@@ -1,17 +1,19 @@
-# Diagramas de Casos de Uso — Página HTML de Gestión de Averías (GGTO-v1)
+﻿# Diagramas de Casos de Uso — Página HTML de Gestión de Averías (GGTO-v1)
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026 (sincronización con `casos_uso.md` y `requerimientos.md`: se incorporan **D-42** —escritura verificada con respaldo previo— y **D-46** —CSV ausente / «sin ingesta»— en los diagramas de secuencia, y se reafirman D-35, D-38, D-39, D-40 y **D-41**).
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026, segunda pasada (cierre de la reauditoría de los casos de uso). Se incorporan **D-42** (escritura verificada con respaldo previo), **D-46** (CSV ausente / «sin ingesta»), **D-45 y D-50** (expiración de sesión de 8 horas y «sin sesión no se ve nada»: nueva secuencia de CU-01 en §3.1 y guarda de renderizado en todo el documento), **D-53** (las columnas 53 y 80 del CSV no se persisten: el rastro de origen es la col. 20), **D-55** (solo dos roles: operador y supervisor; el actor «auditoría / control interno» **se retira**) y **H-33** (`CU05 include CU06` añadido al bloque canónico §1). Se corrigen además el nombre de la copia fechada (`averias_AAAA-MM-DD_HHMM.json`, H-N-08), la destrucción de las hojas impresas (D-27, H-N-09) y el rótulo «escritura atómica» (H-N-18).
 - **Documento hermano:** `RepoTecnico/casos_uso.md` (22 casos de uso CU-01 a CU-22, con Gherkin, EARS y trazabilidad inversa a los 29 RF).
 - **Fuentes:** `RepoTecnico/requerimientos.md`, `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/auditoria_fase1.md`, `RepoTecnico/estado_proyecto.md`, `RepoTecnico/casos_uso/auditoria_casos_uso.md`.
 - **Notación:** los diagramas de casos de uso se expresan como *flowchart* de Mermaid (no existe un tipo UML nativo de casos de uso en Mermaid): los rectángulos con esquinas redondeadas son los **actores**, las elipses son los **casos de uso** y las flechas discontinuas etiquetadas `"<<include>>"` y `"<<extend>>"` son las relaciones UML. Los nombres de actores y de casos de uso son idénticos a los de `casos_uso.md`.
 - **Convención única de dirección de las relaciones (H-06):** **el caso de uso que usa al otro lo incluye** (`A include B` = A invoca a B) y **el caso de uso que añade comportamiento al otro lo extiende** (`A extend B` = A añade comportamiento a B). Esta convención se aplica de forma idéntica en los **8 bloques**: §1 (vista completa), §2.1, §2.2, §2.3, §3.1, §3.2, §3.3 y §4. El bloque **§1 es la vista canónica**: toda relación de los bloques por actor debe aparecer en §1 y en la misma dirección.
-- **Roles (D-35):** el rol «administrador» está absorbido por el **supervisor**; en los diagramas, el nodo `SUP` representa al **supervisor (función administrativa)**. La bandeja GESTION (CU-13) es exclusiva del supervisor (D-35, RNF-12). La sesión exige `P00` **y** contraseña (D-29, D-39).
+- **Roles (D-35, D-55):** el rol «administrador» está absorbido por el **supervisor**; en los diagramas, el nodo `SUP` representa al **supervisor (función administrativa)**. **Solo existen dos roles —operador y supervisor— (D-55):** el «jefe de central» y el actor «auditoría / control interno» **no son roles del sistema**, sus funciones (consumo de cifras, consulta de la auditoría de cambios de CU-15 y control documental del despacho de CU-17) las ejerce el **supervisor**, y ningún diagrama dibuja un nodo de auditoría. La bandeja GESTION (CU-13) es exclusiva del supervisor (D-35, RNF-12). La sesión exige `P00` **y** contraseña (D-29, D-39).
 - **Concurrencia (D-41, RNF-14):** no hay bloqueo de archivo. Todo guardado **relee** el archivo y compara su marca de modificación (`fecha_modificacion`) con la capturada al cargarlo; **si difieren, impide el guardado** y exige que el usuario elija entre *Recargar* o *Sobrescribir*, indicando quién y cuándo modificó por última vez (`usuario_modificacion` y `fecha_modificacion`). Los bloques §3.1, §3.2 y §3.3 muestran ese aviso de conflicto en su rama alternativa.
 - **Estados del caso (D-38):** el maestro conserva **tres** estados —`PEND`, `GESTION` y `CERRADO`—; el `estatus = ASGN` del CSV se ingiere como **`PEND`** y **no** existe un cuarto estado en el maestro (queda sin efecto D-13).
 - **Escritura verificada (D-42, RNF-15):** los bloques §3.1 y §3.2 muestran la secuencia completa del guardado del maestro —copia previa `averias_AAAA-MM-DD_HHMM.bak` (se conservan las **10** últimas), escritura en un **archivo temporal**, **relectura y comparación** del contenido y, solo entonces, confirmación en pantalla—; si algo falla, el respaldo se restaura y la pantalla **no** confirma.
 - **CSV ausente (D-46):** el bloque §3.1 incorpora la rama «CSV ausente / sin ingesta»: la página marca el día, permite registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log`, mantiene el maestro del día anterior y **no bloquea** la consulta ni el despacho.
+- **Nada se ve sin sesión (D-50) y la sesión dura 8 horas (D-45):** antes de una identificación válida la página **no renderiza ningún dato** (tabla, conteos, fichas, gráficos o campos del maestro): solo se ve el diálogo de acceso. Al expirar las **8 horas** o al cerrar la sesión o la pestaña, la pantalla vuelve al diálogo y **oculta de inmediato** lo mostrado. El bloque **§3.1** incorpora la secuencia de acceso y expiración de **CU-01**, y todos los bloques por actor y de secuencia respetan la guarda (H-N-19). **El modo descarga de CU-22 exige la misma sesión válida** (H-N-02).
+- **Rastro de origen (D-52, D-53, D-54):** al ingerir, el sistema conserva **solo la col. 20** (`ultimo_usuario`), que **inicializa `usuario_modificacion`**, y `fecha_modificacion` = **fecha de ingesta**; las columnas **53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) no se persisten** (D-53) y la **col. 18 (`fecha_compromiso`) tampoco** (D-54).
 - **Los 8 bloques Mermaid de este documento:** §1 vista completa (bloque 1), §2.1 operador (bloque 2), §2.2 supervisor (bloque 3), §2.3 supervisor — función administrativa (bloque 4), §3.1 secuencia de la ingesta (bloque 5), §3.2 secuencia del cierre (bloque 6), §3.3 secuencia del despacho y su PDF (bloque 7) y §4 ciclo de vida del caso (bloque 8).
 
 ---
@@ -29,7 +31,8 @@ flowchart LR
     SUP(["Supervisor (función administrativa, D-35)"])
     CUA(["Cuadrilla / técnico de calle"])
     EMI(["Emisor del CSV"])
-    AUD(["Auditoría / control interno"])
+    %% El actor "Auditoría / control interno" se retira del modelo por D-55 (solo operador y supervisor):
+    %% la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17) los ejerce SUP.
 
     %% Casos de uso (elipses)
     CU01([CU-01 Iniciar sesión e identificar al operador])
@@ -87,8 +90,6 @@ flowchart LR
 
     CUA --- CU17
     EMI --- CU08
-    AUD --- CU15
-    AUD --- CU17
 
     %% Relaciones entre casos de uso (include / extend)
     %% Convención: A include B = A invoca a B ; A extend B = A añade comportamiento a B
@@ -106,6 +107,7 @@ flowchart LR
     CU19 -.->|"<<include>>"| CU18
     CU05 -.->|"<<include>>"| CU03
     CU05 -.->|"<<include>>"| CU04
+    CU05 -.->|"<<include>>"| CU06
     CU22 -.->|"<<include>>"| CU21
     CU09 -.->|"<<extend>>"| CU08
 ```
@@ -160,13 +162,12 @@ flowchart LR
 
 **Título:** GGTO-v1 — Casos de uso del supervisor.
 **Cubre:** CU-01, CU-10, CU-11, CU-12, CU-13, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20.
-**Restricción de rol (D-35, RNF-12):** el supervisor puede **todo**, incluidas la bandeja GESTION (CU-13), la consulta y el cierre de cualquier caso, los padrones, el despacho, el respaldo y la restauración.
+**Restricción de rol (D-35, D-55, RNF-12):** el supervisor puede **todo**, incluidas la bandeja GESTION (CU-13), la consulta y el cierre de cualquier caso, los padrones, el despacho, el respaldo, la restauración, la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17). **No existe ningún otro rol** (el «jefe de central» y la «auditoría / control interno» quedan retirados del modelo por D-55).
 
 ```mermaid
 flowchart LR
     SUP(["Supervisor (función administrativa, D-35)"])
     CUA(["Cuadrilla / técnico de calle"])
-    AUD(["Auditoría / control interno"])
 
     CU01([CU-01 Iniciar sesión e identificar al operador])
     CU10([CU-10 Gestionar y filtrar los CASOS])
@@ -193,8 +194,6 @@ flowchart LR
     SUP --- CU20
 
     CUA --- CU17
-    AUD --- CU15
-    AUD --- CU17
 
     CU12 -.->|"<<include>>"| CU11
     CU13 -.->|"<<include>>"| CU11
@@ -240,6 +239,7 @@ flowchart LR
     CU05 -.->|"<<include>>"| CU03
     CU05 -.->|"<<include>>"| CU04
     CU05 -.->|"<<include>>"| CU06
+    CU05 -.->|"<<include>>"| CU06
     CU22 -.->|"<<include>>"| CU21
 ```
 
@@ -261,6 +261,13 @@ sequenceDiagram
     participant CFG as Configuración (C:\GGTO\datos)
     participant MAE as averias.json
 
+    Note over UI,OP: Sin sesión válida la página no renderiza ningún dato: solo el diálogo de acceso (D-50)
+    OP->>UI: Escribe P00 + contraseña y pulsa "Iniciar sesión" (CU-01, D-29, D-39)
+    alt Credencial inválida o cambio obligatorio de contraseña
+        UI-->>OP: "P00 o contraseña incorrectos" / "Debe cambiar la contraseña antes de operar" (D-39)
+    else Sesión válida (8 horas, D-45)
+        UI-->>OP: Habilita las 7 pestañas según la matriz de permisos (D-35, RNF-12)
+    end
     OP->>UI: Pulsa "Cargar CSV diario" y elige el archivo
     UI->>ING: Inicia la ingesta con el archivo elegido
     ING->>CFG: Lee estructura.json, central.json, sectores.json y claves_clasificacion.json
@@ -284,7 +291,7 @@ sequenceDiagram
         ING->>ING: Descarta duplicados contra el maestro (RN-01)
         loop Por cada caso nuevo
             ING->>ING: Extrae informacion_1, informacion_2, estatus, unidad_negocio y ups
-            ING->>ING: Conserva el rastro de origen: ultimo_usuario (col. 20), usuario_acciona (col. 53) y Fecha Hora Asignacion (col. 80)
+            ING->>ING: Rastro de origen: usuario_modificacion = ultimo_usuario (col. 20) y fecha_modificacion = fecha de ingesta (D-52, D-53); las col. 53 y 80 NO se persisten (D-53) y la col. 18 tampoco (D-54)
             alt estatus del CSV = ASGN
                 ING->>ING: status = PEND (D-38; el maestro no tiene cuarto estado)
             else Sin ASGN y con palabra clave de fibra
@@ -328,6 +335,10 @@ sequenceDiagram
                 UI-->>OP: "Ingesta completada: 51 casos nuevos (14 PEND + 37 GESTION)"
             end
         end
+    end
+    opt Sesión expirada (8 horas, D-45) o pestaña cerrada
+        UI-->>OP: Vuelve al diálogo de acceso y OCULTA todo dato mostrado (tabla, conteos, fichas y campos del maestro)
+        Note over UI,MAE: Sin identificación válida no se lee ni se escribe el maestro (D-50, RNF-08); lo ya guardado no se pierde (D-45)
     end
 ```
 
@@ -393,6 +404,10 @@ sequenceDiagram
         OP->>UI: Confirma la reapertura
         UI->>MAE: status = GESTION + nota de reapertura en observaciones
     end
+    opt Sesión expirada (8 horas, D-45) o pestaña cerrada
+        UI-->>OP: Vuelve al diálogo de acceso y OCULTA la ficha y la tabla (D-50, RNF-08)
+        Note over UI,MAE: Sin identificación válida no se modifica el maestro; lo ya guardado se conserva (D-45)
+    end
     opt Otra sesión modificó el maestro desde la carga
         UI->>MAE: Relee fecha_modificacion y usuario_modificacion
         UI-->>OP: "Conflicto: el archivo fue modificado por 12345 el 13/09/2026 10:05. Recargue o sobrescriba"
@@ -403,7 +418,7 @@ sequenceDiagram
 ### 3.3 Secuencia — Generación del despacho y su PDF por cuadrilla
 
 **Título:** GGTO-v1 — Secuencia del despacho diario y del PDF por cuadrilla (RF-08 a RF-10, RF-20; RN-05, RN-06; D-27, D-30, D-31, D-32, D-37; RNF-05, RNF-11).
-**Cubre:** **CU-16** y **CU-17** (flujos principales y alternativos 4a, 4b, 6a, 9b, 3b, 7a, 8a).
+**Cubre:** **CU-16** y **CU-17** (flujos principales y alternativos 4a, 4b, 6a, 9b, 3b, 7a, 8a, 8b).
 
 ```mermaid
 sequenceDiagram
@@ -459,6 +474,13 @@ sequenceDiagram
         UI-->>SUP: "Faltan hojas: C3" y registra la incidencia
     else Todas las hojas recogidas
         UI-->>SUP: "Hojas recogidas: 3 de 3 cuadrillas"
+        SUP->>UI: Registra las hojas destruidas por cuadrilla (D-27)
+        alt Quedan hojas sin destruir
+            UI-->>SUP: "Pendiente de destruir: N hojas" (el día no se da por cerrado)
+        else Destrucción completa
+            UI->>MAE: Asienta la destrucción con fecha, hora, cuadrilla, número de copia y operador (D-27, H-N-09)
+            UI-->>SUP: "Hojas destruidas: 3 de 3 cuadrillas"
+        end
     end
 ```
 
@@ -467,7 +489,7 @@ sequenceDiagram
 ## 4. Diagrama de estados — ciclo de vida del caso
 
 **Título:** GGTO-v1 — Ciclo de vida del caso (PEND / GESTION / CERRADO).
-**Cubre:** reglas de estado aplicadas por **CU-08** (ingesta y clasificación), **CU-12** (cierre y reapertura), **CU-13** (gestión telefónica y «Enviar a calle»), **CU-14** (alta manual) y **CU-16** (despacho). Estados y transiciones según **D-05, D-06, D-20, D-21, D-23, D-38, D-42 (escritura verificada), D-46 (CSV ausente) y D-49 (copia fechada de cierre)**; las guardas descartadas se detallan al final de esta sección.
+**Cubre:** reglas de estado aplicadas por **CU-08** (ingesta y clasificación), **CU-12** (cierre y reapertura), **CU-13** (gestión telefónica y «Enviar a calle»), **CU-14** (alta manual) y **CU-16** (despacho). Estados y transiciones según **D-05, D-06, D-20, D-21, D-23, D-38, D-42 (escritura verificada), D-45 (sesión de 8 horas), D-46 (CSV ausente), D-49 (copia fechada **con hora** de cierre) y D-50 (sin sesión no se ve nada)**; las guardas descartadas se detallan al final de esta sección.
 **Cambio aplicado (H-07):** se **eliminó** la transición `PEND → GESTION` que la versión anterior atribuía a **CU-10**. Verificado contra los 22 casos de uso: CU-10 solo permite editar `clase`, `nivel` y `tipo_abonado`, su postcondición se limita a esas columnas y ninguno de sus criterios cambia el `status`; la vuelta a GESTION **no** existe como comportamiento de ningún caso de uso. Se **eliminó** también el cuarto estado `ASGN`: por **D-38** el `ASGN` del CSV entra como `PEND`. Se **eliminó** la transición `ASGN → PEND` («se retira la asignación de cuadrilla»), que tampoco implementaba ningún caso de uso.
 
 ```mermaid
@@ -514,7 +536,7 @@ stateDiagram-v2
         (10 últimas), archivo temporal, relectura y
         comparación; si falla, se restaura el respaldo
         y la pantalla no confirma. Copia fechada de
-        cierre en C:\\GGTO\\respaldo (D-49, RNF-16).
+        cierre en C:\\GGTO\\respaldo (averias_AAAA-MM-DD_HHMM.json, D-49, RNF-16).
     end note
 
     note left of GESTION
@@ -530,7 +552,7 @@ stateDiagram-v2
 1. **`GESTION → ASGN`** («la gestión telefónica decide la asignación»): **eliminada** por D-38. «Enviar a calle» (CU-13) deja el caso en `PEND` y la asignación de cuadrilla la hace el despacho (CU-16) sin cambiar el estado.
 2. **`PEND → GESTION`** («reclasificación manual a gestión telefónica»): **eliminada** por H-07. Si el usuario decide que debe existir, debe añadirse primero a un caso de uso con su validación de enum y su auditoría (por ejemplo CU-10 editando `status`, o CU-13), y solo entonces volver a dibujarse aquí.
 3. **`ASGN → PEND`** («se retira la asignación de cuadrilla»): **eliminada** por D-38 y porque ningún caso de uso la implementa. Retirar una asignación es hoy una edición de `Reparador Principal` en CU-16 sin cambio de estado.
-4. **Concurrencia:** **decidida** por D-41 y RNF-14 (sin bloqueo; relectura de la marca de modificación y decisión obligatoria entre recargar o sobrescribir). La **escritura atómica y el versionado del maestro** quedaron decididos por **D-42** y RNF-15 (respaldo previo `.bak` con las 10 últimas, archivo temporal, relectura y comparación, y restauración si algo falla), y el **respaldo** por **D-49** y RNF-16; el diagrama no dibuja ninguna guarda sin dueño funcional y **no queda ningún punto `&lt;PENDIENTE&gt;`** en esta sección.
+4. **Concurrencia:** **decidida** por D-41 y RNF-14 (sin bloqueo; relectura de la marca de modificación y decisión obligatoria entre recargar o sobrescribir). La **escritura verificada con respaldo previo** (no «atómica»: D-42 solo especifica copia previa `.bak`, archivo temporal, relectura comparada y restauración) y el versionado del maestro quedaron decididos por **D-42** y RNF-15 (respaldo previo `.bak` con las 10 últimas, archivo temporal, relectura y comparación, y restauración si algo falla), y el **respaldo** por **D-49** y RNF-16; el diagrama no dibuja ninguna guarda sin dueño funcional y **no queda ningún punto `&lt;PENDIENTE&gt;`** en esta sección.
 
 ---
 
@@ -538,22 +560,27 @@ stateDiagram-v2
 
 | Bloque | Diagrama | Tipo | Casos de uso representados |
 |---|---|---|---|
-| §1 | Vista completa (bloque canónico) | Casos de uso (UML en flowchart) | CU-01 a CU-22, con actores operador, supervisor (función administrativa, D-35), cuadrilla, emisor del CSV y auditoría |
+| §1 | Vista completa (bloque canónico) | Casos de uso (UML en flowchart) | CU-01 a CU-22, con actores operador, supervisor (función administrativa, D-35, D-55), cuadrilla y emisor del CSV (**el actor «auditoría / control interno» se retira por D-55**) |
 | §2.1 | Operador de la central | Casos de uso por actor | CU-01, CU-08, CU-09, CU-10, CU-11, CU-12, CU-14, CU-22 |
 | §2.2 | Supervisor | Casos de uso por actor | CU-01, CU-10, CU-11, CU-12, CU-13, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20 |
 | §2.3 | Supervisor — función administrativa | Casos de uso por actor | CU-01 a CU-07, CU-21, CU-22 |
-| §3.1 | Ingesta del CSV | Secuencia | CU-08 (principal), CU-02, CU-06, CU-07; incluye la rama «CSV ausente / sin ingesta» (D-46) y el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), además de la rama de conflicto de concurrencia (D-41) |
-| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15; incluye el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15) y la rama de conflicto de concurrencia (D-41) |
-| §3.3 | Despacho y PDF | Secuencia | CU-16 y CU-17 (principales), CU-05 (padrón de cuadrillas); relectura de la marca antes de confirmar (D-41) |
+| §3.1 | Acceso/sesión e ingesta del CSV | Secuencia | **CU-01** (acceso, credencial inválida, cambio obligatorio y expiración de las 8 horas: D-45 y D-50) y **CU-08** (principal), con CU-02, CU-06 y CU-07; incluye la rama «CSV ausente / sin ingesta» (D-46) y el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), además de la rama de conflicto de concurrencia (D-41) |
+| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15; incluye el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), la rama de conflicto de concurrencia (D-41) y la guarda de expiración de sesión (D-45, D-50) |
+| §3.3 | Despacho y PDF | Secuencia | CU-16 y CU-17 (principales), CU-05 (padrón de cuadrillas); relectura de la marca antes de confirmar (D-41) y control documental completo —entrega, recogida **y destrucción** de las hojas— (D-27) |
 | §4 | Ciclo de vida del caso | Estados | CU-08, CU-12, CU-13, CU-14, CU-16 |
 
-**Verificación de coherencia (H-06, H-07, H-33, H-34):**
+**Verificación de coherencia (H-06, H-07, H-33, H-34, H-N-19, H-N-23):**
 
-1. **Dirección única de las relaciones.** Las 16 relaciones del bloque canónico §1 se repiten con la misma dirección en los bloques por actor: `CU10 include CU01`, `CU14 include CU01`, `CU08 include CU02`, `CU08 include CU06`, `CU08 include CU07`, `CU09 include CU06`, `CU12 include CU11`, `CU13 include CU11`, `CU17 include CU16`, `CU18 include CU10`, `CU20 include CU10`, `CU19 include CU18`, `CU05 include CU03`, `CU05 include CU04`, `CU22 include CU21` y `CU09 extend CU08`.
+1. **Dirección única de las relaciones.** El bloque canónico §1 declara hoy **17 relaciones**: `CU10 include CU01`, `CU14 include CU01`, `CU08 include CU02`, `CU08 include CU06`, `CU08 include CU07`, `CU09 include CU06`, `CU12 include CU11`, `CU13 include CU11`, `CU17 include CU16`, `CU18 include CU10`, `CU20 include CU10`, `CU19 include CU18`, `CU05 include CU03`, `CU05 include CU04`, **`CU05 include CU06`** (añadida por H-33: ya existía en §2.3 y está respaldada por `casos_uso.md`, CU-05 → CU-06), `CU22 include CU21` y `CU09 extend CU08`. **No todas se repiten en los bloques por actor**, porque el bloque §1 es la vista completa del sistema: quedan fuera de los bloques por actor `CU08 include CU02/CU06/CU07` (la ingesta incluye configuración y catálogos sin dibujarlos como actores independientes) y `CU05 include CU06` (que sí aparece en §2.3); el inventario de esta lista es el correcto y ya no promete una repetición universal (H-N-23).
 2. **Nodo duplicado eliminado.** Desaparece el nodo `CU06_EXT` del bloque §2.1: CU-06 aparece una sola vez por bloque y con su nombre completo («Gestionar el catálogo de sectores»), idéntico al de `casos_uso.md` (H-06).
 3. **Nombres idénticos a `casos_uso.md`**, incluidas las cuatro etiquetas antes abreviadas: CU-09 «Resolver la asignación de sector **y las direcciones sin coincidencia**», CU-15 «Consultar la auditoría de cambios **de un caso**», CU-17 «Emitir el PDF **de despacho** por cuadrilla y registrar la entrega» y CU-19 «Emitir el despacho en pantalla y PDF **y el seguimiento semanal estadístico**».
 4. **Etiquetas de relación normalizadas.** Todas usan `|"<<include>>"|` o `|"<<extend>>"|`; se corrigieron las tres etiquetas con comilla simple faltante (`<<extend>>|`) del bloque §1 (H-33).
 5. **Bloques numerados.** Los 8 bloques Mermaid quedan identificados en el encabezado y referenciados con la misma numeración en esta tabla (H-34).
 6. **Estados.** El diagrama §4 declara tres estados y ninguna transición sin dueño funcional (H-07, D-38).
 7. **Concurrencia.** Los bloques §3.1, §3.2 y §3.3 muestran la relectura de la marca de modificación y el aviso de conflicto con usuario y fecha/hora, coherentes con D-41 y RNF-14; ninguno dibuja un bloqueo de archivo que el sistema no implemente.
-8. **Escritura verificada (D-42, RNF-15) y CSV ausente (D-46).** El bloque §3.1 incorpora, en su rama de escritura, la copia previa `.bak` con retención de **10** versiones, la escritura en archivo temporal, la relectura comparada y la restauración del respaldo ante fallo; y en su primera rama el caso «CSV ausente / sin ingesta» con el registro de la novedad en `datos/incidencias.log`. El bloque §3.2 aplica la misma secuencia de D-42 al cierre, con su rama de restauración. Los 8 bloques Mermaid se revisaron y son sintácticamente válidos.
+8. **Escritura verificada (D-42, RNF-15) y CSV ausente (D-46).** El bloque §3.1 incorpora, en su rama de escritura, la copia previa `.bak` con retención de **10** versiones, la escritura en archivo temporal, la relectura comparada y la restauración del respaldo ante fallo; y en su primera rama el caso «CSV ausente / sin ingesta» con el registro de la novedad en `datos/incidencias.log`. El bloque §3.2 aplica la misma secuencia de D-42 al cierre, con su rama de restauración. Se evita el rótulo «escritura atómica», que D-42 no promete (H-N-18).
+9. **Sesión y visibilidad (D-45, D-50).** El bloque §3.1 abre con la secuencia de **CU-01** (acceso con `P00` + contraseña, credencial inválida, cambio obligatorio y sesión válida de 8 horas) y cierra con la guarda de **expiración**; el bloque §3.2 incorpora la misma guarda para el cierre. Ningún bloque dibuja datos renderizados sin sesión válida y el **modo descarga de CU-22 exige la misma sesión** (H-N-02, H-N-19).
+10. **Roles (D-55).** Ningún bloque dibuja el nodo `AUD`: el actor «auditoría / control interno» se retira del modelo y la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17) quedan como acciones del supervisor (`SUP`). Los únicos actores dibujados son el operador, el supervisor, la cuadrilla y el emisor del CSV.
+11. **Rastro de origen (D-52, D-53, D-54).** El bloque §3.1 declara expresamente que `usuario_modificacion` se inicializa con la **col. 20** y `fecha_modificacion` con la **fecha de ingesta**, y que las columnas **53 y 80** (y la **18**) **no se persisten**.
+12. **Control documental (D-27).** El bloque §3.3 cubre la entrega, la recogida **y la destrucción registrada** de las hojas impresas, con su rama de hojas pendientes de destruir (H-N-09).
+13. **Respaldos.** La copia de cierre se dibuja con el nombre **`averias_AAAA-MM-DD_HHMM.json`** (fecha **y hora**), de modo que dos respaldos del mismo día no colisionan (H-N-08). Los 8 bloques Mermaid se revisaron y son sintácticamente válidos.
