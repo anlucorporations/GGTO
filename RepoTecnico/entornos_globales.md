@@ -14,11 +14,12 @@
 | Raíz del proyecto (workspace) | `G:\Mi unidad\CANTV PDE\GGTO-v1` |
 | Documentación técnica | `G:\Mi unidad\CANTV PDE\GGTO-v1\RepoTecnico` |
 | Página (a crear en C1) | `G:\Mi unidad\CANTV PDE\GGTO-v1\app\index.html` |
-| Hojas de estilo (a crear) | `...\css\estilos.css` |
-| Módulos JavaScript (a crear) | `...\js\` |
-| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\`, con respaldo periódico a `G:\Mi unidad\CANTV PDE\GGTO-v1\datos_respaldo\` |
-| Librerías locales (a crear) | `...\lib\` |
+| Hojas de estilo (a crear) | `...\app\css\estilos.css` |
+| Módulos JavaScript (a crear) | `...\app\js\` |
+| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — respaldo **manual** a demanda del supervisor (D-36) |
+| Librerías locales (a crear) | `...\app\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
+| Metadata de git (fuera de Google Drive) | `C:\GGTO\git\GGTO-v1.git` (la raíz apunta con un archivo `.git` que contiene `gitdir:`) |
 
 ### 1.1 Estructura objetivo
 

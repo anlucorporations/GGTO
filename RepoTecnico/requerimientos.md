@@ -27,7 +27,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 | Término | Significado | Fuente |
 |---|---|---|
-| `estatus` | Estado del caso: `PEND` (pendiente), `ASGN` (asignado), `CERRADO`, `GESTION` (requiere verificación telefónica). | L8, L56; col. 27 del CSV; D-13 |
+| `estatus` | Estado del caso: `PEND` (pendiente), `CERRADO`, `GESTION` (requiere verificación telefónica). El `ASGN` del CSV se traduce a `PEND` al ingerir. | L8, L56; col. 27 del CSV; D-38 |
 | `resolucion` | Vía de cierre: `IVR`, `COS`, `COLA`. | L8, L56 |
 | `sacas` | Indicador `SI`/`NO` asociado al cierre del caso. | L8, L56 |
 | `nivel` | `REF` (referido) / `COM` (común o residencial). | L56 |
@@ -60,7 +60,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-10 | La `informacion` duplicada son dos columnas distintas: `informacion_1` e `informacion_2`. |
 | D-11 | Las palabras clave de clasificación son una lista editable en CONFIGURACION con búsqueda normalizada. |
 | D-12 | `estructura.json` es un mapa **posicional** que declara **solo las columnas necesarias** (filtro de central, datos del caso, despacho y gestión), no las 80 del CSV. |
-| D-13 | `ASGN` (asignado) se incorpora como **cuarto valor** del estatus en el maestro, además de PEND, CERRADO y GESTION. |
+| D-13 | ~~`ASGN` se incorpora como cuarto valor del estatus~~ — **dejada sin efecto por D-38**. |
 | D-14 | Se **descartan los datos** de `alta_manual.csv`; los casos se cargan manualmente desde la página. No se usa como modelo obligatorio de campos. |
 | D-15 | El servidor local escucha **solo en loopback** (`--bind 127.0.0.1`) y sirve únicamente el subdirectorio de la aplicación, dejando `datos/` fuera del alcance HTTP (H-01 de la auditoría). |
 | D-16 | El operador se **identifica en cada sesión** contra `tecnicos.json` (P00 o usuario); cada cambio de caso registra quién lo hizo y cuándo. |
@@ -85,6 +85,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. El rol «administrador» queda absorbido por el supervisor. |
 | D-36 | **Respaldo manual** a demanda del supervisor (sin automatismo ni rotación) y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9); riesgo aceptado. |
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
+| D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
 
 ---
 
@@ -94,7 +95,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|---|
 | RF-01 | Navegación por 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION. | C1 (armazón) | L6-19 |
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
-| RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. No permite `CERRADO` sin resolución y fecha. | C3 | L8; D-13, D-20 |
+| RF-03 | PANEL: actualizar `status` (PEND/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. No permite `CERRADO` sin resolución y fecha. | C3 | L8; D-20, D-38 |
 | RF-04 | PANEL: ingresar casos nuevos con una lista **cerrada** de campos (fecha del caso, teléfono, nombre, dirección, contacto, problema reportado, sector, clase, nivel, `tipo_abonado`, observaciones); el `id_averia` se genera como `MAN-` + consecutivo verificando que no exista. | C3 | L8; D-18 |
 | RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (barras de ingreso vs. reparadas por día, con línea de pendiente al cierre de cada día y selector de semana Sem 1 a Sem 36), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9; D-34 |
 | RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), barras + línea (semanal) y torta (reparación). | C5 | L10; D-34 |
@@ -169,7 +170,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|
 | RN-01 | Un caso es nuevo si su `id_averia` no existe en `averias.json`. | L35 |
 | RN-02 | Al ingerir: `ingreso` = fecha de la ingesta, `clase = REP`, `nivel = COM`; la corrección a `CNS`/`REF` es manual. | L38; D-06 |
-| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. La búsqueda es por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, con vista previa del impacto antes de cambiar la lista o el modo. | L36; D-05, D-11, D-21, D-26 |
+| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, se ingiere como `PEND` y no entra a la bandeja GESTION (D-38). La búsqueda es por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, con vista previa del impacto antes de cambiar la lista o el modo. | L36; D-05, D-11, D-21, D-26 |
 | RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
 | RN-05 | Cada cuadrilla recibe: citados del día (`fecha_cita` = día, D-30) + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
 | RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector, desempatando por zona preferente, luego menor carga y luego `id` menor (D-32). | L42 |
@@ -207,10 +208,10 @@ Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión.
 | A-11 | **Resuelta (D-17 y D-29):** `tipo_abonado` se deriva de `unidad_negocio`/`ups`, y `P00` es el código de empleado que identifica la sesión. | Decidido por el usuario el 13/09/2026. | C1 |
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | **Resuelta (D-31):** `despacho.json` se amplía con `sector`, `Reparador Principal` y `fecha_despacho`. | Decidido por el usuario el 13/09/2026. | C4 |
-| A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |
+| A-15 | **Resuelta (D-13, revisada por D-38):** el `ASGN` del CSV se ingiere como `PEND`; el maestro conserva tres estados. | Decidido por el usuario el 12/09/2026 y revisado el 13/09/2026. | C2 |
 | A-16 | **Resuelta (D-21):** las fechas se recortan a `DD/MM/AAAA` y el texto original con hora se conserva en un campo aparte. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
-| A-18 | **Resuelta (D-21):** el `estatus` del CSV prevalece sobre RN-03. | Decidido por el usuario el 12/09/2026. | C2 |
+| A-18 | **Resuelta (D-21 y D-38):** el `estatus` del CSV prevalece sobre RN-03 y `ASGN` entra como `PEND`. | Decidido el 13/09/2026. | C2 |
 
 Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-04 (D-25), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-05, A-08, A-09, A-10, A-11 y A-14.
 

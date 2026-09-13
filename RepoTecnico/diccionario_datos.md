@@ -42,7 +42,7 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 22 | `extra` | T | No | — | CSV | Red / planta externa (D-04). |
 | 23 | `ups` | T | No | — | CSV | Red / planta externa — significado por precisar (A-11). |
 | 24 | `codigos_sin_gestion_en_VENAPP` | T | No | — | CSV | Códigos de casos sin gestión en VENAPP. |
-| 25 | `status` | E | Sí | `PEND` / `ASGN` / `CERRADO` / `GESTION` | Ingesta / manual | `PEND` con palabras clave de fibra; `GESTION` sin ellas (D-05); `ASGN` proviene del estatus del CSV (D-13; conflicto pendiente, A-18). |
+| 25 | `status` | E | Sí | `PEND` / `CERRADO` / `GESTION` | Ingesta / manual | `PEND` con palabras clave de fibra; `GESTION` sin ellas (D-05); el `estatus = ASGN` del CSV se ingiere como `PEND` (D-38). |
 | 26 | `resolucion` | E | No | `IVR` / `COS` / `COLA` | Manual | Se completa al cerrar el caso (RF-03, RF-22). |
 | 27 | `fechaResolucion` | F | No | DD/MM/AAAA | Manual | Fecha de cierre. |
 | 28 | `observaciones` | T | No | texto libre | Manual | Notas de gestión. |
