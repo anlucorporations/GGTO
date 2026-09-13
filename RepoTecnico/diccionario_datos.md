@@ -13,7 +13,7 @@
 
 ## 1. `averias.json` — maestro de casos
 
-Archivo único con el universo de averías gestionadas. Persistencia directa en disco (D-01);
+Archivo único con el universo de averías gestionadas. Persistencia directa en disco (D-01), en **disco local fuera de la carpeta sincronizada** (D-19);
 toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas del fuente (RT-04).
 
 | # | Campo | Tipo | OBL | Dominio / formato | Origen | Notas |
