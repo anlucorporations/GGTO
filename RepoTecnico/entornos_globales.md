@@ -177,7 +177,7 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 
 | Aspecto | Estado |
 |---|---|
-| Uso de GCP | Pendiente de definir (la página es estática y podría publicarse como sitio estático si se autoriza). |
+| Uso de GCP | **No aplica:** ejecución local en la central. |
 | `project_id` | *pendiente* |
 | Credenciales | *pendiente* |
 | Tipo de servicio | *pendiente* (una opción natural sería un bucket de Cloud Storage con sitio estático, o servirla en la red interna de la central). |

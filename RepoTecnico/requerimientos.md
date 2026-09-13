@@ -200,8 +200,8 @@ Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A
 - [x] Modelo de datos preliminar y diccionario de datos (`diccionario_datos.md`).
 - [x] Entornos, rutas y comandos registrados (`entornos_globales.md`).
 - [x] Decisiones de la entrevista registradas (D-01 a D-11).
-- [ ] URLs de los repositorios remotos (GitLab / GitHub) y rama de trabajo.
-- [ ] Definición sobre GCP / entorno de preview.
+- [x] URLs de los repositorios remotos (GitHub y GitLab) y ramas: `main` y `GGTOv1-DSH`.
+- [x] GCP no aplica: ejecución local en la central.
 - [ ] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su diferimiento explícito a los ciclos C4–C6.
 
 ---

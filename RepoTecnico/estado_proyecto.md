@@ -139,8 +139,8 @@ A-12 (D-12), A-13 (D-06), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
 
 ## 6. Pendientes para cerrar la Fase 1
 
-- [ ] URLs de los repositorios remotos (GitLab / GitHub) y rama de trabajo.
-- [ ] Definición sobre GCP o entorno de preview (o su descarte explícito).
+- [x] URLs de los repositorios remotos (GitHub y GitLab) y ramas: `main` y `GGTOv1-DSH`.
+- [x] GCP no aplica: la página se ejecuta localmente en la central (decisión del 12/09/2026).
 - [ ] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su
       diferimiento explícito a los ciclos C4–C6.
 
