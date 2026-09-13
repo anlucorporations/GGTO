@@ -416,8 +416,44 @@ test('valida enums, teléfono, tipo calculado y estructuras iniciales', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Sesión de 8 horas (D-45)
+// 10. Alta del primer supervisor (bootstrap del padrón) y su credencial
 // ---------------------------------------------------------------------------
+test('el primer supervisor creado queda con rol Supervisor y credencial válida', async () => {
+  // El alta desde la página escribe exactamente estos campos (app.js).
+  const sal = N.generarSal(16, webcrypto);
+  const clave = 'Primera2026';
+  const registro = {
+    nombre: 'Supervisor Inicial',
+    cedula: '00000001',
+    P00: '00001',
+    clave_hash: await N.hashClave(clave, sal, subtle),
+    clave_sal: sal,
+    clave_fecha_cambio: N.formatearFecha(new Date()),
+    clave_cambio_obligatorio: 'SI',
+    telefono: '', correo: '', especialidad: '',
+    status: 'Activo',
+    rol: 'Supervisor'
+  };
+  assert.equal(N.resolverRol(registro), 'Supervisor');
+  assert.ok(N.permite(N.resolverRol(registro), 'config.tecnicos'));
+  assert.ok(N.permite(N.resolverRol(registro), 'config.central'));
+
+  const r = await N.verificarCredencial([registro], '00001', clave, { subtle });
+  assert.equal(r.ok, true);
+  assert.equal(r.exigeCambio, true, 'el alta obliga a cambiar la contraseña (D-39)');
+  assert.equal(r.mensajeVigencia, N.CONST.MSG.CAMBIO_OBLIGATORIO);
+
+  // Tras el cambio obligatorio el rol no se degrada por accidente.
+  const actualizado = Object.assign({}, registro, { clave_cambio_obligatorio: 'NO' });
+  assert.equal(N.resolverRol(actualizado), 'Supervisor');
+  assert.equal((await N.verificarCredencial([actualizado], '00001', clave, { subtle })).exigeCambio, false);
+
+  // Un técnico sin campo `rol` es Operador (nunca supervisor por accidente).
+  const sinRol = Object.assign({}, registro, { rol: undefined, P00: '00002' });
+  assert.equal(N.resolverRol(sinRol), 'Operador');
+  assert.equal(N.permite(N.resolverRol(sinRol), 'config.tecnicos'), false);
+});
+
 test('define la sesión de la jornada en 8 horas y el hash con sal de 64 hex', async () => {
   assert.equal(N.CONST.MSG_HORAS_SESION, 8);
   assert.equal(N.CONST.MSG_DIAS_CLAVE, 90);

@@ -529,6 +529,9 @@
     abrirArchivos: abrirArchivos,
     detectarConflicto: detectarConflicto,
     descargar: descargar,
-    errorDe: errorDe
+    errorDe: errorDe,
+    // Punto de entrada para las pruebas de Node.js: permite inyectar una
+    // carpeta simulada con la misma forma que FileSystemDirectoryHandle.
+    crearAlmacen: crearAlmacen
   };
 })(typeof window !== 'undefined' ? window : globalThis);

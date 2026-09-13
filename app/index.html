@@ -33,6 +33,43 @@
       </p>
     </section>
 
+    <!-- Paso 0: alta del primer supervisor cuando el padrón está vacío.
+         Decisión de implementación anotada en el informe: el contrato exige que
+         el supervisor cree los padrones (D-35) y que nadie opere sin sesión
+         (D-50), de modo que el primer técnico debe poder crearse desde aquí. -->
+    <section id="paso-primer-supervisor" class="paso" hidden>
+      <h2>Crear el primer supervisor</h2>
+      <p class="aviso aviso-alerta">El padrón <code>C:\GGTO\datos\tecnicos.json</code> está vacío: sin al menos un
+        supervisor no es posible crear el resto de los padrones (D-35). Complete esta única ficha; la contraseña
+        se guardará como hash con sal y deberá cambiarla en su primer ingreso (D-39).</p>
+      <form id="form-primer-supervisor" novalidate>
+        <p class="campo">
+          <label for="ps-nombre">Nombre y apellido</label>
+          <input type="text" id="ps-nombre" required>
+        </p>
+        <p class="campo">
+          <label for="ps-cedula">Cédula</label>
+          <input type="text" id="ps-cedula" required>
+        </p>
+        <p class="campo">
+          <label for="ps-p00">P00 (código de empleado, será su usuario)</label>
+          <input type="text" id="ps-p00" required>
+        </p>
+        <p class="campo">
+          <label for="ps-clave">Contraseña (8 caracteres o más)</label>
+          <input type="password" id="ps-clave" minlength="8" autocomplete="new-password" required>
+        </p>
+        <p class="campo">
+          <label for="ps-clave2">Repita la contraseña</label>
+          <input type="password" id="ps-clave2" minlength="8" autocomplete="new-password" required>
+        </p>
+        <p class="acciones">
+          <button type="submit" class="boton boton-primario">Crear supervisor y continuar</button>
+        </p>
+        <p id="msg-primer-supervisor" class="mensaje" role="alert" aria-live="assertive"></p>
+      </form>
+    </section>
+
     <!-- Paso 2: credencial P00 + contraseña (D-29, D-39) -->
     <section id="paso-sesion" class="paso" hidden>
       <h2>2. Identificación</h2>

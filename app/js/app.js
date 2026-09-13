@@ -206,11 +206,17 @@
   }
 
   function mostrarPaso(id) {
-    ['paso-carpeta', 'paso-sesion', 'paso-cambio'].forEach(function (p) {
+    ['paso-carpeta', 'paso-primer-supervisor', 'paso-sesion', 'paso-cambio'].forEach(function (p) {
       var el = document.getElementById(p);
       if (el) el.hidden = (p !== id);
     });
-    var foco = id === 'paso-carpeta' ? $('#btn-autorizar') : (id === 'paso-sesion' ? $('#login-p00') : $('#nueva-clave'));
+    var focos = {
+      'paso-carpeta': '#btn-autorizar',
+      'paso-primer-supervisor': '#ps-nombre',
+      'paso-sesion': '#login-p00',
+      'paso-cambio': '#nueva-clave'
+    };
+    var foco = $(focos[id]);
     if (foco && !foco.disabled) foco.focus();
   }
 
@@ -246,6 +252,10 @@
     $('#form-cambio').addEventListener('submit', function (ev) {
       ev.preventDefault();
       guardarClaveNueva();
+    });
+    $('#form-primer-supervisor').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      crearPrimerSupervisor();
     });
     $('#btn-cancelar-cambio').addEventListener('click', function () {
       cancelarCambioClave();
@@ -287,6 +297,13 @@
         $('#paso-sesion').hidden = false;
         $('#boton-crear-estructura') && $('#boton-crear-estructura').remove();
       }
+      // Sin ningún técnico en el padrón nadie podría abrir sesión ni crear los
+      // padrones (D-35 + D-50): se ofrece el alta del primer supervisor.
+      var tecnicos = estado.almacen.datos['tecnicos.json'];
+      if (!estado.archivosFaltantes.length && Array.isArray(tecnicos) && tecnicos.length === 0) {
+        mostrarPaso('paso-primer-supervisor');
+        return res;
+      }
       mostrarPaso('paso-sesion');
       return res;
     }).catch(function (e) {
@@ -318,6 +335,73 @@
       });
     }));
     paso.appendChild(caja);
+  }
+
+  // ------------------------------------------------------------------
+  // Primera ejecución: alta del primer supervisor (bootstrap del padrón)
+  // ------------------------------------------------------------------
+  function crearPrimerSupervisor() {
+    var msg = $('#msg-primer-supervisor');
+    var nombre = $('#ps-nombre').value;
+    var cedula = $('#ps-cedula').value;
+    var p00 = $('#ps-p00').value;
+    var clave = $('#ps-clave').value;
+    var clave2 = $('#ps-clave2').value;
+    var errores = [];
+    if (!N.obligatorio(nombre)) errores.push('Complete: nombre');
+    if (!N.obligatorio(cedula)) errores.push('Complete: cédula');
+    if (!N.obligatorio(p00)) errores.push('Complete: P00');
+    var v = N.validarCambioClave(clave, clave2);
+    if (!v.valido) errores = errores.concat(v.errores);
+    if (errores.length) { msg.textContent = errores.join(' · '); return; }
+    msg.textContent = '';
+
+    var sal = N.generarSal(16, raiz.crypto);
+    N.hashClave(clave, sal, raiz.crypto.subtle).then(function (hash) {
+      var tecnico = {
+        nombre: String(nombre).trim(),
+        cedula: String(cedula).trim(),
+        P00: String(p00).trim(),
+        clave_hash: hash,
+        clave_sal: sal,
+        clave_fecha_cambio: N.formatearFecha(new Date()),
+        clave_cambio_obligatorio: 'SI',
+        telefono: '', correo: '', especialidad: '',
+        status: 'Activo',
+        rol: 'Supervisor'
+      };
+      var lista = [tecnico];
+      var escribir = function (opciones) {
+        if (estado.modoDescarga) {
+          return descargarArchivo('tecnicos.json', lista).then(function () {
+            avisar('Modo descarga: se descargó tecnicos.json. Reemplácela en C:\\GGTO\\datos y vuelva a abrir la página.', 'aviso-alerta', { temporal: false });
+          });
+        }
+        return estado.almacen.guardarArchivo('tecnicos.json', lista, opciones || {}).then(function () {
+          avisar('Supervisor creado: entre con el P00 ' + tecnico.P00 + '; deberá cambiar la contraseña (D-39).', 'aviso-info', { temporal: false });
+        });
+      };
+      return escribir({}).then(function () {
+        registrarLog('bootstrap | primer supervisor creado | p00=' + tecnico.P00);
+        estado.almacen.datos['tecnicos.json'] = lista;
+        $('#ps-nombre').value = ''; $('#ps-cedula').value = ''; $('#ps-p00').value = '';
+        $('#ps-clave').value = ''; $('#ps-clave2').value = '';
+        mostrarPaso('paso-sesion');
+      }).catch(function (e) {
+        if (e && e.tipo === 'conflicto') {
+          manejarConflicto('tecnicos.json', lista, function () {
+            return escribir({ sobrescribir: true }).then(function () {
+              estado.almacen.datos['tecnicos.json'] = lista;
+              mostrarPaso('paso-sesion');
+            });
+          }, e);
+          return;
+        }
+        throw e;
+      });
+    }).catch(function (e) {
+      msg.textContent = 'No se pudo crear el supervisor: ' + A.errorDe(e);
+    });
   }
 
   // ------------------------------------------------------------------
