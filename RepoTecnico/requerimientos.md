@@ -63,6 +63,9 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-13 | `ASGN` (asignado) se incorpora como **cuarto valor** del estatus en el maestro, además de PEND, CERRADO y GESTION. |
 | D-14 | Se **descartan los datos** de `alta_manual.csv`; los casos se cargan manualmente desde la página. No se usa como modelo obligatorio de campos. |
 | D-15 | El servidor local escucha **solo en loopback** (`--bind 127.0.0.1`) y sirve únicamente el subdirectorio de la aplicación, dejando `datos/` fuera del alcance HTTP (H-01 de la auditoría). |
+| D-16 | El operador se **identifica en cada sesión** contra `tecnicos.json` (P00 o usuario); cada cambio de caso registra quién lo hizo y cuándo. |
+| D-17 | Se crea el campo **`tipo_abonado`** (`RES`/`EMP`) alimentado por `unidad_negocio` (col. 61) y `ups` (col. 62) del CSV; `nivel` sigue siendo REF/COM. |
+| D-18 | El **alta manual (RF-04)** usa una lista cerrada de campos y el `id_averia` se genera automáticamente como `MAN-` + consecutivo, verificando unicidad. |
 
 ---
 
@@ -73,7 +76,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-01 | Navegación por 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION. | C1 (armazón) | L6-19 |
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
 | RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. | C3 | L8; D-13 |
-| RF-04 | PANEL: ingresar casos nuevos con datos sencillos (Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, etc.). | C3 | L8 |
+| RF-04 | PANEL: ingresar casos nuevos con una lista **cerrada** de campos (fecha del caso, teléfono, nombre, dirección, contacto, problema reportado, sector, clase, nivel, `tipo_abonado`, observaciones); el `id_averia` se genera como `MAN-` + consecutivo verificando que no exista. | C3 | L8; D-18 |
 | RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (curva lunes–sábado), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9 |
 | RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación). | C5 | L10 |
 | RF-07 | CASOS: registro principal de casos y su resolución, clasificados por Construcción/Reparación y por Residencial/Empresa/Referidos. | C1 (tabla) / C3 (clasificación) | L12 |
@@ -97,8 +100,9 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-25 | Reportes: reporte de trabajo diario y reporte de gestión semanal (formato de salida pendiente, A-08). | C6 | L2 |
 | RF-26 | Seguimiento de casos especiales (definición pendiente, A-09) y de averías concentradas por sector. | C6 | L2, L13 |
 | RF-27 | CONFIGURACION: gestionar la lista editable de palabras clave de clasificación y su modo de búsqueda (`claves_clasificacion.json`). | C2 | D-11 |
+| RF-28 | CASOS y PANEL: editar el `tipo_abonado` (`RES`/`EMP`) del caso y usarlo en las métricas de gestión y en la cuota de despacho. | C1 / C5 | D-17 |
 
-**Total:** 27 RF.
+**Total:** 28 RF.
 
 ---
 
@@ -113,6 +117,8 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-05 | Impresión: el PDF de despacho por cuadrilla cabe en carta horizontal. | Impresión/visualización del PDF con el volumen máximo previsto por cuadrilla. |
 | RNF-06 | Fechas en DD/MM/AAAA y semana operativa lunes–sábado. | Prueba de ingesta y de los cortes semanales del MONITOREO. |
 | RNF-07 | Interfaz en español respetando la nomenclatura del dominio (PEND, CERRADO, GESTION, IVR, COS, COLA, sacas). | Revisión de etiquetas; corrección de typos de interfaz (A-06). |
+| RNF-08 | Control de acceso: la sesión exige identificar al operador contra `tecnicos.json`; sin identificación válida la página no permite editar (H-01). | Prueba de sesión sin identificar: las acciones de edición quedan bloqueadas. |
+| RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre de caso registra operador y fecha/hora del cambio (H-10). | Revisión del historial tras una sesión de cambios. |
 
 ---
 
@@ -170,7 +176,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
-| A-11 | **Evidencia nueva:** en el CSV, `ups` toma los valores `RES` (55) y `NRES` (1), junto a `unidad_negocio` (`CANTV RESIDENCIAL` / `CANTV EMPRESAS`). `P00` sigue sin explicación. | ¿`ups` es el tipo de cliente residencial/no residencial y qué representa `P00` en TECNICOS? | C1 |
+| A-11 | **Parcialmente resuelta (D-17):** `tipo_abonado` se deriva de `unidad_negocio` (col. 61) y `ups` (col. 62). `P00` en TECNICOS sigue sin explicación. | ¿Qué representa `P00` en el padrón de técnicos? | C1 |
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
 | A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |

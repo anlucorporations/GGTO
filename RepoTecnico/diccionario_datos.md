@@ -47,6 +47,9 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 27 | `fechaResolucion` | F | No | DD/MM/AAAA | Manual | Fecha de cierre. |
 | 28 | `observaciones` | T | No | texto libre | Manual | Notas de gestión. |
 | 29 | `sacas` | B | No | `SI` / `NO` | Manual | Indicador de cierre. |
+| 30 | `tipo_abonado` | E | No | `RES` / `EMP` | Ingesta / manual | Derivado de `unidad_negocio` (col. 61) y `ups` (col. 62) del CSV (D-17, RF-28). |
+| 31 | `usuario_modificacion` | T | No | P00 o usuario | Manual | Auditoría: quién hizo el último cambio (D-16, RNF-09). |
+| 32 | `fecha_modificacion` | T | No | DD/MM/AAAA hh:mm | Manual | Auditoría: cuándo se hizo el último cambio (D-16). |
 
 **Reglas de integridad**
 - `id_averia` es único; la ingesta descarta cualquier caso ya presente (RN-01, RNF-04).
@@ -275,9 +278,12 @@ Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centra
 | 19 | fecha_cita | 39 | plan | 59 | descripcion (3) | 79 | Telefono Movil |
 | 20 | ultimo_usuario | 40 | slot | 60 | con_serv_aba | 80 | Fecha Hora Asignacion |
 
-**Columnas que alimentan el maestro propuesto:** 1-10 (filtro de central), 11, 14, 16, 17, 21,
-28, 31, 32, 33, 34, 36, 39-46, 62, 64, 65, 27 (`estatus`). El resto queda disponible para el
-detalle del caso o para el despacho (columnas 65-80).
+**Columnas que alimentan el maestro propuesto** (subconjunto declarado según D-12): 1-10 (filtro
+de central), 11 (`id_averia`), 14, 16, 17, 21, 27 (`estatus`), 28, 31-34, 36, 39-46, 61
+(`unidad_negocio`) y 62 (`ups`) para `tipo_abonado`, 64, 65 (`Reparador Principal`) y 20
+(`ultimo_usuario`) / 53 (`usuario_acciona`) / 80 (`Fecha Hora Asignacion`) como rastro de origen
+para la auditoría (D-16). El resto queda disponible para el detalle del caso o para el despacho
+(columnas 65-80).
 
 ---
 

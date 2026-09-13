@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **5 bloques de entrevista** (18 preguntas) con los que se fijaron **15 decisiones**
+Se realizaron **6 bloques de entrevista** con los que se fijaron **18 decisiones**
 y se cerraron **9 ambigüedades** del documento fuente. Quedan **9 ambigüedades abiertas**, que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -88,6 +88,9 @@ ingesta debe rediseñarse.
 | D-13 | `ASGN` se incorpora como cuarto estado del maestro. | 5 |
 | D-14 | Se descartan los datos de `alta_manual.csv`; los casos se cargan manualmente. | 5 |
 | D-15 | Servidor local solo en loopback y sirviendo únicamente el subdirectorio de la aplicación. | auditoría |
+| D-16 | Identificación del operador en cada sesión contra `tecnicos.json` y registro de quién cambia cada caso. | 6 |
+| D-17 | Campo nuevo `tipo_abonado` (RES/EMP) desde `unidad_negocio` y `ups` del CSV. | 6 |
+| D-18 | Alta manual con lista cerrada de campos e `id_averia` automático `MAN-`. | 6 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -161,3 +164,38 @@ A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14).
 | Pérdida de datos por edición concurrente o cierre accidental. | Casos perdidos. | Escritura inmediata en cada cambio (RN-07) y exportación de respaldo del JSON. |
 | Typos en los textos del CSV. | Clasificación incorrecta. | Búsqueda normalizada y lista de claves editable (D-11). |
 | Fallo de escritura por trabajar sobre Google Drive (`G:`). | No se guardan los documentos. | Escribir en `%TEMP%` y copiar al destino (ver `entornos_globales.md` §9). |
+
+---
+
+## 9. Auditoría de Fase 1 (12/09/2026)
+
+Informe completo: `RepoTecnico/auditoria_fase1.md` (skill `equipo-auditoria`: 7 revisores en
+paralelo → 7 verificadores adversariales → síntesis; 15 agentes).
+
+| Aspecto | Resultado |
+|---|---|
+| Veredicto | **Apto con reservas** para iniciar C1; **no apto** para C2/C3 hasta cerrar A-04, A-11, A-16 y A-18. |
+| Hallazgos | **29** verificados: 2 críticos, 12 altos, 15 medios. |
+| Extras | 14 RNF faltantes (ISO 25010), 11 stakeholders faltantes, 12 huecos de trazabilidad, 6 descartados justificados. |
+
+**Hallazgos críticos y su estado**
+
+| ID | Hallazgo | Estado |
+|---|---|---|
+| H-01 | Servidor local sin `--bind`, sirviendo la raíz (exponía `datos/averias.json`) y sin roles ni permisos. | **Atendido:** D-15 (loopback + solo la aplicación) y D-16 (identificación del operador); RNF-08 creado. |
+| H-02 | RF-04 pedía campos inexistentes (Tipo, Actividad, Agente) sin definir quién genera `id_averia`. | **Atendido:** D-18 (lista cerrada + id `MAN-` automático); RF-04 reescrito. |
+
+**Hallazgos altos atendidos:** H-03 (D-08 contradictoria → D-08 sin efecto y D-12 vigente),
+H-04 («Empresa» no representable → D-17 `tipo_abonado` y RF-28), H-06 (recuento real de
+decisiones y ambigüedades corregido en §1 y §4).
+
+**Hallazgos altos pendientes:** H-05 (agrupaciones de RF-23: «tipo», «abiertos/cerrados» y
+cuadrilla sin definir), H-07 (RNF sin umbral ni ciclo de verificación), H-08 (algoritmo de
+palabras clave sin especificar), H-09 (persistencia del maestro sobre Google Drive: riesgo de
+escritura silenciosamente fallida), H-10 (faltan campos de auditoría en detalle, no solo el
+último cambio), H-11 (invariantes del diccionario sin requisito), H-12 (datos personales en el
+PDF de despacho y en los respaldos), H-13 (base legal, finalidad y retención de datos
+personales) y H-14 (no hay RF de gestión de sectores ni criterio de «avería concentrada»).
+
+**Preguntas de la auditoría pendientes de respuesta** (§9 del informe, 12 preguntas P1-P12).
+Respondidas hasta ahora: P1 (D-15), P2 (D-16), P5 (D-12 + D-17), P6 (D-18), P11 (D-17).
