@@ -1,0 +1,15 @@
+# ---- GGTO-v1 ----
+# Metadatos de carpetas de Windows / Google Drive
+desktop.ini
+Desktop.ini
+Thumbs.db
+*.tmp
+
+# Entornos y secretos (no versionar)
+.env
+.env.*
+*.log
+
+# Respaldos generados por la pagina
+datos/backup/
+RepoTecnico/*.bak

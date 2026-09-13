@@ -1,0 +1,192 @@
+# Requerimientos — Página HTML de Gestión de Averías (GGTO)
+
+- **Proyecto:** GGTO-v1 — Central Francisco Salias (Área 4)
+- **Fase:** 1 (Concepto) — documento vivo, se actualiza de forma incremental
+- **Versión:** v1
+- **Fecha:** 2026-02-19
+- **Fuente primaria:** `RepoTecnico/PAGINA-GGTO-INICIAL.md` (64 líneas)
+- **Documentos derivados:** `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` (análisis y arquitectura),
+  `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`
+
+> Convención de trazabilidad: `L##` se refiere a la línea de la fuente primaria.
+> `D-##` a las decisiones de la entrevista (§3) y `A-##` a las ambigüedades (§9).
+
+---
+
+## 1. Objetivo del sistema
+
+Página HTML que concentra la gestión de los reportes de avería de la central Francisco Salias
+(área 4): conformar el despacho diario a las cuadrillas declaradas, agrupar averías
+concentradas por sector, dar seguimiento a los casos especiales y emitir el reporte de trabajo
+diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a diario
+(L1-2, L31).
+
+---
+
+## 2. Glosario y nomenclatura del dominio
+
+| Término | Significado | Fuente |
+|---|---|---|
+| `estatus` | Estado del caso: `PEND` (pendiente), `CERRADO`, `GESTION` (requiere verificación telefónica). | L8, L56 |
+| `resolucion` | Vía de cierre: `IVR`, `COS`, `COLA`. | L8, L56 |
+| `sacas` | Indicador `SI`/`NO` asociado al cierre del caso. | L8, L56 |
+| `nivel` | `REF` (referido) / `COM` (común o residencial). | L56 |
+| `clase` | `REP` (reparación) / `CNS` (construcción). | L56 |
+| `sector` | Agrupación geográfica de averías por cercanía de direcciones. | L13, L37 |
+| `ingesta` | Procedimiento diario de carga y clasificación del CSV. | L29-38 |
+| `despacho` | Distribución del universo de averías entre las cuadrillas. | L40-45 |
+| citados | Casos agendados/citados del día que deben entrar en el despacho (definición pendiente, A-05). | L42 |
+| `FAT` | Caja de acceso a la red de fibra (planta externa). | L44, L56 |
+| `OLT` | Equipo terminal de línea óptica. | L56 |
+| `VENAPP` | Origen del campo `codigos_sin_gestion_en_VENAPP`. | L56 |
+| cuadrilla | Equipo de trabajo de calle (técnicos + vehículo) al que se asigna el despacho. | L18, L42 |
+| central | Unidad operativa (región, estado, municipio, parroquia, distrito, área, central). | L15 |
+
+---
+
+## 3. Decisiones de la entrevista (Fase 1)
+
+| ID | Decisión |
+|---|---|
+| D-01 | Persistencia mediante servidor local mínimo + File System Access API: la página lee y **escribe** `averias.json` / `despacho.json` en disco. |
+| D-02 | Alcance: primero el MVP (CONFIGURACION + CASOS + INGESTA + PANEL) = ciclos C1–C3. |
+| D-03 | Los sectores se definen como lista de calles/urbanizaciones, con emparejamiento por texto normalizado y cola de asignación manual. |
+| D-04 | La columna `extra` de `averias.json` pertenece a Red / planta externa. |
+| D-05 | RN-03: sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. |
+| D-06 | Todo caso ingerido entra con `clase = REP`; la corrección a `CNS` o `REF` es manual en CASOS o GESTION. |
+| D-07 | Ficha de cuadrilla: `id, nombre, técnicos[], vehículo, turno, sectores[], status`. |
+| D-08 | Los encabezados del CSV diario son los declarados en `estructura.json`; la ingesta es genérica sobre ese contrato. |
+| D-09 | El archivo maestro de casos se llama `averias.json` (la mención a `averia.json` en L35 es un error de tipeo). |
+| D-10 | La `informacion` duplicada son dos columnas distintas: `informacion_1` e `informacion_2`. |
+| D-11 | Las palabras clave de clasificación son una lista editable en CONFIGURACION con búsqueda normalizada. |
+
+---
+
+## 4. Requerimientos funcionales (RF)
+
+| ID | Requerimiento | Ciclo | Fuente |
+|---|---|---|---|
+| RF-01 | Navegación por 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION. | C1 (armazón) | L6-19 |
+| RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
+| RF-03 | PANEL: actualizar `status` (PEND/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. | C3 | L8 |
+| RF-04 | PANEL: ingresar casos nuevos con datos sencillos (Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, etc.). | C3 | L8 |
+| RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (curva lunes–sábado), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9 |
+| RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación). | C5 | L10 |
+| RF-07 | CASOS: registro principal de casos y su resolución, clasificados por Construcción/Reparación y por Residencial/Empresa/Referidos. | C1 (tabla) / C3 (clasificación) | L12 |
+| RF-08 | DESPACHO: distribuir el universo de averías entre cuadrillas agrupando por dirección (sectores cercanos). | C4 | L13, L40-45 |
+| RF-09 | DESPACHO: aplicar las reglas de reparto — citados del día, ≥1 reparación de referidos y ≥1 de empresas por cuadrilla; construcción a una sola cuadrilla con reparaciones en ese sector. | C4 | L42 |
+| RF-10 | DESPACHO: generar los PDF del despacho diario, uno por cuadrilla, ajustados al área máxima imprimible de una hoja carta horizontal (con paginación). | C4 | L45 |
+| RF-11 | CONFIGURACION/CENTRAL: datos operativos de la central (región, estado geográfico, capital, municipio, parroquia, estado operativo, distrito, área, central, nombre central) como filtro base de la matriz CSV. | C1 | L15 |
+| RF-12 | CONFIGURACION/TECNICOS: padrón de trabajadores (Nombre, Cédula, P00, Teléfono, Correo, Especialidad, Status). | C1 | L16 |
+| RF-13 | CONFIGURACION/FLOTA: padrón de vehículos (CAN00, Tipo, Marca, Modelo, Placa, Combustible, Status, Estado Cauchos, Estado Fluidos, Estado General). | C1 | L17 |
+| RF-14 | CONFIGURACION/CUADRILLA: padrón de cuadrillas (`id, nombre, técnicos[], vehículo, turno, sectores[], status`). | C1 | L18; D-07 |
+| RF-15 | GESTION: bandeja de casos a consultar telefónicamente para clasificarlos correctamente antes del trabajo de calle. | C3 | L19 |
+| RF-16 | INGESTA: cargar el CSV diario, filtrar por los datos de la central, extraer las columnas según `estructura.json` y descartar los casos ya existentes por `id_averia`. | C2 | L31-35 |
+| RF-17 | INGESTA: los casos que **no** contengan las palabras clave de fibra (LOSS ROJO, FALLA FIBRA, FIBRA DAÑADA) en `ultimo_comentario`, `problema_reporte`, `informacion_1` o `informacion_2` pasan a `status = GESTION`; los que sí las contienen quedan en `status = PEND`. | C2 | L36; D-05, D-11 |
+| RF-18 | INGESTA: completar `sector` agrupando por `direccion` según los sectores declarados; si la dirección no corresponde a ningún sector, solicitarlo al usuario. | C2 | L37 |
+| RF-19 | INGESTA: insertar los casos nuevos en `averias.json` con `ingreso = fecha de ingesta`, `clase = REP` y `nivel = COM`. | C2 | L38; D-06 |
+| RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal`. | C4 | L44 |
+| RF-21 | GENERALIDADES: tabla con las columnas resumen `nivel, clase, sector, id_averia, nombre, direccion, plan`. | C1 | L49 |
+| RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución. | C1 | L50 |
+| RF-23 | GENERALIDADES: agrupar los datos por abiertos/cerrados, cuadrilla, tipo, clase y estatus; incluye la edición manual de `clase` y `nivel` del caso. | C1 | L51; D-06 |
+| RF-24 | GENERALIDADES: persistir en `averias.json` cada modificación de un caso. | C1 | L52 |
+| RF-25 | Reportes: reporte de trabajo diario y reporte de gestión semanal (formato de salida pendiente, A-08). | C6 | L2 |
+| RF-26 | Seguimiento de casos especiales (definición pendiente, A-09) y de averías concentradas por sector. | C6 | L2, L13 |
+| RF-27 | CONFIGURACION: gestionar la lista editable de palabras clave de clasificación y su modo de búsqueda (`claves_clasificacion.json`). | C2 | D-11 |
+
+**Total:** 27 RF.
+
+---
+
+## 5. Requerimientos no funcionales (RNF)
+
+| ID | Requerimiento | Verificación prevista |
+|---|---|---|
+| RNF-01 | Usabilidad: operación guiada por botones, sin comandos; ingesta + despacho realizables en una sesión corta. | Prueba con un operador sobre datos reales de un día; se documenta el tiempo de cada procedimiento. |
+| RNF-02 | Desempeño: tabla fluida con el universo diario de averías del área (paginación o virtualización). | Medición de tiempo de render y de filtrado con el CSV de un día completo. |
+| RNF-03 | Portabilidad: página autónoma que abre en cualquier PC de la central con navegador moderno. | Apertura en Edge/Chrome sin instalación adicional (solo el lanzador del servidor local). |
+| RNF-04 | Integridad: no duplicar casos por `id_averia` ni perder modificaciones al recargar. | Prueba de doble ingesta del mismo CSV; conteo de registros y verificación de ids únicos. |
+| RNF-05 | Impresión: el PDF de despacho por cuadrilla cabe en carta horizontal. | Impresión/visualización del PDF con el volumen máximo previsto por cuadrilla. |
+| RNF-06 | Fechas en DD/MM/AAAA y semana operativa lunes–sábado. | Prueba de ingesta y de los cortes semanales del MONITOREO. |
+| RNF-07 | Interfaz en español respetando la nomenclatura del dominio (PEND, CERRADO, GESTION, IVR, COS, COLA, sacas). | Revisión de etiquetas; corrección de typos de interfaz (A-06). |
+
+---
+
+## 6. Restricciones y requisitos técnicos (RT)
+
+| ID | Restricción |
+|---|---|
+| RT-01 | Los datos de verdad viven en archivos: `averias.json`, `despacho.json` y `estructura.json` (L54-58). |
+| RT-02 | La fuente externa es un `.csv` diario con información operativa, administrativa, técnica y complementaria (L31). |
+| RT-03 | El filtro de la matriz CSV usa los campos operativos de CONFIGURACION/CENTRAL (L33). |
+| RT-04 | Los JSON respetan los nombres y el orden de columnas declarados, con la única corrección `informacion_1` / `informacion_2` (D-10). |
+| RT-05 | `despacho.json` es un subconjunto de columnas de `averias.json` (L57). |
+| RT-06 | Desde `file://` el navegador no puede leer ni escribir los JSON del disco: se requiere servidor local + File System Access API (D-01). |
+| RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
+
+---
+
+## 7. Reglas de negocio
+
+| ID | Regla | Fuente |
+|---|---|---|
+| RN-01 | Un caso es nuevo si su `id_averia` no existe en `averias.json`. | L35 |
+| RN-02 | Al ingerir: `ingreso` = fecha de la ingesta, `clase = REP`, `nivel = COM`; la corrección a `CNS`/`REF` es manual. | L38; D-06 |
+| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Palabras clave editables y búsqueda normalizada. | L36; D-05, D-11 |
+| RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
+| RN-05 | Cada cuadrilla recibe: citados del día + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
+| RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector. | L42 |
+| RN-07 | Toda edición de un caso se refleja de inmediato en `averias.json`. | L52 |
+| RN-08 | La semana operativa va de lunes a sábado. | L9 |
+
+---
+
+## 8. Alcance por ciclo
+
+| Ciclo | Contenido | Requerimientos |
+|---|---|---|
+| C1 | Armazón de pestañas, CONFIGURACION completa, tabla CASOS + flotante de cierre, persistencia JSON. | RF-01, RF-07 (tabla), RF-11 a RF-14, RF-21 a RF-24 |
+| C2 | INGESTA del CSV: carga, filtro por central, mapeo, dedupe, clasificación por palabras clave, asignación de sector. | RF-16 a RF-19, RF-27 |
+| C3 | PANEL (búsqueda, actualización, alta) + GESTION telefónica + reclasificación. | RF-02 a RF-04, RF-07 (clasificación), RF-15, RF-23 |
+| C4 | DESPACHO: agrupación por sector, reglas RN-05/RN-06, edición y PDF por cuadrilla. | RF-08 a RF-10, RF-20 |
+| C5 | MONITOREO + GRAFICOS. | RF-05, RF-06 |
+| C6 | Reportes diario y semanal + casos especiales y averías concentradas. | RF-25, RF-26 |
+| C7 | Pruebas funcionales con datos reales, ajuste de impresión, entrega y manual de usuario. | RNF-01 a RNF-07 |
+
+---
+
+## 9. Ambigüedades abiertas (preguntas del bloque 4)
+
+| ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
+|---|---|---|---|
+| A-04 | `sector` se describe como `1/2/3` numérico y también como catálogo configurable (L37, L56). | ¿La numeración de sectores es consecutiva por central (1, 2, 3…) y puede crecer? | C2 |
+| A-05 | «casos citados del día» (L42) sin definición. | ¿Qué hace a un caso "citado": fecha prometida al abonado, agenda de la cuadrilla o reincidencia? | C4 |
+| A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
+| A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
+| A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
+| A-11 | `P00` en TECNICOS (L16) y `ups` en `averias.json` (L56) sin descripción. | ¿Qué representan exactamente ambos campos? | C1 |
+| A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
+
+Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
+A-12 (D-08), A-13 (D-06).
+
+---
+
+## 10. Criterios de aceptación de la Fase 1
+
+- [x] Requerimientos funcionales, no funcionales y técnicos extraídos de la fuente primaria con trazabilidad por línea.
+- [x] Modelo de datos preliminar y diccionario de datos (`diccionario_datos.md`).
+- [x] Entornos, rutas y comandos registrados (`entornos_globales.md`).
+- [x] Decisiones de la entrevista registradas (D-01 a D-11).
+- [ ] URLs de los repositorios remotos (GitLab / GitHub) y rama de trabajo.
+- [ ] Definición sobre GCP / entorno de preview.
+- [ ] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su diferimiento explícito a los ciclos C4–C6.
+
+---
+
+## 11. Próximos pasos
+
+1. Cerrar los pendientes del §10 (repositorios, GCP y bloque 4 de preguntas).
+2. Fase 2: auditoría de estos requerimientos con el equipo de auditoría y elaboración de los
+   casos de uso con criterios Gherkin/EARS y trazabilidad a los RF.
+3. Al aprobarse la Fase 2, iniciar el ciclo C1 del plan de desarrollo.
