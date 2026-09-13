@@ -988,7 +988,7 @@
 2. El sistema muestra la sección **Auditoría** con: `usuario_modificacion` y `fecha_modificacion` del **último** cambio, los valores vigentes de `status`, `clase`, `nivel` y `tipo_abonado`, y —solo si el caso se ingirió de un CSV— el **rastro de origen limitado a la col. 20**: la etiqueta «Origen del dato: &lt;ultimo_usuario&gt;», que es el valor con el que CU-08 inicializó `usuario_modificacion`, más la fecha de ingesta en `fecha_modificacion`. Las columnas **53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) no se persisten y no se muestran** (D-53).
 3. El supervisor solicita el historial de cambios del caso.
 4. El sistema muestra **el último cambio registrado** con fecha/hora, operador, campo, valor anterior y valor nuevo, indicando en pantalla que corresponde al último cambio y no al historial completo (alcance MVP).
-5. El supervisor aplica el filtro por rango de fechas y por operador sobre los cambios disponibles y exporta la vista en pantalla o la imprime.
+5. El supervisor aplica el filtro por rango de fechas y por operador sobre los cambios disponibles —comparación de **texto** en formato fijo `DD/MM/AAAA`, **nunca** un rango calculado sobre `fecha_modificacion`, que el diccionario declara TEXTO (H-29)— y exporta la vista en pantalla o la imprime.
 
 **Flujos alternativos**
 
@@ -1150,7 +1150,7 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `averias.json` con casos de la semana en curso y de la semana anterior, y con `sector` y `Reparador Principal` informados en la mayoría de los casos; definiciones de métrica acordadas según D-34 (semana operativa lunes a sábado, Sem 1 a Sem 36).
 - **Postcondiciones:** las 6 zonas de MONITOREO muestran gráfico y tabla descriptiva, incluida la **Gestión Semanal estadística** de D-34 (ingreso del día vs. reparadas del día con la línea del pendiente al cierre de cada día, agrupada por semana del año y con selector **Sem 1 a Sem 36**); ninguna consulta modifica los datos.
 
-**Trazabilidad:** RF-05, RF-06, RF-25; RN-08; RNF-02, RNF-06, RNF-07, **RNF-08, RNF-12, RNF-13**; S-RNF-02b; D-17, D-23, D-24, **D-34, D-35, D-40, D-48, D-50**; H-16, H-28.
+**Trazabilidad:** RF-05, RF-06, RF-25; RN-08; RNF-02, RNF-06, RNF-07, **RNF-08, RNF-12, RNF-13**; S-RNF-02b; D-17, D-23, D-24, **D-34, D-35, D-40, D-48, D-50, D-55**; H-16, H-28.
 
 **Flujo principal**
 
@@ -1166,6 +1166,7 @@
 - **2a. Maestro con 0 casos en el rango.** El sistema muestra los 6 gráficos vacíos con «Sin datos para el rango seleccionado» y el conteo en 0.
 - **2b. Casos sin `sector` o sin `Reparador Principal`.** El sistema los agrupa bajo «Sin asignar» y muestra el conteo de excluidos por cada métrica afectada. [H-28]
 - **2c. Casos sin `fecha_asignacion`.** Los casos que nunca han pasado por el despacho (o los ingeridos antes de D-48) no tienen `fecha_asignacion`: el sistema **no inventa** la cifra, los agrupa bajo «Sin asignar» y muestra la nota «Asignados: casos sin `fecha_asignacion` (no despachados)». El criterio de cálculo de «asignados por día» queda **cerrado por D-48**: se cuenta por la fecha de la **última** asignación de cuadrilla de cada caso. [D-48, H-28]
+- **2d. Corte sobre un domingo.** Si el usuario elige como fecha de corte el domingo 13/09/2026, el sistema lo ajusta al **sábado 12/09/2026** de esa semana operativa, lo informa en pantalla («Corte ajustado al sábado 12/09/2026: la semana operativa es de lunes a sábado») y dibuja 6 puntos, ninguno del domingo. [RN-08, D-34, H-N-22]
 - **4a. Fecha de corte fuera de la semana operativa.** El sistema ajusta el rango al lunes y sábado de la semana correspondiente y lo informa.
 - **4b. Semana fuera del rango Sem 1 a Sem 36.** El sistema limita el selector a **Sem 1 a Sem 36**, avisa «Semana fuera de rango» y no dibuja la serie. [D-34]
 - **5a. El navegador no soporta los gráficos locales.** El sistema muestra las tablas descriptivas sin gráfico y advierte «Gráficos no disponibles en este navegador». [RT-07]
@@ -1175,7 +1176,7 @@
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** un maestro con 1.000 casos, **Cuando** el supervisor abre MONITOREO, **Entonces** las 6 zonas se dibujan **en menos de 3 s** (punto de medida: desde el clic en la pestaña MONITOREO hasta que las 6 zonas quedan dibujadas). [RNF-02, D-24]
-2. **Dado** un rango de corte en la semana del 08/09/2026 al 13/09/2026, **Cuando** el supervisor abre GESTION SEMANAL, **Entonces** la curva muestra 6 puntos: lunes, martes, miércoles, jueves, viernes y sábado, y ningún punto de domingo.
+2. **Dado** un rango de corte en la semana operativa del **07/09/2026 (lunes) al 12/09/2026 (sábado)**, **Cuando** el supervisor abre GESTION SEMANAL, **Entonces** la curva muestra exactamente **6 puntos** fechados 07, 08, 09, 10, 11 y 12 de septiembre de 2026 y ningún punto del domingo 13/09/2026 (RN-08). [RN-08, H-N-22]
 3. **Dado** 120 casos con `status = CERRADO`, `clase = REP` y `tipo_abonado = RES` **con `fechaResolucion` dentro de la fecha de corte mostrada**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Residencial: 120» e indica el corte aplicado en pantalla.
 4. **Dado** 8 casos con `tipo_abonado = EMP`, `status = CERRADO` **y `fechaResolucion` dentro del corte**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Empresarial: 8».
 5. **Dado** 5 casos con `clase = CNS` y `status` distinto de `CERRADO`, **Cuando** el supervisor consulta CONSTRUCCION, **Entonces** la tabla muestra 5 casos pendientes de construcción.
@@ -1194,6 +1195,8 @@
 - **Mientras** el maestro contenga 1.000 casos, el sistema deberá dibujar MONITOREO en menos de 3 s. [RNF-02, D-24]
 - **Si** un caso no tiene sector o cuadrilla, entonces el sistema deberá agruparlo bajo «Sin asignar» y mostrar el conteo de excluidos. [H-28, RNF-10]
 - **El sistema deberá** calcular «asignados por día» de la zona CUADRILLA agrupando los casos por `fecha_asignacion` (fecha de la **última** asignación de cuadrilla, D-48), sin depender de archivos de despacho por fecha, y mostrar el criterio de cálculo y el rango temporal de cada cifra en pantalla. [D-48, H-28, RNF-01]
+- **El sistema deberá** calcular «gestionados por día» como el número de **casos distintos** (`id_averia` único) cuyo último cambio de estado a `GESTION` cae en la fecha del día mostrado, contando cada caso **una sola vez** aunque haya reingresado al estado el mismo día, y deberá mostrar en pantalla la fecha de corte y el conteo de casos excluidos por no tener cambio de estado registrado. [RF-05, D-48, H-N-21]
+- **El sistema deberá** mostrar cada cifra con su fecha de corte y su rango temporal, y cada reemisión de la zona Cuadrilla o del reporte semanal con la huella de comparación («N cambios desde la última emisión», donde N es el número de casos cuyo `fecha_modificacion` cambió después de la emisión anterior), de modo que dos ejecuciones del mismo periodo den el mismo valor. [D-34, H-N-21]
 - **El sistema deberá** funcionar sin conexión a internet y sin consultar servicios externos. [RT-07]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el acceso a MONITOREO y GRAFICOS. [D-35, RNF-12]
 - **El sistema deberá** acompañar **cada gráfico** de una tabla o texto alternativo equivalente con los mismos valores y el mismo criterio de corte, alcanzable solo con el teclado y con foco visible. [D-40, RNF-13]
@@ -1208,7 +1211,7 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); despacho del día confirmado (CU-16) para la salida de despacho; datos del día y de la semana operativa cargados y corregidos para la serie estadística.
 - **Postcondiciones:** el **despacho** queda emitido en pantalla y PDF; el **seguimiento semanal** queda disponible como serie estadística por día (ingreso vs. reparadas, con la línea del pendiente al cierre) seleccionable de Sem 1 a Sem 36; **no** se genera ningún archivo XLSX. [D-34]
 
-**Trazabilidad:** RF-25, RF-05; RN-08; RNF-01, RNF-06, RNF-07, RNF-11, **RNF-08, RNF-12, RNF-13**; D-27, **D-34, D-35, D-40, D-50**; H-16, H-23, H-28.
+**Trazabilidad:** RF-25, RF-05; RN-08; RNF-01, RNF-06, RNF-07, RNF-11, **RNF-08, RNF-12, RNF-13**; D-27, **D-34, D-35, D-40, D-50, D-55**; H-16, H-23, H-28.
 
 **Flujo principal**
 
@@ -1217,7 +1220,7 @@
 3. El sistema genera el PDF del despacho por cuadrilla con la misma proyección de 15 columnas de CU-17 (D-31) y lo guarda con el nombre `despacho_DD_MM_AAAA`, registrando la emisión con fecha, hora y operador.
 4. **Salida estadística semanal.** El sistema presenta la serie estadística por día: **ingreso del día**, **reparadas del día** y la **línea del pendiente al cierre de cada día**, con la semana operativa (lunes a sábado) y el selector de semana del año **Sem 1 a Sem 36**.
 5. El supervisor elige la semana y el sistema recalcula la serie y muestra la fecha de emisión, el periodo, el operador emisor y el criterio de corte.
-6. El sistema permite volver a emitir la misma salida y detecta cambios en los datos, mostrando «El periodo tuvo N cambios desde la última emisión».
+6. El sistema permite volver a emitir la misma salida y detecta cambios en los datos, mostrando «El periodo tuvo N cambios desde la última emisión», donde **N es el número de casos del periodo cuya `fecha_modificacion` es posterior a la fecha y hora de la emisión anterior** (huella de comparación declarada, H-N-21).
 7. El sistema deja constancia de la emisión (qué salida, qué periodo, quién y cuándo) en el registro de la aplicación.
 
 **Flujos alternativos**
@@ -1234,12 +1237,12 @@
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** un despacho confirmado del 13/09/2026 con 45 casos en 3 cuadrillas, **Cuando** el supervisor emite la salida de despacho, **Entonces** el sistema la muestra en pantalla y genera el PDF en la ruta controlada con el nombre `despacho_13_09_2026.pdf`. [D-34]
-2. **Dado** la semana operativa del 08/09/2026 al 13/09/2026, **Cuando** el supervisor abre el seguimiento semanal, **Entonces** el sistema muestra 6 puntos diarios (lunes a sábado) con ingreso del día y reparadas del día, y ningún domingo. [D-34]
+2. **Dado** la semana operativa del **07/09/2026 (lunes) al 12/09/2026 (sábado)**, **Cuando** el supervisor abre el seguimiento semanal, **Entonces** el sistema muestra **6 puntos** diarios fechados 07 a 12 de septiembre de 2026 con ingreso del día y reparadas del día, y ningún punto del domingo 13/09/2026. [D-34, RN-08, H-N-22]
 3. **Dado** la serie estadística de una semana, **Cuando** el supervisor la consulta, **Entonces** el sistema dibuja además la **línea del pendiente al cierre de cada día** y muestra su valor numérico en cada punto. [D-34]
 4. **Dado** el selector de semana, **Cuando** el supervisor elige **Sem 1** y luego **Sem 36**, **Entonces** el sistema recalcula la serie en ambos casos y no ofrece ninguna semana anterior a Sem 1 ni posterior a Sem 36. [D-34]
 5. **Dado** que el supervisor solicita el reporte en XLSX, **Cuando** el sistema no lo tiene implementado por decisión D-34, **Entonces** muestra «Salida no disponible: el despacho se emite en pantalla y PDF; el seguimiento semanal es estadístico en pantalla (D-34)» y no genera ningún archivo.
 6. **Dado** una salida de despacho emitida por el supervisor `12345` a las 14:20 del 13/09/2026, **Cuando** se consulta la emisión, **Entonces** el sistema muestra fecha, hora y operador emisor.
-7. **Dado** el despacho del 13/09/2026 ya emitido, **Cuando** el supervisor lo vuelve a generar tras cerrar 3 casos, **Entonces** el sistema muestra «El periodo tuvo 3 cambios desde la última emisión» y genera una reemisión marcada.
+7. **Dado** el despacho del 13/09/2026 ya emitido y **3 casos cerrados después** de esa emisión (con `fecha_modificacion` posterior a la hora de emisión), **Cuando** el supervisor lo vuelve a generar, **Entonces** el sistema muestra exactamente «El periodo tuvo 3 cambios desde la última emisión» —N = número de casos del periodo con `fecha_modificacion` posterior a la emisión anterior— y genera una reemisión marcada. [RNF-11, H-N-21]
 8. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir REPORTES, **Entonces** el sistema responde «Acción no permitida para su rol» y no genera ningún archivo.
 9. **Dado** la serie estadística semanal en pantalla, **Cuando** el usuario la consulta con lector de pantalla o solo con el teclado, **Entonces** el sistema ofrece la **tabla equivalente** con el ingreso del día, las reparadas del día y el pendiente al cierre de cada día de la semana, con los mismos valores que el gráfico. [D-40, RNF-13]
 10. **Dado** el PDF del despacho emitido, **Cuando** se revisa su contenido, **Entonces** el texto es seleccionable y su contraste es de al menos 4,5:1, y la tabla equivalente del despacho está disponible en pantalla para quien no pueda interpretar la imagen. [D-40, RNF-13]
@@ -1264,7 +1267,7 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); maestro con `sector` y `status` informados; umbral de concentración configurado en CONFIGURACION.
 - **Postcondiciones:** el supervisor ve la lista de averías concentradas por sector y la lista de **casos especiales** —definición **definitiva**: `tipo_abonado = EMP` o `nivel = REF` **abiertos** (D-33)— y puede actuar sobre ellas.
 
-**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-08, RNF-09, **RNF-12, RNF-14**; D-23, D-25, **D-33, D-35, D-41, D-50**; H-04, H-14.
+**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-08, RNF-09, **RNF-12, RNF-14, RNF-15**; D-23, D-25, **D-33, D-35, D-41, D-42, D-50, D-55**; H-04, H-14.
 
 **Flujo principal**
 
@@ -1278,7 +1281,7 @@
 
 **Flujos alternativos**
 
-- **3a. Ningún sector alcanza el umbral.** El sistema muestra «Sin averías concentradas con umbral 3 en la semana del 08/09/2026 al 13/09/2026».
+- **3a. Ningún sector alcanza el umbral.** El sistema muestra «Sin averías concentradas con umbral 3 en la semana operativa del 07/09/2026 al 12/09/2026». [RN-08, H-N-22]
 - **4a. Umbral inválido (0, negativo o no numérico).** El sistema muestra «El umbral debe ser un número entero mayor o igual a 1» y conserva el valor anterior.
 - **6a. Casos especiales (definición definitiva, D-33).** El sistema muestra los casos **abiertos** con `tipo_abonado = EMP` **o** `nivel = REF`, con el rótulo «Casos especiales: EMP o REF abiertos (D-33)». **No** usa la etiqueta «criterio provisional» ni permite sustituir la definición por un filtro manual: el supervisor puede añadir filtros **sobre** esa lista, pero no redefinirla. [D-33]
 - **7a. El caso ya está `CERRADO`.** El sistema permite la anotación, advierte «El caso está cerrado» y no cambia su `status`. [H-19]
@@ -1289,13 +1292,14 @@
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el sector `1` con 4 casos abiertos ingresados entre el 08/09/2026 y el 13/09/2026 y el umbral 3, **Cuando** el supervisor abre CONCENTRADAS, **Entonces** el sector `1` aparece en la lista con conteo 4.
+1. **Dado** el sector `1` con 4 casos abiertos ingresados en la semana operativa del **07/09/2026 (lunes) al 12/09/2026 (sábado)** y el umbral 3, **Cuando** el supervisor abre CONCENTRADAS, **Entonces** el sector `1` aparece en la lista con conteo 4. [RN-08, H-N-22]
 2. **Dado** el mismo sector con 2 casos abiertos y 3 cerrados en la semana, **Cuando** el supervisor abre CONCENTRADAS, **Entonces** el sector `1` no aparece (solo se cuentan los abiertos) y el conteo mostrado para ese sector es 2.
 3. **Dado** el umbral en 3 y 5 sectores por debajo del umbral, **Cuando** el supervisor lo cambia a 1, **Entonces** el sistema muestra los 6 sectores con al menos 1 caso abierto y conserva el umbral 1 en la siguiente consulta.
 4. **Dado** un sector concentrado, **Cuando** el supervisor pulsa *Ver casos*, **Entonces** el sistema abre CASOS filtrado por ese sector con el conteo de abiertos coincidente con el de la lista.
 5. **Dado** un maestro con 3 casos abiertos `tipo_abonado = EMP`, 5 casos abiertos `nivel = REF`, 2 casos `EMP` cerrados y 1 caso `REF` cerrado, **Cuando** el supervisor abre la lista de casos especiales, **Entonces** el sistema muestra **8** casos (3 EMP abiertos + 5 REF abiertos) y **no** muestra los 3 cerrados, con el rótulo «Casos especiales: EMP o REF abiertos (D-33)». [D-33]
 6. **Dado** que el supervisor registra una acción sobre un caso, **Cuando** el sistema persiste, **Entonces** `observaciones` contiene la acción con fecha, hora y P00 del operador.
 6b. **Dado** que el supervisor registra una acción a las 12:00 con `averias.json` en `fecha_modificacion = 13/09/2026 12:00` y el maestro fue modificado a las 12:02 por `12345`, **Cuando** confirma la anotación, **Entonces** el sistema no escribe, muestra «Conflicto: el archivo fue modificado por 12345 el 13/09/2026 12:02. Recargue o sobrescriba», conserva la acción en pantalla y exige *Recargar* o *Sobrescribir*. [D-41, RNF-14]
+6c. **Dado** un maestro de 200 casos y una acción registrada sobre el caso `2026-00123`, **Cuando** el supervisor confirma la anotación, **Entonces** el sistema deja `averias_AAAA-MM-DD_HHMM.bak` con los 200 casos previos, escribe en el archivo temporal, **relee y compara** el contenido y **solo entonces** confirma; si la comparación falla, restaura el `.bak`, avisa y la acción no se da por registrada. [D-42, RNF-15]
 7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir el bloque CONCENTRADAS / ESPECIALES, **Entonces** el sistema responde «Acción no permitida para su rol» y no muestra la lista.
 
 **Restricciones del sistema (EARS)**
@@ -1305,7 +1309,8 @@
 - **El sistema deberá** definir los casos especiales como los casos **abiertos** con `tipo_abonado = EMP` o `nivel = REF`, con carácter **definitivo**, y no deberá rotular esa lista como provisional ni permitir redefinirla manualmente. [D-33]
 - **Si** el umbral informado no es un entero mayor o igual a 1, entonces el sistema deberá rechazarlo y conservar el valor vigente. [RNF-10]
 - **El sistema deberá** registrar operador y fecha/hora de cada cambio de umbral y de cada acción registrada. [RNF-09]
-- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el bloque CONCENTRADAS / ESPECIALES y rechazar las anotaciones. [D-35, RNF-12]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el bloque CONCENTRADAS / ESPECIALES y rechazar las anotaciones. [D-35, D-55, RNF-12]
+- **Cuando** se registre una acción sobre un caso, el sistema deberá copiar el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
 ---
@@ -1316,15 +1321,15 @@
 - **Actores secundarios:** Soporte TI del puesto; operador de la central (recibe el aviso de fallo).
 - **Ciclo:** C1 (respaldo manual) / C7 (prueba de restauración). **Prioridad:** MVP (respaldo manual) / posterior (prueba formal en C7).
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `C:\GGTO\datos` con los JSON de trabajo; carpeta **`C:\GGTO\respaldo\`** disponible (D-49).
-- **Postcondiciones:** existe una copia **fechada** del maestro (`averias_AAAA-MM-DD.json`) en `C:\GGTO\respaldo\`, **sin cifrado**, y —tras una restauración probada y documentada en C7— el sistema vuelve a operar con los datos recuperados dentro del **RTO de 1 hora** y con un **RPO** que no va más atrás del cierre del día anterior (D-49).
+- **Postcondiciones:** existe una copia **fechada con hora** del maestro (`averias_AAAA-MM-DD_HHMM.json`) en `C:\GGTO\respaldo\`, **sin cifrado**, y —tras una restauración probada y documentada en C7— el sistema vuelve a operar con los datos recuperados dentro del **RTO de 1 hora** y con un **RPO** que no va más atrás del cierre del día anterior (D-49).
 
-**Trazabilidad:** RF-24; RNF-04, RNF-10, **RNF-12, RNF-14, RNF-15, RNF-16**; RT-01, RT-10; D-01, D-19, D-28, D-35, D-36, **D-41, D-42, D-49**; H-09, H-12, H-13, H-25.
+**Trazabilidad:** RF-24; RNF-04, RNF-08, RNF-10, **RNF-12, RNF-14, RNF-15, RNF-16**; RT-01, RT-10; D-01, D-19, D-28, D-35, D-36, **D-41, D-42, D-49, D-50, D-55**; H-09, H-12, H-13, H-25.
 
 **Flujo principal**
 
 1. El supervisor abre el bloque **RESPALDO** y consulta el estado: fecha y hora del último respaldo, tamaño de cada archivo y ruta de destino.
 2. El supervisor pulsa *Respaldar ahora* (respaldo **manual**, sin automatismo ni rotación: D-36).
-3. **Copia del cierre de jornada (D-49).** El sistema copia `averias.json`, `despacho.json`, `estructura.json`, `central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json` y `claves_clasificacion.json` a **`C:\GGTO\respaldo\`**, con la copia del maestro fechada como **`averias_AAAA-MM-DD.json`** (`AAAA-MM-DD` = fecha del cierre). **Sin cifrado**: el paquete queda en claro y el supervisor lo lleva después a la red o a un pen drive, bajo su responsabilidad. [D-49, RNF-16]
+3. **Copia del cierre de jornada (D-49).** El sistema copia `averias.json`, `despacho.json`, `estructura.json`, `central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json` y `claves_clasificacion.json` a **`C:\GGTO\respaldo\`**, con la copia del maestro fechada **con hora** como **`averias_AAAA-MM-DD_HHMM.json`** (`AAAA-MM-DD` = fecha del cierre y `HHMM` = hora y minuto del respaldo, para que dos respaldos del mismo día **no colisionen** ni se sobrescriba la copia anterior, H-N-08). **Sin cifrado**: el paquete queda en claro y el supervisor lo lleva después a la red o a un pen drive, bajo su responsabilidad. [D-49, RNF-16]
 4. El sistema relee cada copia y la compara con el original **por contenido** (igualdad del texto serializado y mismo número de registros), con el mismo criterio de verificación por relectura de D-42; muestra «Respaldo verificado: 9 archivos» y la **fecha y hora del último cierre respaldado**. [D-42, D-49, RNF-16]
 5. **Restauración (D-49).** El supervisor elige una copia fechada de `C:\GGTO\respaldo\`, pulsa *Restaurar* y el sistema muestra el archivo, su fecha y cuántos registros contiene frente al maestro vigente.
 6. El supervisor confirma; el sistema **respalda el estado actual antes de reemplazar** (con el mismo mecanismo de D-42) y **copia la copia fechada sobre `C:\GGTO\datos\averias.json`**, releyendo el archivo resultante para verificar que es JSON válido y que tiene al menos el mismo número de registros que la copia.
@@ -1342,7 +1347,7 @@
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** al cierre de la jornada el supervisor acepta la copia ofrecida por la página, **Entonces** `C:\GGTO\respaldo\` contiene los 9 archivos copiados y verificados por contenido, la copia del maestro se llama `averias_2026-09-13.json` (fecha del cierre) y **no** está cifrada. [D-49, RNF-16]
+1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** al cierre de la jornada el supervisor acepta la copia ofrecida por la página, **Entonces** `C:\GGTO\respaldo\` contiene los 9 archivos copiados y verificados por contenido, la copia del maestro se llama `averias_2026-09-13_HHMM.json` —fecha del cierre **y hora del respaldo**— y **no** está cifrada. [D-49, RNF-16, H-N-08]
 2. **Dado** un respaldo con `averias.json` de 1.000 casos y un maestro vigente de 1.000 casos, **Cuando** el supervisor restaura, **Entonces** el maestro queda con los mismos 1.000 `id_averia` y el sistema muestra «Restauración completada».
 3. **Dado** un archivo de respaldo con JSON inválido, **Cuando** el supervisor intenta restaurarlo, **Entonces** el sistema muestra «Respaldo inválido», no reemplaza ningún archivo y el maestro conserva sus datos.
 4. **Dado** un respaldo con 800 casos y un maestro con 1.000, **Cuando** el supervisor intenta restaurar, **Entonces** el sistema pide confirmación escrita y no reemplaza nada hasta obtenerla.
@@ -1359,13 +1364,13 @@
 - **Si** la copia difiere del original, entonces el sistema deberá marcar el respaldo como fallido e informar el detalle del archivo y de la diferencia. [RNF-10]
 - **Cuando** el supervisor restaure un respaldo, el sistema deberá respaldar el estado actual antes de reemplazar y verificar que ese respaldo previo exista y coincida con el estado anterior. [D-19]
 - **El sistema deberá** mantener los datos de trabajo fuera de Google Drive, en `C:\GGTO\datos`. [D-19, RT-10]
-- **El sistema deberá** ejecutar el respaldo **solo a demanda del supervisor**, sin automatismo programado. Al **cierre de la jornada** deberá **ofrecer** la copia fechada del maestro (`averias_AAAA-MM-DD.json`) en `C:\GGTO\respaldo\`, **sin cifrado**, y el supervisor la llevará después a la red o a un pen drive. [D-36, D-49, RNF-16]
+- **El sistema deberá** ejecutar el respaldo **solo a demanda del supervisor**, sin automatismo programado. Al **cierre de la jornada** deberá **ofrecer** la copia fechada **con hora** del maestro (`averias_AAAA-MM-DD_HHMM.json`) en `C:\GGTO\respaldo\`, **sin cifrado** y **sin sobrescribir** una copia anterior del mismo día, y el supervisor la llevará después a la red o a un pen drive. [D-36, D-49, RNF-16]
 - **Cuando** el supervisor restaure una copia fechada, el sistema deberá copiarla sobre `C:\GGTO\datos\averias.json` previa confirmación, registrar la hora de inicio y de fin, y permitir verificar el **RTO de 1 hora** y el **RPO del cierre del día anterior**. [D-49, RNF-16]
 - **El sistema deberá** conservar el histórico de casos sin purga automática y mantener el respaldo en una ruta controlada. [D-28, D-27]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el respaldo y la restauración sin copiar ni reemplazar archivos. [D-35, RNF-12]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
-> **Este caso de uso ya no tiene puntos `&lt;PENDIENTE&gt;`.** La **verificación de la escritura** quedó decidida por **D-42** y RNF-15 (relectura y comparación del contenido tras escribir en un archivo temporal, con respaldo previo `averias_AAAA-MM-DD_HHMM.bak` —se conservan las **10** últimas— y restauración automática ante fallo). La **política de respaldo** quedó decidida por **D-49** y RNF-16: al cierre de la jornada se ofrece la copia fechada `averias_AAAA-MM-DD.json` en **`C:\GGTO\respaldo\`**, **sin cifrado**, que el supervisor lleva después a la red o a un pen drive; la restauración copia esa copia sobre `C:\GGTO\datos\averias.json` previa confirmación; y los objetivos declarados son **RTO de 1 hora** y **RPO = cierre del día anterior**, con prueba de restauración documentada en C7. H-11, H-12 y H-13 quedan cerrados.
+> **Este caso de uso ya no tiene puntos `&lt;PENDIENTE&gt;`.** La **verificación de la escritura** quedó decidida por **D-42** y RNF-15 (relectura y comparación del contenido tras escribir en un archivo temporal, con respaldo previo `averias_AAAA-MM-DD_HHMM.bak` —se conservan las **10** últimas— y restauración automática ante fallo). La **política de respaldo** quedó decidida por **D-49** y RNF-16: al cierre de la jornada se ofrece la copia fechada con hora `averias_AAAA-MM-DD_HHMM.json` en **`C:\GGTO\respaldo\`**, **sin cifrado**, que el supervisor lleva después a la red o a un pen drive; la restauración copia esa copia sobre `C:\GGTO\datos\averias.json` previa confirmación; y los objetivos declarados son **RTO de 1 hora** y **RPO = cierre del día anterior**, con prueba de restauración documentada en C7. H-11, H-12 y H-13 quedan cerrados.
 
 ---
 
