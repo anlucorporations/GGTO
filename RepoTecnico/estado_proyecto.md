@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **7 bloques de entrevista** con los que se fijaron **21 decisiones**
+Se realizaron **8 bloques de entrevista** con los que se fijaron **24 decisiones**
 y se cerraron **11 ambigüedades** del documento fuente. Quedan **7 ambigüedades abiertas** (A-04, A-05, A-08, A-09, A-10, A-11 y A-14), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -94,6 +94,9 @@ ingesta debe rediseñarse.
 | D-20 | Cierre bloqueante sin resolución y fecha, más validación de integridad en alta y edición. | 7 |
 | D-21 | Ingesta estricta: validación bloqueante, fechas recortadas con original conservado y `ASGN` con precedencia. | 7 |
 | D-22 | El directorio `.git` vive en disco local, fuera de Google Drive, tras la corrupción de `.git\refs` por `desktop.ini`. | 7 |
+| D-23 | «Abierto» = status distinto de CERRADO; «tipo» = clase + nivel calculados en pantalla. | 8 |
+| D-24 | Umbrales de desempeño: 1.000 casos, filtrado <1,5 s, gráficos <3 s. | 8 |
+| D-25 | CRUD de sectores en C1 y avería concentrada = 3 casos abiertos por sector en la semana. | 8 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -206,4 +209,4 @@ P8 (D-19), P10 (D-21) y P11 (D-17).
 **Actualización tras el bloque 7:** H-09 queda atendido con D-19 (datos fuera de Google Drive con
 respaldo periódico) y H-11 con D-20 (cierre bloqueante y validación de integridad, RNF-10). H-10
 queda atendido solo en su parte mínima (último cambio con operador y fecha): falta el historial
-completo de valores anteriores. Siguen abiertos H-05, H-07, H-08, H-12, H-13 y H-14.
+completo de valores anteriores. **Actualización (bloque 8):** H-05 atendido con D-23, H-07 con D-24 y H-14 con D-25 (RF-29 y criterio de avería concentrada). Siguen abiertos H-08 (algoritmo exacto de palabras clave), H-12 (datos personales en el PDF de despacho y en los respaldos) y H-13 (base legal, finalidad y retención de datos personales).

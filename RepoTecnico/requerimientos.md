@@ -98,14 +98,15 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal`. | C4 | L44 |
 | RF-21 | GENERALIDADES: tabla con las columnas resumen `nivel, clase, sector, id_averia, nombre, direccion, plan`. | C1 | L49 |
 | RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha. | C1 | L50; D-20 |
-| RF-23 | GENERALIDADES: agrupar los datos por abiertos/cerrados, cuadrilla, tipo, clase y estatus; incluye la edición manual de `clase` y `nivel` del caso. | C1 | L51; D-06 |
+| RF-23 | GENERALIDADES: agrupar y filtrar por **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla), `clase`, `nivel` y `estatus`; incluye la edición manual de `clase` y `nivel`. | C1 | L51; D-06, D-23 |
 | RF-24 | GENERALIDADES: persistir en `averias.json` cada modificación de un caso. | C1 | L52 |
 | RF-25 | Reportes: reporte de trabajo diario y reporte de gestión semanal (formato de salida pendiente, A-08). | C6 | L2 |
-| RF-26 | Seguimiento de casos especiales (definición pendiente, A-09) y de averías concentradas por sector. | C6 | L2, L13 |
+| RF-26 | Seguimiento de casos especiales (definición pendiente, A-09) y de **averías concentradas**: 3 o más casos abiertos del mismo sector en la semana operativa, con umbral editable en CONFIGURACION. | C6 | L2, L13; D-25 |
 | RF-27 | CONFIGURACION: gestionar la lista editable de palabras clave de clasificación y su modo de búsqueda (`claves_clasificacion.json`). | C2 | D-11 |
 | RF-28 | CASOS y PANEL: editar el `tipo_abonado` (`RES`/`EMP`) del caso y usarlo en las métricas de gestión y en la cuota de despacho. | C1 / C5 | D-17 |
+| RF-29 | CONFIGURACION/SECTORES: alta, edición y baja de sectores con nombre, lista de calles/urbanizaciones y cuadrilla sugerida. | C1 | D-25 |
 
-**Total:** 28 RF.
+**Total:** 29 RF.
 
 ---
 
@@ -114,7 +115,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | ID | Requerimiento | Verificación prevista |
 |---|---|---|
 | RNF-01 | Usabilidad: operación guiada por botones, sin comandos; ingesta + despacho realizables en una sesión corta. | Prueba con un operador sobre datos reales de un día; se documenta el tiempo de cada procedimiento. |
-| RNF-02 | Desempeño: tabla fluida con el universo diario de averías del área (paginación o virtualización). | Medición de tiempo de render y de filtrado con el CSV de un día completo. |
+| RNF-02 | Desempeño: con **1.000 casos** en el maestro, la tabla de CASOS filtra y ordena en **menos de 1,5 s** y el MONITOREO se dibuja en **menos de 3 s** (paginación o virtualización). | Cronómetro sobre 1.000 casos en un PC de oficina con Chrome/Edge y 4 GB de RAM. |
 | RNF-03 | Portabilidad: página autónoma que abre en cualquier PC de la central con navegador moderno. | Apertura en Edge/Chrome sin instalación adicional (solo el lanzador del servidor local). |
 | RNF-04 | Integridad: no duplicar casos por `id_averia` ni perder modificaciones al recargar. | Prueba de doble ingesta del mismo CSV; conteo de registros y verificación de ids únicos. |
 | RNF-05 | Impresión: el PDF de despacho por cuadrilla cabe en carta horizontal. | Impresión/visualización del PDF con el volumen máximo previsto por cuadrilla. |
