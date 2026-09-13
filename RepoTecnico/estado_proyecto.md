@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **8 bloques de entrevista** con los que se fijaron **24 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **27 decisiones**
 y se cerraron **11 ambigüedades** del documento fuente. Quedan **7 ambigüedades abiertas** (A-04, A-05, A-08, A-09, A-10, A-11 y A-14), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -97,6 +97,9 @@ ingesta debe rediseñarse.
 | D-23 | «Abierto» = status distinto de CERRADO; «tipo» = clase + nivel calculados en pantalla. | 8 |
 | D-24 | Umbrales de desempeño: 1.000 casos, filtrado <1,5 s, gráficos <3 s. | 8 |
 | D-25 | CRUD de sectores en C1 y avería concentrada = 3 casos abiertos por sector en la semana. | 8 |
+| D-26 | Palabras clave por subcadena sobre texto normalizado, con vista previa del impacto. | 9 |
+| D-27 | PDF con fecha, cuadrilla y nº de copia; registro de entrega y recogida; respaldo en ruta controlada. | 9 |
+| D-28 | Retención indefinida de casos, finalidad documentada y riesgo legal aceptado. | 9 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -169,6 +172,8 @@ A-12 (D-12), A-13 (D-06), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
 | Pérdida de datos por edición concurrente o cierre accidental. | Casos perdidos. | Escritura inmediata en cada cambio (RN-07) y exportación de respaldo del JSON. |
 | Typos en los textos del CSV. | Clasificación incorrecta. | Búsqueda normalizada y lista de claves editable (D-11). |
 | Fallo de escritura por trabajar sobre Google Drive (`G:`). | No se guardan los documentos. | Escribir en `%TEMP%` y copiar al destino (ver `entornos_globales.md` §9). |
+| Corrupción del repositorio por `desktop.ini` de Google Drive dentro de `.git`. | Fallan fetch/push y se pueden perder referencias. | **Ocurrió y se corrigió (D-22):** el directorio de git vive en `C:\GGTO\git\GGTO-v1.git`, fuera de la unidad sincronizada. |
+| Retención indefinida de datos personales sin base legal documentada (H-13). | Riesgo de incumplimiento normativo y de reclamos. | **Riesgo aceptado (D-28):** se documenta finalidad y responsable; sin purga automática. Revisar con el área legal de CANTV antes de ampliar el uso. |
 
 ---
 
@@ -209,4 +214,4 @@ P8 (D-19), P10 (D-21) y P11 (D-17).
 **Actualización tras el bloque 7:** H-09 queda atendido con D-19 (datos fuera de Google Drive con
 respaldo periódico) y H-11 con D-20 (cierre bloqueante y validación de integridad, RNF-10). H-10
 queda atendido solo en su parte mínima (último cambio con operador y fecha): falta el historial
-completo de valores anteriores. **Actualización (bloque 8):** H-05 atendido con D-23, H-07 con D-24 y H-14 con D-25 (RF-29 y criterio de avería concentrada). Siguen abiertos H-08 (algoritmo exacto de palabras clave), H-12 (datos personales en el PDF de despacho y en los respaldos) y H-13 (base legal, finalidad y retención de datos personales).
+completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-23, H-07 con D-24, H-14 con D-25, H-08 con D-26, H-12 con D-27 y H-13 con D-28 (histórico indefinido, finalidad documentada y **riesgo legal aceptado**). Con esto **los 29 hallazgos quedan atendidos o explícitamente aceptados** (2 críticos, 12 altos, 15 medios) y la Fase 1 se puede cerrar.

@@ -73,6 +73,9 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-23 | Agrupaciones de RF-23: «abierto» = `status` distinto de `CERRADO`; «tipo» = combinación `clase` + `nivel` calculada en pantalla, sin campo nuevo. |
 | D-24 | Umbrales de desempeño: 1.000 casos, filtrado y orden en menos de 1,5 s, MONITOREO en menos de 3 s (Chrome/Edge, 4 GB de RAM). |
 | D-25 | Sectores: CRUD completo en C1 (RF-29) y avería concentrada = 3 o más casos abiertos del mismo sector en la semana, con umbral editable. |
+| D-26 | **Palabras clave (RN-03):** coincidencia por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en los 4 campos, con vista previa del impacto antes de cambiar la lista o el modo. |
+| D-27 | **Datos personales en el PDF:** el despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día; los respaldos van a una ruta controlada, no a Descargas. |
+| D-28 | **Retención:** histórico indefinido de casos; se documenta finalidad y responsable del tratamiento, sin purga automática (**riesgo legal aceptado**, H-13). |
 
 ---
 
@@ -128,6 +131,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-08 | Control de acceso: la sesión exige identificar al operador contra `tecnicos.json`; sin identificación válida la página no permite editar (H-01). | Prueba de sesión sin identificar: las acciones de edición quedan bloqueadas. |
 | RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre de caso registra operador y fecha/hora del cambio (H-10). | Revisión del historial tras una sesión de cambios. |
 | RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
+| RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |
 
 ---
 
@@ -155,7 +159,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|
 | RN-01 | Un caso es nuevo si su `id_averia` no existe en `averias.json`. | L35 |
 | RN-02 | Al ingerir: `ingreso` = fecha de la ingesta, `clase = REP`, `nivel = COM`; la corrección a `CNS`/`REF` es manual. | L38; D-06 |
-| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. Palabras clave editables y búsqueda normalizada. | L36; D-05, D-11, D-21 |
+| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. La búsqueda es por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, con vista previa del impacto antes de cambiar la lista o el modo. | L36; D-05, D-11, D-21, D-26 |
 | RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
 | RN-05 | Cada cuadrilla recibe: citados del día + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
 | RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector. | L42 |
