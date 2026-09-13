@@ -96,6 +96,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-46 | **CSV ausente:** si el archivo del día no llega, la página lo muestra como «sin ingesta», permite registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log` y no bloquea la consulta ni el despacho. |
 | D-47 | **Alta manual sin Tipo/Actividad/Agente:** esos campos del fuente (L8) no se incorporan; el formulario se rige por la lista cerrada de D-18. |
 | D-48 | **`fecha_asignacion` en el maestro:** se añade el campo con la fecha de la última asignación de cuadrilla; de él sale la métrica «asignados por día» de la zona CUADRILLA, sin necesidad de archivos de despacho por fecha (H-28). |
+| D-49 | **Respaldo:** al cerrar la jornada se copia el maestro a `C:\GGTO\respaldo\` con la fecha en el nombre, sin cifrado; el supervisor la lleva a la red o a un pendrive. **RTO 1 hora** y **RPO: el cierre del día anterior** (H-12, H-13, H-25). |
 
 ---
 
@@ -156,6 +157,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-13 | Accesibilidad: toda la operación es posible con teclado (Tab, Enter y flechas en la tabla), el foco es visible, cada campo tiene `label` asociado, el contraste es de al menos 4,5:1 y cada gráfico tiene tabla o texto alternativo equivalente (H-05, D-40). | Recorrido completo de las 7 pestañas solo con teclado y verificación de contraste con herramienta automática. |
 | RNF-14 | Integridad ante concurrencia: ningún guardado sobrescribe cambios ajenos sin aviso; la página compara la marca de modificación del archivo con la de su carga y, si difieren, bloquea el guardado hasta que el operador elija recargar o sobrescribir (H-10, D-41). | Prueba con dos ventanas: la segunda debe recibir el aviso de conflicto y no debe poder guardar sin decidir. |
 | RNF-15 | Integridad de escritura: cada guardado del maestro se verifica por relectura antes de confirmar y conserva las 10 últimas versiones en `.bak` (H-11, D-42). | Prueba de escritura con error simulado: la pantalla no confirma el cambio y el maestro queda como estaba. |
+| RNF-16 | Respaldo: al cerrar la jornada la página ofrece crear una copia fechada del maestro en `C:\GGTO\respaldo\`; el objetivo es RTO de 1 hora y RPO del cierre del día anterior (D-49). | Restauración de prueba desde una copia fechada, cronometrada. |
 
 ---
 
