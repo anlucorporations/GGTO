@@ -69,6 +69,10 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-19 | **`datos/` sale de Google Drive:** los JSON viven en disco local (`C:\GGTO\datos`) y se respaldan periódicamente a `G:` o a la red (H-09). |
 | D-20 | **Cierre bloqueante:** un caso no puede pasar a `CERRADO` sin `resolucion` y `fechaResolucion`; en alta y edición se validan obligatorios, enums y que el `sector` exista (H-11). |
 | D-21 | **Ingesta estricta:** validación **bloqueante** del contrato posicional; las fechas del CSV se recortan a DD/MM/AAAA conservando el texto original, y el `estatus = ASGN` del CSV **prevalece** sobre RN-03 (A-16, A-18). |
+| D-22 | El directorio `.git` vive en disco local, fuera de Google Drive, tras la corrupción de `.git\refs` por `desktop.ini`. |
+| D-23 | Agrupaciones de RF-23: «abierto» = `status` distinto de `CERRADO`; «tipo» = combinación `clase` + `nivel` calculada en pantalla, sin campo nuevo. |
+| D-24 | Umbrales de desempeño: 1.000 casos, filtrado y orden en menos de 1,5 s, MONITOREO en menos de 3 s (Chrome/Edge, 4 GB de RAM). |
+| D-25 | Sectores: CRUD completo en C1 (RF-29) y avería concentrada = 3 o más casos abiertos del mismo sector en la semana, con umbral editable. |
 
 ---
 
