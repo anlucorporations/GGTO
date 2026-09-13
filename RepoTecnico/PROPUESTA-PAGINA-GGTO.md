@@ -272,9 +272,12 @@ GGTO-v1/
 | A-09 | "Casos especiales" (L2) no definidos: ¿reincidentes, empresariales, VIP, escalados? | 2 |
 | A-10 | Regla de desempate si **varias** cuadrillas tienen reparaciones en el mismo sector de la construcción. | 42 |
 | A-11 | `P00` (L16) sin significado explícito (¿código de nómina?); `ups` sin descripción. `extra` **resuelto (D-04):** es dato de Red / planta externa. | 16, 56 |
-| A-12 | **Resuelto (D-08):** los encabezados del CSV diario son los declarados en `estructura.json` y los campos de CENTRAL existen como columnas; la ingesta se implementa genérica sobre ese contrato. | 31-34 |
+| A-12 | **Reabierta:** el CSV real tiene 80 columnas con `;` y encabezados repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3); el mapeo debe ser posicional. | 31-34 |
 | A-13 | **Resuelto (D-06):** todo caso ingerido entra con `clase = REP`; si corresponde a construcción/fibra, el operador la cambia a `CNS` manualmente en CASOS o GESTION. | 36, 38 |
 | A-14 | `despacho.json` (L57) no incluye `sector` ni la cuadrilla (`Reparador Principal`) necesarios para agrupar el despacho (L44). ¿Se amplía el archivo o el agrupamiento solo se calcula en memoria? | 44, 57 |
+| A-15 | El CSV trae `estatus` `PEND` (53) y `ASGN` (3); el fuente solo declara PEND/CERRADO/GESTION (L56). | 27 (CSV) |
+| A-16 | Las fechas del CSV incluyen hora (`17/07/2026 11:38:20 a.m.`) y el maestro usa DD/MM/AAAA. | 15, 18, 25 (CSV) |
+| A-17 | `alta_manual.csv` (42 columnas) parece el registro manual actual: ids propios (`REF-REP-05`), `Sector` por nombre y campos de reincidencia e historial. | 44 (CSV alta manual) |
 
 ### 9.2 Supuestos de trabajo
 
@@ -310,13 +313,13 @@ GGTO-v1/
 | D-05 | **RN-03 completo:** los casos con "LOSS ROJO", "FALLA FIBRA" o "Fibra Dañada" quedan en `status = PEND`; los que no las contienen pasan a `status = GESTION`. | Cierra A-07. La `clase` de esos casos se definió después en D-06. |
 | D-06 | **Clase al ingerir:** todo caso nuevo entra `clase = REP`; la corrección a `CNS` es manual (CASOS o GESTION). | Cierra A-13. Exige que CASOS y la bandeja GESTION permitan editar `clase` y `nivel`. |
 | D-07 | **Ficha de cuadrilla:** `id, nombre, técnicos[], vehículo, turno, sectores[], status`. | Cierra A-03 y habilita el padrón CUADRILLA del ciclo C1; `técnicos` y `vehículo` se referencian desde TECNICOS y FLOTA. |
-| D-08 | **Ingesta genérica:** los encabezados del CSV diario coinciden con `estructura.json` y con las columnas de CENTRAL. | Cierra A-12; la ingesta se implementa sobre el contrato declarado, sin mapeador en pantalla. |
+| D-08 | **Revisada (12/09/2026):** la verificación del CSV real mostró 80 columnas con `;`, encabezados repetidos y fechas con hora, por lo que el contrato por nombre no se sostiene. | Reabre A-12: `estructura.json` debe ser un mapa **posicional**; se añaden A-15 (estatus `ASGN`), A-16 (fechas con hora) y A-17 (`alta_manual.csv` como modelo). |
 | D-09 | **Nombre del maestro:** `averias.json` (plural). La mención a `averia.json` de L35 es un error de tipeo. | Cierra A-01; define la ruta única del archivo que la página debe abrir y escribir. |
 | D-10 | **`informacion` duplicada:** son dos columnas distintas del CSV; se guardan como `informacion_1` e `informacion_2`. | Cierra A-02; se refleja en `averias.json`, en `estructura.json` y en la regla RN-03. |
 | D-11 | **Palabras clave RN-03:** lista editable en CONFIGURACION (`claves_clasificacion.json`) con búsqueda normalizada (mayúsculas, sin tildes, variantes LOSS/LOS y DAÑADA/DANADA). | Cierra A-06; el operador puede añadir términos sin tocar el código y los typos del CSV no rompen la clasificación. |
 
 Estas decisiones cierran la pregunta 1-3 del bloque 1 y la parte de catálogo de A-04.
-Pendientes abiertas: A-04 (catálogo y numeración de sectores), A-05 («casos citados del día»), A-08 (formato de los reportes diario y semanal), A-09 (definición de «casos especiales»), A-10 (desempate de cuadrilla para construcción), A-11 (campos `P00` y `ups`) y A-14 (composición de `despacho.json`). Ninguna bloquea los ciclos C1–C3 del MVP; A-14 afecta al ciclo C4.
+Pendientes abiertas: A-04, A-05, A-08, A-09, A-10 y A-11 (catálogo de sectores, «casos citados», formato de reportes, «casos especiales», desempate de cuadrilla y campos `P00`/`ups`), más A-12 (contrato posicional de `estructura.json`), A-14 (composición de `despacho.json`), A-15 (estatus `ASGN`), A-16 (fechas con hora) y A-17 (`alta_manual.csv` como modelo). **A-12, A-15 y A-16 bloquean el ciclo C2**; A-17 condiciona C1 y C6; A-14, A-05 y A-10 afectan a C4.
 
 ---
 

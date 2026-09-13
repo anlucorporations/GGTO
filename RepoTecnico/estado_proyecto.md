@@ -53,6 +53,24 @@ asociadas a los ciclos C4–C6, más dos pendientes administrativos (repositorio
 
 > Su contenido no se ha leído: el alcance acordado se limitó a `PAGINA-GGTO-INICIAL.md`.
 > Analizarlos requiere autorización explícita del usuario.
+## 2.2 Verificación con los CSV reales (12/09/2026)
+
+Autorizado por el usuario, se analizaron `detalle_averias_gpon 12_09_2026.csv` (muestra del CSV
+diario) y `alta_manual.csv`. Resultado: **la premisa de D-08 no se sostiene** y el contrato de
+ingesta debe rediseñarse.
+
+| Hallazgo | Evidencia | Consecuencia |
+|---|---|---|
+| El CSV tiene **80 columnas**, no 19. | Fila de encabezado completa. | `estructura.json` debe rehacerse; se incorporó el Anexo A con las 80 columnas. |
+| Separador `;` y codificación UTF-8 con acentos. | Verificado en ambos CSV. | Configurar PapaParse con `delimiter: ';'`. |
+| Encabezados repetidos: `informacion` ×2, `nombre` ×2, `descripcion` ×3. | Agrupación de la cabecera. | El mapeo no puede ser por nombre: debe ser **posicional** (A-12). |
+| Fechas con hora (`17/07/2026 11:38:20 a.m.`). | Columnas `fecha_reporte`, `fecha_compromiso`, `fecha_despacho`. | Definir si se recorta a fecha (A-16). |
+| `estatus` del CSV: `PEND` (53) y **`ASGN`** (3). | Agrupación de la columna 27. | `ASGN` no está en el enum del fuente (A-15). |
+| El archivo mezcla 3 centrales: FRANCISCO SALIAS (51), LAS MERCEDES CPA (4), EL HATILLO (1). | Agrupación de las columnas 8-10. | El filtro por `area`/`central`/`nombre central` es imprescindible (RT-03 confirmado). |
+| `ups` = `RES` (55) / `NRES` (1); `unidad_negocio` = `CANTV RESIDENCIAL` / `CANTV EMPRESAS`. | Agrupaciones de las columnas 61-62. | Evidencia para resolver A-11. |
+| Regla RN-03 en datos reales: 17 registros con palabras clave de fibra y 39 sin ellas. | Búsqueda sobre `ultimo_comentario`, `problema_reporte` e `informacion`. | Dividiría el día en 17 casos a PEND y 39 a GESTION. |
+| `alta_manual.csv` (42 columnas) parece el registro manual vigente. | Caso `REF-REP-05`, `Sector` = «Prados del Este», «1ª Vez / Última Vez visto», «Historial (fecha:Grupo)». | Candidato a modelo de campos de CASOS y de casos especiales (A-17); su `Sector` es un **nombre**, no un número (A-04). |
+| El proyecto **no tiene** `averias.json`, `despacho.json` ni `estructura.json`. | Listado de la raíz y de `RepoTecnico/`. | Los tres archivos se crean desde cero en el ciclo C1/C2. |
 ## 3. Decisiones tomadas (D-01 a D-11)
 
 | ID | Decisión | Bloque |

@@ -192,7 +192,24 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 
 ---
 
-## 10. Pendientes de este documento
+## 10. Características del CSV diario de entrada (verificadas)
+
+| Característica | Valor |
+|---|---|
+| Nombre típico | `detalle_averias_gpon DD_MM_AAAA.csv` (en la raíz del proyecto). |
+| Separador | `;` (punto y coma) → configurar PapaParse con `delimiter: ';'`. |
+| Codificación | UTF-8 (con acentos). |
+| Encabezado | Una fila, 80 columnas; hay nombres repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3), por lo que la lectura debe ser **posicional**. |
+| Fechas | `DD/MM/AAAA hh:mm:ss a.m./p.m.` (incluyen hora). |
+| Contenido | Mezcla varias centrales; el filtro por `region`, `estado geografico`, `capital estado geografico`, `municipio`, `parroquia`, `estado operativo`, `distrito`, `area`, `central` y `nombre central` (columnas 1-10) selecciona las de Francisco Salias. |
+| Tamaño de muestra | 56 registros (51 de Francisco Salias) en el archivo del 12/09/2026. |
+
+Archivo complementario `alta_manual.csv` (raíz, 42 columnas): registro manual de casos con ids
+propios (`REF-REP-05`), `Sector` por nombre, campos de reincidencia («1ª Vez / Última Vez visto»)
+e historial. Se usa como referencia de campos (A-17), no como entrada de la ingesta.
+
+---
+## 11. Pendientes de este documento
 
 - Fijar versiones exactas de las librerías al descargarlas en C1.
 - Registrar la URL de los repositorios remotos y la rama de trabajo.

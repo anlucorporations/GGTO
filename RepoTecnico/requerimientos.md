@@ -123,6 +123,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-05 | `despacho.json` es un subconjunto de columnas de `averias.json` (L57). |
 | RT-06 | Desde `file://` el navegador no puede leer ni escribir los JSON del disco: se requiere servidor local + File System Access API (D-01). |
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
+| RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 
 ---
 
@@ -159,16 +160,19 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
-| A-04 | `sector` se describe como `1/2/3` numérico y también como catálogo configurable (L37, L56). | ¿La numeración de sectores es consecutiva por central (1, 2, 3…) y puede crecer? | C2 |
+| A-04 | **Evidencia nueva:** en `alta_manual.csv` el `Sector` es un **nombre** de zona («Prados del Este»), no un número, mientras el fuente muestra `sector` como `1/2/3` (L56). | ¿`sector` se guarda como nombre/id de zona, consistente con D-03, en lugar de un número? | C2 |
 | A-05 | «casos citados del día» (L42) sin definición. | ¿Qué hace a un caso "citado": fecha prometida al abonado, agenda de la cuadrilla o reincidencia? | C4 |
 | A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
-| A-11 | `P00` en TECNICOS (L16) y `ups` en `averias.json` (L56) sin descripción. | ¿Qué representan exactamente ambos campos? | C1 |
+| A-11 | **Evidencia nueva:** en el CSV, `ups` toma los valores `RES` (55) y `NRES` (1), junto a `unidad_negocio` (`CANTV RESIDENCIAL` / `CANTV EMPRESAS`). `P00` sigue sin explicación. | ¿`ups` es el tipo de cliente residencial/no residencial y qué representa `P00` en TECNICOS? | C1 |
+| A-12 | **Reabierta:** el CSV real tiene **80 columnas** con `;` como separador (no las 19 de `estructura.json`) y encabezados repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3). | ¿Se redefine `estructura.json` como mapa **posicional** (índice de columna) con el subconjunto de campos que se copian al maestro? | C2 |
 | A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
+| A-15 | El CSV trae `estatus` con valores `PEND` (53) y `ASGN` —asignado— (3), no declarados en el fuente (L56: PEND/CERRADO/GESTION). | ¿`ASGN` se incorpora como estado propio, se mapea a `PEND` o se ignora al ingerir? | C2 |
+| A-16 | Las fechas del CSV incluyen hora (`17/07/2026 11:38:20 a.m.`), mientras el maestro usa DD/MM/AAAA (RNF-06). | ¿Se recorta a fecha al ingerir y se conserva la hora aparte, o se guarda el valor completo? | C2 |
+| A-17 | `alta_manual.csv` (raíz del proyecto, 42 columnas) parece el registro manual actual: usa ids propios (`REF-REP-05`), `Sector` como nombre («Prados del Este») y campos «1ª Vez / Última Vez visto» e «Historial (fecha:Grupo)». | ¿Se toma como modelo de campos para CASOS y para el seguimiento de casos especiales (A-09)? | C1 / C6 |
 
-Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
-A-12 (D-08), A-13 (D-06).
+Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05) y A-13 (D-06). A-12 volvió a abrirse tras verificar el CSV real.
 
 ---
 

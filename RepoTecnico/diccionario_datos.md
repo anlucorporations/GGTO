@@ -84,7 +84,7 @@ si el agrupamiento se calcula en memoria.
 
 ## 3. `estructura.json` — contrato de extracción del CSV
 
-Especificación del mapeo columna-CSV → campo-JSON que usa la ingesta (RF-16, D-08). No contiene
+Especificación del mapeo columna-CSV → campo-JSON que usa la ingesta (RF-16). **Corrección tras verificar el CSV real (ver Anexo A):** el mapeo no puede ser por nombre —hay encabezados repetidos— sino por **posición** (índice de columna). No contiene
 datos, solo la lista de columnas esperadas y su correspondencia.
 
 | # | Campo (JSON) | Tipo | Columna esperada en el CSV | Notas |
@@ -232,9 +232,62 @@ erDiagram
 
 ---
 
-## 7. Pendientes de este diccionario
+## 7. Anexo A — CSV diario real (`detalle_averias_gpon DD_MM_AAAA.csv`)
 
-- A-11: significado de `P00` (TECNICOS) y de `ups` (averias).
+Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centrales).
+
+| Característica | Valor verificado |
+|---|---|
+| Separador | `;` (punto y coma) |
+| Codificación | UTF-8 (acentos correctos) |
+| Encabezado | Una sola fila, **80 columnas** |
+| Fechas | `DD/MM/AAAA hh:mm:ss a.m./p.m.` (con hora) |
+| Encabezados repetidos | `informacion` ×2 (col. 31-32), `nombre` ×2 (col. 33 y 76), `descripcion` ×3 (col. 52, 57, 59) |
+| Centrales presentes | `FRANCISCO SALIAS` 51, `LAS MERCEDES CPA` 4, `EL HATILLO` 1 |
+| Filtro de central | `area` = `AREA 4`, `central` = `2324X`, `nombre central` = `FRANCISCO SALIAS` |
+| `estatus` | `PEND` 53, `ASGN` 3 |
+| `ups` | `RES` 55, `NRES` 1 |
+| `unidad_negocio` | `CANTV RESIDENCIAL` 55, `CANTV EMPRESAS` 1 |
+| Palabras clave de fibra (RN-03) | 17 registros las contienen / 39 no |
+
+**Las 80 columnas del CSV, en orden**
+
+| # | Columna | # | Columna | # | Columna | # | Columna |
+|---|---|---|---|---|---|---|---|
+| 1 | region | 21 | ultimo_comentario | 41 | puerto | 61 | unidad_negocio |
+| 2 | estado geografico | 22 | results | 42 | ont_id | 62 | ups |
+| 3 | capital estado geografico | 23 | asignado_a | 43 | fat | 63 | codigos_gestionados_en_VENAPP |
+| 4 | municipio | 24 | cuadrilla | 44 | serial | 64 | codigos_sin_gestion_en_VENAPP |
+| 5 | parroquia | 25 | fecha_despacho | 45 | cvlan | 65 | Reparador Principal |
+| 6 | estado operativo | 26 | ciudad | 46 | extra | 66 | Ayudante 1 |
+| 7 | distrito | 27 | estatus | 47 | area_trabajo | 67 | Ayudante 2 |
+| 8 | area | 28 | problema_reporte | 48 | dias transcurrido desde la apertura | 68 | Ayudante 3 |
+| 9 | central | 29 | servicio_off_on | 49 | area_resolutoria | 69 | Ayudante 4 |
+| 10 | nombre central | 30 | cliente_notificado | 50 | tipo_servicio | 70 | Ayudante 5 |
+| 11 | id_averia | 31 | informacion (1) | 51 | tipo_problema | 71 | Ayudante 6 |
+| 12 | tipo_reporte | 32 | informacion (2) | 52 | descripcion (1) | 72 | Ayudante 7 |
+| 13 | dac | 33 | nombre (abonado) | 53 | usuario_acciona | 73 | Ayudante 8 |
+| 14 | telefono | 34 | direccion | 54 | fecha_acciona | 74 | Ayudante 9 |
+| 15 | fecha_reporte | 35 | fecha_instalacion | 55 | dias transcurrido en area resolutoria | 75 | Flota (CAN) |
+| 16 | persona_reporta | 36 | olt | 56 | codigo_causa | 76 | Nombre (técnico) |
+| 17 | contacto | 37 | ip | 57 | descripcion (2) | 77 | Apellido |
+| 18 | fecha_compromiso | 38 | tarjeta | 58 | Subcodigo_causa | 78 | Telefono Oficina |
+| 19 | fecha_cita | 39 | plan | 59 | descripcion (3) | 79 | Telefono Movil |
+| 20 | ultimo_usuario | 40 | slot | 60 | con_serv_aba | 80 | Fecha Hora Asignacion |
+
+**Columnas que alimentan el maestro propuesto:** 1-10 (filtro de central), 11, 14, 16, 17, 21,
+28, 31, 32, 33, 34, 36, 39-46, 62, 64, 65, 27 (`estatus`). El resto queda disponible para el
+detalle del caso o para el despacho (columnas 65-80).
+
+---
+
+## 8. Pendientes de este diccionario
+
+- A-11: `ups` parece ser `RES`/`NRES` (residencial/no residencial); falta confirmar. `P00` sigue sin explicación.
 - A-04: numeración definitiva de `sectores.id`.
 - A-14: composición final de `despacho.json` (incluir o no `sector` y cuadrilla).
+- A-12: redefinir `estructura.json` como mapa posicional de las 80 columnas (ver Anexo A).
+- A-15: tratamiento del estatus `ASGN` del CSV.
+- A-16: fechas con hora en el CSV frente a DD/MM/AAAA del maestro.
+- A-17: usar `alta_manual.csv` como modelo de campos de CASOS y casos especiales.
 - Confirmar si el CSV diario trae columnas extra no declaradas en `estructura.json` (se ignorarían).
