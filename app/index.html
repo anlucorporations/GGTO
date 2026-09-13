@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GGTO-v1 — Gestión de averías · Central Francisco Salias (Área 4)</title>
+<!-- Sin CDN y sin dependencias externas: C1 no necesita librerías (RT-07). -->
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<!-- ================= Capa de acceso (D-50): única vista sin sesión ================= -->
+<div id="acceso" class="capa-acceso" role="dialog" aria-modal="true" aria-labelledby="titulo-acceso">
+  <div class="tarjeta-acceso">
+    <h1 id="titulo-acceso">GGTO-v1 · Identificación del operador</h1>
+    <p class="subtitulo">Central Francisco Salias (Área 4) · CANTV</p>
+
+    <div id="aviso-contexto" class="aviso aviso-error" hidden></div>
+
+    <!-- Paso 1: autorizar C:\GGTO\datos (D-01, D-19) -->
+    <section id="paso-carpeta" class="paso">
+      <h2>1. Autorizar la carpeta de datos</h2>
+      <p>La página lee y escribe los archivos de trabajo en <code>C:\GGTO\datos</code>.
+        Por seguridad del navegador, esa autorización solo puede darla usted.</p>
+      <p id="estado-carpeta" class="estado" role="status" aria-live="polite">Sin autorizar.</p>
+      <p class="acciones">
+        <button type="button" id="btn-autorizar" class="boton boton-primario">Autorizar carpeta C:\GGTO\datos</button>
+        <button type="button" id="btn-archivos" class="boton">Elegir los archivos uno a uno</button>
+      </p>
+      <p id="modo-descarga-aviso" class="aviso aviso-info" hidden>
+        Modo consulta: este navegador no permite escribir los JSON. Se habilita solo el
+        <strong>modo descarga</strong>, que exige sesión válida.
+      </p>
+    </section>
+
+    <!-- Paso 2: credencial P00 + contraseña (D-29, D-39) -->
+    <section id="paso-sesion" class="paso" hidden>
+      <h2>2. Identificación</h2>
+      <form id="form-acceso" novalidate>
+        <p class="campo">
+          <label for="login-p00">P00 (código de empleado)</label>
+          <input type="text" id="login-p00" name="p00" autocomplete="username" inputmode="text"
+                 aria-describedby="ayuda-p00" required>
+          <span id="ayuda-p00" class="ayuda">Solo el P00 identifica: el nombre no es un identificador válido.</span>
+        </p>
+        <p class="campo">
+          <label for="login-clave">Contraseña (8 caracteres o más)</label>
+          <input type="password" id="login-clave" name="clave" autocomplete="current-password"
+                 minlength="8" required>
+        </p>
+        <p class="acciones">
+          <button type="submit" id="btn-entrar" class="boton boton-primario">Iniciar sesión</button>
+          <button type="button" id="btn-descarga" class="boton">Modo descarga (solo consulta)</button>
+        </p>
+        <p id="msg-acceso" class="mensaje" role="alert" aria-live="assertive"></p>
+        <p id="contador-intentos" class="ayuda" role="status" aria-live="polite">Intentos fallidos: 0</p>
+      </form>
+    </section>
+
+    <!-- Paso 3: cambio obligatorio de contraseña (D-39: 90 días o restablecimiento) -->
+    <section id="paso-cambio" class="paso" hidden>
+      <h2>3. Cambio obligatorio de contraseña</h2>
+      <p id="msg-cambio" class="aviso aviso-alerta" role="alert" aria-live="assertive"></p>
+      <form id="form-cambio" novalidate>
+        <p class="campo">
+          <label for="nueva-clave">Nueva contraseña (8 caracteres o más)</label>
+          <input type="password" id="nueva-clave" autocomplete="new-password" minlength="8" required>
+        </p>
+        <p class="campo">
+          <label for="confirmar-clave">Repita la nueva contraseña</label>
+          <input type="password" id="confirmar-clave" autocomplete="new-password" minlength="8" required>
+        </p>
+        <p class="acciones">
+          <button type="submit" class="boton boton-primario">Guardar contraseña nueva</button>
+          <button type="button" id="btn-cancelar-cambio" class="boton">Cancelar</button>
+        </p>
+        <p id="msg-cambio-error" class="mensaje" role="alert" aria-live="assertive"></p>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!-- ================= Aplicación (se oculta por completo sin sesión, D-50) ================= -->
+<div id="app" class="app" hidden>
+  <a class="salto-contenido" href="#contenido">Saltar al contenido</a>
+
+  <header class="cabecera">
+    <h1 class="marca">GGTO-v1 <span>· Central Francisco Salias (Área 4)</span></h1>
+    <div class="sesion-caja">
+      <p id="sesion-datos" class="sesion-datos" role="status" aria-live="polite">—</p>
+      <p id="sesion-cuadrilla" class="ayuda">—</p>
+      <button type="button" id="btn-cerrar-sesion" class="boton">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <nav id="pestanas" class="pestanas" aria-label="Pestañas de la aplicación" role="tablist"></nav>
+  <p id="aviso-global" class="aviso aviso-alerta" role="alert" aria-live="assertive" hidden></p>
+
+  <main id="contenido" class="contenido" tabindex="-1">
+    <section id="seccion-panel" class="panel-pestana" role="tabpanel" aria-labelledby="tab-panel" hidden></section>
+    <section id="seccion-monitoreo" class="panel-pestana" role="tabpanel" aria-labelledby="tab-monitoreo" hidden></section>
+    <section id="seccion-graficos" class="panel-pestana" role="tabpanel" aria-labelledby="tab-graficos" hidden></section>
+    <section id="seccion-casos" class="panel-pestana" role="tabpanel" aria-labelledby="tab-casos" hidden></section>
+    <section id="seccion-despacho" class="panel-pestana" role="tabpanel" aria-labelledby="tab-despacho" hidden></section>
+    <section id="seccion-configuracion" class="panel-pestana" role="tabpanel" aria-labelledby="tab-configuracion" hidden></section>
+    <section id="seccion-gestion" class="panel-pestana" role="tabpanel" aria-labelledby="tab-gestion" hidden></section>
+  </main>
+
+  <footer class="pie">
+    <p>Datos: <span id="pie-ruta">C:\GGTO\datos</span> · Respaldo: <span id="pie-respaldo">C:\GGTO\respaldo</span></p>
+    <p>GGTO-v1 · ciclo C1 (armazón, sesión, CONFIGURACION, CASOS) · sin frameworks ni CDN</p>
+  </footer>
+</div>
+
+<!-- Mensajes flotantes accesibles -->
+<div id="avisos" class="avisos" role="status" aria-live="polite"></div>
+
+<!-- Núcleo puro (también probado con Node.js en pruebas/pruebas_c1.mjs) -->
+<script src="js/nucleo.js"></script>
+<script src="js/almacen.js"></script>
+<!-- Módulos del ciclo C1 -->
+<script src="js/casos.js"></script>
+<!-- Stubs de los ciclos C2 a C7 -->
+<script src="js/ingesta.js"></script>
+<script src="js/panel.js"></script>
+<script src="js/gestion.js"></script>
+<script src="js/despacho.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/metricas.js"></script>
+<script src="js/graficos.js"></script>
+<script src="js/reportes.js"></script>
+<script src="js/configuracion.js"></script>
+<!-- Arranque (el último: engancha todo) -->
+<script src="js/app.js"></script>
+</body>
+</html>

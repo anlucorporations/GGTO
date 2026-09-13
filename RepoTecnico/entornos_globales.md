@@ -156,7 +156,7 @@ System Access API), no por HTTP.
 
 | Constante | Valor | Uso |
 |---|---|---|
-| `RUTA_DATOS` | `./datos/` | Carpeta de los JSON. |
+| `RUTA_DATOS` | `C:\GGTO\datos\` | Carpeta de los 9 JSON de trabajo y de `historial.jsonl` (D-19, D-56). |
 | `ARCHIVO_MAESTRO` | `averias.json` | Maestro de casos (D-09). |
 | `ARCHIVO_DESPACHO` | `despacho.json` | Vista de campo. |
 | `ARCHIVO_ESTRUCTURA` | `estructura.json` | Contrato del CSV. |

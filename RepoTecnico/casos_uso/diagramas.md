@@ -2,7 +2,7 @@
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026, segunda pasada (cierre de la reauditoría de los casos de uso). Se incorporan **D-42** (escritura verificada con respaldo previo), **D-46** (CSV ausente / «sin ingesta»), **D-45 y D-50** (expiración de sesión de 8 horas y «sin sesión no se ve nada»: nueva secuencia de CU-01 en §3.1 y guarda de renderizado en todo el documento), **D-53** (las columnas 53 y 80 del CSV no se persisten: el rastro de origen es la col. 20), **D-55** (solo dos roles: operador y supervisor; el actor «auditoría / control interno» **se retira**), **D-56** (historial inmutable `historial.jsonl` *append-only*: el bloque §3.2 incorpora el *append* del cierre y de la reapertura) y **H-33** (`CU05 include CU06` añadido al bloque canónico §1). Se corrigen además el nombre de la copia fechada (`averias_AAAA-MM-DD_HHMM.json`, H-N-08), la destrucción de las hojas impresas (D-27, H-N-09) y el rótulo «escritura atómica» (H-N-18).
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026, segunda pasada (cierre de la reauditoría de los casos de uso). Se incorporan **D-42** (escritura verificada con respaldo previo), **D-46** (CSV ausente / «sin ingesta»), **D-45 y D-50** (expiración de sesión de 8 horas y «sin sesión no se ve nada»: nueva secuencia de CU-01 en §3.1 y guarda de renderizado en todo el documento), **D-53** (las columnas 53 y 80 del CSV no se persisten: el rastro de origen es la col. 20), **D-55** (solo dos roles: operador y supervisor; el actor «auditoría / control interno» **se retira**), **D-56** (historial inmutable `historial.jsonl` *append-only*: el bloque §3.2 incorpora el *append* del cierre y de la reapertura) **D-57 y D-58** (los intentos fallidos de sesión y las acciones denegadas por rol se anotan en el **log de la aplicación** de 5 MB × 5 archivos, sin datos personales, §1.20 de `casos_uso.md`), **D-59** (el **emisor del CSV** solo participa en **CU-08**: se retira su relación con CU-09) y **H-33** (`CU05 include CU06` añadido al bloque canónico §1). Se corrigen además el nombre de la copia fechada (`averias_AAAA-MM-DD_HHMM.json`, H-N-08), la destrucción de las hojas impresas (D-27, H-N-09) y el rótulo «escritura atómica» (H-N-18).
 - **Documento hermano:** `RepoTecnico/casos_uso.md` (22 casos de uso CU-01 a CU-22, con Gherkin, EARS y trazabilidad inversa a los 29 RF).
 - **Fuentes:** `RepoTecnico/requerimientos.md`, `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/auditoria_fase1.md`, `RepoTecnico/estado_proyecto.md`, `RepoTecnico/casos_uso/auditoria_casos_uso.md`.
 - **Notación:** los diagramas de casos de uso se expresan como *flowchart* de Mermaid (no existe un tipo UML nativo de casos de uso en Mermaid): los rectángulos con esquinas redondeadas son los **actores**, las elipses son los **casos de uso** y las flechas discontinuas etiquetadas `"<<include>>"` y `"<<extend>>"` son las relaciones UML. Los nombres de actores y de casos de uso son idénticos a los de `casos_uso.md`.
@@ -90,7 +90,12 @@ flowchart LR
     SUP --- CU22
 
     CUA --- CU17
+    %% EMI (emisor del CSV) es actor secundario SOLO de CU-08 (D-59): no participa en CU-09.
     EMI --- CU08
+
+    %% El supervisor es el rol elevado (D-35): también opera la ingesta y la cola de sectores.
+    SUP --- CU08
+    SUP --- CU09
 
     %% Relaciones entre casos de uso (include / extend)
     %% Convención: A include B = A invoca a B ; A extend B = A añade comportamiento a B
@@ -121,7 +126,7 @@ flowchart LR
 
 **Título:** GGTO-v1 — Casos de uso del operador de la central.
 **Cubre:** CU-01, CU-08, CU-09, CU-10, CU-11, CU-12, CU-14, CU-22.
-**Restricción de rol (D-35, RNF-12):** el operador **solo consulta y cierra los casos de su propia cuadrilla** (`Reparador Principal` = `id` de su cuadrilla, D-37); **no** accede a la bandeja GESTION, a los padrones, a los sectores (salvo el sector mínimo de la cola), a las palabras clave, al despacho ni al respaldo. **La bandeja GESTION ya no aparece en este bloque: es exclusiva del supervisor** (CU-13).
+**Restricción de rol (D-35, RNF-12):** el operador **solo consulta y cierra los casos de su propia cuadrilla** (`Reparador Principal` = `id` de su cuadrilla, D-37); **no** accede a la bandeja GESTION, a los padrones, a los sectores (salvo el sector mínimo de la cola), a las palabras clave, al despacho ni al respaldo. **La bandeja GESTION ya no aparece en este bloque: es exclusiva del supervisor** (CU-13). El **emisor del CSV** (`EMI`) es actor secundario **solo de CU-08** y **no participa en CU-09** (D-59): la titularidad de la cola de direcciones sin sector es del **supervisor** (rol elevado, D-35), y el operador conserva únicamente la creación del **sector mínimo** desde la cola (excepción de la matriz de §2.1 de `casos_uso.md`).
 
 ```mermaid
 flowchart LR
@@ -152,6 +157,7 @@ flowchart LR
     SUP --- CU01
     SUP --- CU22
     SUP --- CU06
+    SUP --- CU09
 
     CU10 -.->|"<<include>>"| CU01
     CU14 -.->|"<<include>>"| CU01
@@ -239,7 +245,6 @@ flowchart LR
 
     CU05 -.->|"<<include>>"| CU03
     CU05 -.->|"<<include>>"| CU04
-    CU05 -.->|"<<include>>"| CU06
     CU05 -.->|"<<include>>"| CU06
     CU22 -.->|"<<include>>"| CU21
 ```
@@ -565,8 +570,8 @@ stateDiagram-v2
 
 | Bloque | Diagrama | Tipo | Casos de uso representados |
 |---|---|---|---|
-| §1 | Vista completa (bloque canónico) | Casos de uso (UML en flowchart) | CU-01 a CU-22, con actores operador, supervisor (función administrativa, D-35, D-55), cuadrilla y emisor del CSV (**el actor «auditoría / control interno» se retira por D-55**) |
-| §2.1 | Operador de la central | Casos de uso por actor | CU-01, CU-08, CU-09, CU-10, CU-11, CU-12, CU-14, CU-22 |
+| §1 | Vista completa (bloque canónico) | Casos de uso (UML en flowchart) | CU-01 a CU-22, con actores operador, supervisor (función administrativa, D-35, D-55), cuadrilla y emisor del CSV —actor **solo de CU-08** (D-59)— (**el actor «auditoría / control interno» se retira por D-55**) |
+| §2.1 | Operador de la central | Casos de uso por actor | CU-01, CU-08, CU-09, CU-10, CU-11, CU-12, CU-14, CU-22 (con el **supervisor** como titular de la cola de CU-09, D-59, y el emisor del CSV solo en CU-08) |
 | §2.2 | Supervisor | Casos de uso por actor | CU-01, CU-10, CU-11, CU-12, CU-13, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20 |
 | §2.3 | Supervisor — función administrativa | Casos de uso por actor | CU-01 a CU-07, CU-21, CU-22 |
 | §3.1 | Acceso/sesión e ingesta del CSV | Secuencia | **CU-01** (acceso, credencial inválida, cambio obligatorio y expiración de las 8 horas: D-45 y D-50) y **CU-08** (principal), con CU-02, CU-06 y CU-07; incluye la rama «CSV ausente / sin ingesta» (D-46) y el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), además de la rama de conflicto de concurrencia (D-41) |
@@ -585,7 +590,7 @@ stateDiagram-v2
 7. **Concurrencia.** Los bloques §3.1, §3.2 y §3.3 muestran la relectura de la marca de modificación y el aviso de conflicto con usuario y fecha/hora, coherentes con D-41 y RNF-14; ninguno dibuja un bloqueo de archivo que el sistema no implemente.
 8. **Escritura verificada (D-42, RNF-15) y CSV ausente (D-46).** El bloque §3.1 incorpora, en su rama de escritura, la copia previa `.bak` con retención de **10** versiones, la escritura en archivo temporal, la relectura comparada y la restauración del respaldo ante fallo; y en su primera rama el caso «CSV ausente / sin ingesta» con el registro de la novedad en `datos/incidencias.log`. El bloque §3.2 aplica la misma secuencia de D-42 al cierre, con su rama de restauración. Se evita el rótulo «escritura atómica», que D-42 no promete (H-N-18).
 9. **Sesión y visibilidad (D-45, D-50).** El bloque §3.1 abre con la secuencia de **CU-01** (acceso con `P00` + contraseña, credencial inválida, cambio obligatorio y sesión válida de 8 horas) y cierra con la guarda de **expiración**; el bloque §3.2 incorpora la misma guarda para el cierre. Ningún bloque dibuja datos renderizados sin sesión válida y el **modo descarga de CU-22 exige la misma sesión** (H-N-02, H-N-19).
-10. **Roles (D-55).** Ningún bloque dibuja el nodo `AUD`: el actor «auditoría / control interno» se retira del modelo y la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17) quedan como acciones del supervisor (`SUP`). Los únicos actores dibujados son el operador, el supervisor, la cuadrilla y el emisor del CSV.
+10. **Roles (D-55).** Ningún bloque dibuja el nodo `AUD`: el actor «auditoría / control interno» se retira del modelo y la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17) quedan como acciones del supervisor (`SUP`). Los únicos actores dibujados son el operador, el supervisor, la cuadrilla y el **emisor del CSV**, este último **solo relacionado con CU-08** (D-59): ningún bloque lo une a CU-09.
 11. **Rastro de origen (D-52, D-53, D-54).** El bloque §3.1 declara expresamente que `usuario_modificacion` se inicializa con la **col. 20** y `fecha_modificacion` con la **fecha de ingesta**, y que las columnas **53 y 80** (y la **18**) **no se persisten**.
 12. **Control documental (D-27).** El bloque §3.3 cubre la entrega, la recogida **y la destrucción registrada** de las hojas impresas, con su rama de hojas pendientes de destruir (H-N-09).
 13. **Respaldos.** La copia de cierre se dibuja con el nombre **`averias_AAAA-MM-DD_HHMM.json`** (fecha **y hora**), de modo que dos respaldos del mismo día no colisionan (H-N-08) y **junto con `historial.jsonl`, que se copia íntegro y nunca se recorta** (D-56, CU-21). Los 8 bloques Mermaid se revisaron y son sintácticamente válidos.
