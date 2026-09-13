@@ -231,7 +231,7 @@ Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión.
 | A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
 | A-18 | **Resuelta (D-21 y D-38):** el `estatus` del CSV prevalece sobre RN-03 y `ASGN` entra como `PEND`. | Decidido el 13/09/2026. | C2 |
 
-Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-04 (D-25), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-05, A-08, A-09, A-10, A-11 y A-14.
+**Ambigüedades: las 18 cerradas.** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-04 (D-25), A-05 (D-30), A-06 (D-11), A-07 (D-05), A-08 (D-34), A-09 (D-33), A-10 (D-32), A-11 (D-17 y D-29), A-12 (D-12), A-13 (D-06), A-14 (D-31), A-15 (D-13, revisada por D-38), A-16 (D-21), A-17 (D-14) y A-18 (D-21, revisada por D-38).
 
 ---
 
