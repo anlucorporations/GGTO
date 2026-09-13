@@ -188,6 +188,8 @@ rotadas**:
 
 **Comprobación en el puesto.** `Get-ChildItem C:\GGTO\datos\incidencias*.log | Select-Object Name, Length`
 debe mostrar como máximo seis archivos (`incidencias.log` y `incidencias.1.log` a `incidencias.5.log`)
+
+> Si incidencias.log no existe todavía, la aplicación lo crea con el primer evento (intento fallido o acción denegada) y **no rota nada**, porque el tamaño medido es 0.
 y ninguno de ellos superar los 5 MB. La lógica del plan de rotación es pura
 (`nucleo.js`: `planRotacionLog`, `nombreIncidencias`, `indiceIncidencias`) y su aplicación al disco
 vive en `almacen.js` (`rotarLogIncidencias`); la prueba con el límite parametrizado está en
