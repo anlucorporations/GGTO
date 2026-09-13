@@ -3,7 +3,7 @@
 - **Proyecto:** GGTO-v1 — Central Francisco Salias (Área 4)
 - **Fase:** 1 (Concepto) — documento vivo, se actualiza de forma incremental
 - **Versión:** v1
-- **Fecha:** 2026-02-19
+- **Fecha:** 2026-09-12
 - **Fuente primaria:** `RepoTecnico/PAGINA-GGTO-INICIAL.md` (64 líneas)
 - **Documentos derivados:** `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` (análisis y arquitectura),
   `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`

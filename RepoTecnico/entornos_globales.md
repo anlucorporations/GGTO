@@ -3,7 +3,7 @@
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías (Central Francisco Salias, Área 4)
 - **Fase:** 1 (Concepto) — documento vivo
 - **Versión:** v1
-- **Fecha:** 2026-02-19
+- **Fecha:** 2026-09-12
 
 ---
 

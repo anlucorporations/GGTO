@@ -2,7 +2,7 @@
 
 - **Proyecto:** Página HTML de gestión de averías — Central Francisco Salias (Área 4)
 - **Fase actual:** 1 (Concepto) — en cierre
-- **Última actualización:** 2026-02-19
+- **Última actualización:** 2026-09-12
 - **Fuente primaria:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`
 
 ---
@@ -33,6 +33,26 @@ asociadas a los ciclos C4–C6, más dos pendientes administrativos (repositorio
 
 ---
 
+## 2.1 Repositorio local
+
+- Se inicializó el repositorio git en la raíz del proyecto (`G:\Mi unidad\CANTV PDE\GGTO-v1`),
+  rama `main`, con `.gitignore` (excluye `desktop.ini`, `.env*`, logs y respaldos de `datos/`).
+- Primer commit: `Fase 1: documentacion de concepto, propuesta y requerimientos de la pagina GGTO`.
+- **Repositorios remotos: pendientes.** No hay `gh` ni `glab` instalados ni credenciales
+  configuradas en el equipo; la creación remota requiere que el usuario aporte la plataforma y
+  un token, o cree los repositorios vacíos y entregue las URLs.
+
+### Archivos operativos detectados en la raíz (aún no analizados)
+
+| Archivo | Relevancia |
+|---|---|
+| `detalle_averias_gpon 12_09_2026.csv` (43 KB) | Muestra real del CSV diario de entrada: permitiría verificar `estructura.json` (RF-16). |
+| `alta_manual.csv` (20 KB) | Posible origen de la carga manual de casos (RF-04). |
+| `Despacho_Cuadrilla_1/2/3_20260911.pdf` (3 archivos) | Despachos reales de 3 cuadrillas: referencia de formato para RF-10. |
+| `CONTROL_DESPACHO_GGTO-v1.xlsm` (99 KB) | Libro con macros: posible proceso actual que la página reemplaza. |
+
+> Su contenido no se ha leído: el alcance acordado se limitó a `PAGINA-GGTO-INICIAL.md`.
+> Analizarlos requiere autorización explícita del usuario.
 ## 3. Decisiones tomadas (D-01 a D-11)
 
 | ID | Decisión | Bloque |

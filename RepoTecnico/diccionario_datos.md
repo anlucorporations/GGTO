@@ -3,7 +3,7 @@
 - **Proyecto:** GGTO-v1
 - **Fase:** 1 (Concepto) — documento vivo
 - **Versión:** v1
-- **Fecha:** 2026-02-19
+- **Fecha:** 2026-09-12
 - **Fuente:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`, sección `[ESTRUCTURAS]` (L54-58) y decisiones D-01 a D-11.
 
 > Tipos: `T` texto, `F` fecha `DD/MM/AAAA`, `E` enumerado, `N` numérico, `B` booleano (`SI`/`NO`),

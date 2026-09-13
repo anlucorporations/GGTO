@@ -1,7 +1,7 @@
 # Propuesta — Página HTML de Gestión de Averías (Central Francisco Salias, Área 4)
 
 - **Versión:** v1 (borrador de concepto)
-- **Fecha:** 2026-02-19
+- **Fecha:** 2026-09-12
 - **Fuente única analizada:** `RepoTecnico/PAGINA-GGTO-INICIAL.md` (64 líneas)
 - **Alcance de este documento:** extracción de requerimientos, modelo de datos, arquitectura
   propuesta, plan de ciclos, riesgos y preguntas de cierre. **No** es todavía el SRS ni el
