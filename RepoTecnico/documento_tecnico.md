@@ -4,10 +4,10 @@
 - **Documento:** arquitectura y especificación técnica.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
 - **Versión:** v1.
-- **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54** y **D-56** incorporadas; A-01, el destino de la col. 18 y el historial inmutable —H-10— cerrados).
+- **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54**, **D-56** y **D-61 a D-64** incorporadas; A-01, el destino de la col. 18, el historial inmutable —H-10—, el campo `rol` del padrón, el arranque en frío, el formato de la credencial y la rotación del log de accesos quedan cerrados).
 - **Ubicación del proyecto:** `C:\GGTO\proyecto` (clon local de GitHub, D-51); Google Drive queda fuera del flujo (§7.1).
-- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-56**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
-- **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-50**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta) y **D-56** (historial inmutable `historial.jsonl`, con H-10 cerrado y RNF-09 completo; §4.4), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
+- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-64**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
+- **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-50**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta), **D-56** (historial inmutable `historial.jsonl`, con H-10 cerrado y RNF-09 completo; §4.4) y **D-61 a D-64** (campo `rol` del padrón —§4.5—, arranque en frío del primer supervisor —§3.4—, formato de la credencial SHA-256 —§4.5— y rotación del log de accesos `incidencias.log` —§4.5.1 y §5.4—), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
 - **Alcance de este documento:** especificar la arquitectura, los contratos de datos, los procedimientos y la trazabilidad del sistema. **No** fija precios, calendario ni asignación de personas. Las afirmaciones se apoyan en los documentos citados; lo aún no implementado se marca como **pendiente técnico** con su ID (§8.3).
 
 ---
@@ -77,9 +77,10 @@ C:\GGTO\proyecto\            # raiz del proyecto: clon local, fuera de Google Dr
 |  \- lib/                   # librerias locales (sin CDN)
 \- RepoTecnico/              # documentacion: FUERA del alcance HTTP
 
-C:\GGTO\datos\               # JSON de trabajo + historial: FUERA del alcance HTTP y fuera de Drive (D-19)
-                             # averias.json, despacho.json, estructura.json, los 6 de configuracion
-                             # y historial.jsonl (append-only, D-56)
+C:\GGTO\datos\               # JSON de trabajo + historial + log: FUERA del alcance HTTP y fuera de Drive (D-19)
+                             # averias.json, despacho.json, estructura.json, los 6 de configuracion,
+                             # historial.jsonl (append-only, D-56) e incidencias.log
+                             # (log de accesos con rotacion 5 MB x 5 archivos, D-64)
 C:\GGTO\respaldo\            # copia fechada del maestro y de historial.jsonl al cierre de la jornada (D-49)
 ```
 
@@ -91,8 +92,8 @@ Son **12 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.j
 
 | Módulo | Responsabilidad principal | RF que implementa |
 |---|---|---|
-| `app.js` | Arranque, enrutado de las 7 pestañas (RF-01), estado global, **sesión e identificación del operador** (D-29, credencial `P00` + contraseña D-39, expiración D-45) y **bloqueo total sin sesión válida** (D-50); accesibilidad de la interfaz (RNF-13); detección de `file://`, versión y log de aplicación | RF-01; RNF-03, RNF-07, RNF-08, RNF-13 |
-| `almacen.js` | Abrir, leer, escribir y **releer** los JSON (File System Access API + modo descarga); catálogo de esquemas; deduplicación por `id_averia`; registro de auditoría (`usuario_modificacion`, `fecha_modificacion`) y **escritura *append* del historial inmutable `historial.jsonl`** (una línea JSON por campo cambiado, D-56); **escritura verificada con respaldo previo `.bak`, temporal, relectura y comparación** (D-42) y **detección de conflicto al guardar** (D-41); copia fechada del maestro y del historial al cierre (D-49) | RF-24; RNF-04, RNF-09, RNF-10, RNF-14, RNF-15, RNF-16; RT-01, RT-04, RT-06, RT-10 |
+| `app.js` | Arranque, enrutado de las 7 pestañas (RF-01), estado global, **sesión e identificación del operador** (D-29, credencial `P00` + contraseña D-39, resolución del **rol** leído de `tecnicos.json` D-61, expiración D-45) y **bloqueo total sin sesión válida** (D-50); **alta del primer supervisor cuando el padrón está vacío** (arranque en frío, D-62); **registro de accesos en `datos/incidencias.log`** con la rotación D-64; accesibilidad de la interfaz (RNF-13); detección de `file://`, versión y log de aplicación | RF-01; RNF-03, RNF-07, RNF-08, RNF-13 |
+| `almacen.js` | Abrir, leer, escribir y **releer** los JSON (File System Access API + modo descarga); catálogo de esquemas; deduplicación por `id_averia`; registro de auditoría (`usuario_modificacion`, `fecha_modificacion`) y **escritura *append* del historial inmutable `historial.jsonl`** (una línea JSON por campo cambiado, D-56); **rotación del log de accesos `incidencias.log` a 5 MB × 5 archivos** antes de cada escritura del log (**D-64**); **escritura verificada con respaldo previo `.bak`, temporal, relectura y comparación** (D-42) y **detección de conflicto al guardar** (D-41); copia fechada del maestro y del historial al cierre (D-49) | RF-24; RNF-04, RNF-09, RNF-10, RNF-14, RNF-15, RNF-16; RT-01, RT-04, RT-06, RT-10 |
 | `ingesta.js` | Carga del CSV con PapaParse (`delimiter: ';'`), validación bloqueante de las 80 columnas, filtro de central, extracción por `estructura.json`, dedupe, clasificación RN-03 y sector (RN-04) | RF-16 a RF-19, RF-27; RNF-02, RNF-04, RNF-06, RNF-10; RT-02, RT-03, RT-07, RT-08 |
 | `despacho.js` | Agrupación por sector y `Reparador Principal`, reglas RN-05/RN-06, desempate D-32, edición manual y persistencia en el maestro | RF-08, RF-09, RF-20; RNF-01, RNF-05 (proyección impresa en carta horizontal), RNF-10, RNF-11; RT-05 |
 | `pdf.js` | PDF del despacho por cuadrilla en carta horizontal con paginación, marca de fecha/cuadrilla/copia (jsPDF + autoTable) y registro de entrega y recogida | RF-10; RNF-05, RNF-11 |
@@ -243,9 +244,13 @@ Restricciones conocidas: Firefox y Safari no soportan la API → la página avis
 | 7 | Sin identificación válida no se permite editar; 3 intentos fallidos vuelven al diálogo con contador visible | RNF-08 |
 | 8 | `tecnicos.json` ausente o inválido → «Padrón de técnicos no disponible» y bloqueo de edición | RNF-08 |
 
-### 3.4 Matriz de permisos operador / supervisor (D-35, RNF-12)
+### 3.4 Matriz de permisos operador / supervisor (D-35, **D-61**, RNF-12)
 
 El rol «administrador» queda **absorbido por el supervisor** (D-35); los casos de uso todavía lo listan como actor, y su actualización es un trabajo de Fase 2 en curso.
+
+**De dónde sale el rol (D-61).** El rol de cada sesión **no se deduce del nombre ni del `P00`**: se lee del campo **`rol` de `tecnicos.json`**, cuyos dos únicos valores son **`Operador`** y **`Supervisor`**, con **`Operador` por defecto** —un registro sin `rol` (padrón heredado) se lee como operador y una sesión de operador nunca queda habilitada como supervisora por accidente—. El rol se resuelve al iniciar sesión (CU-01 paso 10) y, **junto con `status` (Activo/Inactivo)**, es lo que determina esta matriz (D-35, RNF-12). El supervisor **crea y edita ese campo** en CONFIGURACION → TECNICOS (CU-03, D-61).
+
+**Arranque en frío (D-62).** Si `tecnicos.json` está **vacío**, no existe ninguna sesión posible y —por D-50— tampoco debería verse nada; pero ningún rol podría crear el primer padrón. La página resuelve ese único caso ofreciendo crear el **primer supervisor**: es el **único supuesto en que se crea un padrón sin sesión previa**, y el registro nace con `rol = Supervisor` y `clave_cambio_obligatorio = SI` (debe cambiar la contraseña en su primer ingreso). En cuanto el padrón tiene un supervisor, ese paso **desaparece** y toda alta de técnicos exige sesión de supervisor (CU-03).
 
 | Capacidad | Operador | Supervisor |
 |---|---|---|
@@ -264,6 +269,8 @@ El rol «administrador» queda **absorbido por el supervisor** (D-35); los casos
 | MONITOREO, GRAFICOS y reportes (RF-05, RF-06, RF-25, RF-26) | Solo lectura | Sí |
 | Respaldo y restauración (D-36, D-49) | No | Sí |
 | Restablecer la contraseña de un técnico (D-39) | No | Sí |
+| Asignar o cambiar el campo `rol` de un técnico (`Operador`/`Supervisor`, D-61) | No | Sí |
+| Crear el **primer supervisor** con el padrón vacío (arranque en frío, D-62) | — (no hay sesión) | Permitido a quien ejecuta el arranque; el registro nace como supervisor |
 
 ### 3.5 Qué impide cada control y qué **no** cubre
 
@@ -271,7 +278,8 @@ El rol «administrador» queda **absorbido por el supervisor** (D-35); los casos
 |---|---|---|
 | `--bind 127.0.0.1` | Que otro equipo de la red alcance la página o descargue los JSON | Un usuario local del mismo PC o un proceso malicioso en la sesión |
 | `--directory app` | Publicar `datos/averias.json` por HTTP (H-01) | La lectura directa del archivo por quien tenga acceso al disco |
-| Credencial `P00` + contraseña (D-39, RNF-08, D-50) | Editar sin sesión válida; la contraseña (8+ caracteres) se valida contra el hash con sal y caduca a los 90 días | **No hay TLS:** la credencial viaja sin cifrar en loopback. No protege contra el acceso directo al JSON ni al código |
+| Credencial `P00` + contraseña (D-39, RNF-08, D-50) | Editar sin sesión válida; la contraseña (8+ caracteres) se valida contra el hash con sal (`clave_sal + ":" + contraseña` en SHA-256 hexadecimal de 64 caracteres, D-63) y caduca a los 90 días | **No hay TLS:** la credencial viaja sin cifrar en loopback. No protege contra el acceso directo al JSON ni al código |
+| **Log de accesos `datos/incidencias.log` (D-57, D-58, D-64)** | Que un intento fallido o una acción denegada por rol pasen sin constancia: quedan fecha/hora, `P00` intentado y motivo, **sin datos personales**; el archivo rota a 5 MB × 5 archivos (§4.5.1) | No bloquea la cuenta (D-57) ni impide la suplantación; no es un control de seguridad, es trazabilidad |
 | Matriz de permisos (D-35, RNF-12) | Que un operador cierre casos ajenos o toque padrones desde la interfaz | Manipulación directa del JSON o del código en el navegador |
 | Edición local de `lib/` | Dependencia de internet | La integridad del propio código: no hay firma ni verificación de las librerías |
 | Sin TLS | — | **Riesgo aceptado:** el tráfico es HTTP en loopback; no hay cifrado ni certificado |
@@ -473,20 +481,34 @@ archivo **crece con cada cambio** y el maestro sigue guardando además el últim
 | `central` | T | Sí | `2324X` |
 | `nombre_central` | T | Sí | `FRANCISCO SALIAS` |
 
-**`tecnicos.json`** — padrón de trabajadores (RF-12, D-29, D-39).
+**`tecnicos.json`** — padrón de trabajadores (RF-12, D-29, D-39, **D-61**). **12 campos.**
 
 | Campo | Tipo | OBL | Dominio | Notas |
 |---|---|---|---|---|
 | `nombre` | T | Sí | — | Se muestra en la sesión |
 | `cedula` | T | Sí | única | Identificación |
 | `P00` | T | Sí | único y obligatorio | Código de empleado = credencial de sesión (D-29) |
-| `clave_hash` | T | Sí | hash SHA-256 con sal | Contraseña de 8 caracteres o más, **nunca en claro** (D-39) |
-| `clave_sal` | T | Sí | aleatoria por técnico | Sal del hash (D-39) |
+| `clave_hash` | T | Sí | SHA-256 hexadecimal, **64 caracteres** | Hash de `clave_sal + ":" + contraseña` en UTF-8; **nunca en claro** (D-39, **D-63**) |
+| `clave_sal` | T | Sí | aleatoria por técnico (16 bytes → 32 hex) | Sal del hash, propia de cada técnico (D-39, **D-63**) |
 | `clave_fecha_cambio` | F | Sí | DD/MM/AAAA | Último cambio de contraseña; a los **90 días** se exige cambiarla (D-39) |
+| `clave_cambio_obligatorio` | B | Sí | `SI` / `NO` | `SI` tras un alta, un restablecimiento del supervisor o el arranque en frío (**D-62**): obliga a cambiar la contraseña en el siguiente ingreso (D-39) |
 | `telefono` | T | No | — | — |
 | `correo` | T | No | — | — |
 | `especialidad` | T | No | — | — |
 | `status` | E | Sí | Activo / Inactivo | Solo activos en selectores y en el login |
+| `rol` | E | Sí | `Operador` / `Supervisor` (**por defecto `Operador`**) | **D-61:** junto con `status` determina la matriz de permisos de §3.4 (D-35, RNF-12). Un registro sin `rol` se lee como `Operador` |
+
+**Formato de la credencial (D-63).** `clave_hash` es el **SHA-256 en hexadecimal** —**64 caracteres**
+en minúsculas— de la cadena **`clave_sal + ":" + contraseña`** codificada en **UTF-8**; `clave_sal` es
+**aleatoria por técnico** y se regenera en cada alta, cambio o restablecimiento (D-39). La contraseña
+tiene 8 caracteres como mínimo y **nunca** se guarda ni se muestra en claro; el hash se compara en
+tiempo constante. La misma contraseña con sal distinta produce hashes distintos, de modo que el
+archivo no permite deducir contraseñas repetidas.
+
+**Arranque en frío (D-62).** Si `tecnicos.json` está **vacío**, la página ofrece crear el **primer
+supervisor** (único caso en que se crea un padrón sin sesión): el registro nace con
+`rol = Supervisor` y `clave_cambio_obligatorio = SI`. En cuanto existe un supervisor, ese paso
+desaparece y toda alta exige sesión de supervisor (§3.4, CU-03).
 
 **`flota.json`** — padrón de vehículos (RF-13, L17).
 
@@ -532,6 +554,41 @@ archivo **crece con cada cambio** y el maestro sigue guardando además el últim
 | `normalizacion` | E | Sí | `estricta` / `normalizada` (por defecto) | `normalizada`: mayúsculas, sin tildes, espacios colapsados (D-26); `estricta`: comparación literal por subcadena, sin variantes (D-43) |
 | `campos_evaluados` | L | Sí | `ultimo_comentario`, `problema_reporte`, `informacion_1`, `informacion_2` | Coincidencia por subcadena |
 | `umbral_concentracion` | N | No | 3 por defecto, editable | Avería concentrada (D-25, RF-26) |
+
+#### 4.5.1 `incidencias.log` — log de accesos con rotación (D-57, D-58, D-64)
+
+Archivo de **texto plano**, una línea por evento, en `C:\GGTO\datos\incidencias.log`. Es el «log de la
+aplicación» de D-57/D-58 y el destino que fija **D-64**: registra los **intentos fallidos de sesión** y
+las **acciones denegadas por el rol**, con **fecha y hora, `P00` intentado y motivo**, **sin datos
+personales** (ni contraseña, ni hash, ni datos del abonado). **No** es `historial.jsonl`: ese archivo
+es *append-only* y **solo** registra cambios de campos de un caso (§4.4).
+
+| Aspecto | Regla | Requisito |
+|---|---|---|
+| Contenido por línea | `DD/MM/AAAA hh:mm` + tipo de evento (`sesion` / `permiso` / `conflicto` / `bootstrap`) + detalle + `P00` intentado + motivo | D-57, **D-64** |
+| Datos personales | **Ninguno**: solo `P00`, fecha/hora y motivo | D-58, **D-64** |
+| Bloqueo de cuenta | **No** se bloquea por acumular intentos fallidos | D-57 |
+| Destino | `C:\GGTO\datos\incidencias.log` (`datos/` sigue fuera del alcance HTTP, D-15/RT-09) | D-58, **D-64** |
+| Rotación | **5 MB × 5 archivos** | D-58, **D-64** |
+| Respaldo | No entra en la copia de cierre (que copia los 10 archivos de trabajo, §7.4); su retención es su propia rotación | D-49, D-58 |
+
+**Nomenclatura y rotación (D-64).** El archivo vigente es `incidencias.log` y sus copias rotadas son
+`incidencias.1.log` … `incidencias.5.log`. Cuando el vigente **supera 5 MB** (5 × 1024 × 1024 =
+5.242.880 bytes), se renombra a `incidencias.1.log` y la cascada desplaza las copias existentes
+(`incidencias.4.log` → `incidencias.5.log`, `incidencias.3.log` → `incidencias.4.log`, …, `incidencias.1.log`
+→ `incidencias.2.log`), **descartando el `incidencias.5.log` anterior**, que es el más antiguo. Se
+conservan por tanto **el log vigente más 5 copias**. La decisión del plan de rotación es **lógica
+pura** (`nucleo.js`: `planRotacionLog`, `nombreIncidencias`, `indiceIncidencias`) y su aplicación al
+disco vive en `almacen.js` (`rotarLogIncidencias`), que se invoca desde `app.js` **antes de cada
+escritura** del log; el procedimiento operativo está en `entornos_globales.md` §4.2 y §5.
+
+| Elemento | Valor | Notas |
+|---|---|---|
+| Archivo vigente | `incidencias.log` | Se escribe siempre en él |
+| Copias rotadas | `incidencias.1.log` … `incidencias.5.log` | `1` es la rotación más reciente |
+| Límite de tamaño | `LOG_MAX_BYTES` = **5 MB** (5.242.880 bytes) | Se rota cuando el vigente lo **supera** |
+| Número de copias | `LOG_MAX_ARCHIVOS` = **5** | El más antiguo se descarta |
+| Puntos de prueba | `LOG_MAX_BYTES` y `LOG_MAX_ARCHIVOS` en `nucleo.js` | El límite es parametrizable para probar la rotación sin escribir 5 MB reales (`pruebas/pruebas_c1b.mjs`) |
 
 ### 4.6 Diagrama entidad-relación
 
@@ -774,6 +831,39 @@ flowchart TD
 | 5 | Ante fallo, restaurar el respaldo `.bak` y avisar | D-42 |
 | 6 | Al cierre de la jornada, ofrecer la copia fechada del maestro **y del historial** en `C:\GGTO\respaldo\` (RTO 1 h; RPO: cierre del día anterior) | D-49, D-56, RNF-16 |
 
+### 5.4 Registro de accesos y rotación del log (D-57, D-58, **D-64**)
+
+Todo **intento fallido de sesión** y toda **acción denegada por el rol** se anotan en
+`C:\GGTO\datos\incidencias.log` con fecha y hora, `P00` intentado y motivo, **sin datos personales**
+(D-58). La cuenta **no se bloquea** (D-57): el log es la única constancia. El archivo **rota por
+tamaño** con la regla **5 MB × 5 archivos** (D-58, **D-64**).
+
+```mermaid
+flowchart TD
+  A["Evento: intento fallido de sesión<br/>o acción denegada por rol (D-57)"] --> B["Se compone la línea:<br/>DD/MM/AAAA hh:mm | tipo | detalle | P00 | motivo<br/>sin datos personales (D-58)"]
+  B --> C["Antes de escribir: se mide el tamaño de<br/>C:/GGTO/datos/incidencias.log"]
+  C --> D{"supera 5 MB (5.242.880 bytes)?<br/>(D-64)"}
+  D -- No --> G["Se escribe la línea al final del log vigente"]
+  D -- Si --> E["incidencias.4.log -> incidencias.5.log<br/>incidencias.3.log -> incidencias.4.log<br/>... incidencias.1.log -> incidencias.2.log<br/>y se DESCARTAN las incidencias.5.log previas"]
+  E --> F["incidencias.log -> incidencias.1.log"]
+  F --> G
+  G --> H["Quedan como maximo 6 archivos:<br/>incidencias.log + incidencias.1..5.log"]
+```
+
+| Paso | Regla | Requisito |
+|---|---|---|
+| 1 | Componer la línea con `DD/MM/AAAA hh:mm`, el tipo de evento, el detalle, el `P00` intentado y el motivo, **sin datos personales** | D-57, D-58, **D-64** |
+| 2 | Medir el tamaño del log vigente **antes** de escribir | **D-64** |
+| 3 | Si **no** supera 5 MB, añadir la línea al log vigente y terminar | **D-64** |
+| 4 | Si **supera** 5 MB, aplicar la cascada de renombrados de mayor a menor y **descartar** el `incidencias.5.log` anterior | **D-64** |
+| 5 | Renombrar `incidencias.log` a `incidencias.1.log` y escribir la línea nueva en un `incidencias.log` recién iniciado | **D-64** |
+| 6 | Ante fallo de la rotación, **no** se interrumpe la operación: el log nunca bloquea la sesión ni el guardado (mismo criterio que D-46) | D-46, **D-64** |
+
+**Trazabilidad del requisito:** D-58 (5 MB × 5 archivos, sin datos personales) y **D-64** (destino,
+contenido y procedimiento de rotación) en `nucleo.js` + `almacen.js` + `app.js`; registro de la
+decisión en `diccionario_datos.md` §5.7 y procedimiento operativo en `entornos_globales.md` §4.2.
+La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`.
+
 ---
 
 ## 6. Trazabilidad: módulo → caso de uso → RF/RNF/RT
@@ -844,8 +934,8 @@ flowchart TD
 | RNF-05 (impresión) | `pdf.js` (documento) + `despacho.js` (proyección y agrupación impresa): carta horizontal, CU-16 |
 | RNF-06 (fechas y semana) | `ingesta.js`, `casos.js`, `metricas.js`, `panel.js` |
 | RNF-07 (idioma y nomenclatura) | `app.js`, `casos.js`, `configuracion.js` |
-| RNF-08 (control de acceso) | `app.js` |
-| RNF-09 (auditoría) | `almacen.js` (escritura *append* en `historial.jsonl`), `casos.js` (consulta de la secuencia de cambios, CU-15) |
+| RNF-08 (control de acceso) | `app.js` (sesión, resolución del **rol** leído de `tecnicos.json` —D-61—, matriz de permisos y **alta del primer supervisor** —D-62—) |
+| RNF-09 (auditoría) | `almacen.js` (escritura *append* en `historial.jsonl`), `casos.js` (consulta de la secuencia de cambios, CU-15); el **log de accesos** `incidencias.log` (intentos fallidos y denegaciones, **D-57/D-58/D-64**) es de `app.js` + `almacen.js` |
 | RNF-10 (integridad de datos) | `almacen.js`, `casos.js`, `panel.js`, `configuracion.js`, `ingesta.js` |
 | RNF-11 (control documental del despacho) | `pdf.js` (marca de fecha, cuadrilla y copia + registro de entrega), `despacho.js` (registro del día que se documenta), CU-16 |
 | RNF-12 (permisos por rol) | `app.js` (sesión y matriz) — aplicado por todos los módulos que escriben |
@@ -874,7 +964,7 @@ flowchart TD
 | Raíz del proyecto (workspace) | `C:\GGTO\proyecto` (clon local de GitHub) | D-51 |
 | Aplicación servida por HTTP | `C:\GGTO\proyecto\app` | D-15, RT-09 |
 | Documentación técnica | `C:\GGTO\proyecto\RepoTecnico` | Fuera del alcance HTTP |
-| Datos de trabajo (JSON + historial) | `C:\GGTO\datos` (incluye `historial.jsonl`, *append-only*, D-56) | D-19, RT-10 |
+| Datos de trabajo (JSON + historial + log) | `C:\GGTO\datos` (incluye `historial.jsonl`, *append-only*, D-56, y `incidencias.log` con rotación 5 MB × 5 archivos, **D-64**) | D-19, RT-10 |
 | Respaldo del maestro | `C:\GGTO\respaldo` (copia fechada al cierre; el supervisor la lleva a la red o a un pendrive) | D-49, RNF-16; D-36 (respaldo manual a demanda) |
 | Metadata de git | `C:\GGTO\proyecto\.git` (el directorio anterior `C:\GGTO\git\GGTO-v1.git` queda como respaldo del historial) | D-22, D-51, RT-11 |
 | CSV diario de entrada | raíz del proyecto: `C:\GGTO\proyecto\detalle_averias_gpon DD_MM_AAAA.csv` | RT-02, RT-08 |
@@ -912,7 +1002,7 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 | 5 | Restauración: elegir carpeta, previsualizar los archivos a reemplazar y confirmar; el sistema respalda el estado actual antes de reemplazar | Supervisor |
 | 6 | Al cierre de la jornada, la página **ofrece** la copia fechada del maestro en `C:\GGTO\respaldo\` (sin cifrado); el supervisor la lleva a la red o a un pendrive | Página / Supervisor |
 
-Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas versiones `.bak`** del maestro (D-42, §5.3). El **historial `historial.jsonl` se copia junto con el maestro** en el respaldo y **nunca se recorta** (D-49, D-56). **Objetivos (D-49, RNF-16): RTO 1 hora y RPO = cierre del día anterior.** El respaldo va a disco local **sin cifrado** y se conserva el **riesgo aceptado** de pérdida entre cierres. Los datos nunca viven en Google Drive ni en la nube; **no se copia nada sobre `G:`** (D-51).
+Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas versiones `.bak`** del maestro (D-42, §5.3). El **historial `historial.jsonl` se copia junto con el maestro** en el respaldo y **nunca se recorta** (D-49, D-56). El **log de accesos `incidencias.log`** (y sus copias rotadas) **no** entra en esta copia: su retención es su propia rotación de 5 MB × 5 archivos (D-58, **D-64**, §4.5.1). **Objetivos (D-49, RNF-16): RTO 1 hora y RPO = cierre del día anterior.** El respaldo va a disco local **sin cifrado** y se conserva el **riesgo aceptado** de pérdida entre cierres. Los datos nunca viven en Google Drive ni en la nube; **no se copia nada sobre `G:`** (D-51).
 
 ---
 
@@ -941,14 +1031,14 @@ Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas v
 
 ### 8.3 Pendientes técnicos de implementación antes de C4
 
-**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-56** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
+**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-64** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
 
 Los **4 pendientes técnicos** que siguen son los de implementación ya conocidos; el requisito derivado **S-RNF-02b** (umbral de rendimiento de la ingesta) pasa a ser el **n.º 4**, que `casos_uso.md` §5.1/§5.4 declara **pendiente técnico de calibración, no decisión del usuario**; su valor objetivo y su punto de medida ya quedan citados en §6.3 (`ingesta.js`) y en el criterio de terminado de **C2** (§9). El destino de las columnas del CSV que quedaba abierto —la **col. 18 `fecha_compromiso`**— quedó cerrado por **D-54** (no se persiste) y el **historial inmutable** —antes el n.º 2— quedó **decidido por D-56** (archivo `historial.jsonl` *append-only*, §4.4). **Ninguna decisión de usuario queda abierta en este documento.**
 
 | # | Pendiente técnico | Referencia |
 |---|---|---|
 | 1 | Fijar las **versiones** exactas de las librerías de `app/lib/` (PapaParse, Chart.js, jsPDF/autoTable) al descargarlas en C1 y registrarlas en `entornos_globales.md` §2 | `entornos_globales.md` §2 y §11 |
-| 2 | Definir el **canal y registro del escalamiento** con el emisor del CSV cuando el archivo del día no llega (hoy solo se registra la novedad en `datos/incidencias.log`, D-46) | H-15 / H-24 |
+| 2 | Definir el **canal y registro del escalamiento** con el emisor del CSV cuando el archivo del día no llega (hoy solo se registra la novedad en `datos/incidencias.log`, D-46, con la rotación de D-64) | H-15 / H-24 |
 | 3 | Fijar el **corte semanal exacto** de la métrica de averías concentradas (3 o más casos abiertos del mismo sector en la semana operativa, con umbral editable). **Valor por defecto declarado (no es una decisión de usuario pendiente, es un parámetro con valor por defecto):** semana operativa de **lunes a sábado, corte al cierre del sábado** (RN-08, RN-03/RN-04), con el umbral editable en `claves_clasificacion.umbral_concentracion` (3 por defecto, editable en CONFIGURACION) y alineado con CU-20; lo confirma el supervisor al operar el bloque CONCENTRADAS / ESPECIALES | D-25, RF-26, RN-08, RNF-06; CU-20 |
 | 4 | Fijar el **umbral de rendimiento propio de la ingesta** (criterio derivado **S-RNF-02b**): leer el CSV, validar el contrato posicional de 80 columnas, deduplicar e insertar la jornada en **menos de 3 s**, con punto de medida explícito (desde el clic en *Confirmar ingesta* hasta que el resumen aparece en pantalla, con 1.000 casos de maestro y 60 registros de CSV), alineado con D-24 y con RNF-02; es un **pendiente técnico de calibración en la implementación, no una decisión del usuario** | **`casos_uso.md` CU-08 CA-14 y §5.1/§5.4** (requisito derivado); RNF-02, D-24; §6.3 (`ingesta.js`) |
 
@@ -995,10 +1085,13 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | **Escritura verificada** | Guardado que copia el maestro a `.bak`, escribe en un temporal, relee y compara antes de confirmar (D-42, RNF-15) |
 | **Historial inmutable / JSONL** | Registro *append-only* `historial.jsonl` (una línea JSON por cambio, D-56): se añade al final y **nunca** se edita ni se borra; su lectura alimenta la auditoría de CU-15 |
 | **RTO / RPO** | Objetivos de recuperación del respaldo: RTO 1 hora (tiempo para restaurar) y RPO el cierre del día anterior (pérdida máxima admitida) — D-49, RNF-16 |
+| **Rol** | Campo `rol` de `tecnicos.json` con dos valores —`Operador` y `Supervisor`— y `Operador` por defecto; junto con `status` determina la matriz de permisos (D-61, D-35) |
+| **Arranque en frío** | Primer arranque con `tecnicos.json` vacío: la página ofrece crear el **primer supervisor** (`rol = Supervisor`, `clave_cambio_obligatorio = SI`), único supuesto de alta de padrón sin sesión (D-62) |
+| **Log de accesos / `incidencias.log`** | Archivo de texto en `C:\GGTO\datos` con los intentos fallidos de sesión y las acciones denegadas por rol (fecha/hora, `P00` intentado y motivo, **sin datos personales**); rota a **5 MB × 5 archivos** (D-57, D-58, D-64) |
 
 ---
 
-## 11. Anexo — Decisiones D-01 a D-56
+## 11. Anexo — Decisiones D-01 a D-64
 
 | ID | Decisión (una línea) |
 |---|---|
@@ -1057,3 +1150,7 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-53 | Las columnas 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) **no se persisten** (A-01): el rastro de origen se limita a la col. 20 (`ultimo_usuario` → `usuario_modificacion`) y a la fecha de ingesta |
 | D-54 | La col. 18 (`fecha_compromiso`) **no se persiste** (A-04): ningún requisito la usa y los «citados» se determinan por `fecha_cita` (D-30) |
 | D-56 | **Historial inmutable:** cada cambio de un caso (`status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, cierre, `sacas`, `observaciones`) se **añade** a `C:\GGTO\datos\historial.jsonl` (*append-only*, JSON Lines) con `fecha_hora`, `operador` (`P00`), `id_averia`, `campo`, `valor_anterior`, `valor_nuevo` y `accion` (`edicion`/`cierre`/`reapertura`/`asignacion`/`ingesta`); nada se borra ni se sobrescribe y el maestro conserva además el último cambio (§4.4); cierra H-10 y completa RNF-09 |
+| D-61 | **Campo `rol` en `tecnicos.json`:** valores `Operador` y `Supervisor`, por defecto `Operador`; junto con `status` determina la matriz de permisos de D-35 (§3.4 y §4.5) |
+| D-62 | **Arranque en frío:** si `tecnicos.json` está vacío, la página ofrece crear el **primer supervisor** —único caso en que se crea un padrón sin sesión—, que queda con `rol = Supervisor` y `clave_cambio_obligatorio = SI` (§3.4 y §4.5) |
+| D-63 | **Formato de la credencial:** `clave_hash` es el **SHA-256 en hexadecimal (64 caracteres)** de `clave_sal + ":" + contraseña` codificada en **UTF-8**, y `clave_sal` es aleatoria por técnico (§4.5) |
+| D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (§4.5.1 y §5.4) |

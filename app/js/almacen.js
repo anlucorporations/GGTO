@@ -366,6 +366,83 @@
   }
 
   // ------------------------------------------------------------------
+  // Log de accesos: rotacion 5 MB x 5 archivos (D-58, D-64)
+  // ------------------------------------------------------------------
+  /** Lista los nombres de archivo presentes en la carpeta autorizada. */
+  function nombresDeCarpeta(carpeta) {
+    if (!carpeta || typeof carpeta.keys !== 'function') return Promise.resolve([]);
+    var nombres = [];
+    var iterador = carpeta.keys();
+    function paso() {
+      return iterador.next().then(function (r) {
+        if (r.done) return nombres;
+        nombres.push(r.value);
+        return paso();
+      });
+    }
+    return paso().catch(function () { return nombres; });
+  }
+
+  function tamanoDe(carpeta, nombre) {
+    return carpeta.getFileHandle(nombre).then(function (h) {
+      return h.getFile();
+    }).then(function (archivo) {
+      return archivo.size === undefined || archivo.size === null
+        ? archivo.text().then(function (t) { return t.length; })
+        : archivo.size;
+    }).catch(function () { return 0; });
+  }
+
+  /**
+   * Aplica la rotacion del log de accesos si el archivo vigente supera el
+   * limite (5 MB por defecto, D-58/D-64): `incidencias.log` pasa a
+   * `incidencias.1.log` y la cascada desplaza hasta `incidencias.5.log`,
+   * descartando el mas antiguo. Devuelve el plan aplicado.
+   */
+  function rotarLogIncidencias(almacen, opciones) {
+    var opts = opciones || {};
+    var carpeta = almacen.carpeta;
+    if (!carpeta || typeof carpeta.removeEntry !== 'function') {
+      return Promise.resolve({ rota: false, motivo: 'sin carpeta autorizada' });
+    }
+    return nombresDeCarpeta(carpeta).then(function (nombres) {
+      return tamanoDe(carpeta, CONST.ARCHIVO_INCIDENCIAS).then(function (tamano) {
+        var plan = N.planRotacionLog(CONST.ARCHIVO_INCIDENCIAS, {
+          tamano: tamano, maximo: opts.maximo, nombres: nombres
+        });
+        plan.motivo = plan.rota ? 'límite superado' : 'dentro del límite';
+        if (!plan.rota) return plan;
+        var cadena = Promise.resolve();
+        plan.descartados.forEach(function (nombre) {
+          cadena = cadena.then(function () {
+            return carpeta.removeEntry(nombre).catch(function () { return null; });
+          });
+        });
+        plan.pasos.forEach(function (paso) {
+          cadena = cadena.then(function () {
+            return carpeta.removeEntry(paso.hasta).catch(function () { return null; }).then(function () {
+              return carpeta.getFileHandle(paso.desde).then(function (h) {
+                return h.getFile();
+              }).then(function (archivo) {
+                return archivo.text();
+              }).then(function (texto) {
+                return carpeta.getFileHandle(paso.hasta, { create: true }).then(function (destino) {
+                  return destino.createWritable().then(function (w) {
+                    return w.write(texto).then(function () { return w.close(); });
+                  });
+                });
+              }).then(function () {
+                return carpeta.removeEntry(paso.desde).catch(function () { return null; });
+              });
+            });
+          });
+        });
+        return cadena.then(function () { return plan; });
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------
   // Historial inmutable: solo se añade al final (D-56)
   // ------------------------------------------------------------------
   function agregarHistorialCarpeta(lineas) {
@@ -528,6 +605,7 @@
     abrirCarpeta: abrirCarpeta,
     abrirArchivos: abrirArchivos,
     detectarConflicto: detectarConflicto,
+    rotarLogIncidencias: rotarLogIncidencias,
     descargar: descargar,
     errorDe: errorDe,
     // Punto de entrada para las pruebas de Node.js: permite inyectar una

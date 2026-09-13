@@ -290,7 +290,8 @@
       rejilla.appendChild(ctx.campo('Correo', iCorreo));
       rejilla.appendChild(ctx.campo('Especialidad', iEsp));
       rejilla.appendChild(ctx.campo('Status', sStatus, 'Un técnico Inactivo no puede iniciar sesión.'));
-      rejilla.appendChild(ctx.campo('Rol', sRol, 'Los dos únicos roles del sistema (D-55).'));
+      rejilla.appendChild(ctx.campo('Rol', sRol,
+        'Campo rol de tecnicos.json con los dos únicos roles del sistema (Operador por defecto, D-61, D-55).'));
       rejilla.appendChild(ctx.campo('Contraseña (8+ caracteres)', iClave,
         seleccion >= 0 ? 'Déjela vacía para conservar la actual.' : 'Obligatoria en el alta.'));
       rejilla.appendChild(ctx.campo('Repita la contraseña', iClave2));

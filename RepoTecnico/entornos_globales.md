@@ -16,7 +16,7 @@
 | Página (a crear en C1) | `C:\GGTO\proyecto\app\index.html` |
 | Hojas de estilo (a crear) | `...\app\css\estilos.css` |
 | Módulos JavaScript (a crear) | `...\app\js\` |
-| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56); respaldo **manual** a demanda del supervisor (D-36) |
+| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56) y `incidencias.log` (log de accesos con rotación 5 MB × 5 archivos, D-58, **D-64**); respaldo **manual** a demanda del supervisor (D-36) |
 | Librerías locales (a crear) | `...\app\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
 | Metadata de git (fuera de Google Drive) | `C:\GGTO\git\GGTO-v1.git` (la raíz apunta con un archivo `.git` que contiene `gitdir:`) |
@@ -53,7 +53,9 @@ GGTO-v1/
 |  |- cuadrillas.json         # RF-14
 |  |- sectores.json           # D-03
 |  |- claves_clasificacion.json  # D-11
-|  \- historial.jsonl         # historial inmutable de cambios (append-only, D-56)
+|  |- historial.jsonl         # historial inmutable de cambios (append-only, D-56)
+|  |- incidencias.log         # log de accesos; rota a incidencias.1..5.log (D-64)
+|  \- incidencias.1.log ... incidencias.5.log   # copias rotadas (5 MB × 5, D-64)
 \- lib/
    |- papaparse.min.js
    |- chart.umd.min.js
@@ -150,6 +152,47 @@ System Access API), no por HTTP.
 5. Al cierre de la jornada se ofrece la copia fechada `averias_AAAA-MM-DD_HHMM.json`; el supervisor
    la lleva a la red o a un pen drive.
 
+### 4.2 Log de accesos y su rotación (`incidencias.log`, D-57, D-58, D-64)
+
+`C:\GGTO\datos\incidencias.log` es el **log de la aplicación**: registra los **intentos fallidos de
+sesión** y las **acciones denegadas por el rol**, con **fecha y hora, `P00` intentado y motivo**, y
+**sin datos personales** (ni contraseña, ni hash, ni datos del abonado). La cuenta **no se bloquea**
+por acumular intentos fallidos (D-57): el log es la única constancia. No confundirlo con
+`historial.jsonl`, que es *append-only* y **solo** registra cambios de campos de un caso (D-56).
+
+**Regla de rotación (D-64): 5 MB × 5 archivos.** Se conservan el archivo vigente **más cinco copias
+rotadas**:
+
+| Archivo | Contenido |
+|---|---|
+| `incidencias.log` | Log vigente; aquí se escribe siempre |
+| `incidencias.1.log` | Rotación más reciente (el log que se desbordó) |
+| `incidencias.2.log` … `incidencias.5.log` | Rotaciones anteriores, de más nueva a más antigua |
+| *(descartado)* | El `incidencias.5.log` previo se elimina al rotar |
+
+**Procedimiento (lo ejecuta la página antes de cada escritura del log).**
+
+1. Se compone la línea del evento: `DD/MM/AAAA hh:mm | tipo | detalle | p00=<P00 intentado> | motivo`,
+   sin datos personales (D-58).
+2. Se mide el tamaño de `C:\GGTO\datos\incidencias.log`.
+3. Si **no supera 5 MB** (5 × 1024 × 1024 = **5.242.880 bytes**), se añade la línea al final del log
+   vigente y termina.
+4. Si **supera 5 MB**, se aplica la cascada **de mayor a menor** para no pisar archivos:
+   `incidencias.4.log` → `incidencias.5.log`, `incidencias.3.log` → `incidencias.4.log`,
+   `incidencias.2.log` → `incidencias.3.log`, `incidencias.1.log` → `incidencias.2.log`; y se
+   **descarta** (`removeEntry`) el `incidencias.5.log` anterior.
+5. `incidencias.log` → `incidencias.1.log` y se escribe la línea nueva en un `incidencias.log`
+   recién iniciado.
+6. Si la rotación falla, **no se interrumpe la operación**: el log nunca bloquea la sesión ni el
+   guardado (mismo criterio que D-46).
+
+**Comprobación en el puesto.** `Get-ChildItem C:\GGTO\datos\incidencias*.log | Select-Object Name, Length`
+debe mostrar como máximo seis archivos (`incidencias.log` y `incidencias.1.log` a `incidencias.5.log`)
+y ninguno de ellos superar los 5 MB. La lógica del plan de rotación es pura
+(`nucleo.js`: `planRotacionLog`, `nombreIncidencias`, `indiceIncidencias`) y su aplicación al disco
+vive en `almacen.js` (`rotarLogIncidencias`); la prueba con el límite parametrizado está en
+`pruebas/pruebas_c1b.mjs`.
+
 ---
 
 ## 5. Constantes y variables globales del front-end
@@ -161,6 +204,9 @@ System Access API), no por HTTP.
 | `ARCHIVO_DESPACHO` | `despacho.json` | Vista de campo. |
 | `ARCHIVO_ESTRUCTURA` | `estructura.json` | Contrato del CSV. |
 | `ARCHIVO_HISTORIAL` | `historial.jsonl` | Historial inmutable de cambios, *append-only* (D-56): se lee para la auditoría de CU-15 y se escribe solo añadiendo. |
+| `ARCHIVO_INCIDENCIAS` | `incidencias.log` | Log de accesos: intentos fallidos de sesión y acciones denegadas por rol, sin datos personales (D-57, D-58, **D-64**). |
+| `LOG_MAX_BYTES` | `5242880` (5 MB) | Tamaño a partir del cual `incidencias.log` rota a `incidencias.1.log` (**D-64**). |
+| `LOG_MAX_ARCHIVOS` | `5` | Copias rotadas conservadas (`incidencias.1.log` … `incidencias.5.log`); la más antigua se descarta (**D-64**). |
 | `ACCIONES_HISTORIAL` | `edicion` \| `cierre` \| `reapertura` \| `asignacion` \| `ingesta` | Valor de `accion` de cada línea del historial (D-56). |
 | `FORMATO_FECHA` | `DD/MM/AAAA` | Todas las fechas (RNF-06). |
 | `DIAS_SEMANA_OPERATIVA` | lunes … sábado | Cortes del MONITOREO (RN-08). |
@@ -265,6 +311,10 @@ e historial. Se usa como referencia de campos (A-17), no como entrada de la inge
 **Cerrado en este documento:** la carpeta `C:\GGTO\datos\` incluye `historial.jsonl` (historial
 inmutable *append-only*, **D-56**) en el árbol de estructura (§1.1), en la tabla de rutas (§1) y en
 la copia de respaldo (§4.1): el historial se copia junto con el maestro y **nunca se recorta**.
+También queda cerrado el **log de accesos `incidencias.log`** (**D-64**): su ruta (§1 y §1.1), sus
+constantes (§5), su contenido sin datos personales y su **procedimiento de rotación de 5 MB × 5
+archivos** (§4.2), además de su papel en la ficha de tratamiento de datos personales (§12).
+El log de accesos **no** entra en la copia de respaldo de §4.1: su retención es su propia rotación.
 
 ---
 
@@ -280,7 +330,7 @@ Materializa la «finalidad documentada» que exige D-28 y la política acordada 
 | **Origen** | El `.csv` diario que emite el área corporativa (`RT-02`). |
 | **Controles de acceso** | Servidor local solo en loopback sirviendo únicamente `app/`; `datos/` fuera del alcance HTTP; sesión obligatoria con `P00` + contraseña (hash con sal, caducidad 90 días); sin sesión válida no se muestra ningún dato (D-50); permisos por rol (D-35, RNF-12). |
 | **Trazabilidad** | `historial.jsonl` inmutable con cada cambio (D-56) y registro de intentos fallidos (D-57). |
-| **Registro de accesos** | Los intentos fallidos de sesión y las acciones denegadas por permisos se anotan en el log de la aplicación (5 MB × 5 archivos), sin datos personales (D-57, D-58). |
+| **Registro de accesos** | Los intentos fallidos de sesión y las acciones denegadas por permisos se anotan en el log de la aplicación `C:\GGTO\datos\incidencias.log` (fecha y hora, `P00` intentado y motivo, **sin datos personales**), con rotación por tamaño de **5 MB × 5 archivos** (D-57, D-58, **D-64**; procedimiento en §4.2). |
 | **Datos impresos** | El PDF de despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día (D-27, RNF-11). |
 | **Respaldo** | Copia fechada del maestro y del historial en `C:\GGTO\respaldo\` al cerrar la jornada, sin cifrado, bajo custodia del supervisor (D-49); RTO 1 hora, RPO del día anterior. |
 | **Paquete versionado** | Los CSV de entrada, los PDF de despacho y el `.xlsm` **siguen versionados** en los repositorios privados de GitHub y GitLab (D-36, D-58). Riesgo aceptado y declarado: son repositorios privados de la corporación; revisar con el área legal antes de dar acceso a terceros. |

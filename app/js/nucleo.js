@@ -66,7 +66,7 @@
     ],
     CAMPOS_TECNICO: [
       'nombre', 'cedula', 'P00', 'clave_hash', 'clave_sal', 'clave_fecha_cambio',
-      'clave_cambio_obligatorio', 'telefono', 'correo', 'especialidad', 'status'
+      'clave_cambio_obligatorio', 'telefono', 'correo', 'especialidad', 'status', 'rol'
     ],
     CAMPOS_FLOTA: [
       'CAN00', 'tipo', 'marca', 'modelo', 'placa', 'combustible', 'status',
@@ -105,6 +105,10 @@
       SIN_CASOS: '0 casos para los filtros aplicados',
       NO_APLICA: 'No aplica'
     },
+    // Log de accesos (D-58, D-64): intentos fallidos y acciones denegadas
+    ARCHIVO_INCIDENCIAS: 'incidencias.log',
+    LOG_MAX_BYTES: 5 * 1024 * 1024,
+    LOG_MAX_ARCHIVOS: 5,
     MSG_DIAS_CLAVE: 90,
     MSG_HORAS_SESION: 8
   };
@@ -638,6 +642,82 @@
   }
 
   // ------------------------------------------------------------------
+  // Log de accesos `incidencias.log`: rotacion 5 MB x 5 archivos (D-58, D-64)
+  // ------------------------------------------------------------------
+  /**
+   * Nombre de una copia rotada. Indice 0 es el archivo vigente; 1..N las
+   * copias `incidencias.1.log` ... `incidencias.5.log` (D-64).
+   */
+  function nombreIncidencias(indice) {
+    var n = parseInt(indice, 10);
+    if (!isFinite(n) || n <= 0) return CONST.ARCHIVO_INCIDENCIAS;
+    return 'incidencias.' + n + '.log';
+  }
+
+  /** Indice de una copia rotada, o 0 si el nombre no es del log de accesos. */
+  function indiceIncidencias(nombre) {
+    var texto = String(nombre || '');
+    if (texto === CONST.ARCHIVO_INCIDENCIAS) return 0;
+    var m = /^incidencias\.(\d+)\.log$/.exec(texto);
+    if (!m) return -1;
+    var n = parseInt(m[1], 10);
+    if (n < 1 || n > CONST.LOG_MAX_ARCHIVOS) return -1;
+    return n;
+  }
+
+  /**
+   * Decide si el log vigente debe rotar y como.
+   * `opciones.tamano` (bytes) y `opciones.maximo` (bytes) permiten probar la
+   * rotacion sin escribir 5 MB reales; `opciones.nombres` es el catalogo de
+   * archivos presentes en `datos/`.
+   * Devuelve { rota, tamano, maximo, archivo, destino, pasos, descartados },
+   * donde `pasos` es la lista ordenada de renombrados y `descartados` los
+   * archivos que se eliminan (el mas antiguo, D-64).
+   */
+  function planRotacionLog(entrada, opciones) {
+    var opts = opciones || {};
+    var tamano = Number(opts.tamano);
+    if (!isFinite(tamano) || tamano < 0) tamano = 0;
+    var maximo = Number(opts.maximo);
+    if (!isFinite(maximo) || maximo <= 0) maximo = CONST.LOG_MAX_BYTES;
+    var nombres = Array.isArray(opts.nombres) ? opts.nombres : [];
+    var indice = indiceIncidencias(entrada === undefined || entrada === null ? CONST.ARCHIVO_INCIDENCIAS : entrada);
+    var archivo = indice > 0 ? nombreIncidencias(indice) : CONST.ARCHIVO_INCIDENCIAS;
+    var pasos = [];
+    var descartados = [];
+    if (tamano > maximo) {
+      // Cascada de mayor a menor: la copia N se descarta y cada N-1 pasa a N
+      // (`incidencias.4.log` -> `incidencias.5.log`), para que 1 quede libre.
+      var indices = nombres.map(indiceIncidencias).filter(function (n) { return n >= 1; });
+      indices.sort(function (a, b) { return b - a; });
+      indices.forEach(function (n) {
+        if (n >= CONST.LOG_MAX_ARCHIVOS) {
+          descartados.push(nombreIncidencias(n));
+          return;
+        }
+        pasos.push({ desde: nombreIncidencias(n), hasta: nombreIncidencias(n + 1) });
+      });
+      pasos.push({ desde: archivo, hasta: nombreIncidencias(1) });
+    }
+    return {
+      rota: tamano > maximo,
+      tamano: tamano,
+      maximo: maximo,
+      archivo: archivo,
+      destino: nombreIncidencias(1),
+      pasos: pasos,
+      descartados: descartados
+    };
+  }
+
+  /** Lineas de log que se conservan: el vigente y las 5 copias rotadas (D-64). */
+  function archivosLogConservados() {
+    var lista = [CONST.ARCHIVO_INCIDENCIAS];
+    for (var i = 1; i <= CONST.LOG_MAX_ARCHIVOS; i++) lista.push(nombreIncidencias(i));
+    return lista;
+  }
+
+  // ------------------------------------------------------------------
   // Estructuras iniciales vacias (Paso 2.6 y 2.8: sin datos inventados)
   // ------------------------------------------------------------------
   function estructurasIniciales() {
@@ -742,6 +822,10 @@
     nombreCopiaCierre: nombreCopiaCierre,
     respaldosAExpedir: respaldosAExpedir,
     serializarJSON: serializarJSON,
+    nombreIncidencias: nombreIncidencias,
+    indiceIncidencias: indiceIncidencias,
+    planRotacionLog: planRotacionLog,
+    archivosLogConservados: archivosLogConservados,
     estructurasIniciales: estructurasIniciales
   };
 

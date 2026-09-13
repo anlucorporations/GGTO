@@ -4,7 +4,7 @@
 - **Fase:** 1 (Concepto) — documento vivo
 - **Versión:** v1
 - **Fecha:** 2026-09-12
-- **Fuente:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`, sección `[ESTRUCTURAS]` (L54-58) y decisiones D-01 a D-56.
+- **Fuente:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`, sección `[ESTRUCTURAS]` (L54-58) y decisiones D-01 a D-64.
 
 > Tipos: `T` texto, `F` fecha `DD/MM/AAAA`, `E` enumerado, `N` numérico, `B` booleano (`SI`/`NO`),
 > `L` lista. `PK` = clave primaria, `FK` = clave foránea, `OBL` = obligatorio.
@@ -182,19 +182,35 @@ H-10») y completa el **RNF-09**.
 
 ### 5.2 `tecnicos.json` — padrón de trabajadores (RF-12, L16)
 
-| Campo | Tipo | OBL | Notas |
-|---|---|---|---|
-| `nombre` | T | Sí | — |
-| `cedula` | T | Sí | Identificación. |
-| `P00` | T | Sí | Código de empleado, único; identifica la sesión del operador (D-29). |
-| `clave_hash` | T | Sí | Hash de la contraseña (SHA-256 con sal) — nunca en claro (D-39). |
-| `clave_sal` | T | Sí | Sal aleatoria por técnico para el hash (D-39). |
-| `clave_fecha_cambio` | F | Sí | Fecha del último cambio de contraseña; a los 90 días se exige cambiarla (D-39). |
-| `clave_cambio_obligatorio` | B | Sí | `SI` cuando el supervisor restablece la contraseña: el técnico debe cambiarla en el siguiente ingreso (RF-12, D-39). |
-| `telefono` | T | No | — |
-| `correo` | T | No | — |
-| `especialidad` | T | No | — |
-| `status` | E | Sí | Activo / inactivo. Un técnico inactivo no puede iniciar sesión. |
+| Campo | Tipo | OBL | Dominio / formato | Notas |
+|---|---|---|---|---|
+| `nombre` | T | Sí | — | — |
+| `cedula` | T | Sí | única | Identificación. |
+| `P00` | T | Sí | único y obligatorio | Código de empleado; es la credencial con la que el operador inicia sesión (D-29). |
+| `clave_hash` | T | Sí | **SHA-256 en hexadecimal, 64 caracteres** | Hash de `clave_sal + ":" + contraseña` en UTF-8; **nunca** en claro (**D-39, D-63**). |
+| `clave_sal` | T | Sí | aleatoria por técnico (32 hex con 16 bytes) | Sal propia de cada técnico: dos técnicos con la misma contraseña producen hashes distintos (**D-39, D-63**). |
+| `clave_fecha_cambio` | F | Sí | DD/MM/AAAA | Fecha del último cambio de contraseña; a los 90 días se exige cambiarla (D-39). |
+| `clave_cambio_obligatorio` | B | Sí | `SI` / `NO` | `SI` cuando el supervisor restablece la contraseña, cuando el supervisor crea el técnico y en el **primer supervisor del arranque en frío** (RF-12, D-39, **D-62**): el técnico debe cambiarla en el siguiente ingreso. |
+| `telefono` | T | No | — | — |
+| `correo` | T | No | — | — |
+| `especialidad` | T | No | — | — |
+| `status` | E | Sí | Activo / Inactivo | Un técnico inactivo no puede iniciar sesión. |
+| `rol` | E | Sí | `Operador` / `Supervisor` (por defecto `Operador`) | **Añadido por D-61:** junto con `status` determina la matriz de permisos de D-35/RNF-12 (el operador solo consulta y cierra los casos de su propia cuadrilla; el supervisor puede todo). Un registro sin `rol` se lee como `Operador`: una sesión de operador nunca queda habilitada como supervisora por accidente. |
+
+**Formato de la credencial (D-39, D-63).** `clave_hash` es el **SHA-256 en hexadecimal** (exactamente
+**64 caracteres** en minúsculas) de la cadena **`clave_sal + ":" + contraseña`** codificada en
+**UTF-8**; `clave_sal` es **aleatoria por técnico** (se genera con `crypto.getRandomValues`, 16 bytes
+→ 32 caracteres hex). Reglas:
+
+| Regla | Detalle | Fuente |
+|---|---|---|
+| Cadena sellada | `clave_sal + ":" + contraseña`, sin espacios añadidos | **D-63** |
+| Codificación | UTF-8 (los acentos y la `ñ` forman parte del hash) | **D-63**, §7 |
+| Algoritmo y salida | SHA-256 → hexadecimal de 64 caracteres, en minúsculas | **D-63** |
+| Sal | Aleatoria por técnico y regenerada en cada alta, cambio o restablecimiento | **D-63**, D-39 |
+| Contraseña | 8 caracteres como mínimo, **nunca** se guarda ni se muestra en claro | D-39 |
+| Caducidad y cambio obligatorio | 90 días, o `clave_cambio_obligatorio = SI` | D-39, **D-62** |
+| Roles | Solo `Operador` y `Supervisor` (no hay «administrador»); por defecto `Operador` | **D-61**, D-55 |
 
 ### 5.3 `flota.json` — padrón de vehículos (RF-13, L17)
 
@@ -240,6 +256,38 @@ H-10») y completa el **RNF-09**.
 | `normalizacion` | E | Sí | `estricta` (texto literal) / `normalizada` (mayúsculas, sin tildes, variantes LOSS/LOS y DAÑADA/DANADA). Por defecto `normalizada`. |
 | `campos_evaluados` | L | Sí | `ultimo_comentario`, `problema_reporte`, `informacion_1`, `informacion_2`. |
 
+### 5.7 `incidencias.log` — registro de accesos (D-57, D-58, D-64)
+
+Archivo de **texto plano** (una línea por evento, UTF-8 sin BOM) ubicado en
+`C:\GGTO\datos\incidencias.log`. Es el «log de la aplicación» de las decisiones D-57, D-58 y **D-64**:
+recoge los **intentos fallidos de sesión** y las **acciones denegadas por el rol**, y **no** es el
+historial de cambios de casos (`historial.jsonl`, §4), que es *append-only* y solo registra campos de
+un caso.
+
+| # | Elemento de la línea | Formato | OBL | Notas |
+|---|---|---|---|---|
+| 1 | Fecha y hora | `DD/MM/AAAA hh:mm` (texto, RNF-06) | Sí | Marca del evento, idéntica a `fecha_modificacion`. |
+| 2 | Tipo de evento | `sesion` / `permiso` / `conflicto` / `bootstrap` | Sí | Clasifica el registro. |
+| 3 | Detalle | texto libre acotado | Sí | Para `sesion`: `intento fallido` o `motivo` (vacío, longitud, p00, inactivo, hash); para `permiso`: la acción intentada; para `conflicto`: el archivo. |
+| 4 | `P00` intentado | texto | Sí en accesos | **P00 intentado**: el código tecleado en el intento fallido o el `P00` de la sesión que fue denegada. |
+| 5 | Motivo / resultado | texto | Sí | «Acción no permitida para su rol», «P00 o contraseña incorrectos», etc. |
+
+**Reglas de integridad y rotación**
+
+- **Sin datos personales** (D-58, **D-64**): se registran fecha y hora, el `P00` intentado y el
+  motivo; **nunca** la contraseña, el hash ni datos del abonado.
+- **La cuenta no se bloquea** por acumular intentos fallidos (D-57): el registro es la única
+  constancia.
+- **Rotación por tamaño (D-64):** cuando `incidencias.log` supera **5 MB** (5 × 1024 × 1024 bytes), se
+  renombra a **`incidencias.1.log`** y la cascada desplaza las copias hasta **`incidencias.5.log`**,
+  descartando el archivo más antiguo. Se conservan por tanto el log vigente **más 5 copias**
+  (`incidencias.log`, `incidencias.1.log` … `incidencias.5.log`), es decir **5 MB × 5 archivos**.
+  El procedimiento paso a paso está en `entornos_globales.md` §4.2.
+- **No es *append-only*** en el sentido de `historial.jsonl`: el archivo vigente se rota y las copias
+  más antiguas se descartan (D-58, D-64).
+- El log **no** entra en el respaldo de cierre (que copia los 10 archivos de trabajo, §4.1 de
+  `entornos_globales.md`); su retención es la de su propia rotación.
+
 ---
 
 ## 6. Relaciones entre entidades
@@ -281,7 +329,10 @@ erDiagram
 | Texto | Se conserva tal como llega del CSV; los typos de interfaz se corrigen solo en las etiquetas (A-06). |
 | Comparación de direcciones | Mayúsculas, sin tildes, tolerante a abreviaturas ("Av.", "Cll.", "Urb."), según D-03. |
 | Deduplicación | Por `id_averia`, comparación exacta de texto (RN-01). |
-| Codificación de archivos | UTF-8 sin BOM para todos los JSON y para el CSV de entrada; también para `historial.jsonl`, una línea JSON por cambio (D-56). |
+| Codificación de archivos | UTF-8 sin BOM para todos los JSON y para el CSV de entrada; también para `historial.jsonl`, una línea JSON por cambio (D-56), y para `incidencias.log`, una línea de texto por evento (D-64). |
+| Credencial de sesión | `clave_hash` = SHA-256 **hexadecimal de 64 caracteres** de `clave_sal + ":" + contraseña` en UTF-8; `clave_sal` aleatoria por técnico (**D-63**). |
+| Rol del técnico | `rol` ∈ {`Operador`, `Supervisor`}, por defecto `Operador`; junto con `status` fija la matriz de permisos (**D-61**, D-35). |
+| Rotación del log de accesos | `incidencias.log` rota a 5 MB: `incidencias.1.log` … `incidencias.5.log`, descartando el más antiguo (**D-64**). |
 | Nomenclatura de campos | Se respeta la del fuente, incluidos `Reparador Principal` (con espacio), `fechaResolucion` (camelCase) y `codigos_sin_gestion_en_VENAPP`. |
 
 ---
@@ -357,4 +408,8 @@ el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.cs
 
 **Ya resuelto (no es pendiente):** el **historial inmutable de cambios** queda decidido por
 **D-56**: `historial.jsonl` es *append-only*, con los 7 campos de §4, y cierra H-10 y completa
-RNF-09. El maestro conserva el último cambio y el historial conserva todos los anteriores.
+RNF-09. El maestro conserva el último cambio y el historial conserva todos los anteriores. También
+quedan cerrados en este diccionario: el **campo `rol` del padrón de técnicos** (**D-61**, §5.2), el
+**primer supervisor del arranque en frío** (**D-62**, §5.2), el **formato de la credencial**
+`clave_hash` = SHA-256 hexadecimal de `clave_sal + ":" + contraseña` en UTF-8 (**D-63**, §5.2) y el
+**log de accesos `incidencias.log`** con rotación de 5 MB × 5 archivos (**D-64**, §5.7).

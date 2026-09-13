@@ -130,21 +130,23 @@
   }
 
   // ------------------------------------------------------------------
-  // Registro de intentos y errores (D-57, D-58): sin datos personales
+  // Registro de intentos y errores (D-57, D-58, D-64): sin datos personales
   // ------------------------------------------------------------------
   function registrarLog(entradaLog) {
     var linea = N.marcaAhora() + ' | ' + entradaLog + '\n';
     raiz.console && raiz.console.info && raiz.console.info('GGTO log:', linea.trim());
     if (!(estado.almacen && estado.almacen.tipo === 'carpeta' && estado.almacen.carpeta)) return;
-    var handle = null;
-    estado.almacen.carpeta.getFileHandle('incidencias.log', { create: true }).then(function (h) {
-      handle = h;
-      return h.getFile();
-    }).then(function (archivo) {
-      return archivo.text();
-    }).then(function (previo) {
-      return handle.createWritable().then(function (w) {
-        return w.write(previo + linea).then(function () { return w.close(); });
+    // D-64: si `incidencias.log` supera 5 MB se rota a `incidencias.1.log`
+    // (hasta `incidencias.5.log`); el mas antiguo se descarta.
+    A.rotarLogIncidencias(estado.almacen).catch(function () { return null; }).then(function () {
+      return estado.almacen.carpeta.getFileHandle(CONST.ARCHIVO_INCIDENCIAS, { create: true });
+    }).then(function (handle) {
+      return handle.getFile().then(function (archivo) {
+        return archivo.text().then(function (previo) {
+          return handle.createWritable().then(function (w) {
+            return w.write(previo + linea).then(function () { return w.close(); });
+          });
+        });
       });
     }).catch(function () { /* el log nunca interrumpe la operación */ });
   }
