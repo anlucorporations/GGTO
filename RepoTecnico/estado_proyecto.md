@@ -39,9 +39,8 @@ y se cerraron **11 ambigüedades** del documento fuente. Quedan **7 ambigüedade
 - Se inicializó el repositorio git en la raíz del proyecto (`G:\Mi unidad\CANTV PDE\GGTO-v1`),
   rama `main`, con `.gitignore` (excluye `desktop.ini`, `.env*`, logs y respaldos de `datos/`).
 - Primer commit: `Fase 1: documentacion de concepto, propuesta y requerimientos de la pagina GGTO`.
-- **Repositorios remotos: pendientes.** No hay `gh` ni `glab` instalados ni credenciales
-  configuradas en el equipo; la creación remota requiere que el usuario aporte la plataforma y
-  un token, o cree los repositorios vacíos y entregue las URLs.
+- **Repositorios remotos: creados y sincronizados.** GitHub `https://github.com/anlucorporations/GGTO.git` (`origin`) y GitLab `https://gitlab.com/anlucorporations/ggto.git` (`gitlab`), ambos con las ramas `main` y `GGTOv1-DSH` en el mismo commit. Tenian solo un `README.md` inicial: la historia local se integro por merge, sin force-push.
+- **Incidente resuelto (D-22):** Google Drive inyecto 75 archivos `desktop.ini` dentro de `.git` (incluido `.git\refs\`), lo que rompio `git fetch` con `fatal: bad object refs/desktop.ini`. El directorio de git se movio a `C:\GGTO\git\GGTO-v1.git` y la raiz apunta alli con un archivo `.git` (`gitdir:`). No se perdio ningun commit.
 
 ### Archivos operativos detectados en la raíz (aún no analizados)
 

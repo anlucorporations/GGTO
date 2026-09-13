@@ -164,12 +164,23 @@ System Access API), no por HTTP.
 
 ## 7. Repositorios remotos
 
-| Repositorio | URL | Rama de trabajo |
+| Repositorio | URL | Ramas |
 |---|---|---|
-| GitLab | *pendiente de definir* | *pendiente* |
-| GitHub | *pendiente de definir* | *pendiente* |
+| GitHub (`origin`) | https://github.com/anlucorporations/GGTO.git | `main` (estable) y `GGTOv1-DSH` (desarrollo) |
+| GitLab (`gitlab`) | https://gitlab.com/anlucorporations/ggto.git | `main` (estable) y `GGTOv1-DSH` (desarrollo) |
 
 Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.**
+
+### 7.1 Ubicación del directorio git
+
+El directorio de git vive en **`C:\GGTO\git\GGTO-v1.git`** (fuera de Google Drive) y la raíz del
+proyecto apunta a él con un archivo `.git` que contiene `gitdir: C:/GGTO/git/GGTO-v1.git`.
+
+**Motivo (D-22):** Google Drive inyectó 75 archivos `desktop.ini` dentro de `.git` —incluido
+`.git\refs\desktop.ini`— y rompió la resolución de referencias con
+`fatal: bad object refs/desktop.ini`, lo que hizo fallar `git fetch`. Con el metadata fuera de la
+unidad sincronizada el problema no puede repetirse; además se reforzaron las exclusiones en
+`.git\info\exclude`. No se perdió ningún commit.
 
 ---
 
