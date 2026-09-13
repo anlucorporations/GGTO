@@ -82,6 +82,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-32 | **Desempate de la construcción (CNS):** primero la cuadrilla que tenga ese sector como zona preferente en `cuadrillas.sectores`; si hay varias o ninguna, la de menor carga del día y, en empate, el `id` menor; el supervisor puede cambiarla y el cambio queda registrado (A-10). |
 | D-33 | **Casos especiales** = los de clientes empresariales (`tipo_abonado = EMP`) y los referidos (`nivel = REF`) que siguen abiertos; tienen bandeja y seguimiento propios (A-09). |
 | D-34 | **Salida de reportes:** solo el despacho se emite en pantalla y PDF. El seguimiento semanal es **estadístico**: por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre de cada día, agrupado por semana del año con selector **Sem 1 a Sem 36**; sin Excel (A-08). |
+| D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. El rol «administrador» queda absorbido por el supervisor. |
 
 ---
 
@@ -103,14 +104,14 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-12 | CONFIGURACION/TECNICOS: padrón de trabajadores (Nombre, Cédula, P00, Teléfono, Correo, Especialidad, Status). | C1 | L16 |
 | RF-13 | CONFIGURACION/FLOTA: padrón de vehículos (CAN00, Tipo, Marca, Modelo, Placa, Combustible, Status, Estado Cauchos, Estado Fluidos, Estado General). | C1 | L17 |
 | RF-14 | CONFIGURACION/CUADRILLA: padrón de cuadrillas (`id, nombre, técnicos[], vehículo, turno, sectores[], status`). | C1 | L18; D-07 |
-| RF-15 | GESTION: bandeja de casos a consultar telefónicamente para clasificarlos correctamente antes del trabajo de calle. | C3 | L19 |
+| RF-15 | GESTION: bandeja de casos a consultar telefónicamente para clasificarlos correctamente antes del trabajo de calle; la opera el supervisor. | C3 | L19; D-35 |
 | RF-16 | INGESTA: cargar el CSV diario, filtrar por los datos de la central, extraer las columnas según `estructura.json` y descartar los casos ya existentes por `id_averia`. | C2 | L31-35 |
 | RF-17 | INGESTA: los casos que **no** contengan las palabras clave de fibra (LOSS ROJO, FALLA FIBRA, FIBRA DAÑADA) en `ultimo_comentario`, `problema_reporte`, `informacion_1` o `informacion_2` pasan a `status = GESTION`; los que sí las contienen quedan en `status = PEND`. | C2 | L36; D-05, D-11 |
 | RF-18 | INGESTA: completar `sector` agrupando por `direccion` según los sectores declarados; si la dirección no corresponde a ningún sector, solicitarlo al usuario. | C2 | L37 |
 | RF-19 | INGESTA: insertar los casos nuevos en `averias.json` con `ingreso = fecha de ingesta`, `clase = REP` y `nivel = COM`. | C2 | L38; D-06 |
 | RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal`. | C4 | L44 |
 | RF-21 | GENERALIDADES: tabla con las columnas resumen `nivel, clase, sector, id_averia, nombre, direccion, plan`. | C1 | L49 |
-| RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha. | C1 | L50; D-20 |
+| RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha, y el operador solo puede cerrar casos de su propia cuadrilla. | C1 | L50; D-20, D-35 |
 | RF-23 | GENERALIDADES: agrupar y filtrar por **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla), `clase`, `nivel` y `estatus`; incluye la edición manual de `clase` y `nivel`. | C1 | L51; D-06, D-23 |
 | RF-24 | GENERALIDADES: persistir en `averias.json` cada modificación de un caso. | C1 | L52 |
 | RF-25 | Reportes: el despacho diario se emite en pantalla y en PDF (por cuadrilla); el seguimiento semanal es estadístico — ingreso del día vs. reparadas del día con la línea del pendiente al cierre, agrupado por semana del año (Sem 1 a Sem 36) con selector de semana. | C6 | L2; D-34 |
@@ -138,6 +139,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre de caso registra operador y fecha/hora del cambio (H-10). | Revisión del historial tras una sesión de cambios. |
 | RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
 | RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |
+| RNF-12 | Control de acceso por rol: el operador solo ve y cierra los casos de su cuadrilla (`Reparador Principal` = cuadrilla del técnico identificado); el supervisor tiene todas las acciones y es quien opera la bandeja GESTION (H-01, D-35). | Prueba con un operador de la cuadrilla 1: no debe poder editar ni cerrar casos de la cuadrilla 2, ni tocar los padrones. |
 
 ---
 

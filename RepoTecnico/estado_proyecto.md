@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **34 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **35 decisiones**
 y se cerraron **11 ambigüedades** del documento fuente. Queda **1 ambigüedad abierta** (A-08), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -106,6 +106,7 @@ ingesta debe rediseñarse.
 | D-32 | Desempate de construcción: zona preferente → menor carga → id menor, con ajuste manual. | 10 |
 | D-33 | Casos especiales = empresariales (EMP) o referidos (REF) abiertos. | 10 |
 | D-34 | Despacho en pantalla + PDF; seguimiento semanal estadístico (ingreso vs. reparadas por día + línea de pendiente, Sem 1 a Sem 36). | 10 |
+| D-35 | Permisos: operador solo cierra casos de su cuadrilla; supervisor hace todo, incluida la bandeja GESTION. | 11 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
