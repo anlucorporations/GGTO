@@ -87,6 +87,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
 | D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
 | D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
+| D-40 | **Accesibilidad (RNF-13):** navegación completa por teclado (Tab, Enter y flechas en la tabla), foco visible, `label` asociado a cada campo, contraste mínimo 4,5:1 y texto alternativo en los gráficos. |
 
 ---
 
@@ -144,6 +145,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
 | RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |
 | RNF-12 | Control de acceso por rol: el operador solo ve y cierra los casos de su cuadrilla (`Reparador Principal` = cuadrilla del técnico identificado); el supervisor tiene todas las acciones y es quien opera la bandeja GESTION (H-01, D-35). | Prueba con un operador de la cuadrilla 1: no debe poder editar ni cerrar casos de la cuadrilla 2, ni tocar los padrones. |
+| RNF-13 | Accesibilidad: toda la operación es posible con teclado (Tab, Enter y flechas en la tabla), el foco es visible, cada campo tiene `label` asociado, el contraste es de al menos 4,5:1 y cada gráfico tiene tabla o texto alternativo equivalente (H-05, D-40). | Recorrido completo de las 7 pestañas solo con teclado y verificación de contraste con herramienta automática. |
 
 ---
 
