@@ -42,7 +42,7 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 22 | `extra` | T | No | — | CSV | Red / planta externa (D-04). |
 | 23 | `ups` | T | No | — | CSV | Red / planta externa — significado por precisar (A-11). |
 | 24 | `codigos_sin_gestion_en_VENAPP` | T | No | — | CSV | Códigos de casos sin gestión en VENAPP. |
-| 25 | `status` | E | Sí | `PEND` / `CERRADO` / `GESTION` | Ingesta / manual | `PEND` con palabras clave de fibra; `GESTION` sin ellas (D-05). |
+| 25 | `status` | E | Sí | `PEND` / `ASGN` / `CERRADO` / `GESTION` | Ingesta / manual | `PEND` con palabras clave de fibra; `GESTION` sin ellas (D-05); `ASGN` proviene del estatus del CSV (D-13; conflicto pendiente, A-18). |
 | 26 | `resolucion` | E | No | `IVR` / `COS` / `COLA` | Manual | Se completa al cerrar el caso (RF-03, RF-22). |
 | 27 | `fechaResolucion` | F | No | DD/MM/AAAA | Manual | Fecha de cierre. |
 | 28 | `observaciones` | T | No | texto libre | Manual | Notas de gestión. |
@@ -84,7 +84,7 @@ si el agrupamiento se calcula en memoria.
 
 ## 3. `estructura.json` — contrato de extracción del CSV
 
-Especificación del mapeo columna-CSV → campo-JSON que usa la ingesta (RF-16). **Corrección tras verificar el CSV real (ver Anexo A):** el mapeo no puede ser por nombre —hay encabezados repetidos— sino por **posición** (índice de columna). No contiene
+Especificación del mapeo columna-CSV → campo-JSON que usa la ingesta (RF-16). **Corrección tras verificar el CSV real (ver Anexo A):** el mapeo no puede ser por nombre —hay encabezados repetidos— sino por **posición** (índice de columna), y según **D-12** solo se declaran las columnas necesarias, no las 80. No contiene
 datos, solo la lista de columnas esperadas y su correspondencia.
 
 | # | Campo (JSON) | Tipo | Columna esperada en el CSV | Notas |

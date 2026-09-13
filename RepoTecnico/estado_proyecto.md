@@ -14,9 +14,10 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **3 bloques de entrevista** (9 preguntas) con los que se fijaron **11 decisiones**
-y se cerraron **7 ambigüedades** del documento fuente. Quedan **7 ambigüedades abiertas**, todas
-asociadas a los ciclos C4–C6, más dos pendientes administrativos (repositorios remotos y GCP).
+Se realizaron **5 bloques de entrevista** (18 preguntas) con los que se fijaron **15 decisiones**
+y se cerraron **9 ambigüedades** del documento fuente. Quedan **9 ambigüedades abiertas**, que
+**sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
+(repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
 
 ---
 
@@ -82,7 +83,11 @@ ingesta debe rediseñarse.
 | D-05 | RN-03: con palabras clave de fibra → `PEND`; sin ellas → `GESTION`. | 2 |
 | D-06 | Todo caso ingerido entra `clase = REP`; la corrección a `CNS`/`REF` es manual. | 3 |
 | D-07 | Ficha de cuadrilla: `id, nombre, técnicos[], vehículo, turno, sectores[], status`. | 3 |
-| D-08 | Los encabezados del CSV diario coinciden con `estructura.json`; ingesta genérica. | 3 |
+| D-08 | **Revisada — sin efecto:** el CSV real tiene 80 columnas con `;` y encabezados repetidos; el contrato vigente es el mapa posicional de **D-12**. | 4 |
+| D-12 | `estructura.json` = mapa posicional solo de las columnas necesarias. | 5 |
+| D-13 | `ASGN` se incorpora como cuarto estado del maestro. | 5 |
+| D-14 | Se descartan los datos de `alta_manual.csv`; los casos se cargan manualmente. | 5 |
+| D-15 | Servidor local solo en loopback y sirviendo únicamente el subdirectorio de la aplicación. | auditoría |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -91,10 +96,10 @@ ingesta debe rediseñarse.
 
 ## 4. Ambigüedades
 
-**Cerradas (7):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
-A-12 (D-08), A-13 (D-06).
+**Cerradas (9):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
+A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14).
 
-**Abiertas (7):**
+**Abiertas (9):**
 
 | ID | Ambigüedad | Ciclo |
 |---|---|---|
@@ -105,8 +110,10 @@ A-12 (D-08), A-13 (D-06).
 | A-10 | Criterio de desempate de cuadrilla para la construcción. | C4 |
 | A-11 | Significado de `P00` (técnicos) y `ups` (averías). | C1 |
 | A-14 | `despacho.json` no incluye `sector` ni cuadrilla, necesarios para agrupar. | C4 |
+| A-16 | Las fechas del CSV traen hora y el maestro usa DD/MM/AAAA. | C2 |
+| A-18 | Conflicto entre `estatus = ASGN` del CSV y la regla RN-03. | C2 |
 
-Ninguna de ellas bloquea el arranque del ciclo C1.
+**A-11 bloquea C1**; A-04, A-16 y A-18 condicionan C2; A-05, A-10 y A-14 afectan a C4; A-08 y A-09 a C6. Corrección aplicada tras la auditoría (H-06).
 
 ---
 

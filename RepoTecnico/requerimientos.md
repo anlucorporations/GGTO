@@ -27,7 +27,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 | Término | Significado | Fuente |
 |---|---|---|
-| `estatus` | Estado del caso: `PEND` (pendiente), `CERRADO`, `GESTION` (requiere verificación telefónica). | L8, L56 |
+| `estatus` | Estado del caso: `PEND` (pendiente), `ASGN` (asignado), `CERRADO`, `GESTION` (requiere verificación telefónica). | L8, L56; col. 27 del CSV; D-13 |
 | `resolucion` | Vía de cierre: `IVR`, `COS`, `COLA`. | L8, L56 |
 | `sacas` | Indicador `SI`/`NO` asociado al cierre del caso. | L8, L56 |
 | `nivel` | `REF` (referido) / `COM` (común o residencial). | L56 |
@@ -55,10 +55,14 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-05 | RN-03: sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. |
 | D-06 | Todo caso ingerido entra con `clase = REP`; la corrección a `CNS` o `REF` es manual en CASOS o GESTION. |
 | D-07 | Ficha de cuadrilla: `id, nombre, técnicos[], vehículo, turno, sectores[], status`. |
-| D-08 | Los encabezados del CSV diario son los declarados en `estructura.json`; la ingesta es genérica sobre ese contrato. |
+| D-08 | **Revisada el 12/09/2026 — sin efecto:** la verificación del CSV real mostró 80 columnas con `;` y encabezados repetidos. El contrato vigente es el de **D-12** (mapa posicional). |
 | D-09 | El archivo maestro de casos se llama `averias.json` (la mención a `averia.json` en L35 es un error de tipeo). |
 | D-10 | La `informacion` duplicada son dos columnas distintas: `informacion_1` e `informacion_2`. |
 | D-11 | Las palabras clave de clasificación son una lista editable en CONFIGURACION con búsqueda normalizada. |
+| D-12 | `estructura.json` es un mapa **posicional** que declara **solo las columnas necesarias** (filtro de central, datos del caso, despacho y gestión), no las 80 del CSV. |
+| D-13 | `ASGN` (asignado) se incorpora como **cuarto valor** del estatus en el maestro, además de PEND, CERRADO y GESTION. |
+| D-14 | Se **descartan los datos** de `alta_manual.csv`; los casos se cargan manualmente desde la página. No se usa como modelo obligatorio de campos. |
+| D-15 | El servidor local escucha **solo en loopback** (`--bind 127.0.0.1`) y sirve únicamente el subdirectorio de la aplicación, dejando `datos/` fuera del alcance HTTP (H-01 de la auditoría). |
 
 ---
 
@@ -68,7 +72,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|---|
 | RF-01 | Navegación por 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION. | C1 (armazón) | L6-19 |
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
-| RF-03 | PANEL: actualizar `status` (PEND/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. | C3 | L8 |
+| RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. | C3 | L8; D-13 |
 | RF-04 | PANEL: ingresar casos nuevos con datos sencillos (Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, etc.). | C3 | L8 |
 | RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (curva lunes–sábado), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9 |
 | RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación). | C5 | L10 |
@@ -124,6 +128,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-06 | Desde `file://` el navegador no puede leer ni escribir los JSON del disco: se requiere servidor local + File System Access API (D-01). |
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
+| RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
 
 ---
 
@@ -166,13 +171,14 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
 | A-11 | **Evidencia nueva:** en el CSV, `ups` toma los valores `RES` (55) y `NRES` (1), junto a `unidad_negocio` (`CANTV RESIDENCIAL` / `CANTV EMPRESAS`). `P00` sigue sin explicación. | ¿`ups` es el tipo de cliente residencial/no residencial y qué representa `P00` en TECNICOS? | C1 |
-| A-12 | **Reabierta:** el CSV real tiene **80 columnas** con `;` como separador (no las 19 de `estructura.json`) y encabezados repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3). | ¿Se redefine `estructura.json` como mapa **posicional** (índice de columna) con el subconjunto de campos que se copian al maestro? | C2 |
+| A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
-| A-15 | El CSV trae `estatus` con valores `PEND` (53) y `ASGN` —asignado— (3), no declarados en el fuente (L56: PEND/CERRADO/GESTION). | ¿`ASGN` se incorpora como estado propio, se mapea a `PEND` o se ignora al ingerir? | C2 |
+| A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |
 | A-16 | Las fechas del CSV incluyen hora (`17/07/2026 11:38:20 a.m.`), mientras el maestro usa DD/MM/AAAA (RNF-06). | ¿Se recorta a fecha al ingerir y se conserva la hora aparte, o se guarda el valor completo? | C2 |
-| A-17 | `alta_manual.csv` (raíz del proyecto, 42 columnas) parece el registro manual actual: usa ids propios (`REF-REP-05`), `Sector` como nombre («Prados del Este») y campos «1ª Vez / Última Vez visto» e «Historial (fecha:Grupo)». | ¿Se toma como modelo de campos para CASOS y para el seguimiento de casos especiales (A-09)? | C1 / C6 |
+| A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
+| A-18 | Si el CSV trae `estatus = ASGN` y el texto **no** contiene palabras clave de fibra, RN-03 lo enviaría a `GESTION` y el CSV diría `ASGN`. | ¿Prevalece el estatus del CSV o la regla RN-03? (H-03/P10 de la auditoría) | C2 |
 
-Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05) y A-13 (D-06). A-12 volvió a abrirse tras verificar el CSV real.
+Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-04, A-05, A-08, A-09, A-10, A-11, A-14, A-16 y A-18.
 
 ---
 

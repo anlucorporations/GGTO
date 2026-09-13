@@ -96,12 +96,13 @@ fijadas). No se usan CDN: la central puede no tener internet (RT-07).
 # servir-ggto.ps1 — levanta el servidor local de la pagina GGTO y abre el navegador
 $puerto = 8787
 $raiz   = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$app    = Join-Path $raiz "app"   # solo la aplicacion; datos/ queda fuera del alcance HTTP
 
-Write-Host "Sirviendo $raiz en http://localhost:$puerto ..."
+Write-Host "Sirviendo $app en http://localhost:$puerto (solo loopback) ..."
 Start-Process "http://localhost:$puerto/index.html"
 
-# Opcion A: Python
-python -m http.server $puerto --directory $raiz
+# Opcion A: Python — bind a loopback y sin exponer datos/
+python -m http.server $puerto --bind 127.0.0.1 --directory $app
 
 # Opcion B (si no hay Python): Node.js
 # npx --yes serve -l $puerto $raiz
@@ -113,12 +114,19 @@ Alternativa en lote (`servir-ggto.bat`):
 @echo off
 cd /d "%~dp0"
 start "" http://localhost:8787/index.html
-python -m http.server 8787
+python -m http.server 8787 --bind 127.0.0.1 --directory app
 ```
 
 **Nota importante:** la página debe abrirse siempre desde `http://localhost:8787`, nunca con
 doble clic sobre `index.html` (`file://`), porque en `file://` el navegador bloquea la lectura
 de los JSON y la API de archivos (RT-06).
+
+**Seguridad (H-01 de la auditoría):** servir la raíz del proyecto exponía `datos/averias.json` por
+HTTP. Por eso el lanzador usa `--bind 127.0.0.1` (solo escucha en el propio equipo) y
+`--directory app`, de modo que los archivos servidos son únicamente los de la aplicación. En
+consecuencia, `index.html`, `css/`, `js/` y `lib/` deben vivir dentro de `app/`, y `datos/`
+permanece en la raíz del proyecto: la página accede a los JSON con el selector de archivos (File
+System Access API), no por HTTP.
 
 ---
 
