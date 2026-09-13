@@ -53,6 +53,7 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 33 | `fecha_reporte` | F | No | DD/MM/AAAA | CSV (col. 15) | Fecha del reporte, recortada de la marca de tiempo (D-21). |
 | 34 | `fecha_reporte_original` | T | No | texto del CSV | CSV | Valor completo con hora (`17/07/2026 11:38:20 a.m.`) conservado para trazabilidad (D-21). |
 | 35 | `fecha_cita` | F | No | DD/MM/AAAA | CSV (col. 19) | Cita agendada con el abonado; si coincide con el día del despacho el caso es «citado» (D-30). |
+| 36 | `fecha_asignacion` | F | No | DD/MM/AAAA | Despacho | Fecha de la última asignación de cuadrilla; alimenta la métrica «asignados por día» del MONITOREO (D-48). |
 
 **Reglas de integridad**
 - `id_averia` es único; la ingesta descarta cualquier caso ya presente (RN-01, RNF-04).

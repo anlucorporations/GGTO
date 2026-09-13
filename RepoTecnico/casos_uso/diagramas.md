@@ -2,12 +2,13 @@
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026. **Revisión:** 14/09/2026 (corrección de H-06, H-07, H-33 y H-34 y aplicación de D-35, D-38 y D-39).
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 14/09/2026 (corrección de H-06, H-07, H-33 y H-34 y aplicación de D-35, D-38, D-39, D-40 y **D-41**).
 - **Documento hermano:** `RepoTecnico/casos_uso.md` (22 casos de uso CU-01 a CU-22, con Gherkin, EARS y trazabilidad inversa a los 29 RF).
 - **Fuentes:** `RepoTecnico/requerimientos.md`, `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/auditoria_fase1.md`, `RepoTecnico/estado_proyecto.md`, `RepoTecnico/casos_uso/auditoria_casos_uso.md`.
 - **Notación:** los diagramas de casos de uso se expresan como *flowchart* de Mermaid (no existe un tipo UML nativo de casos de uso en Mermaid): los rectángulos con esquinas redondeadas son los **actores**, las elipses son los **casos de uso** y las flechas discontinuas etiquetadas `"<<include>>"` y `"<<extend>>"` son las relaciones UML. Los nombres de actores y de casos de uso son idénticos a los de `casos_uso.md`.
 - **Convención única de dirección de las relaciones (H-06):** **el caso de uso que usa al otro lo incluye** (`A include B` = A invoca a B) y **el caso de uso que añade comportamiento al otro lo extiende** (`A extend B` = A añade comportamiento a B). Esta convención se aplica de forma idéntica en los **8 bloques**: §1 (vista completa), §2.1, §2.2, §2.3, §3.1, §3.2, §3.3 y §4. El bloque **§1 es la vista canónica**: toda relación de los bloques por actor debe aparecer en §1 y en la misma dirección.
 - **Roles (D-35):** el rol «administrador» está absorbido por el **supervisor**; en los diagramas, el nodo `SUP` representa al **supervisor (función administrativa)**. La bandeja GESTION (CU-13) es exclusiva del supervisor (D-35, RNF-12). La sesión exige `P00` **y** contraseña (D-29, D-39).
+- **Concurrencia (D-41, RNF-14):** no hay bloqueo de archivo. Todo guardado **relee** el archivo y compara su marca de modificación (`fecha_modificacion`) con la capturada al cargarlo; **si difieren, impide el guardado** y exige que el usuario elija entre *Recargar* o *Sobrescribir*, indicando quién y cuándo modificó por última vez (`usuario_modificacion` y `fecha_modificacion`). Los bloques §3.1, §3.2 y §3.3 muestran ese aviso de conflicto en su rama alternativa.
 - **Estados del caso (D-38):** el maestro conserva **tres** estados —`PEND`, `GESTION` y `CERRADO`—; el `estatus = ASGN` del CSV se ingiere como **`PEND`** y **no** existe un cuarto estado en el maestro (queda sin efecto D-13).
 - **Los 8 bloques Mermaid de este documento:** §1 vista completa (bloque 1), §2.1 operador (bloque 2), §2.2 supervisor (bloque 3), §2.3 supervisor — función administrativa (bloque 4), §3.1 secuencia de la ingesta (bloque 5), §3.2 secuencia del cierre (bloque 6), §3.3 secuencia del despacho y su PDF (bloque 7) y §4 ciclo de vida del caso (bloque 8).
 
@@ -298,11 +299,18 @@ sequenceDiagram
         ING-->>UI: Resumen: 51 nuevos, 5 por central, 0 duplicados, 7 sin sector, N rechazadas
         UI-->>OP: Muestra el resumen y pide confirmación
         OP->>UI: Confirma la ingesta
-        UI->>MAE: Escribe los casos nuevos (respaldo previo, CU-21)
-        MAE-->>UI: Confirmación de escritura
-        UI->>MAE: Relee el archivo y verifica el conteo
-        MAE-->>UI: 51 id_averia presentes
-        UI-->>OP: "Ingesta completada: 51 casos nuevos (14 PEND + 37 GESTION)"
+        UI->>MAE: Relee la marca de modificación y la compara con la de la carga (D-41, RNF-14)
+        alt La marca de modificación cambió
+            MAE-->>UI: fecha_modificacion distinta + usuario_modificacion
+            UI-->>OP: "Conflicto: el archivo fue modificado por <usuario> el <fecha>. Recargue o sobrescriba"
+            Note over UI,MAE: No se escribe ningún caso hasta que el operador decida (D-41)
+        else La marca coincide
+            UI->>MAE: Escribe los casos nuevos (respaldo previo, CU-21)
+            MAE-->>UI: Confirmación de escritura
+            UI->>MAE: Relee el archivo y verifica el conteo
+            MAE-->>UI: 51 id_averia presentes
+            UI-->>OP: "Ingesta completada: 51 casos nuevos (14 PEND + 37 GESTION)"
+        end
     end
 ```
 
@@ -342,8 +350,9 @@ sequenceDiagram
         else Enum o formato de fecha inválidos
             CAS-->>UI: Error "Fecha inválida: use DD/MM/AAAA" o "Sacas debe ser SI o NO"
             UI-->>OP: No escribe el archivo (RNF-10)
-        else Datos válidos
-            CAS->>ALM: Persiste status = CERRADO, resolucion, fechaResolucion, observaciones, sacas
+        else Datos válidos y sin conflicto de concurrencia
+            CAS->>ALM: Relee la marca de modificación y la compara con la de la carga (D-41, RNF-14)
+            ALM->>MAE: Persiste status = CERRADO, resolucion, fechaResolucion, observaciones, sacas
             ALM->>MAE: Escribe usuario_modificacion y fecha_modificacion (D-16)
             MAE-->>ALM: Confirmación de escritura
             ALM->>MAE: Relee el archivo y verifica el cierre
@@ -357,6 +366,11 @@ sequenceDiagram
         UI-->>OP: Muestra el cierre vigente y ofrece "Reabrir caso"
         OP->>UI: Confirma la reapertura
         UI->>MAE: status = GESTION + nota de reapertura en observaciones
+    end
+    opt Otra sesión modificó el maestro desde la carga
+        UI->>MAE: Relee fecha_modificacion y usuario_modificacion
+        UI-->>OP: "Conflicto: el archivo fue modificado por 12345 el 13/09/2026 10:05. Recargue o sobrescriba"
+        Note over UI,MAE: El cierre no se escribe hasta que el operador elija recargar o sobrescribir (D-41, RNF-14)
     end
 ```
 
@@ -393,6 +407,7 @@ sequenceDiagram
     DSP->>DSP: Asigna la construcción (clase = CNS) a una sola cuadrilla con reparaciones en ese sector (RN-06)
     DSP->>DSP: Desempata por zona preferente, luego menor carga del día y luego id menor (D-32)
     SUP->>UI: Pulsa "Confirmar despacho"
+    DSP->>MAE: Relee la marca de modificación y la compara con la de la carga (D-41, RNF-14)
     DSP->>MAE: Escribe Reparador Principal en cada caso asignado (D-37)
     DSP->>DES: Escribe el registro del día con sector, Reparador Principal y fecha_despacho (D-31, RT-05)
     MAE-->>DSP: Confirmación de escritura
@@ -471,7 +486,7 @@ stateDiagram-v2
 1. **`GESTION → ASGN`** («la gestión telefónica decide la asignación»): **eliminada** por D-38. «Enviar a calle» (CU-13) deja el caso en `PEND` y la asignación de cuadrilla la hace el despacho (CU-16) sin cambiar el estado.
 2. **`PEND → GESTION`** («reclasificación manual a gestión telefónica»): **eliminada** por H-07. Si el usuario decide que debe existir, debe añadirse primero a un caso de uso con su validación de enum y su auditoría (por ejemplo CU-10 editando `status`, o CU-13), y solo entonces volver a dibujarse aquí.
 3. **`ASGN → PEND`** («se retira la asignación de cuadrilla»): **eliminada** por D-38 y porque ningún caso de uso la implementa. Retirar una asignación es hoy una edición de `Reparador Principal` en CU-16 sin cambio de estado.
-4. **Concurrencia y escritura atómica** del maestro: `&lt;PENDIENTE&gt;` de decisión del usuario (H-10, H-11); el diagrama no dibuja ninguna guarda que el sistema no pueda ejecutar.
+4. **Concurrencia:** **decidida** por D-41 y RNF-14 (sin bloqueo; relectura de la marca de modificación y decisión obligatoria entre recargar o sobrescribir). Queda `&lt;PENDIENTE&gt;` únicamente la **escritura atómica y el versionado** del maestro (H-11); el diagrama no dibuja ninguna guarda que el sistema no pueda ejecutar.
 
 ---
 
@@ -483,9 +498,9 @@ stateDiagram-v2
 | §2.1 | Operador de la central | Casos de uso por actor | CU-01, CU-08, CU-09, CU-10, CU-11, CU-12, CU-14, CU-22 |
 | §2.2 | Supervisor | Casos de uso por actor | CU-01, CU-10, CU-11, CU-12, CU-13, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20 |
 | §2.3 | Supervisor — función administrativa | Casos de uso por actor | CU-01 a CU-07, CU-21, CU-22 |
-| §3.1 | Ingesta del CSV | Secuencia | CU-08 (principal), CU-02, CU-06, CU-07 |
-| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15 |
-| §3.3 | Despacho y PDF | Secuencia | CU-16 y CU-17 (principales), CU-05 (padrón de cuadrillas) |
+| §3.1 | Ingesta del CSV | Secuencia | CU-08 (principal), CU-02, CU-06, CU-07; incluye la rama de conflicto de concurrencia (D-41) |
+| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15; incluye la rama de conflicto de concurrencia (D-41) |
+| §3.3 | Despacho y PDF | Secuencia | CU-16 y CU-17 (principales), CU-05 (padrón de cuadrillas); relectura de la marca antes de confirmar (D-41) |
 | §4 | Ciclo de vida del caso | Estados | CU-08, CU-12, CU-13, CU-14, CU-16 |
 
 **Verificación de coherencia (H-06, H-07, H-33, H-34):**
@@ -496,3 +511,4 @@ stateDiagram-v2
 4. **Etiquetas de relación normalizadas.** Todas usan `|"<<include>>"|` o `|"<<extend>>"|`; se corrigieron las tres etiquetas con comilla simple faltante (`<<extend>>|`) del bloque §1 (H-33).
 5. **Bloques numerados.** Los 8 bloques Mermaid quedan identificados en el encabezado y referenciados con la misma numeración en esta tabla (H-34).
 6. **Estados.** El diagrama §4 declara tres estados y ninguna transición sin dueño funcional (H-07, D-38).
+7. **Concurrencia.** Los bloques §3.1, §3.2 y §3.3 muestran la relectura de la marca de modificación y el aviso de conflicto con usuario y fecha/hora, coherentes con D-41 y RNF-14; ninguno dibuja un bloqueo de archivo que el sistema no implemente.

@@ -95,6 +95,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-45 | **Expiración de sesión:** dura la jornada (**8 horas**) y se cierra al cerrar la pestaña; al expirar se exige reingreso, sin perder lo ya guardado. |
 | D-46 | **CSV ausente:** si el archivo del día no llega, la página lo muestra como «sin ingesta», permite registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log` y no bloquea la consulta ni el despacho. |
 | D-47 | **Alta manual sin Tipo/Actividad/Agente:** esos campos del fuente (L8) no se incorporan; el formulario se rige por la lista cerrada de D-18. |
+| D-48 | **`fecha_asignacion` en el maestro:** se añade el campo con la fecha de la última asignación de cuadrilla; de él sale la métrica «asignados por día» de la zona CUADRILLA, sin necesidad de archivos de despacho por fecha (H-28). |
 
 ---
 
@@ -106,7 +107,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
 | RF-03 | PANEL: actualizar `status` (PEND/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. No permite `CERRADO` sin resolución y fecha. | C3 | L8; D-20, D-38 |
 | RF-04 | PANEL: ingresar casos nuevos con una lista **cerrada** de campos (fecha del caso, teléfono, nombre, dirección, contacto, problema reportado, sector, clase, nivel, `tipo_abonado`, observaciones); el `id_averia` se genera como `MAN-` + consecutivo verificando que no exista. | C3 | L8; D-18 |
-| RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (barras de ingreso vs. reparadas por día, con línea de pendiente al cierre de cada día y selector de semana Sem 1 a Sem 36), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9; D-34 |
+| RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (barras de ingreso vs. reparadas por día, con línea de pendiente al cierre de cada día y selector de semana Sem 1 a Sem 36), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados —por `fecha_asignacion`— vs. cerrados vs. gestionados por día). | C5 | L9; D-34, D-48 |
 | RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), barras + línea (semanal) y torta (reparación). | C5 | L10; D-34 |
 | RF-07 | CASOS: registro principal de casos y su resolución, clasificados por Construcción/Reparación y por Residencial/Empresa/Referidos. | C1 (tabla) / C3 (clasificación) | L12 |
 | RF-08 | DESPACHO: distribuir el universo de averías entre cuadrillas agrupando por dirección (sectores cercanos). | C4 | L13, L40-45 |
