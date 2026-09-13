@@ -266,3 +266,32 @@ completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-2
 | 6 | Auditoría del documento técnico y cierre de Fase 2 | informe + preguntas | Pendiente |
 
 **Supuestos en los casos de uso:** ninguno pendiente. Las 6 ambigüedades que los originaban quedaron cerradas (A-05→D-30, A-08→D-34, A-09→D-33, A-10→D-32, A-11→D-29, A-14→D-31), por lo que `casos_uso.md` debe actualizarse para sustituir las marcas `[SUPUESTO: A-xx]` por las decisiones correspondientes.
+---
+
+## 11. Estado de los ciclos de desarrollo
+
+Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
+
+| Ciclo | Alcance | Estado |
+|---|---|---|
+| **C1** | Armazón de las 7 pestañas, CONFIGURACION con los 6 padrones y CRUD de sectores, tabla CASOS con flotante y cierre bloqueante, sesión con `P00` + contraseña, persistencia verificada (`.bak` ×10, temporal, relectura), detección de conflicto, `historial.jsonl`, rotación del log y consulta de auditoría | **Cerrado** — 24 pruebas automatizadas en verde (16 base + 8 de D-61 a D-64), interfaz validada en Chrome headless (19 comprobaciones) y servidor verificado en loopback sirviendo solo `app/` |
+| **C2** | Ingesta diaria del CSV: parseo con `;`, validación bloqueante de las 80 columnas, filtro por central, mapeo posicional, deduplicación, clasificación RN-03, asignación de sector con cola y resumen numérico | **En curso** |
+| **C3** | PANEL (búsqueda, actualización, alta manual) y bandeja GESTION telefónica | Pendiente |
+| **C4** | DESPACHO por sector y cuadrilla, con el PDF por cuadrilla y su registro de entrega | Pendiente |
+| **C5** | MONITOREO y GRAFICOS (6 zonas, serie Sem 1 a Sem 36) | Pendiente |
+| **C6** | Reportes estadísticos y seguimiento de casos especiales y averías concentradas | Pendiente |
+| **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | Pendiente |
+
+**Código entregado (ciclo C1):** `app/index.html`, `app/css/estilos.css`, `app/js/nucleo.js`,
+`almacen.js`, `app.js`, `casos.js`, `configuracion.js`, los ocho módulos rotulados como pendientes de
+su ciclo (`ingesta`, `panel`, `gestion`, `despacho`, `pdf`, `metricas`, `graficos`, `reportes`),
+`pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs` y `pruebas_c1b.mjs`, y los lanzadores
+`servir-ggto.ps1` y `servir-ggto.bat`.
+
+**Datos de trabajo:** `C:\GGTO\datos` con los 10 archivos (el maestro, `despacho.json`,
+`estructura.json`, los 6 de configuración y `historial.jsonl`), `C:\GGTO\respaldo` para la copia de
+cierre y `central.json` ya completado con los datos reales de la central (`region = CAPITAL`).
+
+**Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
+`http://localhost:8787/index.html`. Pruebas:
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs`.
