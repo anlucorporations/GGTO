@@ -81,6 +81,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-31 | **`despacho.json` se amplía** con `sector`, `Reparador Principal` y `fecha_despacho`, y queda como registro del despacho del día (A-14); RT-05 se corrige. |
 | D-32 | **Desempate de la construcción (CNS):** primero la cuadrilla que tenga ese sector como zona preferente en `cuadrillas.sectores`; si hay varias o ninguna, la de menor carga del día y, en empate, el `id` menor; el supervisor puede cambiarla y el cambio queda registrado (A-10). |
 | D-33 | **Casos especiales** = los de clientes empresariales (`tipo_abonado = EMP`) y los referidos (`nivel = REF`) que siguen abiertos; tienen bandeja y seguimiento propios (A-09). |
+| D-34 | **Salida de reportes:** solo el despacho se emite en pantalla y PDF. El seguimiento semanal es **estadístico**: por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre de cada día, agrupado por semana del año con selector **Sem 1 a Sem 36**; sin Excel (A-08). |
 
 ---
 
@@ -92,8 +93,8 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
 | RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. No permite `CERRADO` sin resolución y fecha. | C3 | L8; D-13, D-20 |
 | RF-04 | PANEL: ingresar casos nuevos con una lista **cerrada** de campos (fecha del caso, teléfono, nombre, dirección, contacto, problema reportado, sector, clase, nivel, `tipo_abonado`, observaciones); el `id_averia` se genera como `MAN-` + consecutivo verificando que no exista. | C3 | L8; D-18 |
-| RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (curva lunes–sábado), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9 |
-| RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación). | C5 | L10 |
+| RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (barras de ingreso vs. reparadas por día, con línea de pendiente al cierre de cada día y selector de semana Sem 1 a Sem 36), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9; D-34 |
+| RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), barras + línea (semanal) y torta (reparación). | C5 | L10; D-34 |
 | RF-07 | CASOS: registro principal de casos y su resolución, clasificados por Construcción/Reparación y por Residencial/Empresa/Referidos. | C1 (tabla) / C3 (clasificación) | L12 |
 | RF-08 | DESPACHO: distribuir el universo de averías entre cuadrillas agrupando por dirección (sectores cercanos). | C4 | L13, L40-45 |
 | RF-09 | DESPACHO: aplicar las reglas de reparto — citados del día, ≥1 reparación de referidos y ≥1 de empresas por cuadrilla; construcción a una sola cuadrilla con reparaciones en ese sector. | C4 | L42 |
@@ -112,7 +113,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha. | C1 | L50; D-20 |
 | RF-23 | GENERALIDADES: agrupar y filtrar por **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla), `clase`, `nivel` y `estatus`; incluye la edición manual de `clase` y `nivel`. | C1 | L51; D-06, D-23 |
 | RF-24 | GENERALIDADES: persistir en `averias.json` cada modificación de un caso. | C1 | L52 |
-| RF-25 | Reportes: reporte de trabajo diario y reporte de gestión semanal (formato de salida pendiente, A-08). | C6 | L2 |
+| RF-25 | Reportes: el despacho diario se emite en pantalla y en PDF (por cuadrilla); el seguimiento semanal es estadístico — ingreso del día vs. reparadas del día con la línea del pendiente al cierre, agrupado por semana del año (Sem 1 a Sem 36) con selector de semana. | C6 | L2; D-34 |
 | RF-26 | Seguimiento de casos especiales (EMP o REF abiertos, D-33) y de **averías concentradas**: 3 o más casos abiertos del mismo sector en la semana operativa, con umbral editable en CONFIGURACION. | C6 | L2, L13; D-25, D-33 |
 | RF-27 | CONFIGURACION: gestionar la lista editable de palabras clave de clasificación y su modo de búsqueda (`claves_clasificacion.json`). | C2 | D-11 |
 | RF-28 | CASOS y PANEL: editar el `tipo_abonado` (`RES`/`EMP`) del caso y usarlo en las métricas de gestión y en la cuota de despacho. | C1 / C5 | D-17 |
@@ -190,13 +191,13 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 ## 9. Ambigüedades: 12 cerradas y 6 abiertas
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
-13/09/2026: **cerradas 17** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-09, A-10, A-11, A-12, A-13, A-14, A-15, A-16, A-17 y A-18) y **abierta 1** (A-08), que en los casos de uso quedó como supuesto marcado `[SUPUESTO: A-08]` a la espera de decisión.
+13/09/2026: **cerradas las 18** (A-01 a A-18) y **ninguna abierta**.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
 | A-04 | **Resuelta (D-25):** el sector es una entidad con `id` y `nombre` propios, gestionada por el CRUD de RF-29; `averias.sector` guarda ese `id` y la dirección se asocia por las vías del sector. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-05 | **Resuelta (D-30):** «citado» = caso con `fecha_cita` igual al día del despacho. | Decidido por el usuario el 13/09/2026. | C4 |
-| A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
+| A-08 | **Resuelta (D-34):** despacho en pantalla + PDF; seguimiento semanal estadístico (ingreso vs. reparadas por día + línea de pendiente), por semana Sem 1 a Sem 36. | Decidido por el usuario el 13/09/2026. | C6 |
 | A-09 | **Resuelta (D-33):** casos especiales = EMP o REF abiertos. | Decidido por el usuario el 13/09/2026. | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
 | A-11 | **Resuelta (D-17 y D-29):** `tipo_abonado` se deriva de `unidad_negocio`/`ups`, y `P00` es el código de empleado que identifica la sesión. | Decidido por el usuario el 13/09/2026. | C1 |

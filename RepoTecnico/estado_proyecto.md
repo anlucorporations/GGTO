@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **33 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **34 decisiones**
 y se cerraron **11 ambigüedades** del documento fuente. Queda **1 ambigüedad abierta** (A-08), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -105,6 +105,7 @@ ingesta debe rediseñarse.
 | D-31 | `despacho.json` se amplía con sector, cuadrilla y fecha de despacho. | 10 |
 | D-32 | Desempate de construcción: zona preferente → menor carga → id menor, con ajuste manual. | 10 |
 | D-33 | Casos especiales = empresariales (EMP) o referidos (REF) abiertos. | 10 |
+| D-34 | Despacho en pantalla + PDF; seguimiento semanal estadístico (ingreso vs. reparadas por día + línea de pendiente, Sem 1 a Sem 36). | 10 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -113,16 +114,16 @@ ingesta debe rediseñarse.
 
 ## 4. Ambigüedades
 
-**Cerradas (17):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
-A-04 (D-25), A-05 (D-30), A-09 (D-33), A-10 (D-32), A-11 (D-29), A-12 (D-12), A-13 (D-06), A-14 (D-31), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
+**Cerradas (18):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
+A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-10 D-32, A-11 D-29, A-12 D-12, A-13 D-06, A-14 D-31, A-15 D-13, A-16 D-21, A-17 D-14, A-18 D-21, más A-01 D-09, A-02 D-10, A-03 D-07, A-06 D-11 y A-07 D-05).
 
-**Abiertas (1):**
+**Abiertas: ninguna.**
 
 | ID | Ambigüedad | Ciclo |
 |---|---|---|
 
 
-| A-08 | Formato de salida de los reportes diario y semanal. | C6 |
+
 
 
 
@@ -233,4 +234,4 @@ completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-2
 | 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` | Pendiente |
 | 6 | Auditoría del documento técnico y cierre de Fase 2 | informe + preguntas | Pendiente |
 
-**Supuestos provisionales en los casos de uso:** queda vigente solo el de A-08 (formato de los reportes). Los de A-05 (citados), A-09 (casos especiales), A-10 (desempate), A-11 (`P00`) y A-14 (`despacho.json`) ya quedaron sustituidos por D-30, D-33, D-32, D-29 y D-31.
+**Supuestos en los casos de uso:** ninguno pendiente. Las 6 ambigüedades que los originaban quedaron cerradas (A-05→D-30, A-08→D-34, A-09→D-33, A-10→D-32, A-11→D-29, A-14→D-31), por lo que `casos_uso.md` debe actualizarse para sustituir las marcas `[SUPUESTO: A-xx]` por las decisiones correspondientes.
