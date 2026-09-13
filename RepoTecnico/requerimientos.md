@@ -107,6 +107,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-57 | **Sin bloqueo por intentos fallidos:** cada intento fallido de sesión se registra (fecha, hora y `P00` intentado), pero la cuenta **no se bloquea** (H-N-07, H-N-17). |
 | D-58 | **Datos personales:** se mantiene D-36 (los CSV, los PDF de despacho y el `.xlsm` siguen versionados en los repositorios **privados**) y se documenta la finalidad y los controles en la ficha de tratamiento (`entornos_globales.md` §12). El log de la aplicación rota por tamaño: **5 MB y 5 archivos**, sin datos personales (H-N-31). |
 | D-59 | **El emisor del CSV no participa en CU-09:** se retira esa relación; es actor secundario solo de CU-08 (entrega el archivo) y la cola de direcciones sin sector la resuelve el supervisor. |
+| D-60 | **El operador propone y el supervisor aprueba:** en CU-09 el operador puede proponer el sector de una dirección sin coincidencia (queda `PENDIENTE DE APROBACIÓN`); el supervisor la aprueba o la rechaza y solo entonces el caso queda asignado. |
 
 ---
 

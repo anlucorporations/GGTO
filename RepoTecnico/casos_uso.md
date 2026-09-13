@@ -72,11 +72,11 @@
 | Editar `clase` / `nivel` / `tipo_abonado` (CU-10) | **Solo casos de su propia cuadrilla** | Todos |
 | Alta manual de caso (CU-14) | Permitida (el caso se crea para su cuadrilla si el operador tiene una asignada) | Permitida |
 | Ingesta del CSV (CU-08) | Permitida | Permitida |
-| Resolver la cola de direcciones sin sector (CU-09) | Permitida, incluida la creación del sector mínimo que falte (excepción de D-35); la **titularidad de la cola es del supervisor** (D-59) | Permitida (titular de la cola, D-59) |
+| Resolver la cola de direcciones sin sector (CU-09) | Permitida **solo como propuesta**: el operador propone el sector para la dirección sin coincidencia y queda **pendiente de aprobación** del supervisor (**D-60**) | Permitida (titular de la cola, D-59; **aprueba o rechaza las propuestas**, D-60) |
 | Bandeja GESTION (CU-13) | **Prohibida** | Permitida (opera la bandeja) |
 | Padrones: técnicos, flota, cuadrillas (CU-03, CU-04, CU-05) | **Prohibida** | Permitida |
 | Configuración de la central (CU-02) | **Prohibida** | Permitida |
-| Sectores: CRUD completo (CU-06) | **Prohibida**; el operador solo crea el sector mínimo desde la cola de CU-09 | Permitida |
+| Sectores: CRUD completo (CU-06) | **Prohibida**; el operador solo **propone** el sector de una dirección en cola (D-60) | Permitida |
 | Palabras clave y modo de búsqueda (CU-07) | **Prohibida** | Permitida |
 | Despacho y ajuste de asignaciones (CU-16) | **Prohibida** | Permitida |
 | Emisión de PDF y registro de entrega (CU-17) | **Prohibida** | Permitida |
@@ -463,7 +463,7 @@
 - **Si** el `id` del sector ya existe, entonces el sistema deberá rechazar el alta sin modificar el catálogo. [RNF-04]
 - **Si** un sector tiene averías asociadas, entonces el sistema deberá impedir su eliminación hasta que se reasignen. [RNF-10, RN-04]
 - **El sistema deberá** comparar direcciones contra las vías del sector ignorando mayúsculas, tildes y abreviaturas `Av.`, `Cll.`, `Urb.`. [D-03]
-- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el alta libre, la edición y la baja de sectores, admitiendo únicamente la creación del sector mínimo que resuelve una dirección en cola (CU-09). [D-35, RNF-12]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el alta libre, la edición y la baja de sectores, admitiendo únicamente la **propuesta** de sector para una dirección en cola (CU-09), que queda pendiente de la aprobación del supervisor. [D-35, D-60, RNF-12]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
 ---
@@ -619,21 +619,21 @@
 - **Actor principal:** Operador de la central.
 - **Actor secundario:** Supervisor (mantiene el catálogo de sectores, CU-06).
 - **Ciclo:** C2. **Prioridad:** MVP.
-- **Precondiciones:** **sesión identificada (CU-01)** con un técnico activo y **con el rol que autoriza la matriz de §2.1**: la **cola la resuelve el supervisor** (rol elevado, D-35/D-59) y el operador de la central la resuelve con la creación del **sector mínimo** desde la cola (única excepción a la restricción de sectores de D-35); **`C:\GGTO\datos\sectores.json` disponible y legible**; **existe al menos un caso con `sector` vacío** proveniente de la ingesta (CU-08) o de un alta manual (CU-14), es decir la cola de pendientes no está vacía. **El emisor del CSV no participa en este caso de uso** (D-59): la cola nace del archivo que él entrega, pero la resuelve un rol del sistema, no el origen del dato.
+- **Precondiciones:** **sesión identificada (CU-01)** con un técnico activo y **con el rol que autoriza la matriz de §2.1**: la **cola la resuelve el supervisor** (rol elevado, D-35/D-59) y el operador de la central solo puede **proponer** el sector de una dirección en cola, quedando la propuesta pendiente de la aprobación del supervisor (D-60); **`C:\GGTO\datos\sectores.json` disponible y legible**; **existe al menos un caso con `sector` vacío** proveniente de la ingesta (CU-08) o de un alta manual (CU-14), es decir la cola de pendientes no está vacía. **El emisor del CSV no participa en este caso de uso** (D-59): la cola nace del archivo que él entrega, pero la resuelve un rol del sistema, no el origen del dato.
 - **Postcondiciones:** cada caso de la cola tiene un `sector` existente en `sectores.json`, o queda registrado como pendiente con su motivo; la asignación queda auditada con operador y fecha/hora.
 
-**Trazabilidad:** RF-18, RF-24, RF-29 (creación del sector mínimo desde la cola); RN-04, RN-07; RNF-04, RNF-08, RNF-09, RNF-10, **RNF-12, RNF-14, RNF-15**; RT-01, RT-03; D-03, D-25, **D-35, D-41, D-42, D-56, D-59**; H-18.
+**Trazabilidad:** RF-18, RF-24, RF-29 (propuesta de sector desde la cola, aprobada por el supervisor); RN-04, RN-07; RNF-04, RNF-08, RNF-09, RNF-10, **RNF-12, RNF-14, RNF-15**; RT-01, RT-03; D-03, D-25, **D-35, D-41, D-42, D-56, D-59, D-60**; H-18.
 
 **Flujo principal**
 
-> **Nota de rol (D-59).** En este flujo «el operador» designa al usuario de la sesión que resuelve la cola: la **titularidad de la cola es del supervisor** (rol elevado, D-35) y el operador de la central conserva la excepción del **sector mínimo** de §2.1. El **emisor del CSV no interviene** en ningún paso.
+> **Nota de rol (D-59).** En este flujo «el operador» designa al usuario de la sesión que resuelve la cola: la **titularidad de la cola es del supervisor** (rol elevado, D-35) y el operador de la central solo puede **proponer** el sector de una dirección en cola, a la espera de la aprobación del supervisor (**D-60**). El **emisor del CSV no interviene** en ningún paso.
 
 1. El operador abre la pestaña CONFIGURACION → **SECTORES** → *Cola de asignación* (o el aviso de pendientes que deja CU-08).
 2. El sistema lista los casos sin sector con `id_averia`, `direccion`, `nombre` y fecha de ingreso, ordenados por antigüedad.
 3. El operador selecciona un caso; el sistema muestra la dirección completa y la lista de sectores con sus vías.
 4. El operador elige un sector existente y pulsa *Asignar*.
 5. El sistema verifica que el sector exista y escribe `averias.sector` con la **escritura verificada de D-42/RNF-15**: copia antes el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribe en un **archivo temporal**, **relee y compara** el contenido (mismo número de registros e igualdad del texto serializado) y **solo entonces** confirma y quita el caso de la cola; si algo falla, **restaura el respaldo** y no confirma. La asignación **añade a `historial.jsonl`** la línea `campo = sector` con el valor anterior, el valor nuevo y `accion = edicion` (D-56). [D-42, RNF-15]
-6. Si ningún sector corresponde, el operador pulsa *Crear sector desde esta dirección*, informa `id`, `nombre` y las vías (tomando la dirección como primera vía) y el sistema crea el **sector mínimo** con ese `id`, `nombre` y vías —sin `cuadrilla_sugerida` ni edición de otros sectores, D-35— y asigna el caso.
+6. Si ningún sector corresponde, el operador pulsa *Proponer sector desde esta dirección*, informa `id`, `nombre` y las vías (tomando la dirección como primera vía) y el sistema registra la **propuesta** en estado `PENDIENTE DE APROBACIÓN` —sin `cuadrilla_sugerida` ni edición de otros sectores—; el supervisor la aprueba o la rechaza y, al aprobarla, el caso queda asignado a ese sector (**D-60**).
 7. El sistema muestra el contador actualizado de casos sin sector y registra la asignación con operador y fecha/hora.
 
 **Flujos alternativos**
@@ -642,7 +642,7 @@
 - **6a. `id` de sector repetido al crearlo desde la dirección.** El sistema muestra «El sector 4 ya existe» y devuelve al paso 4 con la lista actualizada.
 - **2a. La cola está vacía.** El sistema muestra «Todas las direcciones tienen sector asignado» y no ofrece acciones.
 - **3a. La dirección es ambigua (coincide con dos sectores).** El sistema muestra ambos sectores con las vías coincidentes y exige que el operador elija uno explícitamente; nunca asigna automáticamente el primero. [RN-04, H-18]
-- **6b. Intento de editar o eliminar un sector existente desde esta pantalla.** El sistema responde «Acción no permitida para su rol: el CRUD de sectores corresponde al supervisor» y registra el intento; el operador solo puede crear el sector mínimo que resuelve la dirección en cola. [D-35, RNF-12]
+- **6b. Intento de editar o eliminar un sector existente desde esta pantalla.** El sistema responde «Acción no permitida para su rol: el CRUD de sectores corresponde al supervisor» y registra el intento; el operador solo puede **proponer** el sector que resuelve la dirección en cola. [D-35, D-60, RNF-12]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente. La marca que se compara (`fecha_modificacion`) es un campo **TEXTO** `DD/MM/AAAA hh:mm`: la comparación es de igualdad de texto, nunca un rango de fechas (H-29).
 - **5b. Escritura verificada con respaldo previo (D-42, RNF-15).** Al asignar el sector, el sistema copia antes el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribe en un **archivo temporal**, **relee y compara** el contenido (mismo número de registros e igualdad del texto serializado) y solo entonces confirma la asignación; si la copia previa falla, la escritura del temporal falla o la relectura no coincide, **restaura el respaldo**, muestra «No se pudo verificar la escritura: se restauró el maestro del DD/MM/AAAA HH:MM» y el caso permanece en la cola. [D-42, RNF-15]
 
@@ -665,7 +665,7 @@
 - **Mientras** un caso no tenga sector, el sistema deberá mostrarlo en la cola de pendientes y marcarlo en la tabla de CASOS. [RN-04]
 - **El sistema deberá** registrar el operador y la fecha/hora de cada asignación de sector y **añadir** a `historial.jsonl` su línea `campo = sector` con `valor_anterior` y `valor_nuevo`. [RNF-09, **D-56**]
 - **Mientras** la sesión no esté identificada, el sistema deberá mantener la cola de asignación bloqueada, sin mostrar direcciones ni habilitar escrituras. [RNF-08]
-- **Si** el operador intenta editar o eliminar un sector, entonces el sistema deberá rechazarlo, admitiendo únicamente la creación del sector mínimo desde la cola. [D-35, RNF-12]
+- **Si** el operador intenta editar o eliminar un sector, entonces el sistema deberá rechazarlo, admitiendo únicamente la **propuesta** de sector desde la cola, pendiente de aprobación del supervisor. [D-35, D-60, RNF-12]
 - **Cuando** vaya a escribir la asignación de sector en el maestro, el sistema deberá copiarlo antes a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
@@ -1481,7 +1481,7 @@
 | RF-26 | CU-20 (averías concentradas) y CU-20 (casos especiales EMP/REF abiertos, D-33) | **Parcial** | Criterio de caso especial cerrado y sin rótulo provisional; permanece el conteo de averías concentradas por semana operativa sujeto a la definición de corte de la semana. |
 | RF-27 | CU-07 (palabras clave y modo de búsqueda) | Cubierto | Semántica del modo `estricta` definida por **D-43** (subcadena literal, sensible a mayúsculas y tildes, sin variantes); P3 cerrado. |
 | RF-28 | CU-13 (edición y uso de `tipo_abonado`) y CU-10 (edición en línea) | Cubierto | — |
-| RF-29 | CU-06 (CRUD de sectores) y CU-09 (creación del sector mínimo desde la cola) | Cubierto | La excepción del operador queda acotada por D-35. |
+| RF-29 | CU-06 (CRUD de sectores) y CU-09 (propuesta de sector desde la cola, aprobada por el supervisor) | Cubierto | La excepción del operador queda acotada por D-35 y convertida en propuesta por D-60. |
 
 **Resultado: 29 de 29 RF cubiertos; ningún RF queda sin caso de uso.** Tras esta sincronización queda **1** fila en estado **Parcial** —**RF-26** (conteo de averías concentradas por semana operativa sujeto a la definición de corte de la semana)—, **no** por falta de dueño funcional. RF-17, RF-23, RF-24 y RF-27, antes «Parcial», pasan a **Cubierto** con **D-42**, **D-43** y **D-48** (H-11, H-28 y P3 cerrados). Las filas RF-01, RF-10 y RF-20 ya habían pasado a **Cubierto** en la revisión anterior (H-20, H-24, H-34).
 
