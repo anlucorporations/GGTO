@@ -77,6 +77,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-27 | **Datos personales en el PDF:** el despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día; los respaldos van a una ruta controlada, no a Descargas. |
 | D-28 | **Retención:** histórico indefinido de casos; se documenta finalidad y responsable del tratamiento, sin purga automática (**riesgo legal aceptado**, H-13). |
 | D-29 | **`P00` es el código de empleado:** único y obligatorio en `tecnicos.json`, y es la credencial con la que el operador inicia sesión (A-11). |
+| D-30 | **«Citados del día»** son los casos con cita agendada para la fecha del despacho (`fecha_cita`, col. 19 del CSV); entran con prioridad y se marcan como CITADO (A-05). |
 
 ---
 
@@ -162,7 +163,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RN-02 | Al ingerir: `ingreso` = fecha de la ingesta, `clase = REP`, `nivel = COM`; la corrección a `CNS`/`REF` es manual. | L38; D-06 |
 | RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. La búsqueda es por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, con vista previa del impacto antes de cambiar la lista o el modo. | L36; D-05, D-11, D-21, D-26 |
 | RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
-| RN-05 | Cada cuadrilla recibe: citados del día + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
+| RN-05 | Cada cuadrilla recibe: citados del día (`fecha_cita` = día, D-30) + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
 | RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector. | L42 |
 | RN-07 | Toda edición de un caso se refleja de inmediato en `averias.json`. | L52 |
 | RN-08 | La semana operativa va de lunes a sábado. | L9 |
@@ -186,12 +187,12 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 ## 9. Ambigüedades: 12 cerradas y 6 abiertas
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
-13/09/2026: **cerradas 13** (A-01, A-02, A-03, A-04, A-06, A-07, A-11, A-12, A-13, A-15, A-16, A-17 y A-18) y **abiertas 5** (A-05, A-08, A-09, A-10 y A-14), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
+13/09/2026: **cerradas 14** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-11, A-12, A-13, A-15, A-16, A-17 y A-18) y **abiertas 4** (A-08, A-09, A-10 y A-14), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
 | A-04 | **Resuelta (D-25):** el sector es una entidad con `id` y `nombre` propios, gestionada por el CRUD de RF-29; `averias.sector` guarda ese `id` y la dirección se asocia por las vías del sector. | Decidido por el usuario el 12/09/2026. | C2 |
-| A-05 | «casos citados del día» (L42) sin definición. | ¿Qué hace a un caso "citado": fecha prometida al abonado, agenda de la cuadrilla o reincidencia? | C4 |
+| A-05 | **Resuelta (D-30):** «citado» = caso con `fecha_cita` igual al día del despacho. | Decidido por el usuario el 13/09/2026. | C4 |
 | A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
