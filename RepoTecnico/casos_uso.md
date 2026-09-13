@@ -2,16 +2,16 @@
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026. **Revisión:** 14/09/2026 (aplicación de las correcciones del informe `casos_uso/auditoria_casos_uso.md`).
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026 (sincronización con `requerimientos.md`: se aplican **D-42 a D-50** y se añaden **RNF-15** y **RNF-16**).
 - **Fuentes normativas (leídas completas, no modificadas):**
   `RepoTecnico/PAGINA-GGTO-INICIAL.md` (fuente primaria del usuario, se cita como `L##`),
-  `RepoTecnico/requerimientos.md` (29 RF, **13 RNF**, 11 RT, 8 RN, decisiones **D-01 a D-41**, ambigüedades A-01 a A-18 **todas cerradas**),
+  `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, decisiones **D-01 a D-50**, ambigüedades A-01 a A-18 **todas cerradas**),
   `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` (arquitectura y ciclos C1-C7),
   `RepoTecnico/diccionario_datos.md` (`averias.json`, `despacho.json`, `estructura.json` posicional y archivos de configuración),
   `RepoTecnico/entornos_globales.md` (rutas, lanzador, CSV real),
-  `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29: **atendidos**, salvo H-10 y H-28 —**atendidos parcialmente**— y **H-21, atendido por D-40/RNF-13**),
+  `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29: **atendidos**; H-10 y H-28 quedaron atendidos parcialmente en su momento y **se cierran ahora** con D-41/D-42 (H-10) y D-48 (H-28), y **H-21 con D-40/RNF-13**),
   `RepoTecnico/estado_proyecto.md` (estado y decisiones vigentes).
-- **Informe de corrección:** `RepoTecnico/casos_uso/auditoria_casos_uso.md` (35 hallazgos H-01 a H-35 y 18 preguntas). Esta revisión aplica las decisiones **D-29 a D-41**.
+- **Informe de corrección:** `RepoTecnico/casos_uso/auditoria_casos_uso.md` (35 hallazgos H-01 a H-35 y 18 preguntas). Las correcciones acumuladas del documento aplican las decisiones **D-29 a D-50**; esta revisión añade **D-42 a D-50**.
 - **Documentos de apoyo (solo lectura de encabezados):** `detalle_averias_gpon 12_09_2026.csv` (80 columnas, separador `;`) y `alta_manual.csv` (42 columnas).
 - **Documento hermano:** `RepoTecnico/casos_uso/diagramas.md` (diagrama UML de casos de uso, diagramas de secuencia y diagrama de estados).
 
@@ -31,14 +31,17 @@
    - *Característica opcional:* «De acuerdo con &lt;característica&gt;, el sistema deberá …»
 6. **Nomenclatura de dominio (RNF-07):** `status` = PEND / GESTION / CERRADO (**tres estados; el cuarto estado `ASGN` queda sin efecto por D-38**); `resolucion` = IVR / COS / COLA; `clase` = REP / CNS; `nivel` = COM / REF; `tipo_abonado` = RES / EMP (D-17); `sacas` = SI / NO. En pantalla se escriben "Gestión" y "Cerrado", nunca "estatus".
 7. **Fechas:** `DD/MM/AAAA` (RNF-06). Semana operativa de **lunes a sábado** (RN-08). **Muestra real del 12/09/2026:** 80 columnas, 56 registros y 3 centrales — **51 de Francisco Salias, 4 de LAS MERCEDES CPA y 1 de EL HATILLO**; los recuentos «17 con palabras clave y 39 sin ellas» que circulaban antes se calcularon **por error sobre los 56 registros**, no sobre los 51 filtrados (H-01). El desglose vigente de Francisco Salias es **14 PEND y 37 GESTION** (11 con claves + 3 con `estatus = ASGN`, que entran como PEND por D-38; y 37 sin claves). Los umbrales de desempeño aplicables son los de D-24 (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s).
-8. **Las 18 ambigüedades están cerradas.** A-01 a A-18 quedaron resueltas, y las seis últimas —A-05, A-08, A-09, A-10, A-11 y A-14— con las decisiones **D-29 a D-34**. Por tanto **no hay supuestos**: cuando un caso de uso aplica una decisión heredada de una ambigüedad, **cita la decisión (D-29 a D-34)** tanto en el paso afectado como en su línea de **Trazabilidad**, y no usa marcas de supuesto ni lenguaje de «provisional». La marca de supuesto por ambigüedad queda erradicada por completo de este documento (**0 marcas**, verificado).
-9. **Decisiones derivadas registradas.** Los umbrales de desempeño se citan como **D-24** (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s). Rango de decisiones vigente para este documento: **D-01 a D-41**.
+8. **Las 18 ambigüedades están cerradas (18 de 18).** A-01 a A-18 quedaron resueltas: las seis últimas —A-05, A-08, A-09, A-10, A-11 y A-14— con las decisiones **D-29 a D-34**. Por tanto **no hay supuestos**: cuando un caso de uso aplica una decisión heredada de una ambigüedad, **cita la decisión (D-29 a D-34)** tanto en el paso afectado como en su línea de **Trazabilidad**, y no usa marcas de supuesto ni lenguaje de «provisional». La marca de supuesto por ambigüedad queda erradicada por completo de este documento (**0 marcas**, verificado).
+9. **Decisiones derivadas registradas.** Los umbrales de desempeño se citan como **D-24** (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s). Rango de decisiones vigente para este documento: **D-01 a D-50** (las decisiones **D-42 a D-50** se aplicaron en esta revisión).
 10. **Persistencia (D-01, D-15, D-19):** la superficie se sirve desde un servidor local en loopback (`--bind 127.0.0.1`, puerto 8787) que publica **solo** el subdirectorio de la aplicación; los JSON de trabajo viven en `C:\GGTO\datos` (fuera de Google Drive) y se leen/escriben con File System Access API.
 11. **Permisos (D-35, RNF-12):** toda acción de escritura exige un rol autorizado según la **matriz acción×rol de §2.1**; la sola identificación de sesión no autoriza. Cada caso de uso que escribe declara su precondición de rol, su restricción EARS de autorización y el flujo alternativo «acción no permitida para su rol».
 12. **Autenticación (D-29, D-39):** la sesión exige `P00` **y contraseña** verificada contra el hash con sal guardado en `tecnicos.json`; la contraseña tiene **8 caracteres como mínimo**, **caduca a los 90 días** y **nunca** se persiste ni se muestra en claro.
 13. **Accesibilidad mínima obligatoria (D-40, RNF-13):** navegación completa por teclado (`Tab`, `Enter` y flechas en la tabla de CASOS), foco visible, `label` asociado a cada campo, contraste mínimo **4,5:1** y **tabla o texto alternativo equivalente en cada gráfico**. Aplica de forma **transversal** a toda la interfaz (CU-01 a CU-22) y su verificación formal vive en **CU-01** (diálogo de sesión), **CU-10** (tabla), **CU-18** y **CU-19** (gráficos).
 14. **Concurrencia sin bloqueo (D-41, RNF-14):** no hay bloqueo de archivo; cada guardado **relee** el archivo, compara su marca de modificación (`fecha_modificacion`) con la capturada al cargarlo y, **si difieren, impide el guardado** hasta que el usuario elija entre *Recargar* (perdiendo sus cambios locales) o *Sobrescribir* conscientemente; el aviso indica quién y cuándo modificó por última vez (`usuario_modificacion` y `fecha_modificacion`). Aplica a **todos** los archivos compartidos: `averias.json` y los padrones y catálogos (`central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json`, `claves_clasificacion.json`). La concurrencia deja de ser un supuesto no verificado: es un requisito probado en CU-12, CU-13, CU-14, CU-15 y CU-21 y en los CU que editan padrones.
-15. **Alcance pendiente de decisión del usuario (no resuelto en esta revisión):** la escritura atómica y el versionado del maestro (H-11) y la ruta, el cifrado, la rotación y el RTO/RPO del respaldo (H-12, H-13). Estos puntos se dejan señalados en el caso de uso correspondiente como `&lt;PENDIENTE&gt;` y **no** se inventan.
+15. **Integridad de escritura (D-42, RNF-15):** ningún guardado del maestro se confirma sin verificación. Antes de escribir, el sistema copia el maestro a `averias_AAAA-MM-DD_HHMM.bak` (**se conservan las 10 últimas**); escribe en un **archivo temporal**; **relee y compara** el contenido (mismo número de registros e igualdad del texto serializado); y **solo entonces** la pantalla confirma el cambio. Si algo falla, **restaura el respaldo**, avisa y **no confirma**. Aplica a todos los casos de uso que escriben `averias.json`: CU-08 (ingesta), CU-12 (cierre y reapertura), CU-13 (bandeja GESTION), CU-14 (alta manual), CU-16 (despacho), CU-21 (respaldo y restauración) y CU-22 (contingencia).
+16. **Política de respaldo (D-49, RNF-16):** al **cerrar la jornada** la página ofrece crear una copia **fechada** del maestro —`averias_AAAA-MM-DD.json`— en **`C:\GGTO\respaldo\`**, **sin cifrado**; el supervisor la lleva después a la red o a un pen drive. Objetivos declarados y verificables: **RTO de 1 hora** y **RPO = el cierre del día anterior**. La restauración copia una de esas copias sobre `C:\GGTO\datos\averias.json` previa confirmación del supervisor, y la prueba de restauración queda documentada en C7. Aplica a **CU-21** (dueño del respaldo) y se cita en CU-14, CU-15 y CU-22.
+17. **Nada se muestra sin sesión (D-50, RNF-08):** sin una **identificación válida** la página **no renderiza ningún dato**: al abrirse solo se ve el diálogo de acceso y quedan ocultos la tabla de CASOS, los conteos, las fichas, los gráficos y cualquier campo del maestro. Los casos de uso de consulta y de gráficos (**CU-10, CU-11, CU-18, CU-19 y CU-20**) declaran la sesión identificada como precondición y contemplan en sus flujos alternativos la **pérdida de sesión** (por cierre o por expiración de las 8 horas de D-45), que devuelve la pantalla al diálogo y oculta los datos ya mostrados.
+18. **No hay puntos `&lt;PENDIENTE&gt;` de decisión del usuario.** Con **D-42 a D-50** quedaron cerrados todos los puntos que dependían del usuario; §5.4 recoge únicamente los **pendientes técnicos de implementación** (no son decisiones de negocio) y no se marca ninguno en el cuerpo de los casos de uso.
 
 ---
 
@@ -159,7 +162,7 @@
 - **8a. Contraseña caducada (más de 90 días desde `clave_fecha_cambio`).** El sistema muestra «Su contraseña tiene más de 90 días: debe cambiarla antes de operar», bloquea toda acción de escritura y ejecuta el cambio obligatorio del paso 9; si el operador cancela, la sesión queda cerrada. [D-39]
 - **8b. `tecnicos.json` no existe, está vacío o tiene JSON inválido.** El sistema muestra «Padrón de técnicos no disponible: &lt;detalle&gt;», ofrece la ruta `C:\GGTO\datos\tecnicos.json` y bloquea toda la edición hasta que se restaure desde respaldo (CU-21). [H-20, H-25]
 - **10a. La sesión no tiene cuadrilla asociada (técnico sin cuadrilla activa).** El sistema abre la sesión **en modo consulta global de solo lectura**: no habilita el cierre de casos ni la edición en línea, y muestra «Sin cuadrilla asignada: solo consulta. Solicite su inclusión en CONFIGURACION/CUADRILLA». [D-35, D-37, RNF-12]
-- **11a. Se cierra la sesión o expira por inactividad.** El sistema cierra la sesión y vuelve al paso 3; las acciones de escritura quedan bloqueadas hasta una nueva identificación. **La duración de la expiración por inactividad es `&lt;PENDIENTE&gt;` de decisión del usuario** (no se inventa un valor).
+- **11a. Se cierra la sesión o expira.** La sesión dura **8 horas** contadas desde la identificación del paso 10 y también se cierra al cerrar la pestaña. Al expirar (o al cerrarse), el sistema vuelve al paso 3 y bloquea las acciones de escritura hasta una nueva identificación: al intentar editar exige **reingreso**. Lo ya guardado **no se pierde** —el maestro conserva todos los cambios persistidos—, pero los cambios cargados sin guardar se descartan y el sistema lo advierte antes de salir. [D-45]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -179,6 +182,9 @@
 14. **Dado** un equipo con Edge o Chrome versión 86 o superior, **Cuando** se carga la página desde `http://localhost:8787`, **Entonces** las 7 pestañas son navegables y ninguna dependencia se solicita por internet.
 15. **Dado** el diálogo **Identificación del operador** con los campos *P00* y *Contraseña*, **Cuando** el usuario recorre el diálogo **solo con el teclado** (`Tab` para pasar de *P00* a *Contraseña* y a *Iniciar sesión*, `Enter` para enviar), **Entonces** el foco es visible en cada control, cada campo tiene su `label` asociado y la sesión se abre sin haber usado el ratón. [D-40, RNF-13]
 16. **Dado** cualquier pantalla de la interfaz, **Cuando** se mide el contraste del texto y de los controles sobre su fondo, **Entonces** la relación es de al menos **4,5:1** en el texto normal y el foco visible se distingue con un indicador de contraste equivalente. [D-40, RNF-13]
+17. **Dado** una sesión abierta a las 08:00 del 13/09/2026, **Cuando** a las 16:01 del mismo día el operador intenta editar `clase` en un caso de su cuadrilla, **Entonces** el sistema no ejecuta la edición, muestra «Sesión expirada (8 horas): identifíquese de nuevo» y exige el reingreso de `P00` y contraseña, y `averias.json` conserva intactos los cambios guardados antes de la expiración. [D-45]
+18. **Dado** un `averias.json` con 51 casos y la página recién abierta, **Cuando** la página termina de cargar **sin** que se haya iniciado sesión, **Entonces** el único contenido visible es el diálogo **Identificación del operador**: la tabla de CASOS, la ficha de un caso, los conteos, los gráficos y cualquier campo del maestro quedan **sin renderizar**, y el DOM no contiene ningún dato del maestro. [D-50, RNF-08]
+19. **Dado** una sesión de supervisor con MONITOREO abierto y la tabla de CASOS dibujada, **Cuando** el supervisor cierra la sesión (o la sesión expira a las 8 horas, D-45), **Entonces** la pantalla vuelve al diálogo **Identificación del operador**, los datos ya mostrados —tabla, conteos y gráficos— se ocultan, y cualquier intento de consulta responde «Identifíquese para editar». [D-45, D-50, RNF-08]
 
 **Restricciones del sistema (EARS)**
 
@@ -193,6 +199,9 @@
 - **Si** el navegador no soporta File System Access API, entonces el sistema deberá avisar «Modo consulta: este navegador no permite escribir los JSON» y ofrecer el modo descarga. [RNF-03, H-22]
 - **El sistema deberá** permitir operar el diálogo de identificación y toda la interfaz **solo con el teclado**, con `label` asociado a cada campo, foco visible y contraste mínimo 4,5:1; y deberá ofrecer una **tabla o texto alternativo equivalente** para cada gráfico. [D-40, RNF-13]
 - **El sistema deberá** registrar en cada cambio el operador de la sesión y la fecha/hora del cambio. [RNF-09, D-16]
+- **Cuando** transcurran **8 horas** desde la identificación, o **cuando** se cierre la pestaña, el sistema deberá cerrar la sesión y exigir reingreso para cualquier acción de escritura, conservando sin pérdida todo lo ya guardado. [D-45]
+- **Mientras** no haya una identificación válida, el sistema **no deberá** renderizar ningún dato del maestro: deberá mostrar solo el diálogo de acceso y mantener ocultos la tabla de CASOS, los conteos, las fichas de caso, los gráficos y cualquier campo de `averias.json`. [D-50, RNF-08]
+- **Cuando** la sesión se cierre (por acción del usuario o por expiración de D-45), el sistema deberá volver al diálogo de acceso y **ocultar de inmediato** los datos ya mostrados, sin dejarlos en pantalla ni en el DOM. [D-45, D-50, RNF-08]
 
 ---
 
@@ -457,9 +466,9 @@
 - **Actor secundario:** Operador de la central (ejecuta la ingesta, CU-08, y consume la lista vigente).
 - **Ciclo:** C2. **Prioridad:** MVP.
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `averias.json` accesible para calcular la vista previa del impacto.
-- **Postcondiciones:** `claves_clasificacion.json` contiene la lista de claves vigente, el modo de normalización y los campos evaluados, con el impacto del cambio aceptado por el supervisor.
+- **Postcondiciones:** `claves_clasificacion.json` contiene la lista de claves vigente, el modo de normalización (`normalizada` por defecto o `estricta`) y los campos evaluados, con el impacto del cambio aceptado por el supervisor.
 
-**Trazabilidad:** RF-27, RF-17; RN-03; RNF-09, RNF-10, **RNF-12, RNF-14**; RT-07; D-05, D-11, D-26, **D-35, D-41**; H-08.
+**Trazabilidad:** RF-27, RF-17; RN-03; RNF-09, RNF-10, **RNF-12, RNF-14**; RT-07; D-05, D-11, D-26, **D-35, D-41, D-43**; H-08.
 
 **Flujo principal**
 
@@ -487,14 +496,15 @@
 3. **Dado** que la vista previa indica que 17 casos pasan a PEND, **Cuando** el supervisor confirma, **Entonces** `claves_clasificacion.json` contiene la nueva clave y la relectura del archivo devuelve el mismo contenido.
 3b. **Dado** que `claves_clasificacion.json` se cargó con `fecha_modificacion = 13/09/2026 09:00` y en disco figura ahora `fecha_modificacion = 13/09/2026 10:00` con `usuario_modificacion = 12345`, **Cuando** el supervisor confirma el cambio de claves, **Entonces** el sistema no escribe, muestra el conflicto con usuario y fecha/hora y exige *Recargar* o *Sobrescribir*. [D-41, RNF-14]
 4. **Dado** el texto `Fibra Danada` en `ultimo_comentario` y el modo `normalizada` con la clave `FIBRA DAÑADA`, **Cuando** se clasifica el caso, **Entonces** el sistema lo trata como coincidencia y el caso queda en `status = PEND`.
-5. **Dado** el texto `Loss Rojo` en `problema_reporte` y el modo `estricta` con la clave `LOSS ROJO`, **Cuando** se clasifica el caso, **Entonces** el resultado depende de la semántica del modo `estricta`, que **sigue `&lt;PENDIENTE&gt;` de decisión del usuario** (pregunta P3 del informe): una definición literal estricta **no** debe considerarlo coincidencia, y una definición «literal sin distinguir mayúsculas» sí. El criterio no se cierra hasta que se publique la semántica en `diccionario_datos.md` §4.6 y se ajuste este criterio.
+5. **Dado** el texto `Loss Rojo` en `problema_reporte` y el modo `estricta` con la clave `LOSS ROJO`, **Cuando** se clasifica el caso, **Entonces** el sistema **no** lo considera coincidencia —el modo `estricta` compara por **subcadena literal, sensible a mayúsculas y tildes** (D-43)—, el caso queda en `status = GESTION` y no se aplica ninguna variante (ni `LOSS`/`LOS` ni `DAÑADA`/`DANADA`). Con el modo `normalizada` (el de por defecto) el mismo texto sí coincide y el caso entra en `PEND`. Criterio P3 **cerrado por D-43**. [D-26, D-43]
 6. **Dado** que el supervisor intenta guardar la clave `FALLA FIBRA` cuando ya existe, **Cuando** pulsa *Agregar*, **Entonces** el sistema muestra «La clave ya existe» y el archivo no cambia.
 7. **Dado** una sesión con rol operador, **Cuando** el operador intenta guardar un cambio en las claves o en el modo de búsqueda, **Entonces** el sistema responde «Acción no permitida para su rol» y `claves_clasificacion.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
 - **Cuando** el supervisor cambie la lista de claves o el modo de búsqueda, el sistema deberá mostrar la vista previa de los casos afectados antes de persistir. [D-26, H-08]
-- **El sistema deberá** evaluar las claves por subcadena sobre el texto normalizado (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`. [RN-03, D-26]
+- **El sistema deberá** evaluar las claves por subcadena sobre el texto normalizado (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2` **cuando el modo sea `normalizada`** (modo por defecto). [RN-03, D-26]
+- **Mientras** el modo de búsqueda sea `estricta`, el sistema deberá comparar la clave como **subcadena literal del texto original**, sensible a mayúsculas y tildes y **sin variantes** (`LOSS ROJO` no coincide con `Loss Rojo`, `FIBRA DAÑADA` no coincide con `Fibra Danada`). [D-43]
 - **Si** el maestro no está disponible, entonces el sistema deberá permitir guardar la lista y advertir que no se reclasifican los casos existentes. [RNF-10]
 - **El sistema deberá** registrar el operador y la fecha/hora de cada cambio de claves o de modo. [RNF-09]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `claves_clasificacion.json` sin modificar el archivo. [D-35, RNF-12]
@@ -510,11 +520,13 @@
 - **Precondiciones:** sesión identificada (CU-01); `central.json` completo (CU-02); `estructura.json` posicional vigente; `sectores.json` y `claves_clasificacion.json` disponibles; el archivo `detalle_averias_gpon DD_MM_AAAA.csv` (separador `;`, UTF-8, 80 columnas) está en disco **y tiene al menos 1 registro de datos**.
 - **Postcondiciones:** `averias.json` contiene los casos nuevos de Francisco Salias con `ingreso`, `clase = REP`, `nivel = COM`, `tipo_abonado`, `sector` (o en cola) y `status` según RN-03 **con `ASGN` del CSV convertido a PEND (D-38)**; el rastro de origen de la ingesta (`ultimo_usuario` col. 20, `usuario_acciona` col. 53 y `Fecha Hora Asignacion` col. 80) queda conservado tal cual llegó del CSV (H-08); los casos ya existentes no se duplican.
 
-**Trazabilidad:** RF-16, RF-17, RF-18, RF-19; RN-01, RN-02, RN-03, RN-04; RNF-02, RNF-04, RNF-06, RNF-10, **RNF-14**; RT-02, RT-03, RT-04, RT-07, RT-08; D-05, D-06, D-10, D-12, D-17, D-21, D-26, **D-38, D-41**; H-03, H-08, H-09, H-14, H-24, H-27.
+**Trazabilidad:** RF-16, RF-17, RF-18, RF-19; RN-01, RN-02, RN-03, RN-04; RNF-02, RNF-04, RNF-06, RNF-10, **RNF-14, RNF-15**; RT-02, RT-03, RT-04, RT-07, RT-08; D-05, D-06, D-10, D-12, D-17, D-21, D-26, **D-38, D-41, D-42, D-44, D-46**; H-03, H-08, H-09, H-14, H-15, H-24, H-27.
 
 **Flujo principal**
 
 0. **Validación previa bloqueante (antes de cualquier escritura).** El sistema lee el archivo completo y comprueba, en este orden: (a) que la cabecera tenga **80 columnas** y que su orden posicional coincida con `estructura.json`; (b) que la primera fila se parta en 80 campos con `;`; (c) que exista **al menos 1 registro de datos** (un archivo de solo encabezado aborta); (d) que la suma del resumen cuadre (leídos = descartados por central + descartados por duplicado + rechazados + nuevos). Si cualquiera falla, la ingesta **aborta sin escribir el maestro y sin disparar el respaldo**. [D-21, H-14]
+
+   **Umbral de la ingesta (D-44, sin umbral porcentual).** El contrato se valida de forma **binaria**: (e) el archivo debe tener **exactamente 80 columnas**; y (f) cada columna declarada en `estructura.json` debe coincidir **en su posición** con la cabecera leída (misma columna, mismo índice). Si falla (e) o (f), la ingesta **aborta sin escribir**; **no existe** ningún umbral porcentual de coincidencia que permita continuar con columnas corridas o faltantes. [D-12, D-21, D-44]
 1. El operador abre la pestaña que contiene el bloque **INGESTA**, pulsa *Cargar CSV diario* y elige el archivo `detalle_averias_gpon DD_MM_AAAA.csv`.
 2. El sistema confirma el contrato de la validación previa (80 columnas, orden posicional, separador `;`, codificación UTF-8, al menos 1 registro) y avisa si algún campo obligatorio no es legible.
 3. El sistema aplica el filtro de central de `central.json` sobre las columnas 1 a 10 y descarta los registros de otras centrales (en la muestra del 12/09/2026: descarta 5 —4 de LAS MERCEDES CPA y 1 de EL HATILLO— y conserva los **51** de FRANCISCO SALIAS).
@@ -530,7 +542,7 @@
 
 **Flujos alternativos**
 
-- **2a. El archivo no tiene 80 columnas o el orden no coincide con `estructura.json`.** El sistema aborta la ingesta sin escribir nada, muestra «Contrato de ingesta inválido: se esperaban 80 columnas y se encontraron X; columna 31 esperada `informacion` y encontrada `Y`» y ofrece descargar el detalle de la cabecera leída. [D-21, H-24]
+- **2a. El archivo no tiene 80 columnas o el orden no coincide con `estructura.json`.** El sistema aborta la ingesta sin escribir nada, muestra «Contrato de ingesta inválido: se esperaban 80 columnas y se encontraron X; columna 31 esperada `informacion` y encontrada `Y`» y ofrece descargar el detalle de la cabecera leída. **El umbral es binario y sin margen porcentual**: basta una columna de menos o una columna declarada fuera de su posición para abortar. [D-12, D-21, D-44, H-24]
 - **2b. Codificación o separador distintos.** El sistema detecta que la primera fila no se puede partir en 80 campos con `;`, aborta y muestra «Verifique que el archivo use `;` y codificación UTF-8». [RT-08]
 - **2d. Archivo de solo encabezado o cuerpo malformado.** Si el archivo tiene la cabecera de 80 columnas pero **0 registros de datos**, o si la suma del resumen no cuadra, el sistema **aborta sin escribir el maestro, sin disparar el respaldo y sin confirmar «Ingesta completada»**, y muestra «El archivo no contiene registros de datos: no se modificó el maestro». [H-14]
 - **5a. Todos los registros son duplicados.** El sistema muestra «0 casos nuevos: los 51 registros de Francisco Salias ya existen» y no escribe el maestro. [RN-01, RNF-04]
@@ -541,8 +553,9 @@
 - **9a. Fecha con formato inesperado.** El sistema conserva el texto original íntegro en `fecha_reporte_original`, deja `fecha_reporte` vacía, cuenta el caso en el informe de incidencias y continúa con los demás. [D-21]
 - **12a. Fallo de escritura sobre `C:\GGTO\datos\averias.json`.** El sistema **no confirma la ingesta**, conserva el resumen en pantalla, muestra «No se pudo escribir el maestro: &lt;detalle&gt;» y ofrece *Reintentar* y *Guardar copia en `datos_respaldo`*; el maestro conserva exactamente su contenido anterior. [CU-21, H-09]
 - **12b. Reingesta del mismo archivo.** El sistema descarta el 100 % de los registros por duplicado y deja el maestro idéntico: mismo número de registros y mismos `id_averia`. [RNF-04, H-27]
-- **2c. El archivo no llega.** El operador no encuentra el archivo: el sistema mantiene el maestro del día anterior y no altera la fecha de ingesta; el supervisor registra la incidencia fuera de la página (el procedimiento de escalamiento con el emisor sigue pendiente). [H-15, H-24]
+- **2c. El archivo del día no llega (CSV ausente, D-46).** El operador no encuentra `detalle_averias_gpon DD_MM_AAAA.csv`: la página marca el día como **«sin ingesta»**, muestra la fecha del último archivo ingerido y deja el maestro del día anterior **intacto** (no altera `ingreso` ni inserta casos). El operador o el supervisor **registran la novedad** con **fecha, motivo y operador** en `datos/incidencias.log`, y la página **no bloquea** la consulta de casos ni la generación del despacho. El escalamiento con el emisor del CSV queda como punto abierto de §5.4. [D-46, H-15, H-24]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
+- **12c. Escritura verificada con respaldo previo (D-42, RNF-15).** Antes de escribir, el sistema copia el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribe el contenido nuevo en un **archivo temporal**, lo **relee** y **compara** con lo que quiso escribir (mismo número de registros e igualdad del texto serializado); solo entonces la pantalla muestra «Ingesta completada». Si la copia previa falla, la escritura falla o la relectura no coincide, el sistema **restaura el respaldo**, muestra «No se pudo verificar la escritura: se restauró el maestro del DD/MM/AAAA HH:MM», **no** confirma la ingesta y conserva el resumen en pantalla. [D-42, RNF-15]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -551,6 +564,7 @@
 3. **Dado** el archivo del 12/09/2026 con los **51 registros de FRANCISCO SALIAS** (11 con palabras clave y `estatus = PEND`, 3 con `estatus = ASGN` —2 con claves y 1 sin ellas— y 37 sin palabras clave y con `estatus = PEND`), **Cuando** el sistema aplica la clasificación, **Entonces** quedan **14 casos en `status = PEND`** (11 con claves + los 3 `ASGN`, que entran como PEND por D-38) **y 37 casos en `status = GESTION`**, de modo que **14 + 37 = 51**. *Nota: los recuentos anteriores «17 PEND y 39 GESTION» eran incorrectos porque se calcularon sobre los **56 registros de las 3 centrales**, no sobre los 51 filtrados de Francisco Salias (H-01).*
 4. **Dado** un registro con `estatus = ASGN` en la columna 27, **Cuando** se ingiere, **Entonces** el caso queda en **`status = PEND`** (D-38) y **no** en un estado `ASGN`; el maestro no incorpora ningún cuarto estado.
 5. **Dado** un archivo con 79 columnas, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «Contrato de ingesta inválido: se esperaban 80 columnas y se encontraron 79» y `averias.json` no se modifica.
+5b. **Dado** un archivo con las **80 columnas** en la cabecera pero con la columna declarada como `direccion` en `estructura.json` desplazada a otra posición, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «Contrato de ingesta inválido: la columna 34 declarada `direccion` no coincide en su posición» y `averias.json` no se modifica: **no** existe umbral porcentual que permita continuar. [D-44]
 6. **Dado** un archivo con la cabecera de 80 columnas y **0 registros de datos**, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «El archivo no contiene registros de datos: no se modificó el maestro», **no** escribe `averias.json`, **no** dispara el respaldo y **no** muestra «Ingesta completada».
 7. **Dado** un registro cuya columna 11 `id_averia` está vacía, **Cuando** se ingiere el archivo, **Entonces** el sistema rechaza la fila, la cuenta en el resumen como **1 rechazada** y la lista en el informe de incidencias con su número de fila, sin modificar el conteo de insertados por esa fila.
 8. **Dado** un lote en el que el `id_averia` `2026-00123` aparece en las filas 12 y 47, **Cuando** se ingiere, **Entonces** el sistema inserta **una sola vez** el caso (el de la fila 12), reporta la fila 47 como duplicada del lote y el maestro contiene un único registro con ese `id_averia`.
@@ -559,8 +573,9 @@
 11. **Dado** los 51 casos nuevos, **Cuando** termina la ingesta, **Entonces** cada uno tiene `ingreso` = 13/09/2026, `clase = REP`, `nivel = COM`, `tipo_abonado` informado y `status` ∈ {PEND, GESTION}.
 12. **Dado** un registro con `fecha_reporte = 17/07/2026 11:38:20 a.m.`, **Cuando** se ingiere, **Entonces** el caso queda con `fecha_reporte = 17/07/2026` y `fecha_reporte_original = 17/07/2026 11:38:20 a.m.`.
 13. **Dado** un registro del CSV con `ultimo_usuario = JPEREZ` (col. 20), `usuario_acciona = MGOMEZ` (col. 53) y `Fecha Hora Asignacion = 12/09/2026 08:15` (col. 80), **Cuando** se ingiere, **Entonces** el maestro conserva esos tres valores tal cual en el rastro de origen del caso y CU-15 los muestra como origen del dato. [H-08]
-14. **Dado** un maestro con 1.000 casos y un CSV de 60 registros, **Cuando** el operador pulsa *Confirmar ingesta*, **Entonces** desde ese clic hasta que el resumen aparece en pantalla transcurren menos de 3 s (punto de medida explícito, alineado con D-24; umbral derivado `&lt;PENDIENTE&gt;` de confirmación del usuario).
+14. **Dado** un maestro con 1.000 casos y un CSV de 60 registros, **Cuando** el operador pulsa *Confirmar ingesta*, **Entonces** desde ese clic hasta que el resumen aparece en pantalla transcurren menos de 3 s (punto de medida explícito, alineado con D-24; umbral derivado **S-RNF-02b**, pendiente **técnico** de calibración en la implementación, no una decisión del usuario).
 15. **Dado** que la escritura de `averias.json` falla, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «No se pudo escribir el maestro: &lt;detalle&gt;», **no** muestra «Ingesta completada», ofrece *Reintentar* y `averias.json` conserva exactamente el mismo contenido y el mismo número de registros que antes del intento.
+15c. **Dado** un maestro de 500 casos y un CSV válido de 51 registros nuevos, **Cuando** el operador confirma la ingesta, **Entonces** el sistema deja `averias_AAAA-MM-DD_HHMM.bak` con los 500 casos previos (y conserva como máximo las **10** copias `.bak` más recientes), escribe en el archivo temporal, **relee y compara** el contenido (551 registros, texto idéntico) y **solo entonces** muestra «Ingesta completada: 51 casos nuevos»; si la comparación falla, restaura el `.bak`, avisa y no confirma. [D-42, RNF-15]
 15b. **Dado** que el operador cargó el CSV con `averias.json` en `fecha_modificacion = 13/09/2026 09:00` y el maestro fue modificado a las 09:40 por `12345`, **Cuando** el operador pulsa *Confirmar ingesta*, **Entonces** el sistema **no escribe**, muestra «Conflicto: el archivo fue modificado por 12345 el 13/09/2026 09:40. Recargue o sobrescriba», conserva el resumen de la ingesta en pantalla y exige *Recargar* o *Sobrescribir* antes de insertar ningún caso. [D-41, RNF-14]
 16. **Dado** que el supervisor modificó las claves y las dejó vacías, **Cuando** el operador ejecuta la ingesta, **Entonces** el sistema advierte «No hay palabras clave configuradas: todos los casos entrarían en GESTION» y exige confirmación explícita antes de continuar.
 
@@ -580,6 +595,8 @@
 - **Mientras** existan direcciones sin sector, el sistema deberá mantenerlas en una cola visible sin impedir la inserción de los demás casos. [RN-04, CU-09]
 - **El sistema deberá** conservar el texto original de la fecha con hora y recortar el valor de trabajo a `DD/MM/AAAA`. [D-21, RNF-06]
 - **Si** la escritura del maestro falla, entonces el sistema deberá conservar el maestro anterior, informar el error, ofrecer *Reintentar* y **no** confirmar la ingesta como exitosa. [RNF-10, H-09]
+- **Cuando** vaya a escribir el maestro, el sistema deberá copiarlo antes a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** con el contenido pretendido, y **solo entonces** confirmar en pantalla; si cualquier paso falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
+- **Si** el archivo del día no llega, entonces el sistema deberá mostrarlo como «sin ingesta», permitir registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log`, mantener intacto el maestro del día anterior y **no** bloquear la consulta ni el despacho. [D-46]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
 ---
@@ -640,10 +657,10 @@
 - **Actor principal:** Operador de la central.
 - **Actor secundario:** Supervisor (consulta y edita todos los casos, D-35).
 - **Ciclo:** C1 (tabla) / C3 (clasificación). **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; `averias.json` legible; **si la sesión es de operador, tiene una cuadrilla asignada o trabaja en modo consulta global de solo lectura** (D-35, D-37, RNF-12).
+- **Precondiciones:** **sesión identificada (CU-01) con credencial válida y vigente (D-39)** —sin identificación válida la tabla **no se renderiza** (D-50, RNF-08)—; `averias.json` legible; **si la sesión es de operador, tiene una cuadrilla asignada o trabaja en modo consulta global de solo lectura** (D-35, D-37, RNF-12).
 - **Postcondiciones:** la tabla muestra los casos con las columnas resumen y los filtros/agrupaciones aplicados; toda edición de `clase`, `nivel` o `tipo_abonado` queda persistida y auditada.
 
-**Trazabilidad:** RF-07, RF-21, RF-23, RF-24; RN-07; RNF-01, RNF-02, RNF-07, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-13, RNF-14**; RT-01, RT-04; D-06, D-17, D-23, D-24, **D-29, D-35, D-37, D-39, D-40, D-41**; H-05, H-28.
+**Trazabilidad:** RF-07, RF-21, RF-23, RF-24; RN-07; RNF-01, RNF-02, RNF-07, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-13, RNF-14, RNF-15**; RT-01, RT-04; D-06, D-17, D-23, D-24, **D-29, D-35, D-37, D-39, D-40, D-41, D-42, D-48, D-50**; H-05, H-28.
 
 **Flujo principal**
 
@@ -665,6 +682,8 @@
 - **9b. Fallo de escritura.** El sistema revierte el valor en pantalla, muestra «No se guardó el cambio» y deja el caso en su estado anterior. [H-09]
 - **9c. Caso fuera del ámbito del rol (otra cuadrilla).** El sistema no muestra el caso al operador; si el operador fuerza la edición de un `id_averia` de otra cuadrilla, el sistema muestra «El caso no está asignado a su cuadrilla», no escribe y registra el intento. [D-35, D-37, RNF-12]
 - **9d. Sesión de operador sin cuadrilla.** El sistema mantiene la tabla en solo lectura y deshabilita *Guardar*, con el aviso «Sin cuadrilla asignada: solo consulta». [D-35, RNF-12]
+- **9e. Pérdida de la sesión (cierre o expiración de las 8 horas, D-45).** El sistema **oculta la tabla y los conteos**, vuelve al diálogo **Identificación del operador** y rechaza la edición con «Identifíquese para editar»; al reingresar, la tabla se reconstruye desde el maestro. [D-45, D-50, RNF-08]
+- **1a. Apertura sin identificación.** Si la página se abre sin sesión válida, la tabla de CASOS **no se renderiza** en absoluto: solo se ve el diálogo de acceso y ningún dato del maestro. [D-50, RNF-08]
 - **5a. El filtro no devuelve filas.** El sistema muestra «0 casos para los filtros aplicados» y ofrece *Limpiar filtros*.
 - **6a. Orden por columna con valores vacíos.** El sistema coloca los vacíos al final del orden, en ambos sentidos.
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
@@ -705,10 +724,10 @@
 - **Actor principal:** Operador de la central.
 - **Actores secundarios:** Supervisor.
 - **Ciclo:** C3. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; `averias.json` legible; **el caso consultado pertenece al ámbito del rol**: para el operador, `Reparador Principal` = `id` de su cuadrilla (D-35, D-37, RNF-12).
+- **Precondiciones:** **sesión identificada (CU-01) con credencial válida y vigente (D-39)** —sin identificación válida no se muestra ficha ni dato alguno del maestro (D-50, RNF-08)—; `averias.json` legible; **el caso consultado pertenece al ámbito del rol**: para el operador, `Reparador Principal` = `id` de su cuadrilla (D-35, D-37, RNF-12).
 - **Postcondiciones:** la ficha muestra los campos del caso agrupados en secciones; ninguna escritura se produce por el solo hecho de consultar.
 
-**Trazabilidad:** RF-02, RF-22 (apertura del flotante); RNF-01, RNF-02, **RNF-08, RNF-12**; RT-04; D-09, **D-35, D-37, D-39**; H-19, H-31.
+**Trazabilidad:** RF-02, RF-22 (apertura del flotante); RNF-01, RNF-02, **RNF-08, RNF-12**; RT-04; D-09, **D-35, D-37, D-39, D-50**; H-19, H-31.
 
 **Flujo principal**
 
@@ -728,7 +747,8 @@
 - **3d. El caso pertenece a otra cuadrilla (sesión de operador).** El sistema no abre la ficha y muestra «El caso no está asignado a su cuadrilla»; registra la consulta fallida con operador y fecha/hora. [D-35, RNF-12]
 - **5a. El caso ya está `CERRADO`.** El sistema muestra el flotante en modo lectura, con `resolucion`, `fechaResolucion`, `observaciones` y `sacas` visibles, y el botón *Cerrar caso* deshabilitado con el texto «Caso cerrado el DD/MM/AAAA». [H-19]
 - **2a. `averias.json` no disponible.** El sistema muestra «Maestro de casos no disponible» y ofrece *Restaurar desde respaldo*. [CU-21]
-- **1a. Sesión no identificada o contraseña caducada.** El sistema bloquea la consulta y pide identificación o el cambio obligatorio de contraseña (D-39); no existe modo de consulta anónima de datos personales: **el alcance exacto de lo que puede verse sin identificación sigue `&lt;PENDIENTE&gt;`** de decisión del usuario (H-31).
+- **1a. Sesión no identificada o contraseña caducada.** El sistema bloquea la consulta y pide identificación o el cambio obligatorio de contraseña (D-39). **No existe modo de consulta anónima ni vista previa de datos personales: sin sesión válida la página no muestra ningún dato** (D-50, RNF-08): el alcance de lo visible antes de iniciar sesión queda cerrado por D-50, que zanja H-31 —antes de identificarse solo se ve el diálogo de acceso—.
+- **5a. Pérdida de la sesión (cierre o expiración de las 8 horas, D-45).** El sistema cierra la ficha abierta, **oculta sus datos**, vuelve al diálogo de acceso y exige reingreso; ninguna ficha permanece visible sin sesión. [D-45, D-50, RNF-08]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -758,9 +778,9 @@
 - **Actor secundario:** Supervisor (verifica y también puede cerrar cualquier caso, D-35).
 - **Ciclo:** C3 (y C1 para el cierre desde el flotante de CASOS). **Prioridad:** MVP.
 - **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; el caso existe en `averias.json` y su `status` es distinto de `CERRADO`; **el `Reparador Principal` del caso coincide con el `id` de la cuadrilla del operador identificado (equivalencia D-37), o la sesión tiene rol supervisor**. [D-35, RNF-12]
-- **Postcondiciones:** el caso queda con `status = CERRADO`, `resolucion`, `fechaResolucion`, `observaciones` y `sacas` persistidos; el cambio queda auditado.
+- **Postcondiciones:** el caso queda con `status = CERRADO`, `resolucion`, `fechaResolucion`, `observaciones` y `sacas` persistidos, **con la escritura verificada por relectura y respaldo previo (D-42, RNF-15)**; el cambio queda auditado.
 
-**Trazabilidad:** RF-03, RF-22, RF-24; RN-07; RNF-06, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-14**; RT-01; D-20, **D-29, D-35, D-37, D-39, D-41**; H-11, H-19.
+**Trazabilidad:** RF-03, RF-22, RF-24; RN-07; RNF-06, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-14, RNF-15**; RT-01; D-20, **D-29, D-35, D-37, D-39, D-41, D-42**; H-11, H-19.
 
 **Flujo principal**
 
@@ -770,7 +790,7 @@
 4. El operador completa `resolucion` y `fechaResolucion`, y opcionalmente `observaciones` y `sacas`.
 5. El sistema valida: `resolucion` ∈ {IVR, COS, COLA}; `fechaResolucion` con formato `DD/MM/AAAA` y fecha válida; `sacas` ∈ {SI, NO}; `observaciones` de hasta 500 caracteres.
 6. El operador pulsa *Confirmar cierre*.
-7. El sistema escribe en `averias.json`: `status = CERRADO`, los 4 campos del cierre, `usuario_modificacion` = operador de la sesión y `fecha_modificacion` = fecha/hora actual; relee el archivo y verifica el cambio.
+7. El sistema escribe en `averias.json`: `status = CERRADO`, los 4 campos del cierre, `usuario_modificacion` = operador de la sesión y `fecha_modificacion` = fecha/hora actual. La escritura es **verificada (D-42, RNF-15)**: primero copia el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), luego escribe en un **archivo temporal**, **relee y compara** el contenido y solo entonces confirma el cambio en pantalla.
 8. El sistema muestra «Caso &lt;id_averia&gt; cerrado con resolución COS» y actualiza la fila de la tabla; el botón *Cerrar caso* queda deshabilitado para ese caso.
 
 **Flujos alternativos**
@@ -782,7 +802,7 @@
 - **2a. Caso de otra cuadrilla.** Si el `Reparador Principal` del caso no es el `id` de la cuadrilla del operador, el sistema muestra «Acción no permitida para su rol: el caso no está asignado a su cuadrilla», mantiene el bloque de cierre deshabilitado, no escribe el maestro y registra el intento con operador y fecha/hora. [D-35, D-37, RNF-12]
 - **2b. Contraseña caducada.** Si la sesión tiene la contraseña caducada, el sistema no habilita el cierre y exige el cambio de contraseña antes de operar. [D-39]
 - **1a. El caso ya está `CERRADO`.** El sistema muestra el cierre vigente y ofrece *Reabrir caso*; si el usuario autorizado confirma la reapertura, el caso pasa a `status = GESTION`, se conservan `resolucion` y `fechaResolucion` anteriores en `observaciones` con la marca «Reapertura DD/MM/AAAA hh:mm por &lt;operador&gt;» y el cambio se audita. [H-19, H-08]
-- **7a. Fallo de escritura.** El sistema muestra «No se pudo guardar el cierre», mantiene el caso abierto y ofrece *Reintentar* y *Guardar en `datos_respaldo`*. [H-09]
+- **7a. Fallo de escritura o de verificación (D-42).** Si la copia previa a `averias_AAAA-MM-DD_HHMM.bak`, la escritura del temporal o la relectura comparada fallan, el sistema **restaura el respaldo**, muestra «No se pudo verificar la escritura del cierre: se restauró el maestro del DD/MM/AAAA HH:MM», mantiene el caso abierto, **no confirma** el cierre y ofrece *Reintentar*. [D-42, RNF-15, H-09]
 - **3a. El operador cancela.** El sistema cierra el bloque de cierre sin escribir y el caso conserva su `status` anterior.
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
 
@@ -805,6 +825,7 @@
 **Restricciones del sistema (EARS)**
 
 - **Mientras** falten `resolucion` o `fechaResolucion`, el sistema deberá mantener deshabilitada la confirmación del cierre. [D-20, RNF-10, H-11]
+- **Cuando** vaya a escribir el cierre en el maestro, el sistema deberá copiarlo antes a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo**, y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 - **Si** un valor de enum o el formato de fecha son inválidos, entonces el sistema deberá rechazar el cierre sin escribir el archivo. [RNF-10]
 - **Cuando** se cierre un caso, el sistema deberá registrar operador y fecha/hora del cambio. [RNF-09, D-16]
 - **El sistema deberá** conservar el caso cerrado en el maestro sin purga automática, con finalidad documentada. [D-28]
@@ -820,9 +841,9 @@
 - **Actor secundario:** Operador de la central (ejecuta en calle los casos que salen de la bandeja).
 - **Ciclo:** C3. **Prioridad:** MVP.
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor y credencial válida y vigente (D-35, D-39, RNF-12)**; existen casos con `status = GESTION` (en la muestra del 12/09/2026, **37 casos**: los 51 ingeridos menos los 14 que entran en PEND).
-- **Postcondiciones:** cada caso gestionado sale de la bandeja con su clasificación corregida (`clase`, `nivel`, `tipo_abonado`, `sector`) y su resultado registrado; los casos no contactados permanecen en la bandeja con su intento anotado.
+- **Postcondiciones:** cada caso gestionado sale de la bandeja con su clasificación corregida (`clase`, `nivel`, `tipo_abonado`, `sector`) y su resultado registrado, **con la escritura verificada por relectura y respaldo previo (D-42, RNF-15)**; los casos no contactados permanecen en la bandeja con su intento anotado.
 
-**Trazabilidad:** RF-15, RF-07 (clasificación), RF-23, RF-24, RF-28; RN-07; RNF-01, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-14**; D-06, D-17, D-23, **D-29, D-35, D-38, D-39, D-41**; H-01, H-27.
+**Trazabilidad:** RF-15, RF-07 (clasificación), RF-23, RF-24, RF-28; RN-07; RNF-01, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-14, RNF-15**; D-06, D-17, D-23, **D-29, D-35, D-38, D-39, D-41, D-42**; H-01, H-27.
 
 **Flujo principal**
 
@@ -844,6 +865,7 @@
 - **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra la bandeja GESTION ni permite llamadas, cambios de clasificación ni «Enviar a calle»; muestra «Acción no permitida para su rol» y registra el intento. [D-35, RNF-12, RF-15]
 - **1b. Contraseña caducada.** Si la sesión del supervisor tiene la contraseña caducada, el sistema no abre la bandeja y exige el cambio antes de operar. [D-39]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
+- **5b. Escritura verificada con respaldo previo (D-42, RNF-15).** Al persistir una gestión, el sistema copia antes el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribe en un **archivo temporal**, **relee y compara** el contenido y solo entonces confirma en pantalla; si la relectura no coincide, **restaura el respaldo**, avisa «No se pudo verificar la escritura: se restauró el maestro» y la gestión no se da por registrada. [D-42, RNF-15]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -862,6 +884,7 @@
 - **Cuando** el supervisor cambie `clase`, `nivel` o `tipo_abonado`, el sistema deberá persistir el cambio de inmediato y auditar operador y fecha/hora. [RN-07, RNF-09]
 - **Si** el valor editado no pertenece al enum, entonces el sistema deberá rechazarlo sin escribir el archivo. [RNF-10]
 - **El sistema deberá** conservar en `observaciones` el rastro de cada intento de contacto con fecha. [D-16]
+- **Cuando** persista una gestión de la bandeja, el sistema deberá copiar el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el acceso a la bandeja GESTION y rechazar cualquier cambio de clasificación o «Enviar a calle». [D-35, RNF-12, RF-15]
 - **El sistema deberá** admitir como `status` del maestro únicamente PEND, GESTION y CERRADO, de modo que «Enviar a calle» lleve el caso a PEND y nunca a un estado `ASGN`. [D-38]
 - **Mientras** la contraseña de la sesión esté caducada, el sistema deberá mantener la bandeja bloqueada hasta completar el cambio obligatorio. [D-39, RNF-08]
@@ -897,9 +920,10 @@
 - **4c. Fecha inválida.** El sistema muestra «Fecha inválida: use DD/MM/AAAA con una fecha real» y no permite guardar.
 - **5a. Colisión de `MAN-` contra el maestro.** Si el `id_averia` candidato (`MAN-0001`) ya existe en `averias.json`, el sistema **rechaza ese valor**, calcula el siguiente consecutivo libre y lo sugiere: muestra «El id MAN-0001 ya existe; se sugiere MAN-0002» y solo continúa el alta cuando el valor sugerido está libre. [D-18, RNF-04]
 - **5b. Colisión de `MAN-` contra el CSV del día.** Si el CSV trae una fila con un `id_averia` del espacio `MAN-`, la ingesta ya la rechazó por reserva de prefijo (CU-08 5d) y el alta manual conserva el prefijo como propio. Si aun así se detecta una colisión en el momento del alta, el sistema **rechaza** el id candidato, sugiere el siguiente consecutivo libre y lo informa. [D-18, RN-01, H-09]
-- **7a. Fallo de escritura.** El sistema no confirma el alta, conserva los datos en el formulario y ofrece *Reintentar*. [CU-21]
-- **2a. Campos del fuente que no existen en el maestro.** A-17 quedó cerrada con D-14 (se descartan los datos de `alta_manual.csv`), pero la fuente original (L8) pedía «Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, ETC». El formulario aplica la lista cerrada de D-18 y **no** incluye Tipo, Actividad ni Agente; el mapeo de esos tres campos queda pendiente como observación de la auditoría y, si se decide incorporarlos, este caso de uso se amplía.
+- **7a. Fallo de escritura.** El sistema no confirma el alta, conserva los datos en el formulario y ofrece *Reintentar*. La copia fechada del cierre de jornada en `C:\GGTO\respaldo\` (D-49, RNF-16) es la red de seguridad del día. [D-49, CU-21]
+- **2a. Campos del fuente que no existen en el maestro (D-47, cerrado).** A-17 quedó cerrada con D-14 (se descartan los datos de `alta_manual.csv`) y **D-47** cierra el punto: aunque la fuente original (L8) pedía «Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, ETC», el alta manual **no incorpora Tipo, Actividad ni Agente** y el formulario se rige **exclusivamente** por la lista cerrada de campos de **D-18**. No queda mapeo pendiente de esos tres campos; si algún día se decidiera incorporarlos, haría falta una decisión nueva y la ampliación de este caso de uso. [D-14, D-18, D-47]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
+- **7b. Escritura verificada con respaldo previo (D-42, RNF-15).** Al confirmar el alta, el sistema copia antes el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribe en un **archivo temporal**, **relee y compara** el contenido y solo entonces muestra «Caso MAN-0001 creado»; si la relectura no coincide, **restaura el respaldo**, avisa y el alta **no** se confirma. [D-42, RNF-15]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -909,7 +933,7 @@
 4. **Dado** el formulario con `sector = 7` cuando `sectores.json` solo tiene los sectores 1 a 6, **Cuando** el operador guarda, **Entonces** el sistema muestra «El sector 7 no existe en `sectores.json`» y no crea el caso.
 5. **Dado** un caso creado manualmente, **Cuando** se lee `averias.json`, **Entonces** el registro tiene `ingreso = 13/09/2026`, `status = GESTION`, `clase = REP`, `nivel = COM`, `sector` informado y `usuario_modificacion` con el P00 de la sesión.
 5b. **Dado** que el operador abrió el formulario con `averias.json` en `fecha_modificacion = 13/09/2026 09:00` y el maestro fue modificado a las 09:20 por `12345`, **Cuando** el operador pulsa *Guardar caso*, **Entonces** el sistema no escribe, no consume el consecutivo `MAN-`, conserva los datos en el formulario, muestra «Conflicto: el archivo fue modificado por 12345 el 13/09/2026 09:20. Recargue o sobrescriba» y exige *Recargar* o *Sobrescribir*. [D-41, RNF-14]
-6. **Dado** el formulario de alta, **Cuando** el operador lo abre, **Entonces** los campos mostrados son exactamente los 11 de la lista cerrada y no hay ningún campo libre fuera de ella.
+6. **Dado** el formulario de alta, **Cuando** el operador lo abre, **Entonces** los campos mostrados son exactamente los 11 de la lista cerrada de D-18 —**sin Tipo, Actividad ni Agente** (D-47)— y no hay ningún campo libre fuera de ella. [D-18, D-47]
 7. **Dado** un caso manual `MAN-0001`, **Cuando** se ejecuta la ingesta del CSV del día, **Entonces** el caso manual no se modifica ni se duplica.
 
 **Restricciones del sistema (EARS)**
@@ -919,8 +943,9 @@
 - **Si** un campo obligatorio falta o un enum es inválido, entonces el sistema deberá rechazar el alta sin escribir el archivo. [RNF-10]
 - **Si** el `sector` no existe en `sectores.json`, entonces el sistema deberá rechazar el alta. [RNF-10, D-20]
 - **El sistema deberá** registrar el operador y la fecha/hora de creación del caso. [RNF-09]
-- **El sistema deberá** limitar el formulario a la lista cerrada de campos definida en D-18. [D-18]
+- **El sistema deberá** limitar el formulario a la lista cerrada de campos definida en D-18, **sin incorporar Tipo, Actividad ni Agente** del fuente. [D-18, D-47]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
+- **Cuando** confirme un alta manual, el sistema deberá copiar el maestro a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 
 ---
 
@@ -965,9 +990,9 @@
 
 - **Cuando** se modifiquen `status`, `clase`, `nivel`, `tipo_abonado`, `sector` o los campos de cierre, el sistema deberá registrar el operador y la fecha/hora del cambio. [RNF-09, D-16]
 - **El sistema deberá** mostrar como auditoría disponible en el MVP únicamente el operador y la fecha/hora del **último** cambio, más el rastro de origen de la ingesta de las columnas 20, 53 y 80 del CSV; **no** deberá mostrar valores anteriores que el maestro no conserve. [H-08, H-10]
-- **Mientras** el maestro no disponga de un registro inmutable de valores anteriores (decisión `&lt;PENDIENTE&gt;`: archivo JSONL append-only, ver H-08), el sistema deberá rotular el historial como pendiente de implementación en lugar de prometerlo. [H-08, H-10]
+- **Mientras** el maestro no disponga de un registro inmutable de valores anteriores (**pendiente técnico de implementación**: archivo JSONL append-only, ver H-08 y §5.4), el sistema deberá rotular el historial como pendiente de implementación en lugar de prometerlo. [H-08, H-10]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar la consulta de auditoría y registrar el intento. [D-35, RNF-12]
-- **El sistema deberá** conservar el caso y su rastro sin purga automática. [D-28]
+- **El sistema deberá** conservar el caso y su rastro sin purga automática, con la copia fechada del cierre de jornada en `C:\GGTO\respaldo\` como respaldo documental (D-49, RNF-16). [D-28, D-49]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
 ---
@@ -978,9 +1003,9 @@
 - **Actores secundarios:** Operador de la central (prepara los datos); cuadrillas (destinatarias).
 - **Ciclo:** C4. **Prioridad:** posterior (fuera del MVP).
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); casos abiertos en `averias.json` con `sector` asignado; `cuadrillas.json` con cuadrillas activas y sus sectores preferentes; los «citados del día» se determinan con `fecha_cita` (col. 19 del CSV, D-30) sin selector manual.
-- **Postcondiciones:** el despacho del día queda armado por cuadrilla, con las reglas de reparto verificadas, la asignación persistida en `averias."Reparador Principal"` (D-37) y el registro del día escrito en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31, RT-05).
+- **Postcondiciones:** el despacho del día queda armado por cuadrilla, con las reglas de reparto verificadas, la asignación persistida en `averias."Reparador Principal"` (D-37) y `averias.fecha_asignacion` con la fecha de la **última** asignación (D-48), y el registro del día escrito en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31, RT-05).
 
-**Trazabilidad:** RF-08, RF-09, RF-20; RN-05, RN-06; RNF-01, RNF-10, RNF-11, **RNF-12, RNF-14**; RT-05; D-07, D-25, **D-30, D-31, D-32, D-35, D-37, D-41**; H-04, H-24, H-28.
+**Trazabilidad:** RF-08, RF-09, RF-20; RN-05, RN-06; RNF-01, RNF-10, RNF-11, **RNF-12, RNF-14, RNF-15**; RT-05; D-07, D-25, **D-30, D-31, D-32, D-35, D-37, D-41, D-42, D-48**; H-04, H-24, H-28.
 
 **Flujo principal**
 
@@ -992,7 +1017,7 @@
 6. El sistema asigna la construcción (`clase = CNS`) a **una sola** cuadrilla: la que tenga reparaciones en el mismo sector, desempatando según D-32 (zona preferente → menor carga del día → `id` menor).
 7. El sistema muestra la propuesta por cuadrilla con los incumplimientos señalados.
 8. El supervisor ajusta manualmente asignaciones entre cuadrillas hasta que no queden incumplimientos; cada cambio queda registrado con operador y fecha/hora.
-9. El supervisor pulsa *Confirmar despacho*; el sistema escribe `Reparador Principal` en cada caso de `averias.json`, escribe el registro del día en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31), relee ambos archivos y muestra «Despacho confirmado: N casos en K cuadrillas».
+9. El supervisor pulsa *Confirmar despacho*; el sistema escribe `Reparador Principal` **y `fecha_asignacion` = fecha del despacho** en cada caso de `averias.json` (D-48: es la fecha de la **última** asignación de cuadrilla y de ella sale la métrica «asignados por día» de MONITOREO), escribe el registro del día en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31) y **verifica la escritura del maestro según D-42** (respaldo `.bak`, temporal, relectura y comparación) antes de mostrar «Despacho confirmado: N casos en K cuadrillas».
 10. El sistema deja disponible el despacho confirmado para el PDF por cuadrilla (CU-17).
 
 **Flujos alternativos**
@@ -1031,6 +1056,8 @@
 - **Mientras** una cuadrilla no tenga al menos una reparación de referidos y una de empresas, el sistema deberá señalar el incumplimiento antes de permitir la confirmación. [RN-05]
 - **Cuando** el despacho se confirme, el sistema deberá persistir la asignación en `averias."Reparador Principal"`, escribir el registro del día en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho`, y releer ambos archivos. [RN-07, D-31, D-37]
 - **El sistema deberá** registrar operador y fecha/hora de la confirmación y de cada ajuste manual del despacho. [RNF-09, RNF-11]
+- **Cuando** confirme el despacho, el sistema deberá escribir `fecha_asignacion` en cada caso asignado con la fecha del día del despacho (fecha de la **última** asignación de cuadrilla), para alimentar la métrica «asignados por día» de la zona CUADRILLA del MONITOREO sin archivos de despacho por fecha. [D-48]
+- **Cuando** vaya a escribir el maestro, el sistema deberá copiarlo antes a `averias_AAAA-MM-DD_HHMM.bak` (conservando las **10** últimas), escribir en un archivo temporal, **releerlo y compararlo** y **solo entonces** confirmar; si falla, deberá restaurar el respaldo, avisar y **no** confirmar. [D-42, RNF-15]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la generación y la confirmación del despacho sin modificar los archivos. [D-35, RNF-12]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
@@ -1096,12 +1123,12 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `averias.json` con casos de la semana en curso y de la semana anterior, y con `sector` y `Reparador Principal` informados en la mayoría de los casos; definiciones de métrica acordadas según D-34 (semana operativa lunes a sábado, Sem 1 a Sem 36).
 - **Postcondiciones:** las 6 zonas de MONITOREO muestran gráfico y tabla descriptiva, incluida la **Gestión Semanal estadística** de D-34 (ingreso del día vs. reparadas del día con la línea del pendiente al cierre de cada día, agrupada por semana del año y con selector **Sem 1 a Sem 36**); ninguna consulta modifica los datos.
 
-**Trazabilidad:** RF-05, RF-06, RF-25; RN-08; RNF-02, RNF-06, RNF-07, **RNF-12, RNF-13**; S-RNF-02b; D-17, D-23, D-24, **D-34, D-35, D-40**; H-16, H-28.
+**Trazabilidad:** RF-05, RF-06, RF-25; RN-08; RNF-02, RNF-06, RNF-07, **RNF-08, RNF-12, RNF-13**; S-RNF-02b; D-17, D-23, D-24, **D-34, D-35, D-40, D-48, D-50**; H-16, H-28.
 
 **Flujo principal**
 
 1. El supervisor abre la pestaña **MONITOREO**.
-2. El sistema calcula y dibuja las 6 zonas con gráfico y tabla descriptiva: **Gestión Diario** (ingreso nuevo, resuelto residencial, resuelto empresarial, resuelto referidos), **Gestión Semanal** (curva de lunes a sábado), **Casos Globales** (pendiente vs. resuelto), **Reparación** (pendientes por tipo: residenciales comunes, residenciales referidos, empresariales), **Construcción** (pendientes residenciales y empresariales) y **Cuadrilla** (asignados vs. cerrados vs. gestionados por día).
+2. El sistema calcula y dibuja las 6 zonas con gráfico y tabla descriptiva: **Gestión Diario** (ingreso nuevo, resuelto residencial, resuelto empresarial, resuelto referidos), **Gestión Semanal** (curva de lunes a sábado), **Casos Globales** (pendiente vs. resuelto), **Reparación** (pendientes por tipo: residenciales comunes, residenciales referidos, empresariales), **Construcción** (pendientes residenciales y empresariales) y **Cuadrilla** (asignados por día —de `fecha_asignacion`, D-48— vs. cerrados vs. gestionados por día).
 3. El sistema muestra la fecha de corte y el rango de la semana operativa (lunes a sábado) usados en el cálculo.
 4. El supervisor cambia la fecha de corte y el sistema recalcula las 6 zonas.
 5. El supervisor abre la pestaña **GRAFICOS** y el sistema presenta las mismas 6 zonas como gráficos dedicados: barras (diario, globales, construcción, cuadrilla), **barras + línea** para la semanal (barras de ingreso vs. reparadas por día y línea del pendiente al cierre de cada día) y torta (reparación). [D-34]
@@ -1111,10 +1138,11 @@
 
 - **2a. Maestro con 0 casos en el rango.** El sistema muestra los 6 gráficos vacíos con «Sin datos para el rango seleccionado» y el conteo en 0.
 - **2b. Casos sin `sector` o sin `Reparador Principal`.** El sistema los agrupa bajo «Sin asignar» y muestra el conteo de excluidos por cada métrica afectada. [H-28]
-- **2c. Métricas no calculables por falta de campos de fecha de asignación.** El sistema muestra «Asignados: criterio pendiente (H-28)» en la zona Cuadrilla y no inventa la cifra. [H-28]
+- **2c. Casos sin `fecha_asignacion`.** Los casos que nunca han pasado por el despacho (o los ingeridos antes de D-48) no tienen `fecha_asignacion`: el sistema **no inventa** la cifra, los agrupa bajo «Sin asignar» y muestra la nota «Asignados: casos sin `fecha_asignacion` (no despachados)». El criterio de cálculo de «asignados por día» queda **cerrado por D-48**: se cuenta por la fecha de la **última** asignación de cuadrilla de cada caso. [D-48, H-28]
 - **4a. Fecha de corte fuera de la semana operativa.** El sistema ajusta el rango al lunes y sábado de la semana correspondiente y lo informa.
 - **4b. Semana fuera del rango Sem 1 a Sem 36.** El sistema limita el selector a **Sem 1 a Sem 36**, avisa «Semana fuera de rango» y no dibuja la serie. [D-34]
 - **5a. El navegador no soporta los gráficos locales.** El sistema muestra las tablas descriptivas sin gráfico y advierte «Gráficos no disponibles en este navegador». [RT-07]
+- **1b. Apertura sin sesión o pérdida de la sesión (D-50, D-45).** Si la página se abre sin identificación válida, MONITOREO y GRAFICOS **no se renderizan**: no hay cifras, tablas ni gráficos a la vista, solo el diálogo de acceso. Si la sesión se cierra o expira (8 horas), el sistema **oculta los 6 gráficos y sus tablas**, vuelve al diálogo y exige reingreso antes de recalcular. [D-45, D-50, RNF-08]
 - **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra MONITOREO ni GRAFICOS y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
@@ -1124,7 +1152,8 @@
 3. **Dado** 120 casos con `status = CERRADO`, `clase = REP` y `tipo_abonado = RES` **con `fechaResolucion` dentro de la fecha de corte mostrada**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Residencial: 120» e indica el corte aplicado en pantalla.
 4. **Dado** 8 casos con `tipo_abonado = EMP`, `status = CERRADO` **y `fechaResolucion` dentro del corte**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Empresarial: 8».
 5. **Dado** 5 casos con `clase = CNS` y `status` distinto de `CERRADO`, **Cuando** el supervisor consulta CONSTRUCCION, **Entonces** la tabla muestra 5 casos pendientes de construcción.
-6. **Dado** un caso sin `Reparador Principal`, **Cuando** el supervisor consulta la zona CUADRILLA, **Entonces** el caso aparece en el grupo «Sin asignar» y no distorsiona los totales por cuadrilla.
+6. **Dado** un caso sin `Reparador Principal` ni `fecha_asignacion`, **Cuando** el supervisor consulta la zona CUADRILLA, **Entonces** el caso aparece en el grupo «Sin asignar», no se cuenta entre los «asignados por día» y no distorsiona los totales por cuadrilla. [D-48]
+6b. **Dado** un despacho confirmado el 13/09/2026 con 45 casos asignados a 3 cuadrillas y 5 casos reasignados por ajuste manual, **Cuando** el supervisor consulta la zona CUADRILLA, **Entonces** la serie «asignados por día» cuenta los casos por su `fecha_asignacion` = 13/09/2026 —la **última** asignación de cada caso— sin usar ningún archivo de despacho por fecha, y muestra ese criterio de cálculo en pantalla. [D-48]
 7. **Dado** que el supervisor abre GRAFICOS, **Cuando** la pestaña termina de cargar, **Entonces** se muestran 6 gráficos: 4 de barras, **1 de barras + línea (semanal)** y 1 de torta. [D-34]
 8. **Dado** el selector de semana del bloque **Gestión Semanal estadístico**, **Cuando** el supervisor elige **Sem 36**, **Entonces** el sistema dibuja la serie de ingreso del día, las reparadas del día y la línea del pendiente al cierre de cada día de esa semana, y no ofrece ninguna opción más allá de Sem 36. [D-34]
 9. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir MONITOREO, **Entonces** el sistema responde «Acción no permitida para su rol» y no muestra cifras.
@@ -1137,7 +1166,7 @@
 - **El sistema deberá** calcular el seguimiento semanal como serie estadística de **ingreso del día vs. reparadas del día**, con la **línea del pendiente al cierre de cada día**, agrupada por semana del año y seleccionable de **Sem 1 a Sem 36**, sin generar ningún archivo de hoja de cálculo. [D-34, RF-05, RF-25]
 - **Mientras** el maestro contenga 1.000 casos, el sistema deberá dibujar MONITOREO en menos de 3 s. [RNF-02, D-24]
 - **Si** un caso no tiene sector o cuadrilla, entonces el sistema deberá agruparlo bajo «Sin asignar» y mostrar el conteo de excluidos. [H-28, RNF-10]
-- **El sistema deberá** mostrar el criterio de cálculo y el rango temporal de cada cifra en pantalla. [H-28, RNF-01]
+- **El sistema deberá** calcular «asignados por día» de la zona CUADRILLA agrupando los casos por `fecha_asignacion` (fecha de la **última** asignación de cuadrilla, D-48), sin depender de archivos de despacho por fecha, y mostrar el criterio de cálculo y el rango temporal de cada cifra en pantalla. [D-48, H-28, RNF-01]
 - **El sistema deberá** funcionar sin conexión a internet y sin consultar servicios externos. [RT-07]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el acceso a MONITOREO y GRAFICOS. [D-35, RNF-12]
 - **El sistema deberá** acompañar **cada gráfico** de una tabla o texto alternativo equivalente con los mismos valores y el mismo criterio de corte, alcanzable solo con el teclado y con foco visible. [D-40, RNF-13]
@@ -1152,7 +1181,7 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); despacho del día confirmado (CU-16) para la salida de despacho; datos del día y de la semana operativa cargados y corregidos para la serie estadística.
 - **Postcondiciones:** el **despacho** queda emitido en pantalla y PDF; el **seguimiento semanal** queda disponible como serie estadística por día (ingreso vs. reparadas, con la línea del pendiente al cierre) seleccionable de Sem 1 a Sem 36; **no** se genera ningún archivo XLSX. [D-34]
 
-**Trazabilidad:** RF-25, RF-05; RN-08; RNF-01, RNF-06, RNF-07, RNF-11, **RNF-12, RNF-13**; D-27, **D-34, D-35, D-40**; H-16, H-23, H-28.
+**Trazabilidad:** RF-25, RF-05; RN-08; RNF-01, RNF-06, RNF-07, RNF-11, **RNF-08, RNF-12, RNF-13**; D-27, **D-34, D-35, D-40, D-50**; H-16, H-23, H-28.
 
 **Flujo principal**
 
@@ -1173,6 +1202,7 @@
 - **4b. Semana fuera de Sem 1 a Sem 36.** El sistema limita el selector a Sem 1 a Sem 36 y avisa «Semana fuera de rango». [D-34]
 - **6a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y conserva la anterior en la ruta controlada. [RNF-11, D-27]
 - **1b. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque REPORTES y registra el intento. [D-35, RNF-12]
+- **1c. Apertura sin sesión o pérdida de la sesión (D-50, D-45).** Sin identificación válida el bloque REPORTES y la serie estadística **no se renderizan** (no se muestra ninguna cifra ni el despacho del día); si la sesión se cierra o expira, el sistema oculta las salidas en pantalla, vuelve al diálogo de acceso y exige reingreso antes de emitir o reemitir. [D-45, D-50, RNF-08]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -1207,7 +1237,7 @@
 - **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); maestro con `sector` y `status` informados; umbral de concentración configurado en CONFIGURACION.
 - **Postcondiciones:** el supervisor ve la lista de averías concentradas por sector y la lista de **casos especiales** —definición **definitiva**: `tipo_abonado = EMP` o `nivel = REF` **abiertos** (D-33)— y puede actuar sobre ellas.
 
-**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-09, **RNF-12, RNF-14**; D-23, D-25, **D-33, D-35, D-41**; H-04, H-14.
+**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-08, RNF-09, **RNF-12, RNF-14**; D-23, D-25, **D-33, D-35, D-41, D-50**; H-04, H-14.
 
 **Flujo principal**
 
@@ -1227,6 +1257,7 @@
 - **7a. El caso ya está `CERRADO`.** El sistema permite la anotación, advierte «El caso está cerrado» y no cambia su `status`. [H-19]
 - **2a. Casos sin sector.** El sistema los excluye del cálculo y muestra «N casos sin sector no se contabilizan».
 - **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque CONCENTRADAS / ESPECIALES ni permite anotar acciones sobre los casos, y registra el intento. [D-35, RNF-12]
+- **1b. Apertura sin sesión o pérdida de la sesión (D-50, D-45).** Sin identificación válida el bloque CONCENTRADAS / ESPECIALES **no se renderiza**: no se muestran las listas de averías concentradas ni de casos especiales. Si la sesión se cierra o expira, el sistema **oculta ambas listas y sus conteos**, vuelve al diálogo de acceso y exige reingreso. [D-45, D-50, RNF-08]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
 
 **Criterios de aceptación (Gherkin)**
@@ -1257,34 +1288,34 @@
 - **Actor principal:** Supervisor (función administrativa, D-35: el respaldo es de su rol).
 - **Actores secundarios:** Soporte TI del puesto; operador de la central (recibe el aviso de fallo).
 - **Ciclo:** C1 (respaldo manual) / C7 (prueba de restauración). **Prioridad:** MVP (respaldo manual) / posterior (prueba formal en C7).
-- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `C:\GGTO\datos` con los JSON de trabajo; ruta de respaldo disponible.
-- **Postcondiciones:** existe una copia fechada e íntegra de los JSON y, tras una restauración probada, el sistema vuelve a operar con los datos recuperados.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `C:\GGTO\datos` con los JSON de trabajo; carpeta **`C:\GGTO\respaldo\`** disponible (D-49).
+- **Postcondiciones:** existe una copia **fechada** del maestro (`averias_AAAA-MM-DD.json`) en `C:\GGTO\respaldo\`, **sin cifrado**, y —tras una restauración probada y documentada en C7— el sistema vuelve a operar con los datos recuperados dentro del **RTO de 1 hora** y con un **RPO** que no va más atrás del cierre del día anterior (D-49).
 
-**Trazabilidad:** RF-24; RNF-04, RNF-10, **RNF-12, RNF-14**; RT-01, RT-10; D-01, D-19, D-28, D-35, D-36, **D-41**; H-09, H-12, H-13, H-25.
+**Trazabilidad:** RF-24; RNF-04, RNF-10, **RNF-12, RNF-14, RNF-15, RNF-16**; RT-01, RT-10; D-01, D-19, D-28, D-35, D-36, **D-41, D-42, D-49**; H-09, H-12, H-13, H-25.
 
 **Flujo principal**
 
 1. El supervisor abre el bloque **RESPALDO** y consulta el estado: fecha y hora del último respaldo, tamaño de cada archivo y ruta de destino.
 2. El supervisor pulsa *Respaldar ahora* (respaldo **manual**, sin automatismo ni rotación: D-36).
-3. El sistema copia `averias.json`, `despacho.json`, `estructura.json`, `central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json` y `claves_clasificacion.json` a la ruta de respaldo en una carpeta con la fecha del día.
-4. El sistema relee cada copia y la compara con el original **por contenido**: igualdad del texto serializado (y, si se decide, suma de verificación SHA-256) **y** igual número de registros; muestra «Respaldo verificado: 9 archivos».
-5. **Restauración:** el supervisor elige una carpeta de respaldo, pulsa *Restaurar* y el sistema muestra qué archivos se van a reemplazar y con qué fecha.
-6. El supervisor confirma; el sistema **respalda el estado actual antes de reemplazar**, copia los archivos elegidos y relee cada uno para verificar que son JSON válidos y que `averias.json` tiene al menos el mismo número de registros que la copia.
-7. El sistema muestra «Restauración completada desde el respaldo del DD/MM/AAAA» y el estado de cada archivo, incluida la ruta del respaldo previo del estado anterior.
+3. **Copia del cierre de jornada (D-49).** El sistema copia `averias.json`, `despacho.json`, `estructura.json`, `central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json` y `claves_clasificacion.json` a **`C:\GGTO\respaldo\`**, con la copia del maestro fechada como **`averias_AAAA-MM-DD.json`** (`AAAA-MM-DD` = fecha del cierre). **Sin cifrado**: el paquete queda en claro y el supervisor lo lleva después a la red o a un pen drive, bajo su responsabilidad. [D-49, RNF-16]
+4. El sistema relee cada copia y la compara con el original **por contenido** (igualdad del texto serializado y mismo número de registros), con el mismo criterio de verificación por relectura de D-42; muestra «Respaldo verificado: 9 archivos» y la **fecha y hora del último cierre respaldado**. [D-42, D-49, RNF-16]
+5. **Restauración (D-49).** El supervisor elige una copia fechada de `C:\GGTO\respaldo\`, pulsa *Restaurar* y el sistema muestra el archivo, su fecha y cuántos registros contiene frente al maestro vigente.
+6. El supervisor confirma; el sistema **respalda el estado actual antes de reemplazar** (con el mismo mecanismo de D-42) y **copia la copia fechada sobre `C:\GGTO\datos\averias.json`**, releyendo el archivo resultante para verificar que es JSON válido y que tiene al menos el mismo número de registros que la copia.
+7. El sistema muestra «Restauración completada desde el respaldo del DD/MM/AAAA» con la **hora de inicio y de fin de la restauración** (para comprobar el **RTO de 1 hora**) y la **fecha del cierre respaldado** (para comprobar el **RPO = cierre del día anterior**), y deja la **prueba de restauración documentada en C7** con operador y fecha.
 
 **Flujos alternativos**
 
-- **3a. Fallo de copia (ruta no disponible).** El sistema muestra «No se pudo escribir en la ruta de respaldo: &lt;detalle&gt;» y ofrece elegir otra ruta; no marca el respaldo como exitoso. [H-25]
-- **4a. La copia difiere del original.** El sistema marca el respaldo como fallido, conserva el error, indica el archivo y la diferencia detectada y recomienda reintentar.
+- **3a. Fallo de copia (`C:\GGTO\respaldo\` no disponible o sin permisos).** El sistema muestra «No se pudo escribir en `C:\GGTO\respaldo\`: &lt;detalle&gt;», no marca el respaldo como exitoso, lo registra en el log con fecha y hora y ofrece reintentar. [D-49, H-25]
+- **4a. La copia difiere del original.** El sistema marca el respaldo como fallido, conserva el error, indica el archivo y la diferencia detectada y recomienda reintentar. La comparación es **por contenido releído** (mismo número de registros e igualdad del texto serializado), el mismo criterio que D-42 aplica al escribir el maestro. [D-42, RNF-15]
 - **6a. El respaldo elegido está corrupto.** El sistema detecta el JSON inválido, no reemplaza nada y muestra «Respaldo inválido: &lt;archivo&gt;».
 - **6b. El respaldo tiene menos registros que el maestro vigente.** El sistema muestra «La copia tiene 800 casos y el maestro 1.000. ¿Confirma el reemplazo?» y exige confirmación escrita. [RNF-04]
-- **1a. Nunca se ha respaldado.** El sistema muestra «Sin respaldos registrados», resalta el aviso y no permite activar la operación del día sin confirmar el respaldo (aviso, no bloqueo). [H-25]
+- **1a. Nunca se ha respaldado.** El sistema muestra «Sin respaldos registrados» y resalta el aviso **al cierre de la jornada**; no bloquea la operación del día (aviso, no bloqueo), pero deja constancia de que no hay copia fechada y, por tanto, el RPO no está cubierto. [D-49, H-25]
 - **2a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque RESPALDO ni permite respaldar o restaurar, y registra el intento. [D-35, RNF-12]
 - **Conflicto de concurrencia (D-41, RNF-14).** Si al guardar el sistema detecta que el archivo cambió desde su carga, **no escribe**: muestra «Conflicto: el archivo fue modificado por &lt;usuario_modificacion&gt; el &lt;fecha_modificacion&gt;. Recargue o sobrescriba», deshabilita *Guardar* hasta que el usuario decida y registra la decisión con operador y fecha/hora. Si elige *Recargar*, sus cambios locales se pierden y la vista se reconstruye con el contenido del disco; si elige *Sobrescribir*, su escritura procede y queda registrada como sobrescritura consciente.
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** el supervisor pulsa *Respaldar ahora*, **Entonces** la ruta de respaldo contiene una carpeta con la fecha del día y los 9 archivos copiados y verificados por contenido.
+1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** al cierre de la jornada el supervisor acepta la copia ofrecida por la página, **Entonces** `C:\GGTO\respaldo\` contiene los 9 archivos copiados y verificados por contenido, la copia del maestro se llama `averias_2026-09-13.json` (fecha del cierre) y **no** está cifrada. [D-49, RNF-16]
 2. **Dado** un respaldo con `averias.json` de 1.000 casos y un maestro vigente de 1.000 casos, **Cuando** el supervisor restaura, **Entonces** el maestro queda con los mismos 1.000 `id_averia` y el sistema muestra «Restauración completada».
 3. **Dado** un archivo de respaldo con JSON inválido, **Cuando** el supervisor intenta restaurarlo, **Entonces** el sistema muestra «Respaldo inválido», no reemplaza ningún archivo y el maestro conserva sus datos.
 4. **Dado** un respaldo con 800 casos y un maestro con 1.000, **Cuando** el supervisor intenta restaurar, **Entonces** el sistema pide confirmación escrita y no reemplaza nada hasta obtenerla.
@@ -1292,6 +1323,7 @@
 6. **Dado** un respaldo completado, **Cuando** el supervisor consulta el estado, **Entonces** el sistema muestra la fecha y hora del último respaldo exitoso y la ruta de destino.
 7. **Dado** un maestro con 1.000 casos, **Cuando** el supervisor confirma una restauración, **Entonces** existe un respaldo del estado anterior (1.000 casos) en la ruta de respaldo y su contenido coincide con el maestro que había antes de reemplazar.
 8. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir el bloque RESPALDO, **Entonces** el sistema responde «Acción no permitida para su rol» y no copia ni reemplaza ningún archivo.
+8c. **Dado** un incidente que obliga a restaurar el maestro del cierre del 12/09/2026, **Cuando** el supervisor inicia la restauración a las 09:05 y el sistema termina de reemplazar y verificar el maestro a las 09:40, **Entonces** la restauración queda registrada con **inicio 09:05 y fin 09:40** —dentro del **RTO de 1 hora** (D-49)—, el maestro recuperado corresponde al **cierre del día anterior** —**RPO** cumplido— y la prueba queda documentada en C7 con el operador que la ejecutó. [D-49, RNF-16]
 8b. **Dado** un respaldo elegido con `averias.json` en `fecha_modificacion = 13/09/2026 09:00`, **Cuando** el supervisor confirma *Restaurar* y el maestro vigente tiene ahora `fecha_modificacion = 13/09/2026 12:30` con `usuario_modificacion = 12345`, **Entonces** el sistema **no reemplaza** el maestro, muestra «Conflicto: el archivo fue modificado por 12345 el 13/09/2026 12:30. Recargue o sobrescriba» y exige una decisión explícita de sobrescritura consciente antes de continuar. [D-41, RNF-14]
 
 **Restricciones del sistema (EARS)**
@@ -1300,12 +1332,13 @@
 - **Si** la copia difiere del original, entonces el sistema deberá marcar el respaldo como fallido e informar el detalle del archivo y de la diferencia. [RNF-10]
 - **Cuando** el supervisor restaure un respaldo, el sistema deberá respaldar el estado actual antes de reemplazar y verificar que ese respaldo previo exista y coincida con el estado anterior. [D-19]
 - **El sistema deberá** mantener los datos de trabajo fuera de Google Drive, en `C:\GGTO\datos`. [D-19, RT-10]
-- **El sistema deberá** ejecutar el respaldo **solo a demanda del supervisor**, sin automatismo programado ni rotación. [D-36]
+- **El sistema deberá** ejecutar el respaldo **solo a demanda del supervisor**, sin automatismo programado. Al **cierre de la jornada** deberá **ofrecer** la copia fechada del maestro (`averias_AAAA-MM-DD.json`) en `C:\GGTO\respaldo\`, **sin cifrado**, y el supervisor la llevará después a la red o a un pen drive. [D-36, D-49, RNF-16]
+- **Cuando** el supervisor restaure una copia fechada, el sistema deberá copiarla sobre `C:\GGTO\datos\averias.json` previa confirmación, registrar la hora de inicio y de fin, y permitir verificar el **RTO de 1 hora** y el **RPO del cierre del día anterior**. [D-49, RNF-16]
 - **El sistema deberá** conservar el histórico de casos sin purga automática y mantener el respaldo en una ruta controlada. [D-28, D-27]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el respaldo y la restauración sin copiar ni reemplazar archivos. [D-35, RNF-12]
 - **Si** la marca de modificación del archivo difiere de la capturada al cargarlo, entonces el sistema deberá **impedir el guardado** y exigir una decisión explícita del usuario (recargar o sobrescribir), de modo que **ningún guardado sobrescriba cambios ajenos sin decisión explícita**. [D-41, RNF-14]
 
-> **Puntos `&lt;PENDIENTE&gt;` de decisión del usuario en este caso de uso (H-12, H-13):** (a) la **ruta de respaldo** definitiva —hoy conviven `G:\...\datos_respaldo` y una ruta controlada por definir— y su justificación si sigue siendo la unidad sincronizada; (b) el **cifrado** del paquete de respaldo, que contiene datos personales (nombre, teléfono, dirección, cédula, correo); (c) el **número de copias en rotación, la retención y el responsable** (D-36 suprime la rotación, pero no fija retención); y (d) el **RTO/RPO** y el algoritmo de verificación (hash SHA-256 o comparación byte a byte). Mientras no se decidan, el sistema no promete rotación, cifrado ni objetivo de recuperación.
+> **Este caso de uso ya no tiene puntos `&lt;PENDIENTE&gt;`.** La **verificación de la escritura** quedó decidida por **D-42** y RNF-15 (relectura y comparación del contenido tras escribir en un archivo temporal, con respaldo previo `averias_AAAA-MM-DD_HHMM.bak` —se conservan las **10** últimas— y restauración automática ante fallo). La **política de respaldo** quedó decidida por **D-49** y RNF-16: al cierre de la jornada se ofrece la copia fechada `averias_AAAA-MM-DD.json` en **`C:\GGTO\respaldo\`**, **sin cifrado**, que el supervisor lleva después a la red o a un pen drive; la restauración copia esa copia sobre `C:\GGTO\datos\averias.json` previa confirmación; y los objetivos declarados son **RTO de 1 hora** y **RPO = cierre del día anterior**, con prueba de restauración documentada en C7. H-11, H-12 y H-13 quedan cerrados.
 
 ---
 
@@ -1326,7 +1359,7 @@
 3. El sistema valida que los archivos de datos requeridos existan y sean JSON válidos y avisa de los que falten.
 4. El supervisor consulta el registro de la aplicación (log) y el informe de la última ingesta, y descarga el detalle si lo necesita.
 5. Si el servidor local no está disponible, el supervisor activa el **modo descarga**: el sistema permite consultar el maestro cargado con el selector de archivos y guarda los cambios descargando el JSON completo, con el aviso «Modo descarga: reemplace el archivo en C:\GGTO\datos al terminar».
-6. Si el archivo del CSV diario no llega, el supervisor mantiene el maestro del día anterior, deja constancia de la incidencia y continúa con la operación existente. [H-24]
+6. Si el archivo del CSV diario no llega, la página muestra el día como **«sin ingesta»** (D-46): mantiene el maestro del día anterior, permite **registrar la novedad** (fecha, motivo y operador) en `datos/incidencias.log` y **no bloquea** la consulta ni el despacho. [D-46, H-24]
 7. Al cierre, el supervisor verifica el estado: última escritura confirmada, último respaldo y número de errores registrados en el día.
 
 **Flujos alternativos**
@@ -1335,7 +1368,7 @@
 - **1b. No hay Python ni Node.js.** El sistema no puede levantar el servidor: muestra las opciones *Instalar Python/Node* o *Trabajar en modo descarga* y queda operativo solo en modo descarga. [H-23, RNF-03]
 - **2a. Navegador sin File System Access API (Firefox o Safari).** El sistema avisa «Este navegador no permite escribir los JSON: use Edge o Chrome 86+» y habilita solo el modo descarga. [RNF-03, H-22]
 - **2b. Versión de Chrome/Edge inferior a 86.** El sistema muestra el mismo aviso y ofrece actualizar.
-- **3a. `averias.json` ausente, vacío o con JSON inválido.** El sistema bloquea la edición, muestra «Maestro no disponible: &lt;detalle&gt;» y ofrece *Restaurar desde respaldo* (CU-21). [H-20, H-25]
+- **3a. `averias.json` ausente, vacío o con JSON inválido.** El sistema bloquea la edición, muestra «Maestro no disponible: &lt;detalle&gt;» y ofrece *Restaurar desde respaldo* (CU-21), que con **D-49** consiste en copiar una copia fechada de `C:\GGTO\respaldo\` sobre `C:\GGTO\datos\averias.json` previa confirmación del supervisor, dentro del **RTO de 1 hora** y con **RPO** del cierre del día anterior. [D-49, RNF-16, H-20, H-25]
 - **5a. Cambios sin guardar en modo descarga.** El sistema mantiene el aviso de pendiente y bloquea la salida de la página hasta confirmar la descarga del JSON. [RNF-04]
 - **4a. Error en la ingesta.** El sistema registra el error en el log, muestra el mensaje accionable y conserva el archivo con la cabecera leída para diagnóstico. [H-20]
 - **7a. Acción no permitida para su rol.** El operador puede ejecutar el lanzador y consultar el estado del entorno, pero **no** puede restaurar desde respaldo ni cambiar la ruta de datos: el sistema responde «Acción no permitida para su rol» y registra el intento. [D-35, RNF-12]
@@ -1358,10 +1391,10 @@
 - **Si** un archivo de datos falta o no es JSON válido, entonces el sistema deberá bloquear la edición, informar con claridad y ofrecer la restauración desde respaldo. [H-20, H-25]
 - **Mientras** el servidor local no esté disponible, el sistema deberá permitir la operación en modo descarga sin pérdida de datos. [H-23]
 - **El sistema deberá** registrar en un log los errores de lectura, escritura e ingesta, con fecha, hora y detalle accionable. [H-20]
-- **El sistema deberá** funcionar sin conexión a internet y sin CDN. [RT-07]
+- **El sistema deberá** funcionar sin conexión a internet y sin CDN, con las **versiones de las librerías de `lib/` (CSV, gráficos y PDF) fijadas** en C1 y verificadas por el paso 2 de diagnóstico. [RT-07]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar las acciones de restauración y de cambio de ruta de datos, admitiendo solo el arranque del puesto y la consulta del estado. [D-35, RNF-12]
 
-> **Puntos `&lt;PENDIENTE&gt;` de decisión del usuario en este caso de uso:** (a) la **concurrencia de dos sesiones** sobre el mismo archivo —el corpus no define bloqueo, versión de documento ni detección de conflicto, y por tanto el sistema no promete evitar el último-escritor-gana—; y (b) la **escritura atómica y el versionado del maestro** (archivo temporal + reemplazo, `averias.json.bak`, campo de versión). [H-10, H-11]
+> **Puntos resueltos que ya no son `&lt;PENDIENTE&gt;` en este caso de uso:** (a) la **concurrencia de dos sesiones** quedó decidida por **D-41** y RNF-14 (sin bloqueo: relectura de la marca de modificación y decisión obligatoria entre recargar o sobrescribir), y (b) la **escritura atómica y el versionado del maestro** quedan decididos por **D-42** y RNF-15 (respaldo previo `averias_AAAA-MM-DD_HHMM.bak` con las 10 últimas copias, escritura en archivo temporal, relectura y comparación antes de confirmar, y restauración del respaldo si algo falla). [D-41, D-42, H-10, H-11]
 
 ---
 
@@ -1385,21 +1418,21 @@
 | RF-14 | CU-05 (CUADRILLA) | Cubierto | `despacho.json` ampliado por D-31 (H-04 cerrado). |
 | RF-15 | CU-13 (bandeja GESTION, exclusiva del supervisor) | Cubierto | Tamaño de bandeja corregido a 37 (D-38, H-01 cerrado). |
 | RF-16 | CU-08 (carga, filtro de central, extracción y dedupe) | Cubierto | Validación de `id_averia` vacío, duplicados del lote y prefijo `MAN-`. |
-| RF-17 | CU-08 (clasificación) y CU-07 (vista previa) | **Parcial** | El criterio CA-3 de CU-08 ya es determinista (14/37, D-38). Queda pendiente únicamente la semántica del modo `estricta` de CU-07 (H-15/P3), que afecta a la clasificación. |
+| RF-17 | CU-08 (clasificación) y CU-07 (vista previa) | Cubierto | El criterio CA-3 de CU-08 ya es determinista (14/37, D-38) y la semántica del modo `estricta` de CU-07 queda cerrada por **D-43** (subcadena literal, sensible a mayúsculas y tildes, sin variantes); P3 cerrado. |
 | RF-18 | CU-08 (asignación de sector) y CU-09 (cola de direcciones sin coincidencia) | Cubierto | — |
 | RF-19 | CU-08 (`ingreso`, `clase = REP`, `nivel = COM`) | Cubierto | — |
 | RF-20 | CU-16 (extracción por `Reparador Principal`) y CU-17 (15 columnas del despacho) | Cubierto | Lista canónica única de 15 columnas (D-31, H-24 cerrado). |
 | RF-21 | CU-10 (tabla con las 7 columnas resumen) | Cubierto | — |
 | RF-22 | CU-11 (flotante con toda la información) y CU-12 (cierre con bloqueo y autorización) | Cubierto | Dueño único del cierre: CU-12; el botón del flotante invoca CU-12 (H-22). |
-| RF-23 | CU-10 (agrupación y filtrado), CU-13 (clasificación correctiva) y CU-15 (rastro de los cambios) | **Parcial** | La transición de estado atribuida por error a CU-10 se eliminó del diagrama (H-07) y la edición de `clase`/`nivel` ahora exige rol y ámbito de cuadrilla. Queda la métrica «Asignados» de MONITOREO sin definir (H-28). |
-| RF-24 | CU-08, CU-10, CU-12, CU-13, CU-14 (persistencia inmediata) y CU-21 (respaldo del archivo) | Cubierto | Persistencia, relectura y **control de concurrencia por comparación de marca (D-41, RNF-14)** aplicados. Queda fuera de RF-24 la escritura atómica (H-11), declarada `&lt;PENDIENTE&gt;` en CU-22. |
+| RF-23 | CU-10 (agrupación y filtrado), CU-13 (clasificación correctiva) y CU-15 (rastro de los cambios) | Cubierto | La transición de estado atribuida por error a CU-10 se eliminó del diagrama (H-07) y la edición de `clase`/`nivel` exige rol y ámbito de cuadrilla. La métrica «asignados por día» queda definida por **D-48** a partir de `fecha_asignacion` (H-28 cerrado). |
+| RF-24 | CU-08, CU-10, CU-12, CU-13, CU-14, CU-16 (persistencia inmediata) y CU-21 (respaldo del archivo) | Cubierto | Persistencia, relectura, **control de concurrencia por comparación de marca (D-41, RNF-14)** y **escritura verificada con respaldo previo (D-42, RNF-15)** aplicados; H-11 cerrado. |
 | RF-25 | CU-19 (despacho en pantalla y PDF; seguimiento semanal estadístico Sem 1 a Sem 36) y CU-18 (zona GESTION SEMANAL) | Cubierto | Reconciliado con D-34 (H-23 cerrado); sin XLSX. |
 | RF-26 | CU-20 (averías concentradas) y CU-20 (casos especiales EMP/REF abiertos, D-33) | **Parcial** | Criterio de caso especial cerrado y sin rótulo provisional; permanece el conteo de averías concentradas por semana operativa sujeto a la definición de corte de la semana. |
-| RF-27 | CU-07 (palabras clave y modo de búsqueda) | **Parcial** | Semántica del modo `estricta` sin definir (H-15/P3), P3 abierta. |
+| RF-27 | CU-07 (palabras clave y modo de búsqueda) | Cubierto | Semántica del modo `estricta` definida por **D-43** (subcadena literal, sensible a mayúsculas y tildes, sin variantes); P3 cerrado. |
 | RF-28 | CU-13 (edición y uso de `tipo_abonado`) y CU-10 (edición en línea) | Cubierto | — |
 | RF-29 | CU-06 (CRUD de sectores) y CU-09 (creación del sector mínimo desde la cola) | Cubierto | La excepción del operador queda acotada por D-35. |
 
-**Resultado: 29 de 29 RF cubiertos; ningún RF queda sin caso de uso.** De ellos, 6 quedan en estado **Parcial** por defectos internos del CU que los cubre —RF-17, RF-23, RF-24, RF-26 y RF-27, con su causa en la columna Observación—, **no** por falta de dueño funcional. Las filas RF-01, RF-10 y RF-20, antes marcadas «Parcial», pasan a **Cubierto** tras las correcciones de esta revisión (H-20, H-24, H-34).
+**Resultado: 29 de 29 RF cubiertos; ningún RF queda sin caso de uso.** Tras esta sincronización queda **1** fila en estado **Parcial** —**RF-26** (conteo de averías concentradas por semana operativa sujeto a la definición de corte de la semana)—, **no** por falta de dueño funcional. RF-17, RF-23, RF-24 y RF-27, antes «Parcial», pasan a **Cubierto** con **D-42**, **D-43** y **D-48** (H-11, H-28 y P3 cerrados). Las filas RF-01, RF-10 y RF-20 ya habían pasado a **Cubierto** en la revisión anterior (H-20, H-24, H-34).
 
 ### 5.1 Cobertura de RNF, RT y RN
 
@@ -1414,13 +1447,15 @@
 | RNF-05 | CU-17 | Verificado |
 | RNF-06 | CU-08, CU-11, CU-12, CU-18, CU-19 | Verificado |
 | RNF-07 | CU-01, CU-04, CU-10, CU-18, CU-19 | Verificado |
-| **RNF-08** | CU-01, CU-02, CU-03, CU-08, CU-09, CU-10, CU-11, CU-12, CU-13, CU-15, CU-21, CU-22 | Verificado (retirado de CU-06, que no lo menciona; añadidos CU-09, CU-10, CU-12 y CU-13, H-19 y H-21 cerrados; reforzado con D-39) |
+| **RNF-08** | CU-01, CU-02, CU-03, CU-08, CU-09, CU-10, CU-11, CU-12, CU-13, CU-15, CU-18, CU-19, CU-20, CU-21, CU-22 | Verificado (retirado de CU-06, que no lo menciona; añadidos CU-09, CU-10, CU-12 y CU-13, H-19 y H-21 cerrados; reforzado con D-39 y, en los CU de consulta y gráficos, con **D-50**: sin sesión válida no se renderiza ningún dato) |
 | RNF-09 | CU-01, CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-09, CU-10, CU-12, CU-13, CU-14, CU-15, CU-16, CU-20 | Verificado |
 | RNF-10 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-08, CU-10, CU-11, CU-12, CU-13, CU-14, CU-16, CU-21 | Verificado |
 | RNF-11 | CU-16, CU-17, CU-19 | Verificado |
 | **RNF-12** | **CU-01, CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-08, CU-09, CU-10, CU-11, CU-12, CU-13, CU-14, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20, CU-21, CU-22** | **Nuevo (D-35): aplicado en los 22 CU** |
 | **RNF-13** | **Transversal: CU-01 a CU-22 (todos los casos de uso con interfaz). Verificación formal en CU-01 (diálogo de sesión), CU-10 (tabla de CASOS), CU-18 y CU-19 (gráficos con tabla o texto alternativo equivalente)** | **Nuevo (D-40): cubre la accesibilidad mínima obligatoria y cierra H-05/H-21, que deja de figurar como hueco** |
 | **RNF-14** | **CU-08, CU-10, CU-12, CU-13, CU-14, CU-15, CU-16, CU-20, CU-21 (y los CU que escriben padrones: CU-02 a CU-07)** | **Nuevo (D-41): cierra H-10 en su parte de concurrencia; probado con dos ventanas simultáneas en CU-12** |
+| **RNF-15** | **CU-08, CU-12, CU-13, CU-14, CU-16 y CU-21 (todos los CU que escriben `averias.json`; CU-10 podría escribirlo si edita en línea)** | **Nuevo (D-42): integridad de escritura con respaldo previo, archivo temporal, relectura y comparación; cierra H-11; verificación formal en CU-12 y CU-08** |
+| **RNF-16** | **CU-21** (dueño del respaldo; se cita además en CU-14, CU-15 y CU-22) | **Nuevo (D-49): copia fechada de cierre en `C:\GGTO\respaldo\` sin cifrado, restauración con confirmación, RTO 1 hora y RPO del cierre del día anterior; cierra H-12 y H-13; prueba documentada en C7** |
 | RT-01 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-08, CU-10, CU-12, CU-14, CU-21 | Verificado |
 | RT-02 | CU-08 | Verificado |
 | RT-03 | CU-02, CU-08, CU-09 | Verificado |
@@ -1487,8 +1522,17 @@
 | **D-39** (`P00` + contraseña de 8 caracteres o más, guardada como hash con sal, caducidad de 90 días y restablecimiento por el supervisor) | **CU-01, CU-03, CU-10, CU-11, CU-12, CU-13** |
 | **D-40** (accesibilidad mínima obligatoria: teclado, foco visible, `label`, contraste 4,5:1 y tabla o texto alternativo por gráfico) | **Transversal CU-01 a CU-22; verificación formal en CU-01, CU-10, CU-18 y CU-19** |
 | **D-41** (concurrencia sin bloqueo: relectura y comparación de la marca de modificación, aviso con usuario y fecha/hora, decisión entre recargar o sobrescribir) | **CU-02 a CU-10, CU-12, CU-13, CU-14, CU-15, CU-16, CU-20, CU-21** |
+| **D-42** (escritura verificada con respaldo previo `averias_AAAA-MM-DD_HHMM.bak` —10 últimas—, archivo temporal, relectura y comparación, y restauración ante fallo; RNF-15) | **CU-08, CU-12, CU-13, CU-14, CU-16, CU-21, CU-22** (y la convención §1.15) |
+| **D-43** (modo `estricta`: subcadena literal, sensible a mayúsculas y tildes, sin variantes; `normalizada` sigue siendo el modo por defecto) | **CU-07, CU-08** |
+| **D-44** (umbral de la ingesta: aborta sin escribir si no hay 80 columnas o si una columna declarada no coincide en su posición; sin umbral porcentual) | **CU-08** |
+| **D-45** (expiración de sesión: 8 horas y cierre al cerrar la pestaña; reingreso sin pérdida de lo guardado) | **CU-01** |
+| **D-46** (CSV ausente: «sin ingesta», novedad en `datos/incidencias.log` con fecha, motivo y operador; no bloquea consulta ni despacho) | **CU-08, CU-22** |
+| **D-47** (el alta manual no incorpora Tipo, Actividad ni Agente; rige la lista cerrada de D-18) | **CU-14** |
+| **D-48** (`fecha_asignacion` en el maestro: fecha de la última asignación de cuadrilla; métrica «asignados por día» de la zona CUADRILLA) | **CU-05, CU-16, CU-18** |
+| **D-49** (política de respaldo: copia fechada `averias_AAAA-MM-DD.json` al cierre de jornada en `C:\GGTO\respaldo\`, sin cifrado; restauración por copia con confirmación; RTO 1 hora y RPO del cierre del día anterior; RNF-16) | **CU-21** (y citada en CU-14, CU-15, CU-22) |
+| **D-50** (sin sesión válida la página no muestra ningún dato: solo el diálogo de acceso; al cerrarse o expirar la sesión se ocultan datos y se vuelve al diálogo; RNF-08) | **CU-01, CU-10, CU-11, CU-18, CU-19, CU-20** (transversal a toda la interfaz) |
 
-**Nota de verificación:** la atribución de cada decisión se contrastó con la línea **Trazabilidad** del caso de uso correspondiente. D-13 queda **sin efecto** por D-38. D-08, D-22 y RT-11 se declaran **fuera del alcance de los casos de uso** y se remiten a `entornos_globales.md` y `requerimientos.md`. RNF-14 (D-41) se verificó línea a línea en los casos de uso que escriben archivos compartidos.
+**Nota de verificación:** la atribución de cada decisión se contrastó con la línea **Trazabilidad** del caso de uso correspondiente. **D-42 a D-50** se aplicaron en esta sincronización: D-42 en los CU que escriben el maestro (CU-08, CU-12, CU-13, CU-14, CU-16, CU-21 y la nota de CU-22) junto con **RNF-15**; D-43 en CU-07 y CU-08; D-44 y D-46 en CU-08 (D-46 también en CU-22); D-45 en CU-01; D-47 en CU-14; D-48 en CU-05 (padrón de cuadrillas), CU-16 y CU-18; **D-49** (copia fechada de cierre en `C:\GGTO\respaldo\` sin cifrado, restauración por copia con confirmación, RTO 1 hora y RPO del cierre del día anterior) en **CU-21**, con **RNF-16**; y **D-50** (sin sesión válida no se renderiza ningún dato; al cerrarse o expirar la sesión se ocultan los datos y se vuelve al diálogo) en **CU-01**, **CU-10**, **CU-11**, **CU-18**, **CU-19** y **CU-20**. D-13 queda **sin efecto** por D-38. D-08, D-22 y RT-11 se declaran **fuera del alcance de los casos de uso** y se remiten a `entornos_globales.md` y `requerimientos.md`. RNF-14 (D-41) se verificó línea a línea en los casos de uso que escriben archivos compartidos.
 
 ### 5.3 Decisiones aplicadas en lugar de supuestos (H-04)
 
@@ -1506,22 +1550,24 @@ Las 18 ambigüedades están cerradas y **no queda ningún supuesto** en este doc
 
 **Verificación mecánica:** la marca de supuesto por ambigüedad (el literal con corchete y el identificador A-xx) aparece **0 veces** en este documento.
 
-### 5.4 Puntos pendientes de decisión del usuario (no resueltos en esta revisión)
+### 5.4 Pendientes técnicos de implementación (ninguna decisión de usuario abierta)
 
-| # | Punto pendiente | Hallazgo | Dónde queda anotado |
+Esta es la **única** sección de pendientes del documento (sustituye a la lista final anterior, que quedaba duplicada). **No queda ningún punto `&lt;PENDIENTE&gt;` de decisión del usuario:** todo lo que dependía de una decisión quedó cerrado por **D-42 a D-50**. Lo que sigue son **asuntos técnicos de implementación** (valores, umbrales y artefactos por fijar al construir), que no cambian el alcance funcional y por eso no se marcan como `&lt;PENDIENTE&gt;` en el cuerpo de los casos de uso.
+
+| # | Pendiente técnico de implementación | Origen | Dónde queda anotado |
 |---|---|---|---|
-| 1 | **Escritura atómica y versionado del maestro** (temporal + reemplazo, `averias.json.bak`, campo de versión) | H-11 / P7 | CU-22, nota final |
-| 2 | **Respaldo:** ruta definitiva, cifrado, número de copias, retención, responsable, RTO/RPO y algoritmo de verificación | H-12, H-13 / P8, P9 | CU-21, nota final |
-| 3 | **Semántica del modo `estricta`** de las palabras clave (literal estricto vs. literal sin distinguir mayúsculas) | H-15 / P3 | CU-07, CA 5 |
-| 4 | **Umbral de desempeño propio de la ingesta** (criterio derivado S-RNF-02b: < 3 s con punto de medida explícito) | H-27 | CU-08, CA 14; §5.1 |
-| 5 | **Métrica «Asignados» de la zona Cuadrilla de MONITOREO** | H-28 | CU-18, flujo 2c |
-| 6 | **Alcance de lo visible sin identificación** (datos personales del abonado) | H-31 | CU-11, flujo 1a |
-| 7 | **Procedimiento de escalamiento con el emisor del CSV** cuando el archivo no llega | H-15 | CU-08, flujo 2c |
-| 8 | **Mapeo de los campos Tipo, Actividad y Agente** de la fuente primaria al alta manual | H-02 | CU-14, flujo 2a |
-| 9 | **Duración de la expiración de sesión por inactividad** | H-03 | CU-01, flujo 11a |
+| 1 | **Umbral de desempeño propio de la ingesta** (criterio derivado S-RNF-02b: &lt; 3 s con punto de medida explícito) | H-27 | CU-08, CA 14; §5.1 |
+| 2 | **Registro inmutable de valores anteriores para el historial de auditoría** (archivo JSONL append-only): el MVP muestra solo el último cambio | H-08, H-10 | CU-15, flujo 4a y EARS |
+| 3 | **Conteo de averías concentradas por semana operativa**: fijar la definición del corte de la semana al implementar CU-20 | H-14 / RF-26 | CU-20; §5, fila RF-26 |
+| 4 | **Procedimiento de escalamiento con el emisor del CSV** cuando el archivo del día no llega: definir el canal y el responsable | H-15 | CU-08, flujo 2c; CU-22, paso 6 |
+| 5 | **Versiones de las librerías locales de `lib/`** (CSV, gráficos y PDF) por fijar antes de C1, junto con el lanzador | RT-07 / C1 | CU-22 (entorno y diagnóstico) |
 
-**Huecos de la auditoría cerrados en esta revisión (ya no figuran como pendientes):** H-01 (cifras de la ingesta con **14 PEND + 37 GESTION**, D-38), H-03 (credencial de sesión con contraseña, hash y sal, D-39), H-05/H-21 (accesibilidad **atendida** por D-40 y RNF-13, con verificación formal en CU-01, CU-10, CU-18 y CU-19), H-04 (supuestos sustituidos por D-29 a D-34) y **H-10 en su parte de concurrencia (atendida por D-41 y RNF-14)**; de H-10 solo queda vivo el punto de la escritura atómica (H-11).
+**Puntos que D-42 a D-50 cerraron y ya no figuran como pendientes:** la **escritura atómica y el versionado del maestro** (D-42, RNF-15; H-11), la **semántica del modo `estricta`** (D-43; H-15/P3), el **umbral de la ingesta** (D-44), la **expiración de sesión** (D-45; H-03), el **CSV ausente** (D-46), el **mapeo de Tipo/Actividad/Agente del alta manual** (D-47; H-02), la **métrica «Asignados» de la zona Cuadrilla** (D-48; H-28), la **política de respaldo** —ruta `C:\GGTO\respaldo\`, ausencia de cifrado, quién la custodia, RTO 1 hora y RPO del cierre del día anterior— (**D-49**, RNF-16; H-12, H-13) y el **alcance de lo visible antes de iniciar sesión**, que queda en **nada: solo el diálogo de acceso** (**D-50**, RNF-08; H-31).
 
-**Registro de decisiones aplicadas en esta revisión.** Se aplicaron **D-29 a D-41**: D-29 (`P00` único y obligatorio), D-30 (citados por `fecha_cita`), D-31 (`despacho.json` ampliado), D-32 (desempate de la construcción), D-33 (casos especiales definitivos), D-34 (salidas de reportes), D-35 (matriz de permisos), D-36 (respaldo manual), D-37 (equivalencia de cuadrilla), **D-38 (`ASGN` del CSV entra como `PEND`; el maestro conserva tres estados)**, **D-39 (`P00` + contraseña con hash, sal, caducidad de 90 días y restablecimiento)** y **D-40 (accesibilidad mínima obligatoria, RNF-13)**. **D-41** (**concurrencia sin bloqueo**: relectura y comparación de la marca de modificación, aviso con `usuario_modificacion` y `fecha_modificacion`, y decisión obligatoria entre *Recargar* y *Sobrescribir*) se aplicó a los 22 CU que escriben y se probó con un criterio de dos ventanas simultáneas en CU-12.
+**Huecos de la auditoría cerrados (ya no figuran como pendientes):** H-01 (cifras de la ingesta con **14 PEND + 37 GESTION**, D-38), H-03 (credencial de sesión con contraseña, hash y sal, D-39), H-05/H-21 (accesibilidad **atendida** por D-40 y RNF-13, con verificación formal en CU-01, CU-10, CU-18 y CU-19), H-04 (supuestos sustituidos por D-29 a D-34), **H-10 (concurrencia, D-41 y RNF-14)**, **H-02 (mapeo de Tipo/Actividad/Agente, D-47)**, **H-11 (escritura atómica y versionado, D-42 y RNF-15)**, **H-12 y H-13 (política de respaldo, D-49 y RNF-16)**, **H-28 (métrica «asignados por día», D-48)**, **H-31 (alcance visible sin identificación, D-50 y RNF-08)**, **H-15/P3 (modo `estricta`, D-43)** y **H-29 (aparcado por D-47)**. Con **D-50** no queda ningún hueco de la auditoría que dependa de una decisión del usuario.
 
-**Nota de cierre.** D-38 resolvió el último bloqueo aritmético del corpus (H-01): la ingesta del 12/09/2026 produce **51 insertados → 14 PEND + 37 GESTION**, y la bandeja de CU-13 queda en **37** casos. D-39 cerró la brecha de autenticación (H-03): la sesión exige `P00` **y** contraseña verificada contra hash con sal, con caducidad de 90 días. D-40 cerró la brecha de accesibilidad (H-05/H-21): la interfaz se opera solo con teclado, con foco visible, `label` por campo, contraste mínimo 4,5:1 y tabla o texto alternativo equivalente por gráfico. **D-41 cerró la concurrencia (H-10 en su parte de concurrencia): ningún guardado sobrescribe cambios ajenos sin decisión explícita del usuario; de H-10 solo queda pendiente la escritura atómica (H-11).** **Riesgo aceptado y documentado por el agente padre:** el hash en un archivo local servido sin TLS protege la atribución frente a suplantaciones casuales, pero **no** es una defensa fuerte frente a quien pueda leer `tecnicos.json` o capturar el tráfico en el puesto.
+**Registro de decisiones aplicadas en esta sincronización (D-42 a D-50).** Se aplicaron **D-42** (escritura verificada con respaldo previo `averias_AAAA-MM-DD_HHMM.bak` —10 últimas copias—, archivo temporal, relectura y comparación, y restauración ante fallo; **RNF-15**, cierra H-11) en CU-08, CU-12, CU-13, CU-14, CU-16, CU-21 y CU-22; **D-43** (modo `estricta` = subcadena literal, sensible a mayúsculas y tildes, sin variantes; `normalizada` por defecto) en CU-07 y CU-08; **D-44** (la ingesta aborta sin escribir si no hay 80 columnas o si una columna declarada no coincide en su posición, sin umbral porcentual) en CU-08; **D-45** (sesión de 8 horas, cierre al cerrar la pestaña y reingreso sin pérdida de lo guardado) en CU-01; **D-46** (CSV ausente = «sin ingesta» con novedad en `datos/incidencias.log` y sin bloquear consulta ni despacho) en CU-08 y CU-22; **D-47** (el alta manual no incorpora Tipo, Actividad ni Agente; rige la lista cerrada de D-18) en CU-14; **D-48** (`fecha_asignacion` con la fecha de la última asignación de cuadrilla y la métrica «asignados por día») en CU-05, CU-16 y CU-18; y **D-49** (copia fechada `averias_AAAA-MM-DD.json` al cierre de jornada en `C:\GGTO\respaldo\`, sin cifrado, con RTO de 1 hora y RPO del cierre del día anterior; **RNF-16**) en CU-21, con la alineación de CU-14, CU-15 y CU-22; y **D-50** (sin sesión válida la página no renderiza ningún dato: solo el diálogo de acceso; al cerrarse o expirar la sesión —8 horas, D-45— se ocultan los datos y se vuelve al diálogo) en **CU-01, CU-10, CU-11, CU-18, CU-19 y CU-20**, con **RNF-08**.
+
+**Registro de decisiones de la revisión anterior.** Se aplicaron **D-29 a D-41**: D-29 (`P00` único y obligatorio), D-30 (citados por `fecha_cita`), D-31 (`despacho.json` ampliado), D-32 (desempate de la construcción), D-33 (casos especiales definitivos), D-34 (salidas de reportes), D-35 (matriz de permisos), D-36 (respaldo manual), D-37 (equivalencia de cuadrilla), **D-38 (`ASGN` del CSV entra como `PEND`; el maestro conserva tres estados)**, **D-39 (`P00` + contraseña con hash, sal, caducidad de 90 días y restablecimiento)** y **D-40 (accesibilidad mínima obligatoria, RNF-13)**. **D-41** (**concurrencia sin bloqueo**: relectura y comparación de la marca de modificación, aviso con `usuario_modificacion` y `fecha_modificacion`, y decisión obligatoria entre *Recargar* y *Sobrescribir*) se aplicó a los 22 CU que escriben y se probó con un criterio de dos ventanas simultáneas en CU-12.
+
+**Nota de cierre.** D-38 resolvió el último bloqueo aritmético del corpus (H-01): la ingesta del 12/09/2026 produce **51 insertados → 14 PEND + 37 GESTION**, y la bandeja de CU-13 queda en **37** casos. D-39 cerró la brecha de autenticación (H-03): la sesión exige `P00` **y** contraseña verificada contra hash con sal, con caducidad de 90 días. D-40 cerró la brecha de accesibilidad (H-05/H-21): la interfaz se opera solo con teclado, con foco visible, `label` por campo, contraste mínimo 4,5:1 y tabla o texto alternativo equivalente por gráfico. **D-41 cerró la concurrencia (H-10): ningún guardado sobrescribe cambios ajenos sin decisión explícita del usuario.** **D-42 y RNF-15 cerraron H-11** (escritura verificada con respaldo previo, archivo temporal, relectura y comparación, y restauración si algo falla) y **D-49 y RNF-16 cerraron H-12 y H-13** (copia fechada de cierre en `C:\GGTO\respaldo\`, sin cifrado, con RTO de 1 hora y RPO del cierre del día anterior). **D-50 y RNF-08 cierran el alcance visible sin identificación (H-31): sin sesión válida la página no muestra ningún dato.** **Riesgo aceptado y documentado por el agente padre:** el hash en un archivo local servido sin TLS protege la atribución frente a suplantaciones casuales, pero **no** es una defensa fuerte frente a quien pueda leer `tecnicos.json` o capturar el tráfico en el puesto.
