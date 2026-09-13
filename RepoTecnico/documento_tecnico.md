@@ -4,10 +4,10 @@
 - **Documento:** arquitectura y especificación técnica.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
 - **Versión:** v1.
-- **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54** y **D-56** incorporadas; A-01, el destino de la col. 18 y el historial inmutable —H-08/H-10— cerrados).
+- **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54** y **D-56** incorporadas; A-01, el destino de la col. 18 y el historial inmutable —H-10— cerrados).
 - **Ubicación del proyecto:** `C:\GGTO\proyecto` (clon local de GitHub, D-51); Google Drive queda fuera del flujo (§7.1).
 - **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-56**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
-- **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-50**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta) y **D-56** (historial inmutable `historial.jsonl`, con H-08 y H-10 cerrados y RNF-09 completo; §4.4), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
+- **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-50**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta) y **D-56** (historial inmutable `historial.jsonl`, con H-10 cerrado y RNF-09 completo; §4.4), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
 - **Alcance de este documento:** especificar la arquitectura, los contratos de datos, los procedimientos y la trazabilidad del sistema. **No** fija precios, calendario ni asignación de personas. Las afirmaciones se apoyan en los documentos citados; lo aún no implementado se marca como **pendiente técnico** con su ID (§8.3).
 
 ---
@@ -55,7 +55,7 @@ El MVP es la decisión **D-02**: CONFIGURACION + CASOS + INGESTA + PANEL. Se sir
 | GCP / servicio en la nube | Ejecución local en la central (GCP descartado) |
 | Exportación a XLSX | D-34: el seguimiento semanal es estadístico y sin Excel |
 | Cifrado del tráfico (TLS/HTTPS) | No previsto: HTTP en loopback; riesgo aceptado y declarado (§3.5). La credencial es `P00` + contraseña (D-39, RNF-08) |
-| Historial completo de valores anteriores de cada campo | **Ya no está fuera de alcance (D-56):** el historial inmutable vive en `C:\GGTO\datos\historial.jsonl` (*append-only*, 7 campos) y cierra H-08 y H-10; el maestro sigue conservando además el último cambio (§4.4) |
+| Historial completo de valores anteriores de cada campo | **Ya no está fuera de alcance (D-56):** el historial inmutable vive en `C:\GGTO\datos\historial.jsonl` (*append-only*, 7 campos) y cierra H-10; el maestro sigue conservando además el último cambio (§4.4) |
 
 ---
 
@@ -410,7 +410,7 @@ El CSV real tiene **80 columnas**, separador `;`, UTF-8, con encabezados repetid
 | Rastro de origen (D-16, D-52, **D-53**) | 20 (`ultimo_usuario`) | **`usuario_modificacion`** | Único componente del rastro de origen: se inicializa con la **col. 20** y la **fecha de ingesta** en `fecha_modificacion` (D-52, **D-53**) |
 | Rastro de origen descartado (**D-53**) | 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) | **Ninguno: no se persisten** (**D-53**) | El rastro de origen se limita a la col. 20 (D-53); las columnas 53 y 80 **no se conservan** |
 
-> **Nota de contrato:** `diccionario_datos.md` §3 enumera los 19 campos sin la columna del CSV, mientras §7 (Anexo A) fija las posiciones usadas por CU-08. La tabla anterior unifica ambas fuentes y describe, para cada columna del CSV, su uso y su destino real en el maestro; C2 debe registrar esas posiciones en `estructura.json` y la ingesta las valida de forma bloqueante (D-44). El destino de las columnas 53 y 80 queda cerrado por **D-53** (no se persisten: el rastro de origen es solo la col. 20) y el de la **col. 18** por **D-54** (no se persiste: ningún requisito la usa y los «citados» salen de `fecha_cita`, D-30); C2 **no** declara la col. 18 en `estructura.json` ni la copia al maestro.
+> **Nota de contrato:** `diccionario_datos.md` §3 enumera los 19 campos sin la columna del CSV, mientras §8 (Anexo A) fija las posiciones usadas por CU-08. La tabla anterior unifica ambas fuentes y describe, para cada columna del CSV, su uso y su destino real en el maestro; C2 debe registrar esas posiciones en `estructura.json` y la ingesta las valida de forma bloqueante (D-44). El destino de las columnas 53 y 80 queda cerrado por **D-53** (no se persisten: el rastro de origen es solo la col. 20) y el de la **col. 18** por **D-54** (no se persiste: ningún requisito la usa y los «citados» salen de `fecha_cita`, D-30); C2 **no** declara la col. 18 en `estructura.json` ni la copia al maestro.
 
 ### 4.4 `historial.jsonl` — registro inmutable de cambios (D-56, RNF-09)
 
@@ -418,14 +418,15 @@ Contrato del archivo **`C:\GGTO\datos\historial.jsonl`**: formato **JSON Lines**
 objeto JSON completo, sin comas entre líneas ni corchetes envolventes), codificación UTF-8 sin BOM.
 Cada cambio de un caso **añade** una línea (*append-only*): **nada se borra ni se sobrescribe**, el
 archivo **crece con cada cambio** y el maestro sigue guardando además el último cambio
-(`usuario_modificacion`, `fecha_modificacion`). Cierra **H-08** y **H-10** y completa **RNF-09**.
+(`usuario_modificacion`, `fecha_modificacion`). Cierra **H-10** (el historial de valores anteriores que
+`requerimientos.md` cita como «H-08, H-10») y completa **RNF-09**.
 
 | # | Campo | Tipo | OBL | Dominio / formato | Origen | Notas |
 |---|---|---|---|---|---|---|
 | 1 | `fecha_hora` | T | Sí | `DD/MM/AAAA hh:mm` | Aplicación | Marca del cambio, igual que `fecha_modificacion` del maestro. |
 | 2 | `operador` | T | Sí | `P00` de la sesión (D-29) | Sesión | Quien hizo el cambio; nunca se guarda la contraseña. |
 | 3 | `id_averia` | T (FK) | Sí | PK de `averias.json` | Aplicación | Caso afectado. |
-| 4 | `campo` | T | Sí | nombre del campo | Aplicación | `status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, `sacas`, `observaciones`, `resolucion`, `fechaResolucion`. |
+| 4 | `campo` | T | Sí | nombre del campo | Aplicación | Los campos de D-56: `status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, `sacas` y `observaciones`; el **cierre** añade además `resolucion` y `fechaResolucion` (los datos del cierre, D-20) y la **reapertura**, el `status` resultante. |
 | 5 | `valor_anterior` | T | No | texto del valor previo | Aplicación | Vacío en la **ingesta** y en el alta (no había valor previo). |
 | 6 | `valor_nuevo` | T | Sí | texto del valor nuevo | Aplicación | Valor que queda en el maestro. |
 | 7 | `accion` | E | Sí | `edicion` / `cierre` / `reapertura` / `asignacion` / `ingesta` | Aplicación | Clasifica el cambio (D-56). |
@@ -608,6 +609,7 @@ erDiagram
     text normalizacion
   }
 ```
+
 ### 4.7 Contratos de operación
 
 #### 4.7.1 Validación bloqueante del CSV (D-21, D-44)
@@ -859,7 +861,7 @@ flowchart TD
 | RT-10 | `almacen.js` + procedimiento de respaldo (D-36, D-42, D-49) |
 | RT-11 | **Fuera del alcance de los módulos:** ubicación del metadata de git (`C:\GGTO\proyecto\.git`; el directorio anterior `C:\GGTO\git\GGTO-v1.git` queda como respaldo del historial), tarea de entorno (§7) |
 
-**Resultado: 16 de 16 RNF tienen módulo responsable**, y el derivado **S-RNF-02b** (umbral propio de la ingesta) queda asignado a `ingesta.js` con valor objetivo y punto de medida. **RNF-09 (auditoría)** queda cubierto por `almacen.js` (escritura *append* en `historial.jsonl`) y `casos.js` (consulta de la secuencia de cambios de CU-15), con lo que H-08 y H-10 se cierran (D-56). RNF-13 (accesibilidad) queda en `app.js` y `casos.js`; RNF-14 y RNF-15 (concurrencia y escritura verificada) en `almacen.js`; RNF-16 (respaldo) en `almacen.js` + `app.js`; y RNF-05 y RNF-11 (impresión y control documental) en `pdf.js` + `despacho.js`, ya alineados con §6.1.
+**Resultado: 16 de 16 RNF tienen módulo responsable**, y el derivado **S-RNF-02b** (umbral propio de la ingesta) queda asignado a `ingesta.js` con valor objetivo y punto de medida. **RNF-09 (auditoría)** queda cubierto por `almacen.js` (escritura *append* en `historial.jsonl`) y `casos.js` (consulta de la secuencia de cambios de CU-15), con lo que H-10 se cierra (D-56). RNF-13 (accesibilidad) queda en `app.js` y `casos.js`; RNF-14 y RNF-15 (concurrencia y escritura verificada) en `almacen.js`; RNF-16 (respaldo) en `almacen.js` + `app.js`; y RNF-05 y RNF-11 (impresión y control documental) en `pdf.js` + `despacho.js`, ya alineados con §6.1.
 
 ---
 
@@ -925,7 +927,7 @@ Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas v
 | **Datos personales en el PDF del despacho** | Nombre, dirección, teléfono y comentarios salen en papel sin control de destino si no se aplica D-27 | Mitigado parcialmente (D-27, H-12) |
 | **Datos personales en el repositorio** (CSV, PDF, `.xlsm`) | Exposición en GitHub y GitLab con datos de abonados | Aceptado (D-36, H-13, P9) |
 | **Retención indefinida** | Histórico sin purga automática; finalidad y responsable documentados, sin base legal verificada | Aceptado (D-28, H-13) |
-| **Historial de cambios incompleto** | Solo se conserva el último cambio, no los valores anteriores | **Ya no aplica como riesgo abierto (D-56):** el historial inmutable `historial.jsonl` (*append-only*, §4.4) conserva campo, valor anterior y valor nuevo de cada cambio; H-08 y H-10 quedan cerrados |
+| **Historial de cambios incompleto** | Solo se conserva el último cambio, no los valores anteriores | **Ya no aplica como riesgo abierto (D-56):** el historial inmutable `historial.jsonl` (*append-only*, §4.4) conserva campo, valor anterior y valor nuevo de cada cambio; H-10 queda cerrado |
 | **Un solo operador a la vez** | Es un supuesto, no una restricción implementable: nada impide dos pestañas o dos puestos sobre el mismo archivo | Supuesto declarado (auditoría H-01); **mitigado parcialmente (D-41, RNF-14):** el guardado avisa del conflicto en vez de sobrescribir en silencio |
 
 ### 8.2 Riesgos de Google Drive (ya corregidos)
@@ -950,7 +952,7 @@ Los **4 pendientes técnicos** que siguen son los de implementación ya conocido
 | 3 | Fijar el **corte semanal exacto** de la métrica de averías concentradas (3 o más casos abiertos del mismo sector en la semana operativa, con umbral editable). **Valor por defecto declarado (no es una decisión de usuario pendiente, es un parámetro con valor por defecto):** semana operativa de **lunes a sábado, corte al cierre del sábado** (RN-08, RN-03/RN-04), con el umbral editable en `claves_clasificacion.umbral_concentracion` (3 por defecto, editable en CONFIGURACION) y alineado con CU-20; lo confirma el supervisor al operar el bloque CONCENTRADAS / ESPECIALES | D-25, RF-26, RN-08, RNF-06; CU-20 |
 | 4 | Fijar el **umbral de rendimiento propio de la ingesta** (criterio derivado **S-RNF-02b**): leer el CSV, validar el contrato posicional de 80 columnas, deduplicar e insertar la jornada en **menos de 3 s**, con punto de medida explícito (desde el clic en *Confirmar ingesta* hasta que el resumen aparece en pantalla, con 1.000 casos de maestro y 60 registros de CSV), alineado con D-24 y con RNF-02; es un **pendiente técnico de calibración en la implementación, no una decisión del usuario** | **`casos_uso.md` CU-08 CA-14 y §5.1/§5.4** (requisito derivado); RNF-02, D-24; §6.3 (`ingesta.js`) |
 
-**Ya resueltos (no son pendientes):** el rol «administrador» —absorbido por el supervisor, D-35—; los campos «Tipo», «Actividad» y «Agente» del alta manual —no se incorporan, D-47—; el tipo y la numeración de `sectores.id` —texto único, D-52—; el destino de las columnas 53 y 80 del CSV —no se persisten, **D-53**— y la inicialización del rastro de auditoría con la col. 20 (D-52, D-53); el destino de la col. 18 `fecha_compromiso` —no se persiste, **D-54**—; el **historial inmutable de valores anteriores** —decidido por **D-56** e implementado en el contrato de `historial.jsonl` (§4.4), con lo que H-08 y H-10 quedan cerrados y RNF-09 completo—; el umbral bloqueante de la ingesta —80 columnas y coincidencia posicional, D-44—; y la asignación formal del respaldo y la escritura verificada —RNF-15 y RNF-16, §6.3—. La sustitución de las marcas `[SUPUESTO: A-xx]` en `casos_uso.md` sigue siendo una **tarea documental de Fase 2**, no una decisión técnica.
+**Ya resueltos (no son pendientes):** el rol «administrador» —absorbido por el supervisor, D-35—; los campos «Tipo», «Actividad» y «Agente» del alta manual —no se incorporan, D-47—; el tipo y la numeración de `sectores.id` —texto único, D-52—; el destino de las columnas 53 y 80 del CSV —no se persisten, **D-53**— y la inicialización del rastro de auditoría con la col. 20 (D-52, D-53); el destino de la col. 18 `fecha_compromiso` —no se persiste, **D-54**—; el **historial inmutable de valores anteriores** —decidido por **D-56** e implementado en el contrato de `historial.jsonl` (§4.4), con lo que H-10 queda cerrado y RNF-09 completo—; el umbral bloqueante de la ingesta —80 columnas y coincidencia posicional, D-44—; y la asignación formal del respaldo y la escritura verificada —RNF-15 y RNF-16, §6.3—. La sustitución de las marcas `[SUPUESTO: A-xx]` en `casos_uso.md` sigue siendo una **tarea documental de Fase 2**, no una decisión técnica.
 
 ---
 
@@ -991,6 +993,7 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | **Modo descarga** | Operación degradada en navegadores sin File System Access API: se descarga el JSON completo y se reemplaza a mano |
 | **P00** | Código de empleado único de `tecnicos.json`; junto con la contraseña (hash + sal, D-39) es la credencial de la sesión (D-29) |
 | **Escritura verificada** | Guardado que copia el maestro a `.bak`, escribe en un temporal, relee y compara antes de confirmar (D-42, RNF-15) |
+| **Historial inmutable / JSONL** | Registro *append-only* `historial.jsonl` (una línea JSON por cambio, D-56): se añade al final y **nunca** se edita ni se borra; su lectura alimenta la auditoría de CU-15 |
 | **RTO / RPO** | Objetivos de recuperación del respaldo: RTO 1 hora (tiempo para restaurar) y RPO el cierre del día anterior (pérdida máxima admitida) — D-49, RNF-16 |
 
 ---
@@ -1053,4 +1056,4 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-52 | `sectores.id` es texto único; `usuario_modificacion`/`fecha_modificacion` se inicializan con la col. 20 del CSV y la fecha de ingesta; las columnas 53 y 80 del CSV no se persisten |
 | D-53 | Las columnas 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) **no se persisten** (A-01): el rastro de origen se limita a la col. 20 (`ultimo_usuario` → `usuario_modificacion`) y a la fecha de ingesta |
 | D-54 | La col. 18 (`fecha_compromiso`) **no se persiste** (A-04): ningún requisito la usa y los «citados» se determinan por `fecha_cita` (D-30) |
-| D-56 | **Historial inmutable:** cada cambio de un caso (`status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, cierre, `sacas`, `observaciones`) se **añade** a `C:\GGTO\datos\historial.jsonl` (*append-only*, JSON Lines) con `fecha_hora`, `operador` (`P00`), `id_averia`, `campo`, `valor_anterior`, `valor_nuevo` y `accion` (`edicion`/`cierre`/`reapertura`/`asignacion`/`ingesta`); nada se borra ni se sobrescribe y el maestro conserva además el último cambio (§4.4); cierra H-08 y H-10 y completa RNF-09 |
+| D-56 | **Historial inmutable:** cada cambio de un caso (`status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, cierre, `sacas`, `observaciones`) se **añade** a `C:\GGTO\datos\historial.jsonl` (*append-only*, JSON Lines) con `fecha_hora`, `operador` (`P00`), `id_averia`, `campo`, `valor_anterior`, `valor_nuevo` y `accion` (`edicion`/`cierre`/`reapertura`/`asignacion`/`ingesta`); nada se borra ni se sobrescribe y el maestro conserva además el último cambio (§4.4); cierra H-10 y completa RNF-09 |

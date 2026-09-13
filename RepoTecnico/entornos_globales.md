@@ -280,6 +280,7 @@ Materializa la «finalidad documentada» que exige D-28 y la política acordada 
 | **Origen** | El `.csv` diario que emite el área corporativa (`RT-02`). |
 | **Controles de acceso** | Servidor local solo en loopback sirviendo únicamente `app/`; `datos/` fuera del alcance HTTP; sesión obligatoria con `P00` + contraseña (hash con sal, caducidad 90 días); sin sesión válida no se muestra ningún dato (D-50); permisos por rol (D-35, RNF-12). |
 | **Trazabilidad** | `historial.jsonl` inmutable con cada cambio (D-56) y registro de intentos fallidos (D-57). |
+| **Registro de accesos** | Los intentos fallidos de sesión y las acciones denegadas por permisos se anotan en el log de la aplicación (5 MB × 5 archivos), sin datos personales (D-57, D-58). |
 | **Datos impresos** | El PDF de despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día (D-27, RNF-11). |
 | **Respaldo** | Copia fechada del maestro y del historial en `C:\GGTO\respaldo\` al cerrar la jornada, sin cifrado, bajo custodia del supervisor (D-49); RTO 1 hora, RPO del día anterior. |
 | **Paquete versionado** | Los CSV de entrada, los PDF de despacho y el `.xlsm` **siguen versionados** en los repositorios privados de GitHub y GitLab (D-36, D-58). Riesgo aceptado y declarado: son repositorios privados de la corporación; revisar con el área legal antes de dar acceso a terceros. |

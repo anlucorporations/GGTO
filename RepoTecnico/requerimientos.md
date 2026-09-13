@@ -106,6 +106,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-56 | **Historial inmutable:** cada cambio de un caso se añade a `C:\GGTO\datos\historial.jsonl` (append-only) con fecha y hora, operador (`P00`), `id_averia`, campo, valor anterior y valor nuevo; nada se borra ni se sobrescribe (H-08, H-10). |
 | D-57 | **Sin bloqueo por intentos fallidos:** cada intento fallido de sesión se registra (fecha, hora y `P00` intentado), pero la cuenta **no se bloquea** (H-N-07, H-N-17). |
 | D-58 | **Datos personales:** se mantiene D-36 (los CSV, los PDF de despacho y el `.xlsm` siguen versionados en los repositorios **privados**) y se documenta la finalidad y los controles en la ficha de tratamiento (`entornos_globales.md` §12). El log de la aplicación rota por tamaño: **5 MB y 5 archivos**, sin datos personales (H-N-31). |
+| D-59 | **El emisor del CSV no participa en CU-09:** se retira esa relación; es actor secundario solo de CU-08 (entrega el archivo) y la cola de direcciones sin sector la resuelve el supervisor. |
 
 ---
 
@@ -183,7 +184,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 | RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
-| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive; el respaldo lo dispara el supervisor al cerrar la jornada y rota 10 versiones `.bak` (D-19, D-36, D-42, D-49). |
+| RT-10 | Los archivos de trabajo (los 9 JSON y `historial.jsonl`) viven en disco local, fuera de la carpeta sincronizada de Google Drive; el respaldo lo dispara el supervisor al cerrar la jornada y rota 10 versiones `.bak` (D-19, D-36, D-42, D-49, D-56). |
 | RT-11 | El metadata de git (`.git`) vive en disco local (`C:\GGTO\git\GGTO-v1.git`), fuera de la unidad sincronizada: Google Drive corrompió `.git\refs` con archivos `desktop.ini` (D-22). |
 
 ---

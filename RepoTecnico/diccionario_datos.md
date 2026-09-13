@@ -132,14 +132,15 @@ corchetes envolventes), ubicado en `C:\GGTO\datos\historial.jsonl`. Cada cambio 
 
 **Es *append-only*:** no se edita ni se borra; **crece con cada cambio** y solo se añade al final.
 Su lectura es la que alimenta la **consulta de auditoría de CU-15** (`casos.js`), que muestra por
-caso la secuencia de cambios. Cierra los hallazgos **H-08** y **H-10** y completa el **RNF-09**.
+caso la secuencia de cambios. Cierra el hallazgo **H-10** (que `requerimientos.md` cita como «H-08,
+H-10») y completa el **RNF-09**.
 
 | # | Campo | Tipo | OBL | Dominio / formato | Origen | Notas |
 |---|---|---|---|---|---|---|
 | 1 | `fecha_hora` | T | Sí | `DD/MM/AAAA hh:mm` (texto, RNF-06) | Aplicación | Momento del cambio; se escribe con la misma marca que `fecha_modificacion` del maestro. |
 | 2 | `operador` | T | Sí | `P00` de la sesión | Aplicación (D-29) | Quien hizo el cambio; nunca se guarda la contraseña. |
 | 3 | `id_averia` | T (FK) | Sí | PK de `averias.json` | Aplicación | Clave del caso afectado. |
-| 4 | `campo` | T | Sí | nombre del campo del maestro | Aplicación | `status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, `sacas`, `observaciones`, `resolucion`, `fechaResolucion`. |
+| 4 | `campo` | T | Sí | nombre del campo del maestro | Aplicación | Los campos enumerados en D-56: `status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, `sacas` y `observaciones`; el cierre añade además `resolucion` y `fechaResolucion` (D-20). |
 | 5 | `valor_anterior` | T | No | texto del valor previo | Aplicación | Vacío cuando el cambio es una **ingesta** o un alta (no había valor previo). |
 | 6 | `valor_nuevo` | T | Sí | texto del valor nuevo | Aplicación | Valor que queda en el maestro. |
 | 7 | `accion` | E | Sí | `edicion` / `cierre` / `reapertura` / `asignacion` / `ingesta` | Aplicación | Clasifica el cambio (D-56). |
@@ -157,7 +158,7 @@ caso la secuencia de cambios. Cierra los hallazgos **H-08** y **H-10** y complet
   anteriores ni impide seguir añadiendo.
 - Todo cambio del maestro genera al menos una línea; un cierre genera las líneas de los campos
   modificados con `accion = cierre` y una reapertura con `accion = reapertura` (D-56).
-- El archivo se respalda junto con el maestro y **nunca se recorta** (§7 de `entornos_globales.md`).
+- El archivo se respalda junto con el maestro y **nunca se recorta** (`entornos_globales.md` §4.1).
 - Codificación UTF-8 sin BOM, igual que el resto de los archivos de trabajo (§6).
 
 ---
@@ -355,5 +356,5 @@ el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.cs
 - Confirmar en el CSV real si trae columnas no declaradas en `estructura.json` (se ignorarían).
 
 **Ya resuelto (no es pendiente):** el **historial inmutable de cambios** queda decidido por
-**D-56**: `historial.jsonl` es *append-only*, con los 7 campos de §4, y cierra H-08 y H-10 y completa
+**D-56**: `historial.jsonl` es *append-only*, con los 7 campos de §4, y cierra H-10 y completa
 RNF-09. El maestro conserva el último cambio y el historial conserva todos los anteriores.
