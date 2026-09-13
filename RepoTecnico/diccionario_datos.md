@@ -143,7 +143,7 @@ como filtro contra `central.json` (RT-03).
 |---|---|---|---|
 | `nombre` | T | Sí | — |
 | `cedula` | T | Sí | Identificación. |
-| `P00` | T | No | Significado por precisar (A-11). |
+| `P00` | T | Sí | Código de empleado, único; identifica la sesión del operador (D-29). |
 | `telefono` | T | No | — |
 | `correo` | T | No | — |
 | `especialidad` | T | No | — |

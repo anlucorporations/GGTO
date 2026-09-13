@@ -76,6 +76,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-26 | **Palabras clave (RN-03):** coincidencia por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en los 4 campos, con vista previa del impacto antes de cambiar la lista o el modo. |
 | D-27 | **Datos personales en el PDF:** el despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día; los respaldos van a una ruta controlada, no a Descargas. |
 | D-28 | **Retención:** histórico indefinido de casos; se documenta finalidad y responsable del tratamiento, sin purga automática (**riesgo legal aceptado**, H-13). |
+| D-29 | **`P00` es el código de empleado:** único y obligatorio en `tecnicos.json`, y es la credencial con la que el operador inicia sesión (A-11). |
 
 ---
 
@@ -185,9 +186,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 ## 9. Ambigüedades: 12 cerradas y 6 abiertas
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
-12/09/2026: **cerradas 12** (A-01, A-02, A-03, A-04, A-06, A-07, A-12, A-13, A-15, A-16, A-17 y
-A-18) y **abiertas 6** (A-05, A-08, A-09, A-10, A-11 y A-14), todas resueltas provisionalmente en
-los casos de uso mediante supuestos marcados `[SUPUESTO: A-xx]`.
+13/09/2026: **cerradas 13** (A-01, A-02, A-03, A-04, A-06, A-07, A-11, A-12, A-13, A-15, A-16, A-17 y A-18) y **abiertas 5** (A-05, A-08, A-09, A-10 y A-14), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
@@ -196,7 +195,7 @@ los casos de uso mediante supuestos marcados `[SUPUESTO: A-xx]`.
 | A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
-| A-11 | **Parcialmente resuelta (D-17):** `tipo_abonado` se deriva de `unidad_negocio` (col. 61) y `ups` (col. 62). `P00` en TECNICOS sigue sin explicación. | ¿Qué representa `P00` en el padrón de técnicos? | C1 |
+| A-11 | **Resuelta (D-17 y D-29):** `tipo_abonado` se deriva de `unidad_negocio`/`ups`, y `P00` es el código de empleado que identifica la sesión. | Decidido por el usuario el 13/09/2026. | C1 |
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
 | A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |
