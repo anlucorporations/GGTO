@@ -149,6 +149,7 @@ como filtro contra `central.json` (RT-03).
 | `clave_hash` | T | Sí | Hash de la contraseña (SHA-256 con sal) — nunca en claro (D-39). |
 | `clave_sal` | T | Sí | Sal aleatoria por técnico para el hash (D-39). |
 | `clave_fecha_cambio` | F | Sí | Fecha del último cambio de contraseña; a los 90 días se exige cambiarla (D-39). |
+| `clave_cambio_obligatorio` | B | Sí | `SI` cuando el supervisor restablece la contraseña: el técnico debe cambiarla en el siguiente ingreso (RF-12, D-39). |
 | `telefono` | T | No | — |
 | `correo` | T | No | — |
 | `especialidad` | T | No | — |

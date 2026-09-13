@@ -83,7 +83,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-33 | **Casos especiales** = los de clientes empresariales (`tipo_abonado = EMP`) y los referidos (`nivel = REF`) que siguen abiertos; tienen bandeja y seguimiento propios (A-09). |
 | D-34 | **Salida de reportes:** solo el despacho se emite en pantalla y PDF. El seguimiento semanal es **estadístico**: por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre de cada día, agrupado por semana del año con selector **Sem 1 a Sem 36**; sin Excel (A-08). |
 | D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. El rol «administrador» queda absorbido por el supervisor. |
-| D-36 | **Respaldo manual** a demanda del supervisor (sin automatismo ni rotación) y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9); riesgo aceptado. |
+| D-36 | **Respaldo a demanda del supervisor** y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9). La rutina y la rotación se fijaron después en D-42 (10 versiones `.bak`) y D-49 (copia fechada al cierre). |
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
 | D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
 | D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
@@ -160,7 +160,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-13 | Accesibilidad: toda la operación es posible con teclado (Tab, Enter y flechas en la tabla), el foco es visible, cada campo tiene `label` asociado, el contraste es de al menos 4,5:1 y cada gráfico tiene tabla o texto alternativo equivalente (H-05, D-40). | Recorrido completo de las 7 pestañas solo con teclado y verificación de contraste con herramienta automática. |
 | RNF-14 | Integridad ante concurrencia: ningún guardado sobrescribe cambios ajenos sin aviso; la página compara la marca de modificación del archivo con la de su carga y, si difieren, bloquea el guardado hasta que el operador elija recargar o sobrescribir (H-10, D-41). | Prueba con dos ventanas: la segunda debe recibir el aviso de conflicto y no debe poder guardar sin decidir. |
 | RNF-15 | Integridad de escritura: cada guardado del maestro se verifica por relectura antes de confirmar y conserva las 10 últimas versiones en `.bak` (H-11, D-42). | Prueba de escritura con error simulado: la pantalla no confirma el cambio y el maestro queda como estaba. |
-| RNF-16 | Respaldo: al cerrar la jornada la página ofrece crear una copia fechada del maestro en `C:\GGTO\respaldo\`; el objetivo es RTO de 1 hora y RPO del cierre del día anterior (D-49). | Restauración de prueba desde una copia fechada, cronometrada. |
+| RNF-16 | Respaldo: al cerrar la jornada la página crea una copia fechada del maestro en `C:\GGTO\respaldo\`; el objetivo es RTO de 1 hora y RPO del cierre del día anterior (D-49). | Restauración de prueba desde una copia fechada, cronometrada. |
 
 ---
 
@@ -177,7 +177,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 | RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
-| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive; el respaldo es manual y bajo responsabilidad del supervisor (D-19, D-36). |
+| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive; el respaldo lo dispara el supervisor al cerrar la jornada y rota 10 versiones `.bak` (D-19, D-36, D-42, D-49). |
 | RT-11 | El metadata de git (`.git`) vive en disco local (`C:\GGTO\git\GGTO-v1.git`), fuera de la unidad sincronizada: Google Drive corrompió `.git\refs` con archivos `desktop.ini` (D-22). |
 
 ---
@@ -211,7 +211,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 ---
 
-## 9. Ambigüedades: 12 cerradas y 6 abiertas
+## 9. Ambigüedades (18, todas cerradas)
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
 13/09/2026: **cerradas las 18** (A-01 a A-18) y **ninguna abierta**.
@@ -222,7 +222,7 @@ Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión.
 | A-05 | **Resuelta (D-30):** «citado» = caso con `fecha_cita` igual al día del despacho. | Decidido por el usuario el 13/09/2026. | C4 |
 | A-08 | **Resuelta (D-34):** despacho en pantalla + PDF; seguimiento semanal estadístico (ingreso vs. reparadas por día + línea de pendiente), por semana Sem 1 a Sem 36. | Decidido por el usuario el 13/09/2026. | C6 |
 | A-09 | **Resuelta (D-33):** casos especiales = EMP o REF abiertos. | Decidido por el usuario el 13/09/2026. | C6 |
-| A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
+| A-10 | **Resuelta (D-32):** desempate por zona preferente del sector, luego menor carga del día y luego `id` menor, con ajuste manual registrado. | Decidido por el usuario el 13/09/2026. | C4 |
 | A-11 | **Resuelta (D-17 y D-29):** `tipo_abonado` se deriva de `unidad_negocio`/`ups`, y `P00` es el código de empleado que identifica la sesión. | Decidido por el usuario el 13/09/2026. | C1 |
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | **Resuelta (D-31):** `despacho.json` se amplía con `sector`, `Reparador Principal` y `fecha_despacho`. | Decidido por el usuario el 13/09/2026. | C4 |
@@ -243,7 +243,7 @@ Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A
 - [x] Decisiones de la entrevista registradas (D-01 a D-11).
 - [x] URLs de los repositorios remotos (GitHub y GitLab) y ramas: `main` y `GGTOv1-DSH`.
 - [x] GCP no aplica: ejecución local en la central.
-- [ ] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su diferimiento explícito a los ciclos C4–C6.
+- [x] Ambigüedades cerradas: las 18 tienen decisión (D-05 a D-38) y los casos de uso ya no contienen supuestos.
 
 ---
 
