@@ -88,6 +88,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
 | D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
 | D-40 | **Accesibilidad (RNF-13):** navegación completa por teclado (Tab, Enter y flechas en la tabla), foco visible, `label` asociado a cada campo, contraste mínimo 4,5:1 y texto alternativo en los gráficos. |
+| D-41 | **Concurrencia sin bloqueo:** cada guardado relee el archivo y compara su marca de modificación; si cambió desde que se cargó, avisa del conflicto y el operador decide entre recargar o sobrescribir conscientemente. |
 
 ---
 
@@ -146,6 +147,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |
 | RNF-12 | Control de acceso por rol: el operador solo ve y cierra los casos de su cuadrilla (`Reparador Principal` = cuadrilla del técnico identificado); el supervisor tiene todas las acciones y es quien opera la bandeja GESTION (H-01, D-35). | Prueba con un operador de la cuadrilla 1: no debe poder editar ni cerrar casos de la cuadrilla 2, ni tocar los padrones. |
 | RNF-13 | Accesibilidad: toda la operación es posible con teclado (Tab, Enter y flechas en la tabla), el foco es visible, cada campo tiene `label` asociado, el contraste es de al menos 4,5:1 y cada gráfico tiene tabla o texto alternativo equivalente (H-05, D-40). | Recorrido completo de las 7 pestañas solo con teclado y verificación de contraste con herramienta automática. |
+| RNF-14 | Integridad ante concurrencia: ningún guardado sobrescribe cambios ajenos sin aviso; la página compara la marca de modificación del archivo con la de su carga y, si difieren, bloquea el guardado hasta que el operador elija recargar o sobrescribir (H-10, D-41). | Prueba con dos ventanas: la segunda debe recibir el aviso de conflicto y no debe poder guardar sin decidir. |
 
 ---
 

@@ -2,15 +2,16 @@
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026.
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 14/09/2026 (aplicación de las correcciones del informe `casos_uso/auditoria_casos_uso.md`).
 - **Fuentes normativas (leídas completas, no modificadas):**
   `RepoTecnico/PAGINA-GGTO-INICIAL.md` (fuente primaria del usuario, se cita como `L##`),
-  `RepoTecnico/requerimientos.md` (29 RF, 11 RNF, 11 RT, 9 RN, D-01 a D-28, ambigüedades A-##),
+  `RepoTecnico/requerimientos.md` (29 RF, **13 RNF**, 11 RT, 8 RN, decisiones **D-01 a D-40**, ambigüedades A-01 a A-18 **todas cerradas**),
   `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` (arquitectura y ciclos C1-C7),
   `RepoTecnico/diccionario_datos.md` (`averias.json`, `despacho.json`, `estructura.json` posicional y archivos de configuración),
   `RepoTecnico/entornos_globales.md` (rutas, lanzador, CSV real),
-  `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29, atendidos o aceptados),
+  `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29: **atendidos**, salvo H-10 y H-28 —**atendidos parcialmente**— y **H-21, atendido por D-40/RNF-13**),
   `RepoTecnico/estado_proyecto.md` (estado y decisiones vigentes).
+- **Informe de corrección:** `RepoTecnico/casos_uso/auditoria_casos_uso.md` (35 hallazgos H-01 a H-35 y 18 preguntas). Esta revisión aplica las decisiones **D-29 a D-40**.
 - **Documentos de apoyo (solo lectura de encabezados):** `detalle_averias_gpon 12_09_2026.csv` (80 columnas, separador `;`) y `alta_manual.csv` (42 columnas).
 - **Documento hermano:** `RepoTecnico/casos_uso/diagramas.md` (diagrama UML de casos de uso, diagramas de secuencia y diagrama de estados).
 
@@ -28,24 +29,65 @@
    - *Dirigido por estado:* «Mientras &lt;estado&gt;, el sistema deberá …»
    - *Comportamiento no deseado:* «Si &lt;condición&gt;, entonces el sistema deberá …»
    - *Característica opcional:* «De acuerdo con &lt;característica&gt;, el sistema deberá …»
-6. **Nomenclatura de dominio (RNF-07):** `status` = PEND / ASGN / GESTION / CERRADO (D-13); `resolucion` = IVR / COS / COLA; `clase` = REP / CNS; `nivel` = COM / REF; `tipo_abonado` = RES / EMP (D-17); `sacas` = SI / NO. En pantalla se escriben "Gestión" y "Cerrado", nunca "estatus".
-7. **Fechas:** `DD/MM/AAAA` (RNF-06). Semana operativa de **lunes a sábado** (RN-08). Los números de los criterios están tomados de la muestra real del 12/09/2026 (80 columnas, 56 registros, 51 de Francisco Salias, 17 con palabras clave de fibra y 39 sin ellas) y de los umbrales D-24 y D-25.
-8. **Supuestos por ambigüedad abierta.** Las ambigüedades **A-05, A-08, A-09, A-10, A-11 y A-14** siguen abiertas. Donde un caso de uso depende de ellas, el supuesto se escribe junto al paso y se marca `[SUPUESTO: A-xx]`. Ningún supuesto se presenta como decisión tomada.
-9. **Decisión derivada registrada.** Los umbrales de desempeño se citan como **D-24** (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s). Nota: la lista de decisiones indicada para este trabajo enumera D-01 a D-28; en los documentos fuente vigentes (`requerimientos.md` §3 y `estado_proyecto.md` §3) los umbrales de desempeño aparecen efectivamente como D-24. Se cita como D-24 en todo el documento.
+6. **Nomenclatura de dominio (RNF-07):** `status` = PEND / GESTION / CERRADO (**tres estados; el cuarto estado `ASGN` queda sin efecto por D-38**); `resolucion` = IVR / COS / COLA; `clase` = REP / CNS; `nivel` = COM / REF; `tipo_abonado` = RES / EMP (D-17); `sacas` = SI / NO. En pantalla se escriben "Gestión" y "Cerrado", nunca "estatus".
+7. **Fechas:** `DD/MM/AAAA` (RNF-06). Semana operativa de **lunes a sábado** (RN-08). **Muestra real del 12/09/2026:** 80 columnas, 56 registros y 3 centrales — **51 de Francisco Salias, 4 de LAS MERCEDES CPA y 1 de EL HATILLO**; los recuentos «17 con palabras clave y 39 sin ellas» que circulaban antes se calcularon **por error sobre los 56 registros**, no sobre los 51 filtrados (H-01). El desglose vigente de Francisco Salias es **14 PEND y 37 GESTION** (11 con claves + 3 con `estatus = ASGN`, que entran como PEND por D-38; y 37 sin claves). Los umbrales de desempeño aplicables son los de D-24 (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s).
+8. **Las 18 ambigüedades están cerradas.** A-01 a A-18 quedaron resueltas, y las seis últimas —A-05, A-08, A-09, A-10, A-11 y A-14— con las decisiones **D-29 a D-34**. Por tanto **no hay supuestos**: cuando un caso de uso aplica una decisión heredada de una ambigüedad, **cita la decisión (D-29 a D-34)** tanto en el paso afectado como en su línea de **Trazabilidad**, y no usa marcas de supuesto ni lenguaje de «provisional». La marca de supuesto por ambigüedad queda erradicada por completo de este documento (**0 marcas**, verificado).
+9. **Decisiones derivadas registradas.** Los umbrales de desempeño se citan como **D-24** (1.000 casos; filtrado y orden &lt; 1,5 s; MONITOREO &lt; 3 s). Rango de decisiones vigente para este documento: **D-01 a D-40**.
 10. **Persistencia (D-01, D-15, D-19):** la superficie se sirve desde un servidor local en loopback (`--bind 127.0.0.1`, puerto 8787) que publica **solo** el subdirectorio de la aplicación; los JSON de trabajo viven en `C:\GGTO\datos` (fuera de Google Drive) y se leen/escriben con File System Access API.
+11. **Permisos (D-35, RNF-12):** toda acción de escritura exige un rol autorizado según la **matriz acción×rol de §2.1**; la sola identificación de sesión no autoriza. Cada caso de uso que escribe declara su precondición de rol, su restricción EARS de autorización y el flujo alternativo «acción no permitida para su rol».
+12. **Autenticación (D-29, D-39):** la sesión exige `P00` **y contraseña** verificada contra el hash con sal guardado en `tecnicos.json`; la contraseña tiene **8 caracteres como mínimo**, **caduca a los 90 días** y **nunca** se persiste ni se muestra en claro.
+13. **Accesibilidad mínima obligatoria (D-40, RNF-13):** navegación completa por teclado (`Tab`, `Enter` y flechas en la tabla de CASOS), foco visible, `label` asociado a cada campo, contraste mínimo **4,5:1** y **tabla o texto alternativo equivalente en cada gráfico**. Aplica de forma **transversal** a toda la interfaz (CU-01 a CU-22) y su verificación formal vive en **CU-01** (diálogo de sesión), **CU-10** (tabla), **CU-18** y **CU-19** (gráficos).
+14. **Alcance pendiente de decisión del usuario (no resuelto en esta revisión):** la concurrencia de dos sesiones sobre el mismo archivo y la escritura atómica/versionado del maestro (H-10, H-11); y la ruta, el cifrado, la rotación y el RTO/RPO del respaldo (H-12, H-13). Estos puntos se dejan señalados en el caso de uso correspondiente como `&lt;PENDIENTE&gt;` y **no** se inventan.
 
 ---
 
 ## 2. Actores
 
+> **Nota de roles (D-35).** La decisión **D-35** absorbe el rol «administrador» en el **supervisor**: a partir de ella el supervisor concentra todas las acciones, incluidas la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. En este documento el actor principal «Supervisor (función administrativa)» sustituye al antiguo «Administrador» y **no** existe un rol administrador separado. La matriz acción×rol de §2.1 es la fuente única de permisos.
+
 | Actor | Tipo | Descripción | Casos de uso |
 |---|---|---|---|
-| **Operador de la central** | Principal | Trabaja la operación diaria: configura padrones, ingiere el CSV, consulta y cierra casos, hace la gestión telefónica y da de alta casos manuales. Se identifica en cada sesión contra `tecnicos.json` (D-16, RNF-08). | CU-01 a CU-14, CU-22 |
-| **Supervisor** | Principal | Responsable del despacho del día y de las cifras: aprueba el reparto, emite los PDF por cuadrilla, revisa MONITOREO y reportes y decide sobre los casos especiales y las averías concentradas. | CU-01, CU-10, CU-13, CU-15 a CU-20 |
-| **Administrador** | Principal | Custodia el sistema: `central.json`, padrones, sectores, palabras clave, respaldos, restauración y control de acceso. | CU-01 a CU-07, CU-21, CU-22 |
+| **Operador de la central** | Principal | Trabaja la operación diaria: ingiere el CSV, resuelve direcciones sin sector, **consulta** los casos de su cuadrilla, cierra los casos **asignados a su propia cuadrilla** y da de alta casos manuales. Se identifica en cada sesión con su `P00` **y su contraseña** contra `tecnicos.json` (D-16, D-29, D-39, RNF-08). **No** accede a los padrones, a la bandeja GESTION ni al respaldo (D-35, RNF-12). | CU-01, CU-08 a CU-14, CU-22 |
+| **Supervisor** (absorbe la función administrativa, D-35) | Principal | Responsable del despacho, de las cifras y del gobierno del sistema: puede **todo**, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho, el respaldo, la restauración y el restablecimiento de contraseñas. | CU-01 a CU-07, CU-10 a CU-22 |
 | **Cuadrilla / técnico de calle** | Secundario | Recibe la hoja impresa del despacho, ejecuta el trabajo y devuelve la hoja al cierre de la jornada. No opera la página en el MVP. | CU-16, CU-17 |
 | **Emisor del CSV (origen corporativo / VENAPP)** | Secundario externo | Entrega el archivo diario `detalle_averias_gpon DD_MM_AAAA.csv`. No interactúa con la interfaz: es el origen del dato y el disparador de la ingesta. | CU-08, CU-09 |
-| **Auditoría / control interno** | Secundario | Consulta el historial de cambios y el control documental del despacho. | CU-14, CU-15, CU-17 |
+| **Auditoría / control interno** | Secundario | Consulta el historial de cambios y el control documental del despacho. | CU-15, CU-17 |
+| **Soporte TI del puesto** | Secundario | Atiende el arranque del puesto (puerto ocupado, ausencia de Python/Node, navegador sin File System Access API, fallo de la ruta de respaldo). No tiene permisos de escritura sobre los datos. | CU-01, CU-21, CU-22 |
+
+### 2.1 Matriz acción×rol (D-35, RNF-12)
+
+| Acción | Operador de la central | Supervisor (función administrativa) |
+|---|---|---|
+| Iniciar sesión (CU-01) | Permitida | Permitida |
+| Consultar casos (lectura) (CU-10, CU-11) | **Solo los casos con `Reparador Principal` = `id` de su cuadrilla** | Todos |
+| Cerrar o reabrir un caso (CU-12) | **Solo casos de su propia cuadrilla** | Todos |
+| Editar `clase` / `nivel` / `tipo_abonado` (CU-10) | **Solo casos de su propia cuadrilla** | Todos |
+| Alta manual de caso (CU-14) | Permitida (el caso se crea para su cuadrilla si el operador tiene una asignada) | Permitida |
+| Ingesta del CSV (CU-08) | Permitida | Permitida |
+| Resolver la cola de direcciones sin sector (CU-09) | Permitida, incluida la creación del sector mínimo que falte | Permitida |
+| Bandeja GESTION (CU-13) | **Prohibida** | Permitida (opera la bandeja) |
+| Padrones: técnicos, flota, cuadrillas (CU-03, CU-04, CU-05) | **Prohibida** | Permitida |
+| Configuración de la central (CU-02) | **Prohibida** | Permitida |
+| Sectores: CRUD completo (CU-06) | **Prohibida**; el operador solo crea el sector mínimo desde la cola de CU-09 | Permitida |
+| Palabras clave y modo de búsqueda (CU-07) | **Prohibida** | Permitida |
+| Despacho y ajuste de asignaciones (CU-16) | **Prohibida** | Permitida |
+| Emisión de PDF y registro de entrega (CU-17) | **Prohibida** | Permitida |
+| MONITOREO, GRAFICOS y reportes (CU-18, CU-19) | **Prohibida** | Permitida |
+| Casos especiales y averías concentradas (CU-20) | **Prohibida** | Permitida |
+| Respaldo, restauración y cambio de umbral (CU-21) | **Prohibida** | Permitida |
+| Consulta de auditoría (CU-15) | **Prohibida** | Permitida |
+| Contingencia y diagnóstico (CU-22) | Permitida (ejecución del lanzador y consulta del estado) | Permitida |
+| Contraseña de técnicos (alta, cambio y restablecimiento) (CU-03) | **Prohibida** (solo puede cambiar la propia en el paso 8 de CU-01) | Permitida |
+
+**Reglas de la matriz:**
+
+- **R1.** Si un operador intenta una acción prohibida, el sistema **no** la ejecuta, muestra «Acción no permitida para su rol» y registra el intento con operador y fecha/hora, **sin** modificar el maestro.
+- **R2.** Un operador **no puede abrir ni consultar** el detalle de un caso cuyo `Reparador Principal` corresponda a otra cuadrilla; el sistema muestra «El caso no está asignado a su cuadrilla».
+- **R3.** El cierre de un caso por el operador exige que el `Reparador Principal` del caso coincida con el `id` de la cuadrilla del técnico identificado (equivalencia de D-37).
+- **R4.** La bandeja GESTION (CU-13) y el bloque CONCENTRADAS / ESPECIALES (CU-20) son **exclusivos del supervisor**.
+- **R5.** La verificación efectiva de la matriz exige la aplicación construida y un operador con cuadrilla asignada → **necesita verificación en el puesto**.
+
+**Nota 1 — credencial de sesión (D-39, resuelta).** La ambigüedad sobre la fuerza de la credencial quedó cerrada: se exige **`P00` + contraseña de 8 caracteres o más**, almacenada como **hash con sal (SHA-256 + sal por técnico)** en `tecnicos.json`, con **cambio obligatorio cada 90 días** y **restablecimiento por el supervisor**. La contraseña **nunca** se guarda ni se muestra en claro. **Riesgo aceptado y anotado:** el hash en un archivo local servido sin TLS protege la **atribución** (evita suplantaciones casuales) pero **no** es una defensa fuerte frente a quien pueda leer `tecnicos.json` o capturar el tráfico en el propio puesto; la mitigación documentada es el puesto único autorizado y la red de loopback (D-15), y lo formaliza el agente padre.
 
 ---
 
@@ -53,30 +95,30 @@
 
 | CU | Nombre | Actor principal | Ciclo | Prioridad |
 |---|---|---|---|---|
-| CU-01 | Iniciar sesión e identificar al operador | Operador de la central | C1 | MVP |
-| CU-02 | Configurar los datos operativos de la central | Administrador | C1 | MVP |
-| CU-03 | Gestionar el padrón de técnicos | Administrador | C1 | MVP |
-| CU-04 | Gestionar el padrón de flota | Administrador | C1 | MVP |
-| CU-05 | Gestionar el padrón de cuadrillas | Administrador | C1 | MVP |
-| CU-06 | Gestionar el catálogo de sectores | Administrador | C1 | MVP |
-| CU-07 | Gestionar las palabras clave de clasificación | Administrador | C2 | MVP |
+| CU-01 | Iniciar sesión e identificar al operador | Operador de la central (y supervisor) | C1 | MVP |
+| CU-02 | Configurar los datos operativos de la central | Supervisor (función administrativa) | C1 | MVP |
+| CU-03 | Gestionar el padrón de técnicos | Supervisor (función administrativa) | C1 | MVP |
+| CU-04 | Gestionar el padrón de flota | Supervisor (función administrativa) | C1 | MVP |
+| CU-05 | Gestionar el padrón de cuadrillas | Supervisor (función administrativa) | C1 | MVP |
+| CU-06 | Gestionar el catálogo de sectores | Supervisor (función administrativa) | C1 | MVP |
+| CU-07 | Gestionar las palabras clave de clasificación | Supervisor (función administrativa) | C2 | MVP |
 | CU-08 | Ingestar el CSV diario | Operador de la central | C2 | MVP |
 | CU-09 | Resolver la asignación de sector y las direcciones sin coincidencia | Operador de la central | C2 | MVP |
 | CU-10 | Gestionar y filtrar los CASOS | Operador de la central | C1 / C3 | MVP |
 | CU-11 | Consultar la ficha de un caso | Operador de la central | C3 | MVP |
 | CU-12 | Cerrar un caso | Operador de la central | C3 | MVP |
-| CU-13 | Gestionar telefónicamente la bandeja GESTION | Operador de la central | C3 | MVP |
+| CU-13 | Gestionar telefónicamente la bandeja GESTION | Supervisor (función administrativa) | C3 | MVP |
 | CU-14 | Dar de alta manual un caso | Operador de la central | C3 | MVP |
-| CU-15 | Consultar la auditoría de cambios de un caso | Supervisor | C1 | MVP |
-| CU-16 | Generar y ajustar el despacho del día | Supervisor | C4 | posterior |
-| CU-17 | Emitir el PDF de despacho por cuadrilla y registrar la entrega | Supervisor | C4 | posterior |
-| CU-18 | Monitorear la gestión diaria y semanal | Supervisor | C5 | posterior |
-| CU-19 | Emitir los reportes de trabajo diario y de gestión semanal | Supervisor | C6 | posterior |
-| CU-20 | Vigilar casos especiales y averías concentradas | Supervisor | C6 | posterior |
-| CU-21 | Respaldar y restaurar los datos | Administrador | C1 (respaldo) / C7 | MVP (respaldo diario) |
-| CU-22 | Operar en contingencia y diagnosticar el entorno | Administrador | C1 / C7 | MVP |
+| CU-15 | Consultar la auditoría de cambios de un caso | Supervisor (función administrativa) | C1 | MVP |
+| CU-16 | Generar y ajustar el despacho del día | Supervisor (función administrativa) | C4 | posterior |
+| CU-17 | Emitir el PDF de despacho por cuadrilla y registrar la entrega | Supervisor (función administrativa) | C4 | posterior |
+| CU-18 | Monitorear la gestión diaria y semanal | Supervisor (función administrativa) | C5 | posterior |
+| CU-19 | Emitir el despacho en pantalla y PDF y el seguimiento semanal estadístico | Supervisor (función administrativa) | C6 | posterior |
+| CU-20 | Vigilar casos especiales y averías concentradas | Supervisor (función administrativa) | C6 | posterior |
+| CU-21 | Respaldar y restaurar los datos | Supervisor (función administrativa) | C1 (respaldo) / C7 | MVP (respaldo manual, D-36) |
+| CU-22 | Operar en contingencia y diagnosticar el entorno | Supervisor (función administrativa) | C1 / C7 | MVP |
 
-**Total: 22 casos de uso.** Actores de la página: operador de la central, supervisor y administrador. Actores secundarios: cuadrilla/técnico de calle, emisor del CSV y auditoría.
+**Total: 22 casos de uso.** El rol administrador está absorbido por el supervisor (D-35).
 
 ---
 
@@ -84,66 +126,91 @@
 
 ### CU-01 — Iniciar sesión e identificar al operador
 
-- **Actor principal:** Operador de la central.
-- **Actores secundarios:** Supervisor, Administrador (mismo mecanismo de identificación); soporte TI del puesto.
+- **Actor principal:** Operador de la central (el supervisor y la función administrativa usan el mismo mecanismo, D-35).
+- **Actores secundarios:** Soporte TI del puesto (arranque del servidor).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** el servidor local responde en `http://localhost:8787` (loopback) y sirve solo el subdirectorio de la aplicación; `C:\GGTO\datos\tecnicos.json` existe y es legible.
-- **Postcondiciones:** la sesión queda asociada a un técnico del padrón; la página habilita la edición; toda modificación posterior registra ese operador y la fecha/hora (RNF-09).
+- **Precondiciones:** el servidor local responde en `http://localhost:8787` (loopback) y sirve solo el subdirectorio de la aplicación; `C:\GGTO\datos\tecnicos.json` existe y es legible, y cada técnico tiene `P00`, `clave_hash`, `clave_sal` y `clave_fecha_cambio` (D-29, D-39); `C:\GGTO\datos\cuadrillas.json` existe y contiene la cuadrilla del técnico si este debe cerrar casos (D-37, RNF-12).
+- **Postcondiciones:** la sesión queda asociada a un técnico **activo** del padrón con credencial verificada, con su rol (operador o supervisor) y, si es operador, con el `id` de su cuadrilla; la página habilita las acciones permitidas por la matriz de §2.1 (D-35, RNF-12); toda modificación posterior registra ese operador y la fecha/hora (RNF-09).
 
-**Trazabilidad:** RF-01; RNF-03, RNF-07, RNF-08; RT-06, RT-07, RT-09, RT-10; D-01, D-15, D-16, D-19, D-22; H-01.
+**Trazabilidad:** RF-01; RNF-03, RNF-07, **RNF-08**, **RNF-12, RNF-13**; RT-06, RT-07, RT-09, RT-10; D-01, D-15, D-16, D-19, D-22, **D-29, D-35, D-37, D-39, D-40**; H-01, H-03, H-05.
 
 **Flujo principal**
 
 1. El operador abre la página en Edge o Chrome desde `http://localhost:8787/index.html`.
 2. El sistema detecta el contexto `http://localhost` y comprueba que existen los archivos de `C:\GGTO\datos` (al menos `tecnicos.json` y `averias.json`).
-3. El sistema muestra el diálogo **Identificación del operador** con el campo *P00 o usuario* y el botón *Iniciar sesión*.
-4. El operador escribe su P00 o usuario y pulsa *Iniciar sesión*.
-5. El sistema busca coincidencia exacta en `tecnicos.json` con `status` activo.
-6. El sistema abre la sesión, muestra en la barra superior el nombre, la cédula y el P00 del operador y presenta las 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION.
-7. El sistema deja la pestaña PANEL activa y habilita los botones de edición.
+3. El sistema muestra el diálogo **Identificación del operador** con los campos ***P00*** y ***Contraseña*** y el botón *Iniciar sesión*. [D-29, D-39]
+4. El operador escribe su `P00` y su contraseña, y pulsa *Iniciar sesión*.
+5. El sistema valida la longitud de la contraseña (mínimo **8 caracteres**) antes de verificar la credencial; si tiene menos de 8, rechaza el envío sin consultar el padrón. [D-39]
+6. El sistema busca **coincidencia exacta por `P00`** en `tecnicos.json` con `status` activo; el campo `nombre` **no** es un identificador válido. [D-29]
+7. El sistema calcula el **hash (SHA-256 + sal del técnico)** de la contraseña escrita y lo compara con `clave_hash`; si no coincide, rechaza la sesión con un mensaje **genérico** que no revela cuál de los dos datos falló. [D-39]
+8. Si la credencial es válida y `clave_fecha_cambio` tiene **más de 90 días**, el sistema **no abre la sesión operativa**: exige el cambio de contraseña antes de continuar (paso 9) y solo después abre la sesión. [D-39]
+9. El operador informa la nueva contraseña dos veces (mínimo 8 caracteres); el sistema guarda su `clave_hash`, una **nueva sal** y `clave_fecha_cambio` = fecha del día, y no conserva la anterior en claro. [D-39]
+10. El sistema abre la sesión, resuelve el rol y, si es operador, el `id` de su cuadrilla en `cuadrillas.json` (`cuadrillas.id` = valor de `Reparador Principal`, D-37), y muestra en la barra superior el nombre, la cédula, el `P00`, el rol y la cuadrilla.
+11. El sistema presenta las 7 pestañas —PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION— pero **habilita solo las que la matriz de §2.1 permite a su rol** (D-35, RNF-12).
+12. El sistema deja la pestaña PANEL activa y habilita los botones de edición permitidos para su rol.
 
 **Flujos alternativos**
 
 - **1a. El operador abre el archivo con doble clic (`file://`).** El sistema detecta el protocolo `file:`, bloquea la edición y muestra el mensaje «Abra la página con `servir-ggto.ps1` (http://localhost:8787). Desde `file://` no se pueden leer ni escribir los JSON.» [D-01, RT-06, H-23]
-- **4a. P00/usuario vacío.** El sistema rechaza el envío con «Indique su P00 o usuario» y no abre la sesión; se permiten 3 intentos fallidos antes de volver al paso 3 con el contador visible.
-- **5a. El usuario no existe en `tecnicos.json` o su `status` no es activo.** El sistema muestra «Operador no registrado o inactivo. Solicite su alta en CONFIGURACION/TECNICOS», registra el intento con fecha y hora y mantiene la sesión cerrada. [RNF-08]
-- **5b. `tecnicos.json` no existe, está vacío o tiene JSON inválido.** El sistema muestra «Padrón de técnicos no disponible: <detalle>», ofrece la ruta `C:\GGTO\datos\tecnicos.json` y bloquea la edición hasta que se restaure desde respaldo. [CU-21, H-20, H-25]
-- **6a. Ambigüedad A-11.** [SUPUESTO: A-11] Se admite como identificador válido el valor `P00` **o** el campo `nombre` de `tecnicos.json`, porque el significado de `P00` continúa sin definirse; el sistema muestra ambos campos en el diálogo y el administrador puede cambiarlo cuando A-11 se cierre.
+- **4a. `P00` o contraseña vacíos.** El sistema rechaza el envío con «Indique su P00 y su contraseña» y no abre la sesión; se permiten 3 intentos fallidos antes de volver al paso 3 con el contador visible y el intento registrado con fecha y hora. [D-29, D-39]
+- **5a. Contraseña de menos de 8 caracteres.** El sistema rechaza el envío con «La contraseña debe tener al menos 8 caracteres» **sin consultar el padrón** y cuenta el intento. [D-39]
+- **7a. Credencial incorrecta (P00 inexistente, técnico inactivo o contraseña que no corresponde al hash).** El sistema muestra el mensaje **genérico** «P00 o contraseña incorrectos» (nunca indica cuál de los dos falló ni si el técnico existe), registra el intento con fecha y hora y mantiene la sesión cerrada. [D-29, D-35, D-39]
+- **8a. Contraseña caducada (más de 90 días desde `clave_fecha_cambio`).** El sistema muestra «Su contraseña tiene más de 90 días: debe cambiarla antes de operar», bloquea toda acción de escritura y ejecuta el cambio obligatorio del paso 9; si el operador cancela, la sesión queda cerrada. [D-39]
+- **8b. `tecnicos.json` no existe, está vacío o tiene JSON inválido.** El sistema muestra «Padrón de técnicos no disponible: &lt;detalle&gt;», ofrece la ruta `C:\GGTO\datos\tecnicos.json` y bloquea toda la edición hasta que se restaure desde respaldo (CU-21). [H-20, H-25]
+- **10a. La sesión no tiene cuadrilla asociada (técnico sin cuadrilla activa).** El sistema abre la sesión **en modo consulta global de solo lectura**: no habilita el cierre de casos ni la edición en línea, y muestra «Sin cuadrilla asignada: solo consulta. Solicite su inclusión en CONFIGURACION/CUADRILLA». [D-35, D-37, RNF-12]
+- **11a. Se cierra la sesión o expira por inactividad.** El sistema cierra la sesión y vuelve al paso 3; las acciones de escritura quedan bloqueadas hasta una nueva identificación. **La duración de la expiración por inactividad es `&lt;PENDIENTE&gt;` de decisión del usuario** (no se inventa un valor).
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** que el servidor local escucha en `127.0.0.1:8787` y `tecnicos.json` contiene un técnico activo con P00 `12345` y nombre `Luis Pérez`, **Cuando** el operador escribe `12345` y pulsa *Iniciar sesión*, **Entonces** la página muestra «Sesión: Luis Pérez (12345)» y habilita los botones *Guardar*, *Cerrar caso* y *Agregar caso*. **Y** el encabezado de la sesión queda registrado como operador activo.
-2. **Dado** que la sesión está cerrada, **Cuando** el operador intenta pulsar *Cerrar caso*, **Entonces** el sistema no ejecuta la acción y muestra «Identifíquese para editar».
-3. **Dado** que el operador abre `index.html` desde `file://`, **Cuando** la página termina de cargar, **Entonces** el sistema muestra el aviso de servidor local y ningún botón de edición queda habilitado.
-4. **Dado** que `tecnicos.json` no contiene el valor `99999`, **Cuando** el operador lo escribe y pulsa *Iniciar sesión*, **Entonces** el sistema muestra «Operador no registrado o inactivo», incrementa el contador de intentos a 1 y mantiene la sesión cerrada.
-5. **Dado** que el operador ya inició sesión, **Cuando** modifica el `status` de un caso, **Entonces** el caso queda con `usuario_modificacion` igual al P00 de la sesión y `fecha_modificacion` con formato `DD/MM/AAAA hh:mm`.
-6. **Dado** un equipo con Edge o Chrome versión 86 o superior, **Cuando** se carga la página desde `http://localhost:8787`, **Entonces** las 7 pestañas son navegables y ninguna dependencia se solicita por internet.
+1. **Dado** que el servidor local escucha en `127.0.0.1:8787` y `tecnicos.json` contiene un técnico activo con P00 `12345`, nombre `Luis Pérez` y contraseña vigente `Clave2026`, **Cuando** el operador escribe `12345` y `Clave2026` y pulsa *Iniciar sesión*, **Entonces** la página muestra «Sesión: Luis Pérez (12345)» y habilita los botones *Guardar*, *Cerrar caso* y *Agregar caso*.
+2. **Dado** el mismo técnico activo, **Cuando** el operador escribe `12345` y la contraseña `Clave26` (7 caracteres), **Entonces** el sistema muestra «La contraseña debe tener al menos 8 caracteres», no consulta el padrón y mantiene la sesión cerrada. [D-39]
+3. **Dado** el mismo técnico activo con P00 `12345` y hash de la contraseña `Clave2026`, **Cuando** el operador escribe `12345` y la contraseña `OtraClave9`, **Entonces** el sistema muestra «P00 o contraseña incorrectos» —sin indicar cuál de los dos datos falló—, incrementa el contador de intentos a 1 y mantiene la sesión cerrada. [D-39]
+4. **Dado** el mismo técnico activo, **Cuando** el operador escribe `99999` y la contraseña `Clave2026`, **Entonces** el sistema muestra exactamente el mismo mensaje genérico «P00 o contraseña incorrectos» y no revela que el P00 no existe. [D-39]
+5. **Dado** un técnico con `status = Inactivo` y credencial correcta, **Cuando** el operador intenta iniciar sesión, **Entonces** el sistema muestra «P00 o contraseña incorrectos», registra el intento con fecha y hora y mantiene la sesión cerrada. [D-39]
+6. **Dado** un técnico activo cuyo `clave_fecha_cambio` es del 01/05/2026 (más de 90 días antes del 14/09/2026), **Cuando** el operador inicia sesión con la credencial correcta, **Entonces** el sistema muestra «Su contraseña tiene más de 90 días: debe cambiarla antes de operar», **no** habilita ninguna pestaña de escritura y exige el cambio de contraseña. [D-39]
+7. **Dado** el cambio obligatorio de contraseña exigido en el criterio anterior, **Cuando** el operador informa la nueva contraseña `Nueva2026` dos veces, **Entonces** `tecnicos.json` guarda un `clave_hash` distinto del anterior, una nueva `clave_sal` y `clave_fecha_cambio = 14/09/2026`, y ninguna parte del archivo contiene la contraseña en claro. [D-39]
+8. **Dado** que la sesión está cerrada, **Cuando** el operador intenta pulsar *Cerrar caso*, **Entonces** el sistema no ejecuta la acción y muestra «Identifíquese para editar».
+9. **Dado** que el operador abre `index.html` desde `file://`, **Cuando** la página termina de cargar, **Entonces** el sistema muestra el aviso de servidor local y ningún botón de edición queda habilitado.
+10. **Dado** que `tecnicos.json` contiene un técnico activo cuyo `nombre` es `Luis Pérez` y cuyo P00 es `12345`, **Cuando** el operador escribe `Luis Pérez` en el campo *P00* y una contraseña cualquiera, **Entonces** el sistema muestra «P00 o contraseña incorrectos» —el nombre no es un identificador válido (D-29)— e incrementa el contador de intentos a 1.
+11. **Dado** que el operador ya inició sesión, **Cuando** modifica el `status` de un caso de su cuadrilla, **Entonces** el caso queda con `usuario_modificacion` igual al P00 de la sesión y `fecha_modificacion` con formato `DD/MM/AAAA hh:mm`.
+12. **Dado** un técnico activo con P00 `12345` cuyo `cuadrillas.id` es `C1`, **Cuando** inicia sesión, **Entonces** la página habilita CASOS, PANEL e INGESTA para los casos de `C1` y **no** habilita CONFIGURACION, DESPACHO, GESTION ni RESPALDO.
+13. **Dado** un técnico activo que no integra ninguna cuadrilla, **Cuando** inicia sesión, **Entonces** el sistema abre la sesión en modo consulta y muestra «Sin cuadrilla asignada: solo consulta», sin habilitar el cierre de casos.
+14. **Dado** un equipo con Edge o Chrome versión 86 o superior, **Cuando** se carga la página desde `http://localhost:8787`, **Entonces** las 7 pestañas son navegables y ninguna dependencia se solicita por internet.
+15. **Dado** el diálogo **Identificación del operador** con los campos *P00* y *Contraseña*, **Cuando** el usuario recorre el diálogo **solo con el teclado** (`Tab` para pasar de *P00* a *Contraseña* y a *Iniciar sesión*, `Enter` para enviar), **Entonces** el foco es visible en cada control, cada campo tiene su `label` asociado y la sesión se abre sin haber usado el ratón. [D-40, RNF-13]
+16. **Dado** cualquier pantalla de la interfaz, **Cuando** se mide el contraste del texto y de los controles sobre su fondo, **Entonces** la relación es de al menos **4,5:1** en el texto normal y el foco visible se distingue con un indicador de contraste equivalente. [D-40, RNF-13]
 
 **Restricciones del sistema (EARS)**
 
 - **Ubicuo:** El sistema deberá servir la página únicamente por `http://127.0.0.1:8787` y publicar solo el subdirectorio de la aplicación, dejando `datos/` y `RepoTecnico/` fuera del alcance HTTP. [D-15, RT-09]
 - **Mientras** no exista una identificación válida, el sistema deberá mantener bloqueadas las acciones de edición, cierre, alta y configuración. [RNF-08]
+- **El sistema deberá** exigir, para abrir la sesión, la combinación de `P00` de un técnico activo y una contraseña de **8 caracteres como mínimo** verificada contra el hash con sal almacenado en `tecnicos.json`. [D-29, D-39, RNF-08]
+- **El sistema deberá** almacenar la contraseña únicamente como **hash (SHA-256) con sal por técnico**, y **no deberá** persistirla ni mostrarla en claro en ningún archivo, pantalla, mensaje o registro. [D-39]
+- **Si** la credencial no es válida, entonces el sistema deberá responder con un mensaje genérico que no revele si el `P00` existe ni cuál de los dos datos falló, y deberá registrar el intento con fecha y hora. [D-39]
+- **Si** han transcurrido más de **90 días** desde `clave_fecha_cambio`, entonces el sistema deberá exigir el cambio de contraseña antes de habilitar cualquier acción de la sesión. [D-39]
+- **Si** el rol de la sesión es operador, entonces el sistema deberá habilitar únicamente las acciones que le permite la matriz acción×rol, y deberá restringir la consulta, la edición y el cierre a los casos cuyo `Reparador Principal` sea el `id` de su cuadrilla. [D-35, D-37, RNF-12]
+- **Si** la sesión intenta una acción fuera de su rol, entonces el sistema deberá rechazarla, mostrar «Acción no permitida para su rol» y registrar el intento con operador y fecha/hora, sin modificar el maestro. [D-35, RNF-12]
 - **Si** el navegador no soporta File System Access API, entonces el sistema deberá avisar «Modo consulta: este navegador no permite escribir los JSON» y ofrecer el modo descarga. [RNF-03, H-22]
+- **El sistema deberá** permitir operar el diálogo de identificación y toda la interfaz **solo con el teclado**, con `label` asociado a cada campo, foco visible y contraste mínimo 4,5:1; y deberá ofrecer una **tabla o texto alternativo equivalente** para cada gráfico. [D-40, RNF-13]
 - **El sistema deberá** registrar en cada cambio el operador de la sesión y la fecha/hora del cambio. [RNF-09, D-16]
 
 ---
 
 ### CU-02 — Configurar los datos operativos de la central
 
-- **Actor principal:** Administrador.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actores secundarios:** Operador de la central (consume el filtro en la ingesta).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); `C:\GGTO\datos\central.json` accesible (puede no existir en la primera ejecución).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `C:\GGTO\datos\central.json` accesible (puede no existir en la primera ejecución).
 - **Postcondiciones:** `central.json` contiene los 10 campos operativos vigentes y la ingesta filtra el CSV contra ellos (RT-03).
 
-**Trazabilidad:** RF-11; RNF-08, RNF-10; RT-01, RT-03; D-01, D-12, D-16; H-14.
+**Trazabilidad:** RF-11; RNF-08, RNF-10, **RNF-12**; RT-01, RT-03; D-01, D-12, D-16, **D-35**; H-14.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **CENTRAL**.
+1. El supervisor entra en CONFIGURACION → **CENTRAL**.
 2. El sistema muestra los 10 campos con el valor vigente: región, estado geográfico, capital del estado geográfico, municipio, parroquia, estado operativo, distrito, área, central y nombre de la central.
-3. El administrador edita los valores (para Francisco Salias, área 4: `area = AREA 4`, `central = 2324X`, `nombre_central = FRANCISCO SALIAS`).
-4. El administrador pulsa *Guardar*.
+3. El supervisor edita los valores (para Francisco Salias, área 4: `area = AREA 4`, `central = 2324X`, `nombre_central = FRANCISCO SALIAS`).
+4. El supervisor pulsa *Guardar*.
 5. El sistema valida que los 10 campos no estén vacíos y que `area` y `central` no tengan espacios al inicio ni al final.
 6. El sistema escribe `C:\GGTO\datos\central.json` y relee el archivo para confirmar el contenido.
 7. El sistema muestra «Central guardada» y el resumen de los 10 campos.
@@ -153,82 +220,99 @@
 - **4a. Algún campo obligatorio vacío.** El sistema marca en rojo los campos vacíos, muestra «Complete: &lt;lista de campos&gt;» y no escribe el archivo.
 - **6a. La escritura falla (permiso, disco, archivo bloqueado).** El sistema conserva el valor anterior en pantalla, muestra «No se pudo guardar `central.json`: &lt;detalle&gt;» y ofrece *Reintentar* y *Guardar copia en `datos_respaldo`*. [CU-21, H-09]
 - **2a. `central.json` no existe.** El sistema muestra el formulario vacío con el botón *Crear central* y advierte que la ingesta quedará bloqueada hasta que exista el registro.
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra la pestaña CONFIGURACION ni ejecuta la escritura, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el formulario CENTRAL vacío, **Cuando** el administrador guarda con 9 campos informados y `municipio` vacío, **Entonces** el sistema muestra «Complete: municipio» y `central.json` no se crea ni se modifica.
-2. **Dado** el formulario CENTRAL con `area = AREA 4`, `central = 2324X` y `nombre_central = FRANCISCO SALIAS`, **Cuando** el administrador pulsa *Guardar*, **Entonces** `central.json` contiene los 10 campos y la relectura inmediata devuelve los mismos valores.
-3. **Dado** que `central.json` tiene `central = 2324X`, **Cuando** se ejecuta la ingesta del CSV del 12/09/2026, **Entonces** el sistema procesa solo los **51 registros** con `nombre central = FRANCISCO SALIAS` y descarta los 5 de LAS MERCEDES CPA y EL HATILLO.
-4. **Dado** que `central.json` no existe, **Cuando** el operador abre CONFIGURACION → CENTRAL, **Entonces** el sistema muestra el formulario vacío con el botón *Crear central* y el aviso «La ingesta está bloqueada hasta configurar la central».
+1. **Dado** el formulario CENTRAL vacío, **Cuando** el supervisor guarda con 9 campos informados y `municipio` vacío, **Entonces** el sistema muestra «Complete: municipio» y `central.json` no se crea ni se modifica.
+2. **Dado** el formulario CENTRAL con `area = AREA 4`, `central = 2324X` y `nombre_central = FRANCISCO SALIAS`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** `central.json` contiene los 10 campos y la relectura inmediata devuelve los mismos valores.
+3. **Dado** que `central.json` tiene `central = 2324X`, **Cuando** se ejecuta la ingesta del CSV del 12/09/2026, **Entonces** el sistema procesa solo los **51 registros** con `nombre central = FRANCISCO SALIAS` y descarta los 5 restantes (4 de LAS MERCEDES CPA y 1 de EL HATILLO).
+4. **Dado** que `central.json` no existe, **Cuando** el usuario autorizado abre CONFIGURACION → CENTRAL, **Entonces** el sistema muestra el formulario vacío con el botón *Crear central* y el aviso «La ingesta está bloqueada hasta configurar la central».
+5. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir CONFIGURACION → CENTRAL, **Entonces** el sistema no muestra el formulario, responde «Acción no permitida para su rol», registra el intento con operador y fecha/hora y `central.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
 - **Mientras** `central.json` no exista o tenga algún campo vacío, el sistema deberá bloquear la ejecución de la ingesta y mostrar «Configure la central (CONFIGURACION → CENTRAL)». [RT-03, RN-04]
 - **Cuando** se guarde `central.json`, el sistema deberá releer el archivo escrito y compararlo con lo enviado antes de confirmar en pantalla. [RNF-10, H-09]
 - **El sistema deberá** registrar el operador y la fecha/hora de cada modificación de `central.json`. [RNF-09]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `central.json` sin modificar el archivo. [D-35, RNF-12]
 
 ---
 
 ### CU-03 — Gestionar el padrón de técnicos
 
-- **Actor principal:** Administrador.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actores secundarios:** Operador de la central (se identifica contra este padrón).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01).
-- **Postcondiciones:** `tecnicos.json` contiene el padrón vigente con nombre, cédula, P00, teléfono, correo, especialidad y status.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12).
+- **Postcondiciones:** `tecnicos.json` contiene el padrón vigente con nombre, cédula, P00, teléfono, correo, especialidad y status; el `P00` es único y obligatorio (D-29) y cada registro tiene `clave_hash`, `clave_sal` y `clave_fecha_cambio`, sin contraseña en claro (D-39).
 
-**Trazabilidad:** RF-12; RNF-04, RNF-08, RNF-10; RT-01; D-16, D-07 (referencia desde CU-05); A-11.
+**Trazabilidad:** RF-12; RNF-04, **RNF-08**, RNF-10, **RNF-12**; RT-01; D-16, D-07 (referencia desde CU-05), **D-29, D-35, D-39**; H-01.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **TECNICOS**.
-2. El sistema lista los técnicos con las columnas: nombre, cédula, P00, teléfono, correo, especialidad y status.
-3. El administrador pulsa *Nuevo técnico*, completa la ficha y guarda.
-4. El sistema valida que `nombre`, `cedula` y `status` estén informados y que `cedula` no se repita.
-5. El sistema agrega el registro a `tecnicos.json`, relee el archivo y muestra «Técnico agregado».
-6. Para editar, el administrador selecciona una fila, modifica los campos y guarda; el sistema aplica la misma validación y persiste.
-7. Para dar de baja, el administrador cambia `status` a inactivo; el técnico desaparece de las listas de selección de cuadrilla, pero permanece en el padrón para no romper el historial.
+1. El supervisor entra en CONFIGURACION → **TECNICOS**.
+2. El sistema lista los técnicos con las columnas: nombre, cédula, P00, teléfono, correo, especialidad, status y **fecha del último cambio de contraseña**; nunca muestra la contraseña ni su hash. [D-39]
+3. El supervisor pulsa *Nuevo técnico*, completa la ficha y asigna una **contraseña inicial de 8 caracteres como mínimo**, que se confirma por duplicado.
+4. El sistema valida que `nombre`, `cedula`, **`P00`** y `status` estén informados, que `cedula` no se repita, que **`P00` no se repita** (es único y obligatorio, D-29) y que la contraseña tenga al menos 8 caracteres.
+5. El sistema guarda el `clave_hash` (**SHA-256 + sal** generada para ese técnico), el `clave_sal` y `clave_fecha_cambio` = fecha del día; **no** guarda la contraseña en claro y **marca el cambio obligatorio en el primer ingreso**. [D-39]
+6. El sistema agrega el registro a `tecnicos.json`, relee el archivo y muestra «Técnico agregado».
+7. Para editar, el supervisor selecciona una fila, modifica los campos y guarda; el sistema aplica la misma validación y persiste. Si el supervisor escribe una contraseña nueva, el sistema regenera sal y hash y actualiza `clave_fecha_cambio`. [D-39]
+8. **Restablecimiento de contraseña.** El supervisor pulsa *Restablecer contraseña* sobre un técnico, asigna una contraseña temporal de 8 caracteres o más y el sistema la guarda como hash con sal nueva y **marca el cambio obligatorio en el siguiente ingreso**. [D-39]
+9. Para dar de baja, el supervisor cambia `status` a inactivo; el técnico desaparece de las listas de selección de cuadrilla, pero permanece en el padrón para no romper el historial. [D-29, D-39]
 
 **Flujos alternativos**
 
 - **4a. Cédula duplicada.** El sistema muestra «La cédula 12345678 ya existe (técnico: Luis Pérez)» y no guarda.
-- **4b. `nombre`, `cedula` o `status` vacíos.** El sistema muestra el campo faltante y no guarda.
-- **7a. El técnico pertenece a una cuadrilla activa.** El sistema advierte «El técnico integra las cuadrillas C1 y C3. Al inactivarlo quedan incompletas» y exige confirmación escrita antes de continuar.
+- **4b. `nombre`, `cedula`, `P00` o `status` vacíos.** El sistema muestra el campo faltante y no guarda.
+- **4c. `P00` duplicado.** El sistema muestra «El P00 12345 ya está asignado a Luis Pérez» y no guarda. [D-29, RNF-04]
+- **4d. Contraseña de menos de 8 caracteres.** El sistema muestra «La contraseña debe tener al menos 8 caracteres y no se muestra en claro en ningún momento» y no guarda. [D-39]
+- **4e. Confirmación de contraseña distinta.** El sistema muestra «Las contraseñas no coinciden» y no guarda. [D-39]
+- **9a. El técnico pertenece a una cuadrilla activa.** El sistema advierte «El técnico integra las cuadrillas C1 y C3. Al inactivarlo quedan incompletas» y exige confirmación escrita antes de continuar.
 - **2a. `tecnicos.json` ausente o inválido.** El sistema muestra «Padrón no disponible» y ofrece *Crear padrón vacío* o *Restaurar desde respaldo* (CU-21).
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el padrón ni ejecuta la escritura, incluido el restablecimiento de contraseñas, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el padrón con un técnico de cédula `12345678`, **Cuando** el administrador intenta agregar otro con la misma cédula, **Entonces** el sistema muestra «La cédula 12345678 ya existe» y el total de técnicos en `tecnicos.json` no cambia.
-2. **Dado** el formulario de alta con `nombre = Ana Gómez`, `cedula = 87654321`, `P00 = 4321`, `especialidad = Fibra` y `status = Activo`, **Cuando** el administrador pulsa *Guardar*, **Entonces** `tecnicos.json` contiene el registro y la lista muestra 1 fila más.
-3. **Dado** un técnico con `status = Inactivo`, **Cuando** el administrador abre el selector de técnicos de una cuadrilla, **Entonces** ese técnico no aparece en la lista.
-4. **Dado** un técnico que integra 2 cuadrillas activas, **Cuando** el administrador cambia su `status` a Inactivo, **Entonces** el sistema muestra el aviso con los identificadores de las 2 cuadrillas y exige confirmación antes de persistir.
+1. **Dado** el padrón con un técnico de cédula `12345678`, **Cuando** el supervisor intenta agregar otro con la misma cédula, **Entonces** el sistema muestra «La cédula 12345678 ya existe» y el total de técnicos en `tecnicos.json` no cambia.
+2. **Dado** el formulario de alta con `nombre = Ana Gómez`, `cedula = 87654321`, `P00 = 4321`, `especialidad = Fibra`, `status = Activo` y contraseña inicial `Clave2026` confirmada, **Cuando** el supervisor pulsa *Guardar*, **Entonces** `tecnicos.json` contiene el registro con `clave_hash`, `clave_sal` y `clave_fecha_cambio = 14/09/2026`, la lista muestra 1 fila más y **ninguna** parte del archivo contiene la cadena `Clave2026`. [D-39]
+3. **Dado** el formulario de alta con la contraseña `Clave26`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** el sistema muestra «La contraseña debe tener al menos 8 caracteres» y no crea el registro. [D-39]
+4. **Dado** el padrón con el P00 `4321` ya asignado, **Cuando** el supervisor intenta guardar otro técnico con `P00 = 4321`, **Entonces** el sistema muestra «El P00 4321 ya está asignado» y el total de técnicos no cambia.
+5. **Dado** el formulario de alta sin `P00`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** el sistema muestra «Complete: P00» y no crea el registro. [D-29]
+6. **Dado** un técnico con contraseña vigente, **Cuando** el supervisor pulsa *Restablecer contraseña* y asigna `Temporal2026`, **Entonces** `tecnicos.json` guarda un `clave_hash` distinto del anterior con sal nueva y ese técnico queda obligado a cambiar la contraseña en su siguiente ingreso. [D-39]
+7. **Dado** un técnico con `status = Inactivo`, **Cuando** el supervisor abre el selector de técnicos de una cuadrilla, **Entonces** ese técnico no aparece en la lista.
+8. **Dado** un técnico que integra 2 cuadrillas activas, **Cuando** el supervisor cambia su `status` a Inactivo, **Entonces** el sistema muestra el aviso con los identificadores de las 2 cuadrillas y exige confirmación antes de persistir.
+9. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir CONFIGURACION → TECNICOS o restablecer una contraseña, **Entonces** el sistema responde «Acción no permitida para su rol» y `tecnicos.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
 - **Si** la cédula ya existe en el padrón, entonces el sistema deberá rechazar el alta sin modificar el archivo. [RNF-04]
+- **El sistema deberá** exigir que todo registro de `tecnicos.json` tenga un `P00` informado y único, y deberá rechazar el alta o la edición que lo duplique o lo deje vacío. [D-29, RNF-04]
+- **El sistema deberá** almacenar la contraseña de cada técnico únicamente como hash (SHA-256) con sal propia y `clave_fecha_cambio`, y **no deberá** guardarla ni mostrarla en claro en la ficha, la lista, los mensajes ni los registros. [D-39]
+- **El sistema deberá** exigir un mínimo de **8 caracteres** en toda contraseña de alta, cambio o restablecimiento, y deberá marcar el cambio obligatorio en el primer ingreso posterior a un alta o a un restablecimiento. [D-39]
 - **Cuando** se modifique un técnico, el sistema deberá persistir el cambio y registrar operador y fecha/hora. [RNF-09]
-- **Mientras** el significado de `P00` no esté cerrado (A-11), el sistema deberá permitir guardarlo como texto libre no obligatorio y mostrarlo tal cual en la ficha. [A-11]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `tecnicos.json`, incluido el restablecimiento de contraseñas, sin modificar el archivo. [D-35, RNF-12]
 
 ---
 
 ### CU-04 — Gestionar el padrón de flota
 
-- **Actor principal:** Administrador.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actores secundarios:** Operador de la central (consume la flota al armar cuadrillas).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12).
 - **Postcondiciones:** `flota.json` contiene los vehículos vigentes con CAN00, tipo, marca, modelo, placa, combustible, status, estado de cauchos, estado de fluidos y estado general.
 
-**Trazabilidad:** RF-13; RNF-04, RNF-10; RT-01; D-07.
+**Trazabilidad:** RF-13; RNF-04, RNF-10, **RNF-12**; RT-01; D-07, **D-35**.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **FLOTA**.
+1. El supervisor entra en CONFIGURACION → **FLOTA**.
 2. El sistema lista los vehículos con las 10 columnas del padrón.
-3. El administrador pulsa *Nuevo vehículo*, informa CAN00, placa y status (obligatorios) y los 7 campos restantes.
+3. El supervisor pulsa *Nuevo vehículo*, informa CAN00, placa y status (obligatorios) y los 7 campos restantes.
 4. El sistema valida que `CAN00` y `placa` no se repitan y que `status` pertenezca a {Operativo, En mantenimiento, Fuera de servicio}.
 5. El sistema agrega el registro a `flota.json`, relee el archivo y muestra «Vehículo agregado».
-6. El administrador edita o cambia el `status` del vehículo cuando cambia su condición; el sistema persiste el cambio y registra operador y fecha/hora.
+6. El supervisor edita o cambia el `status` del vehículo cuando cambia su condición; el sistema persiste el cambio y registra operador y fecha/hora.
 
 **Flujos alternativos**
 
@@ -236,41 +320,44 @@
 - **4b. `status` fuera del enum.** El sistema muestra «Status inválido: use Operativo, En mantenimiento o Fuera de servicio» y no guarda.
 - **6a. El vehículo está asignado a una cuadrilla activa.** El sistema advierte «El CAN00 1234 está asignado a la cuadrilla C2» y exige confirmación antes de ponerlo fuera de servicio.
 - **2a. `flota.json` ausente o inválido.** El sistema muestra «Padrón no disponible» y ofrece *Crear padrón vacío* o *Restaurar desde respaldo* (CU-21).
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el padrón ni ejecuta la escritura, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el padrón con el CAN00 `1234`, **Cuando** el administrador agrega otro vehículo con el mismo CAN00, **Entonces** el sistema muestra el aviso de duplicado y el total de vehículos en `flota.json` no cambia.
-2. **Dado** el formulario con `CAN00 = 5678`, `placa = XY987ZT`, `status = Operativo`, `estado_cauchos = Bueno`, `estado_fluidos = OK` y `estado_general = Bueno`, **Cuando** el administrador pulsa *Guardar*, **Entonces** `flota.json` contiene el vehículo y la lista muestra 1 fila más.
-3. **Dado** un vehículo con `status = Fuera de servicio`, **Cuando** el administrador abre el selector de vehículo de una cuadrilla, **Entonces** ese vehículo no aparece en la lista.
-4. **Dado** un vehículo asignado a la cuadrilla `C2`, **Cuando** el administrador lo marca «Fuera de servicio», **Entonces** el sistema muestra «El CAN00 1234 está asignado a la cuadrilla C2» y pide confirmación.
+1. **Dado** el padrón con el CAN00 `1234`, **Cuando** el supervisor agrega otro vehículo con el mismo CAN00, **Entonces** el sistema muestra el aviso de duplicado y el total de vehículos en `flota.json` no cambia.
+2. **Dado** el formulario con `CAN00 = 5678`, `placa = XY987ZT`, `status = Operativo`, `estado_cauchos = Bueno`, `estado_fluidos = OK` y `estado_general = Bueno`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** `flota.json` contiene el vehículo y la lista muestra 1 fila más.
+3. **Dado** un vehículo con `status = Fuera de servicio`, **Cuando** el supervisor abre el selector de vehículo de una cuadrilla, **Entonces** ese vehículo no aparece en la lista.
+4. **Dado** un vehículo asignado a la cuadrilla `C2`, **Cuando** el supervisor lo marca «Fuera de servicio», **Entonces** el sistema muestra «El CAN00 1234 está asignado a la cuadrilla C2» y pide confirmación.
+5. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir CONFIGURACION → FLOTA, **Entonces** el sistema responde «Acción no permitida para su rol» y `flota.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
 - **Si** `CAN00` o `placa` ya existen, entonces el sistema deberá rechazar el alta sin modificar el archivo. [RNF-04]
 - **Cuando** se modifique un vehículo, el sistema deberá persistir el cambio y registrar operador y fecha/hora. [RNF-09]
 - **El sistema deberá** conservar la grafía corregida `combustible` en el archivo y en la interfaz. [RNF-07, A-06]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `flota.json` sin modificar el archivo. [D-35, RNF-12]
 
 ---
 
 ### CU-05 — Gestionar el padrón de cuadrillas
 
-- **Actor principal:** Administrador.
-- **Actores secundarios:** Supervisor (las usa en el despacho, CU-16); operador de la central.
+- **Actor principal:** Supervisor (función administrativa, D-35).
+- **Actores secundarios:** Operador de la central (consume el `id` de su cuadrilla para saber qué casos puede cerrar).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); existen técnicos (CU-03), vehículos (CU-04) y sectores (CU-06) si se van a referenciar.
-- **Postcondiciones:** `cuadrillas.json` contiene las cuadrillas con `id, nombre, tecnicos[], vehiculo, turno, sectores[], status`; el `id` es el valor que toma `averias."Reparador Principal"`.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); existen técnicos (CU-03), vehículos (CU-04) y sectores (CU-06) si se van a referenciar.
+- **Postcondiciones:** `cuadrillas.json` contiene las cuadrillas con `id, nombre, tecnicos[], vehiculo, turno, sectores[], status`; el `id` es el valor que toma `averias."Reparador Principal"` y `despacho.json."Reparador Principal"` (D-37).
 
-**Trazabilidad:** RF-14; RNF-04, RNF-10; RT-01; RN-05, RN-06; D-07; A-14.
+**Trazabilidad:** RF-14; RNF-04, RNF-10, **RNF-12**; RT-01, **RT-05**; RN-05, RN-06; D-07, **D-31, D-35, D-37**; H-04.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **CUADRILLA**.
+1. El supervisor entra en CONFIGURACION → **CUADRILLA**.
 2. El sistema lista las cuadrillas con id, nombre, técnicos, vehículo, turno, sectores y status.
-3. El administrador pulsa *Nueva cuadrilla* e informa: `id` (por ejemplo `C1`), `nombre` (por ejemplo `Cuadrilla 1`), uno o más técnicos activos, un vehículo operativo, turno y los sectores preferentes.
+3. El supervisor pulsa *Nueva cuadrilla* e informa: `id` (por ejemplo `C1`), `nombre` (por ejemplo `Cuadrilla 1`), uno o más técnicos activos, un vehículo operativo, turno y los sectores preferentes.
 4. El sistema valida: `id` y `nombre` no vacíos; `id` no repetido; al menos 1 técnico activo; el vehículo existe en `flota.json`; cada sector existe en `sectores.json`.
 5. El sistema agrega la cuadrilla a `cuadrillas.json`, relee el archivo y muestra «Cuadrilla agregada».
-6. El administrador edita técnicos, vehículo, turno, sectores o status y guarda; el sistema aplica las mismas validaciones y persiste.
-7. El administrador inactiva una cuadrilla que deja de operar; el sistema la excluye de las listas de asignación del despacho y de los filtros de CASOS.
+6. El supervisor edita técnicos, vehículo, turno, sectores o status y guarda; el sistema aplica las mismas validaciones y persiste.
+7. El supervisor inactiva una cuadrilla que deja de operar; el sistema la excluye de las listas de asignación del despacho y de los filtros de CASOS, y deja en modo consulta a los técnicos que la integraban (D-35, D-37).
 
 **Flujos alternativos**
 
@@ -278,183 +365,212 @@
 - **4b. Técnico inactivo o vehículo no operativo.** El sistema muestra «El técnico Ana Gómez está inactivo» o «El CAN00 1234 está fuera de servicio» y no guarda.
 - **4c. Sector inexistente.** El sistema muestra «El sector 7 no existe en `sectores.json`» y ofrece abrir el CRUD de sectores (CU-06).
 - **7a. La cuadrilla tiene casos con `Reparador Principal` = su id.** El sistema advierte «La cuadrilla C1 tiene 12 casos asignados y 3 abiertos» y exige confirmación antes de inactivarla.
-- **6a. Ambigüedad A-14.** [SUPUESTO: A-14] El sistema guarda la asignación de cuadrilla en `averias."Reparador Principal"` y **no** modifica la composición de `despacho.json` (que sigue con las 12 columnas de L57); el agrupamiento del despacho se calcula en memoria. Si A-14 se cierra ampliando `despacho.json`, este paso se reescribe.
+- **6a. Alta o edición de la cuadrilla y registro del despacho (D-31, D-37).** El sistema guarda la asignación en `averias."Reparador Principal"` **y**, cuando el despacho del día se confirma, escribe el registro del día en `despacho.json`, que **se amplía con `sector`, `Reparador Principal` y `fecha_despacho`** (RT-05). El agrupamiento del despacho **no** se calcula solo en memoria: queda persistido en `despacho.json` como registro del despacho del día. [D-31, D-37]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el padrón ni ejecuta la escritura, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el padrón con la cuadrilla `C1`, **Cuando** el administrador intenta crear otra con `id = C1`, **Entonces** el sistema muestra «La cuadrilla C1 ya existe» y el total de cuadrillas no cambia.
-2. **Dado** el formulario con `id = C2`, `nombre = Cuadrilla 2`, 2 técnicos activos, vehículo `5678`, `turno = Diurno` y sectores `1` y `4`, **Cuando** el administrador pulsa *Guardar*, **Entonces** `cuadrillas.json` contiene la cuadrilla con los 2 técnicos y los 2 sectores.
-3. **Dado** una cuadrilla sin ningún técnico activo, **Cuando** el administrador pulsa *Guardar*, **Entonces** el sistema muestra «Seleccione al menos un técnico activo» y no guarda.
+1. **Dado** el padrón con la cuadrilla `C1`, **Cuando** el supervisor intenta crear otra con `id = C1`, **Entonces** el sistema muestra «La cuadrilla C1 ya existe» y el total de cuadrillas no cambia.
+2. **Dado** el formulario con `id = C2`, `nombre = Cuadrilla 2`, 2 técnicos activos, vehículo `5678`, `turno = Diurno` y sectores `1` y `4`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** `cuadrillas.json` contiene la cuadrilla con los 2 técnicos y los 2 sectores.
+3. **Dado** una cuadrilla sin ningún técnico activo, **Cuando** el supervisor pulsa *Guardar*, **Entonces** el sistema muestra «Seleccione al menos un técnico activo» y no guarda.
 4. **Dado** una cuadrilla con `status = Inactiva`, **Cuando** el supervisor genera el despacho (CU-16), **Entonces** esa cuadrilla no aparece como destino de asignación.
-5. **Dado** una cuadrilla inactiva con 3 casos abiertos cuyo `Reparador Principal` es su id, **Cuando** el administrador confirma la inactivación, **Entonces** los 3 casos conservan su `Reparador Principal` y aparecen filtrables por esa cuadrilla en CU-10.
+5. **Dado** una cuadrilla inactiva con 3 casos abiertos cuyo `Reparador Principal` es su id, **Cuando** el supervisor confirma la inactivación, **Entonces** los 3 casos conservan su `Reparador Principal` y aparecen filtrables por esa cuadrilla en CU-10.
+6. **Dado** un despacho del día confirmado con 45 casos en 3 cuadrillas, **Cuando** el supervisor consulta `despacho.json`, **Entonces** el archivo contiene los 45 registros con `sector`, `Reparador Principal` y `fecha_despacho` informados. [D-31, RT-05]
+7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir CONFIGURACION → CUADRILLA, **Entonces** el sistema responde «Acción no permitida para su rol» y `cuadrillas.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
 - **Si** el `id` de la cuadrilla ya existe, entonces el sistema deberá rechazar el alta y conservar el archivo sin cambios. [RNF-04]
 - **Mientras** una cuadrilla esté inactiva, el sistema deberá excluirla de la asignación del despacho sin reescribir los casos ya asignados. [D-07]
-- **El sistema deberá** guardar `Reparador Principal` con el `id` de la cuadrilla, tal como lo exige `cuadrillas.json`. [D-07, A-14]
+- **El sistema deberá** guardar `Reparador Principal` con el `id` de la cuadrilla, tanto en `averias.json` como en el registro del día de `despacho.json`. [D-07, D-37]
+- **El sistema deberá** escribir en `despacho.json` las columnas `sector`, `Reparador Principal` y `fecha_despacho` además de las columnas del fuente, para que el archivo sirva de registro del despacho del día. [D-31, RT-05]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `cuadrillas.json` sin modificar el archivo. [D-35, RNF-12]
 
 ---
 
 ### CU-06 — Gestionar el catálogo de sectores
 
-- **Actor principal:** Administrador.
-- **Actor secundario:** Operador de la central (asigna sectores en CU-09); supervisor (los usa en el despacho, CU-16).
+- **Actor principal:** Supervisor (función administrativa, D-35).
+- **Actores secundarios:** Operador de la central (asigna sectores en CU-09 y crea el sector mínimo desde la cola); cuadrillas (los usan en el despacho, CU-16).
 - **Ciclo:** C1. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** para el CRUD completo (D-35, RNF-12).
 - **Postcondiciones:** `sectores.json` contiene el catálogo vigente con `id, nombre, vias[], cuadrilla_sugerida`; toda avería puede referenciar un sector existente (RN-04).
 
-**Trazabilidad:** RF-29, RF-18; RN-04; RNF-04, RNF-10; RT-01; D-03, D-25; H-14, H-18.
+**Trazabilidad:** RF-29, RF-18; RN-04; RNF-04, RNF-10, **RNF-12**; RT-01; D-03, D-25, **D-35**; H-14, H-18.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **SECTORES**.
+1. El supervisor entra en CONFIGURACION → **SECTORES**.
 2. El sistema lista los sectores con id, nombre, número de vías y cuadrilla sugerida.
-3. El administrador pulsa *Nuevo sector*, informa `id` (por ejemplo `1`), `nombre` (por ejemplo `Prados del Este`), la lista de calles y urbanizaciones (`vias`) y, opcionalmente, la `cuadrilla_sugerida`.
+3. El supervisor pulsa *Nuevo sector*, informa `id` (por ejemplo `1`), `nombre` (por ejemplo `Prados del Este`), la lista de calles y urbanizaciones (`vias`) y, opcionalmente, la `cuadrilla_sugerida`.
 4. El sistema valida que `id` y `nombre` no estén vacíos, que `id` no se repita y que la cuadrilla sugerida exista en `cuadrillas.json`.
 5. El sistema agrega el sector a `sectores.json`, relee el archivo y muestra «Sector agregado».
-6. El administrador edita el nombre o la lista de vías y guarda; el sistema persiste y muestra cuántas averías abiertas usan ese sector.
-7. El administrador elimina un sector; el sistema bloquea la baja si existen averías con ese `sector` y ofrece reasignarlas primero (CU-09 o CU-10).
+6. El supervisor edita el nombre o la lista de vías y guarda; el sistema persiste y muestra cuántas averías abiertas usan ese sector.
+7. El supervisor elimina un sector; el sistema bloquea la baja si existen averías con ese `sector` y ofrece reasignarlas primero (CU-09 o CU-10).
 
 **Flujos alternativos**
 
 - **4a. `id` repetido.** El sistema muestra «El sector 1 ya existe (Prados del Este)» y no guarda.
 - **7a. El sector tiene averías asociadas.** El sistema muestra «El sector 1 tiene 27 averías (4 abiertas). Reasígnelas antes de eliminarlo» y no elimina.
-- **7b. El administrador confirma eliminar un sector sin averías.** El sistema elimina el registro y muestra «Sector eliminado»; el total de sectores baja en 1.
+- **7b. Confirmación de eliminar un sector sin averías.** El sistema elimina el registro y muestra «Sector eliminado»; el total de sectores baja en 1.
 - **4b. Cuadrilla sugerida inexistente.** El sistema muestra «La cuadrilla C9 no existe» y no guarda.
 - **2a. `sectores.json` ausente.** El sistema muestra la lista vacía con el aviso «Sin sectores no puede completarse la ingesta (RN-04)» y el botón *Nuevo sector*.
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema **no** permite el CRUD de sectores (alta libre, edición o baja) y responde «Acción no permitida para su rol»: el operador solo crea el sector mínimo desde la cola de CU-09. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el catálogo con el sector `1` (Prados del Este), **Cuando** el administrador intenta crear otro con `id = 1`, **Entonces** el sistema muestra el aviso de duplicado y el total de sectores no cambia.
-2. **Dado** el formulario con `id = 4`, `nombre = La Trinidad`, `vias = [Av. Intercomunal, Calle 5]`, **Cuando** el administrador pulsa *Guardar*, **Entonces** `sectores.json` contiene el sector con 2 vías.
-3. **Dado** un sector con 4 averías abiertas asociadas, **Cuando** el administrador pulsa *Eliminar*, **Entonces** el sistema muestra «El sector tiene 4 averías abiertas», no elimina el registro y ofrece abrir CU-09.
-4. **Dado** un sector sin averías asociadas, **Cuando** el administrador confirma la eliminación, **Entonces** el sector desaparece de `sectores.json` y del selector de sectores de CASOS.
+1. **Dado** el catálogo con el sector `1` (Prados del Este), **Cuando** el supervisor intenta crear otro con `id = 1`, **Entonces** el sistema muestra el aviso de duplicado y el total de sectores no cambia.
+2. **Dado** el formulario con `id = 4`, `nombre = La Trinidad`, `vias = [Av. Intercomunal, Calle 5]`, **Cuando** el supervisor pulsa *Guardar*, **Entonces** `sectores.json` contiene el sector con 2 vías.
+3. **Dado** un sector con 4 averías abiertas asociadas, **Cuando** el supervisor pulsa *Eliminar*, **Entonces** el sistema muestra «El sector tiene 4 averías abiertas», no elimina el registro y ofrece abrir CU-09.
+4. **Dado** un sector sin averías asociadas, **Cuando** el supervisor confirma la eliminación, **Entonces** el sector desaparece de `sectores.json` y del selector de sectores de CASOS.
 5. **Dado** un catálogo con 6 sectores declarados, **Cuando** se ingiere un CSV con direcciones que coinciden con 5 de ellos, **Entonces** el sistema asigna 5 sectores automáticamente y envía las direcciones restantes a la cola de CU-09.
+6. **Dado** una sesión con rol operador, **Cuando** el operador intenta eliminar o editar un sector desde CONFIGURACION → SECTORES, **Entonces** el sistema responde «Acción no permitida para su rol», no modifica `sectores.json` y registra el intento.
 
 **Restricciones del sistema (EARS)**
 
 - **Si** el `id` del sector ya existe, entonces el sistema deberá rechazar el alta sin modificar el catálogo. [RNF-04]
 - **Si** un sector tiene averías asociadas, entonces el sistema deberá impedir su eliminación hasta que se reasignen. [RNF-10, RN-04]
 - **El sistema deberá** comparar direcciones contra las vías del sector ignorando mayúsculas, tildes y abreviaturas `Av.`, `Cll.`, `Urb.`. [D-03]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el alta libre, la edición y la baja de sectores, admitiendo únicamente la creación del sector mínimo que resuelve una dirección en cola (CU-09). [D-35, RNF-12]
 
 ---
 
 ### CU-07 — Gestionar las palabras clave de clasificación
 
-- **Actor principal:** Administrador.
-- **Actor secundario:** Operador de la central (ejecuta la ingesta, CU-08).
+- **Actor principal:** Supervisor (función administrativa, D-35).
+- **Actor secundario:** Operador de la central (ejecuta la ingesta, CU-08, y consume la lista vigente).
 - **Ciclo:** C2. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); `averias.json` accesible para calcular la vista previa del impacto.
-- **Postcondiciones:** `claves_clasificacion.json` contiene la lista de claves vigente, el modo de normalización y los campos evaluados, con el impacto del cambio aceptado por el administrador.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `averias.json` accesible para calcular la vista previa del impacto.
+- **Postcondiciones:** `claves_clasificacion.json` contiene la lista de claves vigente, el modo de normalización y los campos evaluados, con el impacto del cambio aceptado por el supervisor.
 
-**Trazabilidad:** RF-27, RF-17; RN-03; RNF-09, RNF-10; RT-07; D-05, D-11, D-26; H-08.
+**Trazabilidad:** RF-27, RF-17; RN-03; RNF-09, RNF-10, **RNF-12**; RT-07; D-05, D-11, D-26, **D-35**; H-08.
 
 **Flujo principal**
 
-1. El administrador entra en CONFIGURACION → **PALABRAS CLAVE**.
+1. El supervisor entra en CONFIGURACION → **PALABRAS CLAVE**.
 2. El sistema muestra las claves vigentes (`LOSS ROJO`, `FALLA FIBRA`, `FIBRA DAÑADA` en la primera ejecución), el modo de búsqueda (`normalizada` por defecto) y los 4 campos evaluados (`ultimo_comentario`, `problema_reporte`, `informacion_1`, `informacion_2`).
-3. El administrador agrega, modifica o quita una clave y/o cambia el modo entre `estricta` y `normalizada`.
-4. El administrador pulsa *Vista previa del impacto*.
+3. El supervisor agrega, modifica o quita una clave y/o cambia el modo entre `estricta` y `normalizada`.
+4. El supervisor pulsa *Vista previa del impacto*.
 5. El sistema recorre `averias.json`, cuenta los casos cuyo `status` cambiaría entre PEND y GESTION con el nuevo conjunto y modo, y muestra el resumen: total evaluado, casos que pasarían a PEND y casos que pasarían a GESTION, con la lista de `id_averia` afectados.
-6. El administrador confirma el cambio.
+6. El supervisor confirma el cambio.
 7. El sistema escribe `claves_clasificacion.json`, relee el archivo y muestra «Claves guardadas» junto con el número de claves activas.
 
 **Flujos alternativos**
 
 - **3a. Clave vacía o duplicada.** El sistema muestra «La clave ya existe: FALLA FIBRA» o «La clave no puede estar vacía» y no permite continuar.
-- **4a. Sin vista previa aceptada.** Si el administrador pulsa *Guardar* sin ejecutar la vista previa, el sistema la ejecuta automáticamente y exige confirmación antes de persistir. [D-26]
+- **4a. Sin vista previa aceptada.** Si el supervisor pulsa *Guardar* sin ejecutar la vista previa, el sistema la ejecuta automáticamente y exige confirmación antes de persistir. [D-26]
 - **5a. `averias.json` ausente o inválido.** El sistema muestra «No se puede calcular el impacto: maestro no disponible», permite guardar la lista y advierte que los casos existentes no se reclasifican retroactivamente. [H-20]
 - **7a. Fallo de escritura.** El sistema conserva la lista anterior y muestra «No se pudo guardar `claves_clasificacion.json`». [CU-21]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema muestra la lista en solo lectura (o no la muestra) y rechaza cualquier escritura de las claves, registrando el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el archivo con las 3 claves por defecto y modo `normalizada`, **Cuando** el administrador abre la pantalla, **Entonces** la lista muestra `LOSS ROJO`, `FALLA FIBRA` y `FIBRA DAÑADA` y el modo seleccionado es `normalizada`.
-2. **Dado** un maestro de 1.000 casos, **Cuando** el administrador agrega la clave `FIBRA DAÑADA` y pulsa *Vista previa del impacto*, **Entonces** el sistema muestra el total evaluado, cuántos casos pasarían a PEND y cuántos a GESTION y la lista de sus `id_averia`, sin modificar todavía `claves_clasificacion.json`.
-3. **Dado** que la vista previa indica que 17 casos pasan a PEND, **Cuando** el administrador confirma, **Entonces** `claves_clasificacion.json` contiene la nueva clave y la relectura del archivo devuelve el mismo contenido.
+1. **Dado** el archivo con las 3 claves por defecto y modo `normalizada`, **Cuando** el supervisor abre la pantalla, **Entonces** la lista muestra `LOSS ROJO`, `FALLA FIBRA` y `FIBRA DAÑADA` y el modo seleccionado es `normalizada`.
+2. **Dado** un maestro de 1.000 casos, **Cuando** el supervisor agrega la clave `FIBRA DAÑADA` y pulsa *Vista previa del impacto*, **Entonces** el sistema muestra el total evaluado, cuántos casos pasarían a PEND y cuántos a GESTION y la lista de sus `id_averia`, sin modificar todavía `claves_clasificacion.json`.
+3. **Dado** que la vista previa indica que 17 casos pasan a PEND, **Cuando** el supervisor confirma, **Entonces** `claves_clasificacion.json` contiene la nueva clave y la relectura del archivo devuelve el mismo contenido.
 4. **Dado** el texto `Fibra Danada` en `ultimo_comentario` y el modo `normalizada` con la clave `FIBRA DAÑADA`, **Cuando** se clasifica el caso, **Entonces** el sistema lo trata como coincidencia y el caso queda en `status = PEND`.
-5. **Dado** el texto `Loss Rojo` en `problema_reporte` y el modo `estricta` con la clave `LOSS ROJO`, **Cuando** se clasifica el caso, **Entonces** el sistema lo trata como coincidencia y el caso queda en `status = PEND`.
-6. **Dado** que el administrador intenta guardar la clave `FALLA FIBRA` cuando ya existe, **Cuando** pulsa *Agregar*, **Entonces** el sistema muestra «La clave ya existe» y el archivo no cambia.
+5. **Dado** el texto `Loss Rojo` en `problema_reporte` y el modo `estricta` con la clave `LOSS ROJO`, **Cuando** se clasifica el caso, **Entonces** el resultado depende de la semántica del modo `estricta`, que **sigue `&lt;PENDIENTE&gt;` de decisión del usuario** (pregunta P3 del informe): una definición literal estricta **no** debe considerarlo coincidencia, y una definición «literal sin distinguir mayúsculas» sí. El criterio no se cierra hasta que se publique la semántica en `diccionario_datos.md` §4.6 y se ajuste este criterio.
+6. **Dado** que el supervisor intenta guardar la clave `FALLA FIBRA` cuando ya existe, **Cuando** pulsa *Agregar*, **Entonces** el sistema muestra «La clave ya existe» y el archivo no cambia.
+7. **Dado** una sesión con rol operador, **Cuando** el operador intenta guardar un cambio en las claves o en el modo de búsqueda, **Entonces** el sistema responde «Acción no permitida para su rol» y `claves_clasificacion.json` no cambia.
 
 **Restricciones del sistema (EARS)**
 
-- **Cuando** el administrador cambie la lista de claves o el modo de búsqueda, el sistema deberá mostrar la vista previa de los casos afectados antes de persistir. [D-26, H-08]
+- **Cuando** el supervisor cambie la lista de claves o el modo de búsqueda, el sistema deberá mostrar la vista previa de los casos afectados antes de persistir. [D-26, H-08]
 - **El sistema deberá** evaluar las claves por subcadena sobre el texto normalizado (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`. [RN-03, D-26]
 - **Si** el maestro no está disponible, entonces el sistema deberá permitir guardar la lista y advertir que no se reclasifican los casos existentes. [RNF-10]
 - **El sistema deberá** registrar el operador y la fecha/hora de cada cambio de claves o de modo. [RNF-09]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la escritura de `claves_clasificacion.json` sin modificar el archivo. [D-35, RNF-12]
 
 ---
 
 ### CU-08 — Ingestar el CSV diario
 
-- **Actor principal:** Operador de la central.
-- **Actores secundarios:** Emisor del CSV (origen del archivo); administrador (CU-07 define las claves).
+- **Actor principal:** Operador de la central (el supervisor puede ejecutarla, D-35).
+- **Actores secundarios:** Emisor del CSV (origen del archivo); supervisor (CU-07 define las claves).
 - **Ciclo:** C2. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); `central.json` completo (CU-02); `estructura.json` posicional vigente; `sectores.json` y `claves_clasificacion.json` disponibles; el archivo `detalle_averias_gpon DD_MM_AAAA.csv` (separador `;`, UTF-8, 80 columnas) está en disco.
-- **Postcondiciones:** `averias.json` contiene los casos nuevos de Francisco Salias con `ingreso`, `clase = REP`, `nivel = COM`, `tipo_abonado`, `sector` (o en cola) y `status` según RN-03 con precedencia de `ASGN`; los casos ya existentes no se duplican.
+- **Precondiciones:** sesión identificada (CU-01); `central.json` completo (CU-02); `estructura.json` posicional vigente; `sectores.json` y `claves_clasificacion.json` disponibles; el archivo `detalle_averias_gpon DD_MM_AAAA.csv` (separador `;`, UTF-8, 80 columnas) está en disco **y tiene al menos 1 registro de datos**.
+- **Postcondiciones:** `averias.json` contiene los casos nuevos de Francisco Salias con `ingreso`, `clase = REP`, `nivel = COM`, `tipo_abonado`, `sector` (o en cola) y `status` según RN-03 **con `ASGN` del CSV convertido a PEND (D-38)**; el rastro de origen de la ingesta (`ultimo_usuario` col. 20, `usuario_acciona` col. 53 y `Fecha Hora Asignacion` col. 80) queda conservado tal cual llegó del CSV (H-08); los casos ya existentes no se duplican.
 
-**Trazabilidad:** RF-16, RF-17, RF-18, RF-19; RN-01, RN-02, RN-03, RN-04; RNF-02, RNF-04, RNF-06, RNF-10; RT-02, RT-03, RT-04, RT-07, RT-08; D-05, D-06, D-10, D-12, D-13, D-17, D-21, D-26; H-03, H-24, H-27.
+**Trazabilidad:** RF-16, RF-17, RF-18, RF-19; RN-01, RN-02, RN-03, RN-04; RNF-02, RNF-04, RNF-06, RNF-10; RT-02, RT-03, RT-04, RT-07, RT-08; D-05, D-06, D-10, D-12, D-17, D-21, D-26, **D-38**; H-03, H-08, H-09, H-14, H-24, H-27.
 
 **Flujo principal**
 
+0. **Validación previa bloqueante (antes de cualquier escritura).** El sistema lee el archivo completo y comprueba, en este orden: (a) que la cabecera tenga **80 columnas** y que su orden posicional coincida con `estructura.json`; (b) que la primera fila se parta en 80 campos con `;`; (c) que exista **al menos 1 registro de datos** (un archivo de solo encabezado aborta); (d) que la suma del resumen cuadre (leídos = descartados por central + descartados por duplicado + rechazados + nuevos). Si cualquiera falla, la ingesta **aborta sin escribir el maestro y sin disparar el respaldo**. [D-21, H-14]
 1. El operador abre la pestaña que contiene el bloque **INGESTA**, pulsa *Cargar CSV diario* y elige el archivo `detalle_averias_gpon DD_MM_AAAA.csv`.
-2. El sistema lee el archivo con separador `;` y codificación UTF-8, sin usar los nombres de encabezado, y verifica **bloqueantemente**: 80 columnas, orden posicional y campos obligatorios legibles.
-3. El sistema aplica el filtro de central de `central.json` sobre las columnas 1 a 10 y descarta los registros de otras centrales (en la muestra del 12/09/2026: descarta 5 de LAS MERCEDES CPA y EL HATILLO).
-4. El sistema extrae las columnas declaradas en `estructura.json` según su posición, incluidas `informacion` (col. 31) → `informacion_1`, `informacion` (col. 32) → `informacion_2`, `estatus` (col. 27), `unidad_negocio` (col. 61) y `ups` (col. 62).
-5. El sistema descarta los casos cuyo `id_averia` (col. 11) ya existe en `averias.json` y calcula el resumen: registros leídos, descartados por central, descartados por duplicado y nuevos a insertar.
-6. El sistema clasifica cada caso nuevo: si el `estatus` del CSV es `ASGN`, el caso entra con `status = ASGN`; si no, busca las claves de `claves_clasificacion.json` por subcadena sobre el texto normalizado en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`: con coincidencia entra `status = PEND`; sin coincidencia entra `status = GESTION`.
+2. El sistema confirma el contrato de la validación previa (80 columnas, orden posicional, separador `;`, codificación UTF-8, al menos 1 registro) y avisa si algún campo obligatorio no es legible.
+3. El sistema aplica el filtro de central de `central.json` sobre las columnas 1 a 10 y descarta los registros de otras centrales (en la muestra del 12/09/2026: descarta 5 —4 de LAS MERCEDES CPA y 1 de EL HATILLO— y conserva los **51** de FRANCISCO SALIAS).
+4. El sistema extrae las columnas declaradas en `estructura.json` según su posición, incluidas `informacion` (col. 31) → `informacion_1`, `informacion` (col. 32) → `informacion_2`, `estatus` (col. 27), `unidad_negocio` (col. 61) y `ups` (col. 62), y **conserva como rastro de origen del dato** las columnas 20 (`ultimo_usuario`), 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) tal como llegan, sin recortarlas ni reinterpretarlas (H-08).
+5. **Validación de la clave primaria (bloqueante por fila).** El sistema rechaza y cuenta como **rechazada** toda fila cuyo `id_averia` (col. 11) esté vacío o solo tenga espacios, y toda fila cuyo `id_averia` empiece por `MAN-` (prefijo reservado al alta manual, CU-14). Además comprueba la **unicidad dentro del propio lote**: si el mismo `id_averia` aparece 2 o más veces, inserta solo la **primera** aparición y reporta las demás como **duplicadas del lote** con su número de fila. Después descarta los casos cuyo `id_averia` ya existe en `averias.json` y calcula el resumen: registros leídos, descartados por central, rechazados, duplicados del lote, duplicados del maestro y nuevos a insertar. [RN-01, RNF-04, H-09]
+6. El sistema clasifica cada caso nuevo: si el `estatus` del CSV es `ASGN`, el caso entra con **`status = PEND`** (D-38, que deja sin efecto el cuarto estado de D-13); si no, busca las claves de `claves_clasificacion.json` por subcadena sobre el texto normalizado en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`: con coincidencia entra `status = PEND`; sin coincidencia entra `status = GESTION`.
 7. El sistema completa `sector` emparejando `direccion` contra las vías de `sectores.json`; las direcciones sin coincidencia quedan en la cola de CU-09 sin frenar la inserción del resto.
 8. El sistema completa `tipo_abonado` = `EMP` cuando `unidad_negocio` = `CANTV EMPRESAS` o `ups` = `NRES`; en el resto de los casos `RES`.
 9. El sistema recorta `fecha_reporte` (col. 15) a `DD/MM/AAAA` y conserva el texto completo con hora en `fecha_reporte_original`.
 10. El sistema asigna a cada caso nuevo `ingreso` = fecha de la ingesta, `clase = REP` y `nivel = COM`.
-11. El sistema presenta el resumen final por estado (PEND, GESTION, ASGN), por `tipo_abonado` y la lista de direcciones sin sector, y solicita *Confirmar ingesta*.
+11. El sistema presenta el resumen final por estado (**PEND y GESTION**), por `tipo_abonado`, el informe de incidencias (rechazadas por `id_averia` vacío, por prefijo `MAN-`, duplicadas del lote y fechas inesperadas) y la lista de direcciones sin sector, y solicita *Confirmar ingesta*.
 12. El operador confirma; el sistema escribe `averias.json` (respaldo previo según CU-21), relee el archivo, verifica que el conteo aumentó exactamente en el número de casos nuevos y muestra «Ingesta completada: N casos nuevos, M descartados por duplicado, K direcciones sin sector».
 
 **Flujos alternativos**
 
 - **2a. El archivo no tiene 80 columnas o el orden no coincide con `estructura.json`.** El sistema aborta la ingesta sin escribir nada, muestra «Contrato de ingesta inválido: se esperaban 80 columnas y se encontraron X; columna 31 esperada `informacion` y encontrada `Y`» y ofrece descargar el detalle de la cabecera leída. [D-21, H-24]
 - **2b. Codificación o separador distintos.** El sistema detecta que la primera fila no se puede partir en 80 campos con `;`, aborta y muestra «Verifique que el archivo use `;` y codificación UTF-8». [RT-08]
+- **2d. Archivo de solo encabezado o cuerpo malformado.** Si el archivo tiene la cabecera de 80 columnas pero **0 registros de datos**, o si la suma del resumen no cuadra, el sistema **aborta sin escribir el maestro, sin disparar el respaldo y sin confirmar «Ingesta completada»**, y muestra «El archivo no contiene registros de datos: no se modificó el maestro». [H-14]
 - **5a. Todos los registros son duplicados.** El sistema muestra «0 casos nuevos: los 51 registros de Francisco Salias ya existen» y no escribe el maestro. [RN-01, RNF-04]
+- **5b. `id_averia` vacío o solo espacios.** El sistema rechaza la fila, **no la inserta**, la cuenta como rechazada y la reporta en el informe de incidencias con su número de fila; el resto de la ingesta continúa. [RN-01, RNF-04, H-09]
+- **5c. Duplicado dentro del mismo lote.** Si el mismo `id_averia` aparece 2 o más veces en el lote, el sistema inserta **solo la primera** aparición y reporta las demás como duplicadas con su número de fila: «id_averia 2026-00123 duplicado en el lote: filas 12 y 47; se conservó la fila 12». [RNF-04, H-09]
+- **5d. `id_averia` con prefijo `MAN-`.** El sistema rechaza la fila por reserva de prefijo (el `MAN-` pertenece al alta manual, D-18), la cuenta como rechazada y la reporta. [D-18, H-09]
 - **6a. La lista de claves está vacía.** El sistema avisa «No hay palabras clave configuradas: todos los casos entrarían en GESTION» y exige confirmación explícita antes de continuar. [RN-03, RF-27]
 - **9a. Fecha con formato inesperado.** El sistema conserva el texto original íntegro en `fecha_reporte_original`, deja `fecha_reporte` vacía, cuenta el caso en el informe de incidencias y continúa con los demás. [D-21]
-- **12a. Fallo de escritura sobre `C:\GGTO\datos\averias.json`.** El sistema no confirma la ingesta, conserva el resumen en pantalla, muestra «No se pudo escribir el maestro: &lt;detalle&gt;» y ofrece *Reintentar* y *Guardar en `datos_respaldo`*. [CU-21, H-09]
+- **12a. Fallo de escritura sobre `C:\GGTO\datos\averias.json`.** El sistema **no confirma la ingesta**, conserva el resumen en pantalla, muestra «No se pudo escribir el maestro: &lt;detalle&gt;» y ofrece *Reintentar* y *Guardar copia en `datos_respaldo`*; el maestro conserva exactamente su contenido anterior. [CU-21, H-09]
 - **12b. Reingesta del mismo archivo.** El sistema descarta el 100 % de los registros por duplicado y deja el maestro idéntico: mismo número de registros y mismos `id_averia`. [RNF-04, H-27]
 - **2c. El archivo no llega.** El operador no encuentra el archivo: el sistema mantiene el maestro del día anterior y no altera la fecha de ingesta; el supervisor registra la incidencia fuera de la página (el procedimiento de escalamiento con el emisor sigue pendiente). [H-15, H-24]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** el archivo `detalle_averias_gpon 12_09_2026.csv` con 80 columnas y 56 registros, y un `averias.json` con 0 casos, **Cuando** el operador confirma la ingesta, **Entonces** el sistema inserta **51 casos** (los de `nombre central = FRANCISCO SALIAS`) y descarta 5 por central distinta.
+1. **Dado** el archivo `detalle_averias_gpon 12_09_2026.csv` con 80 columnas y 56 registros (51 de FRANCISCO SALIAS, 4 de LAS MERCEDES CPA y 1 de EL HATILLO), y un `averias.json` con 0 casos, **Cuando** el operador confirma la ingesta, **Entonces** el sistema inserta **51 casos** (los de `nombre central = FRANCISCO SALIAS`) y descarta 5 por central distinta.
 2. **Dado** el mismo archivo, **Cuando** el operador ejecuta la ingesta una segunda vez, **Entonces** el sistema informa «0 casos nuevos, 51 duplicados» y `averias.json` conserva exactamente los mismos 51 `id_averia`.
-3. **Dado** los 51 casos ingeridos, **Cuando** el sistema aplica la clasificación, **Entonces** **17** casos quedan en `status = PEND` y **39** en `status = GESTION` según la muestra verificada, salvo los que traigan `estatus = ASGN` en el CSV, que quedan en `ASGN`.
-4. **Dado** un registro con `estatus = ASGN` en la columna 27, **Cuando** se ingiere, **Entonces** el caso queda en `status = ASGN` aunque su texto no contenga ninguna palabra clave de fibra.
+3. **Dado** el archivo del 12/09/2026 con los **51 registros de FRANCISCO SALIAS** (11 con palabras clave y `estatus = PEND`, 3 con `estatus = ASGN` —2 con claves y 1 sin ellas— y 37 sin palabras clave y con `estatus = PEND`), **Cuando** el sistema aplica la clasificación, **Entonces** quedan **14 casos en `status = PEND`** (11 con claves + los 3 `ASGN`, que entran como PEND por D-38) **y 37 casos en `status = GESTION`**, de modo que **14 + 37 = 51**. *Nota: los recuentos anteriores «17 PEND y 39 GESTION» eran incorrectos porque se calcularon sobre los **56 registros de las 3 centrales**, no sobre los 51 filtrados de Francisco Salias (H-01).*
+4. **Dado** un registro con `estatus = ASGN` en la columna 27, **Cuando** se ingiere, **Entonces** el caso queda en **`status = PEND`** (D-38) y **no** en un estado `ASGN`; el maestro no incorpora ningún cuarto estado.
 5. **Dado** un archivo con 79 columnas, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «Contrato de ingesta inválido: se esperaban 80 columnas y se encontraron 79» y `averias.json` no se modifica.
-6. **Dado** un caso nuevo con `unidad_negocio = CANTV EMPRESAS` y `ups = NRES`, **Cuando** se ingiere, **Entonces** el caso queda con `tipo_abonado = EMP`.
-7. **Dado** los 51 casos nuevos, **Cuando** termina la ingesta, **Entonces** cada uno tiene `ingreso` = 13/09/2026, `clase = REP`, `nivel = COM` y `tipo_abonado` informado.
-8. **Dado** un registro con `fecha_reporte = 17/07/2026 11:38:20 a.m.`, **Cuando** se ingiere, **Entonces** el caso queda con `fecha_reporte = 17/07/2026` y `fecha_reporte_original = 17/07/2026 11:38:20 a.m.`.
-9. **Dado** un maestro con 1.000 casos y un CSV de 60 registros, **Cuando** el operador ejecuta la ingesta, **Entonces** el sistema termina la validación, el descarte y la inserción en menos de 1,5 s de trabajo de datos y presenta el resumen en pantalla.
+6. **Dado** un archivo con la cabecera de 80 columnas y **0 registros de datos**, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «El archivo no contiene registros de datos: no se modificó el maestro», **no** escribe `averias.json`, **no** dispara el respaldo y **no** muestra «Ingesta completada».
+7. **Dado** un registro cuya columna 11 `id_averia` está vacía, **Cuando** se ingiere el archivo, **Entonces** el sistema rechaza la fila, la cuenta en el resumen como **1 rechazada** y la lista en el informe de incidencias con su número de fila, sin modificar el conteo de insertados por esa fila.
+8. **Dado** un lote en el que el `id_averia` `2026-00123` aparece en las filas 12 y 47, **Cuando** se ingiere, **Entonces** el sistema inserta **una sola vez** el caso (el de la fila 12), reporta la fila 47 como duplicada del lote y el maestro contiene un único registro con ese `id_averia`.
+9. **Dado** un lote con un registro cuyo `id_averia` empieza por `MAN-`, **Cuando** se ingiere, **Entonces** el sistema rechaza la fila por reserva de prefijo, la cuenta como rechazada y **no** modifica ningún caso manual existente.
+10. **Dado** un caso nuevo con `unidad_negocio = CANTV EMPRESAS` y `ups = NRES`, **Cuando** se ingiere, **Entonces** el caso queda con `tipo_abonado = EMP`.
+11. **Dado** los 51 casos nuevos, **Cuando** termina la ingesta, **Entonces** cada uno tiene `ingreso` = 13/09/2026, `clase = REP`, `nivel = COM`, `tipo_abonado` informado y `status` ∈ {PEND, GESTION}.
+12. **Dado** un registro con `fecha_reporte = 17/07/2026 11:38:20 a.m.`, **Cuando** se ingiere, **Entonces** el caso queda con `fecha_reporte = 17/07/2026` y `fecha_reporte_original = 17/07/2026 11:38:20 a.m.`.
+13. **Dado** un registro del CSV con `ultimo_usuario = JPEREZ` (col. 20), `usuario_acciona = MGOMEZ` (col. 53) y `Fecha Hora Asignacion = 12/09/2026 08:15` (col. 80), **Cuando** se ingiere, **Entonces** el maestro conserva esos tres valores tal cual en el rastro de origen del caso y CU-15 los muestra como origen del dato. [H-08]
+14. **Dado** un maestro con 1.000 casos y un CSV de 60 registros, **Cuando** el operador pulsa *Confirmar ingesta*, **Entonces** desde ese clic hasta que el resumen aparece en pantalla transcurren menos de 3 s (punto de medida explícito, alineado con D-24; umbral derivado `&lt;PENDIENTE&gt;` de confirmación del usuario).
+15. **Dado** que la escritura de `averias.json` falla, **Cuando** el operador confirma la ingesta, **Entonces** el sistema muestra «No se pudo escribir el maestro: &lt;detalle&gt;», **no** muestra «Ingesta completada», ofrece *Reintentar* y `averias.json` conserva exactamente el mismo contenido y el mismo número de registros que antes del intento.
+16. **Dado** que el supervisor modificó las claves y las dejó vacías, **Cuando** el operador ejecuta la ingesta, **Entonces** el sistema advierte «No hay palabras clave configuradas: todos los casos entrarían en GESTION» y exige confirmación explícita antes de continuar.
 
 **Restricciones del sistema (EARS)**
 
 - **Cuando** el operador inicie la ingesta, el sistema deberá validar el contrato posicional de 80 columnas y **abortar** la operación completa si no coincide. [D-21, H-03, H-24]
+- **Si** el archivo no contiene al menos un registro de datos, o la suma del resumen no cuadra, entonces el sistema deberá abortar sin escribir el maestro, sin disparar el respaldo y sin confirmar la ingesta. [H-14]
 - **Si** un `id_averia` ya existe en `averias.json`, entonces el sistema deberá descartar el registro y no modificar el caso existente. [RN-01, RNF-04]
+- **Si** la columna 11 `id_averia` de una fila está vacía o contiene solo espacios, entonces el sistema deberá rechazar esa fila, contarla como rechazada y reportarla con su número de fila, sin insertarla. [RN-01, RNF-04, H-09]
+- **Si** el mismo `id_averia` aparece más de una vez en el lote, entonces el sistema deberá insertar únicamente la primera aparición y reportar las restantes como duplicadas del lote con su número de fila. [RNF-04, H-09]
+- **Si** el `id_averia` de una fila del lote empieza por `MAN-`, entonces el sistema deberá rechazarla por reserva de prefijo del alta manual. [D-18, H-09]
 - **El sistema deberá** evaluar las palabras clave en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, por subcadena sobre texto normalizado. [RN-03, D-26]
-- **De acuerdo con** el estatus del CSV, el sistema deberá dar precedencia a `ASGN` sobre la clasificación por palabras clave. [D-21, D-13]
+- **De acuerdo con** el estatus del CSV, el sistema deberá convertir `estatus = ASGN` en `status = PEND` y no incorporar ningún cuarto estado al maestro. [D-38]
+- **El sistema deberá** admitir como valores de `status` del maestro únicamente `PEND`, `GESTION` y `CERRADO`, y deberá rechazar cualquier escritura de `status = ASGN`. [D-38]
+- **El sistema deberá** conservar, al ingerir, los valores de `ultimo_usuario` (col. 20), `usuario_acciona` (col. 53) y `Fecha Hora Asignacion` (col. 80) como rastro de origen del dato, sin modificarlos. [H-08]
 - **El sistema deberá** insertar todo caso ingerido con `clase = REP` y `nivel = COM`, dejando la corrección a `CNS` o `REF` para la edición manual. [RN-02, D-06]
 - **Mientras** existan direcciones sin sector, el sistema deberá mantenerlas en una cola visible sin impedir la inserción de los demás casos. [RN-04, CU-09]
 - **El sistema deberá** conservar el texto original de la fecha con hora y recortar el valor de trabajo a `DD/MM/AAAA`. [D-21, RNF-06]
-- **Si** la escritura del maestro falla, entonces el sistema deberá informar el error y no confirmar la ingesta como exitosa. [RNF-10, H-09]
+- **Si** la escritura del maestro falla, entonces el sistema deberá conservar el maestro anterior, informar el error, ofrecer *Reintentar* y **no** confirmar la ingesta como exitosa. [RNF-10, H-09]
 
 ---
 
 ### CU-09 — Resolver la asignación de sector y las direcciones sin coincidencia
 
 - **Actor principal:** Operador de la central.
-- **Actor secundario:** Administrador (puede crear el sector que falte, CU-06).
+- **Actor secundario:** Supervisor (mantiene el catálogo de sectores, CU-06).
 - **Ciclo:** C2. **Prioridad:** MVP.
-- **Precondiciones:** existe al menos un caso con `sector` vacío proveniente de la ingesta (CU-08) o de un alta manual (CU-14); `sectores.json` disponible.
-- **Postcondiciones:** cada caso de la cola tiene un `sector` existente en `sectores.json`, o queda registrado como pendiente con su motivo.
+- **Precondiciones:** **sesión identificada (CU-01)** con un técnico activo; **`C:\GGTO\datos\sectores.json` disponible y legible**; **existe al menos un caso con `sector` vacío** proveniente de la ingesta (CU-08) o de un alta manual (CU-14), es decir la cola de pendientes no está vacía; el operador tiene habilitada la creación del **sector mínimo** desde la cola (única excepción a la restricción de sectores de D-35).
+- **Postcondiciones:** cada caso de la cola tiene un `sector` existente en `sectores.json`, o queda registrado como pendiente con su motivo; la asignación queda auditada con operador y fecha/hora.
 
-**Trazabilidad:** RF-18; RN-04; RNF-04, RNF-09, RNF-10; RT-03; D-03, D-25; H-18.
+**Trazabilidad:** RF-18, RF-29 (creación del sector mínimo desde la cola); RN-04; RNF-04, RNF-08, RNF-09, RNF-10, **RNF-12**; RT-03; D-03, D-25, **D-35**; H-18.
 
 **Flujo principal**
 
@@ -463,7 +579,7 @@
 3. El operador selecciona un caso; el sistema muestra la dirección completa y la lista de sectores con sus vías.
 4. El operador elige un sector existente y pulsa *Asignar*.
 5. El sistema verifica que el sector exista, escribe `averias.sector`, relee el archivo y quita el caso de la cola.
-6. Si ningún sector corresponde, el operador pulsa *Crear sector desde esta dirección*, informa `id`, `nombre` y las vías (tomando la dirección como primera vía) y el sistema crea el sector (CU-06) y asigna el caso.
+6. Si ningún sector corresponde, el operador pulsa *Crear sector desde esta dirección*, informa `id`, `nombre` y las vías (tomando la dirección como primera vía) y el sistema crea el **sector mínimo** con ese `id`, `nombre` y vías —sin `cuadrilla_sugerida` ni edición de otros sectores, D-35— y asigna el caso.
 7. El sistema muestra el contador actualizado de casos sin sector y registra la asignación con operador y fecha/hora.
 
 **Flujos alternativos**
@@ -472,6 +588,7 @@
 - **6a. `id` de sector repetido al crearlo desde la dirección.** El sistema muestra «El sector 4 ya existe» y devuelve al paso 4 con la lista actualizada.
 - **2a. La cola está vacía.** El sistema muestra «Todas las direcciones tienen sector asignado» y no ofrece acciones.
 - **3a. La dirección es ambigua (coincide con dos sectores).** El sistema muestra ambos sectores con las vías coincidentes y exige que el operador elija uno explícitamente; nunca asigna automáticamente el primero. [RN-04, H-18]
+- **6b. Intento de editar o eliminar un sector existente desde esta pantalla.** El sistema responde «Acción no permitida para su rol: el CRUD de sectores corresponde al supervisor» y registra el intento; el operador solo puede crear el sector mínimo que resuelve la dirección en cola. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -480,6 +597,8 @@
 3. **Dado** un caso cuya dirección coincide con las vías de los sectores `1` y `4`, **Cuando** el operador abre el caso, **Entonces** el sistema muestra ambos sectores y no asigna ninguno hasta que el operador elija uno.
 4. **Dado** que el operador pulsa *Crear sector desde esta dirección* con `id = 9`, `nombre = Baruta`, `vias = [Calle Sucre]`, **Cuando** confirma, **Entonces** `sectores.json` contiene el sector `9` y el caso queda con `sector = 9`.
 5. **Dado** que el operador asigna un sector, **Cuando** el sistema persiste, **Entonces** el archivo `averias.json` releído contiene el nuevo `sector` y el caso registra `usuario_modificacion` y `fecha_modificacion`.
+6. **Dado** que la sesión está cerrada (sin identificación), **Cuando** se intenta abrir la cola de asignación, **Entonces** el sistema no muestra la cola, pide identificación y no habilita ninguna escritura. [RNF-08]
+7. **Dado** una sesión de operador con la cola abierta, **Cuando** el operador intenta modificar las vías de un sector ya existente o eliminarlo, **Entonces** el sistema responde «Acción no permitida para su rol», no modifica `sectores.json` y registra el intento. [D-35, RNF-12]
 
 **Restricciones del sistema (EARS)**
 
@@ -487,57 +606,70 @@
 - **Si** el operador indica un sector que no existe en `sectores.json`, entonces el sistema deberá rechazar la asignación y ofrecer crearlo. [RNF-10]
 - **Mientras** un caso no tenga sector, el sistema deberá mostrarlo en la cola de pendientes y marcarlo en la tabla de CASOS. [RN-04]
 - **El sistema deberá** registrar el operador y la fecha/hora de cada asignación de sector. [RNF-09]
+- **Mientras** la sesión no esté identificada, el sistema deberá mantener la cola de asignación bloqueada, sin mostrar direcciones ni habilitar escrituras. [RNF-08]
+- **Si** el operador intenta editar o eliminar un sector, entonces el sistema deberá rechazarlo, admitiendo únicamente la creación del sector mínimo desde la cola. [D-35, RNF-12]
 
 ---
 
 ### CU-10 — Gestionar y filtrar los CASOS
 
 - **Actor principal:** Operador de la central.
-- **Actor secundario:** Supervisor (consulta las mismas vistas).
+- **Actor secundario:** Supervisor (consulta y edita todos los casos, D-35).
 - **Ciclo:** C1 (tabla) / C3 (clasificación). **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); `averias.json` legible.
-- **Postcondiciones:** la tabla muestra los casos con las columnas resumen y los filtros/agrupaciones aplicados; toda edición de `clase`, `nivel` o `tipo_abonado` queda persistida.
+- **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; `averias.json` legible; **si la sesión es de operador, tiene una cuadrilla asignada o trabaja en modo consulta global de solo lectura** (D-35, D-37, RNF-12).
+- **Postcondiciones:** la tabla muestra los casos con las columnas resumen y los filtros/agrupaciones aplicados; toda edición de `clase`, `nivel` o `tipo_abonado` queda persistida y auditada.
 
-**Trazabilidad:** RF-07, RF-21, RF-23, RF-24; RN-07; RNF-01, RNF-02, RNF-07, RNF-09, RNF-10; RT-01, RT-04; D-06, D-23, D-24, D-17; H-05, H-28.
+**Trazabilidad:** RF-07, RF-21, RF-23, RF-24; RN-07; RNF-01, RNF-02, RNF-07, **RNF-08**, RNF-09, RNF-10, **RNF-12, RNF-13**; RT-01, RT-04; D-06, D-17, D-23, D-24, **D-29, D-35, D-37, D-39, D-40**; H-05, H-28.
 
 **Flujo principal**
 
 1. El operador abre la pestaña **CASOS**.
-2. El sistema carga `averias.json` y dibuja la tabla con las 7 columnas resumen: `nivel`, `clase`, `sector`, `id_averia`, `nombre`, `direccion`, `plan`.
-3. El sistema muestra los controles de agrupación y filtrado: **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla: REP-COM, REP-REF, CNS-COM, CNS-REF), **clase**, **nivel** y **estatus**, más un cuadro de texto de búsqueda libre.
-4. El operador aplica uno o varios filtros y/o elige una agrupación; el sistema recalcula y muestra el conteo por grupo.
-5. El operador ordena por cualquier columna visible con un clic en el encabezado.
-6. El operador selecciona un caso; el sistema resalta la fila y ofrece *Ver detalle* (CU-11).
-7. El operador edita `clase` y/o `nivel` y/o `tipo_abonado` en línea y pulsa *Guardar*.
-8. El sistema valida los enums (`clase` ∈ {REP, CNS}; `nivel` ∈ {COM, REF}; `tipo_abonado` ∈ {RES, EMP}), persiste el cambio en `averias.json`, relee el archivo y confirma con «Caso &lt;id_averia&gt; actualizado».
+2. El sistema resuelve el ámbito de visibilidad: el supervisor ve todos los casos; el operador ve **solo los casos cuyo `Reparador Principal` es el `id` de su cuadrilla** (o todos en solo lectura si no tiene cuadrilla). [D-35, D-37, RNF-12]
+3. El sistema carga `averias.json` y dibuja la tabla con las 7 columnas resumen: `nivel`, `clase`, `sector`, `id_averia`, `nombre`, `direccion`, `plan`.
+4. El sistema muestra los controles de agrupación y filtrado: **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla: REP-COM, REP-REF, CNS-COM, CNS-REF), **clase**, **nivel** y **estatus** (PEND, GESTION, CERRADO), más un cuadro de texto de búsqueda libre.
+5. El operador aplica uno o varios filtros y/o elige una agrupación; el sistema recalcula y muestra el conteo por grupo.
+6. El operador ordena por cualquier columna visible con un clic en el encabezado.
+7. El operador selecciona un caso; el sistema resalta la fila y ofrece *Ver detalle* (CU-11).
+8. El operador edita `clase` y/o `nivel` y/o `tipo_abonado` en línea y pulsa *Guardar*.
+9. El sistema valida los enums (`clase` ∈ {REP, CNS}; `nivel` ∈ {COM, REF}; `tipo_abonado` ∈ {RES, EMP}), **verifica que el caso esté dentro del ámbito del rol** y persiste el cambio en `averias.json`, relee el archivo y confirma con «Caso &lt;id_averia&gt; actualizado».
 
 **Flujos alternativos**
 
 - **2a. `averias.json` no existe.** El sistema muestra la tabla vacía con «No hay maestro de casos. Ejecute la ingesta (CU-08) o cree un caso manual (CU-14)». [H-20]
 - **2b. `averias.json` tiene JSON inválido.** El sistema bloquea la tabla, muestra el detalle del error y ofrece *Restaurar desde respaldo* (CU-21).
-- **8a. Valor fuera del enum.** El sistema muestra «Clase inválida: use REP o CNS» y no persiste.
-- **8b. Fallo de escritura.** El sistema revierte el valor en pantalla, muestra «No se guardó el cambio» y deja el caso en su estado anterior. [H-09]
-- **4a. El filtro no devuelve filas.** El sistema muestra «0 casos para los filtros aplicados» y ofrece *Limpiar filtros*.
-- **5a. Orden por columna con valores vacíos.** El sistema coloca los vacíos al final del orden, en ambos sentidos.
+- **9a. Valor fuera del enum.** El sistema muestra «Clase inválida: use REP o CNS» y no persiste.
+- **9b. Fallo de escritura.** El sistema revierte el valor en pantalla, muestra «No se guardó el cambio» y deja el caso en su estado anterior. [H-09]
+- **9c. Caso fuera del ámbito del rol (otra cuadrilla).** El sistema no muestra el caso al operador; si el operador fuerza la edición de un `id_averia` de otra cuadrilla, el sistema muestra «El caso no está asignado a su cuadrilla», no escribe y registra el intento. [D-35, D-37, RNF-12]
+- **9d. Sesión de operador sin cuadrilla.** El sistema mantiene la tabla en solo lectura y deshabilita *Guardar*, con el aviso «Sin cuadrilla asignada: solo consulta». [D-35, RNF-12]
+- **5a. El filtro no devuelve filas.** El sistema muestra «0 casos para los filtros aplicados» y ofrece *Limpiar filtros*.
+- **6a. Orden por columna con valores vacíos.** El sistema coloca los vacíos al final del orden, en ambos sentidos.
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un `averias.json` con 1.000 casos, **Cuando** el operador abre CASOS, **Entonces** la tabla se dibuja con las 7 columnas resumen en **menos de 1,5 s**.
-2. **Dado** el mismo maestro, **Cuando** el operador aplica el filtro `estatus = GESTION` y ordena por `sector`, **Entonces** el resultado y el orden se muestran en **menos de 1,5 s**.
+1. **Dado** un `averias.json` con 1.000 casos, **Cuando** el operador abre CASOS, **Entonces** la tabla se dibuja con las 7 columnas resumen **en menos de 1,5 s** (punto de medida: desde el clic en la pestaña CASOS hasta que la tabla queda dibujada). [RNF-02, D-24]
+2. **Dado** el mismo maestro, **Cuando** el operador aplica el filtro `estatus = GESTION` y ordena por `sector`, **Entonces** el resultado y el orden se muestran **en menos de 1,5 s** (punto de medida: desde el clic en *Aplicar filtro* hasta el redibujado). [RNF-02, D-24]
 3. **Dado** un caso con `clase = REP` y `nivel = COM`, **Cuando** el operador abre el filtro **tipo**, **Entonces** el caso aparece en el grupo `REP-COM` y no en `CNS-COM` ni en `REP-REF`.
 4. **Dado** un caso con `status = CERRADO` y otro con `status = PEND`, **Cuando** el operador aplica el filtro **abiertos**, **Entonces** la tabla muestra solo el caso `PEND` y el conteo indica 1.
-5. **Dado** 12 casos con `Reparador Principal = C1` y 8 con `C2`, **Cuando** el operador filtra por cuadrilla `C1`, **Entonces** la tabla muestra 12 filas y el conteo indica 12.
-6. **Dado** un caso `CNS` con `nivel = COM`, **Cuando** el operador cambia `clase` a `REP` y guarda, **Entonces** `averias.json` releído contiene `clase = REP` y el caso registra operador y fecha/hora del cambio.
-7. **Dado** un caso `REP-COM`, **Cuando** el operador intenta guardar `nivel = EMP`, **Entonces** el sistema muestra «Nivel inválido: use COM o REF» y el archivo no cambia.
-8. **Dado** un caso con `tipo_abonado` vacío, **Cuando** el operador lo establece en `EMP` y guarda, **Entonces** el caso aparece en el filtro `tipo_abonado = EMP` y en las métricas de gestión empresarial (CU-18).
+5. **Dado** 12 casos con `Reparador Principal = C1` y 8 con `C2`, **Cuando** el operador de la cuadrilla `C1` abre CASOS, **Entonces** la tabla muestra solo los 12 casos de `C1` y no los 8 de `C2`. [D-35, D-37, RNF-12]
+6. **Dado** 12 casos con `Reparador Principal = C1` y 8 con `C2`, **Cuando** el supervisor filtra por cuadrilla `C1`, **Entonces** la tabla muestra 12 filas y el conteo indica 12.
+7. **Dado** un caso `CNS` con `nivel = COM` de la cuadrilla del operador, **Cuando** el operador cambia `clase` a `REP` y guarda, **Entonces** `averias.json` releído contiene `clase = REP` y el caso registra operador y fecha/hora del cambio.
+8. **Dado** un caso de la cuadrilla `C2`, **Cuando** el operador de la cuadrilla `C1` intenta guardar un cambio de `clase` sobre ese caso, **Entonces** el sistema muestra «El caso no está asignado a su cuadrilla», no modifica `averias.json` y registra el intento.
+9. **Dado** un caso `REP-COM`, **Cuando** el operador intenta guardar `nivel = EMP`, **Entonces** el sistema muestra «Nivel inválido: use COM o REF» y el archivo no cambia.
+10. **Dado** un caso con `tipo_abonado` vacío, **Cuando** el operador lo establece en `EMP` y guarda, **Entonces** el caso aparece en el filtro `tipo_abonado = EMP` y en las métricas de gestión empresarial (CU-18).
+11. **Dado** la tabla de CASOS con 12 filas y la sesión sin ratón, **Cuando** el operador recorre la interfaz **solo con el teclado** (`Tab` hasta la tabla, flechas `↑`/`↓` para moverse entre filas y `Enter` para abrir el detalle), **Entonces** el foco es visible en cada fila y el detalle del caso enfocado se abre sin usar el ratón. [D-40, RNF-13]
+12. **Dado** la tabla de CASOS abierta, **Cuando** el operador enfoca el encabezado de una columna con `Tab` y pulsa `Enter`, **Entonces** el sistema ordena la tabla por esa columna y anuncia el nuevo orden, sin requerir el ratón. [D-40, RNF-13]
+13. **Dado** cualquier pantalla de CASOS, **Cuando** se mide el contraste del texto y de los controles sobre su fondo, **Entonces** la relación es de al menos **4,5:1** y cada control del filtro y de la edición en línea tiene su `label` asociado. [D-40, RNF-13]
 
 **Restricciones del sistema (EARS)**
 
 - **Mientras** la tabla muestre más de 200 casos, el sistema deberá paginar o virtualizar el dibujo para mantener el umbral de 1,5 s. [RNF-02, D-24]
 - **Cuando** se modifique un caso, el sistema deberá escribir el cambio en `averias.json` y releer el archivo antes de confirmar. [RN-07, RF-24]
 - **Si** el valor editado no pertenece al enum, entonces el sistema deberá rechazar el cambio sin escribir el archivo. [RNF-10]
-- **El sistema deberá** mostrar los valores de la tabla con la nomenclatura del dominio (`REP`, `CNS`, `COM`, `REF`, `PEND`, `ASGN`, `GESTION`, `CERRADO`). [RNF-07]
+- **El sistema deberá** mostrar los valores de la tabla con la nomenclatura del dominio (`REP`, `CNS`, `COM`, `REF`, `PEND`, `GESTION`, `CERRADO`). [RNF-07, D-38]
 - **El sistema deberá** calcular el «tipo» en pantalla como combinación de `clase` + `nivel`, sin crear un campo nuevo en el archivo. [D-23]
+- **Mientras** la sesión tenga rol operador, el sistema deberá restringir la consulta y la edición en línea a los casos cuyo `Reparador Principal` sea el `id` de su cuadrilla, y deberá rechazar cualquier edición fuera de ese ámbito mostrando «El caso no está asignado a su cuadrilla». [D-35, D-37, RNF-12]
+- **Mientras** la contraseña de la sesión esté caducada, el sistema deberá mantener la tabla en solo lectura hasta que se complete el cambio obligatorio de contraseña. [D-39, RNF-08]
+- **El sistema deberá** permitir recorrer, filtrar y ordenar la tabla de CASOS **solo con el teclado** (`Tab`, `Enter` y flechas), con foco visible y contraste mínimo 4,5:1, y deberá asociar un `label` a cada control de filtro y de edición. [D-40, RNF-13]
 
 ---
 
@@ -546,19 +678,19 @@
 - **Actor principal:** Operador de la central.
 - **Actores secundarios:** Supervisor.
 - **Ciclo:** C3. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01) o modo consulta; `averias.json` legible.
-- **Postcondiciones:** la ficha muestra todos los campos del caso agrupados en secciones; ninguna escritura se produce por el solo hecho de consultar.
+- **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; `averias.json` legible; **el caso consultado pertenece al ámbito del rol**: para el operador, `Reparador Principal` = `id` de su cuadrilla (D-35, D-37, RNF-12).
+- **Postcondiciones:** la ficha muestra los campos del caso agrupados en secciones; ninguna escritura se produce por el solo hecho de consultar.
 
-**Trazabilidad:** RF-02, RF-22 (apertura del flotante); RNF-01, RNF-02; RT-04; D-09; H-19.
+**Trazabilidad:** RF-02, RF-22 (apertura del flotante); RNF-01, RNF-02, **RNF-08, RNF-12**; RT-04; D-09, **D-35, D-37, D-39**; H-19, H-31.
 
 **Flujo principal**
 
 1. El operador abre la pestaña **PANEL** o la tabla **CASOS** (CU-10).
 2. El operador escribe un `id_averia` o un `telefono` en el campo de búsqueda y pulsa *Buscar*.
-3. El sistema busca en `averias.json`: coincidencia exacta por `id_averia`; si el criterio son solo dígitos, también por `telefono`.
+3. El sistema busca en `averias.json` dentro del ámbito del rol: coincidencia exacta por `id_averia`; si el criterio son solo dígitos, también por `telefono`.
 4. El sistema muestra la ficha básica con los datos resumen (nivel, clase, sector, `id_averia`, nombre, dirección, plan) y el `status` vigente.
 5. El operador pulsa *Ver detalle*; el sistema abre el flotante con toda la información restante agrupada en secciones: **Abonado y contacto** (`persona_reporta`, `contacto`, `nombre`, `direccion`), **Red y planta externa** (`olt`, `plan`, `slot`, `puerto`, `fat`, `serial`, `extra`, `ups`), **Diagnóstico** (`ultimo_comentario`, `problema_reporte`, `informacion_1`, `informacion_2`, `codigos_sin_gestion_en_VENAPP`), **Clasificación** (`clase`, `nivel`, `tipo_abonado`, `sector`) y **Gestión** (`status`, `resolucion`, `fechaResolucion`, `observaciones`, `sacas`).
-6. El sistema muestra los botones *Cerrar caso* y *Cancelar*: *Cerrar caso* queda habilitado si el caso está abierto (para capturar `resolucion` y `fechaResolucion`) y deshabilitado si el caso ya está `CERRADO` (con la fecha de cierre como texto).
+6. El sistema muestra los botones *Cerrar caso* y *Cancelar*: *Cerrar caso* queda habilitado **solo si el caso está abierto y dentro del ámbito del rol** (el operador únicamente en casos de su cuadrilla) y deshabilitado si el caso ya está `CERRADO` (con la fecha de cierre como texto). [D-35, RNF-12]
 7. El operador cierra el flotante con *Cancelar* o con la tecla `Esc`; el sistema vuelve a la vista anterior sin escribir en disco.
 
 **Flujos alternativos**
@@ -566,42 +698,48 @@
 - **3a. Un `id_averia` no existe.** El sistema muestra «No se encontró el caso con id &lt;valor&gt;» y sugiere buscar por teléfono.
 - **3b. El teléfono devuelve varios casos.** El sistema muestra la lista de coincidencias con `id_averia`, nombre, dirección y `status`, y exige que el operador elija uno; nunca abre el primero automáticamente. [H-19]
 - **3c. Búsqueda vacía.** El sistema muestra «Escriba un id_averia o un teléfono» y no busca.
+- **3d. El caso pertenece a otra cuadrilla (sesión de operador).** El sistema no abre la ficha y muestra «El caso no está asignado a su cuadrilla»; registra la consulta fallida con operador y fecha/hora. [D-35, RNF-12]
 - **5a. El caso ya está `CERRADO`.** El sistema muestra el flotante en modo lectura, con `resolucion`, `fechaResolucion`, `observaciones` y `sacas` visibles, y el botón *Cerrar caso* deshabilitado con el texto «Caso cerrado el DD/MM/AAAA». [H-19]
 - **2a. `averias.json` no disponible.** El sistema muestra «Maestro de casos no disponible» y ofrece *Restaurar desde respaldo*. [CU-21]
+- **1a. Sesión no identificada o contraseña caducada.** El sistema bloquea la consulta y pide identificación o el cambio obligatorio de contraseña (D-39); no existe modo de consulta anónima de datos personales: **el alcance exacto de lo que puede verse sin identificación sigue `&lt;PENDIENTE&gt;`** de decisión del usuario (H-31).
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un caso con `id_averia = 2026-00123` en el maestro, **Cuando** el operador lo busca por ese id, **Entonces** la ficha muestra `2026-00123`, el nombre, la dirección, el plan y el `status` vigente.
+1. **Dado** un caso con `id_averia = 2026-00123` en el maestro y una sesión de operador de la cuadrilla `C1` con `Reparador Principal = C1`, **Cuando** el operador lo busca por ese id, **Entonces** la ficha muestra `2026-00123`, el nombre, la dirección, el plan y el `status` vigente.
 2. **Dado** un caso con `telefono = 02121234567`, **Cuando** el operador busca ese número, **Entonces** el sistema muestra la ficha del caso.
-3. **Dado** dos casos con el mismo `telefono` `02121234567`, **Cuando** el operador busca ese número, **Entonces** el sistema muestra una lista con 2 coincidencias e `id_averia` distintos y no abre ninguna ficha hasta que el operador elija.
-4. **Dado** un caso seleccionado, **Cuando** el operador pulsa *Ver detalle*, **Entonces** el flotante muestra las 5 secciones con los campos de `averias.json` y ningún campo queda fuera.
-5. **Dado** un caso con `status = CERRADO`, `resolucion = COS` y `fechaResolucion = 12/09/2026`, **Cuando** el operador abre el detalle, **Entonces** el botón *Cerrar caso* está deshabilitado y muestra «Caso cerrado el 12/09/2026».
-6. **Dado** un caso abierto y el flotante abierto, **Cuando** el operador pulsa *Cancelar*, **Entonces** el flotante se cierra y la fecha de modificación del caso no cambia.
+3. **Dado** dos casos con el mismo `telefono` `02121234567` y ambos de la cuadrilla del operador, **Cuando** el operador busca ese número, **Entonces** el sistema muestra una lista con 2 coincidencias e `id_averia` distintos y no abre ninguna ficha hasta que el operador elija.
+4. **Dado** un caso con `Reparador Principal = C2` y una sesión de operador de la cuadrilla `C1`, **Cuando** el operador busca ese `id_averia`, **Entonces** el sistema muestra «El caso no está asignado a su cuadrilla» y no abre la ficha. [D-35, RNF-12]
+5. **Dado** el mismo caso `C2` y una sesión de supervisor, **Cuando** el supervisor busca ese `id_averia`, **Entonces** la ficha se abre con normalidad. [D-35]
+6. **Dado** un caso seleccionado, **Cuando** el operador pulsa *Ver detalle*, **Entonces** el flotante muestra las 5 secciones con los campos de `averias.json` y ningún campo queda fuera.
+7. **Dado** un caso con `status = CERRADO`, `resolucion = COS` y `fechaResolucion = 12/09/2026`, **Cuando** el operador abre el detalle, **Entonces** el botón *Cerrar caso* está deshabilitado y muestra «Caso cerrado el 12/09/2026».
+8. **Dado** un caso abierto de la cuadrilla del operador y el flotante abierto, **Cuando** el operador pulsa *Cancelar*, **Entonces** el flotante se cierra y la fecha de modificación del caso no cambia.
+9. **Dado** un técnico con `clave_fecha_cambio` de hace más de 90 días, **Cuando** intenta consultar la ficha de un caso, **Entonces** el sistema exige primero el cambio obligatorio de contraseña y no muestra datos del abonado. [D-39]
 
 **Restricciones del sistema (EARS)**
 
 - **Cuando** la búsqueda por `telefono` devuelva más de un caso, el sistema deberá exigir la selección explícita del operador. [H-19]
-- **Mientras** la sesión esté en modo consulta, el sistema deberá mostrar el detalle sin habilitar acciones de escritura. [RNF-08]
+- **Mientras** la sesión no esté identificada con credencial válida, el sistema deberá bloquear la consulta del detalle y no mostrar datos personales del abonado. [RNF-08, RNF-12, D-39]
+- **Si** el caso consultado no pertenece al ámbito del rol de la sesión, entonces el sistema deberá denegar la ficha, mostrar «El caso no está asignado a su cuadrilla» y registrar el intento. [D-35, D-37, RNF-12]
+- **Mientras** la sesión tenga rol operador, el sistema deberá mantener deshabilitado el botón *Cerrar caso* en los casos que no sean de su cuadrilla. [D-35, RNF-12]
 - **El sistema deberá** mostrar las fechas en formato `DD/MM/AAAA`. [RNF-06]
-- **El sistema deberá** abrir la ficha en menos de 1,5 s con un maestro de 1.000 casos. [RNF-02, D-24]
 
 ---
 
 ### CU-12 — Cerrar un caso
 
 - **Actor principal:** Operador de la central.
-- **Actor secundario:** Supervisor (verifica los cierres en MONITOREO).
+- **Actor secundario:** Supervisor (verifica y también puede cerrar cualquier caso, D-35).
 - **Ciclo:** C3 (y C1 para el cierre desde el flotante de CASOS). **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); el caso existe en `averias.json` y su `status` es distinto de `CERRADO`.
+- **Precondiciones:** sesión identificada (CU-01) **con credencial válida y vigente (D-39)**; el caso existe en `averias.json` y su `status` es distinto de `CERRADO`; **el `Reparador Principal` del caso coincide con el `id` de la cuadrilla del operador identificado (equivalencia D-37), o la sesión tiene rol supervisor**. [D-35, RNF-12]
 - **Postcondiciones:** el caso queda con `status = CERRADO`, `resolucion`, `fechaResolucion`, `observaciones` y `sacas` persistidos; el cambio queda auditado.
 
-**Trazabilidad:** RF-03, RF-22, RF-24; RN-07; RNF-06, RNF-09, RNF-10; RT-01; D-13, D-20; H-11, H-19.
+**Trazabilidad:** RF-03, RF-22, RF-24; RN-07; RNF-06, **RNF-08**, RNF-09, RNF-10, **RNF-12**; RT-01; D-20, **D-29, D-35, D-37, D-39**; H-11, H-19.
 
 **Flujo principal**
 
 1. El operador localiza el caso por `id_averia` o `telefono` (CU-11) y abre el flotante de detalle.
 2. El operador pulsa *Cerrar caso*.
-3. El sistema habilita el bloque de cierre con los campos: `resolucion` (lista IVR / COS / COLA), `fechaResolucion` (`DD/MM/AAAA`, propuesta con la fecha del día), `observaciones` (texto libre) y `sacas` (SI / NO).
+3. El sistema **verifica el ámbito del rol** (caso de su cuadrilla, D-35/D-37) y habilita el bloque de cierre con los campos: `resolucion` (lista IVR / COS / COLA), `fechaResolucion` (`DD/MM/AAAA`, propuesta con la fecha del día), `observaciones` (texto libre) y `sacas` (SI / NO).
 4. El operador completa `resolucion` y `fechaResolucion`, y opcionalmente `observaciones` y `sacas`.
 5. El sistema valida: `resolucion` ∈ {IVR, COS, COLA}; `fechaResolucion` con formato `DD/MM/AAAA` y fecha válida; `sacas` ∈ {SI, NO}; `observaciones` de hasta 500 caracteres.
 6. El operador pulsa *Confirmar cierre*.
@@ -614,19 +752,24 @@
 - **5b. Falta `fechaResolucion`.** Igual que 5a, con el mensaje «Indique la fecha de resolución en formato DD/MM/AAAA».
 - **5c. `fechaResolucion` con formato inválido (por ejemplo `31/02/2026`).** El sistema muestra «Fecha inválida: use DD/MM/AAAA con una fecha real» y no permite confirmar.
 - **5d. `sacas` con valor fuera del enum.** El sistema muestra «Sacas debe ser SI o NO» y no permite confirmar.
-- **1a. El caso ya está `CERRADO`.** El sistema muestra el cierre vigente y ofrece *Reabrir caso*; si el operador confirma la reapertura, el caso pasa a `status = GESTION`, se conservan `resolucion` y `fechaResolucion` anteriores en `observaciones` con la marca «Reapertura DD/MM/AAAA hh:mm por &lt;operador&gt;» y el cambio se audita. [H-19]
+- **2a. Caso de otra cuadrilla.** Si el `Reparador Principal` del caso no es el `id` de la cuadrilla del operador, el sistema muestra «Acción no permitida para su rol: el caso no está asignado a su cuadrilla», mantiene el bloque de cierre deshabilitado, no escribe el maestro y registra el intento con operador y fecha/hora. [D-35, D-37, RNF-12]
+- **2b. Contraseña caducada.** Si la sesión tiene la contraseña caducada, el sistema no habilita el cierre y exige el cambio de contraseña antes de operar. [D-39]
+- **1a. El caso ya está `CERRADO`.** El sistema muestra el cierre vigente y ofrece *Reabrir caso*; si el usuario autorizado confirma la reapertura, el caso pasa a `status = GESTION`, se conservan `resolucion` y `fechaResolucion` anteriores en `observaciones` con la marca «Reapertura DD/MM/AAAA hh:mm por &lt;operador&gt;» y el cambio se audita. [H-19, H-08]
 - **7a. Fallo de escritura.** El sistema muestra «No se pudo guardar el cierre», mantiene el caso abierto y ofrece *Reintentar* y *Guardar en `datos_respaldo`*. [H-09]
-- **2a. El operador cancela.** El sistema cierra el bloque de cierre sin escribir y el caso conserva su `status` anterior.
+- **3a. El operador cancela.** El sistema cierra el bloque de cierre sin escribir y el caso conserva su `status` anterior.
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un caso con `status = PEND`, **Cuando** el operador pulsa *Cerrar caso* sin informar `resolucion` ni `fechaResolucion`, **Entonces** el botón *Confirmar cierre* permanece deshabilitado y el sistema muestra «Indique la resolución (IVR, COS o COLA)».
+1. **Dado** un caso con `status = PEND` de la cuadrilla del operador, **Cuando** el operador pulsa *Cerrar caso* sin informar `resolucion` ni `fechaResolucion`, **Entonces** el botón *Confirmar cierre* permanece deshabilitado y el sistema muestra «Indique la resolución (IVR, COS o COLA)».
 2. **Dado** el mismo caso con `resolucion = COS` y sin `fechaResolucion`, **Cuando** el operador intenta confirmar, **Entonces** el sistema muestra «Indique la fecha de resolución en formato DD/MM/AAAA» y `averias.json` no cambia.
-3. **Dado** un caso con `resolucion = COS`, `fechaResolucion = 13/09/2026`, `observaciones = Reparado en sitio` y `sacas = NO`, **Cuando** el operador confirma el cierre, **Entonces** `averias.json` releído contiene `status = CERRADO` y los 4 campos informados.
-4. **Dado** que el operador cierra un caso, **Cuando** el sistema persiste, **Entonces** el caso queda con `usuario_modificacion` igual al P00 de la sesión y `fecha_modificacion` con formato `DD/MM/AAAA hh:mm`.
-5. **Dado** un caso `CERRADO` el 12/09/2026, **Cuando** el operador abre su detalle, **Entonces** el botón *Cerrar caso* está deshabilitado con el texto «Caso cerrado el 12/09/2026» y el sistema ofrece *Reabrir caso*.
-6. **Dado** una `fechaResolucion = 31/02/2026`, **Cuando** el operador intenta confirmar, **Entonces** el sistema muestra «Fecha inválida» y no permite el cierre.
-7. **Dado** un caso abierto, **Cuando** el operador confirma el cierre, **Entonces** la tabla de CASOS actualiza la fila y el filtro «abiertos» deja de contarlo (el conteo baja en 1).
+3. **Dado** un caso de la cuadrilla del operador con `resolucion = COS`, `fechaResolucion = 13/09/2026`, `observaciones = Reparado en sitio` y `sacas = NO`, **Cuando** el operador confirma el cierre, **Entonces** `averias.json` releído contiene `status = CERRADO` y los 4 campos informados.
+4. **Dado** que el operador cierra un caso de su cuadrilla, **Cuando** el sistema persiste, **Entonces** el caso queda con `usuario_modificacion` igual al P00 de la sesión y `fecha_modificacion` con formato `DD/MM/AAAA hh:mm`.
+5. **Dado** un caso con `Reparador Principal = C2` y una sesión de operador de la cuadrilla `C1`, **Cuando** el operador pulsa *Confirmar cierre*, **Entonces** el sistema muestra «Acción no permitida para su rol: el caso no está asignado a su cuadrilla», el caso conserva su `status` y `averias.json` no cambia. [D-35, RNF-12]
+6. **Dado** el mismo caso `C2` y una sesión de supervisor, **Cuando** el supervisor confirma el cierre con `resolucion = COS` y `fechaResolucion = 13/09/2026`, **Entonces** el caso queda en `status = CERRADO`. [D-35]
+7. **Dado** un operador cuyo `clave_fecha_cambio` es de hace más de 90 días, **Cuando** intenta cerrar un caso de su cuadrilla, **Entonces** el sistema exige el cambio de contraseña, no habilita *Confirmar cierre* y `averias.json` no cambia. [D-39]
+8. **Dado** un caso `CERRADO` el 12/09/2026, **Cuando** el usuario autorizado abre su detalle, **Entonces** el botón *Cerrar caso* está deshabilitado con el texto «Caso cerrado el 12/09/2026» y el sistema ofrece *Reabrir caso*.
+9. **Dado** una `fechaResolucion = 31/02/2026`, **Cuando** el operador intenta confirmar, **Entonces** el sistema muestra «Fecha inválida» y no permite el cierre.
+10. **Dado** un caso abierto de su cuadrilla, **Cuando** el operador confirma el cierre, **Entonces** la tabla de CASOS actualiza la fila y el filtro «abiertos» deja de contarlo (el conteo baja en 1).
 
 **Restricciones del sistema (EARS)**
 
@@ -634,27 +777,29 @@
 - **Si** un valor de enum o el formato de fecha son inválidos, entonces el sistema deberá rechazar el cierre sin escribir el archivo. [RNF-10]
 - **Cuando** se cierre un caso, el sistema deberá registrar operador y fecha/hora del cambio. [RNF-09, D-16]
 - **El sistema deberá** conservar el caso cerrado en el maestro sin purga automática, con finalidad documentada. [D-28]
+- **Si** la sesión tiene rol operador y el `Reparador Principal` del caso no es el `id` de su cuadrilla, entonces el sistema deberá rechazar el cierre, no escribir el maestro y registrar el intento. [D-35, D-37, RNF-12]
+- **Mientras** la contraseña de la sesión esté caducada, el sistema deberá bloquear el cierre de casos hasta que se complete el cambio obligatorio. [D-39, RNF-08]
 
 ---
 
 ### CU-13 — Gestionar telefónicamente la bandeja GESTION
 
-- **Actor principal:** Operador de la central.
-- **Actor secundario:** Supervisor (controla el avance de la bandeja).
+- **Actor principal:** Supervisor (función administrativa; **la bandeja GESTION es exclusiva de su rol**, D-35 y RF-15).
+- **Actor secundario:** Operador de la central (ejecuta en calle los casos que salen de la bandeja).
 - **Ciclo:** C3. **Prioridad:** MVP.
-- **Precondiciones:** sesión identificada (CU-01); existen casos con `status = GESTION` (los 39 sin palabras clave de fibra de la muestra, menos los `ASGN`).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor y credencial válida y vigente (D-35, D-39, RNF-12)**; existen casos con `status = GESTION` (en la muestra del 12/09/2026, **37 casos**: los 51 ingeridos menos los 14 que entran en PEND).
 - **Postcondiciones:** cada caso gestionado sale de la bandeja con su clasificación corregida (`clase`, `nivel`, `tipo_abonado`, `sector`) y su resultado registrado; los casos no contactados permanecen en la bandeja con su intento anotado.
 
-**Trazabilidad:** RF-15, RF-07 (clasificación), RF-23, RF-24, RF-28; RN-07; RNF-01, RNF-09, RNF-10; D-06, D-17, D-23; H-27.
+**Trazabilidad:** RF-15, RF-07 (clasificación), RF-23, RF-24, RF-28; RN-07; RNF-01, **RNF-08**, RNF-09, RNF-10, **RNF-12**; D-06, D-17, D-23, **D-29, D-35, D-38, D-39**; H-01, H-27.
 
 **Flujo principal**
 
-1. El operador abre la pestaña **GESTION**.
-2. El sistema lista los casos con `status = GESTION`, ordenados por antigüedad de `ingreso` y agrupados por sector, con `id_averia`, teléfono, nombre, dirección, sector y último comentario.
-3. El operador selecciona un caso y llama al abonado; el sistema muestra un guion de verificación con los datos del caso a confirmar (dirección, servicio, tipo de abonado, presencia de fibra).
-4. El operador registra el resultado de la llamada: *Contactado*, *No contesta*, *Número equivocado* o *Reagendar*; y cuando corresponde, corrige `clase`, `nivel` y `tipo_abonado` y escribe una nota breve en `observaciones`.
+1. El supervisor abre la pestaña **GESTION**.
+2. El sistema lista los casos con `status = GESTION`, ordenados por antigüedad de `ingreso` y agrupados por sector, con `id_averia`, teléfono, nombre, dirección, sector y último comentario; el contador de la bandeja es **37** para la muestra del 12/09/2026.
+3. El supervisor selecciona un caso y llama al abonado; el sistema muestra un guion de verificación con los datos del caso a confirmar (dirección, servicio, tipo de abonado, presencia de fibra).
+4. El supervisor registra el resultado de la llamada: *Contactado*, *No contesta*, *Número equivocado* o *Reagendar*; y cuando corresponde, corrige `clase`, `nivel` y `tipo_abonado` y escribe una nota breve en `observaciones`.
 5. El sistema valida los enums editados y persiste los cambios con operador y fecha/hora.
-6. Cuando el caso queda clasificado, el operador pulsa *Enviar a calle*: el sistema cambia `status` a `PEND` si el caso presenta falla de fibra o a `ASGN` si ya se decidió su asignación, y lo saca de la bandeja.
+6. Cuando el caso queda clasificado, el supervisor pulsa *Enviar a calle*: el sistema cambia `status` a `PEND` si el caso presenta falla de fibra, o lo mantiene en `PEND` dejándolo listo para el despacho si no la presenta (el maestro no tiene estado `ASGN`, D-38), y lo saca de la bandeja.
 7. El sistema actualiza el contador de la bandeja y muestra «GESTION: N casos pendientes de llamada, M gestionados hoy».
 
 **Flujos alternativos**
@@ -664,34 +809,40 @@
 - **5a. Enum inválido al corregir la clasificación.** El sistema muestra el error y no persiste.
 - **6a. El caso tiene `clase = CNS` y no hay cuadrilla con reparaciones en ese sector.** El sistema permite igualmente «Enviar a calle», advierte que la asignación de construcción se resolverá en el despacho (CU-16) y no bloquea el cambio. [RN-06]
 - **2a. La bandeja está vacía.** El sistema muestra «No hay casos en GESTION» con la fecha del último cambio de estado.
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra la bandeja GESTION ni permite llamadas, cambios de clasificación ni «Enviar a calle»; muestra «Acción no permitida para su rol» y registra el intento. [D-35, RNF-12, RF-15]
+- **1b. Contraseña caducada.** Si la sesión del supervisor tiene la contraseña caducada, el sistema no abre la bandeja y exige el cambio antes de operar. [D-39]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** 39 casos con `status = GESTION`, **Cuando** el operador abre la pestaña GESTION, **Entonces** el sistema lista los 39 casos ordenados por antigüedad y agrupados por sector.
-2. **Dado** un caso en `GESTION` con `nivel = COM`, **Cuando** el operador verifica por teléfono que es empresarial, cambia `tipo_abonado` a `EMP` y guarda, **Entonces** `averias.json` releído contiene `tipo_abonado = EMP` y el caso registra operador y fecha/hora.
-3. **Dado** un caso en `GESTION` sin palabras clave de fibra, **Cuando** el operador confirma «Sin falla de fibra» y pulsa *Enviar a calle*, **Entonces** el caso queda en `status = PEND` y sale de la bandeja (el contador baja en 1).
-4. **Dado** un caso en `GESTION`, **Cuando** el operador registra «No contesta», **Entonces** el caso permanece en `status = GESTION`, el contador no cambia y `observaciones` contiene la marca de fecha y hora del intento.
-5. **Dado** un caso en `GESTION` con `clase = CNS`, **Cuando** el operador pulsa *Enviar a calle*, **Entonces** el sistema cambia el estado, advierte sobre la asignación de construcción y el caso conserva `clase = CNS`.
-6. **Dado** un caso ya gestionado, **Cuando** el operador aplica el filtro «gestionados hoy», **Entonces** el caso aparece en el conteo diario usado por MONITOREO (CU-18).
+1. **Dado** 37 casos con `status = GESTION`, **Cuando** el supervisor abre la pestaña GESTION, **Entonces** el sistema lista los 37 casos ordenados por antigüedad y agrupados por sector.
+2. **Dado** un caso en `GESTION` con `nivel = COM`, **Cuando** el supervisor verifica por teléfono que es empresarial, cambia `tipo_abonado` a `EMP` y guarda, **Entonces** `averias.json` releído contiene `tipo_abonado = EMP` y el caso registra operador y fecha/hora.
+3. **Dado** un caso en `GESTION` sin palabras clave de fibra, **Cuando** el supervisor confirma «Sin falla de fibra» y pulsa *Enviar a calle*, **Entonces** el caso queda en `status = PEND` y sale de la bandeja (el contador baja en 1).
+4. **Dado** un caso en `GESTION`, **Cuando** el supervisor registra «No contesta», **Entonces** el caso permanece en `status = GESTION`, el contador no cambia y `observaciones` contiene la marca de fecha y hora del intento.
+5. **Dado** un caso en `GESTION` con `clase = CNS`, **Cuando** el supervisor pulsa *Enviar a calle*, **Entonces** el sistema cambia el estado a `PEND`, advierte sobre la asignación de construcción y el caso conserva `clase = CNS`.
+6. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir la pestaña GESTION, **Entonces** el sistema responde «Acción no permitida para su rol», no muestra ningún caso de la bandeja y registra el intento. [D-35, RNF-12]
+7. **Dado** un caso ya gestionado, **Cuando** el supervisor aplica el filtro «gestionados hoy», **Entonces** el caso aparece en el conteo diario usado por MONITOREO (CU-18).
 
 **Restricciones del sistema (EARS)**
 
 - **Mientras** un caso no tenga resultado de llamada, el sistema deberá mantenerlo en la bandeja `GESTION`. [RF-15]
-- **Cuando** el operador cambie `clase`, `nivel` o `tipo_abonado`, el sistema deberá persistir el cambio de inmediato y auditar operador y fecha/hora. [RN-07, RNF-09]
+- **Cuando** el supervisor cambie `clase`, `nivel` o `tipo_abonado`, el sistema deberá persistir el cambio de inmediato y auditar operador y fecha/hora. [RN-07, RNF-09]
 - **Si** el valor editado no pertenece al enum, entonces el sistema deberá rechazarlo sin escribir el archivo. [RNF-10]
 - **El sistema deberá** conservar en `observaciones` el rastro de cada intento de contacto con fecha. [D-16]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el acceso a la bandeja GESTION y rechazar cualquier cambio de clasificación o «Enviar a calle». [D-35, RNF-12, RF-15]
+- **El sistema deberá** admitir como `status` del maestro únicamente PEND, GESTION y CERRADO, de modo que «Enviar a calle» lleve el caso a PEND y nunca a un estado `ASGN`. [D-38]
+- **Mientras** la contraseña de la sesión esté caducada, el sistema deberá mantener la bandeja bloqueada hasta completar el cambio obligatorio. [D-39, RNF-08]
 
 ---
 
 ### CU-14 — Dar de alta manual un caso
 
 - **Actor principal:** Operador de la central.
-- **Actor secundario:** Administrador (padrones usados en la validación).
+- **Actor secundario:** Supervisor (padrones usados en la validación).
 - **Ciclo:** C3. **Prioridad:** MVP.
 - **Precondiciones:** sesión identificada (CU-01); `sectores.json` con al menos un sector; `averias.json` legible.
 - **Postcondiciones:** el caso existe en `averias.json` con un `id_averia` único con prefijo `MAN-` y el resto de campos obligatorios informados.
 
-**Trazabilidad:** RF-04, RF-28; RN-01, RN-02; RNF-04, RNF-09, RNF-10; RT-01; D-06, D-14, D-17, D-18, D-20; H-02.
+**Trazabilidad:** RF-04, RF-28; RN-01, RN-02; RNF-04, RNF-09, RNF-10; RT-01; D-06, D-14, D-17, D-18, D-20; H-02, H-09.
 
 **Flujo principal**
 
@@ -699,7 +850,7 @@
 2. El sistema presenta la lista **cerrada** de campos: fecha del caso (`DD/MM/AAAA`, propuesta con la fecha del día), teléfono, nombre, dirección, contacto, problema reportado, sector (lista de `sectores.json`), clase (REP / CNS), nivel (COM / REF), tipo_abonado (RES / EMP) y observaciones.
 3. El operador completa los campos y pulsa *Guardar caso*.
 4. El sistema valida: fecha con formato `DD/MM/AAAA`; teléfono con 7 a 15 dígitos; nombre y dirección no vacíos; sector existente en `sectores.json`; clase, nivel y tipo_abonado dentro de sus enums.
-5. El sistema genera el `id_averia` como `MAN-` + consecutivo (por ejemplo `MAN-0001`), tomando el mayor consecutivo existente con ese prefijo y verificando que el valor no exista en `averias.json`.
+5. El sistema genera el `id_averia` como `MAN-` + consecutivo (por ejemplo `MAN-0001`), tomando el mayor consecutivo existente con ese prefijo y verificando que el valor no exista en `averias.json` ni en el CSV del día.
 6. El sistema completa los campos no capturados: `ingreso` = fecha del día, `status = GESTION`, `resolucion`, `fechaResolucion`, `sacas` vacíos; `usuario_modificacion` y `fecha_modificacion` con el operador y la hora.
 7. El sistema escribe `averias.json`, relee el archivo, verifica que el `id_averia` generado es único y muestra «Caso MAN-0001 creado».
 8. El sistema limpia el formulario y muestra el caso en la tabla de CASOS.
@@ -709,15 +860,15 @@
 - **4a. Campo obligatorio vacío.** El sistema marca el campo y muestra «Complete: dirección», sin generar id ni escribir.
 - **4b. Sector inexistente.** El sistema muestra «El sector 7 no existe en `sectores.json`» y ofrece abrir CU-06.
 - **4c. Fecha inválida.** El sistema muestra «Fecha inválida: use DD/MM/AAAA con una fecha real» y no permite guardar.
-- **5a. El id generado ya existe (`MAN-0001` presente en el maestro).** El sistema incrementa el consecutivo hasta encontrar un valor libre, muestra «El id MAN-0001 ya existía; se usó MAN-0002» y continúa con el alta. [D-18, RNF-04]
-- **5b. El CSV del día trae un caso con el mismo `MAN-`.** El sistema mantiene el prefijo reservado a los casos manuales y no reutiliza ids del CSV; si detecta colisión, incrementa el consecutivo y lo informa. [RN-01]
+- **5a. Colisión de `MAN-` contra el maestro.** Si el `id_averia` candidato (`MAN-0001`) ya existe en `averias.json`, el sistema **rechaza ese valor**, calcula el siguiente consecutivo libre y lo sugiere: muestra «El id MAN-0001 ya existe; se sugiere MAN-0002» y solo continúa el alta cuando el valor sugerido está libre. [D-18, RNF-04]
+- **5b. Colisión de `MAN-` contra el CSV del día.** Si el CSV trae una fila con un `id_averia` del espacio `MAN-`, la ingesta ya la rechazó por reserva de prefijo (CU-08 5d) y el alta manual conserva el prefijo como propio. Si aun así se detecta una colisión en el momento del alta, el sistema **rechaza** el id candidato, sugiere el siguiente consecutivo libre y lo informa. [D-18, RN-01, H-09]
 - **7a. Fallo de escritura.** El sistema no confirma el alta, conserva los datos en el formulario y ofrece *Reintentar*. [CU-21]
-- **2a. Campos del fuente que no existen en el maestro (residuo de A-17/H-02).** A-17 quedó cerrada con D-14 (se descartan los datos de `alta_manual.csv`), pero el fuente original (L8) pedía «Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, ETC». El formulario aplica la lista cerrada de D-18 y **no** incluye Tipo, Actividad ni Agente; el mapeo de esos tres campos queda pendiente como observación de la auditoría (P6/H-02) y, si se decide incorporarlos, este caso de uso se amplía.
+- **2a. Campos del fuente que no existen en el maestro.** A-17 quedó cerrada con D-14 (se descartan los datos de `alta_manual.csv`), pero la fuente original (L8) pedía «Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, Agente, ETC». El formulario aplica la lista cerrada de D-18 y **no** incluye Tipo, Actividad ni Agente; el mapeo de esos tres campos queda pendiente como observación de la auditoría y, si se decide incorporarlos, este caso de uso se amplía.
 
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** el formulario de nuevo caso con fecha `13/09/2026`, teléfono `04141234567`, nombre `María Díaz`, dirección `Calle Sucre 12`, contacto `04149876543`, problema `Sin tono`, sector `1`, clase `REP`, nivel `COM` y tipo_abonado `RES`, **Cuando** el operador pulsa *Guardar caso*, **Entonces** el sistema crea el caso con `id_averia = MAN-0001`.
-2. **Dado** un maestro que ya contiene `MAN-0001`, **Cuando** el operador da de alta un caso nuevo, **Entonces** el sistema asigna `MAN-0002` e informa que el consecutivo anterior ya existía.
+2. **Dado** un maestro que ya contiene `MAN-0001` y `MAN-0002`, **Cuando** el operador da de alta un caso nuevo, **Entonces** el sistema rechaza `MAN-0001`, informa «El id MAN-0001 ya existe; se sugiere MAN-0003» y crea el caso con `MAN-0003`.
 3. **Dado** el formulario con `direccion` vacía, **Cuando** el operador pulsa *Guardar caso*, **Entonces** el sistema muestra «Complete: dirección» y no crea ningún registro ni consume consecutivo.
 4. **Dado** el formulario con `sector = 7` cuando `sectores.json` solo tiene los sectores 1 a 6, **Cuando** el operador guarda, **Entonces** el sistema muestra «El sector 7 no existe en `sectores.json`» y no crea el caso.
 5. **Dado** un caso creado manualmente, **Cuando** se lee `averias.json`, **Entonces** el registro tiene `ingreso = 13/09/2026`, `status = GESTION`, `clase = REP`, `nivel = COM`, `sector` informado y `usuario_modificacion` con el P00 de la sesión.
@@ -727,6 +878,7 @@
 **Restricciones del sistema (EARS)**
 
 - **Cuando** el operador confirme un alta manual, el sistema deberá generar el `id_averia` con el patrón `MAN-` + consecutivo y comprobar su unicidad antes de escribir. [D-18, RN-01]
+- **Si** el `id_averia` candidato ya existe en el maestro o colisiona con el espacio `MAN-` del CSV, entonces el sistema deberá rechazar ese valor y sugerir el siguiente consecutivo libre en lugar de reutilizarlo. [D-18, RNF-04, H-09]
 - **Si** un campo obligatorio falta o un enum es inválido, entonces el sistema deberá rechazar el alta sin escribir el archivo. [RNF-10]
 - **Si** el `sector` no existe en `sectores.json`, entonces el sistema deberá rechazar el alta. [RNF-10, D-20]
 - **El sistema deberá** registrar el operador y la fecha/hora de creación del caso. [RNF-09]
@@ -736,111 +888,124 @@
 
 ### CU-15 — Consultar la auditoría de cambios de un caso
 
-- **Actor principal:** Supervisor.
-- **Actores secundarios:** Auditoría / control interno; administrador (responde por la integridad).
-- **Ciclo:** C1 (auditoría mínima) / posterior (historial completo de valores anteriores).
-- **Prioridad:** MVP (auditoría del último cambio) / posterior (historial completo).
-- **Precondiciones:** sesión identificada (CU-01); existe al menos un caso con `usuario_modificacion` y `fecha_modificacion` informados.
+- **Actor principal:** Supervisor (función administrativa; la consulta de auditoría es de su rol, D-35).
+- **Actores secundarios:** Auditoría / control interno.
+- **Ciclo:** C1 (auditoría del último cambio) / posterior (historial completo de valores anteriores).
+- **Prioridad:** MVP (último cambio) / posterior (historial completo).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); el caso tiene `usuario_modificacion` y `fecha_modificacion` informados, y —si se ingirió de un CSV— el rastro de origen (`ultimo_usuario` col. 20 y `usuario_acciona` col. 53) conservado por CU-08.
 - **Postcondiciones:** el supervisor conoce quién cambió el caso, cuándo y qué valores cambiaron, sin alterar el maestro.
 
-**Trazabilidad:** RF-24; RNF-09; RT-01; D-16; H-10.
+**Trazabilidad:** RF-24; RNF-09, **RNF-12**; RT-01; D-16, **D-28, D-35**; H-08, H-10, H-29.
 
 **Flujo principal**
 
 1. El supervisor abre el flotante de detalle de un caso (CU-11) y pulsa *Ver auditoría*.
-2. El sistema muestra la sección **Auditoría** con: `usuario_modificacion`, `fecha_modificacion`, `status`, `clase`, `nivel` y `tipo_abonado` vigentes, y el rastro de origen de la ingesta (`ultimo_usuario`, `usuario_acciona`, `Fecha Hora Asignacion` del CSV, conservados al ingerir).
+2. El sistema muestra la sección **Auditoría** con: `usuario_modificacion` y `fecha_modificacion` del **último** cambio, los valores vigentes de `status`, `clase`, `nivel` y `tipo_abonado`, y el **rastro de origen de la ingesta**: `ultimo_usuario` (col. 20 del CSV), `usuario_acciona` (col. 53) y `Fecha Hora Asignacion` (col. 80), conservados por CU-08 tal como llegaron del archivo.
 3. El supervisor solicita el historial de cambios del caso.
-4. El sistema muestra la lista de cambios registrados, del más reciente al más antiguo, con fecha/hora, operador, campo, valor anterior y valor nuevo.
-5. El supervisor aplica el filtro por rango de fechas y por operador y exporta la vista en pantalla o la imprime.
+4. El sistema muestra **el último cambio registrado** con fecha/hora, operador, campo, valor anterior y valor nuevo, indicando en pantalla que corresponde al último cambio y no al historial completo (alcance MVP).
+5. El supervisor aplica el filtro por rango de fechas y por operador sobre los cambios disponibles y exporta la vista en pantalla o la imprime.
 
 **Flujos alternativos**
 
 - **2a. El caso nunca fue modificado.** El sistema muestra «Sin cambios posteriores a la ingesta» e indica la fecha de ingesta y, si existe, el usuario de origen del CSV.
-- **4a. Historial completo no disponible (alcance MVP).** El sistema muestra solo el último cambio y el aviso «Historial de valores anteriores: pendiente de implementación (H-10)». [H-10]
-- **1a. El supervisor no tiene sesión identificada.** El sistema permite la consulta en modo lectura y no habilita ninguna escritura. [RNF-08]
+- **4a. Historial completo no disponible (alcance MVP).** El sistema muestra solo el último cambio y el aviso «Historial de valores anteriores: **pendiente** de implementación (H-08/H-10); requiere decidir el registro inmutable (JSONL append-only)». No se ofrece ninguna cifra ni lista de valores anteriores que el maestro no pueda sostener. [H-08, H-10]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra la sección de auditoría y responde «Acción no permitida para su rol», registrando el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** un caso modificado por el operador `12345` el `13/09/2026 09:14`, **Cuando** el supervisor abre *Ver auditoría*, **Entonces** el sistema muestra `usuario_modificacion = 12345` y `fecha_modificacion = 13/09/2026 09:14`.
-2. **Dado** un caso recién ingerido y nunca editado, **Cuando** el supervisor abre *Ver auditoría*, **Entonces** el sistema muestra «Sin cambios posteriores a la ingesta» y la fecha de ingesta.
-3. **Dado** un caso cerrado con resolución `COS`, **Cuando** el supervisor consulta la auditoría, **Entonces** el sistema muestra el cambio de `status` a `CERRADO` con operador y fecha/hora.
-4. **Dado** que el supervisor consulta la auditoría, **Cuando** cierra la vista, **Entonces** `averias.json` no cambia (misma fecha de modificación, mismo contenido).
-5. **Dado** un filtro por operador `12345` y rango `01/09/2026` a `13/09/2026`, **Cuando** el supervisor aplica, **Entonces** el sistema muestra solo los cambios de ese operador en ese rango.
+2. **Dado** un caso ingerido con `ultimo_usuario = JPEREZ` (col. 20) y `usuario_acciona = MGOMEZ` (col. 53), **Cuando** el supervisor abre *Ver auditoría*, **Entonces** el sistema muestra ambos valores como rastro de origen del dato y los distingue de `usuario_modificacion` (que corresponde al último cambio hecho en la página).
+3. **Dado** un caso recién ingerido y nunca editado, **Cuando** el supervisor abre *Ver auditoría*, **Entonces** el sistema muestra «Sin cambios posteriores a la ingesta» y la fecha de ingesta.
+4. **Dado** un caso cerrado con resolución `COS`, **Cuando** el supervisor consulta la auditoría, **Entonces** el sistema muestra el cambio de `status` a `CERRADO` con operador y fecha/hora.
+5. **Dado** que el supervisor consulta la auditoría, **Cuando** cierra la vista, **Entonces** `averias.json` no cambia (misma fecha de modificación, mismo contenido).
+6. **Dado** un filtro por operador `12345` y rango `01/09/2026` a `13/09/2026`, **Cuando** el supervisor aplica, **Entonces** el sistema muestra solo los cambios de ese operador en ese rango.
+7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir *Ver auditoría*, **Entonces** el sistema responde «Acción no permitida para su rol» y no muestra el historial. [D-35, RNF-12]
 
 **Restricciones del sistema (EARS)**
 
 - **Cuando** se modifiquen `status`, `clase`, `nivel`, `tipo_abonado`, `sector` o los campos de cierre, el sistema deberá registrar el operador y la fecha/hora del cambio. [RNF-09, D-16]
-- **Mientras** el usuario no tenga sesión identificada, el sistema deberá mostrar la auditoría en modo solo lectura. [RNF-08]
-- **El sistema deberá** conservar los valores anteriores de los campos auditados para poder mostrar el historial. [RNF-09, H-10]
-- **El sistema deberá** conservar el caso y su historial sin purga automática. [D-28]
+- **El sistema deberá** mostrar como auditoría disponible en el MVP únicamente el operador y la fecha/hora del **último** cambio, más el rastro de origen de la ingesta de las columnas 20, 53 y 80 del CSV; **no** deberá mostrar valores anteriores que el maestro no conserve. [H-08, H-10]
+- **Mientras** el maestro no disponga de un registro inmutable de valores anteriores (decisión `&lt;PENDIENTE&gt;`: archivo JSONL append-only, ver H-08), el sistema deberá rotular el historial como pendiente de implementación en lugar de prometerlo. [H-08, H-10]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar la consulta de auditoría y registrar el intento. [D-35, RNF-12]
+- **El sistema deberá** conservar el caso y su rastro sin purga automática. [D-28]
 
 ---
 
 ### CU-16 — Generar y ajustar el despacho del día
 
-- **Actor principal:** Supervisor.
-- **Actores secundarios:** Operador de la central (prepara los datos), cuadrillas (destinatarias).
+- **Actor principal:** Supervisor (función administrativa, D-35).
+- **Actores secundarios:** Operador de la central (prepara los datos); cuadrillas (destinatarias).
 - **Ciclo:** C4. **Prioridad:** posterior (fuera del MVP).
-- **Precondiciones:** casos abiertos en `averias.json` con `sector` asignado; `cuadrillas.json` con cuadrillas activas y sus sectores; existe la definición operativa de «citados del día».
-- **Postcondiciones:** el despacho del día queda armado por cuadrilla, con las reglas de reparto verificadas y la asignación persistida en `averias."Reparador Principal"`.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); casos abiertos en `averias.json` con `sector` asignado; `cuadrillas.json` con cuadrillas activas y sus sectores preferentes; los «citados del día» se determinan con `fecha_cita` (col. 19 del CSV, D-30) sin selector manual.
+- **Postcondiciones:** el despacho del día queda armado por cuadrilla, con las reglas de reparto verificadas, la asignación persistida en `averias."Reparador Principal"` (D-37) y el registro del día escrito en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31, RT-05).
 
-**Trazabilidad:** RF-08, RF-09, RF-20; RN-05, RN-06; RNF-01, RNF-10, RNF-11; RT-05; D-07, D-25; A-05, A-10, A-14 (H-05, H-28).
+**Trazabilidad:** RF-08, RF-09, RF-20; RN-05, RN-06; RNF-01, RNF-10, RNF-11, **RNF-12**; RT-05; D-07, D-25, **D-30, D-31, D-32, D-35, D-37**; H-04, H-24, H-28.
 
 **Flujo principal**
 
 1. El supervisor abre la pestaña **DESPACHO** y pulsa *Generar despacho del día*.
 2. El sistema toma los casos abiertos (abierto = `status` distinto de `CERRADO`) y extrae `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` junto con `sector` y `Reparador Principal`.
 3. El sistema agrupa los casos por sector y propone una cuadrilla a cada grupo usando `sectores.cuadrilla_sugerida` y los sectores preferentes de `cuadrillas.json`.
-4. El sistema verifica las reglas de reparto y marca el resultado por cuadrilla: citados del día incluidos, ≥1 reparación de referidos (`nivel = REF`, `clase = REP`) y ≥1 reparación de empresas (`tipo_abonado = EMP`, `clase = REP`).
-5. El sistema asigna la construcción (`clase = CNS`) a **una sola** cuadrilla: la que tenga reparaciones en el mismo sector.
-6. El sistema muestra la propuesta por cuadrilla con los incumplimientos señalados.
-7. El supervisor ajusta manualmente asignaciones entre cuadrillas hasta que no queden incumplimientos.
-8. El supervisor pulsa *Confirmar despacho*; el sistema escribe `Reparador Principal` en cada caso de `averias.json`, relee el archivo y muestra «Despacho confirmado: N casos en K cuadrillas».
-9. El sistema deja disponible el despacho confirmado para el PDF por cuadrilla (CU-17).
+4. El sistema **incorpora con prioridad los casos citados del día** —aquellos cuyo `fecha_cita` (col. 19 del CSV) coincide con la fecha del despacho, D-30— y los marca como **CITADO** en la propuesta y en el despacho; no existe selector manual de citados.
+5. El sistema verifica las reglas de reparto y marca el resultado por cuadrilla: citados del día incluidos, ≥1 reparación de referidos (`nivel = REF`, `clase = REP`) y ≥1 reparación de empresas (`tipo_abonado = EMP`, `clase = REP`).
+6. El sistema asigna la construcción (`clase = CNS`) a **una sola** cuadrilla: la que tenga reparaciones en el mismo sector, desempatando según D-32 (zona preferente → menor carga del día → `id` menor).
+7. El sistema muestra la propuesta por cuadrilla con los incumplimientos señalados.
+8. El supervisor ajusta manualmente asignaciones entre cuadrillas hasta que no queden incumplimientos; cada cambio queda registrado con operador y fecha/hora.
+9. El supervisor pulsa *Confirmar despacho*; el sistema escribe `Reparador Principal` en cada caso de `averias.json`, escribe el registro del día en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho` (D-31), relee ambos archivos y muestra «Despacho confirmado: N casos en K cuadrillas».
+10. El sistema deja disponible el despacho confirmado para el PDF por cuadrilla (CU-17).
 
 **Flujos alternativos**
 
 - **2a. No hay casos abiertos.** El sistema muestra «No hay casos abiertos para despachar» y no genera propuesta.
 - **4a. Alguna cuadrilla no recibe referidos o empresas.** El sistema marca la cuadrilla en rojo con «Sin reparación de referidos» y/o «Sin reparación de empresas» y exige resolverlo o justificarlo antes de confirmar. [RN-05]
-- **5a. Varias cuadrillas tienen reparaciones en el sector de la construcción.** [SUPUESTO: A-10] El sistema propone la cuadrilla con menos casos asignados y, si persiste el empate, la de `id` menor; el supervisor puede cambiarla manualmente y la decisión queda registrada con su operador y fecha/hora. [A-10]
-- **2b. La definición de «citados del día» no está cerrada.** [SUPUESTO: A-05] El sistema ofrece un selector manual «Citados del día» sobre los casos abiertos, sin campo de datos que lo determine, y no incluye ningún caso por defecto; el supervisor los marca uno a uno. [A-05]
-- **8a. Fallo de escritura.** El sistema no confirma, mantiene la propuesta en pantalla y ofrece *Reintentar*. [CU-21]
-- **7a. El supervisor quita todos los casos de una cuadrilla activa.** El sistema avisa «La cuadrilla C2 queda sin casos» y exige confirmación para dejarla fuera del despacho.
-- **5b. Ambigüedad A-14.** [SUPUESTO: A-14] La asignación se persiste en `averias."Reparador Principal"`; `despacho.json` conserva sus 12 columnas de L57 y el agrupamiento se calcula en memoria. [A-14]
+- **6a. Varias cuadrillas tienen reparaciones en el sector de la construcción (D-32).** El sistema propone **primero la cuadrilla que tenga ese sector como zona preferente en `cuadrillas.sectores`**; **si hay varias o ninguna**, propone la de **menor carga del día** y, **si persiste el empate, la de `id` menor**. El supervisor puede cambiarla manualmente y el cambio queda **registrado con operador y fecha/hora**. [D-32]
+- **4b. Casos citados del día (D-30).** El sistema incluye automáticamente en el despacho, con prioridad y marca **CITADO**, todos los casos abiertos cuyo `fecha_cita` (col. 19) sea igual a la fecha del despacho; no hay selector manual. Si el CSV del día no trae `fecha_cita` para ningún caso, el sistema informa «Sin citados para el DD/MM/AAAA» y continúa. [D-30]
+- **9a. Fallo de escritura.** El sistema no confirma, mantiene la propuesta en pantalla y ofrece *Reintentar*. [CU-21]
+- **8a. El supervisor quita todos los casos de una cuadrilla activa.** El sistema avisa «La cuadrilla C2 queda sin casos» y exige confirmación para dejarla fuera del despacho.
+- **9b. Registro del despacho del día (D-31, D-37).** Al confirmar, el sistema persiste la asignación en `averias."Reparador Principal"` **y** escribe `despacho.json` ampliado con `sector`, `Reparador Principal` y `fecha_despacho`; el agrupamiento del despacho **no** se calcula solo en memoria. [D-31, RT-05]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra la pestaña DESPACHO ni permite generar o ajustar la propuesta, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** 60 casos abiertos distribuidos en 4 sectores y 3 cuadrillas activas, **Cuando** el supervisor pulsa *Generar despacho del día*, **Entonces** el sistema presenta los 60 casos agrupados por sector con una cuadrilla propuesta para cada grupo.
 2. **Dado** un despacho propuesto con la cuadrilla `C1` sin ninguna reparación de referidos, **Cuando** el supervisor intenta confirmar, **Entonces** el sistema muestra «C1: sin reparación de referidos» y no permite confirmar hasta resolverlo o justificarlo.
-3. **Dado** 3 casos con `clase = CNS` en el sector `1` y 2 cuadrillas con reparaciones en el sector `1`, **Cuando** el sistema propone el reparto, **Entonces** los 3 casos de construcción quedan en **una sola** cuadrilla.
-4. **Dado** un despacho confirmado con 45 casos en 3 cuadrillas, **Cuando** el sistema persiste, **Entonces** `averias.json` releído contiene `Reparador Principal` informado en los 45 casos y el filtro por cuadrilla de CU-10 los encuentra.
-5. **Dado** un caso con `Reparador Principal` vacío antes del despacho, **Cuando** se confirma el despacho, **Entonces** ese caso queda asignado a una cuadrilla y deja de contar como «sin asignar» en MONITOREO.
-6. **Dado** el despacho del día ya confirmado, **Cuando** el supervisor abre DESPACHO de nuevo, **Entonces** el sistema muestra la asignación vigente y permite modificarla antes de emitir los PDF.
+3. **Dado** 3 casos con `clase = CNS` en el sector `1` y 2 cuadrillas con reparaciones en el sector `1` (ninguna con el sector `1` como zona preferente, cargas de 9 y 12 casos), **Cuando** el sistema propone el reparto, **Entonces** los 3 casos de construcción quedan en **una sola** cuadrilla, la de menor carga (la de 9 casos). [D-32]
+4. **Dado** el mismo escenario con las dos cuadrillas empatadas en 9 casos y con `id` `C1` y `C4`, **Cuando** el sistema propone el reparto, **Entonces** asigna la construcción a la cuadrilla `C1` (el `id` menor). [D-32]
+5. **Dado** que el sector `1` es zona preferente de la cuadrilla `C3` y hay otra cuadrilla con reparaciones en ese sector, **Cuando** el sistema propone el reparto, **Entonces** la construcción queda en `C3` por zona preferente. [D-32]
+6. **Dado** un despacho propuesto donde el supervisor cambia manualmente la cuadrilla de la construcción de `C3` a `C2`, **Cuando** confirma, **Entonces** el cambio queda registrado con el P00 del supervisor y la fecha/hora.
+7. **Dado** 4 casos abiertos con `fecha_cita = 13/09/2026` y el despacho del `13/09/2026`, **Cuando** el supervisor genera el despacho, **Entonces** los 4 casos entran con prioridad y quedan marcados **CITADO**, sin que el supervisor los seleccione a mano. [D-30]
+8. **Dado** un despacho confirmado con 45 casos en 3 cuadrillas, **Cuando** el sistema persiste, **Entonces** `averias.json` releído contiene `Reparador Principal` informado en los 45 casos, `despacho.json` contiene 45 registros con `sector`, `Reparador Principal` y `fecha_despacho`, y el filtro por cuadrilla de CU-10 los encuentra.
+9. **Dado** un caso con `Reparador Principal` vacío antes del despacho, **Cuando** se confirma el despacho, **Entonces** ese caso queda asignado a una cuadrilla y deja de contar como «sin asignar» en MONITOREO.
+10. **Dado** el despacho del día ya confirmado, **Cuando** el supervisor abre DESPACHO de nuevo, **Entonces** el sistema muestra la asignación vigente y permite modificarla antes de emitir los PDF.
+11. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir DESPACHO, **Entonces** el sistema responde «Acción no permitida para su rol» y `averias.json` y `despacho.json` no cambian.
 
 **Restricciones del sistema (EARS)**
 
 - **El sistema deberá** agrupar el despacho por sector y por `Reparador Principal` sobre los casos abiertos. [RF-08, RF-20, L44]
+- **Cuando** existan casos con `fecha_cita` igual a la fecha del despacho, el sistema deberá incorporarlos con prioridad y marcarlos como CITADO, sin selector manual. [D-30, RN-05]
+- **Si** existen casos `clase = CNS`, entonces el sistema deberá asignarlos a una única cuadrilla con reparaciones en ese sector, desempatando por zona preferente en `cuadrillas.sectores`, luego por menor carga del día y luego por `id` menor. [RN-06, D-32]
+- **Cuando** el supervisor cambie manualmente una asignación de la construcción, el sistema deberá registrar el operador y la fecha/hora del cambio. [D-32, RNF-09]
 - **Mientras** una cuadrilla no tenga al menos una reparación de referidos y una de empresas, el sistema deberá señalar el incumplimiento antes de permitir la confirmación. [RN-05]
-- **Si** existen casos `clase = CNS`, entonces el sistema deberá asignarlos a una única cuadrilla con reparaciones en ese sector. [RN-06]
-- **Cuando** el despacho se confirme, el sistema deberá persistir la asignación en `averias."Reparador Principal"` y releer el archivo. [RN-07, A-14]
+- **Cuando** el despacho se confirme, el sistema deberá persistir la asignación en `averias."Reparador Principal"`, escribir el registro del día en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho`, y releer ambos archivos. [RN-07, D-31, D-37]
 - **El sistema deberá** registrar operador y fecha/hora de la confirmación y de cada ajuste manual del despacho. [RNF-09, RNF-11]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la generación y la confirmación del despacho sin modificar los archivos. [D-35, RNF-12]
 
 ---
 
 ### CU-17 — Emitir el PDF de despacho por cuadrilla y registrar la entrega
 
-- **Actor principal:** Supervisor.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actores secundarios:** Cuadrilla / técnico de calle (recibe la hoja); auditoría / control interno (verifica el control documental).
 - **Ciclo:** C4. **Prioridad:** posterior (fuera del MVP).
-- **Precondiciones:** despacho del día confirmado (CU-16); impresora con papel carta disponible; `pdf.js` y `despacho.json` accesibles.
-- **Postcondiciones:** existe un PDF por cuadrilla en carta horizontal con las 12 columnas de despacho y la marca de fecha, cuadrilla y número de copia; la entrega queda registrada y las hojas se recogen al cierre.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); despacho del día confirmado (CU-16) y registrado en `despacho.json` con `sector`, `Reparador Principal` y `fecha_despacho`; impresora con papel carta disponible; `pdf.js` disponible en `lib/`.
+- **Postcondiciones:** existe un PDF por cuadrilla en carta horizontal con las **15 columnas canónicas de despacho** (D-31) y la marca de fecha, cuadrilla y número de copia; la entrega queda registrada y las hojas se recogen al cierre.
 
-**Trazabilidad:** RF-10, RF-20; RNF-05, RNF-11; RT-05, RT-07; D-27; H-12.
+**Trazabilidad:** RF-10, RF-20; RNF-05, RNF-11, **RNF-12**; RT-05, RT-07; D-27, **D-31, D-35, D-37**; H-12, H-24.
 
 **Flujo principal**
 
 1. El supervisor abre la pestaña **DESPACHO** con el despacho del día confirmado y pulsa *PDF por cuadrilla*.
-2. El sistema construye la proyección `despacho.json` con las 12 columnas: `nivel, clase, id_averia, telefono, persona_reporta, contacto, ultimo_comentario, nombre, direccion, plan, fat, serial`.
+2. El sistema construye la proyección desde `despacho.json` con las **15 columnas canónicas**: `nivel, clase, id_averia, telefono, persona_reporta, contacto, ultimo_comentario, nombre, direccion, plan, fat, serial, sector, Reparador Principal, fecha_despacho` (D-31, RT-05, D-37).
 3. El sistema genera un PDF por cuadrilla activa con casos asignados, en hoja carta **horizontal**, respetando el área máxima imprimible y paginando cuando el volumen lo exige.
 4. El sistema imprime en cada hoja el encabezado con fecha del día, `id` y nombre de la cuadrilla, y el **número de copia**.
 5. El sistema guarda los PDF en la ruta controlada definida para el proyecto (no en la carpeta de Descargas) y muestra la lista de archivos generados.
@@ -855,35 +1020,39 @@
 - **5a. Fallo de escritura del PDF.** El sistema muestra «No se pudo guardar el PDF de la cuadrilla C2» y permite reintentar por cuadrilla sin regenerar las demás.
 - **7a. Una cuadrilla no recibe su hoja.** El sistema mantiene el estado «Pendiente de entrega» y no permite dar el despacho por cerrado hasta registrarlo o justificarlo. [RNF-11]
 - **8a. Faltan hojas al cierre.** El sistema muestra «Faltan hojas: C3» y registra la incidencia con fecha, hora y operador. [D-27, H-12]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra DESPACHO ni permite generar PDF o registrar entregas, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
 1. **Dado** un despacho confirmado con 3 cuadrillas activas, **Cuando** el supervisor pulsa *PDF por cuadrilla*, **Entonces** el sistema genera **3 archivos PDF**, uno por cuadrilla.
-2. **Dado** el PDF de la cuadrilla `C1` con 18 casos, **Cuando** se abre el archivo, **Entonces** contiene las 12 columnas de despacho y cabe en una hoja carta horizontal, con el encabezado «Fecha 13/09/2026 — Cuadrilla C1 — Copia 1».
+2. **Dado** el PDF de la cuadrilla `C1` con 18 casos, **Cuando** se abre el archivo, **Entonces** contiene **las 15 columnas** `nivel, clase, id_averia, telefono, persona_reporta, contacto, ultimo_comentario, nombre, direccion, plan, fat, serial, sector, Reparador Principal, fecha_despacho` y cabe en una hoja carta horizontal, con el encabezado «Fecha 13/09/2026 — Cuadrilla C1 — Copia 1».
 3. **Dado** el PDF de la cuadrilla `C2` con 60 casos, **Cuando** se abre, **Entonces** el contenido está paginado y cada hoja repite fecha, cuadrilla y número de copia con la marca «Hoja X de Y».
 4. **Dado** que el supervisor pulsa *Registrar entrega* para `C1` y `C2`, **Cuando** consulta el estado del despacho, **Entonces** el sistema muestra `C1: Entregado`, `C2: Entregado` y `C3: Pendiente de entrega`.
 5. **Dado** el despacho del día con 3 cuadrillas entregadas, **Cuando** el supervisor pulsa *Recoger hojas* y solo registra 2, **Entonces** el sistema muestra «Faltan hojas: C3» y asienta la incidencia con fecha, hora y operador.
 6. **Dado** un PDF generado, **Cuando** se revisa su ruta, **Entonces** el archivo está en la ruta controlada del proyecto y no en la carpeta de Descargas del puesto.
+7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir la emisión de PDF, **Entonces** el sistema responde «Acción no permitida para su rol» y no genera ningún archivo.
 
 **Restricciones del sistema (EARS)**
 
 - **Cuando** el supervisor solicite el PDF, el sistema deberá generar un archivo por cuadrilla en orientación carta horizontal, ajustado al área máxima imprimible. [RF-10, RNF-05]
+- **El sistema deberá** proyectar el PDF desde `despacho.json` con las 15 columnas canónicas `nivel, clase, id_averia, telefono, persona_reporta, contacto, ultimo_comentario, nombre, direccion, plan, fat, serial, sector, Reparador Principal, fecha_despacho`. [D-31, RT-05, RF-20]
 - **El sistema deberá** imprimir fecha, cuadrilla y número de copia en todas las hojas de cada PDF. [D-27, RNF-11]
 - **Si** el volumen de una cuadrilla excede una hoja, entonces el sistema deberá paginar repitiendo la marca de control documental en cada hoja. [RNF-05, D-27]
 - **El sistema deberá** asentar la entrega y la recogida de las hojas con fecha, hora, cuadrilla y operador. [RNF-11, D-27]
 - **El sistema deberá** guardar los PDF en una ruta controlada y no en la carpeta de Descargas. [D-27, H-12]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la emisión del PDF y el registro de entrega. [D-35, RNF-12]
 
 ---
 
 ### CU-18 — Monitorear la gestión diaria y semanal
 
-- **Actor principal:** Supervisor.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actor secundario:** Operador de la central (alimenta los datos con su gestión); jefe de central (consume las cifras).
 - **Ciclo:** C5. **Prioridad:** posterior (fuera del MVP).
-- **Precondiciones:** `averias.json` con casos de la semana en curso y de la semana anterior; definiciones de métrica acordadas; `averias.json` con `sector` y `Reparador Principal` informados en la mayoría de los casos.
-- **Postcondiciones:** las 6 zonas de MONITOREO muestran gráfico y tabla descriptiva; ninguna consulta modifica los datos.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `averias.json` con casos de la semana en curso y de la semana anterior, y con `sector` y `Reparador Principal` informados en la mayoría de los casos; definiciones de métrica acordadas según D-34 (semana operativa lunes a sábado, Sem 1 a Sem 36).
+- **Postcondiciones:** las 6 zonas de MONITOREO muestran gráfico y tabla descriptiva, incluida la **Gestión Semanal estadística** de D-34 (ingreso del día vs. reparadas del día con la línea del pendiente al cierre de cada día, agrupada por semana del año y con selector **Sem 1 a Sem 36**); ninguna consulta modifica los datos.
 
-**Trazabilidad:** RF-05, RF-06; RN-08; RNF-02, RNF-06, RNF-07; D-17, D-23, D-24; H-28.
+**Trazabilidad:** RF-05, RF-06, RF-25; RN-08; RNF-02, RNF-06, RNF-07, **RNF-12, RNF-13**; S-RNF-02b; D-17, D-23, D-24, **D-34, D-35, D-40**; H-16, H-28.
 
 **Flujo principal**
 
@@ -891,7 +1060,7 @@
 2. El sistema calcula y dibuja las 6 zonas con gráfico y tabla descriptiva: **Gestión Diario** (ingreso nuevo, resuelto residencial, resuelto empresarial, resuelto referidos), **Gestión Semanal** (curva de lunes a sábado), **Casos Globales** (pendiente vs. resuelto), **Reparación** (pendientes por tipo: residenciales comunes, residenciales referidos, empresariales), **Construcción** (pendientes residenciales y empresariales) y **Cuadrilla** (asignados vs. cerrados vs. gestionados por día).
 3. El sistema muestra la fecha de corte y el rango de la semana operativa (lunes a sábado) usados en el cálculo.
 4. El supervisor cambia la fecha de corte y el sistema recalcula las 6 zonas.
-5. El supervisor abre la pestaña **GRAFICOS** y el sistema presenta las mismas 6 zonas como gráficos dedicados: barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación).
+5. El supervisor abre la pestaña **GRAFICOS** y el sistema presenta las mismas 6 zonas como gráficos dedicados: barras (diario, globales, construcción, cuadrilla), **barras + línea** para la semanal (barras de ingreso vs. reparadas por día y línea del pendiente al cierre de cada día) y torta (reparación). [D-34]
 6. El supervisor pasa el cursor sobre una barra o segmento y el sistema muestra el valor exacto y el criterio de cálculo aplicado.
 
 **Flujos alternativos**
@@ -900,83 +1069,101 @@
 - **2b. Casos sin `sector` o sin `Reparador Principal`.** El sistema los agrupa bajo «Sin asignar» y muestra el conteo de excluidos por cada métrica afectada. [H-28]
 - **2c. Métricas no calculables por falta de campos de fecha de asignación.** El sistema muestra «Asignados: criterio pendiente (H-28)» en la zona Cuadrilla y no inventa la cifra. [H-28]
 - **4a. Fecha de corte fuera de la semana operativa.** El sistema ajusta el rango al lunes y sábado de la semana correspondiente y lo informa.
+- **4b. Semana fuera del rango Sem 1 a Sem 36.** El sistema limita el selector a **Sem 1 a Sem 36**, avisa «Semana fuera de rango» y no dibuja la serie. [D-34]
 - **5a. El navegador no soporta los gráficos locales.** El sistema muestra las tablas descriptivas sin gráfico y advierte «Gráficos no disponibles en este navegador». [RT-07]
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra MONITOREO ni GRAFICOS y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un maestro con 1.000 casos, **Cuando** el supervisor abre MONITOREO, **Entonces** las 6 zonas se dibujan en **menos de 3 s**.
+1. **Dado** un maestro con 1.000 casos, **Cuando** el supervisor abre MONITOREO, **Entonces** las 6 zonas se dibujan **en menos de 3 s** (punto de medida: desde el clic en la pestaña MONITOREO hasta que las 6 zonas quedan dibujadas). [RNF-02, D-24]
 2. **Dado** un rango de corte en la semana del 08/09/2026 al 13/09/2026, **Cuando** el supervisor abre GESTION SEMANAL, **Entonces** la curva muestra 6 puntos: lunes, martes, miércoles, jueves, viernes y sábado, y ningún punto de domingo.
-3. **Dado** 120 casos con `status = CERRADO`, `clase = REP` y `tipo_abonado = RES`, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Residencial: 120».
-4. **Dado** 8 casos con `tipo_abonado = EMP` y `status = CERRADO`, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Empresarial: 8».
+3. **Dado** 120 casos con `status = CERRADO`, `clase = REP` y `tipo_abonado = RES` **con `fechaResolucion` dentro de la fecha de corte mostrada**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Residencial: 120» e indica el corte aplicado en pantalla.
+4. **Dado** 8 casos con `tipo_abonado = EMP`, `status = CERRADO` **y `fechaResolucion` dentro del corte**, **Cuando** el supervisor consulta GESTION DIARIO, **Entonces** la tabla muestra «Resuelto Empresarial: 8».
 5. **Dado** 5 casos con `clase = CNS` y `status` distinto de `CERRADO`, **Cuando** el supervisor consulta CONSTRUCCION, **Entonces** la tabla muestra 5 casos pendientes de construcción.
 6. **Dado** un caso sin `Reparador Principal`, **Cuando** el supervisor consulta la zona CUADRILLA, **Entonces** el caso aparece en el grupo «Sin asignar» y no distorsiona los totales por cuadrilla.
-7. **Dado** que el supervisor abre GRAFICOS, **Cuando** la pestaña termina de cargar, **Entonces** se muestran 6 gráficos: 4 de barras, 1 de curva y 1 de torta.
+7. **Dado** que el supervisor abre GRAFICOS, **Cuando** la pestaña termina de cargar, **Entonces** se muestran 6 gráficos: 4 de barras, **1 de barras + línea (semanal)** y 1 de torta. [D-34]
+8. **Dado** el selector de semana del bloque **Gestión Semanal estadístico**, **Cuando** el supervisor elige **Sem 36**, **Entonces** el sistema dibuja la serie de ingreso del día, las reparadas del día y la línea del pendiente al cierre de cada día de esa semana, y no ofrece ninguna opción más allá de Sem 36. [D-34]
+9. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir MONITOREO, **Entonces** el sistema responde «Acción no permitida para su rol» y no muestra cifras.
+10. **Dado** cualquiera de los 6 gráficos de MONITOREO o GRAFICOS, **Cuando** el usuario no puede interpretar la imagen (por ejemplo, con un lector de pantalla o navegación solo por teclado), **Entonces** el sistema ofrece una **tabla o texto alternativo equivalente** con los mismos valores y el mismo criterio de corte que el gráfico. [D-40, RNF-13]
+11. **Dado** el bloque de GESTION SEMANAL, **Cuando** el usuario recorre el gráfico solo con el teclado, **Entonces** puede alcanzar la tabla equivalente, leer cada punto (ingreso del día, reparadas del día y pendiente al cierre) y el foco es visible en cada elemento. [D-40, RNF-13]
 
 **Restricciones del sistema (EARS)**
 
 - **El sistema deberá** calcular las métricas sobre la semana operativa de lunes a sábado. [RN-08]
+- **El sistema deberá** calcular el seguimiento semanal como serie estadística de **ingreso del día vs. reparadas del día**, con la **línea del pendiente al cierre de cada día**, agrupada por semana del año y seleccionable de **Sem 1 a Sem 36**, sin generar ningún archivo de hoja de cálculo. [D-34, RF-05, RF-25]
 - **Mientras** el maestro contenga 1.000 casos, el sistema deberá dibujar MONITOREO en menos de 3 s. [RNF-02, D-24]
 - **Si** un caso no tiene sector o cuadrilla, entonces el sistema deberá agruparlo bajo «Sin asignar» y mostrar el conteo de excluidos. [H-28, RNF-10]
 - **El sistema deberá** mostrar el criterio de cálculo y el rango temporal de cada cifra en pantalla. [H-28, RNF-01]
 - **El sistema deberá** funcionar sin conexión a internet y sin consultar servicios externos. [RT-07]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el acceso a MONITOREO y GRAFICOS. [D-35, RNF-12]
+- **El sistema deberá** acompañar **cada gráfico** de una tabla o texto alternativo equivalente con los mismos valores y el mismo criterio de corte, alcanzable solo con el teclado y con foco visible. [D-40, RNF-13]
 
 ---
 
-### CU-19 — Emitir los reportes de trabajo diario y de gestión semanal
+### CU-19 — Emitir el despacho en pantalla y PDF y el seguimiento semanal estadístico
 
-- **Actor principal:** Supervisor.
-- **Actores secundarios:** Jefe de central; operador de la central (corrige los datos antes de emitir).
+- **Actor principal:** Supervisor (función administrativa, D-35).
+- **Actores secundarios:** Jefe de central (consume el reporte); operador de la central (corrige los datos antes de emitir).
 - **Ciclo:** C6. **Prioridad:** posterior (fuera del MVP).
-- **Precondiciones:** datos del día y de la semana operativa cargados y corregidos; formato de salida acordado.
-- **Postcondiciones:** existe el reporte de trabajo diario y el reporte de gestión semanal con los datos del periodo, y queda constancia de a quién y cuándo se entregaron.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); despacho del día confirmado (CU-16) para la salida de despacho; datos del día y de la semana operativa cargados y corregidos para la serie estadística.
+- **Postcondiciones:** el **despacho** queda emitido en pantalla y PDF; el **seguimiento semanal** queda disponible como serie estadística por día (ingreso vs. reparadas, con la línea del pendiente al cierre) seleccionable de Sem 1 a Sem 36; **no** se genera ningún archivo XLSX. [D-34]
 
-**Trazabilidad:** RF-25; RN-08; RNF-01, RNF-06, RNF-07; D-28; A-08 (H-12, H-28).
+**Trazabilidad:** RF-25, RF-05; RN-08; RNF-01, RNF-06, RNF-07, RNF-11, **RNF-12, RNF-13**; D-27, **D-34, D-35, D-40**; H-16, H-23, H-28.
 
 **Flujo principal**
 
-1. El supervisor abre el bloque **REPORTES** y elige *Reporte de trabajo diario* o *Reporte de gestión semanal*.
-2. El sistema propone la fecha del día (diario) o la semana operativa lunes a sábado (semanal) y muestra el resumen de datos incluidos.
-3. El supervisor confirma el periodo y pulsa *Generar*.
-4. El sistema construye el reporte con: para el diario, ingreso nuevo, resueltos por tipo de abonado y nivel, pendientes por tipo, casos gestionados y cuadrillas activas; para el semanal, la serie de lunes a sábado y los acumulados de la semana.
-5. El sistema presenta el reporte en pantalla con fecha de emisión, periodo, operador emisor y el detalle por cuadrilla.
-6. El supervisor elige la salida: *Imprimir* o *Guardar PDF en la ruta controlada*.
-7. El sistema genera la salida elegida, la guarda con el nombre `reporte_diario_DD_MM_AAAA` o `reporte_semanal_DD_MM_AAAA_AL_DD_MM_AAAA` y registra la emisión con fecha, hora y operador.
-8. El sistema permite volver a emitir el mismo reporte y detecta cambios en los datos, mostrando «El periodo tuvo N cambios desde la última emisión».
+1. El supervisor abre el bloque **REPORTES** y elige *Despacho del día (pantalla + PDF)* o *Seguimiento semanal estadístico*.
+2. **Salida de despacho.** El sistema presenta en pantalla el despacho del día confirmado (fecha, cuadrilla y detalle por cuadrilla) y ofrece *Imprimir* o *Guardar PDF en la ruta controlada*.
+3. El sistema genera el PDF del despacho por cuadrilla con la misma proyección de 15 columnas de CU-17 (D-31) y lo guarda con el nombre `despacho_DD_MM_AAAA`, registrando la emisión con fecha, hora y operador.
+4. **Salida estadística semanal.** El sistema presenta la serie estadística por día: **ingreso del día**, **reparadas del día** y la **línea del pendiente al cierre de cada día**, con la semana operativa (lunes a sábado) y el selector de semana del año **Sem 1 a Sem 36**.
+5. El supervisor elige la semana y el sistema recalcula la serie y muestra la fecha de emisión, el periodo, el operador emisor y el criterio de corte.
+6. El sistema permite volver a emitir la misma salida y detecta cambios en los datos, mostrando «El periodo tuvo N cambios desde la última emisión».
+7. El sistema deja constancia de la emisión (qué salida, qué periodo, quién y cuándo) en el registro de la aplicación.
 
 **Flujos alternativos**
 
-- **3a. Formato de salida no acordado (A-08 abierto).** [SUPUESTO: A-08] El sistema ofrece **pantalla + PDF en carta** como salida por defecto, no genera XLSX y lo advierte en la propia pantalla; cuando A-08 se cierre se ajusta la salida. [A-08]
+- **1a. Salida en hoja de cálculo (XLSX) solicitada.** El sistema **no genera XLSX** (D-34): ofrece la salida en pantalla y PDF para el despacho, y en pantalla para la serie estadística, con el aviso «Salida no disponible: el despacho se emite en pantalla y PDF; el seguimiento semanal es estadístico en pantalla (D-34)». No se genera ningún archivo.
 - **2a. Sin datos en el periodo.** El sistema muestra «Sin datos en el periodo seleccionado» y no genera archivo.
+- **3a. Fallo al guardar el PDF.** El sistema mantiene el despacho en pantalla y ofrece *Reintentar* o *Imprimir*.
 - **4a. Casos sin clasificar.** El sistema incluye la fila «Sin clasificar» con su conteo y no los reparte entre categorías.
-- **6a. Fallo al guardar el PDF.** El sistema mantiene el reporte en pantalla y ofrece *Reintentar* o *Imprimir*.
-- **8a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y conserva la anterior en la ruta controlada. [RNF-11, D-27]
+- **4b. Semana fuera de Sem 1 a Sem 36.** El sistema limita el selector a Sem 1 a Sem 36 y avisa «Semana fuera de rango». [D-34]
+- **6a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y conserva la anterior en la ruta controlada. [RNF-11, D-27]
+- **1b. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque REPORTES y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** los datos del 13/09/2026 con 51 casos ingresados y 30 cerrados, **Cuando** el supervisor genera el reporte diario, **Entonces** el reporte muestra ingreso nuevo 51, cerrados 30 y el desglose por tipo de abonado, y el archivo se guarda como `reporte_diario_13_09_2026.pdf`.
-2. **Dado** la semana operativa del 08/09/2026 al 13/09/2026, **Cuando** el supervisor genera el reporte semanal, **Entonces** el reporte muestra 6 columnas (lunes a sábado) y ningún domingo.
-3. **Dado** un reporte emitido por el operador `12345` a las 14:20 del 13/09/2026, **Cuando** el supervisor consulta la emisión, **Entonces** el sistema muestra fecha, hora y operador emisor.
-4. **Dado** el reporte diario del 13/09/2026 ya emitido, **Cuando** el supervisor lo vuelve a generar tras cerrar 3 casos, **Entonces** el sistema muestra «El periodo tuvo 3 cambios desde la última emisión» y genera una reemisión marcada.
-5. **Dado** que el supervisor solicita el reporte en XLSX, **Cuando** el sistema no lo tiene implementado, **Entonces** muestra «Salida no disponible: se ofrece pantalla y PDF (A-08 pendiente)» y no genera ningún archivo.
+1. **Dado** un despacho confirmado del 13/09/2026 con 45 casos en 3 cuadrillas, **Cuando** el supervisor emite la salida de despacho, **Entonces** el sistema la muestra en pantalla y genera el PDF en la ruta controlada con el nombre `despacho_13_09_2026.pdf`. [D-34]
+2. **Dado** la semana operativa del 08/09/2026 al 13/09/2026, **Cuando** el supervisor abre el seguimiento semanal, **Entonces** el sistema muestra 6 puntos diarios (lunes a sábado) con ingreso del día y reparadas del día, y ningún domingo. [D-34]
+3. **Dado** la serie estadística de una semana, **Cuando** el supervisor la consulta, **Entonces** el sistema dibuja además la **línea del pendiente al cierre de cada día** y muestra su valor numérico en cada punto. [D-34]
+4. **Dado** el selector de semana, **Cuando** el supervisor elige **Sem 1** y luego **Sem 36**, **Entonces** el sistema recalcula la serie en ambos casos y no ofrece ninguna semana anterior a Sem 1 ni posterior a Sem 36. [D-34]
+5. **Dado** que el supervisor solicita el reporte en XLSX, **Cuando** el sistema no lo tiene implementado por decisión D-34, **Entonces** muestra «Salida no disponible: el despacho se emite en pantalla y PDF; el seguimiento semanal es estadístico en pantalla (D-34)» y no genera ningún archivo.
+6. **Dado** una salida de despacho emitida por el supervisor `12345` a las 14:20 del 13/09/2026, **Cuando** se consulta la emisión, **Entonces** el sistema muestra fecha, hora y operador emisor.
+7. **Dado** el despacho del 13/09/2026 ya emitido, **Cuando** el supervisor lo vuelve a generar tras cerrar 3 casos, **Entonces** el sistema muestra «El periodo tuvo 3 cambios desde la última emisión» y genera una reemisión marcada.
+8. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir REPORTES, **Entonces** el sistema responde «Acción no permitida para su rol» y no genera ningún archivo.
+9. **Dado** la serie estadística semanal en pantalla, **Cuando** el usuario la consulta con lector de pantalla o solo con el teclado, **Entonces** el sistema ofrece la **tabla equivalente** con el ingreso del día, las reparadas del día y el pendiente al cierre de cada día de la semana, con los mismos valores que el gráfico. [D-40, RNF-13]
+10. **Dado** el PDF del despacho emitido, **Cuando** se revisa su contenido, **Entonces** el texto es seleccionable y su contraste es de al menos 4,5:1, y la tabla equivalente del despacho está disponible en pantalla para quien no pueda interpretar la imagen. [D-40, RNF-13]
 
 **Restricciones del sistema (EARS)**
 
-- **De acuerdo con** el formato de salida que se acuerde (A-08), el sistema deberá generar el reporte diario y el semanal y registrar su emisión. [RF-25, A-08]
-- **El sistema deberá** calcular los cortes semanales de lunes a sábado. [RN-08, RNF-06]
+- **De acuerdo con** D-34, el sistema deberá emitir **solo el despacho** en pantalla y PDF, y deberá presentar el **seguimiento semanal como serie estadística en pantalla** (por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre, agrupado por semana del año de Sem 1 a Sem 36). [RF-25, D-34]
+- **El sistema no deberá** generar archivos de hoja de cálculo (XLSX) para ninguna de las dos salidas. [D-34]
+- **El sistema deberá** calcular los cortes semanales de lunes a sábado y limitar el selector de semana a **Sem 1 a Sem 36**. [RN-08, RNF-06, D-34]
 - **Si** el periodo no tiene datos, entonces el sistema deberá informarlo y no generar archivo. [RNF-10]
-- **El sistema deberá** guardar cada reporte en la ruta controlada con el periodo en el nombre y la marca de reemisión cuando corresponda. [D-27, RNF-11]
+- **El sistema deberá** guardar cada PDF de despacho en la ruta controlada con el periodo en el nombre y la marca de reemisión cuando corresponda. [D-27, RNF-11]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el bloque REPORTES. [D-35, RNF-12]
+- **El sistema deberá** ofrecer la **tabla equivalente** de la serie estadística semanal y del despacho, alcanzable solo con el teclado, con contraste mínimo 4,5:1 y foco visible. [D-40, RNF-13]
 
 ---
 
 ### CU-20 — Vigilar casos especiales y averías concentradas
 
-- **Actor principal:** Supervisor.
+- **Actor principal:** Supervisor (función administrativa, D-35).
 - **Actor secundario:** Operador de la central (ejecuta las acciones sobre los casos señalados); jefe de central.
 - **Ciclo:** C6. **Prioridad:** posterior (fuera del MVP).
-- **Precondiciones:** maestro con `sector` y `status` informados; umbral de concentración configurado en CONFIGURACION.
-- **Postcondiciones:** el supervisor ve la lista de averías concentradas por sector y la lista de casos especiales del día, y puede actuar sobre ellas.
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); maestro con `sector` y `status` informados; umbral de concentración configurado en CONFIGURACION.
+- **Postcondiciones:** el supervisor ve la lista de averías concentradas por sector y la lista de **casos especiales** —definición **definitiva**: `tipo_abonado = EMP` o `nivel = REF` **abiertos** (D-33)— y puede actuar sobre ellas.
 
-**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-09; D-23, D-25; A-09 (H-14).
+**Trazabilidad:** RF-26, RF-29; RN-04, RN-08; RNF-01, RNF-09, **RNF-12**; D-23, D-25, **D-33, D-35**; H-04, H-14.
 
 **Flujo principal**
 
@@ -985,16 +1172,17 @@
 3. El sistema lista los sectores cuyo conteo alcanza o supera el umbral vigente (3 por defecto, editable en CONFIGURACION) con el conteo, el sector, las cuadrillas implicadas y la lista de `id_averia`.
 4. El supervisor ajusta el umbral (por ejemplo a 5) y el sistema recalcula la lista y mantiene el valor guardado para las próximas consultas.
 5. El supervisor selecciona un sector concentrado y pulsa *Ver casos*: el sistema abre la tabla de CASOS filtrada por ese sector y por abiertos (CU-10).
-6. El supervisor solicita la lista de casos especiales del día; el sistema muestra la lista según el criterio vigente y permite marcarlos para seguimiento. [SUPUESTO: A-09]
+6. El supervisor solicita la lista de casos especiales del día; el sistema muestra la lista **definitiva** de los casos **abiertos** con `tipo_abonado = EMP` **o** `nivel = REF` (D-33), sin rótulo de provisionalidad, y permite marcarlos para seguimiento.
 7. El supervisor registra una acción por caso (llamada al abonado, escalamiento al supervisor de área, reasignación de cuadrilla) y el sistema la asienta en `observaciones` con operador y fecha/hora.
 
 **Flujos alternativos**
 
 - **3a. Ningún sector alcanza el umbral.** El sistema muestra «Sin averías concentradas con umbral 3 en la semana del 08/09/2026 al 13/09/2026».
 - **4a. Umbral inválido (0, negativo o no numérico).** El sistema muestra «El umbral debe ser un número entero mayor o igual a 1» y conserva el valor anterior.
-- **6a. Criterio de «caso especial» no definido (A-09 abierto).** [SUPUESTO: A-09] El sistema muestra por defecto los casos con `tipo_abonado = EMP` o `nivel = REF` abiertos, rotula la lista como «Criterio provisional (A-09 pendiente)» y permite al supervisor aplicar además un filtro manual. [A-09]
+- **6a. Casos especiales (definición definitiva, D-33).** El sistema muestra los casos **abiertos** con `tipo_abonado = EMP` **o** `nivel = REF`, con el rótulo «Casos especiales: EMP o REF abiertos (D-33)». **No** usa la etiqueta «criterio provisional» ni permite sustituir la definición por un filtro manual: el supervisor puede añadir filtros **sobre** esa lista, pero no redefinirla. [D-33]
 - **7a. El caso ya está `CERRADO`.** El sistema permite la anotación, advierte «El caso está cerrado» y no cambia su `status`. [H-19]
 - **2a. Casos sin sector.** El sistema los excluye del cálculo y muestra «N casos sin sector no se contabilizan».
+- **1a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque CONCENTRADAS / ESPECIALES ni permite anotar acciones sobre los casos, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
@@ -1002,87 +1190,94 @@
 2. **Dado** el mismo sector con 2 casos abiertos y 3 cerrados en la semana, **Cuando** el supervisor abre CONCENTRADAS, **Entonces** el sector `1` no aparece (solo se cuentan los abiertos) y el conteo mostrado para ese sector es 2.
 3. **Dado** el umbral en 3 y 5 sectores por debajo del umbral, **Cuando** el supervisor lo cambia a 1, **Entonces** el sistema muestra los 6 sectores con al menos 1 caso abierto y conserva el umbral 1 en la siguiente consulta.
 4. **Dado** un sector concentrado, **Cuando** el supervisor pulsa *Ver casos*, **Entonces** el sistema abre CASOS filtrado por ese sector con el conteo de abiertos coincidente con el de la lista.
-5. **Dado** el criterio provisional de A-09, **Cuando** el supervisor abre la lista de casos especiales, **Entonces** el sistema muestra los casos abiertos con `tipo_abonado = EMP` o `nivel = REF` y la etiqueta «Criterio provisional (A-09 pendiente)».
+5. **Dado** un maestro con 3 casos abiertos `tipo_abonado = EMP`, 5 casos abiertos `nivel = REF`, 2 casos `EMP` cerrados y 1 caso `REF` cerrado, **Cuando** el supervisor abre la lista de casos especiales, **Entonces** el sistema muestra **8** casos (3 EMP abiertos + 5 REF abiertos) y **no** muestra los 3 cerrados, con el rótulo «Casos especiales: EMP o REF abiertos (D-33)». [D-33]
 6. **Dado** que el supervisor registra una acción sobre un caso, **Cuando** el sistema persiste, **Entonces** `observaciones` contiene la acción con fecha, hora y P00 del operador.
+7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir el bloque CONCENTRADAS / ESPECIALES, **Entonces** el sistema responde «Acción no permitida para su rol» y no muestra la lista.
 
 **Restricciones del sistema (EARS)**
 
 - **El sistema deberá** contar como avería concentrada todo sector con 3 o más casos abiertos ingresados en la semana operativa en curso. [D-25]
 - **El sistema deberá** considerar «abierto» todo caso con `status` distinto de `CERRADO`. [D-23]
+- **El sistema deberá** definir los casos especiales como los casos **abiertos** con `tipo_abonado = EMP` o `nivel = REF`, con carácter **definitivo**, y no deberá rotular esa lista como provisional ni permitir redefinirla manualmente. [D-33]
 - **Si** el umbral informado no es un entero mayor o igual a 1, entonces el sistema deberá rechazarlo y conservar el valor vigente. [RNF-10]
-- **Mientras** A-09 no esté cerrada, el sistema deberá rotular la lista de casos especiales como criterio provisional. [A-09]
 - **El sistema deberá** registrar operador y fecha/hora de cada cambio de umbral y de cada acción registrada. [RNF-09]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el bloque CONCENTRADAS / ESPECIALES y rechazar las anotaciones. [D-35, RNF-12]
 
 ---
 
 ### CU-21 — Respaldar y restaurar los datos
 
-- **Actor principal:** Administrador.
+- **Actor principal:** Supervisor (función administrativa, D-35: el respaldo es de su rol).
 - **Actores secundarios:** Soporte TI del puesto; operador de la central (recibe el aviso de fallo).
-- **Ciclo:** C1 (respaldo diario) / C7 (prueba de restauración). **Prioridad:** MVP (respaldo diario) / posterior (prueba formal en C7).
-- **Precondiciones:** `C:\GGTO\datos` con los JSON de trabajo; ruta de respaldo disponible (`G:\Mi unidad\CANTV PDE\GGTO-v1\datos_respaldo` o ruta de red).
+- **Ciclo:** C1 (respaldo manual) / C7 (prueba de restauración). **Prioridad:** MVP (respaldo manual) / posterior (prueba formal en C7).
+- **Precondiciones:** sesión identificada (CU-01) **con rol supervisor** (D-35, RNF-12); `C:\GGTO\datos` con los JSON de trabajo; ruta de respaldo disponible.
 - **Postcondiciones:** existe una copia fechada e íntegra de los JSON y, tras una restauración probada, el sistema vuelve a operar con los datos recuperados.
 
-**Trazabilidad:** RF-24; RNF-04, RNF-10; RT-01, RT-10; D-01, D-19, D-28; H-09, H-25.
+**Trazabilidad:** RF-24; RNF-04, RNF-10, **RNF-12**; RT-01, RT-10; D-01, D-19, D-28, D-35, D-36; H-09, H-12, H-13, H-25.
 
 **Flujo principal**
 
-1. El administrador abre el bloque **RESPALDO** y consulta el estado: fecha del último respaldo, número de copias en rotación y tamaño de cada archivo.
-2. El administrador pulsa *Respaldar ahora*.
+1. El supervisor abre el bloque **RESPALDO** y consulta el estado: fecha y hora del último respaldo, tamaño de cada archivo y ruta de destino.
+2. El supervisor pulsa *Respaldar ahora* (respaldo **manual**, sin automatismo ni rotación: D-36).
 3. El sistema copia `averias.json`, `despacho.json`, `estructura.json`, `central.json`, `tecnicos.json`, `flota.json`, `cuadrillas.json`, `sectores.json` y `claves_clasificacion.json` a la ruta de respaldo en una carpeta con la fecha del día.
-4. El sistema relee cada copia, la compara con el original (número de registros y contenido) y muestra «Respaldo verificado: 9 archivos».
-5. El administrador programa el respaldo diario al cierre de la jornada; el sistema lo ejecuta a la hora indicada y registra el resultado.
-6. **Restauración:** el administrador elige una carpeta de respaldo, pulsa *Restaurar* y el sistema muestra qué archivos se van a reemplazar y con qué fecha.
-7. El administrador confirma; el sistema respalda el estado actual antes de reemplazar, copia los archivos elegidos y relee cada uno para verificar que son JSON válidos y que `averias.json` tiene al menos el mismo número de registros que la copia.
-8. El sistema muestra «Restauración completada desde el respaldo del DD/MM/AAAA» y el estado de cada archivo.
+4. El sistema relee cada copia y la compara con el original **por contenido**: igualdad del texto serializado (y, si se decide, suma de verificación SHA-256) **y** igual número de registros; muestra «Respaldo verificado: 9 archivos».
+5. **Restauración:** el supervisor elige una carpeta de respaldo, pulsa *Restaurar* y el sistema muestra qué archivos se van a reemplazar y con qué fecha.
+6. El supervisor confirma; el sistema **respalda el estado actual antes de reemplazar**, copia los archivos elegidos y relee cada uno para verificar que son JSON válidos y que `averias.json` tiene al menos el mismo número de registros que la copia.
+7. El sistema muestra «Restauración completada desde el respaldo del DD/MM/AAAA» y el estado de cada archivo, incluida la ruta del respaldo previo del estado anterior.
 
 **Flujos alternativos**
 
 - **3a. Fallo de copia (ruta no disponible).** El sistema muestra «No se pudo escribir en la ruta de respaldo: &lt;detalle&gt;» y ofrece elegir otra ruta; no marca el respaldo como exitoso. [H-25]
-- **4a. La copia difiere del original.** El sistema marca el respaldo como fallido, conserva el error y recomienda reintentar.
-- **7a. El respaldo elegido está corrupto.** El sistema detecta el JSON inválido, no reemplaza nada y muestra «Respaldo inválido: &lt;archivo&gt;».
-- **7b. El respaldo tiene menos registros que el maestro vigente.** El sistema muestra «La copia tiene 800 casos y el maestro 1.000. ¿Confirma el reemplazo?» y exige confirmación escrita. [RNF-04]
+- **4a. La copia difiere del original.** El sistema marca el respaldo como fallido, conserva el error, indica el archivo y la diferencia detectada y recomienda reintentar.
+- **6a. El respaldo elegido está corrupto.** El sistema detecta el JSON inválido, no reemplaza nada y muestra «Respaldo inválido: &lt;archivo&gt;».
+- **6b. El respaldo tiene menos registros que el maestro vigente.** El sistema muestra «La copia tiene 800 casos y el maestro 1.000. ¿Confirma el reemplazo?» y exige confirmación escrita. [RNF-04]
 - **1a. Nunca se ha respaldado.** El sistema muestra «Sin respaldos registrados», resalta el aviso y no permite activar la operación del día sin confirmar el respaldo (aviso, no bloqueo). [H-25]
-- **6a. A-11/A-14 abiertas.** No aplica a este flujo; el respaldo copia los archivos tal como estén.
+- **2a. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque RESPALDO ni permite respaldar o restaurar, y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** el administrador pulsa *Respaldar ahora*, **Entonces** la ruta de respaldo contiene una carpeta con la fecha del día y los 9 archivos copiados y verificados.
-2. **Dado** un respaldo con `averias.json` de 1.000 casos y un maestro vigente de 1.000 casos, **Cuando** el administrador restaura, **Entonces** el maestro queda con los mismos 1.000 `id_averia` y el sistema muestra «Restauración completada».
-3. **Dado** un archivo de respaldo con JSON inválido, **Cuando** el administrador intenta restaurarlo, **Entonces** el sistema muestra «Respaldo inválido», no reemplaza ningún archivo y el maestro conserva sus datos.
-4. **Dado** un respaldo con 800 casos y un maestro con 1.000, **Cuando** el administrador intenta restaurar, **Entonces** el sistema pide confirmación escrita y no reemplaza nada hasta obtenerla.
-5. **Dado** que la ruta de respaldo no está disponible, **Cuando** el sistema ejecuta el respaldo diario, **Entonces** muestra el error, no marca el respaldo como exitoso y deja constancia con fecha y hora.
-6. **Dado** un respaldo completado, **Cuando** el administrador consulta el estado, **Entonces** el sistema muestra la fecha del último respaldo exitoso y el número de copias en rotación.
+1. **Dado** `C:\GGTO\datos` con 9 archivos JSON, **Cuando** el supervisor pulsa *Respaldar ahora*, **Entonces** la ruta de respaldo contiene una carpeta con la fecha del día y los 9 archivos copiados y verificados por contenido.
+2. **Dado** un respaldo con `averias.json` de 1.000 casos y un maestro vigente de 1.000 casos, **Cuando** el supervisor restaura, **Entonces** el maestro queda con los mismos 1.000 `id_averia` y el sistema muestra «Restauración completada».
+3. **Dado** un archivo de respaldo con JSON inválido, **Cuando** el supervisor intenta restaurarlo, **Entonces** el sistema muestra «Respaldo inválido», no reemplaza ningún archivo y el maestro conserva sus datos.
+4. **Dado** un respaldo con 800 casos y un maestro con 1.000, **Cuando** el supervisor intenta restaurar, **Entonces** el sistema pide confirmación escrita y no reemplaza nada hasta obtenerla.
+5. **Dado** que la ruta de respaldo no está disponible, **Cuando** el supervisor ejecuta el respaldo, **Entonces** muestra el error, no marca el respaldo como exitoso y deja constancia con fecha y hora.
+6. **Dado** un respaldo completado, **Cuando** el supervisor consulta el estado, **Entonces** el sistema muestra la fecha y hora del último respaldo exitoso y la ruta de destino.
+7. **Dado** un maestro con 1.000 casos, **Cuando** el supervisor confirma una restauración, **Entonces** existe un respaldo del estado anterior (1.000 casos) en la ruta de respaldo y su contenido coincide con el maestro que había antes de reemplazar.
+8. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir el bloque RESPALDO, **Entonces** el sistema responde «Acción no permitida para su rol» y no copia ni reemplaza ningún archivo.
 
 **Restricciones del sistema (EARS)**
 
-- **Cuando** el administrador solicite un respaldo, el sistema deberá copiar los archivos y **releer** cada copia antes de marcarla como exitosa. [RNF-10, H-09]
-- **Si** la copia difiere del original, entonces el sistema deberá marcar el respaldo como fallido e informar el detalle. [RNF-10]
-- **Cuando** el administrador restaure un respaldo, el sistema deberá respaldar el estado actual antes de reemplazar. [D-19]
+- **Cuando** el supervisor solicite un respaldo, el sistema deberá copiar los archivos y **releer** cada copia antes de marcarla como exitosa. [RNF-10, H-09]
+- **Si** la copia difiere del original, entonces el sistema deberá marcar el respaldo como fallido e informar el detalle del archivo y de la diferencia. [RNF-10]
+- **Cuando** el supervisor restaure un respaldo, el sistema deberá respaldar el estado actual antes de reemplazar y verificar que ese respaldo previo exista y coincida con el estado anterior. [D-19]
 - **El sistema deberá** mantener los datos de trabajo fuera de Google Drive, en `C:\GGTO\datos`. [D-19, RT-10]
+- **El sistema deberá** ejecutar el respaldo **solo a demanda del supervisor**, sin automatismo programado ni rotación. [D-36]
 - **El sistema deberá** conservar el histórico de casos sin purga automática y mantener el respaldo en una ruta controlada. [D-28, D-27]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar el respaldo y la restauración sin copiar ni reemplazar archivos. [D-35, RNF-12]
+
+> **Puntos `&lt;PENDIENTE&gt;` de decisión del usuario en este caso de uso (H-12, H-13):** (a) la **ruta de respaldo** definitiva —hoy conviven `G:\...\datos_respaldo` y una ruta controlada por definir— y su justificación si sigue siendo la unidad sincronizada; (b) el **cifrado** del paquete de respaldo, que contiene datos personales (nombre, teléfono, dirección, cédula, correo); (c) el **número de copias en rotación, la retención y el responsable** (D-36 suprime la rotación, pero no fija retención); y (d) el **RTO/RPO** y el algoritmo de verificación (hash SHA-256 o comparación byte a byte). Mientras no se decidan, el sistema no promete rotación, cifrado ni objetivo de recuperación.
 
 ---
 
 ### CU-22 — Operar en contingencia y diagnosticar el entorno
 
-- **Actor principal:** Administrador.
+- **Actor principal:** Supervisor (función administrativa, D-35). El operador puede ejecutar el lanzador y consultar el estado del entorno.
 - **Actores secundarios:** Operador de la central; soporte TI del puesto.
 - **Ciclo:** C1 / C7. **Prioridad:** MVP.
-- **Precondiciones:** el puesto tiene Edge o Chrome (versión 86 o superior) y Python 3.7+ o Node.js disponibles para el lanzador.
+- **Precondiciones:** sesión identificada (CU-01) para las acciones de escritura; el puesto tiene Edge o Chrome (versión 86 o superior) y Python 3.7+ o Node.js disponibles para el lanzador.
 - **Postcondiciones:** el sistema arranca de forma reproducible, informa con claridad cualquier fallo y permite operar en modo degradado sin perder datos.
 
-**Trazabilidad:** RF-01; RNF-03, RNF-04, RNF-10; RT-06, RT-07, RT-09; D-01, D-15, D-19; H-20, H-22, H-23, H-24, H-25.
+**Trazabilidad:** RF-01; RNF-03, RNF-04, RNF-10, **RNF-12**; RT-06, RT-07, RT-09; D-01, D-15, D-19, D-35; H-20, H-22, H-23, H-24, H-25, H-28.
 
 **Flujo principal**
 
-1. El administrador (o el operador) ejecuta el lanzador `pwsh -File .\servir-ggto.ps1`, que levanta el servidor en `127.0.0.1:8787` sirviendo solo el subdirectorio de la aplicación y abre el navegador.
+1. El usuario ejecuta el lanzador `pwsh -File .\servir-ggto.ps1`, que levanta el servidor en `127.0.0.1:8787` sirviendo solo el subdirectorio de la aplicación y abre el navegador.
 2. El sistema carga la página, verifica el contexto (`http` y host local), comprueba la versión del navegador y muestra el estado del entorno: servidor, ruta de datos `C:\GGTO\datos`, versión de la aplicación y navegador detectado.
 3. El sistema valida que los archivos de datos requeridos existan y sean JSON válidos y avisa de los que falten.
-4. El administrador consulta el registro de la aplicación (log) y el informe de la última ingesta, y descarga el detalle si lo necesita.
-5. Si el servidor local no está disponible, el administrador activa el **modo descarga**: el sistema permite consultar el maestro cargado con el selector de archivos y guarda los cambios descargando el JSON completo, con el aviso «Modo descarga: reemplace el archivo en C:\GGTO\datos al terminar».
-6. Si el archivo del CSV diario no llega, el administrador mantiene el maestro del día anterior, deja constancia de la incidencia y continúa con la operación existente. [H-24]
-7. Al cierre, el administrador verifica el estado: última escritura confirmada, último respaldo y número de errores registrados en el día.
+4. El supervisor consulta el registro de la aplicación (log) y el informe de la última ingesta, y descarga el detalle si lo necesita.
+5. Si el servidor local no está disponible, el supervisor activa el **modo descarga**: el sistema permite consultar el maestro cargado con el selector de archivos y guarda los cambios descargando el JSON completo, con el aviso «Modo descarga: reemplace el archivo en C:\GGTO\datos al terminar».
+6. Si el archivo del CSV diario no llega, el supervisor mantiene el maestro del día anterior, deja constancia de la incidencia y continúa con la operación existente. [H-24]
+7. Al cierre, el supervisor verifica el estado: última escritura confirmada, último respaldo y número de errores registrados en el día.
 
 **Flujos alternativos**
 
@@ -1093,16 +1288,18 @@
 - **3a. `averias.json` ausente, vacío o con JSON inválido.** El sistema bloquea la edición, muestra «Maestro no disponible: &lt;detalle&gt;» y ofrece *Restaurar desde respaldo* (CU-21). [H-20, H-25]
 - **5a. Cambios sin guardar en modo descarga.** El sistema mantiene el aviso de pendiente y bloquea la salida de la página hasta confirmar la descarga del JSON. [RNF-04]
 - **4a. Error en la ingesta.** El sistema registra el error en el log, muestra el mensaje accionable y conserva el archivo con la cabecera leída para diagnóstico. [H-20]
+- **7a. Acción no permitida para su rol.** El operador puede ejecutar el lanzador y consultar el estado del entorno, pero **no** puede restaurar desde respaldo ni cambiar la ruta de datos: el sistema responde «Acción no permitida para su rol» y registra el intento. [D-35, RNF-12]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un puesto con Python 3.7 o superior y el puerto 8787 libre, **Cuando** el administrador ejecuta `pwsh -File .\servir-ggto.ps1`, **Entonces** el servidor responde en `http://127.0.0.1:8787` y la página abre con las 7 pestañas.
-2. **Dado** el servidor levantado, **Cuando** se consulta la URL `http://<IP-del-equipo>:8787/datos/averias.json`, **Entonces** la respuesta es de recurso no encontrado: `datos/` no está publicado por HTTP.
+1. **Dado** un puesto con Python 3.7 o superior y el puerto 8787 libre, **Cuando** el usuario ejecuta `pwsh -File .\servir-ggto.ps1`, **Entonces** el servidor responde en `http://127.0.0.1:8787` y la página abre con las 7 pestañas.
+2. **Dado** el servidor levantado, **Cuando** el administrador del puesto ejecuta `Get-NetTCPConnection -LocalPort 8787`, **Entonces** la única dirección en escucha es `127.0.0.1` (no `0.0.0.0`); **Y** al solicitar `http://127.0.0.1:8787/datos/averias.json` la respuesta es de **recurso no encontrado** (404), de modo que `datos/` no está publicado por HTTP. El criterio es discriminante: la prueba se hace contra `127.0.0.1`, no contra la IP del equipo, porque el servidor no escucha en esa IP. [D-15, RT-09, H-28]
 3. **Dado** un equipo con Firefox, **Cuando** el operador abre la página, **Entonces** el sistema muestra «Este navegador no permite escribir los JSON» y habilita únicamente el modo descarga.
-4. **Dado** un lanzamiento con el puerto 8787 ocupado, **Cuando** el administrador ejecuta el lanzador, **Entonces** el sistema muestra «El puerto 8787 está en uso» y ofrece un puerto alterno.
-5. **Dado** que `averias.json` contiene un JSON inválido, **Cuando** el operador abre la página, **Entonces** el sistema muestra «Maestro no disponible: <detalle>» y ofrece *Restaurar desde respaldo* sin permitir edición.
-6. **Dado** que el operador trabaja en modo descarga con 3 cambios sin guardar, **Cuando** intenta cerrar la página, **Entonces** el sistema advierte de los cambios pendientes y exige confirmar la descarga del JSON.
-7. **Dado** un fallo de escritura en `averias.json`, **Cuando** el operador reintenta, **Entonces** el sistema muestra el detalle del error, registra el evento en el log con fecha y hora y permite guardar una copia en `datos_respaldo`.
+4. **Dado** un lanzamiento con el puerto 8787 ocupado, **Cuando** el usuario ejecuta el lanzador, **Entonces** el sistema muestra «El puerto 8787 está en uso» y ofrece un puerto alterno.
+5. **Dado** que `averias.json` contiene un JSON inválido, **Cuando** el operador abre la página, **Entonces** el sistema muestra «Maestro no disponible: &lt;detalle&gt;» y ofrece *Restaurar desde respaldo* sin permitir edición.
+6. **Dado** que el usuario trabaja en modo descarga con 3 cambios sin guardar, **Cuando** intenta cerrar la página, **Entonces** el sistema advierte de los cambios pendientes y exige confirmar la descarga del JSON.
+7. **Dado** un fallo de escritura en `averias.json`, **Cuando** el usuario reintenta, **Entonces** el sistema muestra el detalle del error, registra el evento en el log con fecha, hora y detalle accionable, y permite guardar una copia en la ruta de respaldo.
+8. **Dado** una sesión con rol operador, **Cuando** el operador intenta restaurar desde respaldo, **Entonces** el sistema responde «Acción no permitida para su rol» y no reemplaza ningún archivo.
 
 **Restricciones del sistema (EARS)**
 
@@ -1112,79 +1309,87 @@
 - **Mientras** el servidor local no esté disponible, el sistema deberá permitir la operación en modo descarga sin pérdida de datos. [H-23]
 - **El sistema deberá** registrar en un log los errores de lectura, escritura e ingesta, con fecha, hora y detalle accionable. [H-20]
 - **El sistema deberá** funcionar sin conexión a internet y sin CDN. [RT-07]
+- **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar las acciones de restauración y de cambio de ruta de datos, admitiendo solo el arranque del puesto y la consulta del estado. [D-35, RNF-12]
+
+> **Puntos `&lt;PENDIENTE&gt;` de decisión del usuario en este caso de uso:** (a) la **concurrencia de dos sesiones** sobre el mismo archivo —el corpus no define bloqueo, versión de documento ni detección de conflicto, y por tanto el sistema no promete evitar el último-escritor-gana—; y (b) la **escritura atómica y el versionado del maestro** (archivo temporal + reemplazo, `averias.json.bak`, campo de versión). [H-10, H-11]
 
 ---
 
 ## 5. Trazabilidad inversa — RF a casos de uso
 
-| RF | Casos de uso que lo cubren | Estado |
-|---|---|---|
-| RF-01 | CU-01 (armazón de 7 pestañas), CU-02 a CU-14 (contenido de cada pestaña) | Cubierto |
-| RF-02 | CU-11 (búsqueda por `id_averia` o `telefono`) | Cubierto |
-| RF-03 | CU-12 (actualización de `status`, `resolucion`, `fechaResolucion`, `observaciones`, `sacas`) | Cubierto |
-| RF-04 | CU-14 (alta manual con lista cerrada e `id_averia` `MAN-`) | Cubierto |
-| RF-05 | CU-18 (6 zonas con gráfico y tabla) | Cubierto |
-| RF-06 | CU-18 (GRAFICOS: barras, curva y torta) | Cubierto |
-| RF-07 | CU-10 (registro principal y clasificación), CU-13 (reclasificación) | Cubierto |
-| RF-08 | CU-16 (distribución por sector y cuadrilla) | Cubierto |
-| RF-09 | CU-16 (citados, ≥1 referido y ≥1 empresa, construcción única) | Cubierto |
-| RF-10 | CU-17 (PDF por cuadrilla, carta horizontal) | Cubierto |
-| RF-11 | CU-02 (CENTRAL) | Cubierto |
-| RF-12 | CU-03 (TECNICOS) | Cubierto |
-| RF-13 | CU-04 (FLOTA) | Cubierto |
-| RF-14 | CU-05 (CUADRILLA) | Cubierto |
-| RF-15 | CU-13 (bandeja GESTION) | Cubierto |
-| RF-16 | CU-08 (carga, filtro de central, extracción y dedupe) | Cubierto |
-| RF-17 | CU-08 (clasificación; vista previa en CU-07) | Cubierto |
-| RF-18 | CU-08 (asignación de sector) y CU-09 (cola de direcciones sin coincidencia) | Cubierto |
-| RF-19 | CU-08 (`ingreso`, `clase = REP`, `nivel = COM`) | Cubierto |
-| RF-20 | CU-16 (extracción por `Reparador Principal`) y CU-17 (12 columnas del despacho) | Cubierto |
-| RF-21 | CU-10 (tabla con las 7 columnas resumen) | Cubierto |
-| RF-22 | CU-11 (flotante con toda la información) y CU-12 (cierre con bloqueo) | Cubierto |
-| RF-23 | CU-10 (agrupación y filtrado) y CU-15 (trazabilidad de los cambios de clasificación) | Cubierto |
-| RF-24 | CU-10, CU-12, CU-13, CU-14 (persistencia inmediata) y CU-21 (respaldo del archivo) | Cubierto |
-| RF-25 | CU-19 (reporte diario y reporte semanal) | Cubierto |
-| RF-26 | CU-20 (averías concentradas y casos especiales) | Cubierto |
-| RF-27 | CU-07 (palabras clave y modo de búsqueda) | Cubierto |
-| RF-28 | CU-13 (edición y uso de `tipo_abonado`) y CU-10 (edición en línea) | Cubierto |
-| RF-29 | CU-06 (CRUD de sectores) y CU-09 (creación desde la cola) | Cubierto |
+| RF | Casos de uso que lo cubren | Estado | Observación |
+|---|---|---|---|
+| RF-01 | CU-01 (armazón de 7 pestañas) + los CU que declaran su pestaña en el flujo principal (CU-02 a CU-22) | Cubierto | El armazón lo construye CU-01; el resto lo consume. Se elimina la sobre-declaración «CU-02 a CU-14» de la versión anterior (H-20). |
+| RF-02 | CU-11 (búsqueda por `id_averia` o `telefono`) | Cubierto | — |
+| RF-03 | CU-12 (actualización de `status`, `resolucion`, `fechaResolucion`, `observaciones`, `sacas`) | Cubierto | Cierre bloqueante y con autorización por rol (D-35). |
+| RF-04 | CU-14 (alta manual con lista cerrada e `id_averia` `MAN-`) | Cubierto | Colisión de `MAN-` resuelta con rechazo y consecutivo libre. |
+| RF-05 | CU-18 (6 zonas con gráfico y tabla), CU-19 (serie semanal estadística) | Cubierto | Cifras de resueltos con corte explícito en el «Dado»; cada gráfico lleva tabla o texto alternativo equivalente (D-40, RNF-13). |
+| RF-06 | CU-18 (GRAFICOS: 4 barras, barras + línea semanal y torta) | Cubierto | Barras + línea conforme a D-34; cada gráfico con tabla o texto alternativo equivalente (D-40, RNF-13). |
+| RF-07 | CU-10 (registro principal y clasificación), CU-13 (reclasificación telefónica) | Cubierto | — |
+| RF-08 | CU-16 (distribución por sector y cuadrilla) | Cubierto | — |
+| RF-09 | CU-16 (citados del día por `fecha_cita`, ≥1 referido y ≥1 empresa, construcción única) | Cubierto | Citados definidos por D-30. |
+| RF-10 | CU-17 (PDF por cuadrilla, carta horizontal) | Cubierto (C4, no MVP) | Lista canónica de 15 columnas fijada por D-31 (H-24 cerrado). |
+| RF-11 | CU-02 (CENTRAL) | Cubierto | — |
+| RF-12 | CU-03 (TECNICOS) | Cubierto | — |
+| RF-13 | CU-04 (FLOTA) | Cubierto | — |
+| RF-14 | CU-05 (CUADRILLA) | Cubierto | `despacho.json` ampliado por D-31 (H-04 cerrado). |
+| RF-15 | CU-13 (bandeja GESTION, exclusiva del supervisor) | Cubierto | Tamaño de bandeja corregido a 37 (D-38, H-01 cerrado). |
+| RF-16 | CU-08 (carga, filtro de central, extracción y dedupe) | Cubierto | Validación de `id_averia` vacío, duplicados del lote y prefijo `MAN-`. |
+| RF-17 | CU-08 (clasificación) y CU-07 (vista previa) | **Parcial** | El criterio CA-3 de CU-08 ya es determinista (14/37, D-38). Queda pendiente únicamente la semántica del modo `estricta` de CU-07 (H-15/P3), que afecta a la clasificación. |
+| RF-18 | CU-08 (asignación de sector) y CU-09 (cola de direcciones sin coincidencia) | Cubierto | — |
+| RF-19 | CU-08 (`ingreso`, `clase = REP`, `nivel = COM`) | Cubierto | — |
+| RF-20 | CU-16 (extracción por `Reparador Principal`) y CU-17 (15 columnas del despacho) | Cubierto | Lista canónica única de 15 columnas (D-31, H-24 cerrado). |
+| RF-21 | CU-10 (tabla con las 7 columnas resumen) | Cubierto | — |
+| RF-22 | CU-11 (flotante con toda la información) y CU-12 (cierre con bloqueo y autorización) | Cubierto | Dueño único del cierre: CU-12; el botón del flotante invoca CU-12 (H-22). |
+| RF-23 | CU-10 (agrupación y filtrado), CU-13 (clasificación correctiva) y CU-15 (rastro de los cambios) | **Parcial** | La transición de estado atribuida por error a CU-10 se eliminó del diagrama (H-07) y la edición de `clase`/`nivel` ahora exige rol y ámbito de cuadrilla. Queda la métrica «Asignados» de MONITOREO sin definir (H-28). |
+| RF-24 | CU-08, CU-10, CU-12, CU-13, CU-14 (persistencia inmediata) y CU-21 (respaldo del archivo) | **Parcial** | Persistencia y relectura aplicadas. Sigue sin decidirse el control de concurrencia y la escritura atómica (H-10, H-11), declarados `&lt;PENDIENTE&gt;`. |
+| RF-25 | CU-19 (despacho en pantalla y PDF; seguimiento semanal estadístico Sem 1 a Sem 36) y CU-18 (zona GESTION SEMANAL) | Cubierto | Reconciliado con D-34 (H-23 cerrado); sin XLSX. |
+| RF-26 | CU-20 (averías concentradas) y CU-20 (casos especiales EMP/REF abiertos, D-33) | **Parcial** | Criterio de caso especial cerrado y sin rótulo provisional; permanece el conteo de averías concentradas por semana operativa sujeto a la definición de corte de la semana. |
+| RF-27 | CU-07 (palabras clave y modo de búsqueda) | **Parcial** | Semántica del modo `estricta` sin definir (H-15/P3), P3 abierta. |
+| RF-28 | CU-13 (edición y uso de `tipo_abonado`) y CU-10 (edición en línea) | Cubierto | — |
+| RF-29 | CU-06 (CRUD de sectores) y CU-09 (creación del sector mínimo desde la cola) | Cubierto | La excepción del operador queda acotada por D-35. |
 
-**Resultado: 29 de 29 RF cubiertos; ningún RF queda sin caso de uso.**
+**Resultado: 29 de 29 RF cubiertos; ningún RF queda sin caso de uso.** De ellos, 6 quedan en estado **Parcial** por defectos internos del CU que los cubre —RF-17, RF-23, RF-24, RF-26 y RF-27, con su causa en la columna Observación—, **no** por falta de dueño funcional. Las filas RF-01, RF-10 y RF-20, antes marcadas «Parcial», pasan a **Cubierto** tras las correcciones de esta revisión (H-20, H-24, H-34).
 
 ### 5.1 Cobertura de RNF, RT y RN
 
-| Grupo | Cobertura |
-|---|---|
-| RNF-01 | CU-10, CU-11, CU-13, CU-16, CU-18, CU-19, CU-20 |
-| RNF-02 | CU-08, CU-10, CU-11, CU-18 |
-| RNF-03 | CU-01, CU-22 |
-| RNF-04 | CU-03, CU-04, CU-05, CU-06, CU-08, CU-14, CU-21, CU-22 |
-| RNF-05 | CU-17 |
-| RNF-06 | CU-08, CU-11, CU-12, CU-18, CU-19 |
-| RNF-07 | CU-01, CU-04, CU-10, CU-18, CU-19 |
-| RNF-08 | CU-01, CU-02, CU-03, CU-06, CU-08, CU-15 |
-| RNF-09 | CU-01, CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-09, CU-10, CU-12, CU-13, CU-14, CU-15, CU-16, CU-20 |
-| RNF-10 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-08, CU-10, CU-11, CU-12, CU-13, CU-14, CU-16, CU-21 |
-| RNF-11 | CU-16, CU-17, CU-19 |
-| RT-01 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-08, CU-10, CU-12, CU-14, CU-21 |
-| RT-02 | CU-08 |
-| RT-03 | CU-02, CU-08, CU-09 |
-| RT-04 | CU-08, CU-10, CU-11 |
-| RT-05 | CU-16, CU-17 |
-| RT-06 | CU-01, CU-22 |
-| RT-07 | CU-01, CU-07, CU-17, CU-18, CU-22 |
-| RT-08 | CU-08 |
-| RT-09 | CU-01, CU-22 |
-| RT-10 | CU-01, CU-21 |
-| RT-11 | Fuera del alcance de los casos de uso (ubicación del repositorio git; ver `entornos_globales.md` §7.1) |
-| RN-01 | CU-08, CU-14 |
-| RN-02 | CU-08, CU-14 |
-| RN-03 | CU-07, CU-08 |
-| RN-04 | CU-02, CU-06, CU-08, CU-09, CU-20 |
-| RN-05 | CU-05, CU-16 |
-| RN-06 | CU-05, CU-13, CU-16 |
-| RN-07 | CU-10, CU-12, CU-13, CU-14, CU-16 |
-| RN-08 | CU-18, CU-19, CU-20 |
+**Verificación de esta tabla:** cada fila se regeneró a partir de la línea **Trazabilidad** de los 22 casos de uso (fuente única), no al revés. La fila marcada «verificado» se contrastó línea a línea; la marcada «parcial» conserva un defecto declarado.
+
+| Grupo | Cobertura | Verificación |
+|---|---|---|
+| RNF-01 | CU-10, CU-11, CU-13, CU-16, CU-18, CU-19, CU-20 | Verificado (RNF-01 añadido a CU-13, H-19 cerrado) |
+| RNF-02 | CU-08, CU-10, CU-11, CU-18 | Verificado (umbrales con punto de medida en CU-10 y CU-18) |
+| RNF-03 | CU-01, CU-22 | Verificado |
+| RNF-04 | CU-03, CU-04, CU-05, CU-06, CU-08, CU-14, CU-21, CU-22 | Verificado |
+| RNF-05 | CU-17 | Verificado |
+| RNF-06 | CU-08, CU-11, CU-12, CU-18, CU-19 | Verificado |
+| RNF-07 | CU-01, CU-04, CU-10, CU-18, CU-19 | Verificado |
+| **RNF-08** | CU-01, CU-02, CU-03, CU-08, CU-09, CU-10, CU-11, CU-12, CU-13, CU-15, CU-21, CU-22 | Verificado (retirado de CU-06, que no lo menciona; añadidos CU-09, CU-10, CU-12 y CU-13, H-19 y H-21 cerrados; reforzado con D-39) |
+| RNF-09 | CU-01, CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-09, CU-10, CU-12, CU-13, CU-14, CU-15, CU-16, CU-20 | Verificado |
+| RNF-10 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-08, CU-10, CU-11, CU-12, CU-13, CU-14, CU-16, CU-21 | Verificado |
+| RNF-11 | CU-16, CU-17, CU-19 | Verificado |
+| **RNF-12** | **CU-01, CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-08, CU-09, CU-10, CU-11, CU-12, CU-13, CU-14, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20, CU-21, CU-22** | **Nuevo (D-35): aplicado en los 22 CU** |
+| **RNF-13** | **Transversal: CU-01 a CU-22 (todos los casos de uso con interfaz). Verificación formal en CU-01 (diálogo de sesión), CU-10 (tabla de CASOS), CU-18 y CU-19 (gráficos con tabla o texto alternativo equivalente)** | **Nuevo (D-40): cubre la accesibilidad mínima obligatoria y cierra H-05/H-21, que deja de figurar como hueco** |
+| RT-01 | CU-02, CU-03, CU-04, CU-05, CU-06, CU-08, CU-10, CU-12, CU-14, CU-21 | Verificado |
+| RT-02 | CU-08 | Verificado |
+| RT-03 | CU-02, CU-08, CU-09 | Verificado |
+| RT-04 | CU-08, CU-10, CU-11 | Verificado |
+| RT-05 | CU-05, CU-16, CU-17 | Verificado (ampliado con D-31) |
+| RT-06 | CU-01, CU-22 | Verificado |
+| RT-07 | CU-01, CU-07, CU-17, CU-18, CU-22 | Verificado |
+| RT-08 | CU-08 | Verificado |
+| RT-09 | CU-01, CU-22 | Verificado |
+| RT-10 | CU-01, CU-21 | Verificado |
+| RT-11 | **Fuera del alcance de los casos de uso** (ubicación del repositorio git; ver `entornos_globales.md` §7.1) | Declarado fuera de alcance, igual que D-08 y D-22 |
+| RN-01 | CU-08, CU-14 | Verificado |
+| RN-02 | CU-08, CU-14 | Verificado |
+| RN-03 | CU-07, CU-08 | Verificado |
+| RN-04 | CU-02, CU-06, CU-08, CU-09, CU-20 | Verificado |
+| RN-05 | CU-05, CU-16 | Verificado |
+| RN-06 | CU-05, CU-13, CU-16 | Verificado |
+| RN-07 | CU-10, CU-12, CU-13, CU-14, CU-16 | Verificado |
+| RN-08 | CU-18, CU-19, CU-20 | Verificado |
+| **S-RNF-02b** (derivado) | CU-08 (rendimiento de la ingesta, con punto de medida explícito) | **Derivado del analista** — requiere confirmación del usuario (ver §5.4) |
 
 ### 5.2 Decisiones aplicadas y trazabilidad de decisiones
 
@@ -1197,42 +1402,75 @@
 | D-05 (RN-03: con claves → PEND; sin claves → GESTION) | CU-07, CU-08 |
 | D-06 (`clase = REP` al ingerir; corrección manual) | CU-08, CU-10, CU-13, CU-14 |
 | D-07 (ficha de cuadrilla) | CU-05, CU-16 |
+| D-08 (contrato de 80 columnas; sin efecto por D-12) | Sin caso de uso propio; se cita como antecedente en CU-08 |
 | D-09 (`averias.json` es el maestro) | CU-11 |
 | D-10 (`informacion_1` / `informacion_2`) | CU-08, CU-11 |
 | D-11 (palabras clave editables) | CU-07 |
 | D-12 (`estructura.json` posicional) | CU-02, CU-08 |
-| D-13 (`ASGN` cuarto estado) | CU-08, CU-12 |
+| D-13 (`ASGN` cuarto estado) — **sin efecto por D-38** | Reemplazada por D-38 en CU-08, CU-10, CU-13 y CU-16 |
 | D-14 (se descarta `alta_manual.csv`) | CU-14 |
 | D-15 (loopback y solo la aplicación) | CU-01, CU-22 |
 | D-16 (identificación y auditoría) | CU-01, CU-15 |
 | D-17 (`tipo_abonado` RES/EMP) | CU-08, CU-10, CU-13, CU-18 |
-| D-18 (alta manual con `MAN-`) | CU-14 |
-| D-19 (`datos/` en disco local con respaldo) | CU-01, CU-21 |
+| D-18 (alta manual con `MAN-`) | CU-08 (rechazo del prefijo), CU-14 |
+| D-19 (`datos/` en disco local con respaldo) | CU-01, CU-21, CU-22 |
 | D-20 (cierre bloqueante e integridad) | CU-12, CU-14 |
 | D-21 (ingesta estricta y fechas recortadas) | CU-08 |
-| D-22 (git en disco local) | CU-01 (entorno del puesto) |
-| D-23 (abierto = distinto de CERRADO; tipo = clase + nivel) | CU-10, CU-13, CU-20 |
+| D-22 (git en disco local) | **Fuera del alcance de los casos de uso** (igual que RT-11); se retira la atribución errónea a CU-01 (H-20) |
+| D-23 (abierto = distinto de CERRADO; tipo = clase + nivel) | CU-10, CU-13, CU-18, CU-20 |
 | D-24 (umbrales de desempeño) | CU-10, CU-11, CU-18 |
-| D-25 (CRUD de sectores y umbral de concentración) | CU-06, CU-20 |
+| D-25 (CRUD de sectores y umbral de concentración) | CU-06, CU-09, CU-20 |
 | D-26 (subcadena normalizada y vista previa) | CU-07, CU-08 |
 | D-27 (control documental del PDF) | CU-17, CU-19, CU-21 |
 | D-28 (retención indefinida y riesgo aceptado) | CU-12, CU-15, CU-19, CU-21 |
+| **D-29** (`P00` = código de empleado único, obligatorio y parte de la credencial de sesión) | **CU-01, CU-03, CU-10, CU-11, CU-12, CU-13** |
+| **D-30** (citados = `fecha_cita` del día, con prioridad y marca CITADO) | **CU-16** |
+| **D-31** (`despacho.json` ampliado con `sector`, `Reparador Principal` y `fecha_despacho`; RT-05) | **CU-05, CU-16, CU-17, CU-19** |
+| **D-32** (desempate: zona preferente → menor carga → `id` menor; ajuste manual registrado) | **CU-16** |
+| **D-33** (casos especiales = EMP o REF abiertos, criterio definitivo) | **CU-20** |
+| **D-34** (solo el despacho en pantalla + PDF; seguimiento semanal estadístico Sem 1 a Sem 36; sin XLSX) | **CU-18, CU-19** |
+| **D-35** (matriz de permisos operador/supervisor; supervisor absorbe la función administrativa) | **CU-01 a CU-22** (matriz en §2.1) |
+| **D-36** (respaldo manual a demanda, sin automatismo ni rotación; repositorio como está) | **CU-21** |
+| **D-37** (`cuadrillas.id` = `Reparador Principal`; asignación persistida en el maestro) | **CU-01, CU-05, CU-10, CU-11, CU-12, CU-16, CU-17** |
+| **D-38** (`estatus = ASGN` del CSV se ingiere como `PEND`; el maestro conserva solo PEND/GESTION/CERRADO) | **CU-08, CU-10, CU-13, CU-16** |
+| **D-39** (`P00` + contraseña de 8 caracteres o más, guardada como hash con sal, caducidad de 90 días y restablecimiento por el supervisor) | **CU-01, CU-03, CU-10, CU-11, CU-12, CU-13** |
+| **D-40** (accesibilidad mínima obligatoria: teclado, foco visible, `label`, contraste 4,5:1 y tabla o texto alternativo por gráfico) | **Transversal CU-01 a CU-22; verificación formal en CU-01, CU-10, CU-18 y CU-19** |
 
-### 5.3 Supuestos por ambigüedades abiertas
+**Nota de verificación:** la atribución de cada decisión se contrastó con la línea **Trazabilidad** del caso de uso correspondiente. D-13 queda **sin efecto** por D-38. D-08, D-22 y RT-11 se declaran **fuera del alcance de los casos de uso** y se remiten a `entornos_globales.md` y `requerimientos.md`.
 
-| Ambigüedad | Casos de uso afectados | Supuesto marcado en el documento |
-|---|---|---|
-| A-05 («casos citados del día») | CU-16 | Selector manual de citados, sin campo de datos ni inclusión automática. |
-| A-08 (formato de los reportes) | CU-19 | Salida por defecto pantalla + PDF en carta; sin XLSX, con aviso en pantalla. |
-| A-09 («casos especiales») | CU-20 | Lista provisional = casos abiertos `EMP` o `REF`, rotulada como criterio provisional. |
-| A-10 (desempate de cuadrilla para construcción) | CU-16 | Menor carga y, en empate, `id` menor; ajuste manual registrado. |
-| A-11 (significado de `P00`) | CU-01, CU-03 | Identificación por `P00` **o** `nombre`; `P00` guardado como texto libre no obligatorio. |
-| A-14 (composición de `despacho.json`) | CU-05, CU-16 | La asignación se persiste en `averias."Reparador Principal"`; `despacho.json` conserva sus 12 columnas. |
+### 5.3 Decisiones aplicadas en lugar de supuestos (H-04)
 
-**Decisiones tomadas por el analista al redactar este documento (no estaban cerradas en la normativa):**
+Las 18 ambigüedades están cerradas y **no queda ningún supuesto** en este documento. Esta tabla sustituye a la antigua sección «Supuestos por ambigüedades abiertas» y permite verificar la sustitución:
 
-1. **Umbrales de desempeño citados como D-24.** Los umbrales (1.000 casos, filtrado y orden &lt; 1,5 s, MONITOREO &lt; 3 s) se citan como **D-24** porque así aparecen en `requerimientos.md` §3 y en `estado_proyecto.md` §3, aunque la lista de decisiones indicada para este trabajo los sitúa fuera de D-01…D-28.
-2. **Cierre cubierto por CU-12 y alta manual por CU-14**, de modo que RF-03 y RF-04 tienen un único dueño funcional cada uno y el flotante de CASOS (CU-11) no duplica el cierre.
-3. **La auditoría se separó en CU-15** (consulta del historial) para que el supervisor tenga un objetivo propio; el registro del cambio en sí queda como restricción EARS dentro de cada caso de uso que escribe (RNF-09).
-4. **El respaldo (CU-21) y la contingencia (CU-22)** se redactaron como casos de uso propios porque los hallazgos H-25, H-23, H-22 y H-20 no tenían RF/RNF con dueño; cubren RNF-03, RNF-04 y RNF-10 sin crear requisitos nuevos.
-5. **Los "citados" y los "casos especiales" no se inventaron:** se dejaron como selección manual y como criterio provisional rotulado, respectivamente.
+| Ambigüedad cerrada | Decisión | Casos de uso que la aplican | Dónde se cita |
+|---|---|---|---|
+| A-05 («casos citados del día») | **D-30** | CU-16 | Precondición, paso 4, flujo 4b, CA 7, EARS y trazabilidad |
+| A-08 (formato de los reportes) | **D-34** | CU-18, CU-19 | Precondición, pasos 2 a 5, flujos 1a y 4b, CA 1 a 5, EARS y trazabilidad |
+| A-09 («casos especiales») | **D-33** | CU-20 | Precondición, paso 6, flujo 6a, CA 5, EARS y trazabilidad |
+| A-10 (desempate de cuadrilla para construcción) | **D-32** | CU-16 | Paso 6, flujo 6a, CA 3 a 6, EARS y trazabilidad |
+| A-11 (significado de `P00`) | **D-29** y **D-39** | CU-01, CU-03 | Diálogo, pasos 4 a 9, flujos 4a/5a/7a/8a, CA 1 a 7, EARS y trazabilidad |
+| A-14 (composición de `despacho.json`) | **D-31** | CU-05, CU-16, CU-17, CU-19 | Flujo 6a/9b de CU-05 y CU-16, paso 2 y CA 2 de CU-17, CA 8 de CU-16, EARS y trazabilidad |
+| *(nueva, no era ambigüedad documentada)* estatus `ASGN` del CSV | **D-38** | CU-08, CU-10, CU-13, CU-16 | Paso 6 y CA 3 y 4 de CU-08, nomenclatura de CU-10 y CU-13, EARS y trazabilidad |
+
+**Verificación mecánica:** la marca de supuesto por ambigüedad (el literal con corchete y el identificador A-xx) aparece **0 veces** en este documento.
+
+### 5.4 Puntos pendientes de decisión del usuario (no resueltos en esta revisión)
+
+| # | Punto pendiente | Hallazgo | Dónde queda anotado |
+|---|---|---|---|
+| 1 | **Concurrencia de dos sesiones** sobre el mismo archivo (bloqueo, versión de documento, detección de conflicto) | H-10 / P7 | CU-22, nota final |
+| 2 | **Escritura atómica y versionado del maestro** (temporal + reemplazo, `averias.json.bak`, campo de versión) | H-11 / P7 | CU-22, nota final |
+| 3 | **Respaldo:** ruta definitiva, cifrado, número de copias, retención, responsable, RTO/RPO y algoritmo de verificación | H-12, H-13 / P8, P9 | CU-21, nota final |
+| 4 | **Semántica del modo `estricta`** de las palabras clave (literal estricto vs. literal sin distinguir mayúsculas) | H-15 / P3 | CU-07, CA 5 |
+| 5 | **Umbral de desempeño propio de la ingesta** (criterio derivado S-RNF-02b: < 3 s con punto de medida explícito) | H-27 | CU-08, CA 14; §5.1 |
+| 6 | **Métrica «Asignados» de la zona Cuadrilla de MONITOREO** | H-28 | CU-18, flujo 2c |
+| 7 | **Alcance de lo visible sin identificación** (datos personales del abonado) | H-31 | CU-11, flujo 1a |
+| 8 | **Procedimiento de escalamiento con el emisor del CSV** cuando el archivo no llega | H-15 | CU-08, flujo 2c |
+| 9 | **Mapeo de los campos Tipo, Actividad y Agente** de la fuente primaria al alta manual | H-02 | CU-14, flujo 2a |
+| 10 | **Duración de la expiración de sesión por inactividad** | H-03 | CU-01, flujo 11a |
+
+**Huecos de la auditoría cerrados en esta revisión (ya no figuran como pendientes):** H-01 (cifras de la ingesta con **14 PEND + 37 GESTION**, D-38), H-03 (credencial de sesión con contraseña, hash y sal, D-39), H-05/H-21 (accesibilidad **atendida** por D-40 y RNF-13, con verificación formal en CU-01, CU-10, CU-18 y CU-19) y H-04 (supuestos sustituidos por D-29 a D-34).
+
+**Registro de decisiones aplicadas en esta revisión.** Se aplicaron **D-29 a D-40**: D-29 (`P00` único y obligatorio), D-30 (citados por `fecha_cita`), D-31 (`despacho.json` ampliado), D-32 (desempate de la construcción), D-33 (casos especiales definitivos), D-34 (salidas de reportes), D-35 (matriz de permisos), D-36 (respaldo manual), D-37 (equivalencia de cuadrilla), **D-38 (`ASGN` del CSV entra como `PEND`; el maestro conserva tres estados)**, **D-39 (`P00` + contraseña con hash, sal, caducidad de 90 días y restablecimiento)** y **D-40 (accesibilidad mínima obligatoria, RNF-13)**.
+
+**Nota de cierre.** D-38 resolvió el último bloqueo aritmético del corpus (H-01): la ingesta del 12/09/2026 produce **51 insertados → 14 PEND + 37 GESTION**, y la bandeja de CU-13 queda en **37** casos. D-39 cerró la brecha de autenticación (H-03): la sesión exige `P00` **y** contraseña verificada contra hash con sal, con caducidad de 90 días. D-40 cerró la brecha de accesibilidad (H-05/H-21): la interfaz se opera solo con teclado, con foco visible, `label` por campo, contraste mínimo 4,5:1 y tabla o texto alternativo equivalente por gráfico. **Riesgo aceptado y documentado por el agente padre:** el hash en un archivo local servido sin TLS protege la atribución frente a suplantaciones casuales, pero **no** es una defensa fuerte frente a quien pueda leer `tecnicos.json` o capturar el tráfico en el puesto.
