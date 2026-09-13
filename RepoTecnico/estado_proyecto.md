@@ -14,8 +14,8 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **6 bloques de entrevista** con los que se fijaron **18 decisiones**
-y se cerraron **9 ambigüedades** del documento fuente. Quedan **9 ambigüedades abiertas**, que
+Se realizaron **7 bloques de entrevista** con los que se fijaron **21 decisiones**
+y se cerraron **11 ambigüedades** del documento fuente. Quedan **7 ambigüedades abiertas** (A-04, A-05, A-08, A-09, A-10, A-11 y A-14), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
 
@@ -91,6 +91,9 @@ ingesta debe rediseñarse.
 | D-16 | Identificación del operador en cada sesión contra `tecnicos.json` y registro de quién cambia cada caso. | 6 |
 | D-17 | Campo nuevo `tipo_abonado` (RES/EMP) desde `unidad_negocio` y `ups` del CSV. | 6 |
 | D-18 | Alta manual con lista cerrada de campos e `id_averia` automático `MAN-`. | 6 |
+| D-19 | `datos/` sale de Google Drive y vive en disco local con respaldo periódico. | 7 |
+| D-20 | Cierre bloqueante sin resolución y fecha, más validación de integridad en alta y edición. | 7 |
+| D-21 | Ingesta estricta: validación bloqueante, fechas recortadas con original conservado y `ASGN` con precedencia. | 7 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -99,10 +102,10 @@ ingesta debe rediseñarse.
 
 ## 4. Ambigüedades
 
-**Cerradas (9):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
-A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14).
+**Cerradas (11):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
+A-12 (D-12), A-13 (D-06), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
 
-**Abiertas (9):**
+**Abiertas (7):**
 
 | ID | Ambigüedad | Ciclo |
 |---|---|---|
@@ -111,10 +114,9 @@ A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14).
 | A-08 | Formato de salida de los reportes diario y semanal. | C6 |
 | A-09 | Definición de «casos especiales». | C6 |
 | A-10 | Criterio de desempate de cuadrilla para la construcción. | C4 |
-| A-11 | Significado de `P00` (técnicos) y `ups` (averías). | C1 |
+| A-11 | Significado de `P00` (técnicos); `ups` ya se resolvió vía D-17. | C1 |
 | A-14 | `despacho.json` no incluye `sector` ni cuadrilla, necesarios para agrupar. | C4 |
-| A-16 | Las fechas del CSV traen hora y el maestro usa DD/MM/AAAA. | C2 |
-| A-18 | Conflicto entre `estatus = ASGN` del CSV y la regla RN-03. | C2 |
+
 
 **A-11 bloquea C1**; A-04, A-16 y A-18 condicionan C2; A-05, A-10 y A-14 afectan a C4; A-08 y A-09 a C6. Corrección aplicada tras la auditoría (H-06).
 
@@ -198,4 +200,10 @@ PDF de despacho y en los respaldos), H-13 (base legal, finalidad y retención de
 personales) y H-14 (no hay RF de gestión de sectores ni criterio de «avería concentrada»).
 
 **Preguntas de la auditoría pendientes de respuesta** (§9 del informe, 12 preguntas P1-P12).
-Respondidas hasta ahora: P1 (D-15), P2 (D-16), P5 (D-12 + D-17), P6 (D-18), P11 (D-17).
+Respondidas hasta ahora: P1 (D-15), P2 (D-16), P5 (D-12 + D-17), P6 (D-18), P7 (D-20),
+P8 (D-19), P10 (D-21) y P11 (D-17).
+
+**Actualización tras el bloque 7:** H-09 queda atendido con D-19 (datos fuera de Google Drive con
+respaldo periódico) y H-11 con D-20 (cierre bloqueante y validación de integridad, RNF-10). H-10
+queda atendido solo en su parte mínima (último cambio con operador y fecha): falta el historial
+completo de valores anteriores. Siguen abiertos H-05, H-07, H-08, H-12, H-13 y H-14.

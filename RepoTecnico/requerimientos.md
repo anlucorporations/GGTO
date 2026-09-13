@@ -66,6 +66,9 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-16 | El operador se **identifica en cada sesión** contra `tecnicos.json` (P00 o usuario); cada cambio de caso registra quién lo hizo y cuándo. |
 | D-17 | Se crea el campo **`tipo_abonado`** (`RES`/`EMP`) alimentado por `unidad_negocio` (col. 61) y `ups` (col. 62) del CSV; `nivel` sigue siendo REF/COM. |
 | D-18 | El **alta manual (RF-04)** usa una lista cerrada de campos y el `id_averia` se genera automáticamente como `MAN-` + consecutivo, verificando unicidad. |
+| D-19 | **`datos/` sale de Google Drive:** los JSON viven en disco local (`C:\GGTO\datos`) y se respaldan periódicamente a `G:` o a la red (H-09). |
+| D-20 | **Cierre bloqueante:** un caso no puede pasar a `CERRADO` sin `resolucion` y `fechaResolucion`; en alta y edición se validan obligatorios, enums y que el `sector` exista (H-11). |
+| D-21 | **Ingesta estricta:** validación **bloqueante** del contrato posicional; las fechas del CSV se recortan a DD/MM/AAAA conservando el texto original, y el `estatus = ASGN` del CSV **prevalece** sobre RN-03 (A-16, A-18). |
 
 ---
 
@@ -75,7 +78,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|---|
 | RF-01 | Navegación por 7 pestañas: PANEL, MONITOREO, GRAFICOS, CASOS, DESPACHO, CONFIGURACION y GESTION. | C1 (armazón) | L6-19 |
 | RF-02 | PANEL: buscar la ficha básica de un caso por `id_averia` o `telefono` con un botón, leyendo `averias.json`. | C3 | L8 |
-| RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. | C3 | L8; D-13 |
+| RF-03 | PANEL: actualizar `status` (PEND/ASGN/CERRADO/GESTION), `resolucion` (IVR/COS/COLA), `fechaResolucion` (DD/MM/AAAA), `observaciones` y `sacas` (SI/NO) por `id_averia` o `telefono`. No permite `CERRADO` sin resolución y fecha. | C3 | L8; D-13, D-20 |
 | RF-04 | PANEL: ingresar casos nuevos con una lista **cerrada** de campos (fecha del caso, teléfono, nombre, dirección, contacto, problema reportado, sector, clase, nivel, `tipo_abonado`, observaciones); el `id_averia` se genera como `MAN-` + consecutivo verificando que no exista. | C3 | L8; D-18 |
 | RF-05 | MONITOREO: 6 zonas con gráfico + tabla descriptiva — Gestión Diario, Gestión Semanal (curva lunes–sábado), Casos Globales (pendiente vs. resuelto), Reparación (pendientes por tipo), Construcción (pendientes por tipo) y Cuadrilla (asignados vs. cerrados vs. gestionados por día). | C5 | L9 |
 | RF-06 | GRAFICOS: las 6 zonas anteriores como gráficos dedicados — barras (diario, globales, construcción, cuadrilla), curva (semanal) y torta (reparación). | C5 | L10 |
@@ -94,7 +97,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-19 | INGESTA: insertar los casos nuevos en `averias.json` con `ingreso = fecha de ingesta`, `clase = REP` y `nivel = COM`. | C2 | L38; D-06 |
 | RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal`. | C4 | L44 |
 | RF-21 | GENERALIDADES: tabla con las columnas resumen `nivel, clase, sector, id_averia, nombre, direccion, plan`. | C1 | L49 |
-| RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución. | C1 | L50 |
+| RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha. | C1 | L50; D-20 |
 | RF-23 | GENERALIDADES: agrupar los datos por abiertos/cerrados, cuadrilla, tipo, clase y estatus; incluye la edición manual de `clase` y `nivel` del caso. | C1 | L51; D-06 |
 | RF-24 | GENERALIDADES: persistir en `averias.json` cada modificación de un caso. | C1 | L52 |
 | RF-25 | Reportes: reporte de trabajo diario y reporte de gestión semanal (formato de salida pendiente, A-08). | C6 | L2 |
@@ -119,6 +122,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-07 | Interfaz en español respetando la nomenclatura del dominio (PEND, CERRADO, GESTION, IVR, COS, COLA, sacas). | Revisión de etiquetas; corrección de typos de interfaz (A-06). |
 | RNF-08 | Control de acceso: la sesión exige identificar al operador contra `tecnicos.json`; sin identificación válida la página no permite editar (H-01). | Prueba de sesión sin identificar: las acciones de edición quedan bloqueadas. |
 | RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre de caso registra operador y fecha/hora del cambio (H-10). | Revisión del historial tras una sesión de cambios. |
+| RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
 
 ---
 
@@ -135,6 +139,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 | RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
+| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive, con respaldo periódico a `G:` o a la red (D-19). |
 
 ---
 
@@ -144,7 +149,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 |---|---|---|
 | RN-01 | Un caso es nuevo si su `id_averia` no existe en `averias.json`. | L35 |
 | RN-02 | Al ingerir: `ingreso` = fecha de la ingesta, `clase = REP`, `nivel = COM`; la corrección a `CNS`/`REF` es manual. | L38; D-06 |
-| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Palabras clave editables y búsqueda normalizada. | L36; D-05, D-11 |
+| RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. Palabras clave editables y búsqueda normalizada. | L36; D-05, D-11, D-21 |
 | RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
 | RN-05 | Cada cuadrilla recibe: citados del día + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
 | RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector. | L42 |
@@ -180,11 +185,11 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
 | A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |
-| A-16 | Las fechas del CSV incluyen hora (`17/07/2026 11:38:20 a.m.`), mientras el maestro usa DD/MM/AAAA (RNF-06). | ¿Se recorta a fecha al ingerir y se conserva la hora aparte, o se guarda el valor completo? | C2 |
+| A-16 | **Resuelta (D-21):** las fechas se recortan a `DD/MM/AAAA` y el texto original con hora se conserva en un campo aparte. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
-| A-18 | Si el CSV trae `estatus = ASGN` y el texto **no** contiene palabras clave de fibra, RN-03 lo enviaría a `GESTION` y el CSV diría `ASGN`. | ¿Prevalece el estatus del CSV o la regla RN-03? (H-03/P10 de la auditoría) | C2 |
+| A-18 | **Resuelta (D-21):** el `estatus` del CSV prevalece sobre RN-03. | Decidido por el usuario el 12/09/2026. | C2 |
 
-Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-04, A-05, A-08, A-09, A-10, A-11, A-14, A-16 y A-18.
+Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-04, A-05, A-08, A-09, A-10, A-11 y A-14.
 
 ---
 

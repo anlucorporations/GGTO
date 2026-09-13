@@ -1,7 +1,7 @@
 # Entornos Globales — GGTO-v1
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías (Central Francisco Salias, Área 4)
-- **Fase:** 1 (Concepto) — documento vivo
+- **Fase:** 1 (Concepto) — documento vivo (los archivos servidos por HTTP viven en `app/`; ver §4)
 - **Versión:** v1
 - **Fecha:** 2026-09-12
 
@@ -13,10 +13,10 @@
 |---|---|
 | Raíz del proyecto (workspace) | `G:\Mi unidad\CANTV PDE\GGTO-v1` |
 | Documentación técnica | `G:\Mi unidad\CANTV PDE\GGTO-v1\RepoTecnico` |
-| Página (a crear en C1) | `G:\Mi unidad\CANTV PDE\GGTO-v1\index.html` |
+| Página (a crear en C1) | `G:\Mi unidad\CANTV PDE\GGTO-v1\app\index.html` |
 | Hojas de estilo (a crear) | `...\css\estilos.css` |
 | Módulos JavaScript (a crear) | `...\js\` |
-| Datos de trabajo (a crear) | `...\datos\` |
+| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\`, con respaldo periódico a `G:\Mi unidad\CANTV PDE\GGTO-v1\datos_respaldo\` |
 | Librerías locales (a crear) | `...\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
 

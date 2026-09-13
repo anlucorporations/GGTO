@@ -50,6 +50,8 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 30 | `tipo_abonado` | E | No | `RES` / `EMP` | Ingesta / manual | Derivado de `unidad_negocio` (col. 61) y `ups` (col. 62) del CSV (D-17, RF-28). |
 | 31 | `usuario_modificacion` | T | No | P00 o usuario | Manual | Auditoría: quién hizo el último cambio (D-16, RNF-09). |
 | 32 | `fecha_modificacion` | T | No | DD/MM/AAAA hh:mm | Manual | Auditoría: cuándo se hizo el último cambio (D-16). |
+| 33 | `fecha_reporte` | F | No | DD/MM/AAAA | CSV (col. 15) | Fecha del reporte, recortada de la marca de tiempo (D-21). |
+| 34 | `fecha_reporte_original` | T | No | texto del CSV | CSV | Valor completo con hora (`17/07/2026 11:38:20 a.m.`) conservado para trazabilidad (D-21). |
 
 **Reglas de integridad**
 - `id_averia` es único; la ingesta descarta cualquier caso ya presente (RN-01, RNF-04).
@@ -279,7 +281,7 @@ Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centra
 | 20 | ultimo_usuario | 40 | slot | 60 | con_serv_aba | 80 | Fecha Hora Asignacion |
 
 **Columnas que alimentan el maestro propuesto** (subconjunto declarado según D-12): 1-10 (filtro
-de central), 11 (`id_averia`), 14, 16, 17, 21, 27 (`estatus`), 28, 31-34, 36, 39-46, 61
+de central), 11 (`id_averia`), 14, 15 (`fecha_reporte`), 16, 17, 21, 27 (`estatus`), 28, 31-34, 36, 39-46, 61
 (`unidad_negocio`) y 62 (`ups`) para `tipo_abonado`, 64, 65 (`Reparador Principal`) y 20
 (`ultimo_usuario`) / 53 (`usuario_acciona`) / 80 (`Fecha Hora Asignacion`) como rastro de origen
 para la auditoría (D-16). El resto queda disponible para el detalle del caso o para el despacho
