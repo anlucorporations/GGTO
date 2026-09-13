@@ -186,7 +186,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
-| A-04 | **Evidencia nueva:** en `alta_manual.csv` el `Sector` es un **nombre** de zona («Prados del Este»), no un número, mientras el fuente muestra `sector` como `1/2/3` (L56). | ¿`sector` se guarda como nombre/id de zona, consistente con D-03, en lugar de un número? | C2 |
+| A-04 | **Resuelta (D-25):** el sector es una entidad con `id` y `nombre` propios, gestionada por el CRUD de RF-29; `averias.sector` guarda ese `id` y la dirección se asocia por las vías del sector. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-05 | «casos citados del día» (L42) sin definición. | ¿Qué hace a un caso "citado": fecha prometida al abonado, agenda de la cuadrilla o reincidencia? | C4 |
 | A-08 | Formato de los reportes diario y semanal (L2). | ¿Se emiten en PDF, en Excel (XLSX) o solo en pantalla/impresión? | C6 |
 | A-09 | «casos especiales» (L2) sin definir. | ¿Qué casos se consideran especiales (empresariales, referidos, reincidentes, escalados)? | C6 |
@@ -199,7 +199,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
 | A-18 | **Resuelta (D-21):** el `estatus` del CSV prevalece sobre RN-03. | Decidido por el usuario el 12/09/2026. | C2 |
 
-Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-04, A-05, A-08, A-09, A-10, A-11 y A-14.
+Ambigüedades ya cerradas: A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05), A-04 (D-25), A-12 (D-12), A-13 (D-06), A-15 (D-13) y A-17 (D-14). Abiertas: A-05, A-08, A-09, A-10, A-11 y A-14.
 
 ---
 

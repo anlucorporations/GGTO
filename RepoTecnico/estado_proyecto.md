@@ -15,7 +15,7 @@ un CSV, dosificación del despacho por cuadrillas, sectores de averías concentr
 de casos especiales y reportes diario y semanal.
 
 Se realizaron **9 bloques de entrevista** con los que se fijaron **27 decisiones**
-y se cerraron **11 ambigüedades** del documento fuente. Quedan **7 ambigüedades abiertas** (A-04, A-05, A-08, A-09, A-10, A-11 y A-14), que
+y se cerraron **11 ambigüedades** del documento fuente. Quedan **6 ambigüedades abiertas** (A-05, A-08, A-09, A-10, A-11 y A-14), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
 
@@ -108,14 +108,14 @@ ingesta debe rediseñarse.
 
 ## 4. Ambigüedades
 
-**Cerradas (11):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
-A-12 (D-12), A-13 (D-06), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
+**Cerradas (12):** A-01 (D-09), A-02 (D-10), A-03 (D-07), A-06 (D-11), A-07 (D-05),
+A-04 (D-25), A-12 (D-12), A-13 (D-06), A-15 (D-13), A-16 (D-21), A-17 (D-14) y A-18 (D-21).
 
-**Abiertas (7):**
+**Abiertas (6):**
 
 | ID | Ambigüedad | Ciclo |
 |---|---|---|
-| A-04 | Numeración y catálogo definitivo de sectores. | C2 |
+
 | A-05 | Definición de «casos citados del día». | C4 |
 | A-08 | Formato de salida de los reportes diario y semanal. | C6 |
 | A-09 | Definición de «casos especiales». | C6 |
