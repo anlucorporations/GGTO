@@ -82,7 +82,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-32 | **Desempate de la construcción (CNS):** primero la cuadrilla que tenga ese sector como zona preferente en `cuadrillas.sectores`; si hay varias o ninguna, la de menor carga del día y, en empate, el `id` menor; el supervisor puede cambiarla y el cambio queda registrado (A-10). |
 | D-33 | **Casos especiales** = los de clientes empresariales (`tipo_abonado = EMP`) y los referidos (`nivel = REF`) que siguen abiertos; tienen bandeja y seguimiento propios (A-09). |
 | D-34 | **Salida de reportes:** solo el despacho se emite en pantalla y PDF. El seguimiento semanal es **estadístico**: por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre de cada día, agrupado por semana del año con selector **Sem 1 a Sem 36**; sin Excel (A-08). |
-| D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. El rol «administrador» queda absorbido por el supervisor. |
+| D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho, el respaldo y la consulta de la auditoría. Es el único rol elevado (D-55); no hay «administrador». |
 | D-36 | **Respaldo a demanda del supervisor** y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9). La rutina y la rotación se fijaron después en D-42 (10 versiones `.bak`) y D-49 (copia fechada al cierre). |
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
 | D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
@@ -102,6 +102,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-52 | **Detalles técnicos de C1/C2:** `sectores.id` es texto único asignado por el supervisor; `usuario_modificacion` y `fecha_modificacion` se inicializan con la col. 20 del CSV y la fecha de ingesta. |
 | D-53 | **Las columnas 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) no se persisten** (A-01): el rastro de origen se limita a la col. 20 (`ultimo_usuario` → `usuario_modificacion`) y a la fecha de ingesta; se corrigen CU-08 y CU-15. |
 | D-54 | **La col. 18 (`fecha_compromiso`) no se persiste** (A-04): ningún requisito la usa —los «citados» se determinan por `fecha_cita` (D-30)—; se corrige el Anexo A del diccionario. |
+| D-55 | **Solo existen dos roles: operador y supervisor** (no se añaden «jefe de central» ni «auditoría»). Las funciones de respaldo, restauración y consulta de la auditoría de cambios son del supervisor. |
 
 ---
 

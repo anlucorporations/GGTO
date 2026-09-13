@@ -286,12 +286,16 @@ Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centra
 | 19 | fecha_cita | 39 | plan | 59 | descripcion (3) | 79 | Telefono Movil |
 | 20 | ultimo_usuario | 40 | slot | 60 | con_serv_aba | 80 | Fecha Hora Asignacion |
 
-**Columnas que alimentan el maestro propuesto** (subconjunto declarado según D-12): 1-10 (filtro
-de central), 11 (`id_averia`), 14, 15 (`fecha_reporte`), 16, 17, 18 (`fecha_compromiso`), 19 (`fecha_cita`), 21, 27 (`estatus`), 28, 31-34, 36, 39-46, 61
-(`unidad_negocio`) y 62 (`ups`) para `tipo_abonado`, 64, 65 (`Reparador Principal`) y 20
-(`ultimo_usuario`) / 53 (`usuario_acciona`) / 80 (`Fecha Hora Asignacion`) como rastro de origen
-para la auditoría (D-16). El resto queda disponible para el detalle del caso o para el despacho
-(columnas 65-80).
+**Columnas que alimentan el maestro propuesto** (subconjunto declarado según D-12): 1-10 (filtro de
+central), 11 (`id_averia`), 14 (`telefono`), 15 (`fecha_reporte` y su original), 16, 17, 19
+(`fecha_cita`), 20 (`ultimo_usuario` → inicializa `usuario_modificacion`), 21, 27 (`estatus` →
+`status`), 28, 31-34, 36, 39-46, 61 (`unidad_negocio`) y 62 (`ups`) para `tipo_abonado`, 64 y 65
+(`Reparador Principal`).
+
+**No se copian al maestro:** la col. 18 (`fecha_compromiso`, D-54 — ningún requisito la usa; los
+«citados» salen de `fecha_cita`), la col. 53 (`usuario_acciona`) y la col. 80
+(`Fecha Hora Asignacion`), ambas descartadas por D-53. El resto queda disponible para el detalle
+del caso o para el despacho (columnas 65-80).
 
 ---
 
@@ -301,7 +305,7 @@ para la auditoría (D-16). El resto queda disponible para el detalle del caso o 
 sector es una entidad con `id` y `nombre`; el `id` es texto único, D-52), A-11 (D-17 y D-29: `ups` es el
 tipo de abonado y `P00` el código de empleado), A-12 (D-12: mapa posicional), A-14 (D-31: `despacho.json`
 ampliado), A-15 (D-13, revisada por D-38: `ASGN` entra como `PEND`) y A-16 (D-21: fechas recortadas con
-el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.csv`).
+el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.csv`). Además, **D-53** y **D-54** fijan que las columnas 18, 53 y 80 del CSV **no se persisten**.
 
 **Pendientes técnicos de implementación (no de decisión):**
 
