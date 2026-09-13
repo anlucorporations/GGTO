@@ -1,8 +1,8 @@
-﻿# Diagramas de Casos de Uso — Página HTML de Gestión de Averías (GGTO-v1)
+# Diagramas de Casos de Uso — Página HTML de Gestión de Averías (GGTO-v1)
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central telefónica **Francisco Salias (Área 4)**, CANTV, Venezuela.
 - **Fase:** 2 (Auditoría y casos de uso) — documento vivo.
-- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026, segunda pasada (cierre de la reauditoría de los casos de uso). Se incorporan **D-42** (escritura verificada con respaldo previo), **D-46** (CSV ausente / «sin ingesta»), **D-45 y D-50** (expiración de sesión de 8 horas y «sin sesión no se ve nada»: nueva secuencia de CU-01 en §3.1 y guarda de renderizado en todo el documento), **D-53** (las columnas 53 y 80 del CSV no se persisten: el rastro de origen es la col. 20), **D-55** (solo dos roles: operador y supervisor; el actor «auditoría / control interno» **se retira**) y **H-33** (`CU05 include CU06` añadido al bloque canónico §1). Se corrigen además el nombre de la copia fechada (`averias_AAAA-MM-DD_HHMM.json`, H-N-08), la destrucción de las hojas impresas (D-27, H-N-09) y el rótulo «escritura atómica» (H-N-18).
+- **Fecha de emisión:** 13/09/2026. **Revisión:** 15/09/2026, segunda pasada (cierre de la reauditoría de los casos de uso). Se incorporan **D-42** (escritura verificada con respaldo previo), **D-46** (CSV ausente / «sin ingesta»), **D-45 y D-50** (expiración de sesión de 8 horas y «sin sesión no se ve nada»: nueva secuencia de CU-01 en §3.1 y guarda de renderizado en todo el documento), **D-53** (las columnas 53 y 80 del CSV no se persisten: el rastro de origen es la col. 20), **D-55** (solo dos roles: operador y supervisor; el actor «auditoría / control interno» **se retira**), **D-56** (historial inmutable `historial.jsonl` *append-only*: el bloque §3.2 incorpora el *append* del cierre y de la reapertura) y **H-33** (`CU05 include CU06` añadido al bloque canónico §1). Se corrigen además el nombre de la copia fechada (`averias_AAAA-MM-DD_HHMM.json`, H-N-08), la destrucción de las hojas impresas (D-27, H-N-09) y el rótulo «escritura atómica» (H-N-18).
 - **Documento hermano:** `RepoTecnico/casos_uso.md` (22 casos de uso CU-01 a CU-22, con Gherkin, EARS y trazabilidad inversa a los 29 RF).
 - **Fuentes:** `RepoTecnico/requerimientos.md`, `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/auditoria_fase1.md`, `RepoTecnico/estado_proyecto.md`, `RepoTecnico/casos_uso/auditoria_casos_uso.md`.
 - **Notación:** los diagramas de casos de uso se expresan como *flowchart* de Mermaid (no existe un tipo UML nativo de casos de uso en Mermaid): los rectángulos con esquinas redondeadas son los **actores**, las elipses son los **casos de uso** y las flechas discontinuas etiquetadas `"<<include>>"` y `"<<extend>>"` son las relaciones UML. Los nombres de actores y de casos de uso son idénticos a los de `casos_uso.md`.
@@ -14,6 +14,7 @@
 - **CSV ausente (D-46):** el bloque §3.1 incorpora la rama «CSV ausente / sin ingesta»: la página marca el día, permite registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log`, mantiene el maestro del día anterior y **no bloquea** la consulta ni el despacho.
 - **Nada se ve sin sesión (D-50) y la sesión dura 8 horas (D-45):** antes de una identificación válida la página **no renderiza ningún dato** (tabla, conteos, fichas, gráficos o campos del maestro): solo se ve el diálogo de acceso. Al expirar las **8 horas** o al cerrar la sesión o la pestaña, la pantalla vuelve al diálogo y **oculta de inmediato** lo mostrado. El bloque **§3.1** incorpora la secuencia de acceso y expiración de **CU-01**, y todos los bloques por actor y de secuencia respetan la guarda (H-N-19). **El modo descarga de CU-22 exige la misma sesión válida** (H-N-02).
 - **Rastro de origen (D-52, D-53, D-54):** al ingerir, el sistema conserva **solo la col. 20** (`ultimo_usuario`), que **inicializa `usuario_modificacion`**, y `fecha_modificacion` = **fecha de ingesta**; las columnas **53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) no se persisten** (D-53) y la **col. 18 (`fecha_compromiso`) tampoco** (D-54).
+- **Historial inmutable (D-56):** cada cambio de un caso (`status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, cierre, `sacas`, `observaciones`) **añade** una línea a `C:\GGTO\datos\historial.jsonl` (JSON Lines, ***append-only***: nada se borra ni se sobrescribe) con `fecha_hora`, `operador` (`P00`), `id_averia`, `campo`, `valor_anterior`, `valor_nuevo` y `accion` (`edicion`/`cierre`/`reapertura`/`asignacion`/`ingesta`). El bloque **§3.2** muestra ese *append* en la secuencia del cierre; la lectura del historial alimenta la consulta de auditoría de **CU-15** y el respaldo lo copia junto con el maestro, **nunca recortado** (CU-21).
 - **Los 8 bloques Mermaid de este documento:** §1 vista completa (bloque 1), §2.1 operador (bloque 2), §2.2 supervisor (bloque 3), §2.3 supervisor — función administrativa (bloque 4), §3.1 secuencia de la ingesta (bloque 5), §3.2 secuencia del cierre (bloque 6), §3.3 secuencia del despacho y su PDF (bloque 7) y §4 ciclo de vida del caso (bloque 8).
 
 ---
@@ -344,7 +345,7 @@ sequenceDiagram
 
 ### 3.2 Secuencia — Cierre de un caso
 
-**Título:** GGTO-v1 — Secuencia del cierre bloqueante de un caso (RF-03, RF-22, RF-24; D-20, D-35, D-37, D-39, D-42; RN-07; RNF-15).
+**Título:** GGTO-v1 — Secuencia del cierre bloqueante de un caso (RF-03, RF-22, RF-24; D-20, D-35, D-37, D-39, D-42, D-56; RN-07; RNF-09, RNF-15).
 **Cubre:** **CU-12** (flujo principal y alternativos 2a, 2b, 5a a 5d, 7a, 7b), con **CU-11** y **CU-15**.
 
 ```mermaid
@@ -355,6 +356,7 @@ sequenceDiagram
     participant CAS as casos.js
     participant ALM as almacen.js
     participant MAE as averias.json
+    participant HIS as historial.jsonl
 
     OP->>UI: Busca el caso por id_averia o telefono y pulsa "Buscar"
     UI->>ALM: Solicita el caso
@@ -393,9 +395,11 @@ sequenceDiagram
                 UI-->>OP: "No se pudo verificar la escritura del cierre: se restauró el maestro del DD/MM/AAAA HH:MM"
             else Verificación correcta
                 MAE-->>ALM: status = CERRADO confirmado en el maestro
+                ALM->>HIS: Append a historial.jsonl: una línea por campo cambiado con fecha_hora, operador (P00), id_averia, campo, valor_anterior, valor_nuevo y accion = cierre (D-56, RNF-09)
+                HIS-->>ALM: Línea(s) añadida(s); el archivo solo crece y ninguna línea anterior se modifica ni se borra
                 ALM-->>UI: Cierre confirmado
                 UI-->>OP: "Caso 2026-00123 cerrado con resolución COS"
-                Note over UI,MAE: El caso ya no cuenta como abierto (D-23) y el cambio queda para CU-15
+                Note over UI,HIS: El caso ya no cuenta como abierto (D-23); la secuencia de cambios queda en historial.jsonl para CU-15
             end
         end
     end
@@ -403,6 +407,7 @@ sequenceDiagram
         UI-->>OP: Muestra el cierre vigente y ofrece "Reabrir caso"
         OP->>UI: Confirma la reapertura
         UI->>MAE: status = GESTION + nota de reapertura en observaciones
+        UI->>HIS: Append a historial.jsonl con accion = reapertura (valor_anterior = CERRADO, valor_nuevo = GESTION) (D-56)
     end
     opt Sesión expirada (8 horas, D-45) o pestaña cerrada
         UI-->>OP: Vuelve al diálogo de acceso y OCULTA la ficha y la tabla (D-50, RNF-08)
@@ -565,7 +570,7 @@ stateDiagram-v2
 | §2.2 | Supervisor | Casos de uso por actor | CU-01, CU-10, CU-11, CU-12, CU-13, CU-15, CU-16, CU-17, CU-18, CU-19, CU-20 |
 | §2.3 | Supervisor — función administrativa | Casos de uso por actor | CU-01 a CU-07, CU-21, CU-22 |
 | §3.1 | Acceso/sesión e ingesta del CSV | Secuencia | **CU-01** (acceso, credencial inválida, cambio obligatorio y expiración de las 8 horas: D-45 y D-50) y **CU-08** (principal), con CU-02, CU-06 y CU-07; incluye la rama «CSV ausente / sin ingesta» (D-46) y el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), además de la rama de conflicto de concurrencia (D-41) |
-| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15; incluye el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), la rama de conflicto de concurrencia (D-41) y la guarda de expiración de sesión (D-45, D-50) |
+| §3.2 | Cierre de un caso | Secuencia | CU-12 (principal), CU-11, CU-15; incluye el guardado verificado con respaldo previo, temporal, relectura y comparación (D-42, RNF-15), el **append a `historial.jsonl`** del cierre y de la reapertura (D-56, RNF-09), la rama de conflicto de concurrencia (D-41) y la guarda de expiración de sesión (D-45, D-50) |
 | §3.3 | Despacho y PDF | Secuencia | CU-16 y CU-17 (principales), CU-05 (padrón de cuadrillas); relectura de la marca antes de confirmar (D-41) y control documental completo —entrega, recogida **y destrucción** de las hojas— (D-27) |
 | §4 | Ciclo de vida del caso | Estados | CU-08, CU-12, CU-13, CU-14, CU-16 |
 
@@ -583,4 +588,5 @@ stateDiagram-v2
 10. **Roles (D-55).** Ningún bloque dibuja el nodo `AUD`: el actor «auditoría / control interno» se retira del modelo y la consulta de la auditoría de cambios (CU-15) y el control documental del despacho (CU-17) quedan como acciones del supervisor (`SUP`). Los únicos actores dibujados son el operador, el supervisor, la cuadrilla y el emisor del CSV.
 11. **Rastro de origen (D-52, D-53, D-54).** El bloque §3.1 declara expresamente que `usuario_modificacion` se inicializa con la **col. 20** y `fecha_modificacion` con la **fecha de ingesta**, y que las columnas **53 y 80** (y la **18**) **no se persisten**.
 12. **Control documental (D-27).** El bloque §3.3 cubre la entrega, la recogida **y la destrucción registrada** de las hojas impresas, con su rama de hojas pendientes de destruir (H-N-09).
-13. **Respaldos.** La copia de cierre se dibuja con el nombre **`averias_AAAA-MM-DD_HHMM.json`** (fecha **y hora**), de modo que dos respaldos del mismo día no colisionan (H-N-08). Los 8 bloques Mermaid se revisaron y son sintácticamente válidos.
+13. **Respaldos.** La copia de cierre se dibuja con el nombre **`averias_AAAA-MM-DD_HHMM.json`** (fecha **y hora**), de modo que dos respaldos del mismo día no colisionan (H-N-08) y **junto con `historial.jsonl`, que se copia íntegro y nunca se recorta** (D-56, CU-21). Los 8 bloques Mermaid se revisaron y son sintácticamente válidos.
+14. **Historial inmutable (D-56).** El bloque **§3.2** muestra el *append* a `historial.jsonl` (una línea por campo cambiado, con `accion = cierre` y, en la reapertura, `accion = reapertura`) y el participante `historial.jsonl`; **ningún** bloque dibuja una operación de edición o de borrado sobre ese archivo, coherente con el carácter *append-only* de D-56 y con la consulta de auditoría de CU-15.

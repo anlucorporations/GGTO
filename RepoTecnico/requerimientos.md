@@ -105,6 +105,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-55 | **Solo existen dos roles: operador y supervisor** (no se añaden «jefe de central» ni «auditoría»). Las funciones de respaldo, restauración y consulta de la auditoría de cambios son del supervisor. |
 | D-56 | **Historial inmutable:** cada cambio de un caso se añade a `C:\GGTO\datos\historial.jsonl` (append-only) con fecha y hora, operador (`P00`), `id_averia`, campo, valor anterior y valor nuevo; nada se borra ni se sobrescribe (H-08, H-10). |
 | D-57 | **Sin bloqueo por intentos fallidos:** cada intento fallido de sesión se registra (fecha, hora y `P00` intentado), pero la cuenta **no se bloquea** (H-N-07, H-N-17). |
+| D-58 | **Datos personales:** se mantiene D-36 (los CSV, los PDF de despacho y el `.xlsm` siguen versionados en los repositorios **privados**) y se documenta la finalidad y los controles en la ficha de tratamiento (`entornos_globales.md` §12). El log de la aplicación rota por tamaño: **5 MB y 5 archivos**, sin datos personales (H-N-31). |
 
 ---
 

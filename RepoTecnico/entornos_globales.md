@@ -265,3 +265,24 @@ e historial. Se usa como referencia de campos (A-17), no como entrada de la inge
 **Cerrado en este documento:** la carpeta `C:\GGTO\datos\` incluye `historial.jsonl` (historial
 inmutable *append-only*, **D-56**) en el árbol de estructura (§1.1), en la tabla de rutas (§1) y en
 la copia de respaldo (§4.1): el historial se copia junto con el maestro y **nunca se recorta**.
+
+---
+
+## 12. Ficha de tratamiento de datos personales (D-28, D-58)
+
+Materializa la «finalidad documentada» que exige D-28 y la política acordada en D-58.
+
+| Aspecto | Contenido |
+|---|---|
+| **Finalidad** | Gestión operativa de los reportes de avería de la central Francisco Salias (área 4): clasificar, despachar, reparar y cerrar casos, y medir la gestión diaria y semanal. Ningún otro uso. |
+| **Responsable** | Supervisor de la central (rol único elevado, D-55), que administra accesos, respaldos y consultas de auditoría. |
+| **Datos tratados** | De abonados: `nombre`, `telefono`, `persona_reporta`, `contacto`, `direccion` y `ultimo_comentario` (texto libre). De trabajadores: `nombre`, `cedula`, `P00`, `telefono`, `correo`. |
+| **Origen** | El `.csv` diario que emite el área corporativa (`RT-02`). |
+| **Controles de acceso** | Servidor local solo en loopback sirviendo únicamente `app/`; `datos/` fuera del alcance HTTP; sesión obligatoria con `P00` + contraseña (hash con sal, caducidad 90 días); sin sesión válida no se muestra ningún dato (D-50); permisos por rol (D-35, RNF-12). |
+| **Trazabilidad** | `historial.jsonl` inmutable con cada cambio (D-56) y registro de intentos fallidos (D-57). |
+| **Datos impresos** | El PDF de despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día (D-27, RNF-11). |
+| **Respaldo** | Copia fechada del maestro y del historial en `C:\GGTO\respaldo\` al cerrar la jornada, sin cifrado, bajo custodia del supervisor (D-49); RTO 1 hora, RPO del día anterior. |
+| **Paquete versionado** | Los CSV de entrada, los PDF de despacho y el `.xlsm` **siguen versionados** en los repositorios privados de GitHub y GitLab (D-36, D-58). Riesgo aceptado y declarado: son repositorios privados de la corporación; revisar con el área legal antes de dar acceso a terceros. |
+| **Retención** | Casos: histórica, sin purga automática (D-28). CSV procesado: se conserva junto al caso. Log de aplicación: rotación por tamaño, 5 MB y 5 archivos (D-58), sin datos personales. |
+| **Derechos del titular** | Canal único: el supervisor de la central, que localiza el caso por `id_averia` o teléfono y aplica la corrección dejando rastro en `historial.jsonl`. |
+| **Revisión pendiente** | Confirmar con el área legal de CANTV la normativa aplicable y esta ficha antes de ampliar el uso de la página. |

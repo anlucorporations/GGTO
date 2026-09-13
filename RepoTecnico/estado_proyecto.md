@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **57 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **58 decisiones**
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
@@ -128,6 +128,7 @@ ingesta debe rediseñarse.
 | D-55 | Solo dos roles: operador y supervisor (sin «jefe de central» ni «auditoría»). | auditorías |
 | D-56 | Historial inmutable de cambios en `C:\GGTO\datos\historial.jsonl` (append-only). | auditorías |
 | D-57 | Los intentos fallidos de sesión se registran, sin bloquear la cuenta. | auditorías |
+| D-58 | Datos personales: se mantiene D-36 y se documenta la ficha de tratamiento; log de 5 MB × 5 archivos. | auditorías |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
