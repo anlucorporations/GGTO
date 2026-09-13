@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **27 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **28 decisiones**
 y se cerraron **11 ambigüedades** del documento fuente. Quedan **6 ambigüedades abiertas** (A-05, A-08, A-09, A-10, A-11 y A-14), que
 **sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
 (repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
@@ -215,3 +215,20 @@ P8 (D-19), P10 (D-21) y P11 (D-17).
 respaldo periódico) y H-11 con D-20 (cierre bloqueante y validación de integridad, RNF-10). H-10
 queda atendido solo en su parte mínima (último cambio con operador y fecha): falta el historial
 completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-23, H-07 con D-24, H-14 con D-25, H-08 con D-26, H-12 con D-27 y H-13 con D-28 (histórico indefinido, finalidad documentada y **riesgo legal aceptado**). Con esto **los 29 hallazgos quedan atendidos o explícitamente aceptados** (2 críticos, 12 altos, 15 medios) y la Fase 1 se puede cerrar.
+---
+
+## 10. Estado de la Fase 2 (casos de uso y documento técnico)
+
+| # | Paso | Entregable | Estado |
+|---|---|---|---|
+| 1 | Casos de uso con Gherkin/EARS y trazabilidad | `RepoTecnico/casos_uso.md` (22 CU, 130 criterios Gherkin, 96 restricciones EARS, 29/29 RF) | **Completado** (commit `d0c5933`) |
+| 2 | Diagramas Mermaid | `RepoTecnico/casos_uso/diagramas.md` (8 bloques: CU por actor, 3 secuencias y estados del caso) | **Completado** |
+| 3 | Auditoría de los casos de uso | `RepoTecnico/casos_uso/auditoria_casos_uso.md` | **En curso** |
+| 4 | Resolución de las dudas de la auditoría con el usuario | decisiones nuevas en `requerimientos.md` | Pendiente |
+| 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` | Pendiente |
+| 6 | Auditoría del documento técnico y cierre de Fase 2 | informe + preguntas | Pendiente |
+
+**Supuestos provisionales en los casos de uso:** 8 marcas `[SUPUESTO: A-xx]` correspondientes a las
+6 ambigüedades abiertas (A-05 citados, A-08 formato de reportes, A-09 casos especiales, A-10
+desempate de cuadrilla, A-11 `P00`, A-14 composición de `despacho.json`). Cada supuesto deberá
+convertirse en decisión (D-29 en adelante) o en requisito antes de iniciar el ciclo C4.

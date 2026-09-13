@@ -182,7 +182,12 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 
 ---
 
-## 9. Ambigüedades abiertas (preguntas del bloque 4)
+## 9. Ambigüedades: 12 cerradas y 6 abiertas
+
+Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
+12/09/2026: **cerradas 12** (A-01, A-02, A-03, A-04, A-06, A-07, A-12, A-13, A-15, A-16, A-17 y
+A-18) y **abiertas 6** (A-05, A-08, A-09, A-10, A-11 y A-14), todas resueltas provisionalmente en
+los casos de uso mediante supuestos marcados `[SUPUESTO: A-xx]`.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
