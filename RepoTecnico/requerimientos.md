@@ -86,6 +86,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-36 | **Respaldo manual** a demanda del supervisor (sin automatismo ni rotación) y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9); riesgo aceptado. |
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
 | D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
+| D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
 
 ---
 
@@ -104,7 +105,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-09 | DESPACHO: aplicar las reglas de reparto — citados del día, ≥1 reparación de referidos y ≥1 de empresas por cuadrilla; construcción a una sola cuadrilla con reparaciones en ese sector. | C4 | L42 |
 | RF-10 | DESPACHO: generar los PDF del despacho diario, uno por cuadrilla, ajustados al área máxima imprimible de una hoja carta horizontal (con paginación). | C4 | L45 |
 | RF-11 | CONFIGURACION/CENTRAL: datos operativos de la central (región, estado geográfico, capital, municipio, parroquia, estado operativo, distrito, área, central, nombre central) como filtro base de la matriz CSV. | C1 | L15 |
-| RF-12 | CONFIGURACION/TECNICOS: padrón de trabajadores (Nombre, Cédula, P00, Teléfono, Correo, Especialidad, Status). | C1 | L16 |
+| RF-12 | CONFIGURACION/TECNICOS: padrón de trabajadores (Nombre, Cédula, P00, Teléfono, Correo, Especialidad, Status) más la credencial de sesión: contraseña (hash + sal), fecha del último cambio y si debe cambiarla. | C1 | L16; D-39 |
 | RF-13 | CONFIGURACION/FLOTA: padrón de vehículos (CAN00, Tipo, Marca, Modelo, Placa, Combustible, Status, Estado Cauchos, Estado Fluidos, Estado General). | C1 | L17 |
 | RF-14 | CONFIGURACION/CUADRILLA: padrón de cuadrillas (`id, nombre, técnicos[], vehículo, turno, sectores[], status`). | C1 | L18; D-07 |
 | RF-15 | GESTION: bandeja de casos a consultar telefónicamente para clasificarlos correctamente antes del trabajo de calle; la opera el supervisor. | C3 | L19; D-35 |
@@ -138,7 +139,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-05 | Impresión: el PDF de despacho por cuadrilla cabe en carta horizontal. | Impresión/visualización del PDF con el volumen máximo previsto por cuadrilla. |
 | RNF-06 | Fechas en DD/MM/AAAA y semana operativa lunes–sábado. | Prueba de ingesta y de los cortes semanales del MONITOREO. |
 | RNF-07 | Interfaz en español respetando la nomenclatura del dominio (PEND, CERRADO, GESTION, IVR, COS, COLA, sacas). | Revisión de etiquetas; corrección de typos de interfaz (A-06). |
-| RNF-08 | Control de acceso: la sesión exige identificar al operador contra `tecnicos.json`; sin identificación válida la página no permite editar (H-01). | Prueba de sesión sin identificar: las acciones de edición quedan bloqueadas. |
+| RNF-08 | Control de acceso: la sesión exige `P00` + contraseña validados contra el hash con sal de `tecnicos.json` (D-39); sin sesión válida la página no permite editar, y la contraseña caduca cada 90 días (H-01, H-03). | Prueba de sesión sin identificar, con contraseña incorrecta y con contraseña caducada: en los tres casos las acciones de edición quedan bloqueadas. |
 | RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre de caso registra operador y fecha/hora del cambio (H-10). | Revisión del historial tras una sesión de cambios. |
 | RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
 | RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |

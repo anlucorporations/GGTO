@@ -145,10 +145,13 @@ como filtro contra `central.json` (RT-03).
 | `nombre` | T | Sí | — |
 | `cedula` | T | Sí | Identificación. |
 | `P00` | T | Sí | Código de empleado, único; identifica la sesión del operador (D-29). |
+| `clave_hash` | T | Sí | Hash de la contraseña (SHA-256 con sal) — nunca en claro (D-39). |
+| `clave_salt` | T | Sí | Sal aleatoria por técnico para el hash (D-39). |
+| `clave_fecha_cambio` | F | Sí | Fecha del último cambio de contraseña; a los 90 días se exige cambiarla (D-39). |
 | `telefono` | T | No | — |
 | `correo` | T | No | — |
 | `especialidad` | T | No | — |
-| `status` | E | Sí | Activo / inactivo. |
+| `status` | E | Sí | Activo / inactivo. Un técnico inactivo no puede iniciar sesión. |
 
 ### 4.3 `flota.json` — padrón de vehículos (RF-13, L17)
 
