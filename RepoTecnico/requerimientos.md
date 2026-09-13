@@ -108,6 +108,10 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-58 | **Datos personales:** se mantiene D-36 (los CSV, los PDF de despacho y el `.xlsm` siguen versionados en los repositorios **privados**) y se documenta la finalidad y los controles en la ficha de tratamiento (`entornos_globales.md` §12). El log de la aplicación rota por tamaño: **5 MB y 5 archivos**, sin datos personales (H-N-31). |
 | D-59 | **El emisor del CSV no participa en CU-09:** se retira esa relación; es actor secundario solo de CU-08 (entrega el archivo) y la cola de direcciones sin sector la resuelve el supervisor. |
 | D-60 | **El operador propone y el supervisor aprueba:** en CU-09 el operador puede proponer el sector de una dirección sin coincidencia (queda `PENDIENTE DE APROBACIÓN`); el supervisor la aprueba o la rechaza y solo entonces el caso queda asignado. |
+| D-61 | **Campo `rol` en `tecnicos.json`:** valores `Operador` y `Supervisor`, por defecto `Operador`; junto con `status` (Activo/Inactivo) determina la matriz de permisos de D-35. |
+| D-62 | **Arranque en frío:** si `tecnicos.json` está vacío, la página ofrece crear el **primer supervisor** (único caso en que se crea un padrón sin sesión); queda con `rol = Supervisor` y `clave_cambio_obligatorio = SI`. |
+| D-63 | **Formato de la credencial:** `clave_hash` es el **SHA-256 en hexadecimal (64 caracteres)** de `clave_sal + ":" + contraseña` en UTF-8; `clave_sal` es aleatoria por técnico. |
+| D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (D-58). |
 
 ---
 

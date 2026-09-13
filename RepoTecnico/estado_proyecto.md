@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **60 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **64 decisiones**
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
@@ -131,6 +131,10 @@ ingesta debe rediseñarse.
 | D-58 | Datos personales: se mantiene D-36 y se documenta la ficha de tratamiento; log de 5 MB × 5 archivos. | auditorías |
 | D-59 | El emisor del CSV solo participa en la ingesta (se retira su relación con CU-09). | auditorías |
 | D-60 | En CU-09 el operador propone el sector y el supervisor lo aprueba. | auditorías |
+| D-61 | Campo `rol` (Operador/Supervisor) en `tecnicos.json`. | C1 |
+| D-62 | Arranque en frío: crear el primer supervisor si el padrón está vacío. | C1 |
+| D-63 | Credencial: SHA-256 hex de `sal + ":" + contraseña`. | C1 |
+| D-64 | Log de accesos en `datos/incidencias.log`, sin datos personales, 5 MB × 5. | C1 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
