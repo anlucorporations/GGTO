@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **50 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **52 decisiones**
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
@@ -39,6 +39,7 @@ y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna 
 - Primer commit: `Fase 1: documentacion de concepto, propuesta y requerimientos de la pagina GGTO`.
 - **Repositorios remotos: creados y sincronizados.** GitHub `https://github.com/anlucorporations/GGTO.git` (`origin`) y GitLab `https://gitlab.com/anlucorporations/ggto.git` (`gitlab`), ambos con las ramas `main` y `GGTOv1-DSH` en el mismo commit. Tenian solo un `README.md` inicial: la historia local se integro por merge, sin force-push.
 - **Incidente resuelto (D-22):** Google Drive inyecto 75 archivos `desktop.ini` dentro de `.git` (incluido `.git\refs\`), lo que rompio `git fetch` con `fatal: bad object refs/desktop.ini`. El directorio de git se movio a `C:\GGTO\git\GGTO-v1.git` y la raiz apunta alli con un archivo `.git` (`gitdir:`). No se perdio ningun commit.
+- **Incidente de cuota (13/09/2026):** Google Drive se quedó sin cuota y `Copy-Item` truncó `casos_uso.md` y `diagramas.md` a 0 bytes. Se recuperó el contenido desde la copia de la entrega y se commiteó por índice, sin escribir en Drive. Consecuencia: **D-51**, el proyecto pasa a `C:\GGTO\proyecto`.
 
 ### Archivos operativos detectados en la raíz (aún no analizados)
 
@@ -120,6 +121,8 @@ ingesta debe rediseñarse.
 | D-48 | `fecha_asignacion` en el maestro para la métrica «asignados por día». | 15 |
 | D-49 | Respaldo diario al cierre en `C:\GGTO\respaldo\`, sin cifrado; RTO 1 h y RPO del día anterior. | 16 |
 | D-50 | Sin sesión válida no se muestra ningún dato (solo el diálogo de acceso). | 16 |
+| D-51 | El proyecto se muda a `C:\GGTO\proyecto`; Google Drive sale del flujo de trabajo. | 16 |
+| D-52 | Detalles técnicos: `sectores.id` texto único, inicialización del rastro de auditoría y columnas 53/80 no persistidas. | 16 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |

@@ -11,9 +11,9 @@
 
 | Elemento | Ruta |
 |---|---|
-| Raíz del proyecto (workspace) | `G:\Mi unidad\CANTV PDE\GGTO-v1` |
-| Documentación técnica | `G:\Mi unidad\CANTV PDE\GGTO-v1\RepoTecnico` |
-| Página (a crear en C1) | `G:\Mi unidad\CANTV PDE\GGTO-v1\app\index.html` |
+| Raíz del proyecto (workspace) | `C:\GGTO\proyecto` — clon local desde GitHub (D-51); la copia en Google Drive quedó fuera de uso |
+| Documentación técnica | `C:\GGTO\proyecto\RepoTecnico` |
+| Página (a crear en C1) | `C:\GGTO\proyecto\app\index.html` |
 | Hojas de estilo (a crear) | `...\app\css\estilos.css` |
 | Módulos JavaScript (a crear) | `...\app\js\` |
 | Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — respaldo **manual** a demanda del supervisor (D-36) |
@@ -174,7 +174,7 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 
 ### 7.1 Ubicación del directorio git
 
-El directorio de git vive en **`C:\GGTO\git\GGTO-v1.git`** (fuera de Google Drive) y la raíz del
+El repositorio de trabajo es el clon local **`C:\GGTO\proyecto`** (con su `.git` en `C:\GGTO\proyecto\.git`). El directorio anterior, `C:\GGTO\git\GGTO-v1.git`, queda como respaldo del historial previo; la raíz antigua en Google Drive ya no se usa y
 proyecto apunta a él con un archivo `.git` que contiene `gitdir: C:/GGTO/git/GGTO-v1.git`.
 
 **Motivo (D-22):** Google Drive inyectó 75 archivos `desktop.ini` dentro de `.git` —incluido
@@ -211,6 +211,8 @@ unidad sincronizada el problema no puede repetirse; además se reforzaron las ex
 - Codificación de trabajo: UTF-8 sin BOM para todos los archivos de datos y de código.
 
 ---
+
+- **Incidente de cuota de Drive (13/09/2026):** la cuenta de Google Drive se llenó y el cliente del volumen `G:` rechazó toda escritura de 1 KB o más: dos archivos de documentación quedaron en 0 bytes al intentar copiarlos. Regla operativa: **no trabajar ni copiar archivos sobre `G:`**; el proyecto vive en `C:\GGTO\proyecto` y su copia compartida son los repositorios GitHub/GitLab (D-51).
 
 ## 10. Características del CSV diario de entrada (verificadas)
 

@@ -147,7 +147,7 @@ como filtro contra `central.json` (RT-03).
 | `cedula` | T | Sí | Identificación. |
 | `P00` | T | Sí | Código de empleado, único; identifica la sesión del operador (D-29). |
 | `clave_hash` | T | Sí | Hash de la contraseña (SHA-256 con sal) — nunca en claro (D-39). |
-| `clave_salt` | T | Sí | Sal aleatoria por técnico para el hash (D-39). |
+| `clave_sal` | T | Sí | Sal aleatoria por técnico para el hash (D-39). |
 | `clave_fecha_cambio` | F | Sí | Fecha del último cambio de contraseña; a los 90 días se exige cambiarla (D-39). |
 | `telefono` | T | No | — |
 | `correo` | T | No | — |
@@ -294,13 +294,17 @@ para la auditoría (D-16). El resto queda disponible para el detalle del caso o 
 
 ---
 
-## 8. Pendientes de este diccionario
+## 8. Estado del diccionario
 
-- A-11: `ups` parece ser `RES`/`NRES` (residencial/no residencial); falta confirmar. `P00` sigue sin explicación.
-- A-04: numeración definitiva de `sectores.id`.
-- A-14: composición final de `despacho.json` (incluir o no `sector` y cuadrilla).
-- A-12: redefinir `estructura.json` como mapa posicional de las 80 columnas (ver Anexo A).
-- A-15: tratamiento del estatus `ASGN` del CSV.
-- A-16: fechas con hora en el CSV frente a DD/MM/AAAA del maestro.
-- A-17: usar `alta_manual.csv` como modelo de campos de CASOS y casos especiales.
-- Confirmar si el CSV diario trae columnas extra no declaradas en `estructura.json` (se ignorarían).
+**Sin pendientes de decisión:** las ambigüedades que figuraban aquí quedaron cerradas — A-04 (D-25: el
+sector es una entidad con `id` y `nombre`; el `id` es texto único, D-52), A-11 (D-17 y D-29: `ups` es el
+tipo de abonado y `P00` el código de empleado), A-12 (D-12: mapa posicional), A-14 (D-31: `despacho.json`
+ampliado), A-15 (D-13, revisada por D-38: `ASGN` entra como `PEND`) y A-16 (D-21: fechas recortadas con
+el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.csv`).
+
+**Pendientes técnicos de implementación (no de decisión):**
+
+- Fijar las versiones exactas de las librerías de `lib/` al iniciar C1.
+- Historial inmutable de cambios (JSONL append-only): fuera del MVP; el maestro conserva el último
+  cambio (`usuario_modificacion`, `fecha_modificacion`).
+- Confirmar en el CSV real si trae columnas no declaradas en `estructura.json` (se ignorarían).

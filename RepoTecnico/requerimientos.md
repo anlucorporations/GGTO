@@ -98,6 +98,8 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-48 | **`fecha_asignacion` en el maestro:** se añade el campo con la fecha de la última asignación de cuadrilla; de él sale la métrica «asignados por día» de la zona CUADRILLA, sin necesidad de archivos de despacho por fecha (H-28). |
 | D-49 | **Respaldo:** al cerrar la jornada se copia el maestro a `C:\GGTO\respaldo\` con la fecha en el nombre, sin cifrado; el supervisor la lleva a la red o a un pendrive. **RTO 1 hora** y **RPO: el cierre del día anterior** (H-12, H-13, H-25). |
 | D-50 | **Sin sesión no se ve nada:** antes de una identificación válida la página solo muestra el diálogo de acceso; no expone tabla, conteos ni gráficos (H-31). |
+| D-51 | **Ubicación del proyecto:** el proyecto vive en `C:\GGTO\proyecto` (clon local de GitHub). Google Drive sale del flujo de trabajo tras el incidente del 13/09/2026, en el que la cuota llena truncó dos archivos a 0 bytes. |
+| D-52 | **Detalles técnicos de C1/C2:** `sectores.id` es texto único asignado por el supervisor; `usuario_modificacion` y `fecha_modificacion` se inicializan con la col. 20 del CSV y la fecha de ingesta; las columnas 53 y 80 del CSV no se persisten. |
 
 ---
 
