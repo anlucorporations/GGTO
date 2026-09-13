@@ -99,7 +99,9 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-49 | **Respaldo:** al cerrar la jornada se copia el maestro a `C:\GGTO\respaldo\` con la fecha en el nombre, sin cifrado; el supervisor la lleva a la red o a un pendrive. **RTO 1 hora** y **RPO: el cierre del día anterior** (H-12, H-13, H-25). |
 | D-50 | **Sin sesión no se ve nada:** antes de una identificación válida la página solo muestra el diálogo de acceso; no expone tabla, conteos ni gráficos (H-31). |
 | D-51 | **Ubicación del proyecto:** el proyecto vive en `C:\GGTO\proyecto` (clon local de GitHub). Google Drive sale del flujo de trabajo tras el incidente del 13/09/2026, en el que la cuota llena truncó dos archivos a 0 bytes. |
-| D-52 | **Detalles técnicos de C1/C2:** `sectores.id` es texto único asignado por el supervisor; `usuario_modificacion` y `fecha_modificacion` se inicializan con la col. 20 del CSV y la fecha de ingesta; las columnas 53 y 80 del CSV no se persisten. |
+| D-52 | **Detalles técnicos de C1/C2:** `sectores.id` es texto único asignado por el supervisor; `usuario_modificacion` y `fecha_modificacion` se inicializan con la col. 20 del CSV y la fecha de ingesta. |
+| D-53 | **Las columnas 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) no se persisten** (A-01): el rastro de origen se limita a la col. 20 (`ultimo_usuario` → `usuario_modificacion`) y a la fecha de ingesta; se corrigen CU-08 y CU-15. |
+| D-54 | **La col. 18 (`fecha_compromiso`) no se persiste** (A-04): ningún requisito la usa —los «citados» se determinan por `fecha_cita` (D-30)—; se corrige el Anexo A del diccionario. |
 
 ---
 

@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **52 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **54 decisiones**
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
@@ -122,7 +122,9 @@ ingesta debe rediseñarse.
 | D-49 | Respaldo diario al cierre en `C:\GGTO\respaldo\`, sin cifrado; RTO 1 h y RPO del día anterior. | 16 |
 | D-50 | Sin sesión válida no se muestra ningún dato (solo el diálogo de acceso). | 16 |
 | D-51 | El proyecto se muda a `C:\GGTO\proyecto`; Google Drive sale del flujo de trabajo. | 16 |
-| D-52 | Detalles técnicos: `sectores.id` texto único, inicialización del rastro de auditoría y columnas 53/80 no persistidas. | 16 |
+| D-52 | Detalles técnicos: `sectores.id` texto único e inicialización del rastro de auditoría. | 16 |
+| D-53 | Las columnas 53 y 80 del CSV no se persisten; el rastro de origen se limita a la col. 20 y a la fecha de ingesta. | auditorías |
+| D-54 | La col. 18 (`fecha_compromiso`) no se persiste. | auditorías |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
