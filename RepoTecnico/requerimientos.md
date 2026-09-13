@@ -89,6 +89,12 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
 | D-40 | **Accesibilidad (RNF-13):** navegación completa por teclado (Tab, Enter y flechas en la tabla), foco visible, `label` asociado a cada campo, contraste mínimo 4,5:1 y texto alternativo en los gráficos. |
 | D-41 | **Concurrencia sin bloqueo:** cada guardado relee el archivo y compara su marca de modificación; si cambió desde que se cargó, avisa del conflicto y el operador decide entre recargar o sobrescribir conscientemente. |
+| D-42 | **Escritura verificada con respaldo previo:** antes de escribir, el maestro se copia a `averias_AAAA-MM-DD_HHMM.bak` (se conservan las 10 últimas); se escribe en un archivo temporal, se relee y se compara; solo entonces la pantalla confirma. Ante fallo se restaura el respaldo y se avisa (H-11, H-12). |
+| D-43 | **Modo `estricta` de palabras clave:** comparación literal por subcadena (sensible a mayúsculas y tildes) y sin variantes; el modo por defecto sigue siendo `normalizada` (D-26). |
+| D-44 | **Umbral de la ingesta:** aborta sin escribir si el archivo no tiene **80 columnas** o si alguna columna declarada en `estructura.json` no coincide en su posición (D-12, D-21). |
+| D-45 | **Expiración de sesión:** dura la jornada (**8 horas**) y se cierra al cerrar la pestaña; al expirar se exige reingreso, sin perder lo ya guardado. |
+| D-46 | **CSV ausente:** si el archivo del día no llega, la página lo muestra como «sin ingesta», permite registrar la novedad (fecha, motivo y operador) en `datos/incidencias.log` y no bloquea la consulta ni el despacho. |
+| D-47 | **Alta manual sin Tipo/Actividad/Agente:** esos campos del fuente (L8) no se incorporan; el formulario se rige por la lista cerrada de D-18. |
 
 ---
 
@@ -148,6 +154,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-12 | Control de acceso por rol: el operador solo ve y cierra los casos de su cuadrilla (`Reparador Principal` = cuadrilla del técnico identificado); el supervisor tiene todas las acciones y es quien opera la bandeja GESTION (H-01, D-35). | Prueba con un operador de la cuadrilla 1: no debe poder editar ni cerrar casos de la cuadrilla 2, ni tocar los padrones. |
 | RNF-13 | Accesibilidad: toda la operación es posible con teclado (Tab, Enter y flechas en la tabla), el foco es visible, cada campo tiene `label` asociado, el contraste es de al menos 4,5:1 y cada gráfico tiene tabla o texto alternativo equivalente (H-05, D-40). | Recorrido completo de las 7 pestañas solo con teclado y verificación de contraste con herramienta automática. |
 | RNF-14 | Integridad ante concurrencia: ningún guardado sobrescribe cambios ajenos sin aviso; la página compara la marca de modificación del archivo con la de su carga y, si difieren, bloquea el guardado hasta que el operador elija recargar o sobrescribir (H-10, D-41). | Prueba con dos ventanas: la segunda debe recibir el aviso de conflicto y no debe poder guardar sin decidir. |
+| RNF-15 | Integridad de escritura: cada guardado del maestro se verifica por relectura antes de confirmar y conserva las 10 últimas versiones en `.bak` (H-11, D-42). | Prueba de escritura con error simulado: la pantalla no confirma el cambio y el maestro queda como estaba. |
 
 ---
 
