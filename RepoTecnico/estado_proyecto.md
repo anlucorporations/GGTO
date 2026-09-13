@@ -14,10 +14,8 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **35 decisiones**
-y se cerraron **11 ambigüedades** del documento fuente. Queda **1 ambigüedad abierta** (A-08), que
-**sí** tocan el MVP (A-11 en C1; A-04, A-16 y A-18 en C2), más los pendientes administrativos
-(repositorios remotos y GCP). Corrección aplicada tras la auditoría (H-06).
+Se realizaron **9 bloques de entrevista** con los que se fijaron **37 decisiones**
+y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
 
@@ -107,6 +105,8 @@ ingesta debe rediseñarse.
 | D-33 | Casos especiales = empresariales (EMP) o referidos (REF) abiertos. | 10 |
 | D-34 | Despacho en pantalla + PDF; seguimiento semanal estadístico (ingreso vs. reparadas por día + línea de pendiente, Sem 1 a Sem 36). | 10 |
 | D-35 | Permisos: operador solo cierra casos de su cuadrilla; supervisor hace todo, incluida la bandeja GESTION. | 11 |
+| D-36 | Respaldo manual sin automatismo; CSV, PDF y `.xlsm` siguen versionados en el repositorio (riesgo aceptado). | 12 |
+| D-37 | `cuadrillas.id` = `Reparador Principal`; la asignación del despacho se persiste en `averias.json`. | 12 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -181,6 +181,8 @@ A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-1
 | Fallo de escritura por trabajar sobre Google Drive (`G:`). | No se guardan los documentos. | Escribir en `%TEMP%` y copiar al destino (ver `entornos_globales.md` §9). |
 | Corrupción del repositorio por `desktop.ini` de Google Drive dentro de `.git`. | Fallan fetch/push y se pueden perder referencias. | **Ocurrió y se corrigió (D-22):** el directorio de git vive en `C:\GGTO\git\GGTO-v1.git`, fuera de la unidad sincronizada. |
 | Retención indefinida de datos personales sin base legal documentada (H-13). | Riesgo de incumplimiento normativo y de reclamos. | **Riesgo aceptado (D-28):** se documenta finalidad y responsable; sin purga automática. Revisar con el área legal de CANTV antes de ampliar el uso. |
+| Sin respaldo automático del maestro (H-09, H-25). | Una pérdida del archivo local no se recupera. | **Riesgo aceptado (D-36):** respaldo manual a demanda del supervisor. El maestro nunca está en Google Drive. |
+| CSV, PDF de despacho y `.xlsm` versionados en GitHub y GitLab, con datos personales de abonados (H-13, P9). | Exposición de datos personales en repositorios y crecimiento del historial. | **Riesgo aceptado (D-36):** se mantiene el repositorio como está; revisar con el área legal antes de dar acceso a terceros. |
 
 ---
 

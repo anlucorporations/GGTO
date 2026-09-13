@@ -39,7 +39,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | `FAT` | Caja de acceso a la red de fibra (planta externa). | L44, L56 |
 | `OLT` | Equipo terminal de línea óptica. | L56 |
 | `VENAPP` | Origen del campo `codigos_sin_gestion_en_VENAPP`. | L56 |
-| cuadrilla | Equipo de trabajo de calle (técnicos + vehículo) al que se asigna el despacho. | L18, L42 |
+| cuadrilla | Equipo de trabajo de calle (técnicos + vehículo) al que se asigna el despacho; se identifica con `cuadrillas.id` y ese es el valor de `Reparador Principal` (D-37). | L18, L42 |
 | central | Unidad operativa (región, estado, municipio, parroquia, distrito, área, central). | L15 |
 
 ---
@@ -66,7 +66,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-16 | El operador se **identifica en cada sesión** contra `tecnicos.json` (P00 o usuario); cada cambio de caso registra quién lo hizo y cuándo. |
 | D-17 | Se crea el campo **`tipo_abonado`** (`RES`/`EMP`) alimentado por `unidad_negocio` (col. 61) y `ups` (col. 62) del CSV; `nivel` sigue siendo REF/COM. |
 | D-18 | El **alta manual (RF-04)** usa una lista cerrada de campos y el `id_averia` se genera automáticamente como `MAN-` + consecutivo, verificando unicidad. |
-| D-19 | **`datos/` sale de Google Drive:** los JSON viven en disco local (`C:\GGTO\datos`) y se respaldan periódicamente a `G:` o a la red (H-09). |
+| D-19 | **`datos/` sale de Google Drive:** los JSON viven en disco local (`C:\GGTO\datos`); el respaldo es **manual**, a demanda del supervisor (D-36). |
 | D-20 | **Cierre bloqueante:** un caso no puede pasar a `CERRADO` sin `resolucion` y `fechaResolucion`; en alta y edición se validan obligatorios, enums y que el `sector` exista (H-11). |
 | D-21 | **Ingesta estricta:** validación **bloqueante** del contrato posicional; las fechas del CSV se recortan a DD/MM/AAAA conservando el texto original, y el `estatus = ASGN` del CSV **prevalece** sobre RN-03 (A-16, A-18). |
 | D-22 | El directorio `.git` vive en disco local, fuera de Google Drive, tras la corrupción de `.git\refs` por `desktop.ini`. |
@@ -83,6 +83,8 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-33 | **Casos especiales** = los de clientes empresariales (`tipo_abonado = EMP`) y los referidos (`nivel = REF`) que siguen abiertos; tienen bandeja y seguimiento propios (A-09). |
 | D-34 | **Salida de reportes:** solo el despacho se emite en pantalla y PDF. El seguimiento semanal es **estadístico**: por día, ingreso del día vs. reparadas del día, con la línea del pendiente al cierre de cada día, agrupado por semana del año con selector **Sem 1 a Sem 36**; sin Excel (A-08). |
 | D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho y el respaldo. El rol «administrador» queda absorbido por el supervisor. |
+| D-36 | **Respaldo manual** a demanda del supervisor (sin automatismo ni rotación) y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9); riesgo aceptado. |
+| D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
 
 ---
 
@@ -109,7 +111,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-17 | INGESTA: los casos que **no** contengan las palabras clave de fibra (LOSS ROJO, FALLA FIBRA, FIBRA DAÑADA) en `ultimo_comentario`, `problema_reporte`, `informacion_1` o `informacion_2` pasan a `status = GESTION`; los que sí las contienen quedan en `status = PEND`. | C2 | L36; D-05, D-11 |
 | RF-18 | INGESTA: completar `sector` agrupando por `direccion` según los sectores declarados; si la dirección no corresponde a ningún sector, solicitarlo al usuario. | C2 | L37 |
 | RF-19 | INGESTA: insertar los casos nuevos en `averias.json` con `ingreso = fecha de ingesta`, `clase = REP` y `nivel = COM`. | C2 | L38; D-06 |
-| RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal`. | C4 | L44 |
+| RF-20 | DESPACHO: extraer `id_averia, telefono, persona_reporta, contacto, nombre, direccion, fat, plan, serial` agrupando por `Reparador Principal` (= `cuadrillas.id`) y escribir la asignación de vuelta en `averias.json`. | C4 | L44; D-37 |
 | RF-21 | GENERALIDADES: tabla con las columnas resumen `nivel, clase, sector, id_averia, nombre, direccion, plan`. | C1 | L49 |
 | RF-22 | GENERALIDADES: al seleccionar un registro se abre un flotante con toda la información restante del caso, agrupada en secciones, con opción de **CERRAR CASO** ingresando los datos de resolución; el botón queda bloqueado si faltan resolución o fecha, y el operador solo puede cerrar casos de su propia cuadrilla. | C1 | L50; D-20, D-35 |
 | RF-23 | GENERALIDADES: agrupar y filtrar por **abiertos/cerrados** (abierto = `status` distinto de `CERRADO`), **cuadrilla** (`Reparador Principal`), **tipo** (combinación `clase` + `nivel` calculada en pantalla), `clase`, `nivel` y `estatus`; incluye la edición manual de `clase` y `nivel`. | C1 | L51; D-06, D-23 |
@@ -156,7 +158,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 | RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
-| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive, con respaldo periódico a `G:` o a la red (D-19). |
+| RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive; el respaldo es manual y bajo responsabilidad del supervisor (D-19, D-36). |
 | RT-11 | El metadata de git (`.git`) vive en disco local (`C:\GGTO\git\GGTO-v1.git`), fuera de la unidad sincronizada: Google Drive corrompió `.git\refs` con archivos `desktop.ini` (D-22). |
 
 ---
