@@ -78,6 +78,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-28 | **Retención:** histórico indefinido de casos; se documenta finalidad y responsable del tratamiento, sin purga automática (**riesgo legal aceptado**, H-13). |
 | D-29 | **`P00` es el código de empleado:** único y obligatorio en `tecnicos.json`, y es la credencial con la que el operador inicia sesión (A-11). |
 | D-30 | **«Citados del día»** son los casos con cita agendada para la fecha del despacho (`fecha_cita`, col. 19 del CSV); entran con prioridad y se marcan como CITADO (A-05). |
+| D-31 | **`despacho.json` se amplía** con `sector`, `Reparador Principal` y `fecha_despacho`, y queda como registro del despacho del día (A-14); RT-05 se corrige. |
 
 ---
 
@@ -145,7 +146,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-02 | La fuente externa es un `.csv` diario con información operativa, administrativa, técnica y complementaria (L31). |
 | RT-03 | El filtro de la matriz CSV usa los campos operativos de CONFIGURACION/CENTRAL (L33). |
 | RT-04 | Los JSON respetan los nombres y el orden de columnas declarados, con la única corrección `informacion_1` / `informacion_2` (D-10). |
-| RT-05 | `despacho.json` es un subconjunto de columnas de `averias.json` (L57). |
+| RT-05 | `despacho.json` conserva las columnas del fuente (L57) **más** `sector`, `Reparador Principal` y `fecha_despacho`, para servir de registro del despacho del día (D-31). |
 | RT-06 | Desde `file://` el navegador no puede leer ni escribir los JSON del disco: se requiere servidor local + File System Access API (D-01). |
 | RT-07 | Sin internet garantizado en la central: las librerías (CSV, gráficos, PDF) se guardan localmente en `lib/`. |
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
@@ -187,7 +188,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 ## 9. Ambigüedades: 12 cerradas y 6 abiertas
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
-13/09/2026: **cerradas 14** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-11, A-12, A-13, A-15, A-16, A-17 y A-18) y **abiertas 4** (A-08, A-09, A-10 y A-14), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
+13/09/2026: **cerradas 15** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-11, A-12, A-13, A-14, A-15, A-16, A-17 y A-18) y **abiertas 3** (A-08, A-09 y A-10), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|

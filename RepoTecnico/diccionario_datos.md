@@ -80,11 +80,11 @@ Subconjunto de columnas de `averias.json` (RT-05). Se usa para generar los PDF d
 | 10 | `plan` | T | No | — | — |
 | 11 | `fat` | T | No | — | — |
 | 12 | `serial` | T | No | — | — |
+| 13 | `sector` | T (FK) | Sí | id de `sectores.json` | Añadido por D-31 para poder agrupar el despacho por sector. |
+| 14 | `Reparador Principal` | T (FK) | No | id de `cuadrillas.json` | Añadido por D-31: es la cuadrilla asignada. |
+| 15 | `fecha_despacho` | F | Sí | DD/MM/AAAA | Añadido por D-31: día del despacho que representa el archivo. |
 
-**Observación abierta (A-14):** el fuente (L57) no incluye `sector` ni la cuadrilla
-(`Reparador Principal`) en `despacho.json`, aunque el agrupamiento del despacho se hace por
-`Reparador Principal` (L44) y por sector (L42-43). Pendiente decidir si se amplía el archivo o
-si el agrupamiento se calcula en memoria.
+**Resuelto (D-31):** `despacho.json` conserva las 12 columnas del fuente y añade `sector`, `Reparador Principal` y `fecha_despacho`, de modo que cada archivo queda como registro del despacho de ese día (quién recibió qué, en qué sector y cuándo). Es la base del registro de entrega del PDF (RNF-11).
 
 ---
 
