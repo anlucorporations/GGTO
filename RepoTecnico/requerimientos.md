@@ -140,6 +140,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RT-08 | El CSV diario real usa `;` como separador, codificación UTF-8, una fila de encabezado de **80 columnas**, fechas con hora y encabezados repetidos; la muestra analizada traía 56 registros de 3 centrales (51 de Francisco Salias). |
 | RT-09 | El servidor local escucha solo en loopback y sirve exclusivamente el subdirectorio de la aplicación: `datos/` y `RepoTecnico/` quedan fuera del alcance HTTP. |
 | RT-10 | Los JSON de trabajo viven en disco local, fuera de la carpeta sincronizada de Google Drive, con respaldo periódico a `G:` o a la red (D-19). |
+| RT-11 | El metadata de git (`.git`) vive en disco local (`C:\GGTO\git\GGTO-v1.git`), fuera de la unidad sincronizada: Google Drive corrompió `.git\refs` con archivos `desktop.ini` (D-22). |
 
 ---
 

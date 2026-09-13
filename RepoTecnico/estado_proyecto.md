@@ -94,6 +94,7 @@ ingesta debe rediseñarse.
 | D-19 | `datos/` sale de Google Drive y vive en disco local con respaldo periódico. | 7 |
 | D-20 | Cierre bloqueante sin resolución y fecha, más validación de integridad en alta y edición. | 7 |
 | D-21 | Ingesta estricta: validación bloqueante, fechas recortadas con original conservado y `ASGN` con precedencia. | 7 |
+| D-22 | El directorio `.git` vive en disco local, fuera de Google Drive, tras la corrupción de `.git\refs` por `desktop.ini`. | 7 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
