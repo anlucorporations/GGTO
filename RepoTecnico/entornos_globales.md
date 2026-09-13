@@ -16,7 +16,7 @@
 | Página (a crear en C1) | `C:\GGTO\proyecto\app\index.html` |
 | Hojas de estilo (a crear) | `...\app\css\estilos.css` |
 | Módulos JavaScript (a crear) | `...\app\js\` |
-| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — respaldo **manual** a demanda del supervisor (D-36) |
+| Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56); respaldo **manual** a demanda del supervisor (D-36) |
 | Librerías locales (a crear) | `...\app\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
 | Metadata de git (fuera de Google Drive) | `C:\GGTO\git\GGTO-v1.git` (la raíz apunta con un archivo `.git` que contiene `gitdir:`) |
@@ -52,7 +52,8 @@ GGTO-v1/
 |  |- flota.json              # RF-13
 |  |- cuadrillas.json         # RF-14
 |  |- sectores.json           # D-03
-|  \- claves_clasificacion.json  # D-11
+|  |- claves_clasificacion.json  # D-11
+|  \- historial.jsonl         # historial inmutable de cambios (append-only, D-56)
 \- lib/
    |- papaparse.min.js
    |- chart.umd.min.js
@@ -129,6 +130,26 @@ consecuencia, `index.html`, `css/`, `js/` y `lib/` deben vivir dentro de `app/`,
 permanece en la raíz del proyecto: la página accede a los JSON con el selector de archivos (File
 System Access API), no por HTTP.
 
+### 4.1 Carpeta de datos y copia de respaldo
+
+| Elemento | Ruta | Requisito |
+|---|---|---|
+| Carpeta de datos de trabajo | `C:\GGTO\datos\` — los 9 JSON de trabajo **más** `historial.jsonl` | D-19, RT-01, RT-10 |
+| Historial inmutable de cambios | `C:\GGTO\datos\historial.jsonl` (JSON Lines, *append-only*: no se edita ni se borra) | **D-56**, RNF-09 |
+| Carpeta de respaldo | `C:\GGTO\respaldo\` — copia fechada del maestro **y del historial** al cierre de la jornada, sin cifrado | D-49, RNF-16 |
+
+**Procedimiento de respaldo (D-36, D-49, D-56).**
+
+1. El supervisor abre el bloque RESPALDO y consulta la fecha del último respaldo.
+2. Pulsa *Respaldar ahora* (manual, a demanda).
+3. La página copia a `C:\GGTO\respaldo\` los archivos de `C:\GGTO\datos\`: los 9 JSON de trabajo
+   (`averias.json`, `despacho.json`, `estructura.json` y los 6 de configuración) **y el historial
+   `historial.jsonl`**, que **se copia junto con el maestro y nunca se recorta** (no se trunca, no
+   se filtra por fecha y no se reescribe: se copia íntegro, D-56).
+4. La página relee cada copia y la compara con el original; muestra «Respaldo verificado: 10 archivos».
+5. Al cierre de la jornada se ofrece la copia fechada `averias_AAAA-MM-DD_HHMM.json`; el supervisor
+   la lleva a la red o a un pen drive.
+
 ---
 
 ## 5. Constantes y variables globales del front-end
@@ -139,6 +160,8 @@ System Access API), no por HTTP.
 | `ARCHIVO_MAESTRO` | `averias.json` | Maestro de casos (D-09). |
 | `ARCHIVO_DESPACHO` | `despacho.json` | Vista de campo. |
 | `ARCHIVO_ESTRUCTURA` | `estructura.json` | Contrato del CSV. |
+| `ARCHIVO_HISTORIAL` | `historial.jsonl` | Historial inmutable de cambios, *append-only* (D-56): se lee para la auditoría de CU-15 y se escribe solo añadiendo. |
+| `ACCIONES_HISTORIAL` | `edicion` \| `cierre` \| `reapertura` \| `asignacion` \| `ingesta` | Valor de `accion` de cada línea del historial (D-56). |
 | `FORMATO_FECHA` | `DD/MM/AAAA` | Todas las fechas (RNF-06). |
 | `DIAS_SEMANA_OPERATIVA` | lunes … sábado | Cortes del MONITOREO (RN-08). |
 | `STATUS` | `PEND` \| `CERRADO` \| `GESTION` | Enumerado de estatus. |
@@ -238,3 +261,7 @@ e historial. Se usa como referencia de campos (A-17), no como entrada de la inge
 - Definir el uso de GCP y, si aplica, credenciales y tipo de servicio.
 - Confirmar en el puesto real de la central que Edge/Chrome están disponibles y que se autoriza
   un servidor local en el puerto 8787.
+
+**Cerrado en este documento:** la carpeta `C:\GGTO\datos\` incluye `historial.jsonl` (historial
+inmutable *append-only*, **D-56**) en el árbol de estructura (§1.1), en la tabla de rutas (§1) y en
+la copia de respaldo (§4.1): el historial se copia junto con el maestro y **nunca se recorta**.

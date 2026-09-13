@@ -104,6 +104,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-54 | **La col. 18 (`fecha_compromiso`) no se persiste** (A-04): ningún requisito la usa —los «citados» se determinan por `fecha_cita` (D-30)—; se corrige el Anexo A del diccionario. |
 | D-55 | **Solo existen dos roles: operador y supervisor** (no se añaden «jefe de central» ni «auditoría»). Las funciones de respaldo, restauración y consulta de la auditoría de cambios son del supervisor. |
 | D-56 | **Historial inmutable:** cada cambio de un caso se añade a `C:\GGTO\datos\historial.jsonl` (append-only) con fecha y hora, operador (`P00`), `id_averia`, campo, valor anterior y valor nuevo; nada se borra ni se sobrescribe (H-08, H-10). |
+| D-57 | **Sin bloqueo por intentos fallidos:** cada intento fallido de sesión se registra (fecha, hora y `P00` intentado), pero la cuenta **no se bloquea** (H-N-07, H-N-17). |
 
 ---
 
@@ -156,7 +157,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RNF-05 | Impresión: el PDF de despacho por cuadrilla cabe en carta horizontal. | Impresión/visualización del PDF con el volumen máximo previsto por cuadrilla. |
 | RNF-06 | Fechas en DD/MM/AAAA y semana operativa lunes–sábado. | Prueba de ingesta y de los cortes semanales del MONITOREO. |
 | RNF-07 | Interfaz en español respetando la nomenclatura del dominio (PEND, CERRADO, GESTION, IVR, COS, COLA, sacas). | Revisión de etiquetas; corrección de typos de interfaz (A-06). |
-| RNF-08 | Control de acceso: la sesión exige `P00` + contraseña validados contra el hash con sal de `tecnicos.json` (D-39); sin sesión válida la página **no muestra ningún dato** ni permite editar (D-50), y la contraseña caduca cada 90 días (H-01, H-03). | Prueba de sesión sin identificar, con contraseña incorrecta y con contraseña caducada: en los tres casos las acciones de edición quedan bloqueadas. |
+| RNF-08 | Control de acceso: la sesión exige `P00` + contraseña validados contra el hash con sal de `tecnicos.json` (D-39); sin sesión válida la página **no muestra ningún dato** ni permite editar (D-50); la contraseña caduca cada 90 días y cada intento fallido se registra sin bloquear la cuenta (D-57) (H-01, H-03). | Prueba de sesión sin identificar, con contraseña incorrecta y con contraseña caducada: en los tres casos las acciones de edición quedan bloqueadas. |
 | RNF-09 | Auditoría: todo cambio de `status`, `clase`, `nivel`, `tipo_abonado` o cierre registra operador y fecha/hora en el maestro, y el detalle (campo, valor anterior y valor nuevo) se conserva de forma **inmutable** en `historial.jsonl` (H-10, D-56). | Revisión de `historial.jsonl` tras una sesión de cambios y prueba de que ninguna línea se sobrescribe. |
 | RNF-10 | Integridad de datos: en alta y edición se validan campos obligatorios, enums, formato de fecha y que el `sector` exista en `sectores.json`; el cierre exige `resolucion` y `fechaResolucion` (H-11). | Casos de prueba con OBL vacío, enum inválido y sector inexistente: todos deben ser rechazados. |
 | RNF-11 | Control documental del despacho: cada PDF registra fecha, cuadrilla y número de copia, y la entrega queda asentada para poder recoger las hojas impresas (H-12). | Revisión de la marca en el PDF y del registro de entrega del día. |

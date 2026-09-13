@@ -4,7 +4,7 @@
 - **Fase:** 1 (Concepto) — documento vivo
 - **Versión:** v1
 - **Fecha:** 2026-09-12
-- **Fuente:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`, sección `[ESTRUCTURAS]` (L54-58) y decisiones D-01 a D-11.
+- **Fuente:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`, sección `[ESTRUCTURAS]` (L54-58) y decisiones D-01 a D-56.
 
 > Tipos: `T` texto, `F` fecha `DD/MM/AAAA`, `E` enumerado, `N` numérico, `B` booleano (`SI`/`NO`),
 > `L` lista. `PK` = clave primaria, `FK` = clave foránea, `OBL` = obligatorio.
@@ -122,9 +122,49 @@ como filtro contra `central.json` (RT-03).
 
 ---
 
-## 4. Archivos de configuración
+## 4. `historial.jsonl` — registro inmutable de cambios (D-56, RNF-09)
 
-### 4.1 `central.json` — datos operativos de la central (RF-11, L15)
+Archivo **JSON Lines** (*JSONL*: una línea = un objeto JSON completo, sin comas entre líneas ni
+corchetes envolventes), ubicado en `C:\GGTO\datos\historial.jsonl`. Cada cambio de un caso
+(`status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, cierre, `sacas` y
+`observaciones`) **añade** una línea; el maestro sigue guardando además el **último** cambio en
+`usuario_modificacion` y `fecha_modificacion` (D-16, D-56).
+
+**Es *append-only*:** no se edita ni se borra; **crece con cada cambio** y solo se añade al final.
+Su lectura es la que alimenta la **consulta de auditoría de CU-15** (`casos.js`), que muestra por
+caso la secuencia de cambios. Cierra los hallazgos **H-08** y **H-10** y completa el **RNF-09**.
+
+| # | Campo | Tipo | OBL | Dominio / formato | Origen | Notas |
+|---|---|---|---|---|---|---|
+| 1 | `fecha_hora` | T | Sí | `DD/MM/AAAA hh:mm` (texto, RNF-06) | Aplicación | Momento del cambio; se escribe con la misma marca que `fecha_modificacion` del maestro. |
+| 2 | `operador` | T | Sí | `P00` de la sesión | Aplicación (D-29) | Quien hizo el cambio; nunca se guarda la contraseña. |
+| 3 | `id_averia` | T (FK) | Sí | PK de `averias.json` | Aplicación | Clave del caso afectado. |
+| 4 | `campo` | T | Sí | nombre del campo del maestro | Aplicación | `status`, `clase`, `nivel`, `tipo_abonado`, `sector`, `Reparador Principal`, `sacas`, `observaciones`, `resolucion`, `fechaResolucion`. |
+| 5 | `valor_anterior` | T | No | texto del valor previo | Aplicación | Vacío cuando el cambio es una **ingesta** o un alta (no había valor previo). |
+| 6 | `valor_nuevo` | T | Sí | texto del valor nuevo | Aplicación | Valor que queda en el maestro. |
+| 7 | `accion` | E | Sí | `edicion` / `cierre` / `reapertura` / `asignacion` / `ingesta` | Aplicación | Clasifica el cambio (D-56). |
+
+**Ejemplo de línea** (una sola línea física, sin salto interno):
+
+```json
+{"fecha_hora":"13/09/2026 10:05","operador":"12345","id_averia":"2026-00123","campo":"status","valor_anterior":"PEND","valor_nuevo":"CERRADO","accion":"cierre"}
+```
+
+**Reglas de integridad**
+- **No se edita ni se borra ninguna línea**: no hay operación de actualización ni de baja sobre
+  este archivo (append-only, D-56); la aplicación solo escribe añadiendo al final.
+- Cada línea es un JSON válido e independiente (JSONL); una línea corrupta no invalida las
+  anteriores ni impide seguir añadiendo.
+- Todo cambio del maestro genera al menos una línea; un cierre genera las líneas de los campos
+  modificados con `accion = cierre` y una reapertura con `accion = reapertura` (D-56).
+- El archivo se respalda junto con el maestro y **nunca se recorta** (§7 de `entornos_globales.md`).
+- Codificación UTF-8 sin BOM, igual que el resto de los archivos de trabajo (§6).
+
+---
+
+## 5. Archivos de configuración
+
+### 5.1 `central.json` — datos operativos de la central (RF-11, L15)
 
 | Campo | Tipo | Dominio / ejemplo | Notas |
 |---|---|---|---|
@@ -139,7 +179,7 @@ como filtro contra `central.json` (RT-03).
 | `central` | T | — | Código de la central. |
 | `nombre_central` | T | `Francisco Salias` | Nombre de la central (L1). |
 
-### 4.2 `tecnicos.json` — padrón de trabajadores (RF-12, L16)
+### 5.2 `tecnicos.json` — padrón de trabajadores (RF-12, L16)
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
@@ -155,7 +195,7 @@ como filtro contra `central.json` (RT-03).
 | `especialidad` | T | No | — |
 | `status` | E | Sí | Activo / inactivo. Un técnico inactivo no puede iniciar sesión. |
 
-### 4.3 `flota.json` — padrón de vehículos (RF-13, L17)
+### 5.3 `flota.json` — padrón de vehículos (RF-13, L17)
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
@@ -170,7 +210,7 @@ como filtro contra `central.json` (RT-03).
 | `estado_fluidos` | T | No | — |
 | `estado_general` | T | No | — |
 
-### 4.4 `cuadrillas.json` — padrón de cuadrillas (RF-14, D-07)
+### 5.4 `cuadrillas.json` — padrón de cuadrillas (RF-14, D-07)
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
@@ -182,7 +222,7 @@ como filtro contra `central.json` (RT-03).
 | `sectores` | L | No | FK a `sectores.json`; zonas preferentes. |
 | `status` | E | Sí | Activa / inactiva. |
 
-### 4.5 `sectores.json` — catálogo de sectores (D-03)
+### 5.5 `sectores.json` — catálogo de sectores (D-03)
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
@@ -191,7 +231,7 @@ como filtro contra `central.json` (RT-03).
 | `vias` | L | Sí | Calles, urbanizaciones o puntos de referencia que lo componen. |
 | `cuadrilla_sugerida` | T | No | FK a `cuadrillas.json`; sugerencia para el despacho. |
 
-### 4.6 `claves_clasificacion.json` — palabras clave de clasificación (D-11, RN-03)
+### 5.6 `claves_clasificacion.json` — palabras clave de clasificación (D-11, RN-03)
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
@@ -201,7 +241,7 @@ como filtro contra `central.json` (RT-03).
 
 ---
 
-## 5. Relaciones entre entidades
+## 6. Relaciones entre entidades
 
 ```mermaid
 erDiagram
@@ -212,6 +252,7 @@ erDiagram
   CUADRILLA }o--o{ TECNICO : integra
   CUADRILLA }o--o{ SECTOR : cubre
   AVERIA ||--o{ DESPACHO : proyecta
+  AVERIA ||--o{ HISTORIAL : audita
   ESTRUCTURA ||--o{ AVERIA : "mapea el CSV"
   CLAVES ||--o{ AVERIA : clasifica
 ```
@@ -224,12 +265,13 @@ erDiagram
 | `cuadrillas.tecnicos` → `tecnicos.json` | N a N | Un técnico puede integrar una cuadrilla por jornada. |
 | `cuadrillas.vehiculo` → `flota.json` | 1 a 1 | Un vehículo por cuadrilla. |
 | `averias.json` → `despacho.json` | 1 a N | Proyección de columnas para el trabajo de campo (RT-05). |
+| `averias.json` → `historial.jsonl` | 1 a N | Cada cambio de un caso **añade** una línea con `id_averia`, campo, valor anterior y valor nuevo; el archivo es *append-only* y no se edita ni se borra (D-56, RNF-09). |
 | `estructura.json` → ingesta | 1 a 1 | Contrato de columnas del CSV diario (D-08). |
 | `claves_clasificacion.json` → `status` | 1 a 1 | Determina PEND vs. GESTION (D-05, D-11). |
 
 ---
 
-## 6. Reglas de formato y normalización
+## 7. Reglas de formato y normalización
 
 | Tema | Regla |
 |---|---|
@@ -238,12 +280,12 @@ erDiagram
 | Texto | Se conserva tal como llega del CSV; los typos de interfaz se corrigen solo en las etiquetas (A-06). |
 | Comparación de direcciones | Mayúsculas, sin tildes, tolerante a abreviaturas ("Av.", "Cll.", "Urb."), según D-03. |
 | Deduplicación | Por `id_averia`, comparación exacta de texto (RN-01). |
-| Codificación de archivos | UTF-8 sin BOM para todos los JSON y para el CSV de entrada. |
+| Codificación de archivos | UTF-8 sin BOM para todos los JSON y para el CSV de entrada; también para `historial.jsonl`, una línea JSON por cambio (D-56). |
 | Nomenclatura de campos | Se respeta la del fuente, incluidos `Reparador Principal` (con espacio), `fechaResolucion` (camelCase) y `codigos_sin_gestion_en_VENAPP`. |
 
 ---
 
-## 7. Anexo A — CSV diario real (`detalle_averias_gpon DD_MM_AAAA.csv`)
+## 8. Anexo A — CSV diario real (`detalle_averias_gpon DD_MM_AAAA.csv`)
 
 Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centrales).
 
@@ -299,7 +341,7 @@ del caso o para el despacho (columnas 65-80).
 
 ---
 
-## 8. Estado del diccionario
+## 9. Estado del diccionario
 
 **Sin pendientes de decisión:** las ambigüedades que figuraban aquí quedaron cerradas — A-04 (D-25: el
 sector es una entidad con `id` y `nombre`; el `id` es texto único, D-52), A-11 (D-17 y D-29: `ups` es el
@@ -310,6 +352,8 @@ el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.cs
 **Pendientes técnicos de implementación (no de decisión):**
 
 - Fijar las versiones exactas de las librerías de `lib/` al iniciar C1.
-- Historial inmutable de cambios (JSONL append-only): fuera del MVP; el maestro conserva el último
-  cambio (`usuario_modificacion`, `fecha_modificacion`).
 - Confirmar en el CSV real si trae columnas no declaradas en `estructura.json` (se ignorarían).
+
+**Ya resuelto (no es pendiente):** el **historial inmutable de cambios** queda decidido por
+**D-56**: `historial.jsonl` es *append-only*, con los 7 campos de §4, y cierra H-08 y H-10 y completa
+RNF-09. El maestro conserva el último cambio y el historial conserva todos los anteriores.
