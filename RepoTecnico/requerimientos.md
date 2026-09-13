@@ -79,6 +79,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-29 | **`P00` es el código de empleado:** único y obligatorio en `tecnicos.json`, y es la credencial con la que el operador inicia sesión (A-11). |
 | D-30 | **«Citados del día»** son los casos con cita agendada para la fecha del despacho (`fecha_cita`, col. 19 del CSV); entran con prioridad y se marcan como CITADO (A-05). |
 | D-31 | **`despacho.json` se amplía** con `sector`, `Reparador Principal` y `fecha_despacho`, y queda como registro del despacho del día (A-14); RT-05 se corrige. |
+| D-32 | **Desempate de la construcción (CNS):** primero la cuadrilla que tenga ese sector como zona preferente en `cuadrillas.sectores`; si hay varias o ninguna, la de menor carga del día y, en empate, el `id` menor; el supervisor puede cambiarla y el cambio queda registrado (A-10). |
 
 ---
 
@@ -165,7 +166,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RN-03 | Sin palabras clave de fibra → `status = GESTION`; con palabras clave → `status = PEND`. Si el CSV trae `estatus = ASGN`, prevalece sobre esta regla. La búsqueda es por **subcadena sobre texto normalizado** (mayúsculas, sin tildes, espacios colapsados) en `ultimo_comentario`, `problema_reporte`, `informacion_1` e `informacion_2`, con vista previa del impacto antes de cambiar la lista o el modo. | L36; D-05, D-11, D-21, D-26 |
 | RN-04 | Toda dirección debe quedar asociada a un sector; si no hay coincidencia, el sistema solicita incorporar el sector. | L37 |
 | RN-05 | Cada cuadrilla recibe: citados del día (`fecha_cita` = día, D-30) + ≥1 reparación de referidos + ≥1 reparación de empresas. | L42 |
-| RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector. | L42 |
+| RN-06 | La construcción se asigna a una sola cuadrilla: la que tenga reparaciones en ese sector, desempatando por zona preferente, luego menor carga y luego `id` menor (D-32). | L42 |
 | RN-07 | Toda edición de un caso se refleja de inmediato en `averias.json`. | L52 |
 | RN-08 | La semana operativa va de lunes a sábado. | L9 |
 
@@ -188,7 +189,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 ## 9. Ambigüedades: 12 cerradas y 6 abiertas
 
 Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión. Estado al
-13/09/2026: **cerradas 15** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-11, A-12, A-13, A-14, A-15, A-16, A-17 y A-18) y **abiertas 3** (A-08, A-09 y A-10), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
+13/09/2026: **cerradas 16** (A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-10, A-11, A-12, A-13, A-14, A-15, A-16, A-17 y A-18) y **abiertas 2** (A-08 y A-09), que en los casos de uso quedaron como supuestos marcados `[SUPUESTO: A-xx]` a la espera de decisión.
 
 | ID | Ambigüedad | Pregunta a resolver | Ciclo afectado |
 |---|---|---|---|
@@ -199,7 +200,7 @@ Las filas marcadas **Resuelta (D-xx)** se conservan como historial de decisión.
 | A-10 | Desempate cuando varias cuadrillas tienen reparaciones en el sector de la construcción (L42). | ¿Qué criterio decide (menor carga, sectores asignados a la cuadrilla o decisión manual)? | C4 |
 | A-11 | **Resuelta (D-17 y D-29):** `tipo_abonado` se deriva de `unidad_negocio`/`ups`, y `P00` es el código de empleado que identifica la sesión. | Decidido por el usuario el 13/09/2026. | C1 |
 | A-12 | **Resuelta (D-12):** `estructura.json` pasa a ser un mapa posicional que declara solo las columnas necesarias. | Decidido por el usuario el 12/09/2026. | C2 |
-| A-14 | `despacho.json` (L57) no incluye `Reparador Principal` ni `sector`, necesarios para agrupar por cuadrilla (L44). | ¿Se amplía `despacho.json` con `sector` y cuadrilla, o el agrupamiento se calcula y no se persiste? | C4 |
+| A-14 | **Resuelta (D-31):** `despacho.json` se amplía con `sector`, `Reparador Principal` y `fecha_despacho`. | Decidido por el usuario el 13/09/2026. | C4 |
 | A-15 | **Resuelta (D-13):** `ASGN` es un cuarto estado del maestro. Queda abierta su interacción con RN-03 (A-18). | Decidido por el usuario el 12/09/2026. | C2 |
 | A-16 | **Resuelta (D-21):** las fechas se recortan a `DD/MM/AAAA` y el texto original con hora se conserva en un campo aparte. | Decidido por el usuario el 12/09/2026. | C2 |
 | A-17 | **Resuelta (D-14):** los datos de `alta_manual.csv` se descartan; los casos se cargan manualmente en la página. | Decidido por el usuario el 12/09/2026. | C1 / C6 |
