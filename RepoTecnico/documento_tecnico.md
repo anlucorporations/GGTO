@@ -88,12 +88,12 @@ C:\GGTO\respaldo\            # copia fechada del maestro y de historial.jsonl al
 
 ### 2.3 Módulos y responsabilidades
 
-Son **12 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`, `casos.js`, `panel.js`, `gestion.js`, `configuracion.js` y `reportes.js`). La tabla tiene **13 filas** porque la última —respaldo y contingencia— **no es un módulo propio**: es una **responsabilidad compartida** de `almacen.js` + `app.js`. El diagrama de componentes de §2.4 dibuja **12 nodos**, uno por módulo.
+Son **13 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`, `casos.js`, `panel.js`, `gestion.js`, `configuracion.js`, `reportes.js` y `respaldo.js`). La tabla tiene **13 filas**, una por módulo: **`respaldo.js` dejó de ser una responsabilidad compartida** de `almacen.js` + `app.js` al implementarse el bloque RESPALDO del ciclo **C7** (CU-21). El diagrama de componentes de §2.4 dibuja **13 nodos**, uno por módulo.
 
 | Módulo | Responsabilidad principal | RF que implementa |
 |---|---|---|
 | `app.js` | Arranque, enrutado de las 7 pestañas (RF-01), estado global, **sesión e identificación del operador** (D-29, credencial `P00` + contraseña D-39, resolución del **rol** leído de `tecnicos.json` D-61, expiración D-45) y **bloqueo total sin sesión válida** (D-50); **alta del primer supervisor cuando el padrón está vacío** (arranque en frío, D-62); **registro de accesos en `datos/incidencias.log`** con la rotación D-64; accesibilidad de la interfaz (RNF-13); detección de `file://`, versión y log de aplicación | RF-01; RNF-03, RNF-07, RNF-08, RNF-13 |
-| `almacen.js` | Abrir, leer, escribir y **releer** los JSON (File System Access API + modo descarga); catálogo de esquemas; deduplicación por `id_averia`; registro de auditoría (`usuario_modificacion`, `fecha_modificacion`) y **escritura *append* del historial inmutable `historial.jsonl`** (una línea JSON por campo cambiado, D-56); **rotación del log de accesos `incidencias.log` a 5 MB × 5 archivos** antes de cada escritura del log (**D-64**); **escritura verificada con respaldo previo `.bak`, temporal, relectura y comparación** (D-42) y **detección de conflicto al guardar** (D-41); copia fechada del maestro y del historial al cierre (D-49) | RF-24; RNF-04, RNF-09, RNF-10, RNF-14, RNF-15, RNF-16; RT-01, RT-04, RT-06, RT-10 |
+| `almacen.js` | Abrir, leer, escribir y **releer** los JSON (File System Access API + modo descarga); catálogo de esquemas; deduplicación por `id_averia`; registro de auditoría (`usuario_modificacion`, `fecha_modificacion`) y **escritura *append* del historial inmutable `historial.jsonl`** (una línea JSON por campo cambiado, D-56); **rotación del log de accesos `incidencias.log` a 5 MB × 5 archivos** antes de cada escritura del log (**D-64**); **escritura verificada con respaldo previo `.bak`, temporal, relectura y comparación** (D-42) y **detección de conflicto al guardar** (D-41); **primitivas de la copia de cierre en `C:\GGTO\respaldo\` y de la restauración verificada** (D-49), sobre las que trabaja `respaldo.js` | RF-24; RNF-04, RNF-09, RNF-10, RNF-14, RNF-15, RNF-16; RT-01, RT-04, RT-06, RT-10 |
 | `ingesta.js` | Carga del CSV con PapaParse (`delimiter: ';'`), validación bloqueante de las 80 columnas, filtro de central, extracción por `estructura.json`, dedupe, clasificación RN-03 y sector (RN-04) | RF-16 a RF-19, RF-27; RNF-02, RNF-04, RNF-06, RNF-10; RT-02, RT-03, RT-07, RT-08 |
 | `despacho.js` | Agrupación por sector y `Reparador Principal`, reglas RN-05/RN-06, desempate D-32, edición manual y persistencia en el maestro | RF-08, RF-09, RF-20; RNF-01, RNF-05 (proyección impresa en carta horizontal), RNF-10, RNF-11; RT-05 |
 | `pdf.js` | PDF del despacho por cuadrilla en carta horizontal con paginación, marca de fecha/cuadrilla/copia (jsPDF + autoTable) y registro de entrega y recogida | RF-10; RNF-05, RNF-11 |
@@ -102,9 +102,9 @@ Son **12 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.j
 | `casos.js` | Tabla maestra (7 columnas resumen), agrupación y filtrado (abiertos/cerrados, cuadrilla, tipo, clase, nivel, estatus), edición en línea de `clase`/`nivel`/`tipo_abonado`, flotante de detalle y **cierre bloqueante**; **consulta de la auditoría de CU-15 leyendo `historial.jsonl`** (secuencia de cambios por caso: fecha/hora, operador, campo, valor anterior y valor nuevo, D-56); navegación y foco accesibles (RNF-13) | RF-07, RF-21 a RF-24, RF-28; RNF-01, RNF-02, RNF-07, RNF-09, RNF-10, RNF-13 |
 | `panel.js` | Búsqueda por `id_averia` o `telefono`, actualización de gestión y alta manual con `id_averia` `MAN-` | RF-02, RF-03, RF-04, RF-28 |
 | `gestion.js` | Bandeja telefónica de `status = GESTION`: cola por antigüedad y sector, guion de verificación y reclasificación | RF-15, RF-07 (clasificación), RF-28 |
-| `configuracion.js` | Subpestañas CENTRAL, TECNICOS, FLOTA, CUADRILLA, SECTORES (CRUD) y PALABRAS CLAVE, más la cola de asignación de sector | RF-11 a RF-14, RF-18 (cola), RF-27, RF-29 |
+| `configuracion.js` | Subpestañas CENTRAL, TECNICOS, FLOTA, CUADRILLA, SECTORES (CRUD), PALABRAS CLAVE y **RESPALDO** (que delega en `respaldo.js`), más la cola de asignación de sector | RF-11 a RF-14, RF-18 (cola), RF-27, RF-29 |
 | `reportes.js` | Reporte de trabajo diario y de gestión semanal; vigilancia de casos especiales y averías concentradas | RF-25, RF-26 |
-| `almacen.js` + `app.js` *(sin módulo propio)* | Escritura verificada con respaldo previo y 10 versiones `.bak` (D-42), respaldo del maestro al cierre en `C:\GGTO\respaldo\` (D-49), restauración (D-36) y diagnóstico del entorno en modo descarga | —; RNF-14, RNF-15, RNF-16; RT-10 |
+| `respaldo.js` | Bloque **RESPALDO** de CONFIGURACION: estado del último respaldo, **copia de cierre de los 10 archivos** (9 JSON + `historial.jsonl` íntegro) verificada por relectura, **restauración** con respaldo previo `.bak`, confirmación escrita cuando la copia pierde casos, detección de conflicto (D-41) y registro de las horas de inicio y fin para comprobar el **RTO de 1 hora** y el **RPO** del cierre anterior | RF-24; RNF-04, RNF-10, RNF-12, RNF-14, RNF-15, RNF-16; RT-10 |
 
 ### 2.4 Diagrama de componentes
 
@@ -133,6 +133,7 @@ flowchart TB
     GES["gestion.js - RF-15"]
     CFG["configuracion.js - RF-11 a RF-14, RF-27, RF-29"]
     REP["reportes.js - RF-25, RF-26"]
+    RSP["respaldo.js - RF-24 (CU-21)"]
   end
 
   subgraph LIB["app/lib - librerias locales (RT-07)"]
@@ -156,6 +157,8 @@ flowchart TB
   CAS --> ALM
   GES --> ALM
   CFG --> ALM
+  CFG --> RSP
+  RSP --> ALM
   ING --> ALM
   DSP --> ALM
   ALM --> DES
@@ -884,7 +887,7 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | `gestion.js` | CU-13 | RF-07 (clasificación), RF-15, RF-28 | RNF-01, RNF-09, RNF-10, RNF-12 |
 | `configuracion.js` | CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-09 | RF-11, RF-12, RF-13, RF-14, RF-18 (cola), RF-27, RF-29 | RNF-04, RNF-08, RNF-09, RNF-10, RNF-12; RT-01, RT-03 |
 | `reportes.js` | CU-19, CU-20 | RF-25, RF-26 | RNF-01, RNF-06, RNF-11 |
-| Respaldo / contingencia (`almacen.js` + `app.js`, sin módulo propio) | CU-21, CU-22 | **H-17 atendido:** RNF-15 (escritura verificada) y RNF-16 (respaldo) los asignan a `almacen.js` + `app.js` | RNF-04, RNF-10, RNF-15, RNF-16; RT-10 |
+| `respaldo.js` (bloque RESPALDO de CONFIGURACION, C7) | CU-21 | RF-24 | RNF-04, RNF-10, RNF-12, **RNF-14**, **RNF-15**, **RNF-16**; RT-10 |
 
 ### 6.2 Cobertura de los 29 RF
 
@@ -913,7 +916,7 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | RF-21 | `casos.js` | CU-10 |
 | RF-22 | `casos.js` | CU-11, CU-12 |
 | RF-23 | `casos.js` | CU-10 |
-| RF-24 | `almacen.js` | CU-10, CU-12, CU-13, CU-14 |
+| RF-24 | `almacen.js`, `respaldo.js` (copia de cierre y restauración, CU-21) | CU-10, CU-12, CU-13, CU-14, CU-21 |
 | RF-25 | `reportes.js` + `metricas.js` | CU-19 |
 | RF-26 | `reportes.js` + `configuracion.js` (umbral) | CU-20 |
 | RF-27 | `configuracion.js` + `ingesta.js` | CU-07 |
@@ -942,16 +945,16 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | RNF-13 (accesibilidad) | `app.js` (armazón, foco y contraste), `casos.js` (tabla y flotante navegables por teclado) |
 | RNF-14 (integridad ante concurrencia) | `almacen.js` (detección de conflicto al guardar) |
 | RNF-15 (integridad de escritura) | `almacen.js` (`.bak`, temporal, relectura y comparación) |
-| RNF-16 (respaldo) | `almacen.js` (copia fechada del maestro) + `app.js` (oferta al cierre de la jornada) |
+| RNF-16 (respaldo) | `respaldo.js` (bloque RESPALDO: copia de cierre de los 10 archivos y restauración, CU-21) + `almacen.js` (primitiva de copia verificada) |
 | RT-01, RT-04 | `almacen.js` (esquemas y orden de campos) |
 | RT-02, RT-03, RT-08 | `ingesta.js` + `configuracion.js` (CENTRAL) |
 | RT-05 | `despacho.js` |
 | RT-06, RT-09 | `servir-ggto.ps1` + `app.js` |
 | RT-07 | `app/lib/` (las 4 librerías locales) |
-| RT-10 | `almacen.js` + procedimiento de respaldo (D-36, D-42, D-49) |
+| RT-10 | `almacen.js` + `respaldo.js` (bloque RESPALDO) y procedimiento de respaldo (D-36, D-42, D-49) |
 | RT-11 | **Fuera del alcance de los módulos:** ubicación del metadata de git (`C:\GGTO\proyecto\.git`; el directorio anterior `C:\GGTO\git\GGTO-v1.git` queda como respaldo del historial), tarea de entorno (§7) |
 
-**Resultado: 16 de 16 RNF tienen módulo responsable**, y el derivado **S-RNF-02b** (umbral propio de la ingesta) queda asignado a `ingesta.js` con valor objetivo y punto de medida. **RNF-09 (auditoría)** queda cubierto por `almacen.js` (escritura *append* en `historial.jsonl`) y `casos.js` (consulta de la secuencia de cambios de CU-15), con lo que H-10 se cierra (D-56). RNF-13 (accesibilidad) queda en `app.js` y `casos.js`; RNF-14 y RNF-15 (concurrencia y escritura verificada) en `almacen.js`; RNF-16 (respaldo) en `almacen.js` + `app.js`; y RNF-05 y RNF-11 (impresión y control documental) en `pdf.js` + `despacho.js`, ya alineados con §6.1.
+**Resultado: 16 de 16 RNF tienen módulo responsable**, y el derivado **S-RNF-02b** (umbral propio de la ingesta) queda asignado a `ingesta.js` con valor objetivo y punto de medida. **RNF-09 (auditoría)** queda cubierto por `almacen.js` (escritura *append* en `historial.jsonl`) y `casos.js` (consulta de la secuencia de cambios de CU-15), con lo que H-10 se cierra (D-56). RNF-13 (accesibilidad) queda en `app.js` y `casos.js`; RNF-14 y RNF-15 (concurrencia y escritura verificada) en `almacen.js`; RNF-16 (respaldo) en `respaldo.js` + `almacen.js`; y RNF-05 y RNF-11 (impresión y control documental) en `pdf.js` + `despacho.js`, ya alineados con §6.1.
 
 ---
 

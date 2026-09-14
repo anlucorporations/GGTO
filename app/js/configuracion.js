@@ -1,7 +1,8 @@
 /*
  * GGTO-v1 - configuracion.js  (ciclo C1)
- * CONFIGURACION con seis sub-pestañas: CENTRAL (CU-02), TECNICOS (CU-03),
- * FLOTA (CU-04), CUADRILLA (CU-05), SECTORES (CU-06) y PALABRAS CLAVE (CU-07).
+ * CONFIGURACION con siete sub-pestañas: CENTRAL (CU-02), TECNICOS (CU-03),
+ * FLOTA (CU-04), CUADRILLA (CU-05), SECTORES (CU-06), PALABRAS CLAVE (CU-07) y
+ * RESPALDO (CU-21, ciclo C7: copia de cierre y restauración).
  * Alta, edición y baja de cada archivo de configuración con escritura
  * verificada (D-42, RNF-15) y detección de conflicto (D-41, RNF-14).
  * Solo el supervisor edita (D-35, RNF-12); el operador no ve la pestaña.
@@ -19,7 +20,8 @@
     { id: 'flota', etiqueta: 'FLOTA', archivo: 'flota.json' },
     { id: 'cuadrilla', etiqueta: 'CUADRILLA', archivo: 'cuadrillas.json' },
     { id: 'sectores', etiqueta: 'SECTORES', archivo: 'sectores.json' },
-    { id: 'claves', etiqueta: 'PALABRAS CLAVE', archivo: 'claves_clasificacion.json' }
+    { id: 'claves', etiqueta: 'PALABRAS CLAVE', archivo: 'claves_clasificacion.json' },
+    { id: 'respaldo', etiqueta: 'RESPALDO', archivo: null }
   ];
 
   var subActiva = 'central';
@@ -77,7 +79,20 @@
     else if (subActiva === 'flota') renderFlota(cuerpo, ctx);
     else if (subActiva === 'cuadrilla') renderCuadrillas(cuerpo, ctx);
     else if (subActiva === 'sectores') renderSectores(cuerpo, ctx);
-    else renderClaves(cuerpo, ctx);
+    else if (subActiva === 'claves') renderClaves(cuerpo, ctx);
+    else renderRespaldo(cuerpo, ctx);
+  }
+
+  /** Bloque RESPALDO (CU-21, ciclo C7): delega en el módulo respaldo.js. */
+  function renderRespaldo(cuerpo, ctx) {
+    var R = raiz.GGTO_RESPALDO;
+    if (!R || typeof R.render !== 'function') {
+      cuerpo.appendChild(ctx.texto('p',
+        'El módulo de respaldo no está cargado: revise que respaldo.js esté incluido en la página.',
+        'aviso aviso-error'));
+      return;
+    }
+    R.render(cuerpo, ctx);
   }
 
   function avisoRol(ctx) {

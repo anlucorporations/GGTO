@@ -42,7 +42,8 @@ GGTO-v1/
 |  |- panel.js                # RF-02 a RF-04
 |  |- gestion.js              # RF-15
 |  |- configuracion.js        # RF-11 a RF-14, RF-27
-|  \- reportes.js             # RF-25, RF-26
+|  |- reportes.js             # RF-25, RF-26
+|  \- respaldo.js             # CU-21: bloque RESPALDO (copia de cierre y restauracion)
 |- datos/
 |  |- averias.json            # maestro (L56)
 |  |- despacho.json           # vista de campo (L57)

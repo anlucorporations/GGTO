@@ -6,6 +6,9 @@
  *    relectura comparada y confirmacion (D-42, RNF-15);
  *  - deteccion de conflicto por marca de modificacion (D-41, RNF-14);
  *  - historial inmutable append-only (D-56, RNF-09);
+ *  - copia de cierre de la jornada en C:\GGTO\respaldo verificada por
+ *    relectura, y restauracion del maestro desde una copia fechada
+ *    (C7: CU-21, D-49, RNF-16);
  *  - modo descarga para navegadores sin la API (RNF-03), exigiendo sesion.
  *
  * Depende de GGTO_NUCLEO (carga previa por <script>).
@@ -64,6 +67,17 @@
     });
   }
 
+  /**
+   * Pide autorizacion de la carpeta de respaldo `C:\GGTO\respaldo` (D-49).
+   * Es una autorizacion aparte de la de datos: el navegador exige conceder
+   * cada carpeta por separado y la pagina no puede escribir fuera de la
+   * carpeta autorizada.
+   */
+  function abrirCarpetaRespaldo() {
+    if (!soportado()) return Promise.reject(new Error('File System Access API no disponible'));
+    return raiz.showDirectoryPicker({ id: 'ggto-respaldo', mode: 'readwrite' });
+  }
+
   function leerTexto(handle) {
     return handle.getFile().then(function (archivo) {
       return archivo.text().then(function (texto) {
@@ -76,6 +90,7 @@
     return {
       tipo: 'carpeta',
       carpeta: dir,
+      carpetaRespaldo: null,
       handles: {},
       estado: {},
       datos: {},
@@ -84,7 +99,12 @@
       guardarArchivo: guardarCarpeta,
       agregarHistorial: agregarHistorialCarpeta,
       crearEstructura: crearEstructuraCarpeta,
+      autorizarRespaldo: autorizarRespaldoCarpeta,
       guardarCopiaCierre: guardarCopiaCierreCarpeta,
+      estadoRespaldo: estadoRespaldoCarpeta,
+      listarCopiasRespaldo: listarCopiasRespaldoCarpeta,
+      leerCopiaRespaldo: leerCopiaRespaldoCarpeta,
+      restaurarCopia: restaurarCopiaCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (carpeta autorizada)'; }
     };
   }
@@ -93,6 +113,7 @@
     var almacen = {
       tipo: 'archivos',
       carpeta: null,
+      carpetaRespaldo: null,
       handles: manejadores,
       estado: {},
       datos: {},
@@ -101,9 +122,14 @@
       guardarArchivo: guardarArchivoSuelto,
       agregarHistorial: agregarHistorialArchivo,
       crearEstructura: crearEstructuraArchivos,
-      guardarCopiaCierre: function () {
-        return Promise.reject(new Error('El modo por archivo no crea la copia fechada de cierre'));
-      },
+      autorizarRespaldo: autorizarRespaldoCarpeta,
+      // La copia de cierre solo necesita leer los archivos de origen (ya
+      // autorizados uno a uno) y la carpeta de respaldo: funciona igual.
+      guardarCopiaCierre: guardarCopiaCierreCarpeta,
+      estadoRespaldo: estadoRespaldoCarpeta,
+      listarCopiasRespaldo: listarCopiasRespaldoCarpeta,
+      leerCopiaRespaldo: leerCopiaRespaldoCarpeta,
+      restaurarCopia: restaurarCopiaCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (archivos elegidos uno a uno)'; }
     };
     return almacen;
@@ -569,15 +595,186 @@
     return cadena.then(function () { return { creados: creados }; });
   }
 
-  /** Copia fechada con hora del maestro en C:\GGTO\respaldo\ (D-49, RNF-16). */
+  // ------------------------------------------------------------------
+  // Copia de cierre y restauracion (C7: CU-21, RF-24, D-42, D-49, D-56)
+  // ------------------------------------------------------------------
+  /** Escribe `texto` en `nombre` dentro de la carpeta de respaldo. */
+  function escribirEnCarpeta(carpeta, nombre, texto) {
+    return carpeta.getFileHandle(nombre, { create: true }).then(function (h) {
+      return h.createWritable().then(function (w) {
+        return w.write(texto).then(function () { return w.close(); });
+      });
+    });
+  }
+
+  /** Lee el archivo `nombre` de la carpeta de respaldo. */
+  function leerDeCarpeta(carpeta, nombre) {
+    return carpeta.getFileHandle(nombre).then(function (h) { return leerTexto(h); });
+  }
+
+  /** Líneas con contenido: comprueba que el historial no se recorta (D-56). */
+  function lineasConContenido(texto) {
+    return String(texto || '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; }).length;
+  }
+
+  /** Autoriza la carpeta de respaldo `C:\GGTO\respaldo` en esta sesión (D-49). */
+  function autorizarRespaldoCarpeta(dir) {
+    if (!dir) return Promise.reject(new Error('No se recibió la carpeta de respaldo'));
+    this.carpetaRespaldo = dir;
+    return Promise.resolve({ autorizada: true, ruta: CONST.RUTA_RESPALDO });
+  }
+
+  /**
+   * Copia de cierre de la jornada (CU-21 pasos 3 y 4; D-49, D-56, RNF-16):
+   * copia los 9 JSON de trabajo y `historial.jsonl` a `C:\GGTO\respaldo`, con
+   * el maestro fechado con hora (`averias_AAAA-MM-DD_HHMM.json`) para que dos
+   * respaldos del mismo día no colisionen, y verifica cada copia **releyéndola
+   * y comparando el contenido** con el original. El historial se copia íntegro,
+   * sin truncar ni filtrar. Devuelve el resumen con verificados y fallos.
+   */
   function guardarCopiaCierreCarpeta() {
     var almacen = this;
-    var handle = almacen.handles[CONST.ARCHIVO_MAESTRO];
-    if (!handle) return Promise.reject(new Error('No hay maestro cargado para respaldar'));
-    return leerTexto(handle).then(function (lectura) {
-      var nombre = N.nombreCopiaCierre(new Date());
-      return descargar(nombre, lectura.texto).then(function () {
-        return { nombre: nombre, tamano: lectura.texto.length };
+    if (!almacen.carpetaRespaldo) {
+      var e = new Error('No está autorizada la carpeta de respaldo ' + CONST.RUTA_RESPALDO);
+      e.tipo = 'sinRespaldo';
+      return Promise.reject(e);
+    }
+    var ahora = new Date();
+    var nombreMaestro = N.nombreCopiaCierre(ahora);
+    var archivos = [];
+    var fallos = [];
+    var cadena = Promise.resolve();
+    NOMBRES.forEach(function (nombre) {
+      cadena = cadena.then(function () {
+        var destino = nombre === CONST.ARCHIVO_MAESTRO ? nombreMaestro : nombre;
+        var origen = almacen.handles[nombre];
+        if (!origen) {
+          fallos.push({ archivo: destino, motivo: 'el archivo de origen no está disponible' });
+          return null;
+        }
+        return leerTexto(origen).then(function (lectura) {
+          return escribirEnCarpeta(almacen.carpetaRespaldo, destino, lectura.texto).then(function () {
+            return leerDeCarpeta(almacen.carpetaRespaldo, destino);
+          }).then(function (copia) {
+            if (copia.texto !== lectura.texto) {
+              fallos.push({ archivo: destino, motivo: 'la copia releída no coincide con el original' });
+              return null;
+            }
+            if (nombre === CONST.ARCHIVO_HISTORIAL &&
+                lineasConContenido(copia.texto) !== lineasConContenido(lectura.texto)) {
+              fallos.push({ archivo: destino, motivo: 'el historial copiado no conserva todas sus líneas' });
+              return null;
+            }
+            archivos.push({ archivo: destino, tamano: lectura.texto.length });
+            return null;
+          });
+        }).catch(function (err) {
+          fallos.push({ archivo: destino, motivo: errorDe(err) });
+          return null;
+        });
+      });
+    });
+    return cadena.then(function () {
+      var marca = N.marcaAhora(ahora);
+      return {
+        marca: marca,
+        fecha: String(marca).split(' ')[0],
+        hora: String(marca).split(' ')[1] || '',
+        nombreMaestro: nombreMaestro,
+        ruta: CONST.RUTA_RESPALDO,
+        archivos: archivos,
+        verificados: archivos.length,
+        total: NOMBRES.length,
+        fallos: fallos,
+        cifrado: false
+      };
+    });
+  }
+
+  /** Copias de cierre de la carpeta de respaldo, de la más nueva a la más antigua. */
+  function listarCopiasRespaldoCarpeta() {
+    var almacen = this;
+    if (!almacen.carpetaRespaldo) return Promise.resolve([]);
+    return nombresDeCarpeta(almacen.carpetaRespaldo).then(function (nombres) {
+      var copias = nombres.filter(N.esCopiaCierre).sort().reverse();
+      var lista = [];
+      var cadena = Promise.resolve();
+      copias.forEach(function (nombre) {
+        cadena = cadena.then(function () {
+          return tamanoDe(almacen.carpetaRespaldo, nombre).then(function (tamano) {
+            lista.push({ nombre: nombre, marca: N.marcaDeCopia(nombre), tamano: tamano, ruta: CONST.RUTA_RESPALDO });
+          });
+        });
+      });
+      return cadena.then(function () { return lista; });
+    });
+  }
+
+  /** Estado del respaldo (CU-21 paso 1 y CA-6): última copia, listado y ruta. */
+  function estadoRespaldoCarpeta() {
+    var almacen = this;
+    return listarCopiasRespaldoCarpeta.call(almacen).then(function (copias) {
+      return {
+        autorizada: !!almacen.carpetaRespaldo,
+        ruta: CONST.RUTA_RESPALDO,
+        hay: copias.length > 0,
+        copias: copias,
+        ultima: copias.length ? copias[0] : null,
+        total: copias.length
+      };
+    });
+  }
+
+  /** Lee y valida una copia de cierre de la carpeta de respaldo (CU-21, flujo 6a). */
+  function leerCopiaRespaldoCarpeta(nombre) {
+    var almacen = this;
+    if (!almacen.carpetaRespaldo) {
+      var e = new Error('No está autorizada la carpeta de respaldo ' + CONST.RUTA_RESPALDO);
+      e.tipo = 'sinRespaldo';
+      return Promise.reject(e);
+    }
+    return leerDeCarpeta(almacen.carpetaRespaldo, nombre).then(function (lectura) {
+      var casos = null;
+      try {
+        casos = JSON.parse(lectura.texto);
+      } catch (err) {
+        casos = null;
+      }
+      if (!Array.isArray(casos)) {
+        var invalido = new Error('Respaldo inválido: ' + nombre);
+        invalido.tipo = 'copiaInvalida';
+        throw invalido;
+      }
+      return {
+        nombre: nombre, marca: N.marcaDeCopia(nombre), casos: casos,
+        texto: lectura.texto, tamano: lectura.texto.length
+      };
+    });
+  }
+
+  /**
+   * Restaura el maestro desde una copia de cierre (CU-21 pasos 5 a 7): valida la
+   * copia y escribe el maestro con el protocolo de D-42 —respaldo previo `.bak`,
+   * escritura, relectura comparada y restauración automática ante fallo—, con la
+   * detección de conflicto de D-41. Devuelve las horas de inicio y fin para poder
+   * comprobar el RTO de 1 hora (D-49, RNF-16).
+   */
+  function restaurarCopiaCarpeta(nombre, opciones) {
+    var almacen = this;
+    var inicio = new Date();
+    return leerCopiaRespaldoCarpeta.call(almacen, nombre).then(function (copia) {
+      return almacen.guardarArchivo(CONST.ARCHIVO_MAESTRO, copia.casos, opciones || {}).then(function () {
+        var fin = new Date();
+        var ms = fin.getTime() - inicio.getTime();
+        return {
+          copia: nombre,
+          marcaCopia: copia.marca,
+          casos: copia.casos.length,
+          inicio: N.marcaAhora(inicio),
+          fin: N.marcaAhora(fin),
+          duracionMs: ms,
+          rtoCumplido: ms <= 3600000
+        };
       });
     });
   }
@@ -604,6 +801,7 @@
     soportado: soportado,
     abrirCarpeta: abrirCarpeta,
     abrirArchivos: abrirArchivos,
+    abrirCarpetaRespaldo: abrirCarpetaRespaldo,
     detectarConflicto: detectarConflicto,
     rotarLogIncidencias: rotarLogIncidencias,
     descargar: descargar,

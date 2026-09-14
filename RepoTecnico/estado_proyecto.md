@@ -282,15 +282,17 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07) |
 | **C5** | MONITOREO y GRAFICOS: las 6 zonas con tabla (RF-05) y con gráficos de barras, barras + línea y torta (RF-06), más la serie semanal lunes–sábado con la línea de pendientes al cierre y selector Sem 1 a Sem 36 (D-34) | **Cerrado** — 15 pruebas; **Chart.js 4.4.7** fijado en `app/lib/` (RT-07) y tablas equivalentes en cada gráfico (RNF-13) |
 | **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
-| **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | Pendiente |
+| **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — **respaldo y restauración (CU-21) implementados y probados**: `app/js/respaldo.js` enganchado como subpestaña **RESPALDO** de CONFIGURACION, con copia de cierre de los **10 archivos** verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita cuando la copia pierde casos y registro del RTO/RPO. **12 pruebas automatizadas** nuevas y **18 comprobaciones** de interfaz en Chrome headless. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; el ciclo C4 (despacho y PDF) también está cerrado. **78 pruebas automatizadas en verde.**
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo y la restauración ya entregados. **114 pruebas automatizadas en verde.**
 
-**Código entregado (ciclos C1 a C4):** `app/index.html`, `app/css/estilos.css`, `app/js/nucleo.js`,
-`almacen.js`, `app.js`, `casos.js`, `configuracion.js`, los ocho módulos rotulados como pendientes de
-su ciclo (`ingesta`, `panel`, `gestion`, `despacho`, `pdf`, `metricas`, `graficos`, `reportes`),
-`pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs` y `pruebas_c1b.mjs`, y los lanzadores
-`servir-ggto.ps1` y `servir-ggto.bat`.
+**Código entregado (ciclos C1 a C7 en curso):** `app/index.html`, `app/css/estilos.css`,
+`app/js/nucleo.js`, `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, `ingesta_nucleo.js`,
+`ingesta.js`, `panel.js`, `gestion.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`,
+`reportes.js` y `respaldo.js`; `app/lib/` con las librerías locales fijadas (Chart.js 4.4.7,
+jsPDF 2.5.2, PapaParse — RT-07); las pruebas `pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs`,
+`pruebas_c1b.mjs`, `pruebas_c2.mjs` a `pruebas_c7.mjs`; y los lanzadores `servir-ggto.ps1` y
+`servir-ggto.bat`.
 
 **Datos de trabajo:** `C:\GGTO\datos` con los 10 archivos (el maestro, `despacho.json`,
 `estructura.json`, los 6 de configuración y `historial.jsonl`), `C:\GGTO\respaldo` para la copia de
@@ -298,4 +300,4 @@ cierre y `central.json` ya completado con los datos reales de la central (`regio
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs` (102 pruebas).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs` (114 pruebas).

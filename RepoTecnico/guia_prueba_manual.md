@@ -1,10 +1,11 @@
-# Guía de prueba manual — Ciclo C1 (GGTO-v1)
+# Guía de prueba manual — Ciclos C1 a C7 (GGTO-v1)
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías de la central Francisco Salias (Área 4).
 - **Ubicación:** `C:\GGTO\proyecto`
 - **Alcance de esta guía:** verificar a mano lo que las pruebas automatizadas no pueden cubrir (el selector
-  de carpeta y el guardado real desde el navegador). Cubre el ciclo **C1**; los ciclos C2 a C7
-  (ingesta, PANEL/GESTION, despacho y PDF, monitoreo, reportes) todavía no están implementados.
+  de carpeta, la autorización de la carpeta de respaldo y el guardado real desde el navegador). Cubre los
+  ciclos **C1 a C7**: armazón y configuración, ingesta, PANEL/GESTION, despacho y PDF, monitoreo y
+  gráficos, reportes, y **respaldo y restauración**.
 
 ---
 
@@ -168,11 +169,43 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
       el historial desde la emisión anterior.
 - [ ] Un operador **no** puede abrir la pestaña (es del supervisor) y el intento queda registrado.
 
-### 3.11 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.11 Respaldo y restauración (CU-21, ciclo C7)
 
-- [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
+> El bloque **RESPALDO** es una **subpestaña de CONFIGURACION**, no una pestaña propia (las pestañas
+> siguen siendo 7), y es **exclusivo del supervisor** (D-35, RNF-12).
+
+- [ ] Con sesión de **operador**, la subpestaña RESPALDO no permite respaldar ni restaurar: muestra
+      «Acción no permitida para su rol» y el intento queda en `incidencias.log`.
+- [ ] Al abrir RESPALDO por primera vez aparece **«Sin respaldos registrados»** y la advertencia de que
+      el RPO no está cubierto (D-49).
+- [ ] Pulsar *Autorizar carpeta C:\GGTO\respaldo* abre el selector del navegador; al concederlo, el
+      estado deja de avisar que falta la autorización.
+- [ ] *Respaldar ahora* muestra **«Respaldo verificado: 10 archivos»** con la fecha y hora, e indica el
+      nombre de la copia del maestro (`averias_AAAA-MM-DD_HHMM.json`).
+- [ ] En `C:\GGTO\respaldo\` quedan los **10 archivos**: los 9 JSON de trabajo **y** `historial.jsonl`
+      **íntegro** (las mismas líneas que el original, sin truncar), y **sin cifrar** (D-56, D-49).
+- [ ] Respaldar dos veces en el mismo día **no** sobrescribe la copia anterior: quedan dos archivos
+      `averias_..._HHMM.json` con minutos distintos (H-N-08).
+- [ ] Si se quita el permiso o la carpeta no está disponible, el respaldo **no** se marca como exitoso:
+      muestra el error con el archivo que falló y lo deja en el log con fecha y hora.
+- [ ] *Revisar la copia elegida* muestra el impacto: casos en la copia, casos en el maestro, cuántos
+      volverían al estado de la copia, cuántos se recuperarían y cuántos se perderían.
+- [ ] Con una copia que tiene **menos** casos que el maestro, el botón *Confirmar la restauración* queda
+      **deshabilitado** hasta escribir `RESTAURAR` (confirmación escrita).
+- [ ] Elegir un archivo que no es JSON válido responde **«Respaldo inválido»** y no reemplaza nada.
+- [ ] Al confirmar una restauración: el maestro queda con los casos de la copia, aparece en
+      `C:\GGTO\datos` un `.bak` con el **estado anterior** y el aviso informa **hora de inicio y de fin**
+      —dentro del **RTO de 1 hora**— y la fecha del cierre respaldado (**RPO**, D-49).
+- [ ] Si otra ventana modificó `averias.json` después de la carga, la restauración avisa del
+      **conflicto** con quién y cuándo, y exige elegir entre *Recargar* y *Sobrescribir* (D-41).
+- [ ] En **modo descarga** (navegador sin la API de archivos), la copia se **descarga** en lugar de
+      escribirse, y el bloque lo advierte para que se guarde a mano en `C:\GGTO\respaldo\`.
+
+### 3.12 Diagnóstico del entorno (CU-22)
+
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de
       casos leídos.
+- [ ] Con el CSV del día ausente, la página avisa «sin ingesta» y **no** bloquea la operación (D-46).
 
 ---
 
@@ -190,11 +223,10 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ## 5. Qué queda fuera de esta prueba
 
-- La **ingesta del CSV** y la cola de sectores (ciclo C2).
-- El **PANEL** de búsqueda/actualización y el **alta manual** de casos, y la bandeja **GESTION** (C3).
-- El **despacho** con su PDF por cuadrilla (C4), el **monitoreo y los gráficos** (C5) y los
-  **reportes** (C6).
-- Las pruebas con datos reales de una semana, la impresión y la restauración probada (C7).
+- La **prueba con los datos reales de una semana completa** en el puesto de la central (C7).
+- La **impresión** física del despacho y del PDF en la impresora de la central (C7).
+- El **manual de usuario** del sistema (C7).
+- El **diagnóstico del puesto** (CU-22) más allá de lo que cubre la §3.12.
 
 ---
 
@@ -202,8 +234,9 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ```powershell
 cd C:\GGTO\proyecto
-node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs
+node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs
 ```
 
-Deben pasar **24 de 24**. Cubren la lógica pura y el protocolo de escritura verificada con la API
-simulada (lo que el navegador no permite automatizar sin un gesto humano).
+Deben pasar **114 de 114**. Cubren la lógica pura y el protocolo de escritura verificada con la API
+simulada (lo que el navegador no permite automatizar sin un gesto humano), incluida la copia de cierre
+y la restauración de CU-21.

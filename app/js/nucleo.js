@@ -627,6 +627,19 @@
     return 'averias_' + marcaArchivo(fecha) + '.json';
   }
 
+  /** ¿El nombre es una copia de cierre 'averias_AAAA-MM-DD_HHMM.json'? (D-49) */
+  function esCopiaCierre(nombre) {
+    return /^averias_\d{4}-\d{2}-\d{2}_\d{4}\.json$/.test(String(nombre || ''));
+  }
+
+  /** 'DD/MM/AAAA HH:MM' de una copia de cierre; '' si el nombre no lo es. */
+  function marcaDeCopia(nombre) {
+    var m = /^averias_(\d{4})-(\d{2})-(\d{2})_(\d{4})\.json$/.exec(String(nombre || ''));
+    if (!m) return '';
+    var hhmm = String(m[4]);
+    return m[3] + '/' + m[2] + '/' + m[1] + ' ' + hhmm.slice(0, 2) + ':' + hhmm.slice(2);
+  }
+
   /** Conserva solo las 10 ultimas copias .bak del maestro (D-42, RNF-15). */
   function respaldosAExpedir(nombres) {
     var baks = (nombres || []).filter(function (n) {
@@ -820,6 +833,8 @@
     marcaArchivo: marcaArchivo,
     nombreRespaldo: nombreRespaldo,
     nombreCopiaCierre: nombreCopiaCierre,
+    esCopiaCierre: esCopiaCierre,
+    marcaDeCopia: marcaDeCopia,
     respaldosAExpedir: respaldosAExpedir,
     serializarJSON: serializarJSON,
     nombreIncidencias: nombreIncidencias,
