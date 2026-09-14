@@ -70,6 +70,26 @@ const sonda = `
     if (!c) { c = document.createElement('div'); c.id = 'seccion-' + id; document.body.appendChild(c); }
     return c;
   }
+  function botonesDe(raiz, texto) {
+    var todos = raiz.querySelectorAll('button');
+    var salida = [];
+    for (var i = 0; i < todos.length; i++) {
+      if ((todos[i].textContent || '').indexOf(texto) >= 0) salida.push(todos[i]);
+    }
+    return salida;
+  }
+  function serie(pasos) {
+    var i = 0;
+    function siguiente() {
+      if (i >= pasos.length) { publicar(); return; }
+      var paso = pasos[i++];
+      try { paso(siguiente); } catch (e) {
+        lineas.push('FAIL :: excepción en un paso: ' + (e && e.name) + ': ' + (e && e.message));
+        siguiente();
+      }
+    }
+    siguiente();
+  }
 
   setTimeout(function () {
     try {
@@ -85,6 +105,8 @@ const sonda = `
       datos['averias.json'] = [{ id_averia: 'A-1', telefono: '4241234567', nombre: 'Abonado Uno', direccion: 'CALLE 1', sector: 'S1', status: 'PEND', clase: 'REP', nivel: 'COM', tipo_abonado: 'RES', 'Reparador Principal': '', fecha_cita: '13/09/2026', ingreso: '13/09/2026', fecha_reporte: '13/09/2026', plan: 'ABA', fat: 'FAT1', serial: 'S1', ultimo_comentario: 'comentario' }];
 
       var salidas = { registradas: [] };
+      var logIncidencias = '13/09/2026 09:00 | sesion | intento fallido | p00=999 | credencial' + NL;
+      window.GGTO.estado.resumen = [{ archivo: 'averias.json', existe: true, invalido: null, registros: 1 }];
       window.GGTO.estado.almacen = {
         tipo: 'carpeta', carpeta: {}, carpetaRespaldo: null, carpetaDespachos: {},
         handles: {}, estado: {}, datos: datos, historialTexto: '',
@@ -98,15 +120,20 @@ const sonda = `
           salidas.registradas.push({ nombre: nombre, tamano: bytes.byteLength });
           return Promise.resolve({ nombre: nombre, ruta: N.CONST.RUTA_DESPACHOS, bytes: bytes.byteLength, verificado: true });
         },
+        leerIncidencias: function () { return Promise.resolve(logIncidencias); },
         describir: function () { return 'simulado'; }
       };
       window.GGTO.estado.sesion = { P00: '12345', rol: 'Supervisor' };
 
       var logs = [];
       var avisos = [];
-      var ctx = window.GGTO.contexto();
-      ctx.registrarLog = function (l) { logs.push(String(l)); };
-      ctx.avisar = function (m) { avisos.push(String(m)); };
+      function nuevoCtx() {
+        var c = window.GGTO.contexto();
+        c.registrarLog = function (l) { logs.push(String(l)); };
+        c.avisar = function (m) { avisos.push(String(m)); };
+        return c;
+      }
+      var ctx = nuevoCtx();
 
       // --- contrato de contexto (el defecto que rompía todas las pestañas) ---
       ok('ctx.almacen entrega la instancia y no el módulo', ctx.almacen !== window.GGTO_ALMACEN);
@@ -116,6 +143,7 @@ const sonda = `
       // --- librerías locales que index.html debe cargar (RT-07) ---
       ok('Chart.js cargado por la página (RT-07)', typeof window.Chart !== 'undefined');
       ok('jsPDF cargado por la página (RT-07)', !!(window.jspdf && window.jspdf.jsPDF));
+      ok('entorno.js cargado por la página (CU-22)', !!(window.GGTO_ENTORNO && window.GGTO_ENTORNO.render));
 
       // --- las 8 vistas renderizan con el contexto real ---
       var modulos = [
@@ -129,43 +157,122 @@ const sonda = `
         var mod = window[m[1]];
         if (!mod || typeof mod.render !== 'function') { ok('render ' + m[0], false); return; }
         var err = null;
-        try { mod.render(cont, window.GGTO.contexto()); } catch (e) { err = e.name + ': ' + e.message; }
+        try { mod.render(cont, nuevoCtx()); } catch (e) { err = e.name + ': ' + e.message; }
         ok('render ' + m[0] + (err ? ' -> ' + err : ''), err === null);
       });
       ok('GRAFICOS dibuja los 6 lienzos',
         seccion('graficos').querySelectorAll('canvas').length === 6);
+      var subids = (window.GGTO_CONFIGURACION.subsecciones || []).map(function (s) { return s.id; });
+      ok('CONFIGURACION tiene 8 sub-pestañas (RESPALDO y ENTORNO incluidas)',
+        subids.length === 8 && subids.indexOf('respaldo') >= 0 && subids.indexOf('entorno') >= 0);
 
       // --- ruta controlada de los PDF (D-27, D-67) ---
       var bloque = { cuadrilla: { id: 'C1', nombre: 'Cuadrilla 1' },
         asignaciones: [{ caso: { id_averia: 'A-1', telefono: '4241234567', contacto: 'Ana', nombre: 'Abonado Uno',
           direccion: 'CALLE 1', plan: 'ABA', fat: 'FAT1', serial: 'S1', ultimo_comentario: 'x' }, motivo: 'reparación' }] };
 
-      var ctxPdf = window.GGTO.contexto();
-      ctxPdf.registrarLog = function (l) { logs.push(String(l)); };
-      ctxPdf.avisar = function (m) { avisos.push(String(m)); };
-      window.GGTO_PDF.generar(ctxPdf, bloque, '13/09/2026', 1);
-
-      setTimeout(function () {
-        ok('el PDF se guarda en la ruta controlada', salidas.registradas.length === 1 &&
-          salidas.registradas[0].nombre === 'Despacho_Cuadrilla_C1_20260913.pdf');
-        ok('el log registra la ruta controlada del PDF',
-          logs.join(' ').indexOf(N.CONST.RUTA_DESPACHOS + BS + 'Despacho_Cuadrilla_C1_20260913.pdf') >= 0);
-
-        window.GGTO_PDF.generar(ctxPdf, bloque, '13/09/2026', 1);
-        setTimeout(function () {
-          ok('la reemisión conserva la versión anterior', salidas.registradas.length === 2 &&
-            salidas.registradas[1].nombre === 'Despacho_Cuadrilla_C1_20260913_r2.pdf');
-
-          // Sin ruta controlada: la vista DESPACHO debe advertirlo y ofrecer autorizarla.
+      serie([
+        function (sig) {
+          window.GGTO_PDF.generar(nuevoCtx(), bloque, '13/09/2026', 1);
+          setTimeout(function () {
+            ok('el PDF se guarda en la ruta controlada', salidas.registradas.length === 1 &&
+              salidas.registradas[0].nombre === 'Despacho_Cuadrilla_C1_20260913.pdf');
+            ok('el log registra la ruta controlada del PDF',
+              logs.join(' ').indexOf(N.CONST.RUTA_DESPACHOS + BS + 'Despacho_Cuadrilla_C1_20260913.pdf') >= 0);
+            sig();
+          }, 160);
+        },
+        function (sig) {
+          window.GGTO_PDF.generar(nuevoCtx(), bloque, '13/09/2026', 1);
+          setTimeout(function () {
+            ok('la reemisión conserva la versión anterior', salidas.registradas.length === 2 &&
+              salidas.registradas[1].nombre === 'Despacho_Cuadrilla_C1_20260913_r2.pdf');
+            sig();
+          }, 160);
+        },
+        function (sig) {
           window.GGTO.estado.almacen.carpetaDespachos = null;
-          var contDesp = seccion('despacho');
-          window.GGTO_DESPACHO.render(contDesp, window.GGTO.contexto());
-          var t = contDesp.textContent || '';
+          var cont = seccion('despacho');
+          window.GGTO_DESPACHO.render(cont, nuevoCtx());
+          var t = cont.textContent || '';
           ok('sin ruta controlada la vista DESPACHO lo advierte', t.indexOf('no está autorizada') >= 0);
           ok('la vista DESPACHO ofrece autorizar la carpeta', t.indexOf('Autorizar carpeta') >= 0);
-          publicar();
-        }, 150);
-      }, 150);
+          window.GGTO.estado.almacen.carpetaDespachos = {};
+          sig();
+        },
+        // --- ENTORNO: diagnóstico del puesto (CU-22) ---
+        function (sig) {
+          window.GGTO_CONFIGURACION.subActiva('entorno');
+          var cont = seccion('configuracion');
+          window.GGTO_CONFIGURACION.render(cont, nuevoCtx());
+          setTimeout(function () {
+            var t = cont.textContent || '';
+            var bien = t.indexOf('ENTORNO y diagnóstico') >= 0;
+            ok('ENTORNO renderiza el diagnóstico' +
+              (bien ? '' : ' [' + t.slice(-160).replace(/\s+/g, ' ') + ']'), bien);
+            ok('ENTORNO informa las rutas y el modo de trabajo',
+              t.indexOf('Ruta controlada de los PDF') >= 0 && t.indexOf('Modo de trabajo') >= 0);
+            ok('ENTORNO resume el registro de la aplicación', t.indexOf('Incidencias registradas hoy') >= 0);
+            ok('ENTORNO verifica el cierre de la jornada',
+              t.indexOf('Última escritura confirmada') >= 0 && t.indexOf('Último respaldo') >= 0);
+            sig();
+          }, 160);
+        },
+        // --- Control documental del despacho (CU-17) ---
+        function (sig) {
+          window.GGTO_DESPACHO.reiniciarControl();
+          var cont = seccion('despacho');
+          window.GGTO_DESPACHO.render(cont, nuevoCtx());
+          var generar = botonesDe(cont, 'Generar el despacho')[0];
+          ok('la vista DESPACHO ofrece generar el despacho', !!generar);
+          if (generar) generar.click();
+          setTimeout(function () {
+            var t = cont.textContent || '';
+            ok('el control documental arranca pendiente de entrega', t.indexOf('Pendiente de entrega: C1') >= 0);
+            var cierre = botonesDe(cont, 'Dar el control documental del día por cerrado')[0];
+            ok('el día no se puede cerrar con hojas pendientes', !!cierre && cierre.disabled === true);
+            sig();
+          }, 160);
+        },
+        function (sig) {
+          var cont = seccion('despacho');
+          botonesDe(cont, 'Registrar entrega').forEach(function (b) { b.click(); });
+          setTimeout(function () {
+            var t = cont.textContent || '';
+            ok('tras entregar, el control pide recoger las hojas', t.indexOf('Faltan hojas: C1') >= 0);
+            sig();
+          }, 160);
+        },
+        function (sig) {
+          var cont = seccion('despacho');
+          botonesDe(cont, 'Recoger hojas').forEach(function (b) { b.click(); });
+          setTimeout(function () {
+            var t = cont.textContent || '';
+            ok('tras recoger, el control pide destruir', t.indexOf('Pendiente de destruir') >= 0);
+            sig();
+          }, 160);
+        },
+        function (sig) {
+          var cont = seccion('despacho');
+          botonesDe(cont, 'Registrar destrucción').forEach(function (b) { b.click(); });
+          setTimeout(function () {
+            var t = cont.textContent || '';
+            ok('tras destruir, el control da el día por completo', t.indexOf('Hojas destruidas: 1 de 1') >= 0);
+            var cierre = botonesDe(cont, 'Dar el control documental del día por cerrado')[0];
+            ok('con todo destruido el cierre se habilita', !!cierre && cierre.disabled === false);
+            if (cierre) cierre.click();
+            setTimeout(function () {
+              ok('el cierre del control queda asentado en el log',
+                logs.join(' ').indexOf('CONTROL DOCUMENTAL CERRADO') >= 0);
+              ok('las acciones del control dejan asiento en el log',
+                logs.join(' ').indexOf('ENTREGA HOJA') >= 0 &&
+                logs.join(' ').indexOf('RECOGIDA HOJA') >= 0 &&
+                logs.join(' ').indexOf('DESTRUCCION HOJA') >= 0);
+              sig();
+            }, 80);
+          }, 160);
+        }
+      ]);
     } catch (e) {
       lineas.push('FAIL :: excepción de la comprobación: ' + (e && e.name) + ': ' + (e && e.message));
       publicar();

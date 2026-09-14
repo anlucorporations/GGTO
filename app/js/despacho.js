@@ -277,6 +277,10 @@
   var vista = { resultado: null, movimientos: {} };
   /** Refresco de la lista de PDF de la ruta controlada (bloqueRutaControlada). */
   var refrescarSalidas = null;
+  /** Control documental del día (CU-17, D-68): estado de SESIÓN, no se persiste. */
+  var control = null;
+  /** Repintado del bloque de control documental. */
+  var refrescarControl = null;
 
   function render(contenedor, ctx) {
     contenedor.innerHTML = '';
@@ -392,6 +396,143 @@
       }));
     });
     zona.appendChild(acciones);
+    zona.appendChild(bloqueControlDocumental(ctx, r.reparto, fecha));
+  }
+
+  /**
+   * Control documental del día (CU-17, D-27, D-68): entrega, recogida y
+   * destrucción de las hojas por cuadrilla.
+   *
+   * El estado vive en la **sesión** y **no se persiste** (D-68): cada acción deja
+   * su asiento en `datos/incidencias.log` y el soporte oficial del día sigue
+   * siendo la hoja impresa y el `.xlsm`. El día no se da por cerrado hasta que
+   * todas las cuadrillas están entregadas, recogidas y destruidas, o su falta
+   * está justificada (flujos 7a, 8a y 8b).
+   */
+  function bloqueControlDocumental(ctx, reparto, fecha) {
+    var contenedor = ctx.texto('div', null, 'bloque');
+    var ids = (reparto || []).map(function (b) {
+      return String((b && b.cuadrilla ? b.cuadrilla.id : '') || '');
+    }).filter(function (id) { return id !== ''; });
+    if (!control || control.fecha !== fecha) control = N.controlVacio(fecha, ids);
+
+    function operador() { return ctx.sesion ? ctx.sesion.P00 : ''; }
+
+    function pintar() {
+      ctx.limpiar(contenedor);
+      contenedor.appendChild(ctx.texto('h3', 'Control documental del despacho'));
+      contenedor.appendChild(ctx.texto('p',
+        'Entrega, recogida y destrucción de las hojas por cuadrilla (D-27). El estado es de la sesión: ' +
+        'cada acción queda asentada en incidencias.log y el control oficial del día es la hoja impresa y el .xlsm (D-68).',
+        'resumen-linea'));
+
+      var resumen = N.controlResumen(control);
+      contenedor.appendChild(ctx.texto('p', resumen.mensaje,
+        resumen.cerrado ? 'aviso aviso-ok' : 'aviso aviso-alerta'));
+
+      var tabla = ctx.texto('table', null, 'tabla');
+      var thead = ctx.texto('thead');
+      var trh = ctx.texto('tr');
+      ['Cuadrilla', 'Copia', 'Entrega', 'Recogida', 'Destrucción', 'Acciones'].forEach(function (t) {
+        trh.appendChild(ctx.texto('th', t));
+      });
+      thead.appendChild(trh);
+      tabla.appendChild(thead);
+      var tbody = ctx.texto('tbody');
+
+      (reparto || []).forEach(function (bloque) {
+        var id = String((bloque && bloque.cuadrilla ? bloque.cuadrilla.id : '') || '');
+        var e = control.cuadrillas[id] || {};
+        var tr = ctx.texto('tr');
+        tr.appendChild(ctx.texto('th', id));
+        tr.appendChild(ctx.texto('td', String(e.copias || 1)));
+        tr.appendChild(ctx.texto('td', e.entrega
+          ? 'Entregado ' + e.entrega.fecha_hora + (e.entrega.receptor ? ' a ' + e.entrega.receptor : '')
+          : (e.justificacion ? 'Justificada' : 'Pendiente de entrega')));
+        tr.appendChild(ctx.texto('td', e.recogida ? 'Recogida ' + e.recogida.fecha_hora : '—'));
+        tr.appendChild(ctx.texto('td', e.destruccion
+          ? 'Destruida ' + e.destruccion.fecha_hora + ' (' + e.destruccion.hojas + ')'
+          : '—'));
+
+        var td = ctx.texto('td');
+        if (e.justificacion) {
+          td.appendChild(ctx.texto('span', 'Justificada: ' + e.justificacion.motivo, 'aviso'));
+        } else if (!e.entrega) {
+          var receptor = document.createElement('input');
+          receptor.type = 'text';
+          receptor.id = 'receptor-' + id;
+          receptor.placeholder = 'Receptor (opcional)';
+          td.appendChild(receptor);
+          td.appendChild(ctx.boton('Registrar entrega', 'boton-secundario', function () {
+            control = N.controlEntregar(control, id, {
+              fecha_hora: N.marcaAhora(), operador: operador(), receptor: receptor.value, copias: 1
+            });
+            ctx.registrarLog('despacho | ENTREGA HOJA | ' + fecha + ' | cuadrilla=' + id +
+              ' | copias=1 | receptor=' + (receptor.value || '(no informado)') + ' | p00=' + operador());
+            pintar();
+          }));
+          td.appendChild(ctx.boton('Justificar la falta', null, function () {
+            control = N.controlJustificar(control, id, {
+              fecha_hora: N.marcaAhora(), operador: operador(), motivo: 'hoja no entregada'
+            });
+            ctx.registrarLog('despacho | FALTA HOJA JUSTIFICADA | ' + fecha + ' | cuadrilla=' + id +
+              ' | p00=' + operador());
+            pintar();
+          }));
+        } else if (!e.recogida) {
+          td.appendChild(ctx.boton('Recoger hojas', 'boton-secundario', function () {
+            control = N.controlRecoger(control, id, {
+              fecha_hora: N.marcaAhora(), operador: operador(), hojas: e.copias || 1
+            });
+            ctx.registrarLog('despacho | RECOGIDA HOJA | ' + fecha + ' | cuadrilla=' + id +
+              ' | hojas=' + (e.copias || 1) + ' | p00=' + operador());
+            pintar();
+          }));
+        } else if (!e.destruccion) {
+          var hojas = document.createElement('input');
+          hojas.type = 'number';
+          hojas.min = '0';
+          hojas.id = 'hojas-' + id;
+          hojas.value = String(e.recogida.hojas || e.copias || 1);
+          td.appendChild(hojas);
+          td.appendChild(ctx.boton('Registrar destrucción', 'boton-secundario', function () {
+            var n = Number(hojas.value) || 0;
+            var esperadas = e.recogida.hojas || e.copias || 1;
+            control = N.controlDestruir(control, id, {
+              fecha_hora: N.marcaAhora(), operador: operador(), hojas: n, justificada: n < esperadas
+            });
+            ctx.registrarLog('despacho | DESTRUCCION HOJA | ' + fecha + ' | cuadrilla=' + id +
+              ' | hojas=' + n + ' de ' + esperadas + ' | p00=' + operador());
+            pintar();
+          }));
+        } else {
+          td.appendChild(ctx.texto('span', 'Control cerrado para esta cuadrilla.', 'aviso aviso-ok'));
+        }
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      });
+      tabla.appendChild(tbody);
+      contenedor.appendChild(tabla);
+
+      var cierre = N.controlResumen(control);
+      var boton = ctx.boton('Dar el control documental del día por cerrado', 'boton-primario', function () {
+        ctx.registrarLog('despacho | CONTROL DOCUMENTAL CERRADO | ' + fecha + ' | cuadrillas=' +
+          cierre.total + ' | p00=' + operador());
+        ctx.avisar('Control documental del día cerrado: ' + cierre.mensaje +
+          '. El soporte oficial del día es la hoja impresa y el .xlsm.', 'aviso-info', { temporal: false });
+      });
+      boton.disabled = !cierre.cerrado;
+      contenedor.appendChild(boton);
+      if (!cierre.cerrado) {
+        contenedor.appendChild(ctx.texto('p',
+          'No se puede dar el día por cerrado hasta completar la entrega, la recogida y la destrucción de ' +
+          'todas las hojas, o justificar su falta (CU-17, flujos 7a/8a/8b).', 'aviso aviso-alerta'));
+      }
+    }
+
+    refrescarControl = pintar;
+    pintar();
+    return contenedor;
   }
 
   /**
@@ -532,6 +673,10 @@
     generarReparto: generarReparto,
     aplicarReparto: aplicarReparto,
     filasDespacho: filasDespacho,
+    bloqueControlDocumental: bloqueControlDocumental,
+    /** Estado de sesión del control documental (para pruebas y diagnóstico). */
+    controlSesion: function () { return control; },
+    reiniciarControl: function () { control = null; },
     render: render
   };
 

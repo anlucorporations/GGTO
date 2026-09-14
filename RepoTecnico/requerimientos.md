@@ -115,6 +115,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»**, que son las formas que usa el CSV (el fuente escribe «LOSS ROJO» y «FALLA FIBRA»). Con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION**. |
 | D-66 | **Convención de semanas (Sem 1 a Sem 36):** la **Sem 1 es la semana que empieza el primer lunes del año** y la semana operativa va de lunes a sábado (RN-08). Con 2026, la **Sem 36 es la del 07/09 al 12/09**, que es la del archivo real. |
 | D-67 | **Ruta controlada de los PDF de despacho:** los PDF se guardan en **`C:\GGTO\despachos`** —carpeta autorizada aparte, como `datos` y `respaldo`—, con **verificación por relectura**, y **nunca** en la carpeta de Descargas (D-27); las reemisiones del mismo día conservan la versión anterior con el sufijo `_rN` (CU-17, 6a). Cierra la pregunta **P8** de la auditoría del documento técnico. |
+| D-68 | **El control documental del despacho no se persiste:** la entrega, la recogida y la destrucción de las hojas por cuadrilla viven en la **sesión** —el estado de la pantalla— y cada acción deja su **asiento en `datos/incidencias.log`**; **no se añade ningún archivo nuevo** a `datos/` (la copia de cierre de D-49 sigue siendo de 10 archivos) y el **soporte oficial del día sigue siendo la hoja impresa y el `.xlsm`**. Al recargar la página el control vuelve a empezar, y lo que queda como constancia son los asientos del log. |
 
 ---
 

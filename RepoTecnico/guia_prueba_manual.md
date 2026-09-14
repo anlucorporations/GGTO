@@ -213,9 +213,42 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ### 3.12 Diagnóstico del entorno (CU-22)
 
-- [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de
-      casos leídos.
+> El bloque **ENTORNO** es la última subpestaña de CONFIGURACION. Es de solo lectura y lo pueden
+> consultar operador y supervisor.
+
+- [ ] **ENTORNO** muestra: navegador y versión, si soporta la File System Access API, el origen de la
+      página (`http://localhost:8787`), el modo de trabajo, las rutas (`C:\GGTO\datos`,
+      `C:\GGTO\despachos` y `C:\GGTO\respaldo`) y la versión de la aplicación.
+- [ ] Abriendo la página con doble clic (`file://`), el origen avisa de que hay que usar
+      `servir-ggto.ps1` en lugar de la apertura directa.
+- [ ] El **informe de archivos** dice cuántos hay, cuántos faltan y cuántos son ilegibles; si se borra
+      `flota.json` de `C:\GGTO\datos`, aparece como ausente sin romper la página.
+- [ ] El **registro de la aplicación** informa de las líneas del día y de las incidencias (intentos
+      fallidos y acciones denegadas); *Descargar el detalle del registro* baja `incidencias.log`.
+- [ ] La **verificación de cierre** muestra la última escritura confirmada, el último respaldo y las
+      incidencias registradas hoy; sin copias de cierre avisa de que el RPO no está cubierto.
 - [ ] Con el CSV del día ausente, la página avisa «sin ingesta» y **no** bloquea la operación (D-46).
+
+### 3.13 Control documental del despacho (CU-17, D-68)
+
+> El bloque aparece en la vista DESPACHO **después** de pulsar *Generar el despacho*. Su estado es de
+> **sesión**: no se guarda en ningún archivo, y al recargar la página vuelve a empezar (D-68). Lo que
+> queda como constancia son los **asientos de `incidencias.log`**; el soporte oficial del día es la
+> hoja impresa y el `.xlsm`.
+
+- [ ] Al generar el despacho, el control aparece mostrando **«Pendiente de entrega: C1, C2…»** y el
+      botón *Dar el control documental del día por cerrado* **deshabilitado**.
+- [ ] Con la hoja de una cuadrilla en la mano, escribir el receptor (opcional) y pulsar
+      *Registrar entrega*: la fila pasa a «Entregado DD/MM/AAAA hh:mm» y el resumen a «Faltan hojas: …».
+- [ ] Pulsar *Recoger hojas*: la fila pasa a «Recogida …» y el resumen a «Pendiente de destruir: N hoja(s)».
+- [ ] Indicar el número de hojas destruidas y pulsar *Registrar destrucción*: con todas las cuadrillas
+      destruidas el resumen dice **«Hojas destruidas: N de N cuadrillas»** y el cierre se **habilita**.
+- [ ] Si una cuadrilla no entrega su hoja, *Justificar la falta* la saca del bloqueo y permite cerrar
+      el día (flujo 7a).
+- [ ] Pulsar *Dar el control documental del día por cerrado* deja el asiento en `incidencias.log`
+      (`CONTROL DOCUMENTAL CERRADO`), igual que cada entrega, recogida y destrucción.
+- [ ] **Recargar la página**: el control vuelve a «Pendiente de entrega» y los asientos siguen en el log
+      (es el comportamiento acordado en D-68, no un fallo).
 
 ---
 
@@ -236,7 +269,6 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 - La **prueba con los datos reales de una semana completa** en el puesto de la central (C7).
 - La **impresión** física del despacho y del PDF en la impresora de la central (C7).
 - El **manual de usuario** del sistema (C7).
-- El **diagnóstico del puesto** (CU-22) más allá de lo que cubre la §3.12.
 
 ---
 
@@ -244,12 +276,13 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ```powershell
 cd C:\GGTO\proyecto
-node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs
+node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs
 ```
 
-Deben pasar **122 de 122**. Cubren la lógica pura y el protocolo de escritura verificada con la API
+Deben pasar **133 de 133**. Cubren la lógica pura y el protocolo de escritura verificada con la API
 simulada (lo que el navegador no permite automatizar sin un gesto humano), incluida la **ruta
-controlada de los PDF** (D-67), la copia de cierre y la restauración de CU-21.
+controlada de los PDF** (D-67), el **control documental** del despacho (D-68), el diagnóstico de
+CU-22, la copia de cierre y la restauración de CU-21.
 
 Además hay una **comprobación de interfaz** que sí abre la página real en un navegador headless y
 renderiza las 8 vistas (necesita Chrome o Edge instalado):
@@ -259,5 +292,6 @@ cd C:\GGTO\proyecto
 node pruebas/interfaz.mjs
 ```
 
-Deben pasar **19 de 19**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
-(por ejemplo, que una pestaña no renderice o que falte cargar una librería local).
+Deben pasar **34 de 34**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+(por ejemplo, que una pestaña no renderice o que falte cargar una librería local), y recorre el alta
+del despacho, la entrega, la recogida y la destrucción de las hojas.

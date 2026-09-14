@@ -800,6 +800,137 @@
     };
   }
 
+  // ------------------------------------------------------------------
+  // Control documental del despacho (CU-17, D-27, D-68, RNF-11)
+  // El estado vive en la SESION (D-68: no se persiste): los asientos van al log
+  // de la aplicacion y el soporte oficial del dia es la hoja impresa y el .xlsm.
+  // ------------------------------------------------------------------
+  function controlVacio(fecha, idsCuadrillas) {
+    var c = { fecha: String(fecha || ''), cuadrillas: {} };
+    (idsCuadrillas || []).forEach(function (id) {
+      c.cuadrillas[String(id)] = { copias: 0, entrega: null, recogida: null, destruccion: null, justificacion: null };
+    });
+    return c;
+  }
+
+  function clonarControl(control) {
+    var base = control || { fecha: '', cuadrillas: {} };
+    var copia = { fecha: base.fecha, cuadrillas: {} };
+    Object.keys(base.cuadrillas || {}).forEach(function (id) {
+      var c = base.cuadrillas[id] || {};
+      copia.cuadrillas[id] = {
+        copias: c.copias || 0,
+        entrega: c.entrega ? Object.assign({}, c.entrega) : null,
+        recogida: c.recogida ? Object.assign({}, c.recogida) : null,
+        destruccion: c.destruccion ? Object.assign({}, c.destruccion) : null,
+        justificacion: c.justificacion ? Object.assign({}, c.justificacion) : null
+      };
+    });
+    return copia;
+  }
+
+  function controlConCuadrilla(control, id) {
+    var c = clonarControl(control);
+    var k = String(id);
+    if (!c.cuadrillas[k]) {
+      c.cuadrillas[k] = { copias: 0, entrega: null, recogida: null, destruccion: null, justificacion: null };
+    }
+    return { control: c, clave: k };
+  }
+
+  /** Asienta la entrega de la hoja de una cuadrilla (CU-17, paso 7). */
+  function controlEntregar(control, id, datos) {
+    var d = datos || {};
+    var r = controlConCuadrilla(control, id);
+    var c = r.control.cuadrillas[r.clave];
+    c.copias = Number(d.copias) || c.copias || 1;
+    c.entrega = {
+      fecha_hora: String(d.fecha_hora || ''), operador: String(d.operador || ''),
+      receptor: String(d.receptor || ''), copias: c.copias
+    };
+    return r.control;
+  }
+
+  /** Asienta la recogida de las hojas de una cuadrilla (CU-17, paso 8). */
+  function controlRecoger(control, id, datos) {
+    var d = datos || {};
+    var r = controlConCuadrilla(control, id);
+    r.control.cuadrillas[r.clave].recogida = {
+      fecha_hora: String(d.fecha_hora || ''), operador: String(d.operador || ''),
+      hojas: Number(d.hojas) || 0
+    };
+    return r.control;
+  }
+
+  /** Asienta la destrucción de las hojas de una cuadrilla (D-27, H-N-09). */
+  function controlDestruir(control, id, datos) {
+    var d = datos || {};
+    var r = controlConCuadrilla(control, id);
+    r.control.cuadrillas[r.clave].destruccion = {
+      fecha_hora: String(d.fecha_hora || ''), operador: String(d.operador || ''),
+      hojas: Number(d.hojas) || 0, justificada: d.justificada === true
+    };
+    return r.control;
+  }
+
+  /** Justifica la falta de una hoja (CU-17, flujo 7a): permite cerrar el día. */
+  function controlJustificar(control, id, datos) {
+    var d = datos || {};
+    var r = controlConCuadrilla(control, id);
+    r.control.cuadrillas[r.clave].justificacion = {
+      fecha_hora: String(d.fecha_hora || ''), operador: String(d.operador || ''),
+      motivo: String(d.motivo || '')
+    };
+    return r.control;
+  }
+
+  /** Resumen del control: qué falta para dar el día por cerrado (CU-17). */
+  function controlResumen(control) {
+    var ids = Object.keys((control || {}).cuadrillas || {}).sort();
+    var sinEntregar = [], sinRecoger = [], sinDestruir = [], completas = [], justificadas = [];
+    ids.forEach(function (id) {
+      var c = (control.cuadrillas || {})[id] || {};
+      if (c.justificacion) { justificadas.push(id); return; }
+      if (!c.entrega) sinEntregar.push(id);
+      else if (!c.recogida) sinRecoger.push(id);
+      else if (!c.destruccion) sinDestruir.push(id);
+      else completas.push(id);
+    });
+    var resueltas = completas.length + justificadas.length;
+    var mensaje;
+    if (!ids.length) mensaje = 'Sin cuadrillas en el despacho del día.';
+    else if (sinEntregar.length) mensaje = 'Pendiente de entrega: ' + sinEntregar.join(', ');
+    else if (sinRecoger.length) mensaje = 'Faltan hojas: ' + sinRecoger.join(', ');
+    else if (sinDestruir.length) mensaje = 'Pendiente de destruir: ' + sinDestruir.length + ' hoja(s)';
+    else if (justificadas.length) mensaje = 'Hojas destruidas: ' + completas.length + ' de ' + ids.length +
+      ' cuadrillas · ' + justificadas.length + ' justificada(s)';
+    else mensaje = 'Hojas destruidas: ' + completas.length + ' de ' + ids.length + ' cuadrillas';
+    return {
+      total: ids.length,
+      entregadas: ids.length - sinEntregar.length - justificadas.length,
+      recogidas: ids.length - sinEntregar.length - sinRecoger.length - justificadas.length,
+      destruidas: completas.length,
+      justificadas: justificadas,
+      sinEntregar: sinEntregar, sinRecoger: sinRecoger, sinDestruir: sinDestruir,
+      cerrado: ids.length > 0 && resueltas === ids.length,
+      mensaje: mensaje
+    };
+  }
+
+  /** Resume el log de la aplicación (CU-22, pasos 4 y 7). */
+  function resumirIncidencias(texto, fecha) {
+    var lineas = String(texto || '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+    var delDia = fecha ? lineas.filter(function (l) { return l.indexOf(String(fecha)) === 0; }) : lineas;
+    var graves = delDia.filter(function (l) { return /DENEGADO|FALLO|ERROR|denegado|fallido|error/.test(l); });
+    return {
+      total: lineas.length,
+      delDia: delDia.length,
+      incidenciasDelDia: graves.length,
+      ultima: lineas.length ? lineas[lineas.length - 1] : '',
+      detalle: graves.slice(-10)
+    };
+  }
+
   var NUCLEO = {
     CONST: CONST,
     ACCIONES: ACCIONES,
@@ -842,6 +973,13 @@
     esCopiaCierre: esCopiaCierre,
     marcaDeCopia: marcaDeCopia,
     esSalidaDespacho: esSalidaDespacho,
+    controlVacio: controlVacio,
+    controlEntregar: controlEntregar,
+    controlRecoger: controlRecoger,
+    controlDestruir: controlDestruir,
+    controlJustificar: controlJustificar,
+    controlResumen: controlResumen,
+    resumirIncidencias: resumirIncidencias,
     respaldosAExpedir: respaldosAExpedir,
     serializarJSON: serializarJSON,
     nombreIncidencias: nombreIncidencias,

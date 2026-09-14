@@ -120,6 +120,7 @@
       autorizarDespachos: autorizarDespachosCarpeta,
       guardarSalida: guardarSalidaCarpeta,
       listarSalidas: listarSalidasCarpeta,
+      leerIncidencias: leerIncidenciasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (carpeta autorizada)'; }
     };
   }
@@ -151,6 +152,7 @@
       autorizarDespachos: autorizarDespachosCarpeta,
       guardarSalida: guardarSalidaCarpeta,
       listarSalidas: listarSalidasCarpeta,
+      leerIncidencias: leerIncidenciasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (archivos elegidos uno a uno)'; }
     };
     return almacen;
@@ -798,6 +800,25 @@
         };
       });
     });
+  }
+
+  // ------------------------------------------------------------------
+  // Log de la aplicacion: lectura para el diagnostico (CU-22, paso 4)
+  // ------------------------------------------------------------------
+  /** Devuelve el texto del log `datos/incidencias.log` (vacio si no existe). */
+  function leerIncidenciasCarpeta() {
+    var almacen = this;
+    function leer(handle) {
+      return leerTexto(handle).then(function (l) { return l.texto; }).catch(function () { return ''; });
+    }
+    if (almacen.handles[CONST.ARCHIVO_INCIDENCIAS]) {
+      return leer(almacen.handles[CONST.ARCHIVO_INCIDENCIAS]);
+    }
+    if (!almacen.carpeta || typeof almacen.carpeta.getFileHandle !== 'function') return Promise.resolve('');
+    return almacen.carpeta.getFileHandle(CONST.ARCHIVO_INCIDENCIAS).then(function (h) {
+      almacen.handles[CONST.ARCHIVO_INCIDENCIAS] = h;
+      return leer(h);
+    }).catch(function () { return ''; });
   }
 
   // ------------------------------------------------------------------

@@ -44,7 +44,8 @@ GGTO-v1/
 |  |- gestion.js              # RF-15
 |  |- configuracion.js        # RF-11 a RF-14, RF-27
 |  |- reportes.js             # RF-25, RF-26
-|  \- respaldo.js             # CU-21: bloque RESPALDO (copia de cierre y restauracion)
+|  |- respaldo.js             # CU-21: bloque RESPALDO (copia de cierre y restauracion)
+|  \- entorno.js              # CU-22: bloque ENTORNO (diagnostico y contingencia)
 |- datos/
 |  |- averias.json            # maestro (L56)
 |  |- despacho.json           # vista de campo (L57)
@@ -225,6 +226,26 @@ autorizada **aparte** de `datos/` y de `respaldo/` (el navegador concede cada ca
 **Comprobación en el puesto.** `Get-ChildItem C:\GGTO\despachos\*.pdf | Select-Object Name, Length`
 debe listar los PDF del día, y la carpeta de Descargas del usuario **no** debe contener
 `Despacho_Cuadrilla_*.pdf`.
+
+### 4.4 Control documental del despacho (D-68)
+
+El control de **entrega, recogida y destrucción** de las hojas del despacho (D-27) **no se persiste**:
+vive en la **sesión** de la página y **no ocupa ningún archivo** de `C:\GGTO\datos\` —la copia de cierre
+de §4.1 sigue siendo de **10 archivos**—. Cada acción deja su **asiento en `datos/incidencias.log`**
+(fecha, hora, cuadrilla, copias, hojas y `P00`), y el **soporte oficial del día es la hoja impresa y el
+`.xlsm`**, que el supervisor custodia y destruye.
+
+| Acción | Asiento en el log |
+|---|---|
+| Entrega de una hoja | `despacho \| ENTREGA HOJA \| <fecha> \| cuadrilla=… \| copias=… \| receptor=… \| p00=…` |
+| Recogida de las hojas | `despacho \| RECOGIDA HOJA \| <fecha> \| cuadrilla=… \| hojas=… \| p00=…` |
+| Destrucción | `despacho \| DESTRUCCION HOJA \| <fecha> \| cuadrilla=… \| hojas=N de M \| p00=…` |
+| Falta justificada | `despacho \| FALTA HOJA JUSTIFICADA \| <fecha> \| cuadrilla=… \| p00=…` |
+| Cierre del día | `despacho \| CONTROL DOCUMENTAL CERRADO \| <fecha> \| cuadrillas=N \| p00=…` |
+
+**Consecuencia asumida:** si la página se recarga a mitad de jornada, el control vuelve a
+«Pendiente de entrega»; la constancia son los asientos del log y el papel. Los asientos **no** llevan
+datos personales del abonado (D-58).
 
 ---
 

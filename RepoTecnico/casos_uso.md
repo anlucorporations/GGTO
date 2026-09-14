@@ -1136,6 +1136,8 @@
 7. El sistema asienta la entrega con fecha, hora, cuadrilla, número de copia y operador, y muestra el estado «Entregado» por cuadrilla.
 8. Al cierre de la jornada, el supervisor pulsa *Recoger hojas*; el sistema asienta la recogida, muestra «Hojas recogidas: 3 de 3 cuadrillas» y **solicita el número de hojas destruidas por cuadrilla**. Al confirmarlo, el sistema asienta la **destrucción** con fecha, hora, cuadrilla, número de copia y operador, muestra «Hojas destruidas: 3 de 3 cuadrillas» y deja el control documental del día cerrado. [D-27, RNF-11]
 
+> **Alcance del control documental (D-68).** Los estados «Entregado», «Recogida», «Destruida» y «Pendiente» son **de la sesión**: el sistema **no los persiste** en ningún archivo de datos y, al recargar la página, el control vuelve a empezar. Cada acción deja su **asiento en `datos/incidencias.log`** (fecha, hora, cuadrilla, copias y `P00`) y el **soporte oficial del día es la hoja impresa y el `.xlsm`**, que el supervisor custodia. La página lo advierte en el propio bloque.
+
 **Flujos alternativos**
 
 - **3a. Una cuadrilla tiene 0 casos.** El sistema no genera PDF para esa cuadrilla y lo informa en la lista.
@@ -1259,6 +1261,7 @@
 - **4a. Casos sin clasificar.** El sistema incluye la fila «Sin clasificar» con su conteo y no los reparte entre categorías.
 - **4b. Semana fuera de Sem 1 a Sem 36.** El sistema limita el selector a Sem 1 a Sem 36 y avisa «Semana fuera de rango». [D-34]
 - **6a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y **conserva la anterior** en la ruta controlada: la nueva versión se guarda como `Despacho_Cuadrilla_<id>_AAAAMMDD_r2.pdf` (y `_r3`, `_r4`… en las siguientes), de modo que **ninguna reemisión pisa el archivo anterior**. [RNF-11, D-27, **D-67**]
+- **8c. El control documental no se persiste (D-68).** Si la página se recarga o la sesión se cierra a mitad de la jornada, el control vuelve a «Pendiente de entrega»: el estado vive en la sesión y **no** se guarda en ningún archivo. La constancia son los **asientos de `datos/incidencias.log`** y el soporte oficial del día es la **hoja impresa y el `.xlsm`**, que siguen siendo responsabilidad del supervisor. El sistema lo advierte en el propio bloque. [**D-68**, D-27, D-58]
 - **1b. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque REPORTES y registra el intento. [D-35, RNF-12]
 - **1c. Apertura sin sesión o pérdida de la sesión (D-50, D-45).** Sin identificación válida el bloque REPORTES y la serie estadística **no se renderizan** (no se muestra ninguna cifra ni el despacho del día); si la sesión se cierra o expira, el sistema oculta las salidas en pantalla, vuelve al diálogo de acceso y exige reingreso antes de emitir o reemitir. [D-45, D-50, RNF-08]
 
@@ -1423,6 +1426,8 @@
 6. Si el archivo del CSV diario no llega, la página muestra el día como **«sin ingesta»** (D-46): mantiene el maestro del día anterior, permite **registrar la novedad** (fecha, motivo y operador) en `datos/incidencias.log` y **no bloquea** la consulta ni el despacho. [D-46, H-24]
 7. Al cierre, el supervisor verifica el estado: última escritura confirmada, último respaldo y número de errores registrados en el día.
 
+> **Bloque ENTORNO (implementado).** Los pasos 2, 3, 4 y 7 los cubre el bloque **ENTORNO** de CONFIGURACION: muestra navegador y versión, soporte de File System Access API, origen de la página, modo de trabajo, rutas (`datos`, `despachos`, `respaldo`), versión de la aplicación, el informe de archivos de datos (ausentes e ilegibles), el resumen del registro `incidencias.log` con su detalle descargable, y la verificación de cierre con la **última escritura confirmada**, el **último respaldo** y las **incidencias registradas del día**. Es de solo lectura y está disponible para operador y supervisor (`entorno.diagnostico`).
+
 **Flujos alternativos**
 
 - **1a. El puerto 8787 está ocupado.** El lanzador muestra «El puerto 8787 está en uso» y ofrece cambiar de puerto; el sistema abre la página en el puerto alterno elegido. [H-23]
@@ -1579,6 +1584,7 @@
 | D-26 (subcadena normalizada y vista previa) | CU-07, CU-08 |
 | D-27 (control documental del PDF: entrega, recogida y destrucción; no a Descargas) | CU-17, CU-19, CU-21, **CU-22** (destino controlado y modo descarga) |
 | **D-67** (ruta controlada de los PDF: `C:\GGTO\despachos`, verificada por relectura y sin pisar reemisiones) | **CU-17**, **CU-19** |
+| **D-68** (el control documental no se persiste: estado de sesión, asientos en el log, papel y `.xlsm` como soporte oficial) | **CU-17** |
 | D-28 (retención indefinida, riesgo aceptado y ficha de tratamiento) | CU-12, CU-15, CU-19, CU-21 |
 | D-29 (`P00` = código de empleado único, obligatorio y parte de la credencial) | CU-01, CU-03, CU-10, CU-11, CU-12, CU-13 |
 | D-30 (citados = `fecha_cita` del día, con prioridad y marca CITADO) | CU-13, CU-16 |

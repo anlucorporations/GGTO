@@ -73,7 +73,7 @@ C:\GGTO\proyecto\            # raiz del proyecto: clon local, fuera de Google Dr
 |- app/                      # UNICO subdirectorio publicado por HTTP (D-15)
 |  |- index.html
 |  |- css/estilos.css
-|  |- js/                    # los 12 modulos de la aplicacion (la fila de respaldo/contingencia es responsabilidad compartida, sin modulo propio)
+|  |- js/                    # los 14 modulos de la aplicacion (incluye respaldo.js y entorno.js, C7)
 |  \- lib/                   # librerias locales (sin CDN)
 \- RepoTecnico/              # documentacion: FUERA del alcance HTTP
 
@@ -88,7 +88,7 @@ C:\GGTO\respaldo\            # copia fechada del maestro y de historial.jsonl al
 
 ### 2.3 Módulos y responsabilidades
 
-Son **13 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`, `casos.js`, `panel.js`, `gestion.js`, `configuracion.js`, `reportes.js` y `respaldo.js`). La tabla tiene **13 filas**, una por módulo: **`respaldo.js` dejó de ser una responsabilidad compartida** de `almacen.js` + `app.js` al implementarse el bloque RESPALDO del ciclo **C7** (CU-21). El diagrama de componentes de §2.4 dibuja **13 nodos**, uno por módulo.
+Son **14 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`, `casos.js`, `panel.js`, `gestion.js`, `configuracion.js`, `reportes.js`, `respaldo.js` y `entorno.js`). La tabla tiene **14 filas**, una por módulo: **`respaldo.js`** (CU-21) y **`entorno.js`** (CU-22) dejaron de ser responsabilidades compartidas de `almacen.js` + `app.js` al implementarse los bloques RESPALDO y ENTORNO del ciclo **C7**. El diagrama de componentes de §2.4 dibuja **14 nodos**, uno por módulo.
 
 | Módulo | Responsabilidad principal | RF que implementa |
 |---|---|---|
@@ -105,6 +105,7 @@ Son **13 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.j
 | `configuracion.js` | Subpestañas CENTRAL, TECNICOS, FLOTA, CUADRILLA, SECTORES (CRUD), PALABRAS CLAVE y **RESPALDO** (que delega en `respaldo.js`), más la cola de asignación de sector | RF-11 a RF-14, RF-18 (cola), RF-27, RF-29 |
 | `reportes.js` | Reporte de trabajo diario y de gestión semanal; vigilancia de casos especiales y averías concentradas | RF-25, RF-26 |
 | `respaldo.js` | Bloque **RESPALDO** de CONFIGURACION: estado del último respaldo, **copia de cierre de los 10 archivos** (9 JSON + `historial.jsonl` íntegro) verificada por relectura, **restauración** con respaldo previo `.bak`, confirmación escrita cuando la copia pierde casos, detección de conflicto (D-41) y registro de las horas de inicio y fin para comprobar el **RTO de 1 hora** y el **RPO** del cierre anterior | RF-24; RNF-04, RNF-10, RNF-12, RNF-14, RNF-15, RNF-16; RT-10 |
+| `entorno.js` | Bloque **ENTORNO** de CONFIGURACION: diagnóstico del puesto (navegador y versión, soporte de la API de archivos, origen de la página, modo de trabajo, rutas y versión), informe de los archivos de datos ausentes o ilegibles, resumen del registro `incidencias.log` con descarga del detalle y **verificación del cierre de la jornada** (última escritura confirmada, último respaldo e incidencias del día); solo lectura | RF-01 (CU-22); RNF-03, RNF-04, RNF-08, RNF-10, RNF-16; RT-06, RT-09 |
 
 ### 2.4 Diagrama de componentes
 
@@ -134,6 +135,7 @@ flowchart TB
     CFG["configuracion.js - RF-11 a RF-14, RF-27, RF-29"]
     REP["reportes.js - RF-25, RF-26"]
     RSP["respaldo.js - RF-24 (CU-21)"]
+    ENT["entorno.js - diagnostico (CU-22)"]
   end
 
   subgraph LIB["app/lib - librerias locales (RT-07)"]
@@ -159,6 +161,7 @@ flowchart TB
   CFG --> ALM
   CFG --> RSP
   RSP --> ALM
+  ENT --> ALM
   ING --> ALM
   DSP --> ALM
   ALM --> DES
@@ -888,12 +891,13 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | `configuracion.js` | CU-02, CU-03, CU-04, CU-05, CU-06, CU-07, CU-09 | RF-11, RF-12, RF-13, RF-14, RF-18 (cola), RF-27, RF-29 | RNF-04, RNF-08, RNF-09, RNF-10, RNF-12; RT-01, RT-03 |
 | `reportes.js` | CU-19, CU-20 | RF-25, RF-26 | RNF-01, RNF-06, RNF-11 |
 | `respaldo.js` (bloque RESPALDO de CONFIGURACION, C7) | CU-21 | RF-24 | RNF-04, RNF-10, RNF-12, **RNF-14**, **RNF-15**, **RNF-16**; RT-10 |
+| `entorno.js` (bloque ENTORNO de CONFIGURACION, C7) | CU-22 | RF-01 (diagnóstico del entorno) | RNF-03, RNF-04, RNF-08, RNF-10, RNF-16; RT-06, RT-09 |
 
 ### 6.2 Cobertura de los 29 RF
 
 | RF | Módulo responsable | CU |
 |---|---|---|
-| RF-01 | `app.js` | CU-01, CU-22 |
+| RF-01 | `app.js`, `entorno.js` (diagnóstico del entorno de CU-22) | CU-01, CU-22 |
 | RF-02 | `panel.js` | CU-11 |
 | RF-03 | `panel.js` | CU-12 |
 | RF-04 | `panel.js` | CU-14 |
@@ -932,7 +936,7 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | RNF-01 (usabilidad) | `app.js`, `casos.js`, `panel.js`, `gestion.js`, `despacho.js`, `reportes.js` |
 | RNF-02 (desempeño) | `almacen.js`, `casos.js`, `ingesta.js`, `metricas.js`, `graficos.js` |
 | **S-RNF-02b** (derivado de RNF-02: umbral propio de la ingesta) | `ingesta.js` — leer, validar el contrato posicional, deduplicar e insertar la jornada en **menos de 3 s**, con el punto de medida de CU-08 CA-14 (`casos_uso.md` §5.1/§5.4; pendiente técnico n.º 4 de §8.3) |
-| RNF-03 (portabilidad) | `app.js`, `servir-ggto.ps1` |
+| RNF-03 (portabilidad) | `app.js`, `entorno.js` (detecta navegador, origen y modo degradado), `servir-ggto.ps1` |
 | RNF-04 (integridad) | `almacen.js`, `ingesta.js` |
 | RNF-05 (impresión) | `pdf.js` (documento) + `despacho.js` (proyección y agrupación impresa): carta horizontal, CU-16 |
 | RNF-06 (fechas y semana) | `ingesta.js`, `casos.js`, `metricas.js`, `panel.js` |
@@ -1167,3 +1171,4 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»** (las formas que usa el CSV); con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION** (§4.6, §5.2) |
 | D-66 | **Convención de semanas:** **Sem 1** es la semana que empieza el **primer lunes del año** y la semana operativa va de **lunes a sábado** (RN-08); con 2026, la **Sem 36** es la del 07/09 al 12/09 (§5.2, CU-18 a CU-20) |
 | D-67 | **Ruta controlada de los PDF del despacho:** se guardan en **`C:\GGTO\despachos`** —carpeta autorizada aparte, como `datos` y `respaldo`—, con **verificación por relectura** (tamaño y suma de control), **nunca** en la carpeta de Descargas (D-27); las reemisiones del mismo día usan el sufijo `_rN` y **no pisan** la versión anterior (§3.5, §4.7, CU-17 flujo 6a). Cierra la pregunta **P8** de la auditoría de este documento |
+| D-68 | **El control documental del despacho no se persiste:** la entrega, la recogida y la destrucción de las hojas por cuadrilla viven en la **sesión** y cada acción deja su **asiento en `datos/incidencias.log`**; **no se añade ningún archivo** a `datos/` (la copia de cierre de D-49 sigue siendo de 10 archivos) y el **soporte oficial del día es la hoja impresa y el `.xlsm`**. Al recargar, el control vuelve a empezar (§3.5, §4.7, CU-17 flujo 8c) |

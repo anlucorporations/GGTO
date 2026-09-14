@@ -268,3 +268,78 @@ test('sin ruta controlada autorizada, la página descarga y lo advierte', async 
   assert.match(aviso, /C:\\GGTO\\despachos/);
   assert.equal(CTX.log.join(' ').includes('ruta=DESCARGA'), true, 'queda registrado en el log');
 });
+
+// ===========================================================================
+// 4. Control documental del día (CU-17, D-27, D-68)
+//    El estado es de SESIÓN: no se persiste y el soporte oficial es el papel.
+// ===========================================================================
+const OPERADOR = '12345';
+
+test('el control documental arranca con todas las cuadrillas pendientes de entrega', () => {
+  const c = N.controlVacio(HOY, ['C1', 'C2', 'C3']);
+  const r = N.controlResumen(c);
+  assert.equal(r.total, 3);
+  assert.equal(r.cerrado, false);
+  assert.deepEqual(r.sinEntregar, ['C1', 'C2', 'C3']);
+  assert.equal(r.mensaje, 'Pendiente de entrega: C1, C2, C3');
+  assert.equal(N.controlResumen(N.controlVacio(HOY, [])).cerrado, false,
+    'un día sin cuadrillas no se da por cerrado');
+});
+
+test('la secuencia entrega → recogida → destrucción cierra el día (CA-4, CA-5, CA-5b)', () => {
+  let c = N.controlVacio(HOY, ['C1', 'C2']);
+
+  c = N.controlEntregar(c, 'C1', { fecha_hora: '13/09/2026 10:05', operador: OPERADOR, receptor: 'Jefe C1', copias: 1 });
+  c = N.controlEntregar(c, 'C2', { fecha_hora: '13/09/2026 10:06', operador: OPERADOR, copias: 1 });
+  let r = N.controlResumen(c);
+  assert.equal(r.entregadas, 2);
+  assert.equal(r.mensaje, 'Faltan hojas: C1, C2', 'tras entregar, falta recoger');
+  assert.equal(c.cuadrillas.C1.entrega.receptor, 'Jefe C1', 'la entrega asienta el receptor');
+
+  c = N.controlRecoger(c, 'C1', { fecha_hora: '13/09/2026 18:10', operador: OPERADOR, hojas: 1 });
+  c = N.controlRecoger(c, 'C2', { fecha_hora: '13/09/2026 18:11', operador: OPERADOR, hojas: 1 });
+  r = N.controlResumen(c);
+  assert.equal(r.recogidas, 2);
+  assert.equal(r.mensaje, 'Pendiente de destruir: 2 hoja(s)', 'tras recoger, falta destruir');
+  assert.equal(r.cerrado, false, 'recoger no cierra el día');
+
+  c = N.controlDestruir(c, 'C1', { fecha_hora: '13/09/2026 18:12', operador: OPERADOR, hojas: 1 });
+  assert.equal(N.controlResumen(c).cerrado, false, 'con una cuadrilla sin destruir no cierra');
+  c = N.controlDestruir(c, 'C2', { fecha_hora: '13/09/2026 18:13', operador: OPERADOR, hojas: 1 });
+  r = N.controlResumen(c);
+  assert.equal(r.destruidas, 2);
+  assert.equal(r.cerrado, true);
+  assert.equal(r.mensaje, 'Hojas destruidas: 2 de 2 cuadrillas');
+  assert.equal(c.cuadrillas.C2.destruccion.hojas, 1);
+});
+
+test('las transiciones no mutan el estado anterior (el bloque puede repintarse)', () => {
+  const inicial = N.controlVacio(HOY, ['C1']);
+  const trasEntrega = N.controlEntregar(inicial, 'C1', { fecha_hora: 'x', operador: OPERADOR });
+  assert.equal(inicial.cuadrillas.C1.entrega, null, 'el estado original queda intacto');
+  assert.ok(trasEntrega.cuadrillas.C1.entrega, 'el nuevo estado sí lo lleva');
+  assert.notEqual(inicial, trasEntrega);
+});
+
+test('una hoja no entregada se puede justificar y así el día cierra (flujo 7a)', () => {
+  let c = N.controlVacio(HOY, ['C1', 'C2']);
+  c = N.controlEntregar(c, 'C1', { fecha_hora: 'x', operador: OPERADOR });
+  c = N.controlRecoger(c, 'C1', { fecha_hora: 'x', operador: OPERADOR, hojas: 1 });
+  c = N.controlDestruir(c, 'C1', { fecha_hora: 'x', operador: OPERADOR, hojas: 1 });
+  assert.equal(N.controlResumen(c).cerrado, false, 'C2 todavía bloquea');
+  c = N.controlJustificar(c, 'C2', { fecha_hora: '13/09/2026 19:00', operador: OPERADOR, motivo: 'hoja no entregada' });
+  const r = N.controlResumen(c);
+  assert.deepEqual(r.sinEntregar, [], 'la justificada ya no bloquea');
+  assert.deepEqual(r.justificadas, ['C2']);
+  assert.equal(r.cerrado, true, 'con la falta justificada el control puede cerrarse');
+  assert.match(r.mensaje, /justificada/);
+});
+
+test('destruir sin haber entregado no da el día por cerrado (orden de los asientos)', () => {
+  let c = N.controlVacio(HOY, ['C1']);
+  c = N.controlDestruir(c, 'C1', { fecha_hora: 'x', operador: OPERADOR, hojas: 1 });
+  const r = N.controlResumen(c);
+  assert.equal(r.cerrado, false);
+  assert.deepEqual(r.sinEntregar, ['C1'], 'sin entrega sigue pendiente de entrega');
+  assert.deepEqual(r.sinDestruir, []);
+});
