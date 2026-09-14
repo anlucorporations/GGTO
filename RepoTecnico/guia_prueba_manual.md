@@ -142,7 +142,19 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
       (D-27). Con muchos casos debe salir en varias páginas.
 - [ ] El registro de entrega (a quién se entregó) queda en `incidencias.log`.
 
-### 3.9 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.9 MONITOREO y GRAFICOS (CU-18, ciclo C5)
+
+- [ ] **MONITOREO** muestra las 6 zonas con su tabla: gestión diaria, casos globales, reparación
+      pendiente (comunes/referidos/empresariales), construcción pendiente, cuadrillas del día
+      (asignados/cerrados/gestionados) y la semana operativa.
+- [ ] **GRAFICOS** dibuja las 6 zonas: barras (diario, globales, construcción, cuadrilla), barras +
+      línea (semanal) y torta (reparación), cada una con su tabla equivalente al lado.
+- [ ] El selector **Sem 1 a Sem 36** cambia la semana del gráfico semanal; con el año 2026, la Sem 36
+      es la del 07/09 al 12/09.
+- [ ] Los números de los gráficos coinciden con los de las tablas y con los del MONITOREO.
+- [ ] Sin la librería Chart.js, la página avisa y deja las tablas (no se queda en blanco).
+
+### 3.10 Diagnóstico y respaldo (CU-21, CU-22)
 
 - [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de

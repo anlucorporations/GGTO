@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **65 decisiones**
+Se realizaron **9 bloques de entrevista** con los que se fijaron **66 decisiones**
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
 
 ---
@@ -136,6 +136,7 @@ ingesta debe rediseñarse.
 | D-63 | Credencial: SHA-256 hex de `sal + ":" + contraseña`. | C1 |
 | D-64 | Log de accesos en `datos/incidencias.log`, sin datos personales, 5 MB × 5. | C1 |
 | D-65 | Claves por defecto ajustadas a los datos reales (LOS ROJO, FALLA DE FIBRA): 18 PEND + 33 GESTION. | C2 |
+| D-66 | Semanas: Sem 1 = primer lunes del año; la Sem 36 de 2026 es la del 07/09 al 12/09. | C5 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -279,7 +280,7 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C2** | Ingesta diaria del CSV: parseo con `;`, validación bloqueante de las 80 columnas, filtro por central, mapeo posicional, deduplicación, clasificación RN-03, asignación de sector con cola y resumen numérico | **Cerrado** — 20 pruebas con el archivo real (51 de la central y 5 descartadas; 17 con claves / 34 sin claves → **18 PEND + 33 GESTION**; 23 ms) |
 | **C3** | PANEL (búsqueda por `id_averia` o teléfono, actualización de gestión con cierre bloqueante y alta manual con id `MAN-`) y bandeja GESTION con reclasificación | **Cerrado** — 17 pruebas, incluida la matriz de permisos operador/supervisor |
 | **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07) |
-| **C5** | MONITOREO y GRAFICOS (6 zonas, serie Sem 1 a Sem 36) | Pendiente |
+| **C5** | MONITOREO y GRAFICOS: las 6 zonas con tabla (RF-05) y con gráficos de barras, barras + línea y torta (RF-06), más la serie semanal lunes–sábado con la línea de pendientes al cierre y selector Sem 1 a Sem 36 (D-34) | **Cerrado** — 15 pruebas; **Chart.js 4.4.7** fijado en `app/lib/` (RT-07) y tablas equivalentes en cada gráfico (RNF-13) |
 | **C6** | Reportes estadísticos y seguimiento de casos especiales y averías concentradas | Pendiente |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | Pendiente |
 
@@ -297,4 +298,4 @@ cierre y `central.json` ya completado con los datos reales de la central (`regio
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs` (78 pruebas).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs` (93 pruebas).

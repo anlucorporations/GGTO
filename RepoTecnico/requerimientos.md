@@ -113,6 +113,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-63 | **Formato de la credencial:** `clave_hash` es el **SHA-256 en hexadecimal (64 caracteres)** de `clave_sal + ":" + contraseña` en UTF-8; `clave_sal` es aleatoria por técnico. |
 | D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (D-58). |
 | D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»**, que son las formas que usa el CSV (el fuente escribe «LOSS ROJO» y «FALLA FIBRA»). Con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION**. |
+| D-66 | **Convención de semanas (Sem 1 a Sem 36):** la **Sem 1 es la semana que empieza el primer lunes del año** y la semana operativa va de lunes a sábado (RN-08). Con 2026, la **Sem 36 es la del 07/09 al 12/09**, que es la del archivo real. |
 
 ---
 
