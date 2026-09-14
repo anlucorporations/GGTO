@@ -281,7 +281,7 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C3** | PANEL (búsqueda por `id_averia` o teléfono, actualización de gestión con cierre bloqueante y alta manual con id `MAN-`) y bandeja GESTION con reclasificación | **Cerrado** — 17 pruebas, incluida la matriz de permisos operador/supervisor |
 | **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07) |
 | **C5** | MONITOREO y GRAFICOS: las 6 zonas con tabla (RF-05) y con gráficos de barras, barras + línea y torta (RF-06), más la serie semanal lunes–sábado con la línea de pendientes al cierre y selector Sem 1 a Sem 36 (D-34) | **Cerrado** — 15 pruebas; **Chart.js 4.4.7** fijado en `app/lib/` (RT-07) y tablas equivalentes en cada gráfico (RNF-13) |
-| **C6** | Reportes estadísticos y seguimiento de casos especiales y averías concentradas | Pendiente |
+| **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | Pendiente |
 
 **MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; el ciclo C4 (despacho y PDF) también está cerrado. **78 pruebas automatizadas en verde.**
@@ -298,4 +298,4 @@ cierre y `central.json` ya completado con los datos reales de la central (`regio
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs` (93 pruebas).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs` (102 pruebas).

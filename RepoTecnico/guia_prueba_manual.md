@@ -154,7 +154,21 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 - [ ] Los números de los gráficos coinciden con los de las tablas y con los del MONITOREO.
 - [ ] Sin la librería Chart.js, la página avisa y deja las tablas (no se queda en blanco).
 
-### 3.10 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.10 REPORTES y seguimiento (CU-19, CU-20, ciclo C6)
+
+- [ ] La pestaña **REPORTES** muestra el **parte de trabajo del día**: ingresos, resueltos (por tipo),
+      pendientes al cierre, total del maestro y casos especiales abiertos.
+- [ ] **Casos especiales**: lista de los empresariales (EMP) y referidos (REF) que siguen abiertos, con
+      su sector, tipo y cuadrilla (D-33).
+- [ ] **Averías concentradas**: por sector, los casos abiertos ingresados en la **semana operativa**, y
+      la marca de **concentrada** cuando alcanza el umbral (por defecto 3, editable en CONFIGURACION →
+      palabras clave; D-25).
+- [ ] Cambiar el umbral en CONFIGURACION cambia la marca de concentración al volver a la pestaña.
+- [ ] **Emitir el parte del día** deja constancia en `incidencias.log` e informa cuántos cambios hubo en
+      el historial desde la emisión anterior.
+- [ ] Un operador **no** puede abrir la pestaña (es del supervisor) y el intento queda registrado.
+
+### 3.11 Diagnóstico y respaldo (CU-21, CU-22)
 
 - [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de
