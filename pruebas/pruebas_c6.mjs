@@ -67,7 +67,7 @@ test('resume los casos especiales por motivo, sector y cuadrilla', () => {
   assert.equal(r.total, 4);
   assert.equal(r.referidos, 3);       // 1, 5 y 8
   assert.equal(r.empresariales, 2);   // 2 y 5
-  assert.equal(r.porSector.S1, 2);    // 1 y 8
+  assert.equal(r.porSector.S1, 3);    // 1 y 8 (referidos) + 2 (empresarial)
   assert.equal(r.porSector.S2, 1);    // 5
   assert.equal(r.porCuadrilla.C1, 2); // 1 y 2
   assert.equal(r.porCuadrilla.C2, 1); // 5
