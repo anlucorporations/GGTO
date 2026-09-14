@@ -1,27 +1,178 @@
 /*
  * GGTO-v1 - pdf.js
- * PENDIENTE DEL CICLO C4 (RF-10; RNF-05, RNF-11): PDF del despacho por
- * cuadrilla en carta horizontal con paginación, marca de fecha/cuadrilla/copia
- * y registro de entrega. Requiere jsPDF + autoTable locales en app/lib/
- * (RT-07), que se incorporan en C4; C1 no necesita ninguna librería.
+ * Ciclo C4. PDF del despacho por cuadrilla (CU-17, RF-10):
+ *   - Una hoja por cuadrilla, en CARTA HORIZONTAL, ajustada al área imprimible
+ *     (RNF-05), con paginación cuando hay más casos de los que caben.
+ *   - Marca de fecha, cuadrilla y número de copia, y pie con la instrucción de
+ *     recoger y destruir las hojas al cierre del día (RNF-11, D-27).
+ *   - Registro de entrega en el log de la aplicación (D-58).
+ * Usa jsPDF local en `app/lib/` (RT-07, versión fijada).
  */
 (function (raiz) {
   'use strict';
 
-  function render(contenedor, ctx) {
-    contenedor.innerHTML = '';
-    var caja = document.createElement('div');
-    caja.className = 'pendiente';
-    var h = document.createElement('h2');
-    h.textContent = 'PDF DE DESPACHO — pendiente del ciclo C4';
-    var p1 = document.createElement('p');
-    p1.textContent = 'La emisión del PDF por cuadrilla (carta horizontal, paginación, marca de fecha, cuadrilla ' +
-      'y número de copia, y registro de entrega y recogida) se implementa en el ciclo C4.';
-    var p2 = document.createElement('p');
-    p2.textContent = 'Requisitos asociados: RF-10; RNF-05 y RNF-11; decisiones D-27 y D-31.';
-    caja.appendChild(h); caja.appendChild(p1); caja.appendChild(p2);
-    contenedor.appendChild(caja);
+  var N = raiz.GGTO_NUCLEO;
+
+  // Carta horizontal (letter landscape): 279,4 x 215,9 mm.
+  var PAGINA = { ancho: 279.4, alto: 215.9 };
+  var MARGEN = 8;
+  var ALTO_FILA = 6;
+  var COLUMNAS = [
+    { clave: 'id_averia', titulo: 'Id avería', ancho: 21 },
+    { clave: 'telefono', titulo: 'Teléfono', ancho: 22 },
+    { clave: 'contacto', titulo: 'Contacto', ancho: 24 },
+    { clave: 'nombre', titulo: 'Nombre', ancho: 34 },
+    { clave: 'direccion', titulo: 'Dirección', ancho: 74 },
+    { clave: 'plan', titulo: 'Plan', ancho: 26 },
+    { clave: 'fat', titulo: 'FAT', ancho: 18 },
+    { clave: 'serial', titulo: 'Serial', ancho: 27 },
+    { clave: 'ultimo_comentario', titulo: 'Comentario', ancho: 0 } // el resto
+  ];
+
+  function claseJsPDF(opciones) {
+    var opts = opciones || {};
+    if (opts.jsPDFClase) return opts.jsPDFClase;
+    if (raiz.jspdf && raiz.jspdf.jsPDF) return raiz.jspdf.jsPDF;
+    return null;
   }
 
-  raiz.GGTO_PDF = { ciclo: 'C4', requisitos: 'RF-10', render: render };
-})(window);
+  /** Cuántas filas caben en una página (RNF-05: área imprimible). */
+  function filasPorPagina() {
+    var util = PAGINA.alto - MARGEN * 2 - 26; // cabecera + pie
+    return Math.max(1, Math.floor(util / ALTO_FILA));
+  }
+
+  function truncar(texto, ancho, tamanoLetra) {
+    var t = String(texto === null || texto === undefined ? '' : texto);
+    var porCaracter = tamanoLetra * 0.5;
+    var max = Math.max(3, Math.floor(ancho / porCaracter));
+    return t.length > max ? t.slice(0, max - 1) + '…' : t;
+  }
+
+  /**
+   * Construye el PDF de una cuadrilla.
+   * `bloque` es el bloque del reparto: { cuadrilla, asignaciones }.
+   * Devuelve { doc, paginas, filas } o null si falta jsPDF.
+   */
+  function construirPDF(bloque, fecha, numeroCopia, opciones) {
+    var opts = opciones || {};
+    var Clase = claseJsPDF(opts);
+    if (!Clase) return null;
+
+    var doc = new Clase({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+    var cuadrilla = (bloque && bloque.cuadrilla) || {};
+    var asignaciones = (bloque && bloque.asignaciones) || [];
+    var porPagina = filasPorPagina();
+    var paginas = Math.max(1, Math.ceil(asignaciones.length / porPagina));
+    var anchos = COLUMNAS.map(function (c) { return c.ancho; });
+    var usado = anchos.reduce(function (t, a) { return t + a; }, 0);
+    var resto = PAGINA.ancho - MARGEN * 2 - usado;
+    anchos[anchos.length - 1] = resto > 30 ? resto : 30;
+    var totalAncho = anchos.reduce(function (t, a) { return t + a; }, 0);
+
+    function cabecera(pagina) {
+      doc.setFontSize(13);
+      doc.text('CANTV · Despacho diario — Central Francisco Salias (Área 4)', MARGEN, MARGEN + 5);
+      doc.setFontSize(10);
+      doc.text('Fecha: ' + fecha + '   ·   Cuadrilla: ' + String(cuadrilla.id || '') +
+        (cuadrilla.nombre ? ' (' + cuadrilla.nombre + ')' : '') +
+        '   ·   Copia n.º ' + numeroCopia + (opts.receptor ? '   ·   Entregada a: ' + opts.receptor : ''),
+        MARGEN, MARGEN + 11);
+      doc.text('Casos: ' + asignaciones.length + '   ·   Página ' + pagina + ' de ' + paginas +
+        '   ·   Recoger y destruir las hojas al cierre del día (D-27)', MARGEN, MARGEN + 16);
+    }
+
+    function encabezadoTabla(y) {
+      doc.setFontSize(8);
+      var x = MARGEN;
+      COLUMNAS.forEach(function (col, i) {
+        doc.rect(x, y, anchos[i], ALTO_FILA);
+        doc.text(truncar(col.titulo, anchos[i], 8), x + 1, y + 4);
+        x += anchos[i];
+      });
+      return y + ALTO_FILA;
+    }
+
+    var fila = 0;
+    var pagina = 1;
+    var y = 0;
+
+    if (asignaciones.length === 0) {
+      cabecera(1);
+      doc.setFontSize(10);
+      doc.text('Sin casos asignados a esta cuadrilla.', MARGEN, MARGEN + 30);
+      return { doc: doc, paginas: 1, filas: 0, anchoTabla: totalAncho };
+    }
+
+    while (fila < asignaciones.length) {
+      cabecera(pagina);
+      y = encabezadoTabla(MARGEN + 20);
+      var enEstaPagina = 0;
+      while (fila < asignaciones.length && enEstaPagina < porPagina) {
+        var caso = asignaciones[fila].caso || {};
+        var x = MARGEN;
+        doc.setFontSize(7.5);
+        COLUMNAS.forEach(function (col, i) {
+          doc.rect(x, y, anchos[i], ALTO_FILA);
+          var valor = caso[col.clave];
+          if (col.clave === 'fat') valor = caso.fat;
+          doc.text(truncar(valor, anchos[i] - 1, 7.5), x + 1, y + 4);
+          x += anchos[i];
+        });
+        y += ALTO_FILA;
+        fila++;
+        enEstaPagina++;
+      }
+      pagina++;
+      if (fila < asignaciones.length) doc.addPage('letter', 'landscape');
+    }
+
+    return { doc: doc, paginas: paginas, filas: asignaciones.length, anchoTabla: totalAncho };
+  }
+
+  /** Línea de registro de entrega para el log (RNF-11, D-27, D-58). */
+  function registroEntrega(fecha, bloque, numeroCopia, receptor, operador, marca) {
+    var cuadrilla = (bloque && bloque.cuadrilla) || {};
+    return 'despacho | ENTREGA PDF | ' + fecha + ' | cuadrilla=' + String(cuadrilla.id || '') +
+      ' | copias=' + numeroCopia + ' | receptor=' + String(receptor || '(no informado)') +
+      ' | p00=' + String(operador || '') + ' | ' + String(marca || '') +
+      ' | recoger y destruir al cierre (D-27)';
+  }
+
+  function nombreArchivo(bloque, fecha) {
+    var id = String(((bloque || {}).cuadrilla || {}).id || 'X');
+    var f = String(fecha || '').split('/');
+    var iso = f.length === 3 ? f[2] + f[1] + f[0] : 'sinfecha';
+    return 'Despacho_Cuadrilla_' + id + '_' + iso + '.pdf';
+  }
+
+  /** Genera y descarga el PDF desde la interfaz. */
+  function generar(ctx, bloque, fecha, copias) {
+    var receptor = raiz.prompt ? (raiz.prompt('¿A quién se entrega la copia impresa de la cuadrilla ' +
+      String(((bloque || {}).cuadrilla || {}).id || '') + '? (opcional)') || '') : '';
+    var armado = construirPDF(bloque, fecha, copias || 1, { receptor: receptor });
+    if (!armado) {
+      ctx.avisar('No se pudo generar el PDF: falta la librería jsPDF en app/lib/.', 'aviso-error', { temporal: false });
+      return;
+    }
+    var archivo = nombreArchivo(bloque, fecha);
+    armado.doc.save(archivo);
+    ctx.registrarLog(registroEntrega(fecha, bloque, copias || 1, receptor, ctx.sesion ? ctx.sesion.P00 : '', N.marcaAhora()));
+    ctx.avisar('PDF generado: ' + archivo + ' (' + armado.paginas + ' página(s), ' + armado.filas +
+      ' casos). Registre la entrega y recoja las hojas al cierre del día.', 'aviso-info', { temporal: false });
+  }
+
+  var API = {
+    ciclo: 'C4',
+    PAGINA: PAGINA,
+    COLUMNAS: COLUMNAS,
+    filasPorPagina: filasPorPagina,
+    construirPDF: construirPDF,
+    registroEntrega: registroEntrega,
+    nombreArchivo: nombreArchivo,
+    generar: generar
+  };
+
+  raiz.GGTO_PDF = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
