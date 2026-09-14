@@ -81,7 +81,25 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
       anterior y valor nuevo (D-56), y la vista de auditoría del caso la muestra.
 - [ ] Un operador **no** puede ver ni cerrar casos de otra cuadrilla (D-35).
 
-### 3.5 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.5 Ingesta del CSV diario (CU-07 a CU-09, ciclo C2)
+
+- [ ] La pestaña **INGESTA** solo es accesible con sesión de **supervisor**; con un operador muestra
+      «Acción no permitida para su rol».
+- [ ] Al elegir `detalle_averias_gpon 12_09_2026.csv` aparece la revisión **sin escribir nada**: filas
+      leídas, descartadas por no ser de la central, duplicadas, rechazadas, casos nuevos y el reparto
+      PEND/GESTION (con ese archivo: 56 leídas, **51 de la central**, 5 descartadas y
+      **18 PEND + 33 GESTION**).
+- [ ] Con un archivo manipulado (una columna menos, o una columna renombrada) la ingesta **aborta** y
+      avisa qué columna falla: no se escribe ni se confirma nada.
+- [ ] Con un archivo que solo tenga el encabezado también aborta.
+- [ ] Al pulsar *Ingestar los casos nuevos* se escribe `averias.json` con el protocolo verificado
+      (aparece el `.bak`), se añade una línea por caso a `historial.jsonl` y el resumen queda en
+      `incidencias.log`.
+- [ ] Volver a ingerir el mismo archivo inserta **0** casos (deduplicación por `id_averia`).
+- [ ] Las direcciones que no coincidan con ninguna vía de `sectores.json` quedan **en cola** (CU-09).
+- [ ] El botón *Registrar que el CSV no llegó* deja constancia en el log sin tocar el maestro.
+
+### 3.6 Diagnóstico y respaldo (CU-21, CU-22)
 
 - [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de
