@@ -139,6 +139,8 @@ ingesta debe rediseñarse.
 | D-66 | Semanas: Sem 1 = primer lunes del año; la Sem 36 de 2026 es la del 07/09 al 12/09. | C5 |
 | D-67 | Ruta controlada de los PDF: `C:\GGTO\despachos`, verificada por relectura, sin Descargas y sin pisar reemisiones (`_rN`). Cierra P8. | C4 |
 | D-68 | El control documental del despacho (entrega, recogida y destrucción) **no se persiste**: estado de sesión, asientos en `incidencias.log`, y el papel/`.xlsm` como soporte oficial. | C4 |
+| D-69 | La **dirección** no es obligatoria en el contrato del CSV (el archivo real trae 4 de 51 sin ella): esas filas entran y quedan en la cola de sectores. | C2 |
+| D-70 | El **bloque INGESTA** (CU-08) se aloja en la pestaña **PANEL** y lo pueden ejecutar operador y supervisor (§2.1). | C2 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -286,7 +288,21 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — entregados y probados: **respaldo y restauración (CU-21)** en `app/js/respaldo.js` (copia de cierre de los 10 archivos verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita y RTO/RPO); **control documental del despacho (CU-17)**: entrega, recogida y destrucción por cuadrilla, con estado de sesión y asientos en `incidencias.log` (**D-68**); y **diagnóstico del puesto (CU-22)** en `app/js/entorno.js`, subpestaña **ENTORNO** de CONFIGURACION. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **133 pruebas automatizadas en verde**, más **34 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **142 pruebas automatizadas en verde**, más **50 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+
+### 11.2 Fase 4 (Pruebas) — cerrada
+
+Informe completo: `RepoTecnico/informe_pruebas_fase4.md`; logs en `RepoTecnico/logs/`.
+
+| Aspecto | Resultado |
+|---|---|
+| Veredicto | **Fase 4 cumplida** — **192 comprobaciones, 0 fallos** (142 de módulos y contratos + 50 E2E) |
+| Pruebas nuevas de la fase | `pruebas/pruebas_contratos.mjs` (9 pruebas de contrato contra el CSV real) y la comprobación E2E ampliada de 34 a **50** (sesión con credencial real, ingesta del CSV real, respaldo y reporte) |
+| Defectos encontrados | **7**: la **ingesta del CSV era inalcanzable** (no la invocaba nadie), la **hoja del despacho** no llevaba 4 columnas canónicas y se salía del área imprimible, el **recorte de texto** del PDF mezclaba puntos y milímetros, `COLUMNAS_DESPACHO` contradecía las 15 canónicas, y `estructura.json` declaraba obligatoria la `direccion` contra el dato real |
+| Correcciones | Todas aplicadas y con prueba de regresión; decisiones nuevas **D-69** (la dirección no es obligatoria en el contrato del CSV) y **D-70** (el bloque INGESTA vive en el PANEL y lo ejecutan los dos roles) |
+| Riesgos residuales | Prueba con los datos reales de una semana, impresión física y modo degradado real: exigen el puesto de la central (criterio de terminado de **C7**) |
+
+**Fase 5 (Manuales): omitida por decisión del usuario** (14/09/2026).
 
 ### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
 
@@ -305,8 +321,8 @@ La comprobación de interfaz se creó **después** de descubrir que la página n
 `reportes.js`, `respaldo.js` y `entorno.js`; `app/lib/` con las librerías locales fijadas (Chart.js 4.4.7 y
 jsPDF 2.5.2 — RT-07; la ingesta no usa PapaParse: parsea el CSV posicionalmente); las pruebas
 `pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs`, `pruebas_c1b.mjs`, `pruebas_c2.mjs` a
-`pruebas_c7.mjs`, `pruebas_c4b.mjs`, `pruebas_cu22.mjs` y la comprobación de interfaz
-`pruebas/interfaz.mjs`; y los lanzadores `servir-ggto.ps1` y `servir-ggto.bat`.
+`pruebas_c7.mjs`, `pruebas_c4b.mjs`, `pruebas_cu22.mjs`, `pruebas_contratos.mjs` y la comprobación de
+interfaz `pruebas/interfaz.mjs`; y los lanzadores `servir-ggto.ps1` y `servir-ggto.bat`.
 
 **Datos de trabajo:** `C:\GGTO\datos` con los 10 archivos (el maestro, `despacho.json`,
 `estructura.json`, los 6 de configuración y `historial.jsonl`), `C:\GGTO\respaldo` para la copia de
@@ -315,6 +331,6 @@ con los datos reales de la central (`region = CAPITAL`).
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas de módulos:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs` (133 pruebas).
-Comprobación de interfaz (necesita Chrome o Edge):
-`node pruebas/interfaz.mjs` (34 comprobaciones).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs` (142 pruebas).
+Comprobación de interfaz (necesita Chrome o Edge; sirve la página por HTTP en loopback):
+`node pruebas/interfaz.mjs` (50 comprobaciones).

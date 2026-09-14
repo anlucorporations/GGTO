@@ -9,6 +9,8 @@ Thumbs.db
 .env
 .env.*
 *.log
+# …salvo los logs de las pruebas, que son evidencia de la Fase 4
+!RepoTecnico/logs/*.log
 
 # Respaldos generados por la pagina
 datos/backup/

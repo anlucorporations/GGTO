@@ -84,8 +84,8 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ### 3.5 Ingesta del CSV diario (CU-07 a CU-09, ciclo C2)
 
-- [ ] La pestaña **INGESTA** solo es accesible con sesión de **supervisor**; con un operador muestra
-      «Acción no permitida para su rol».
+- [ ] El bloque **INGESTA** está **dentro de la pestaña PANEL** (no es una pestaña propia: siguen siendo 7) y
+      lo pueden usar **operador y supervisor** (la matriz de §2.1 lo permite a los dos roles; D-70).
 - [ ] Al elegir `detalle_averias_gpon 12_09_2026.csv` aparece la revisión **sin escribir nada**: filas
       leídas, descartadas por no ser de la central, duplicadas, rechazadas, casos nuevos y el reparto
       PEND/GESTION (con ese archivo: 56 leídas, **51 de la central**, 5 descartadas y
@@ -276,13 +276,13 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ```powershell
 cd C:\GGTO\proyecto
-node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs
+node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs
 ```
 
-Deben pasar **133 de 133**. Cubren la lógica pura y el protocolo de escritura verificada con la API
-simulada (lo que el navegador no permite automatizar sin un gesto humano), incluida la **ruta
-controlada de los PDF** (D-67), el **control documental** del despacho (D-68), el diagnóstico de
-CU-22, la copia de cierre y la restauración de CU-21.
+Deben pasar **142 de 142**. Cubren la lógica pura, el protocolo de escritura verificada con la API
+simulada (lo que el navegador no permite automatizar sin un gesto humano) y los **contratos de datos
+contra el CSV real**: la ruta controlada de los PDF (D-67), el control documental del despacho (D-68),
+el diagnóstico de CU-22, la copia de cierre y la restauración de CU-21.
 
 Además hay una **comprobación de interfaz** que sí abre la página real en un navegador headless y
 renderiza las 8 vistas (necesita Chrome o Edge instalado):
@@ -292,6 +292,7 @@ cd C:\GGTO\proyecto
 node pruebas/interfaz.mjs
 ```
 
-Deben pasar **34 de 34**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
-(por ejemplo, que una pestaña no renderice o que falte cargar una librería local), y recorre el alta
-del despacho, la entrega, la recogida y la destrucción de las hojas.
+Deben pasar **50 de 50**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+(por ejemplo, que una pestaña no renderice, que falte cargar una librería local o que un bloque no
+tenga punto de entrada), y recorre de verdad la **sesión con credencial**, la **ingesta del CSV real**,
+el alta del despacho, la entrega, la recogida y la destrucción de las hojas, el respaldo y el reporte.

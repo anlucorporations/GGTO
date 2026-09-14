@@ -267,9 +267,15 @@
     return filas;
   }
 
+  /**
+   * Las **15 columnas canónicas** de `despacho.json`, en su orden documentado
+   * (D-31, RT-05, CU-17/RF-20). Es la lista de referencia que escribe
+   * `filasDespacho` y que la hoja impresa cubre entre su tabla y su encabezado.
+   */
   var COLUMNAS_DESPACHO = [
-    'id_averia', 'telefono', 'persona_reporta', 'contacto', 'nombre', 'direccion',
-    'plan', 'fat', 'serial', 'ultimo_comentario'
+    'nivel', 'clase', 'id_averia', 'telefono', 'persona_reporta', 'contacto',
+    'ultimo_comentario', 'nombre', 'direccion', 'plan', 'fat', 'serial',
+    'sector', 'Reparador Principal', 'fecha_despacho'
   ];
 
   // -------------------------------------------------------------------- UI

@@ -14,6 +14,7 @@
  * navegador Chromium disponible. Con GGTO_KEEP=1 conserva la página generada.
  */
 import fs from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -54,6 +55,8 @@ const sonda = `
   var BS = String.fromCharCode(92);
   var NL = String.fromCharCode(10);
   var lineas = [];
+  var errores = [];
+  window.addEventListener('error', function (ev) { errores.push(String(ev.message)); });
   function ok(nombre, condicion) { lineas.push((condicion ? 'PASS' : 'FAIL') + ' :: ' + nombre); }
   function publicar() {
     var pre = document.createElement('pre');
@@ -78,6 +81,17 @@ const sonda = `
     }
     return salida;
   }
+  /** Mapa etiqueta -> valor de las tablas de resumen de un contenedor. */
+  function tablaPlana(raiz) {
+    var mapa = {};
+    var filas = raiz.querySelectorAll('tr');
+    for (var i = 0; i < filas.length; i++) {
+      var th = filas[i].querySelector('th');
+      var td = filas[i].querySelector('td');
+      if (th && td) mapa[(th.textContent || '').trim()] = (td.textContent || '').trim();
+    }
+    return mapa;
+  }
   function serie(pasos) {
     var i = 0;
     function siguiente() {
@@ -95,16 +109,28 @@ const sonda = `
     try {
       window.prompt = function () { return ''; };
       var N = window.GGTO_NUCLEO;
+      // Contenido del CSV real y de los archivos de trabajo, inyectados por el
+      // lanzador (Node) para poder probar la ingesta de verdad.
+      var CSV = "__CSV__";
+      var DATOS_REALES = __DATOS_REALES__;
 
       var base = N.estructurasIniciales();
       var datos = {};
       Object.keys(base).forEach(function (k) { datos[k] = base[k]; });
+      // Archivos REALES de trabajo cuando están disponibles: hacen que la ingesta
+      // del CSV del día se compruebe con el contrato y las claves de verdad.
+      if (DATOS_REALES) {
+        datos['estructura.json'] = __ESTRUCTURA__;
+        datos['central.json'] = __CENTRAL__;
+        datos['claves_clasificacion.json'] = __CLAVES__;
+      }
       datos['tecnicos.json'] = [{ P00: '12345', nombre: 'Supervisor', rol: 'Supervisor', status: 'Activo', cuadrillas: [] }];
       datos['cuadrillas.json'] = [{ id: 'C1', nombre: 'Cuadrilla 1', status: 'Activa', tecnicos: ['12345'], sectores: ['S1'], vehiculo: 'V1', turno: 'Diurno' }];
       datos['sectores.json'] = [{ id: 'S1', nombre: 'Cumbres', vias: ['CUMBRES'], cuadrilla_sugerida: 'C1' }];
       datos['averias.json'] = [{ id_averia: 'A-1', telefono: '4241234567', nombre: 'Abonado Uno', direccion: 'CALLE 1', sector: 'S1', status: 'PEND', clase: 'REP', nivel: 'COM', tipo_abonado: 'RES', 'Reparador Principal': '', fecha_cita: '13/09/2026', ingreso: '13/09/2026', fecha_reporte: '13/09/2026', plan: 'ABA', fat: 'FAT1', serial: 'S1', ultimo_comentario: 'comentario' }];
 
       var salidas = { registradas: [] };
+      var copias = { n: 0 };
       var logIncidencias = '13/09/2026 09:00 | sesion | intento fallido | p00=999 | credencial' + NL;
       window.GGTO.estado.resumen = [{ archivo: 'averias.json', existe: true, invalido: null, registros: 1 }];
       window.GGTO.estado.almacen = {
@@ -114,7 +140,21 @@ const sonda = `
         guardarArchivo: function () { return Promise.resolve(null); },
         agregarHistorial: function () { return Promise.resolve({ agregadas: 0, verificadas: 0 }); },
         crearEstructura: function () { return Promise.resolve({ creados: [] }); },
-        estadoRespaldo: function () { return Promise.resolve({ autorizada: false, hay: false, copias: [], total: 0, ruta: N.CONST.RUTA_RESPALDO }); },
+        estadoRespaldo: function () {
+          return Promise.resolve({
+            autorizada: !!window.GGTO.estado.almacen.carpetaRespaldo, hay: false, copias: [],
+            total: 0, ruta: N.CONST.RUTA_RESPALDO
+          });
+        },
+        guardarCopiaCierre: function () {
+          copias.n++;
+          return Promise.resolve({
+            marca: '13/09/2026 18:00', fecha: '13/09/2026', hora: '18:00',
+            nombreMaestro: 'averias_2026-09-13_1800.json', ruta: N.CONST.RUTA_RESPALDO,
+            archivos: [{ archivo: 'averias_2026-09-13_1800.json', tamano: 10 }],
+            verificados: 10, total: 10, fallos: [], cifrado: false
+          });
+        },
         listarSalidas: function () { return Promise.resolve(salidas.registradas); },
         guardarSalida: function (nombre, bytes) {
           salidas.registradas.push({ nombre: nombre, tamano: bytes.byteLength });
@@ -271,6 +311,116 @@ const sonda = `
               sig();
             }, 80);
           }, 160);
+        },
+        // --- RESPALDO: copia de cierre (CU-21) ---
+        function (sig) {
+          window.GGTO.estado.almacen.carpetaRespaldo = {};
+          var cont = seccion('configuracion');
+          window.GGTO_CONFIGURACION.subActiva('respaldo');
+          window.GGTO_CONFIGURACION.render(cont, nuevoCtx());
+          // El bloque consulta el estado del respaldo de forma asíncrona.
+          setTimeout(function () {
+            var boton = botonesDe(cont, 'Respaldar ahora')[0];
+            ok('la subpestaña RESPALDO ofrece la copia de cierre', !!boton);
+            if (boton) boton.click();
+            setTimeout(function () {
+              ok('la copia de cierre se ejecuta y se verifica', copias.n === 1);
+              ok('el respaldo queda asentado en el log',
+                logs.join(' ').indexOf('COPIA DE CIERRE') >= 0);
+              sig();
+            }, 220);
+          }, 220);
+        },
+        // --- REPORTES: emisión del parte del día (CU-19) ---
+        function (sig) {
+          var cont = seccion('reportes');
+          window.GGTO_REPORTES.render(cont, nuevoCtx());
+          var boton = botonesDe(cont, 'Emitir el parte del día')[0];
+          ok('REPORTES ofrece emitir el parte del día', !!boton);
+          var antes = logs.length;
+          if (boton) boton.click();
+          setTimeout(function () {
+            ok('la emisión del parte queda asentada en el log', logs.length > antes);
+            sig();
+          }, 180);
+        },
+        // --- Sesión con credencial real (CU-01) ---
+        function (sig) {
+          var sal = 'a1b2c3d4e5f6a7b8';
+          window.GGTO_NUCLEO.hashClave('ClaveSegura123', sal, window.crypto.subtle).then(function (hash) {
+            window.GGTO.estado.almacen.datos['tecnicos.json'] = [{
+              P00: '12345', nombre: 'Supervisor Uno', cedula: '1', rol: 'Supervisor', status: 'Activo',
+              clave_sal: sal, clave_hash: hash, clave_cambio_obligatorio: 'NO', clave_fecha_cambio: '13/09/2026'
+            }];
+            window.GGTO.estado.sesion = null;
+            document.getElementById('paso-carpeta').hidden = true;
+            document.getElementById('paso-sesion').hidden = false;
+
+            // 1) contraseña incorrecta: la sesión no se abre y el intento se registra.
+            document.getElementById('login-p00').value = '12345';
+            document.getElementById('login-clave').value = 'ClaveIncorrecta1';
+            document.getElementById('form-acceso').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            setTimeout(function () {
+              ok('la sesión NO se abre con la contraseña incorrecta', !window.GGTO.estado.sesion);
+              var contador = document.getElementById('contador-intentos');
+              ok('el intento fallido queda registrado',
+                !!contador && /Intentos fallidos: 1/.test(contador.textContent || ''));
+
+              // 2) credencial válida: se abre la sesión y se habilitan las pestañas.
+              document.getElementById('login-p00').value = '12345';
+              document.getElementById('login-clave').value = 'ClaveSegura123';
+              document.getElementById('form-acceso').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              setTimeout(function () {
+                var ses = window.GGTO.estado.sesion;
+                var msg = document.getElementById('msg-acceso');
+                var pista = ses ? '' : ' [msg="' + ((msg && msg.textContent) || '') +
+                  '" errores="' + errores.join(' | ') + '"]';
+                ok('la sesión se abre con la credencial válida (P00 + contraseña con hash)' + pista,
+                  !!ses && ses.P00 === '12345');
+                ok('el armazón construye las 7 pestañas',
+                  document.querySelectorAll('#pestanas button').length === 7);
+                var desp = document.getElementById('tab-despacho');
+                var conf = document.getElementById('tab-configuracion');
+                ok('el supervisor tiene habilitadas DESPACHO y CONFIGURACION',
+                  !!desp && desp.disabled === false && !!conf && conf.disabled === false);
+                sig();
+              }, 350);
+            }, 250);
+          }).catch(function (e) {
+            ok('no se pudo preparar la credencial: ' + (e && e.message), false);
+            sig();
+          });
+        },
+        // --- Ingesta del CSV REAL desde el bloque del PANEL (CU-08) ---
+        function (sig) {
+          var cont = seccion('panel');
+          window.GGTO_PANEL.render(cont, nuevoCtx());
+          var entrada = document.getElementById('archivo-csv');
+          ok('el PANEL aloja el bloque INGESTA del CSV (CU-08)', !!entrada);
+          if (!entrada) { sig(); return; }
+          if (!DATOS_REALES) {
+            lineas.push('SKIP :: ingesta del CSV real (faltan los archivos de C:' + BS + 'GGTO' + BS + 'datos)');
+            sig();
+            return;
+          }
+          var dt = new DataTransfer();
+          dt.items.add(new File([CSV], 'detalle_averias_gpon 12_09_2026.csv', { type: 'text/csv' }));
+          entrada.files = dt.files;
+          entrada.dispatchEvent(new Event('change', { bubbles: true }));
+          setTimeout(function () {
+            var filas = tablaPlana(cont);
+            ok('la revisión lee las 56 filas del archivo real', filas['Filas leídas'] === '56');
+            ok('descarta los 5 registros de otras centrales',
+              filas['Descartadas por no ser de la central'] === '5');
+            ok('quedan 51 casos nuevos de Francisco Salias',
+              filas['Casos nuevos a insertar'] === '51');
+            ok('el reparto es 18 PEND + 33 GESTION',
+              filas['Quedarían en PEND'] === '18' &&
+              filas['Quedarían en GESTION (bandeja telefónica)'] === '33');
+            ok('la revisión NO escribe el maestro',
+              (window.GGTO.estado.almacen.datos['averias.json'] || []).length === 1);
+            sig();
+          }, 600);
         }
       ]);
     } catch (e) {
@@ -283,22 +433,64 @@ const sonda = `
 `;
 
 // --- 3. Página de comprobación y ejecución ---------------------------------
+const RUTA_DATOS = 'C:\\GGTO\\datos';
+function leerSiExiste(ruta) {
+  try { return fs.readFileSync(ruta, 'utf8'); } catch { return null; }
+}
+const csvCrudo = leerSiExiste(path.join(raiz, 'detalle_averias_gpon 12_09_2026.csv'));
+const estructuraCruda = leerSiExiste(path.join(RUTA_DATOS, 'estructura.json'));
+const centralCruda = leerSiExiste(path.join(RUTA_DATOS, 'central.json'));
+const clavesCruda = leerSiExiste(path.join(RUTA_DATOS, 'claves_clasificacion.json'));
+const datosReales = !!(csvCrudo && estructuraCruda && centralCruda && clavesCruda);
+
 const html = fs.readFileSync(indexHtml, 'utf8');
 if (!html.includes('</body>')) {
   console.error('No se encontró </body> en app/index.html');
   process.exit(1);
 }
+// El CSV se inyecta como literal de JavaScript (JSON lo escapa por nosotros).
+const sondaFinal = sonda
+  .replace('"__CSV__"', JSON.stringify(csvCrudo || ''))
+  .replace('__ESTRUCTURA__', estructuraCruda || 'null')
+  .replace('__CENTRAL__', centralCruda || 'null')
+  .replace('__CLAVES__', clavesCruda || 'null')
+  .replace('__DATOS_REALES__', datosReales ? 'true' : 'false');
+
 const pagina = path.join(raiz, 'app', '_interfaz_check.html');
-fs.writeFileSync(pagina, html.replace('</body>', sonda + '\n</body>'), 'utf8');
+fs.writeFileSync(pagina, html.replace('</body>', sondaFinal + '\n</body>'), 'utf8');
 
 const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'ggto-ui-'));
 const salida = path.join(perfil, 'dom.txt');
+
+// La comprobación se sirve por HTTP (no por file://): en file:// el arranque de
+// la página se aborta a propósito y no se conectan los eventos de la interfaz,
+// así que no se podría probar ni la sesión ni la ingesta.
+const raizApp = path.join(raiz, 'app');
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.csv': 'text/csv; charset=utf-8'
+};
+const servidor = http.createServer((peticion, respuesta) => {
+  const limpio = decodeURIComponent(String(peticion.url || '/').split('?')[0]);
+  const relativo = path.normalize(limpio === '/' ? '/index.html' : limpio).replace(/^[/\\]+/, '');
+  const destino = path.join(raizApp, relativo);
+  if (!destino.startsWith(raizApp)) { respuesta.writeHead(403); respuesta.end('fuera del alcance'); return; }
+  fs.readFile(destino, (err, datos) => {
+    if (err) { respuesta.writeHead(404); respuesta.end('no encontrado'); return; }
+    respuesta.writeHead(200, { 'Content-Type': TIPOS[path.extname(destino)] || 'application/octet-stream' });
+    respuesta.end(datos);
+  });
+});
+await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+const url = 'http://127.0.0.1:' + servidor.address().port + '/_interfaz_check.html';
+
 const argumentos = [
   '--headless=new', '--disable-gpu', '--no-first-run',
   '--user-data-dir=' + path.join(perfil, 'perfil'),
   '--virtual-time-budget=9000',
   '--dump-dom',
-  'file:///' + pagina.replace(/\\/g, '/')
+  url
 ];
 
 // Salida a ARCHIVO con espera por sondeo: las tuberías no devuelven nada en este
@@ -317,6 +509,7 @@ while (Date.now() < limite) {
 }
 try { hijo.kill(); } catch { /* ya terminó */ }
 try { fs.closeSync(fd); } catch { /* ya cerrado */ }
+servidor.close();
 
 function limpiar(ruta) {
   try { fs.rmSync(ruta, { recursive: true, force: true }); } catch { /* Chrome aún lo retiene */ }

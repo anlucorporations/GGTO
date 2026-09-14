@@ -2,7 +2,9 @@
  * GGTO-v1 - pdf.js
  * Ciclo C4. PDF del despacho por cuadrilla (CU-17, RF-10):
  *   - Una hoja por cuadrilla, en CARTA HORIZONTAL, ajustada al área imprimible
- *     (RNF-05), con paginación cuando hay más casos de los que caben.
+ *     (RNF-05), con paginación cuando hay más casos de los que caben. La tabla
+ *     ocupa exactamente el ancho imprimible y, con el encabezado, cubre las
+ *     **15 columnas canónicas** de `despacho.json` (CU-17 CA-2, D-31).
  *   - Marca de fecha, cuadrilla y número de copia, y pie con la instrucción de
  *     recoger y destruir las hojas al cierre del día (RNF-11, D-27).
  *   - Se guarda en la RUTA CONTROLADA `C:\GGTO\despachos` (D-27, D-67), nunca en
@@ -20,17 +22,45 @@
   var PAGINA = { ancho: 279.4, alto: 215.9 };
   var MARGEN = 8;
   var ALTO_FILA = 6;
+  /** Milímetros por punto tipográfico: el tamaño de letra viene en puntos. */
+  var MM_POR_PUNTO = 0.3528;
+  /**
+   * Columnas de la tabla impresa. Entre la tabla y el encabezado se cubren las
+   * **15 columnas canónicas** de `despacho.json` (CU-17 CA-2, D-31): la tabla
+   * lleva estas 13 y el encabezado lleva `Reparador Principal` (cuadrilla) y
+   * `fecha_despacho` (fecha). La última columna es elástica: absorbe el resto del
+   * área imprimible, de modo que el ancho total es exactamente el disponible
+   * (RNF-05).
+   */
   var COLUMNAS = [
-    { clave: 'id_averia', titulo: 'Id avería', ancho: 21 },
-    { clave: 'telefono', titulo: 'Teléfono', ancho: 22 },
-    { clave: 'contacto', titulo: 'Contacto', ancho: 24 },
-    { clave: 'nombre', titulo: 'Nombre', ancho: 34 },
-    { clave: 'direccion', titulo: 'Dirección', ancho: 74 },
-    { clave: 'plan', titulo: 'Plan', ancho: 26 },
-    { clave: 'fat', titulo: 'FAT', ancho: 18 },
-    { clave: 'serial', titulo: 'Serial', ancho: 27 },
+    { clave: 'nivel', titulo: 'Nivel', ancho: 11 },
+    { clave: 'clase', titulo: 'Clase', ancho: 11 },
+    { clave: 'id_averia', titulo: 'Id avería', ancho: 19 },
+    { clave: 'telefono', titulo: 'Teléfono', ancho: 18 },
+    { clave: 'persona_reporta', titulo: 'Reporta', ancho: 19 },
+    { clave: 'contacto', titulo: 'Contacto', ancho: 19 },
+    { clave: 'nombre', titulo: 'Nombre', ancho: 27 },
+    { clave: 'direccion', titulo: 'Dirección', ancho: 44 },
+    { clave: 'plan', titulo: 'Plan', ancho: 14 },
+    { clave: 'fat', titulo: 'FAT', ancho: 12 },
+    { clave: 'serial', titulo: 'Serial', ancho: 15 },
+    { clave: 'sector', titulo: 'Sector', ancho: 14 },
     { clave: 'ultimo_comentario', titulo: 'Comentario', ancho: 0 } // el resto
   ];
+
+  /** Anchos efectivos: la última columna absorbe lo que queda del área. */
+  function anchosColumnas() {
+    var anchos = COLUMNAS.map(function (c) { return c.ancho; });
+    var fijos = anchos.reduce(function (t, a) { return t + a; }, 0);
+    var resto = PAGINA.ancho - MARGEN * 2 - fijos;
+    anchos[anchos.length - 1] = resto > 0 ? resto : 0;
+    return anchos;
+  }
+
+  /** Ancho total de la tabla impresa (RNF-05: área máxima imprimible). */
+  function anchoTabla() {
+    return anchosColumnas().reduce(function (t, a) { return t + a; }, 0);
+  }
 
   function claseJsPDF(opciones) {
     var opts = opciones || {};
@@ -45,10 +75,15 @@
     return Math.max(1, Math.floor(util / ALTO_FILA));
   }
 
+  /**
+   * Recorta el texto al ancho disponible. `ancho` va en milímetros y
+   * `tamanoLetra` en puntos: se convierten para no cortar de más (el ancho medio
+   * de un carácter es la mitad del cuerpo, ya en milímetros).
+   */
   function truncar(texto, ancho, tamanoLetra) {
     var t = String(texto === null || texto === undefined ? '' : texto);
-    var porCaracter = tamanoLetra * 0.5;
-    var max = Math.max(3, Math.floor(ancho / porCaracter));
+    var porCaracter = Math.max(0.5, Number(tamanoLetra) * 0.5 * MM_POR_PUNTO);
+    var max = Math.max(3, Math.floor((ancho - 2) / porCaracter));
     return t.length > max ? t.slice(0, max - 1) + '…' : t;
   }
 
@@ -67,11 +102,8 @@
     var asignaciones = (bloque && bloque.asignaciones) || [];
     var porPagina = filasPorPagina();
     var paginas = Math.max(1, Math.ceil(asignaciones.length / porPagina));
-    var anchos = COLUMNAS.map(function (c) { return c.ancho; });
-    var usado = anchos.reduce(function (t, a) { return t + a; }, 0);
-    var resto = PAGINA.ancho - MARGEN * 2 - usado;
-    anchos[anchos.length - 1] = resto > 30 ? resto : 30;
-    var totalAncho = anchos.reduce(function (t, a) { return t + a; }, 0);
+    var anchos = anchosColumnas();
+    var totalAncho = anchoTabla();
 
     function cabecera(pagina) {
       doc.setFontSize(13);
@@ -219,8 +251,12 @@
   var API = {
     ciclo: 'C4',
     PAGINA: PAGINA,
+    MARGEN: MARGEN,
     COLUMNAS: COLUMNAS,
     filasPorPagina: filasPorPagina,
+    anchosColumnas: anchosColumnas,
+    anchoTabla: anchoTabla,
+    truncar: truncar,
     construirPDF: construirPDF,
     registroEntrega: registroEntrega,
     nombreArchivo: nombreArchivo,

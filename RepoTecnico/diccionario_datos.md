@@ -32,7 +32,7 @@ toda edición se refleja aquí (RF-24 / RN-07). Se conserva el orden de columnas
 | 12 | `informacion_1` | T | No | — | CSV | Primera columna `informacion` del CSV (D-10). |
 | 13 | `informacion_2` | T | No | — | CSV | Segunda columna `informacion` del CSV (D-10). |
 | 14 | `nombre` | T | No | — | CSV | Nombre del abonado. |
-| 15 | `direccion` | T | Sí | texto libre | CSV | Base del agrupamiento por sector y del despacho. |
+| 15 | `direccion` | T | Sí | texto libre | CSV | Base del agrupamiento por sector y del despacho. **Obligatoria en el maestro, no en el contrato del CSV (D-69):** el archivo real del 12/09/2026 trae 4 de 51 filas sin dirección, entran igualmente y quedan en la cola de sectores (CU-09). |
 | 16 | `olt` | T | No | — | CSV | Red / planta externa. |
 | 17 | `plan` | T | No | — | CSV | Plan contratado. |
 | 18 | `slot` | T | No | — | CSV | Red / planta externa. |

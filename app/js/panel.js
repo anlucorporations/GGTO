@@ -6,6 +6,8 @@
  *     observaciones y sacas, con cierre bloqueante (CU-12, RF-03, D-20).
  *   - Alta manual con lista CERRADA de campos e id_averia MAN- (CU-14, RF-04,
  *     D-18, D-62).
+ *   - Aloja el bloque INGESTA del CSV diario (CU-08): no es una pestaña propia
+ *     (las pestañas son 7) y lo pueden ejecutar operador y supervisor (§2.1).
  * Toda escritura pasa por el protocolo verificado de C1 (D-41, D-42) y deja su
  * linea en el historial inmutable (D-56).
  */
@@ -295,12 +297,27 @@
       alta.appendChild(zonaAlta);
     }
     seccion.appendChild(alta);
+
+    // --- bloque INGESTA del CSV diario (CU-08) ---------------------------
+    // CU-08 lo define como BLOQUE dentro de una pestaña, no como pestaña propia
+    // (CU-01: las pestañas son 7), y la matriz de §2.1 lo permite al operador y
+    // al supervisor. Se aloja en el PANEL, que es la pantalla principal.
+    if (N.autorizar(ctx.ambito, 'ingesta.ejecutar').permitido) {
+      var ingesta = raiz.GGTO_INGESTA;
+      if (ingesta && typeof ingesta.render === 'function') {
+        var cajaIngesta = ctx.texto('div', null, 'bloque');
+        cajaIngesta.id = 'bloque-ingesta';
+        seccion.appendChild(cajaIngesta);
+        ingesta.render(cajaIngesta, ctx);
+      }
+    }
+
     contenedor.appendChild(seccion);
 
     if (maestrovacio) {
       seccion.insertBefore(ctx.texto('p',
-        'El maestro está vacío: puede dar de alta un caso a mano o ejecutar la ingesta del CSV (C2).',
-        'aviso aviso-info'), seccion.firstChild.nextSibling);
+        'El maestro está vacío: puede ejecutar la ingesta del CSV del día en el bloque INGESTA de abajo, ' +
+        'o dar de alta un caso a mano.', 'aviso aviso-info'), seccion.firstChild.nextSibling);
     }
   }
 

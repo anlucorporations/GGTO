@@ -196,10 +196,11 @@ test('proyecta despacho.json con las 15 columnas de D-31', () => {
   assert.ok(filas.every((f) => f['Reparador Principal'] !== '' && f.sector !== ''));
 });
 
-test('las columnas del PDF son las del despacho (RF-20)', () => {
+test('las columnas del despacho son las 15 canónicas (RF-20, CU-17)', () => {
   assert.deepEqual(D.COLUMNAS_DESPACHO, [
-    'id_averia', 'telefono', 'persona_reporta', 'contacto', 'nombre', 'direccion',
-    'plan', 'fat', 'serial', 'ultimo_comentario'
+    'nivel', 'clase', 'id_averia', 'telefono', 'persona_reporta', 'contacto',
+    'ultimo_comentario', 'nombre', 'direccion', 'plan', 'fat', 'serial',
+    'sector', 'Reparador Principal', 'fecha_despacho'
   ]);
 });
 

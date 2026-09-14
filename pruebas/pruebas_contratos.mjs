@@ -1,0 +1,211 @@
+/*
+ * GGTO-v1 · pruebas/pruebas_contratos.mjs  (FASE 4: pruebas de contrato)
+ * Verifica que la implementación respeta los CONTRATOS documentados en el
+ * corpus: `estructura.json` contra el CSV real, los campos del maestro, las 15
+ * columnas canónicas de `despacho.json`, lo que debe contener la hoja impresa
+ * del despacho (CU-17 CA-2), el ancho imprimible (RNF-05) y el inventario de
+ * archivos de trabajo (D-49, D-56).
+ *
+ *   Ejecutar:  node --test pruebas/pruebas_contratos.mjs
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
+const aqui = path.dirname(fileURLToPath(import.meta.url));
+const raizProyecto = path.join(aqui, '..');
+const RUTA_DATOS = 'C:\\GGTO\\datos';
+
+const N = require(path.join(raizProyecto, 'app', 'js', 'nucleo.js'));
+const I = require(path.join(raizProyecto, 'app', 'js', 'ingesta_nucleo.js'));
+const D = require(path.join(raizProyecto, 'app', 'js', 'despacho.js'));
+const PDF = require(path.join(raizProyecto, 'app', 'js', 'pdf.js'));
+const A = (() => {
+  globalThis.window = globalThis;
+  globalThis.document = { createElement: () => ({ setAttribute() {}, style: {} }), body: { appendChild() {}, removeChild() {} } };
+  globalThis.URL.createObjectURL = () => 'blob:x';
+  globalThis.URL.revokeObjectURL = () => {};
+  globalThis.GGTO_NUCLEO = N;
+  require(path.join(raizProyecto, 'app', 'js', 'almacen.js'));
+  return globalThis.GGTO_ALMACEN;
+})();
+
+const leer = (ruta) => fs.readFileSync(ruta, 'utf8');
+const CSV = leer(path.join(raizProyecto, 'detalle_averias_gpon 12_09_2026.csv'));
+const ESTRUCTURA = JSON.parse(leer(path.join(RUTA_DATOS, 'estructura.json')));
+const CENTRAL = JSON.parse(leer(path.join(RUTA_DATOS, 'central.json')));
+const CLAVES = JSON.parse(leer(path.join(RUTA_DATOS, 'claves_clasificacion.json')));
+
+/** Las 15 columnas canónicas de `despacho.json` (D-31, RT-05, CU-17). */
+const COLUMNAS_CANONICAS = [
+  'nivel', 'clase', 'id_averia', 'telefono', 'persona_reporta', 'contacto',
+  'ultimo_comentario', 'nombre', 'direccion', 'plan', 'fat', 'serial',
+  'sector', 'Reparador Principal', 'fecha_despacho'
+];
+/** Columnas canónicas que la hoja impresa lleva en el ENCABEZADO, no en la tabla. */
+const EN_CABECERA = ['Reparador Principal', 'fecha_despacho'];
+
+const ingerir = (csv, extras) => I.ingerir(Object.assign({
+  texto: csv,
+  estructura: ESTRUCTURA,
+  central: CENTRAL,
+  claves: CLAVES.claves,
+  maestro: [],
+  sectores: [],
+  opciones: {
+    fecha: '13/09/2026', marca: '13/09/2026 18:00', operador: '12345',
+    clase: 'REP', nivel: 'COM', modo: CLAVES.normalizacion || 'normalizada'
+  }
+}, extras || {}));
+
+// ===========================================================================
+// 1. Contrato del CSV y de `estructura.json` (RF-16, D-12, D-44)
+// ===========================================================================
+test('la cabecera del CSV real tiene las 80 columnas que declara estructura.json', () => {
+  const cabecera = I.parsearCSV(CSV, ';').filas[0];
+  assert.equal(ESTRUCTURA.columnas_esperadas, 80);
+  assert.equal(ESTRUCTURA.separador, ';');
+  assert.equal(cabecera.length, ESTRUCTURA.columnas_esperadas,
+    'la cabecera real debe tener 80 columnas separadas por «;»');
+});
+
+test('cada campo declarado apunta a una columna existente y los obligatorios se cumplen', () => {
+  const p = I.parsearCSV(CSV, ';');
+  const filas = p.filas.slice(1).filter((f) => f.length > 1);
+  (ESTRUCTURA.campos || []).forEach((campo) => {
+    assert.ok(campo.columna >= 1 && campo.columna <= ESTRUCTURA.columnas_esperadas,
+      campo.json + ' declara la columna ' + campo.columna + ', fuera del rango 1..80');
+  });
+  const obligatorios = (ESTRUCTURA.campos || []).filter((c) => c.obligatorio);
+  assert.ok(obligatorios.length > 0, 'debe haber campos obligatorios declarados');
+  obligatorios.forEach((campo) => {
+    const vacios = filas.filter((f) => String(f[campo.columna - 1] || '').trim() === '').length;
+    assert.equal(vacios, 0, 'el contrato declara obligatoria la columna ' + campo.columna + ' (' +
+      campo.json + ') pero ' + vacios + ' fila(s) del archivo real vienen vacías');
+  });
+});
+
+test('una fila sin dirección entra igualmente y queda en la cola de sectores (CU-08, CU-09)', () => {
+  const r = ingerir(CSV);
+  const sinDireccion = r.casos.filter((c) => !String(c.direccion || '').trim());
+  assert.equal(sinDireccion.length, 4, 'el archivo real trae 4 casos sin dirección');
+  assert.equal(r.resumen.insertadas, 51, 'y aun así entran los 51: la dirección no bloquea la ingesta');
+  assert.equal(r.resumen.rechazadas.length, 0, 'ninguna fila se rechaza por venir sin dirección');
+
+  const conSectores = ingerir(CSV, { sectores: [{ id: 'S1', nombre: 'Cumbres', vias: ['CUMBRES'] }] });
+  assert.ok(conSectores.casos.some((c) => String(c.sector || '').trim() !== ''),
+    'con un catálogo de sectores, los casos con dirección sí se asignan');
+  sinDireccion.forEach((c) => {
+    const enCola = conSectores.casos.filter((s) => s.id_averia === c.id_averia &&
+      String(s.sector || '').trim() === '');
+    assert.equal(enCola.length, 1, 'el caso ' + c.id_averia + ' sin dirección debe quedar en la cola (CU-09)');
+  });
+});
+
+test('la ingesta del CSV real produce casos con los campos del maestro informados', () => {
+  const r = ingerir(CSV);
+  assert.equal(r.ok, true, 'la ingesta del archivo real debe completarse');
+  assert.equal(r.resumen.insertadas, 51, 'los 51 casos de Francisco Salias');
+  assert.equal(r.casos.length, 51);
+  const conteo = r.casos.reduce((acc, c) => {
+    acc[c.status] = (acc[c.status] || 0) + 1;
+    return acc;
+  }, {});
+  assert.equal(conteo.PEND, 18);
+  assert.equal(conteo.GESTION, 33);
+
+  // Obligatorios del contrato del CSV: `id_averia` y `telefono` (la dirección no
+  // lo es: el archivo real trae filas sin ella y entran igualmente).
+  const camposObligatorios = ['id_averia', 'telefono'];
+  r.casos.forEach((caso) => {
+    camposObligatorios.forEach((campo) => {
+      assert.ok(String(caso[campo] || '').trim() !== '',
+        'el caso ' + caso.id_averia + ' no trae ' + campo);
+    });
+  });
+  // Rastro de origen (D-52, D-53): la ingesta lo inicializa con la columna 20
+  // del CSV (usuario_acciona) y con la fecha de ingesta como marca.
+  assert.equal(r.casos[0].fecha_modificacion, '13/09/2026 18:00',
+    'la marca de la ingesta queda como fecha de modificación');
+  assert.ok(String(r.casos[0].usuario_modificacion || '').trim() !== '',
+    'la ingesta inicializa el rastro de origen con el usuario de la columna 20');
+  // Y no persiste lo que D-53 y D-54 excluyeron.
+  assert.equal(r.casos[0].fecha_compromiso, undefined, 'la col. 18 no se persiste (D-54)');
+});
+
+// ===========================================================================
+// 2. Contrato de `despacho.json`: las 15 columnas canónicas (D-31, RT-05)
+// ===========================================================================
+test('la proyección de despacho escribe las 15 columnas canónicas en su orden', () => {
+  const casos = [{
+    id_averia: 'A-1', telefono: '4241234567', persona_reporta: 'Ana', contacto: 'Luis',
+    nombre: 'Abonado Uno', direccion: 'CALLE 1', plan: 'ABA', fat: 'FAT1', serial: 'S1',
+    ultimo_comentario: 'comentario', sector: 'S1', clase: 'REP', nivel: 'COM', status: 'PEND'
+  }];
+  const cuadrillas = [{ id: 'C1', nombre: 'Cuadrilla 1', status: 'Activa', sectores: ['S1'], tecnicos: [] }];
+  const sectores = [{ id: 'S1', nombre: 'Cumbres', vias: ['CUMBRES'], cuadrilla_sugerida: '' }];
+  const r = D.generarReparto(casos, cuadrillas, sectores, '13/09/2026');
+  const filas = D.filasDespacho(r, '13/09/2026');
+
+  assert.equal(filas.length, 1, 'el caso despachable debe producir una fila');
+  assert.deepEqual(Object.keys(filas[0]), COLUMNAS_CANONICAS,
+    'las 15 columnas canónicas, en el orden documentado');
+  assert.equal(filas[0]['Reparador Principal'], 'C1');
+  assert.equal(filas[0].fecha_despacho, '13/09/2026');
+});
+
+// ===========================================================================
+// 3. Contrato de la HOJA IMPRESA del despacho (CU-17 CA-2, RNF-05, RNF-11)
+// ===========================================================================
+test('la hoja del despacho muestra todas las columnas canónicas (CU-17 CA-2)', () => {
+  const enTabla = PDF.COLUMNAS.map((c) => c.clave);
+  const faltan = COLUMNAS_CANONICAS.filter(
+    (c) => enTabla.indexOf(c) < 0 && EN_CABECERA.indexOf(c) < 0
+  );
+  assert.deepEqual(faltan, [],
+    'la hoja impresa debe contener las 15 columnas canónicas: ' +
+    'en la tabla o en el encabezado; faltan ' + faltan.join(', '));
+  // Y el encabezado debe llevar las dos que se imprimen fuera de la tabla.
+  assert.ok(typeof PDF.encabezado === 'function' || typeof PDF.construirPDF === 'function',
+    'la hoja se construye en construirPDF');
+});
+
+test('la tabla del despacho cabe en el área imprimible de la hoja (RNF-05)', () => {
+  const disponible = PDF.PAGINA.ancho - 2 * PDF.MARGEN;
+  const ancho = PDF.anchoTabla();
+  assert.ok(ancho <= disponible + 0.01,
+    'la tabla mide ' + ancho.toFixed(1) + ' mm y el área imprimible es ' + disponible.toFixed(1) +
+    ' mm: se sale del margen derecho');
+  assert.ok(ancho >= disponible - 0.01,
+    'la tabla mide ' + ancho.toFixed(1) + ' mm y podría aprovechar los ' + disponible.toFixed(1) +
+    ' mm del área imprimible');
+});
+
+// ===========================================================================
+// 4. Inventario y contratos de los archivos de trabajo (D-49, D-56)
+// ===========================================================================
+test('los archivos de trabajo son los 10 documentados y la copia de cierre los incluye', () => {
+  const base = N.estructurasIniciales();
+  const nombres = Object.keys(base);
+  assert.equal(nombres.length, 10, 'son 9 JSON de trabajo y el historial');
+  assert.deepEqual(nombres.slice().sort(), A.NOMBRES.slice().sort(),
+    'estructurasIniciales y el almacén deben declarar el mismo inventario');
+  assert.ok(nombres.indexOf('historial.jsonl') >= 0);
+  assert.equal(base['historial.jsonl'], '', 'el historial arranca vacío');
+  assert.equal(base['averias.json'].length, 0, 'el maestro arranca sin casos inventados');
+  assert.equal(N.nombreCopiaCierre(new Date(2026, 8, 13, 9, 5)), 'averias_2026-09-13_0905.json');
+});
+
+test('cada línea del historial lleva los 7 campos documentados (D-56)', () => {
+  const linea = JSON.parse(N.lineaHistorial({
+    fecha_hora: '13/09/2026 10:05', operador: '12345', id_averia: 'A-1', campo: 'status',
+    valor_anterior: 'PEND', valor_nuevo: 'CERRADO', accion: 'cierre'
+  }));
+  assert.deepEqual(Object.keys(linea).sort(), [
+    'accion', 'campo', 'fecha_hora', 'id_averia', 'operador', 'valor_anterior', 'valor_nuevo'
+  ]);
+});

@@ -759,7 +759,10 @@
           { json: 'informacion_1', columna: 31, tipo: 'T', obligatorio: false },
           { json: 'informacion_2', columna: 32, tipo: 'T', obligatorio: false },
           { json: 'nombre', columna: 33, tipo: 'T', obligatorio: false },
-          { json: 'direccion', columna: 34, tipo: 'T', obligatorio: true },
+          // La direccion NO es bloqueante en la ingesta: el archivo real del
+      // 12/09/2026 trae 4 de 51 filas sin ella y CU-08 exige insertar las 51.
+      // Esas filas entran y quedan en la cola de sectores (CU-09, RN-04).
+      { json: 'direccion', columna: 34, tipo: 'T', obligatorio: false },
           { json: 'olt', columna: 36, tipo: 'T', obligatorio: false },
           { json: 'plan', columna: 39, tipo: 'T', obligatorio: false },
           { json: 'slot', columna: 40, tipo: 'T', obligatorio: false },

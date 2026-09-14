@@ -1,0 +1,52 @@
+﻿PASS :: ctx.almacen entrega la instancia y no el módulo
+PASS :: ctx.almacen.datos está disponible
+PASS :: ctx.almacen expone guardarArchivo
+PASS :: Chart.js cargado por la página (RT-07)
+PASS :: jsPDF cargado por la página (RT-07)
+PASS :: entorno.js cargado por la página (CU-22)
+PASS :: render CASOS
+PASS :: render PANEL
+PASS :: render GESTION
+PASS :: render DESPACHO
+PASS :: render MONITOREO
+PASS :: render GRAFICOS
+PASS :: render REPORTES
+PASS :: render CONFIGURACION
+PASS :: GRAFICOS dibuja los 6 lienzos
+PASS :: CONFIGURACION tiene 8 sub-pestañas (RESPALDO y ENTORNO incluidas)
+PASS :: el PDF se guarda en la ruta controlada
+PASS :: el log registra la ruta controlada del PDF
+PASS :: la reemisión conserva la versión anterior
+PASS :: sin ruta controlada la vista DESPACHO lo advierte
+PASS :: la vista DESPACHO ofrece autorizar la carpeta
+PASS :: ENTORNO renderiza el diagnóstico
+PASS :: ENTORNO informa las rutas y el modo de trabajo
+PASS :: ENTORNO resume el registro de la aplicación
+PASS :: ENTORNO verifica el cierre de la jornada
+PASS :: la vista DESPACHO ofrece generar el despacho
+PASS :: el control documental arranca pendiente de entrega
+PASS :: el día no se puede cerrar con hojas pendientes
+PASS :: tras entregar, el control pide recoger las hojas
+PASS :: tras recoger, el control pide destruir
+PASS :: tras destruir, el control da el día por completo
+PASS :: con todo destruido el cierre se habilita
+PASS :: el cierre del control queda asentado en el log
+PASS :: las acciones del control dejan asiento en el log
+PASS :: la subpestaña RESPALDO ofrece la copia de cierre
+PASS :: la copia de cierre se ejecuta y se verifica
+PASS :: el respaldo queda asentado en el log
+PASS :: REPORTES ofrece emitir el parte del día
+PASS :: la emisión del parte queda asentada en el log
+PASS :: la sesión NO se abre con la contraseña incorrecta
+PASS :: el intento fallido queda registrado
+PASS :: la sesión se abre con la credencial válida (P00 + contraseña con hash)
+PASS :: el armazón construye las 7 pestañas
+PASS :: el supervisor tiene habilitadas DESPACHO y CONFIGURACION
+PASS :: el PANEL aloja el bloque INGESTA del CSV (CU-08)
+PASS :: la revisión lee las 56 filas del archivo real
+PASS :: descarta los 5 registros de otras centrales
+PASS :: quedan 51 casos nuevos de Francisco Salias
+PASS :: el reparto es 18 PEND + 33 GESTION
+PASS :: la revisión NO escribe el maestro
+
+Comprobación de interfaz: 50/50 correctas.
