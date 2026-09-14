@@ -99,7 +99,31 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 - [ ] Las direcciones que no coincidan con ninguna vía de `sectores.json` quedan **en cola** (CU-09).
 - [ ] El botón *Registrar que el CSV no llegó* deja constancia en el log sin tocar el maestro.
 
-### 3.6 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.6 PANEL: buscar, gestionar y dar de alta (CU-11, CU-12, CU-14, ciclo C3)
+
+- [ ] En **PANEL**, buscar por `id_averia` exacto y por **teléfono**; si el teléfono está en varios
+      casos, avisa y muestra el primero.
+- [ ] Con un caso de otra cuadrilla, el operador ve el aviso de que no le corresponde.
+- [ ] **Actualizar la gestión**: cambiar `status`, `resolucion`, `fechaResolucion`, `observaciones` y
+      `sacas`. Al elegir **CERRADO** sin resolución ni fecha, el guardado se bloquea y explica por qué.
+- [ ] Al cerrar correctamente se añaden las líneas correspondientes a `historial.jsonl` y se registra
+      el operador y la fecha/hora.
+- [ ] **Alta manual**: crear un caso; el id se genera como `MAN-0001` (y siguientes) y el caso queda en
+      `PEND`, asignado a la cuadrilla de la sesión si la tiene.
+- [ ] Intentar dar de alta con teléfono inválido, fecha imposible o sector inexistente: se rechaza con
+      el motivo.
+
+### 3.7 Bandeja GESTION (CU-13, ciclo C3)
+
+- [ ] La bandeja es **solo del supervisor**; con un operador la pestaña avisa que no tiene permiso y el
+      intento queda en `incidencias.log`.
+- [ ] Muestra los casos en `status = GESTION` (con el archivo del 12/09 son **33**) y resume cuántos
+      hay sin sector, empresariales y referidos.
+- [ ] Se puede ordenar la cola por antigüedad, sector o dirección.
+- [ ] Al clasificar (clase, nivel, tipo_abonado) y marcar «pasar a PEND», el caso sale de la bandeja,
+      queda en `PEND` para el despacho y se registra en el historial.
+
+### 3.8 Diagnóstico y respaldo (CU-21, CU-22)
 
 - [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de
