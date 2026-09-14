@@ -123,7 +123,26 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 - [ ] Al clasificar (clase, nivel, tipo_abonado) y marcar «pasar a PEND», el caso sale de la bandeja,
       queda en `PEND` para el despacho y se registra en el historial.
 
-### 3.8 Diagnóstico y respaldo (CU-21, CU-22)
+### 3.8 DESPACHO y PDF por cuadrilla (CU-16, CU-17, ciclo C4)
+
+> Requiere cuadrillas activas en CONFIGURACION y casos abiertos en el maestro (llegan con la ingesta).
+
+- [ ] **Generar el despacho** reparte todos los casos abiertos entre las cuadrillas activas y avisa si
+      alguna queda sin referido o sin empresa (RN-05).
+- [ ] La **construcción (CNS)** de cada sector queda en **una sola** cuadrilla: la que tenga
+      reparaciones en ese sector (RN-06); si hay empate, decide la zona preferente, luego la menor
+      carga y luego el `id` menor (D-32).
+- [ ] Los **citados del día** (`fecha_cita` = hoy) aparecen en el reparto y marcados como tales.
+- [ ] Se puede **mover** un caso a otra cuadrilla con el selector; el cambio queda registrado.
+- [ ] Al **guardar el despacho** se escriben `Reparador Principal` y `fecha_asignacion` en
+      `averias.json`, se graba `despacho.json` con sus 15 columnas, y hay una línea de historial por
+      asignación.
+- [ ] **PDF por cuadrilla**: se descarga `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf` en **carta horizontal**,
+      con fecha, cuadrilla y número de copia, y el pie recuerda recoger y destruir las hojas al cierre
+      (D-27). Con muchos casos debe salir en varias páginas.
+- [ ] El registro de entrega (a quién se entregó) queda en `incidencias.log`.
+
+### 3.9 Diagnóstico y respaldo (CU-21, CU-22)
 
 - [ ] Al cerrar la jornada, la página ofrece crear la copia fechada en `C:\GGTO\respaldo\` (D-49).
 - [ ] El diagnóstico reporta: navegador, soporte de la API de archivos, carpeta autorizada y número de

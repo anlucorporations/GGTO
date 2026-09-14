@@ -278,14 +278,14 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C1** | Armazón de las 7 pestañas, CONFIGURACION con los 6 padrones y CRUD de sectores, tabla CASOS con flotante y cierre bloqueante, sesión con `P00` + contraseña, persistencia verificada (`.bak` ×10, temporal, relectura), detección de conflicto, `historial.jsonl`, rotación del log y consulta de auditoría | **Cerrado** — 24 pruebas automatizadas en verde (16 base + 8 de D-61 a D-64), interfaz validada en Chrome headless (19 comprobaciones) y servidor verificado en loopback sirviendo solo `app/` |
 | **C2** | Ingesta diaria del CSV: parseo con `;`, validación bloqueante de las 80 columnas, filtro por central, mapeo posicional, deduplicación, clasificación RN-03, asignación de sector con cola y resumen numérico | **Cerrado** — 20 pruebas con el archivo real (51 de la central y 5 descartadas; 17 con claves / 34 sin claves → **18 PEND + 33 GESTION**; 23 ms) |
 | **C3** | PANEL (búsqueda por `id_averia` o teléfono, actualización de gestión con cierre bloqueante y alta manual con id `MAN-`) y bandeja GESTION con reclasificación | **Cerrado** — 17 pruebas, incluida la matriz de permisos operador/supervisor |
-| **C4** | DESPACHO por sector y cuadrilla, con el PDF por cuadrilla y su registro de entrega | Pendiente |
+| **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07) |
 | **C5** | MONITOREO y GRAFICOS (6 zonas, serie Sem 1 a Sem 36) | Pendiente |
 | **C6** | Reportes estadísticos y seguimiento de casos especiales y averías concentradas | Pendiente |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | Pendiente |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo (61 pruebas automatizadas en verde).
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; el ciclo C4 (despacho y PDF) también está cerrado. **78 pruebas automatizadas en verde.**
 
-**Código entregado (ciclos C1 a C3):** `app/index.html`, `app/css/estilos.css`, `app/js/nucleo.js`,
+**Código entregado (ciclos C1 a C4):** `app/index.html`, `app/css/estilos.css`, `app/js/nucleo.js`,
 `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, los ocho módulos rotulados como pendientes de
 su ciclo (`ingesta`, `panel`, `gestion`, `despacho`, `pdf`, `metricas`, `graficos`, `reportes`),
 `pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs` y `pruebas_c1b.mjs`, y los lanzadores
@@ -297,4 +297,4 @@ cierre y `central.json` ya completado con los datos reales de la central (`regio
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs` (61 pruebas).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs` (78 pruebas).
