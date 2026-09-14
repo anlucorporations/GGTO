@@ -275,6 +275,8 @@
   // -------------------------------------------------------------------- UI
 
   var vista = { resultado: null, movimientos: {} };
+  /** Refresco de la lista de PDF de la ruta controlada (bloqueRutaControlada). */
+  var refrescarSalidas = null;
 
   function render(contenedor, ctx) {
     contenedor.innerHTML = '';
@@ -311,6 +313,7 @@
       pintar(ctx, zona, fecha);
     }));
     seccion.appendChild(zona);
+    seccion.appendChild(bloqueRutaControlada(ctx));
     contenedor.appendChild(seccion);
   }
 
@@ -384,9 +387,72 @@
           return;
         }
         raiz.GGTO_PDF.generar(ctx, bloque, fecha, 1);
+        // El PDF se escribe de forma asíncrona: se refresca la lista al terminar.
+        if (refrescarSalidas) setTimeout(refrescarSalidas, 500);
       }));
     });
     zona.appendChild(acciones);
+  }
+
+  /**
+   * Bloque de la RUTA CONTROLADA de los PDF (CU-17, D-27, D-67): estado de
+   * `C:\GGTO\despachos`, botón para autorizarla y lista de lo generado. Se
+   * muestra siempre en la vista, antes y después de generar el despacho.
+   */
+  function bloqueRutaControlada(ctx) {
+    var salidas = ctx.texto('div', null, 'bloque');
+    salidas.appendChild(ctx.texto('h3', 'PDF del despacho — ruta controlada'));
+    var avisoRuta = ctx.texto('p', null, 'aviso');
+    var listaSalidas = ctx.texto('div', null, 'lista-salidas');
+    salidas.appendChild(avisoRuta);
+    salidas.appendChild(listaSalidas);
+
+    function pintarSalidas() {
+      var almacen = ctx.almacen || {};
+      var disponible = !ctx.modoDescarga() && typeof almacen.listarSalidas === 'function' && almacen.carpetaDespachos;
+      ctx.limpiar(avisoRuta);
+      ctx.limpiar(listaSalidas);
+      if (!disponible) {
+        avisoRuta.className = 'aviso aviso-alerta';
+        avisoRuta.textContent = 'La ruta controlada ' + N.CONST.RUTA_DESPACHOS + ' no está autorizada: el PDF se ' +
+          'descargaría fuera de ella y no se cumpliría D-27. Autorice la carpeta para guardarlo y verificarlo.';
+        if (!ctx.modoDescarga()) {
+          listaSalidas.appendChild(ctx.boton('Autorizar carpeta ' + N.CONST.RUTA_DESPACHOS, null, function () {
+            A.abrirCarpetaDespachos().then(function (dir) {
+              return almacen.autorizarDespachos(dir);
+            }).then(function () {
+              ctx.avisar('Ruta controlada autorizada: ' + N.CONST.RUTA_DESPACHOS, 'aviso-info');
+              pintarSalidas();
+            }).catch(function (e) {
+              if (e && e.name === 'AbortError') return;
+              ctx.avisar('No se pudo autorizar la ruta controlada: ' + A.errorDe(e), 'aviso-error', { temporal: false });
+            });
+          }));
+        }
+        return;
+      }
+      almacen.listarSalidas().then(function (lista) {
+        avisoRuta.className = 'aviso aviso-ok';
+        avisoRuta.textContent = 'Ruta controlada: ' + N.CONST.RUTA_DESPACHOS + ' · ' +
+          lista.length + ' PDF generado(s). La página no usa la carpeta de Descargas (D-27).';
+        ctx.limpiar(listaSalidas);
+        if (!lista.length) return;
+        var tabla = ctx.texto('table', null, 'tabla');
+        var tbody = ctx.texto('tbody');
+        lista.forEach(function (s) {
+          var tr = ctx.texto('tr');
+          tr.appendChild(ctx.texto('th', s.nombre));
+          tr.appendChild(ctx.texto('td', String(s.tamano) + ' bytes'));
+          tbody.appendChild(tr);
+        });
+        tabla.appendChild(tbody);
+        listaSalidas.appendChild(tabla);
+      }).catch(function () { return null; });
+    }
+
+    refrescarSalidas = pintarSalidas;
+    pintarSalidas();
+    return salidas;
   }
 
   function guardar(ctx, fecha) {

@@ -137,6 +137,7 @@ ingesta debe rediseñarse.
 | D-64 | Log de accesos en `datos/incidencias.log`, sin datos personales, 5 MB × 5. | C1 |
 | D-65 | Claves por defecto ajustadas a los datos reales (LOS ROJO, FALLA DE FIBRA): 18 PEND + 33 GESTION. | C2 |
 | D-66 | Semanas: Sem 1 = primer lunes del año; la Sem 36 de 2026 es la del 07/09 al 12/09. | C5 |
+| D-67 | Ruta controlada de los PDF: `C:\GGTO\despachos`, verificada por relectura, sin Descargas y sin pisar reemisiones (`_rN`). Cierra P8. | C4 |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -279,25 +280,40 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C1** | Armazón de las 7 pestañas, CONFIGURACION con los 6 padrones y CRUD de sectores, tabla CASOS con flotante y cierre bloqueante, sesión con `P00` + contraseña, persistencia verificada (`.bak` ×10, temporal, relectura), detección de conflicto, `historial.jsonl`, rotación del log y consulta de auditoría | **Cerrado** — 24 pruebas automatizadas en verde (16 base + 8 de D-61 a D-64), interfaz validada en Chrome headless (19 comprobaciones) y servidor verificado en loopback sirviendo solo `app/` |
 | **C2** | Ingesta diaria del CSV: parseo con `;`, validación bloqueante de las 80 columnas, filtro por central, mapeo posicional, deduplicación, clasificación RN-03, asignación de sector con cola y resumen numérico | **Cerrado** — 20 pruebas con el archivo real (51 de la central y 5 descartadas; 17 con claves / 34 sin claves → **18 PEND + 33 GESTION**; 23 ms) |
 | **C3** | PANEL (búsqueda por `id_averia` o teléfono, actualización de gestión con cierre bloqueante y alta manual con id `MAN-`) y bandeja GESTION con reclasificación | **Cerrado** — 17 pruebas, incluida la matriz de permisos operador/supervisor |
-| **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07) |
+| **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07). **Ampliado (D-67):** el PDF se guarda en la **ruta controlada `C:\GGTO\despachos`** —nunca en Descargas— con verificación por relectura, reemisiones que no pisan la anterior y lista de archivos generados; **8 pruebas nuevas** (`pruebas_c4b.mjs`) |
 | **C5** | MONITOREO y GRAFICOS: las 6 zonas con tabla (RF-05) y con gráficos de barras, barras + línea y torta (RF-06), más la serie semanal lunes–sábado con la línea de pendientes al cierre y selector Sem 1 a Sem 36 (D-34) | **Cerrado** — 15 pruebas; **Chart.js 4.4.7** fijado en `app/lib/` (RT-07) y tablas equivalentes en cada gráfico (RNF-13) |
 | **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — **respaldo y restauración (CU-21) implementados y probados**: `app/js/respaldo.js` enganchado como subpestaña **RESPALDO** de CONFIGURACION, con copia de cierre de los **10 archivos** verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita cuando la copia pierde casos y registro del RTO/RPO. **12 pruebas automatizadas** nuevas y **18 comprobaciones** de interfaz en Chrome headless. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo y la restauración ya entregados. **114 pruebas automatizadas en verde.**
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo y la restauración ya entregados. **122 pruebas automatizadas en verde**, más **19 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+
+### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
+
+La comprobación de interfaz se creó **después** de descubrir que la página no llegaba a renderizar ninguna pestaña, aunque las 114 pruebas de módulos pasaban. Los dos defectos eran de **contrato entre `app.js` y los módulos**, invisibles para las pruebas unitarias:
+
+| Defecto | Causa | Corrección |
+|---|---|---|
+| **Toda pestaña lanzaba `TypeError`** al renderizar (`Cannot read properties of undefined (reading 'cuadrillas.json')`) | `contexto()` entregaba `almacen: A` —el **módulo** `GGTO_ALMACEN`— mientras los 10 módulos usan `ctx.almacen.datos`, `guardarArchivo`, `agregarHistorial` e `historialTexto`, que son de la **instancia** | `app.js`: `contexto()` pasa `estado.almacen` (la instancia autorizada) con un `almacenVacio()` defensivo para antes de autorizar la carpeta |
+| **GRAFICOS nunca dibujaba** («falta la librería Chart.js») | `app/lib/chart.umd.min.js` existía y estaba fijado (RT-07), pero **`index.html` no lo cargaba** | `index.html`: se añade `<script src="lib/chart.umd.min.js">` junto a jsPDF |
+
+**Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y renderiza las 8 vistas con el `contexto()` real, así que estos dos defectos ya no pueden volver sin que la comprobación falle.
 
 **Código entregado (ciclos C1 a C7 en curso):** `app/index.html`, `app/css/estilos.css`,
 `app/js/nucleo.js`, `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, `ingesta_nucleo.js`,
 `ingesta.js`, `panel.js`, `gestion.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`,
-`reportes.js` y `respaldo.js`; `app/lib/` con las librerías locales fijadas (Chart.js 4.4.7,
-jsPDF 2.5.2, PapaParse — RT-07); las pruebas `pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs`,
-`pruebas_c1b.mjs`, `pruebas_c2.mjs` a `pruebas_c7.mjs`; y los lanzadores `servir-ggto.ps1` y
-`servir-ggto.bat`.
+`reportes.js` y `respaldo.js`; `app/lib/` con las librerías locales fijadas (Chart.js 4.4.7 y
+jsPDF 2.5.2 — RT-07; la ingesta no usa PapaParse: parsea el CSV posicionalmente); las pruebas
+`pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs`, `pruebas_c1b.mjs`, `pruebas_c2.mjs` a
+`pruebas_c7.mjs`, `pruebas_c4b.mjs` y la comprobación de interfaz `pruebas/interfaz.mjs`; y los
+lanzadores `servir-ggto.ps1` y `servir-ggto.bat`.
 
 **Datos de trabajo:** `C:\GGTO\datos` con los 10 archivos (el maestro, `despacho.json`,
 `estructura.json`, los 6 de configuración y `historial.jsonl`), `C:\GGTO\respaldo` para la copia de
-cierre y `central.json` ya completado con los datos reales de la central (`region = CAPITAL`).
+cierre, **`C:\GGTO\despachos` como ruta controlada de los PDF (D-67)** y `central.json` ya completado
+con los datos reales de la central (`region = CAPITAL`).
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
-`http://localhost:8787/index.html`. Pruebas:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs` (114 pruebas).
+`http://localhost:8787/index.html`. Pruebas de módulos:
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs` (122 pruebas).
+Comprobación de interfaz (necesita Chrome o Edge):
+`node pruebas/interfaz.mjs` (19 comprobaciones).

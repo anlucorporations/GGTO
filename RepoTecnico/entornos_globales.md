@@ -17,6 +17,7 @@
 | Hojas de estilo (a crear) | `...\app\css\estilos.css` |
 | Módulos JavaScript (a crear) | `...\app\js\` |
 | Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56) y `incidencias.log` (log de accesos con rotación 5 MB × 5 archivos, D-58, **D-64**); respaldo **manual** a demanda del supervisor (D-36) |
+| Ruta controlada de los PDF de despacho | `C:\GGTO\despachos\` — carpeta autorizada aparte, **nunca** la carpeta de Descargas (**D-67**, D-27); ver §4.3 |
 | Librerías locales (a crear) | `...\app\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
 | Metadata de git (fuera de Google Drive) | `C:\GGTO\git\GGTO-v1.git` (la raíz apunta con un archivo `.git` que contiene `gitdir:`) |
@@ -198,11 +199,41 @@ vive en `almacen.js` (`rotarLogIncidencias`); la prueba con el límite parametri
 
 ---
 
+### 4.3 Ruta controlada de los PDF del despacho (`C:\GGTO\despachos`, D-67)
+
+Los PDF del despacho llevan datos personales del abonado, así que **no pueden quedar en la carpeta de
+Descargas del puesto** (D-27). La página los escribe en una **ruta controlada**, que es una carpeta
+autorizada **aparte** de `datos/` y de `respaldo/` (el navegador concede cada carpeta por separado).
+
+| Elemento | Ruta | Requisito |
+|---|---|---|
+| Ruta controlada de salidas | `C:\GGTO\despachos\` | **D-67**, D-27, RNF-11 |
+
+**Procedimiento (lo ejecuta la página).**
+
+1. El supervisor autoriza la carpeta una vez con *Autorizar carpeta `C:\GGTO\despachos`* (vista
+   DESPACHO). Sin esa autorización la página **avisa** y el PDF se **descarga**, dejando constancia en
+   el log de que salió de la ruta controlada.
+2. Nombre del archivo: `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf`. Las **reemisiones del mismo día**
+   añaden el sufijo `_r2`, `_r3`… para **conservar la versión anterior** (CU-17, flujo 6a).
+3. Tras escribir, la página **relee el archivo y compara tamaño y suma de control**: si no coincide,
+   no lo da por bueno.
+4. El registro de entrega (a quién se entregó) y la ruta del archivo van al log de la aplicación
+   (`datos/incidencias.log`, D-27, D-58).
+5. Las hojas impresas se **recogen y destruyen al cierre del día** bajo custodia del supervisor.
+
+**Comprobación en el puesto.** `Get-ChildItem C:\GGTO\despachos\*.pdf | Select-Object Name, Length`
+debe listar los PDF del día, y la carpeta de Descargas del usuario **no** debe contener
+`Despacho_Cuadrilla_*.pdf`.
+
+---
+
 ## 5. Constantes y variables globales del front-end
 
 | Constante | Valor | Uso |
 |---|---|---|
 | `RUTA_DATOS` | `C:\GGTO\datos\` | Carpeta de los 9 JSON de trabajo y de `historial.jsonl` (D-19, D-56). |
+| `RUTA_DESPACHOS` | `C:\GGTO\despachos\` | **Ruta controlada** de los PDF del despacho; nunca la carpeta de Descargas (**D-67**, D-27). |
 | `ARCHIVO_MAESTRO` | `averias.json` | Maestro de casos (D-09). |
 | `ARCHIVO_DESPACHO` | `despacho.json` | Vista de campo. |
 | `ARCHIVO_ESTRUCTURA` | `estructura.json` | Contrato del CSV. |

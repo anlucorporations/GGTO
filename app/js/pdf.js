@@ -5,6 +5,9 @@
  *     (RNF-05), con paginación cuando hay más casos de los que caben.
  *   - Marca de fecha, cuadrilla y número de copia, y pie con la instrucción de
  *     recoger y destruir las hojas al cierre del día (RNF-11, D-27).
+ *   - Se guarda en la RUTA CONTROLADA `C:\GGTO\despachos` (D-27, D-67), nunca en
+ *     Descargas, verificando la escritura por relectura; las reemisiones del
+ *     mismo día conservan la versión anterior (CU-17, 6a).
  *   - Registro de entrega en el log de la aplicación (D-58).
  * Usa jsPDF local en `app/lib/` (RT-07, versión fijada).
  */
@@ -139,15 +142,25 @@
       ' | recoger y destruir al cierre (D-27)';
   }
 
-  function nombreArchivo(bloque, fecha) {
+  /**
+   * Nombre del archivo. Las reemisiones del mismo día llevan sufijo `_rN` para
+   * **conservar la anterior** (CU-17, flujo 6a).
+   */
+  function nombreArchivo(bloque, fecha, reemision) {
     var id = String(((bloque || {}).cuadrilla || {}).id || 'X');
     var f = String(fecha || '').split('/');
     var iso = f.length === 3 ? f[2] + f[1] + f[0] : 'sinfecha';
-    return 'Despacho_Cuadrilla_' + id + '_' + iso + '.pdf';
+    var n = Number(reemision) || 0;
+    return 'Despacho_Cuadrilla_' + id + '_' + iso + (n > 1 ? '_r' + n : '') + '.pdf';
   }
 
-  /** Genera y descarga el PDF desde la interfaz. */
-  function generar(ctx, bloque, fecha, copias) {
+  /**
+   * Genera el PDF de una cuadrilla y lo guarda en la **ruta controlada**
+   * `C:\GGTO\despachos` (D-27, D-67), nunca en Descargas, verificando la
+   * escritura por relectura. Si la carpeta no está autorizada (o falla la
+   * escritura) descarga el archivo y lo advierte expresamente.
+   */
+  function generar(ctx, bloque, fecha, copias, reemision) {
     var receptor = raiz.prompt ? (raiz.prompt('¿A quién se entrega la copia impresa de la cuadrilla ' +
       String(((bloque || {}).cuadrilla || {}).id || '') + '? (opcional)') || '') : '';
     var armado = construirPDF(bloque, fecha, copias || 1, { receptor: receptor });
@@ -155,11 +168,52 @@
       ctx.avisar('No se pudo generar el PDF: falta la librería jsPDF en app/lib/.', 'aviso-error', { temporal: false });
       return;
     }
-    var archivo = nombreArchivo(bloque, fecha);
-    armado.doc.save(archivo);
-    ctx.registrarLog(registroEntrega(fecha, bloque, copias || 1, receptor, ctx.sesion ? ctx.sesion.P00 : '', N.marcaAhora()));
-    ctx.avisar('PDF generado: ' + archivo + ' (' + armado.paginas + ' página(s), ' + armado.filas +
-      ' casos). Registre la entrega y recoja las hojas al cierre del día.', 'aviso-info', { temporal: false });
+    var almacen = ctx.almacen || {};
+    var marca = N.marcaAhora();
+    var operador = ctx.sesion ? ctx.sesion.P00 : '';
+
+    function registrar(ruta) {
+      ctx.registrarLog(registroEntrega(fecha, bloque, copias || 1, receptor, operador, marca) +
+        (ruta ? ' | ruta=' + ruta : ' | ruta=DESCARGA (fuera de la ruta controlada)'));
+    }
+
+    function exito(rutaTexto, verificado, n) {
+      registrar(rutaTexto);
+      ctx.avisar('PDF en la ruta controlada: ' + rutaTexto + ' (' + armado.paginas + ' página(s), ' +
+        armado.filas + ' casos' + (verificado === false ? ', sin poder verificar la relectura' : ', verificado') + ')' +
+        (n > 1 ? '. Reemisión n.º ' + n + ': se conserva la versión anterior' : '') +
+        '. Registre la entrega y recoja las hojas al cierre del día (D-27).', 'aviso-info', { temporal: false });
+    }
+
+    function descargar(motivo) {
+      armado.doc.save(nombreArchivo(bloque, fecha, reemision));
+      registrar('');
+      ctx.avisar(motivo + ' Se descargó el PDF, NO en la ruta controlada: guárdelo en ' +
+        N.CONST.RUTA_DESPACHOS + ' o autorice esa carpeta para cumplir D-27.', 'aviso-alerta', { temporal: false });
+    }
+
+    var bytes = typeof armado.doc.output === 'function' ? armado.doc.output('arraybuffer') : null;
+    var puedeEscribir = bytes && typeof almacen.guardarSalida === 'function' && almacen.carpetaDespachos;
+    if (!puedeEscribir) {
+      descargar('La ruta controlada ' + N.CONST.RUTA_DESPACHOS + ' no está autorizada.');
+      return;
+    }
+
+    var base = nombreArchivo(bloque, fecha, 1).replace(/\.pdf$/, '');
+    var listar = typeof almacen.listarSalidas === 'function' ? almacen.listarSalidas() : Promise.resolve([]);
+    listar.then(function (salidas) {
+      var previas = (salidas || []).filter(function (s) {
+        return String((s || {}).nombre || '').indexOf(base) === 0;
+      }).length;
+      var n = Math.max(Number(reemision) || 1, previas + 1);
+      var archivo = nombreArchivo(bloque, fecha, n);
+      return almacen.guardarSalida(archivo, bytes).then(function (res) {
+        exito(res.ruta + '\\' + archivo, res.verificado, n);
+      });
+    }).catch(function (e) {
+      descargar('No se pudo escribir en ' + N.CONST.RUTA_DESPACHOS + ' (' +
+        (e && e.message ? e.message : e) + ').');
+    });
   }
 
   var API = {

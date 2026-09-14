@@ -722,11 +722,39 @@
     contenedor.setAttribute('aria-labelledby', 'tab-' + id);
   }
 
+  /**
+   * Almacén vacío de respaldo para antes de autorizar la carpeta de datos:
+   * mantiene el contrato de `ctx.almacen` (lecturas vacías y escrituras que
+   * fallan con un mensaje claro) en lugar de dejar `undefined` y provocar un
+   * `TypeError` en los módulos.
+   */
+  function almacenVacio() {
+    var rechazar = function () {
+      return Promise.reject(new Error('No hay carpeta de datos autorizada'));
+    };
+    return {
+      tipo: 'ninguno',
+      carpeta: null,
+      carpetaRespaldo: null,
+      handles: {},
+      estado: {},
+      datos: {},
+      historialTexto: '',
+      cargar: function () { return Promise.resolve({ archivos: [] }); },
+      guardarArchivo: rechazar,
+      agregarHistorial: rechazar,
+      crearEstructura: rechazar,
+      describir: function () { return 'sin carpeta de datos autorizada'; }
+    };
+  }
+
   function contexto() {
     return {
       estado: estado,
       nucleo: N,
-      almacen: A,
+      // La instancia autorizada (no el módulo): los 10 módulos leen `datos`,
+      // `historialTexto` y escriben con `guardarArchivo`/`agregarHistorial`.
+      almacen: estado.almacen || almacenVacio(),
       sesion: estado.sesion,
       ambito: ambito(),
       autorizar: autorizar,

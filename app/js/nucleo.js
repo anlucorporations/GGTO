@@ -19,6 +19,7 @@
   var CONST = {
     RUTA_DATOS: 'C:\\GGTO\\datos',
     RUTA_RESPALDO: 'C:\\GGTO\\respaldo',
+    RUTA_DESPACHOS: 'C:\\GGTO\\despachos',
     PUERTO_LOCAL: 8787,
     ARCHIVO_MAESTRO: 'averias.json',
     ARCHIVO_DESPACHO: 'despacho.json',
@@ -640,6 +641,11 @@
     return m[3] + '/' + m[2] + '/' + m[1] + ' ' + hhmm.slice(0, 2) + ':' + hhmm.slice(2);
   }
 
+  /** ¿El nombre es un PDF de despacho de la ruta controlada (D-27, D-67)? */
+  function esSalidaDespacho(nombre) {
+    return /^Despacho_Cuadrilla_.+_\d{8}(_r\d+)?\.pdf$/.test(String(nombre || ''));
+  }
+
   /** Conserva solo las 10 ultimas copias .bak del maestro (D-42, RNF-15). */
   function respaldosAExpedir(nombres) {
     var baks = (nombres || []).filter(function (n) {
@@ -835,6 +841,7 @@
     nombreCopiaCierre: nombreCopiaCierre,
     esCopiaCierre: esCopiaCierre,
     marcaDeCopia: marcaDeCopia,
+    esSalidaDespacho: esSalidaDespacho,
     respaldosAExpedir: respaldosAExpedir,
     serializarJSON: serializarJSON,
     nombreIncidencias: nombreIncidencias,

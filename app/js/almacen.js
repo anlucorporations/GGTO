@@ -9,6 +9,8 @@
  *  - copia de cierre de la jornada en C:\GGTO\respaldo verificada por
  *    relectura, y restauracion del maestro desde una copia fechada
  *    (C7: CU-21, D-49, RNF-16);
+ *  - ruta controlada de las salidas C:\GGTO\despachos para los PDF del
+ *    despacho, con relectura verificada (C4: CU-17, D-27, D-67);
  *  - modo descarga para navegadores sin la API (RNF-03), exigiendo sesion.
  *
  * Depende de GGTO_NUCLEO (carga previa por <script>).
@@ -78,6 +80,15 @@
     return raiz.showDirectoryPicker({ id: 'ggto-respaldo', mode: 'readwrite' });
   }
 
+  /**
+   * Pide autorizacion de la ruta controlada de las salidas
+   * `C:\GGTO\despachos`, donde se guardan los PDF del despacho (D-27, D-67).
+   */
+  function abrirCarpetaDespachos() {
+    if (!soportado()) return Promise.reject(new Error('File System Access API no disponible'));
+    return raiz.showDirectoryPicker({ id: 'ggto-despachos', mode: 'readwrite' });
+  }
+
   function leerTexto(handle) {
     return handle.getFile().then(function (archivo) {
       return archivo.text().then(function (texto) {
@@ -91,6 +102,7 @@
       tipo: 'carpeta',
       carpeta: dir,
       carpetaRespaldo: null,
+      carpetaDespachos: null,
       handles: {},
       estado: {},
       datos: {},
@@ -105,6 +117,9 @@
       listarCopiasRespaldo: listarCopiasRespaldoCarpeta,
       leerCopiaRespaldo: leerCopiaRespaldoCarpeta,
       restaurarCopia: restaurarCopiaCarpeta,
+      autorizarDespachos: autorizarDespachosCarpeta,
+      guardarSalida: guardarSalidaCarpeta,
+      listarSalidas: listarSalidasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (carpeta autorizada)'; }
     };
   }
@@ -114,6 +129,7 @@
       tipo: 'archivos',
       carpeta: null,
       carpetaRespaldo: null,
+      carpetaDespachos: null,
       handles: manejadores,
       estado: {},
       datos: {},
@@ -130,6 +146,11 @@
       listarCopiasRespaldo: listarCopiasRespaldoCarpeta,
       leerCopiaRespaldo: leerCopiaRespaldoCarpeta,
       restaurarCopia: restaurarCopiaCarpeta,
+      // La ruta controlada de los PDF es una carpeta propia, independiente de
+      // cómo se haya autorizado la carpeta de datos (D-27, D-67).
+      autorizarDespachos: autorizarDespachosCarpeta,
+      guardarSalida: guardarSalidaCarpeta,
+      listarSalidas: listarSalidasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (archivos elegidos uno a uno)'; }
     };
     return almacen;
@@ -780,6 +801,95 @@
   }
 
   // ------------------------------------------------------------------
+  // Ruta controlada de las salidas: PDF de despacho (CU-17, D-27, D-67)
+  // ------------------------------------------------------------------
+  /** Convierte lo que se va a escribir en bytes. */
+  function bytesDe(datos) {
+    if (datos instanceof Uint8Array) return datos;
+    if (typeof ArrayBuffer !== 'undefined' && datos instanceof ArrayBuffer) return new Uint8Array(datos);
+    if (datos && datos.buffer && typeof datos.byteLength === 'number') return new Uint8Array(datos.buffer);
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(String(datos));
+    var texto = String(datos);
+    var bytes = new Uint8Array(texto.length);
+    for (var i = 0; i < texto.length; i++) bytes[i] = texto.charCodeAt(i) & 0xff;
+    return bytes;
+  }
+
+  /** Suma de control FNV-1a de 32 bits: verifica el contenido leído byte a byte. */
+  function sumaControl(datos) {
+    var bytes = bytesDe(datos);
+    var h = 2166136261;
+    for (var i = 0; i < bytes.length; i++) {
+      h ^= bytes[i];
+      h = (h * 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  /** Autoriza la ruta controlada `C:\GGTO\despachos` en esta sesión (D-67). */
+  function autorizarDespachosCarpeta(dir) {
+    if (!dir) return Promise.reject(new Error('No se recibió la carpeta de despachos'));
+    this.carpetaDespachos = dir;
+    return Promise.resolve({ autorizada: true, ruta: CONST.RUTA_DESPACHOS });
+  }
+
+  /**
+   * Guarda una salida (el PDF del despacho) en la **ruta controlada**
+   * `C:\GGTO\despachos` —nunca en la carpeta de Descargas— (CU-17, D-27, D-67)
+   * y la **relee para verificar** que el contenido escrito coincide: mismo
+   * tamaño y misma suma de control.
+   */
+  function guardarSalidaCarpeta(nombre, datos) {
+    var almacen = this;
+    if (!almacen.carpetaDespachos) {
+      var e = new Error('No está autorizada la ruta controlada ' + CONST.RUTA_DESPACHOS);
+      e.tipo = 'sinDespachos';
+      return Promise.reject(e);
+    }
+    var bytes = bytesDe(datos);
+    var control = sumaControl(bytes);
+    return escribirEnCarpeta(almacen.carpetaDespachos, nombre, bytes).then(function () {
+      return almacen.carpetaDespachos.getFileHandle(nombre);
+    }).then(function (h) {
+      return h.getFile();
+    }).then(function (archivo) {
+      var tamano = typeof archivo.size === 'number' ? archivo.size : null;
+      if (typeof archivo.arrayBuffer !== 'function') {
+        return { nombre: nombre, bytes: bytes.length, tamano: tamano, control: control, verificado: null, ruta: CONST.RUTA_DESPACHOS };
+      }
+      return archivo.arrayBuffer().then(function (buf) {
+        var leidos = new Uint8Array(buf);
+        var coincide = leidos.length === bytes.length && sumaControl(leidos) === control;
+        if (!coincide) {
+          var err = new Error('La relectura de ' + nombre + ' no coincide con lo escrito');
+          err.tipo = 'verificacion';
+          throw err;
+        }
+        return { nombre: nombre, bytes: bytes.length, tamano: tamano, control: control, verificado: true, ruta: CONST.RUTA_DESPACHOS };
+      });
+    });
+  }
+
+  /** Salidas de la ruta controlada presentes en disco (CU-17, paso 5). */
+  function listarSalidasCarpeta() {
+    var almacen = this;
+    if (!almacen.carpetaDespachos) return Promise.resolve([]);
+    return nombresDeCarpeta(almacen.carpetaDespachos).then(function (nombres) {
+      var salidas = nombres.filter(N.esSalidaDespacho).sort();
+      var lista = [];
+      var cadena = Promise.resolve();
+      salidas.forEach(function (nombre) {
+        cadena = cadena.then(function () {
+          return tamanoDe(almacen.carpetaDespachos, nombre).then(function (tamano) {
+            lista.push({ nombre: nombre, tamano: tamano, ruta: CONST.RUTA_DESPACHOS });
+          });
+        });
+      });
+      return cadena.then(function () { return lista; });
+    });
+  }
+
+  // ------------------------------------------------------------------
   // Modo descarga (RNF-03, CU-22): se exige sesion valida antes de usarlo
   // ------------------------------------------------------------------
   function descargar(nombre, texto) {
@@ -802,6 +912,7 @@
     abrirCarpeta: abrirCarpeta,
     abrirArchivos: abrirArchivos,
     abrirCarpetaRespaldo: abrirCarpetaRespaldo,
+    abrirCarpetaDespachos: abrirCarpetaDespachos,
     detectarConflicto: detectarConflicto,
     rotarLogIncidencias: rotarLogIncidencias,
     descargar: descargar,

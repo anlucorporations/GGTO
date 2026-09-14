@@ -114,6 +114,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (D-58). |
 | D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»**, que son las formas que usa el CSV (el fuente escribe «LOSS ROJO» y «FALLA FIBRA»). Con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION**. |
 | D-66 | **Convención de semanas (Sem 1 a Sem 36):** la **Sem 1 es la semana que empieza el primer lunes del año** y la semana operativa va de lunes a sábado (RN-08). Con 2026, la **Sem 36 es la del 07/09 al 12/09**, que es la del archivo real. |
+| D-67 | **Ruta controlada de los PDF de despacho:** los PDF se guardan en **`C:\GGTO\despachos`** —carpeta autorizada aparte, como `datos` y `respaldo`—, con **verificación por relectura**, y **nunca** en la carpeta de Descargas (D-27); las reemisiones del mismo día conservan la versión anterior con el sufijo `_rN` (CU-17, 6a). Cierra la pregunta **P8** de la auditoría del documento técnico. |
 
 ---
 
@@ -130,7 +131,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | RF-07 | CASOS: registro principal de casos y su resolución, clasificados por Construcción/Reparación y por Residencial/Empresa/Referidos. | C1 (tabla) / C3 (clasificación) | L12 |
 | RF-08 | DESPACHO: distribuir el universo de averías entre cuadrillas agrupando por dirección (sectores cercanos). | C4 | L13, L40-45 |
 | RF-09 | DESPACHO: aplicar las reglas de reparto — citados del día, ≥1 reparación de referidos y ≥1 de empresas por cuadrilla; construcción a una sola cuadrilla con reparaciones en ese sector. | C4 | L42 |
-| RF-10 | DESPACHO: generar los PDF del despacho diario, uno por cuadrilla, ajustados al área máxima imprimible de una hoja carta horizontal (con paginación). | C4 | L45 |
+| RF-10 | DESPACHO: generar los PDF del despacho diario, uno por cuadrilla, ajustados al área máxima imprimible de una hoja carta horizontal (con paginación). Se guardan en la **ruta controlada `C:\GGTO\despachos`** (D-67) y **no** en la carpeta de Descargas (D-27). | C4 | L45 |
 | RF-11 | CONFIGURACION/CENTRAL: datos operativos de la central (región, estado geográfico, capital, municipio, parroquia, estado operativo, distrito, área, central, nombre central) como filtro base de la matriz CSV. | C1 | L15 |
 | RF-12 | CONFIGURACION/TECNICOS: padrón de trabajadores (Nombre, Cédula, P00, Teléfono, Correo, Especialidad, Status) más la credencial de sesión: contraseña (hash + sal), fecha del último cambio y si debe cambiarla. | C1 | L16; D-39 |
 | RF-13 | CONFIGURACION/FLOTA: padrón de vehículos (CAN00, Tipo, Marca, Modelo, Placa, Combustible, Status, Estado Cauchos, Estado Fluidos, Estado General). | C1 | L17 |

@@ -138,10 +138,20 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 - [ ] Al **guardar el despacho** se escriben `Reparador Principal` y `fecha_asignacion` en
       `averias.json`, se graba `despacho.json` con sus 15 columnas, y hay una línea de historial por
       asignación.
-- [ ] **PDF por cuadrilla**: se descarga `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf` en **carta horizontal**,
+- [ ] **PDF por cuadrilla**: se genera `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf` en **carta horizontal**,
       con fecha, cuadrilla y número de copia, y el pie recuerda recoger y destruir las hojas al cierre
       (D-27). Con muchos casos debe salir en varias páginas.
-- [ ] El registro de entrega (a quién se entregó) queda en `incidencias.log`.
+- [ ] **Ruta controlada (D-67).** Antes de generar, la vista DESPACHO muestra el estado de
+      `C:\GGTO\despachos`: si no está autorizada lo advierte y ofrece *Autorizar carpeta*. Una vez
+      autorizada, pulsar *Autorizar carpeta C:\GGTO\despachos* en el selector del navegador.
+- [ ] Al generar el PDF, el aviso indica la **ruta controlada** `C:\GGTO\despachos\Despacho_Cuadrilla_…pdf`
+      y la vista lista los PDF generados con su tamaño. **La carpeta de Descargas del usuario NO debe
+      contener** `Despacho_Cuadrilla_*.pdf`.
+- [ ] **Reemisión**: generar dos veces el PDF de la misma cuadrilla y el mismo día produce
+      `…_r2.pdf` **sin borrar** el primero (CU-17, flujo 6a).
+- [ ] El registro de entrega (a quién se entregó) y la ruta del archivo quedan en `incidencias.log`.
+- [ ] Si se deniega o se pierde la autorización de la carpeta, el PDF se descarga pero la página
+      **avisa expresamente** de que quedó fuera de la ruta controlada, y así consta en el log.
 
 ### 3.9 MONITOREO y GRAFICOS (CU-18, ciclo C5)
 
@@ -234,9 +244,20 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ```powershell
 cd C:\GGTO\proyecto
-node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs
+node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs
 ```
 
-Deben pasar **114 de 114**. Cubren la lógica pura y el protocolo de escritura verificada con la API
-simulada (lo que el navegador no permite automatizar sin un gesto humano), incluida la copia de cierre
-y la restauración de CU-21.
+Deben pasar **122 de 122**. Cubren la lógica pura y el protocolo de escritura verificada con la API
+simulada (lo que el navegador no permite automatizar sin un gesto humano), incluida la **ruta
+controlada de los PDF** (D-67), la copia de cierre y la restauración de CU-21.
+
+Además hay una **comprobación de interfaz** que sí abre la página real en un navegador headless y
+renderiza las 8 vistas (necesita Chrome o Edge instalado):
+
+```powershell
+cd C:\GGTO\proyecto
+node pruebas/interfaz.mjs
+```
+
+Deben pasar **19 de 19**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+(por ejemplo, que una pestaña no renderice o que falte cargar una librería local).

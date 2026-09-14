@@ -1131,7 +1131,7 @@
 2. El sistema construye la proyección desde `despacho.json` con las **15 columnas canónicas**: `nivel, clase, id_averia, telefono, persona_reporta, contacto, ultimo_comentario, nombre, direccion, plan, fat, serial, sector, Reparador Principal, fecha_despacho` (D-31, RT-05, D-37).
 3. El sistema genera un PDF por cuadrilla activa con casos asignados, en hoja carta **horizontal**, respetando el área máxima imprimible y paginando cuando el volumen lo exige.
 4. El sistema imprime en cada hoja el encabezado con fecha del día, `id` y nombre de la cuadrilla, y el **número de copia**.
-5. El sistema guarda los PDF en la ruta controlada definida para el proyecto (no en la carpeta de Descargas) y muestra la lista de archivos generados.
+5. El sistema guarda los PDF en la **ruta controlada `C:\GGTO\despachos`** (nunca en la carpeta de Descargas), verifica la escritura releyendo el archivo y **muestra la lista de archivos generados** (D-67).
 6. El supervisor imprime las hojas y las entrega a cada cuadrilla; en la página pulsa *Registrar entrega* por cuadrilla.
 7. El sistema asienta la entrega con fecha, hora, cuadrilla, número de copia y operador, y muestra el estado «Entregado» por cuadrilla.
 8. Al cierre de la jornada, el supervisor pulsa *Recoger hojas*; el sistema asienta la recogida, muestra «Hojas recogidas: 3 de 3 cuadrillas» y **solicita el número de hojas destruidas por cuadrilla**. Al confirmarlo, el sistema asienta la **destrucción** con fecha, hora, cuadrilla, número de copia y operador, muestra «Hojas destruidas: 3 de 3 cuadrillas» y deja el control documental del día cerrado. [D-27, RNF-11]
@@ -1155,7 +1155,7 @@
 5. **Dado** el despacho del día con 3 cuadrillas entregadas, **Cuando** el supervisor pulsa *Recoger hojas* y solo registra 2, **Entonces** el sistema muestra «Faltan hojas: C3» y asienta la incidencia con fecha, hora y operador.
 5b. **Dado** el despacho del día con 3 cuadrillas entregadas y recogidas, **Cuando** el supervisor registra la destrucción de las 3 hojas, **Entonces** el sistema muestra «Hojas destruidas: 3 de 3 cuadrillas» y el asiento de la destrucción queda con fecha, hora, cuadrilla, número de copia y P00 del supervisor. [D-27, H-N-09]
 5c. **Dado** el mismo despacho con 3 hojas entregadas y solo 2 destruidas, **Cuando** el supervisor intenta cerrar el control documental del día, **Entonces** el sistema muestra «Pendiente de destruir: 1 hoja» y no da el día por cerrado. [D-27, H-N-09]
-6. **Dado** un PDF generado, **Cuando** se revisa su ruta, **Entonces** el archivo está en la ruta controlada del proyecto y no en la carpeta de Descargas del puesto.
+6. **Dado** un PDF generado, **Cuando** se revisa su ruta, **Entonces** el archivo está en la **ruta controlada `C:\GGTO\despachos`** —con el nombre `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf`— y no en la carpeta de Descargas del puesto, y la vista DESPACHO lista los PDF generados. [D-27, D-67]
 7. **Dado** una sesión con rol operador, **Cuando** el operador intenta abrir la emisión de PDF, **Entonces** el sistema responde «Acción no permitida para su rol» y no genera ningún archivo.
 
 **Restricciones del sistema (EARS)**
@@ -1165,7 +1165,7 @@
 - **El sistema deberá** imprimir fecha, cuadrilla y número de copia en todas las hojas de cada PDF. [D-27, RNF-11]
 - **Si** el volumen de una cuadrilla excede una hoja, entonces el sistema deberá paginar repitiendo la marca de control documental en cada hoja. [RNF-05, D-27]
 - **El sistema deberá** asentar la entrega, la recogida **y la destrucción** de las hojas con fecha, hora, cuadrilla, número de copia y operador; ninguna hoja entregada puede quedar sin constancia de destrucción al cierre del día. [RNF-11, D-27, H-N-09]
-- **El sistema deberá** guardar los PDF en una ruta controlada y no en la carpeta de Descargas. [D-27, H-12]
+- **El sistema deberá** guardar los PDF en la ruta controlada **`C:\GGTO\despachos`** y no en la carpeta de Descargas; **si** esa carpeta no está autorizada, entonces deberá avisarlo expresamente y registrar que el archivo salió de la ruta controlada. [D-27, **D-67**, H-12]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá rechazar la emisión del PDF y el registro de entrega. [D-35, RNF-12]
 
 ---
@@ -1244,8 +1244,8 @@
 **Flujo principal**
 
 1. El supervisor abre el bloque **REPORTES** y elige *Despacho del día (pantalla + PDF)* o *Seguimiento semanal estadístico*.
-2. **Salida de despacho.** El sistema presenta en pantalla el despacho del día confirmado (fecha, cuadrilla y detalle por cuadrilla) y ofrece *Imprimir* o *Guardar PDF en la ruta controlada*.
-3. El sistema genera el PDF del despacho por cuadrilla con la misma proyección de 15 columnas de CU-17 (D-31) y lo guarda con el nombre `despacho_DD_MM_AAAA`, registrando la emisión con fecha, hora y operador.
+2. **Salida de despacho.** El sistema presenta en pantalla el despacho del día confirmado (fecha, cuadrilla y detalle por cuadrilla) y ofrece *Imprimir* o *Guardar PDF en la ruta controlada `C:\GGTO\despachos`*.
+3. El sistema genera el PDF del despacho por cuadrilla con la misma proyección de 15 columnas de CU-17 (D-31) y lo guarda en la **ruta controlada `C:\GGTO\despachos`** con el nombre canónico **`Despacho_Cuadrilla_<id>_AAAAMMDD.pdf`** (el mismo de CU-17, D-67), registrando la emisión con fecha, hora y operador.
 4. **Salida estadística semanal.** El sistema presenta la serie estadística por día: **ingreso del día**, **reparadas del día** y la **línea del pendiente al cierre de cada día**, con la semana operativa (lunes a sábado) y el selector de semana del año **Sem 1 a Sem 36**.
 5. El supervisor elige la semana y el sistema recalcula la serie y muestra la fecha de emisión, el periodo, el operador emisor y el criterio de corte.
 6. El sistema permite volver a emitir la misma salida y detecta cambios en los datos, mostrando «El periodo tuvo N cambios desde la última emisión», donde **N es el número de casos del periodo cuya `fecha_modificacion` es posterior a la fecha y hora de la emisión anterior** (huella de comparación declarada, H-N-21).
@@ -1258,13 +1258,13 @@
 - **3a. Fallo al guardar el PDF.** El sistema mantiene el despacho en pantalla y ofrece *Reintentar* o *Imprimir*.
 - **4a. Casos sin clasificar.** El sistema incluye la fila «Sin clasificar» con su conteo y no los reparte entre categorías.
 - **4b. Semana fuera de Sem 1 a Sem 36.** El sistema limita el selector a Sem 1 a Sem 36 y avisa «Semana fuera de rango». [D-34]
-- **6a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y conserva la anterior en la ruta controlada. [RNF-11, D-27]
+- **6a. Reemisión tras correcciones.** El sistema genera una nueva versión con la marca «Reemisión DD/MM/AAAA hh:mm — &lt;operador&gt;» y **conserva la anterior** en la ruta controlada: la nueva versión se guarda como `Despacho_Cuadrilla_<id>_AAAAMMDD_r2.pdf` (y `_r3`, `_r4`… en las siguientes), de modo que **ninguna reemisión pisa el archivo anterior**. [RNF-11, D-27, **D-67**]
 - **1b. Acción no permitida para su rol.** Si la sesión es de operador, el sistema no muestra el bloque REPORTES y registra el intento. [D-35, RNF-12]
 - **1c. Apertura sin sesión o pérdida de la sesión (D-50, D-45).** Sin identificación válida el bloque REPORTES y la serie estadística **no se renderizan** (no se muestra ninguna cifra ni el despacho del día); si la sesión se cierra o expira, el sistema oculta las salidas en pantalla, vuelve al diálogo de acceso y exige reingreso antes de emitir o reemitir. [D-45, D-50, RNF-08]
 
 **Criterios de aceptación (Gherkin)**
 
-1. **Dado** un despacho confirmado del 13/09/2026 con 45 casos en 3 cuadrillas, **Cuando** el supervisor emite la salida de despacho, **Entonces** el sistema la muestra en pantalla y genera el PDF en la ruta controlada con el nombre `despacho_13_09_2026.pdf`. [D-34]
+1. **Dado** un despacho confirmado del 13/09/2026 con 45 casos en 3 cuadrillas, **Cuando** el supervisor emite la salida de despacho, **Entonces** el sistema la muestra en pantalla y genera el PDF en la **ruta controlada `C:\GGTO\despachos`** con el nombre `Despacho_Cuadrilla_<id>_20260913.pdf`. [D-34, **D-67**]
 2. **Dado** la semana operativa del **07/09/2026 (lunes) al 12/09/2026 (sábado)**, **Cuando** el supervisor abre el seguimiento semanal, **Entonces** el sistema muestra **6 puntos** diarios fechados 07 a 12 de septiembre de 2026 con ingreso del día y reparadas del día, y ningún punto del domingo 13/09/2026. [D-34, RN-08, H-N-22]
 3. **Dado** la serie estadística de una semana, **Cuando** el supervisor la consulta, **Entonces** el sistema dibuja además la **línea del pendiente al cierre de cada día** y muestra su valor numérico en cada punto. [D-34]
 4. **Dado** el selector de semana, **Cuando** el supervisor elige **Sem 1** y luego **Sem 36**, **Entonces** el sistema recalcula la serie en ambos casos y no ofrece ninguna semana anterior a Sem 1 ni posterior a Sem 36. [D-34]
@@ -1281,7 +1281,7 @@
 - **El sistema no deberá** generar archivos de hoja de cálculo (XLSX) para ninguna de las dos salidas. [D-34]
 - **El sistema deberá** calcular los cortes semanales de lunes a sábado y limitar el selector de semana a **Sem 1 a Sem 36**. [RN-08, RNF-06, D-34]
 - **Si** el periodo no tiene datos, entonces el sistema deberá informarlo y no generar archivo. [RNF-10]
-- **El sistema deberá** guardar cada PDF de despacho en la ruta controlada con el periodo en el nombre y la marca de reemisión cuando corresponda. [D-27, RNF-11]
+- **El sistema deberá** guardar cada PDF de despacho en la **ruta controlada `C:\GGTO\despachos`** con el nombre canónico `Despacho_Cuadrilla_<id>_AAAAMMDD.pdf` y el sufijo de reemisión `_rN` cuando corresponda, **sin sobrescribir** la versión anterior. [D-27, RNF-11, **D-67**]
 - **Si** la sesión no tiene el rol supervisor, entonces el sistema deberá denegar el bloque REPORTES. [D-35, RNF-12]
 - **El sistema deberá** ofrecer la **tabla equivalente** de la serie estadística semanal y del despacho, alcanzable solo con el teclado, con contraste mínimo 4,5:1 y foco visible. [D-40, RNF-13]
 
@@ -1578,6 +1578,7 @@
 | D-25 (CRUD de sectores y umbral de concentración) | CU-06, CU-09, CU-20 |
 | D-26 (subcadena normalizada y vista previa) | CU-07, CU-08 |
 | D-27 (control documental del PDF: entrega, recogida y destrucción; no a Descargas) | CU-17, CU-19, CU-21, **CU-22** (destino controlado y modo descarga) |
+| **D-67** (ruta controlada de los PDF: `C:\GGTO\despachos`, verificada por relectura y sin pisar reemisiones) | **CU-17**, **CU-19** |
 | D-28 (retención indefinida, riesgo aceptado y ficha de tratamiento) | CU-12, CU-15, CU-19, CU-21 |
 | D-29 (`P00` = código de empleado único, obligatorio y parte de la credencial) | CU-01, CU-03, CU-10, CU-11, CU-12, CU-13 |
 | D-30 (citados = `fecha_cita` del día, con prioridad y marca CITADO) | CU-13, CU-16 |
