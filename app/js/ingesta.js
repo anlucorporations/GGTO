@@ -31,6 +31,11 @@
     return N.resolverRol(ctx.sesion) === 'Supervisor';
   }
 
+  /** La matriz de permisos manda: el operador también puede ingerir (CU-08). */
+  function puedeIngerir(ctx) {
+    return N.autorizar(ctx.ambito, 'ingesta.ejecutar').permitido;
+  }
+
   function render(contenedor, ctx) {
     contenedor.innerHTML = '';
     vista = { nombreArchivo: '', texto: '', resultado: null, ingiriendo: false };
@@ -39,9 +44,9 @@
       contenedor.appendChild(ctx.texto('p', 'Identifíquese para ingresar el archivo del día.', 'aviso aviso-alerta'));
       return;
     }
-    if (!esSupervisor(ctx)) {
+    if (!puedeIngerir(ctx)) {
       contenedor.appendChild(ctx.texto('p',
-        'Acción no permitida para su rol: la ingesta del CSV corresponde al supervisor.',
+        N.autorizar(ctx.ambito, 'ingesta.ejecutar').mensaje || 'Acción no permitida para su rol',
         'aviso aviso-error'));
       return;
     }
