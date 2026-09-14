@@ -85,7 +85,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-35 | **Permisos:** el **operador** solo consulta y cierra los casos asignados a su propia cuadrilla (su despacho del día); el **supervisor** puede todo, incluida la bandeja GESTION, los padrones, los sectores, las palabras clave, el despacho, el respaldo y la consulta de la auditoría. Es el único rol elevado (D-55); no hay «administrador». |
 | D-36 | **Respaldo a demanda del supervisor** y el repositorio se mantiene como está, con los CSV, los PDF de despacho y el `.xlsm` versionados (P9). La rutina y la rotación se fijaron después en D-42 (10 versiones `.bak`) y D-49 (copia fechada al cierre). |
 | D-37 | **Equivalencia de cuadrilla:** `cuadrillas.id` es el valor de `Reparador Principal` en `averias.json` y en `despacho.json`, y la asignación del despacho se escribe de vuelta en el maestro (P12). |
-| D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **14 PEND + 37 GESTION**. |
+| D-38 | **`ASGN` se ingiere como `PEND`:** el maestro conserva tres estados (`PEND`/`CERRADO`/`GESTION`) y deja sin efecto el cuarto estado de D-13. Verificado con el CSV del 12/09/2026: 51 insertados de Francisco Salias → **18 PEND + 33 GESTION** (17 con palabras clave y 34 sin ellas, con el catálogo de D-65). |
 | D-39 | **Credencial de sesión:** `P00` + contraseña de 8 caracteres o más, guardada como **hash con sal** en `tecnicos.json`, con cambio obligatorio cada **90 días**; el supervisor puede restablecerla. La contraseña no se guarda en claro. |
 | D-40 | **Accesibilidad (RNF-13):** navegación completa por teclado (Tab, Enter y flechas en la tabla), foco visible, `label` asociado a cada campo, contraste mínimo 4,5:1 y texto alternativo en los gráficos. |
 | D-41 | **Concurrencia sin bloqueo:** cada guardado relee el archivo y compara su marca de modificación; si cambió desde que se cargó, avisa del conflicto y el operador decide entre recargar o sobrescribir conscientemente. |
@@ -112,6 +112,7 @@ diario y de gestión semanal, alimentándose de un archivo `.csv` que se emite a
 | D-62 | **Arranque en frío:** si `tecnicos.json` está vacío, la página ofrece crear el **primer supervisor** (único caso en que se crea un padrón sin sesión); queda con `rol = Supervisor` y `clave_cambio_obligatorio = SI`. |
 | D-63 | **Formato de la credencial:** `clave_hash` es el **SHA-256 en hexadecimal (64 caracteres)** de `clave_sal + ":" + contraseña` en UTF-8; `clave_sal` es aleatoria por técnico. |
 | D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (D-58). |
+| D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»**, que son las formas que usa el CSV (el fuente escribe «LOSS ROJO» y «FALLA FIBRA»). Con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION**. |
 
 ---
 

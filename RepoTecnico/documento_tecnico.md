@@ -1132,7 +1132,7 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-35 | Permisos: el operador solo consulta y cierra los casos de su cuadrilla; el supervisor puede todo |
 | D-36 | Respaldo manual a demanda del supervisor, sin automatismo; el repositorio se mantiene como está |
 | D-37 | Equivalencia de cuadrilla: `cuadrillas.id` es el valor de `Reparador Principal`, y el despacho se escribe de vuelta en el maestro |
-| D-38 | `ASGN` se ingiere como `PEND`: el maestro conserva tres estados (51 de Francisco Salias → 14 PEND + 37 GESTION) y D-13 queda sin efecto |
+| D-38 | `ASGN` se ingiere como `PEND`: el maestro conserva tres estados (51 de Francisco Salias → 18 PEND + 33 GESTION) y D-13 queda sin efecto |
 | D-39 | Credencial de sesión: `P00` + contraseña de 8 caracteres o más, guardada como hash con sal en `tecnicos.json`, con cambio obligatorio cada 90 días |
 | D-40 | Accesibilidad (RNF-13): teclado (Tab, Enter y flechas), foco visible, `label` por campo, contraste 4,5:1 y alternativa textual en los gráficos |
 | D-41 | Concurrencia sin bloqueo: al guardar se compara la marca de modificación; si cambió, se avisa del conflicto y el operador decide recargar o sobrescribir (RNF-14) |

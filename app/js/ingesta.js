@@ -1,32 +1,304 @@
 /*
  * GGTO-v1 - ingesta.js
- * PENDIENTE DEL CICLO C2 (RF-16 a RF-19, RF-27; RNF-02, RNF-04, RNF-06,
- * RNF-10; D-21, D-26, D-38, D-43, D-44). En C1 no se implementa: la carga del
- * CSV, la validación posicional de 80 columnas, el filtro de central, el
- * dedupe, la clasificación RN-03 y la asignación de sector llegan en C2.
+ * Ciclo C2: ingesta diaria del CSV (RF-16 a RF-19, RF-27).
+ *   - Carga del archivo con separador «;» y validacion POSICIONAL bloqueante
+ *     (D-12, D-44): si algo no cuadra, no se escribe nada.
+ *   - Filtro por central contra central.json (RF-16, RT-03).
+ *   - Mapeo a los campos del maestro segun estructura.json (D-12).
+ *   - Deduplicacion por id_averia, duplicados en lote e id vacio (RN-01).
+ *   - Clasificacion RN-03 con la lista editable (D-05, D-21, D-26, D-38, D-43).
+ *   - Asignacion de sector por vias y cola de pendientes (RF-18, RN-04, D-03).
+ *   - Escritura con el protocolo verificado de C1 (D-41, D-42) y linea de
+ *     historial inmutable por caso (D-56).
+ *   - Si el CSV del dia no llega, se registra la novedad sin bloquear (D-46).
  */
 (function (raiz) {
   'use strict';
-  var CONST = raiz.GGTO_NUCLEO.CONST;
+
+  var N = raiz.GGTO_NUCLEO;
+  var A = raiz.GGTO_ALMACEN;
+  var IN = raiz.GGTO_INGESTA_NUCLEO;
+
+  // Estado de la pantalla (se reinicia en cada render).
+  var vista = {
+    nombreArchivo: '',
+    texto: '',
+    resultado: null,
+    ingiriendo: false
+  };
+
+  function esSupervisor(ctx) {
+    return N.resolverRol(ctx.sesion) === 'Supervisor';
+  }
 
   function render(contenedor, ctx) {
     contenedor.innerHTML = '';
-    var caja = document.createElement('div');
-    caja.className = 'pendiente';
-    var h = document.createElement('h2');
-    h.textContent = 'INGESTA — pendiente del ciclo C2';
-    var p1 = document.createElement('p');
-    p1.textContent = 'La ingesta del CSV diario (carga con separador «;», validación bloqueante de las ' +
-      CONST.ARCHIVO_ESTRUCTURA + ' con ' + 80 + ' columnas, filtro de central, mapeo posicional, dedupe por ' +
-      'id_averia, clasificación RN-03 y cola de direcciones sin sector) se implementa en el ciclo C2.';
-    var p2 = document.createElement('p');
-    p2.textContent = 'Requisitos asociados: RF-16, RF-17, RF-18, RF-19 y RF-27; RNF-02 (umbral S-RNF-02b), ' +
-      'RNF-04, RNF-06 y RNF-10; decisiones D-21, D-26, D-38, D-43 y D-44.';
-    var p3 = document.createElement('p');
-    p3.textContent = 'El maestro de casos permanece sin cambios: en C1 no se escribe nada por esta vía.';
-    caja.appendChild(h); caja.appendChild(p1); caja.appendChild(p2); caja.appendChild(p3);
-    contenedor.appendChild(caja);
+    vista = { nombreArchivo: '', texto: '', resultado: null, ingiriendo: false };
+
+    if (!ctx.sesion) {
+      contenedor.appendChild(ctx.texto('p', 'Identifíquese para ingresar el archivo del día.', 'aviso aviso-alerta'));
+      return;
+    }
+    if (!esSupervisor(ctx)) {
+      contenedor.appendChild(ctx.texto('p',
+        'Acción no permitida para su rol: la ingesta del CSV corresponde al supervisor.',
+        'aviso aviso-error'));
+      return;
+    }
+
+    var seccion = ctx.texto('section', null, 'ingesta');
+    seccion.appendChild(ctx.texto('h2', 'INGESTA del CSV diario'));
+
+    var maestro = ctx.almacen.datos[CONST_MAESTRO()] || [];
+    seccion.appendChild(ctx.texto('p',
+      'Casos en el maestro: ' + maestro.length + ' · Hoy: ' + N.marcaAhora() +
+      ' · Central: ' + ((ctx.almacen.datos['central.json'] || {}).nombre_central || 'sin configurar'),
+      'resumen-linea'));
+
+    // --- paso 1: elegir el archivo -----------------------------------------
+    var bloque = ctx.texto('div', null, 'bloque');
+    bloque.appendChild(ctx.texto('h3', '1. Elegir el archivo del día'));
+
+    var entrada = document.createElement('input');
+    entrada.type = 'file';
+    entrada.accept = '.csv,text/csv';
+    entrada.id = 'archivo-csv';
+    entrada.className = 'entrada-archivo';
+
+    var etiqueta = document.createElement('label');
+    etiqueta.setAttribute('for', 'archivo-csv');
+    etiqueta.textContent = 'Archivo CSV (separador «;», 80 columnas)';
+
+    bloque.appendChild(etiqueta);
+    bloque.appendChild(entrada);
+    seccion.appendChild(bloque);
+
+    var zona = ctx.texto('div', null, 'zona-ingesta');
+    seccion.appendChild(zona);
+
+    var acciones = ctx.texto('div', null, 'acciones');
+    var botonIngerir = ctx.boton('Ingestar los casos nuevos', 'boton-primario', function () {
+      ejecutarIngesta(ctx, zona, botonIngerir);
+    });
+    botonIngerir.disabled = true;
+    acciones.appendChild(botonIngerir);
+
+    acciones.appendChild(ctx.boton('Registrar que el CSV no llegó', 'boton-secundario', function () {
+      registrarSinIngesta(ctx, zona);
+    }));
+    seccion.appendChild(acciones);
+
+    contenedor.appendChild(seccion);
+
+    entrada.addEventListener('change', function () {
+      var archivo = entrada.files && entrada.files[0];
+      if (!archivo) return;
+      vista.nombreArchivo = archivo.name;
+      leerArchivo(archivo).then(function (texto) {
+        vista.texto = texto;
+        vista.resultado = calcular(ctx, texto);
+        pintarResultado(ctx, zona, vista.resultado);
+        botonIngerir.disabled = !(vista.resultado && vista.resultado.ok && vista.resultado.casos.length > 0);
+      }).catch(function (e) {
+        ctx.avisar('No se pudo leer el archivo: ' + (e && e.message ? e.message : e), 'aviso-error', { temporal: false });
+      });
+    });
   }
 
-  raiz.GGTO_INGESTA = { ciclo: 'C2', requisitos: 'RF-16 a RF-19, RF-27', render: render };
+  function CONST_MAESTRO() { return N.CONST.ARCHIVO_MAESTRO; }
+
+  function leerArchivo(archivo) {
+    if (typeof archivo.text === 'function') return archivo.text();
+    return new Promise(function (resolve, reject) {
+      var lector = new FileReader();
+      lector.onload = function () { resolve(String(lector.result || '')); };
+      lector.onerror = function () { reject(new Error('lectura fallida')); };
+      lector.readAsText(archivo, 'UTF-8');
+    });
+  }
+
+  /** Calcula el resultado sin escribir nada (dry run). */
+  function calcular(ctx, texto) {
+    var datos = ctx.almacen.datos;
+    var conf = datos['claves_clasificacion.json'] || {};
+    return IN.ingerir({
+      texto: texto,
+      estructura: datos[N.CONST.ARCHIVO_ESTRUCTURA] || {},
+      central: datos['central.json'] || {},
+      claves: conf.claves || [],
+      maestro: datos[N.CONST.ARCHIVO_MAESTRO] || [],
+      sectores: datos['sectores.json'] || [],
+      opciones: {
+        fecha: fechaDeHoy(),
+        marca: N.marcaAhora(),
+        operador: ctx.sesion.P00,
+        clase: 'REP',
+        nivel: 'COM',
+        modo: conf.normalizacion || 'normalizada'
+      }
+    });
+  }
+
+  function fechaDeHoy() {
+    var marca = N.marcaAhora();
+    return marca.split(' ')[0];
+  }
+
+  function pintarResultado(ctx, zona, r) {
+    ctx.limpiar(zona);
+    if (!r) return;
+
+    zona.appendChild(ctx.texto('h3', '2. Resultado de la revisión'));
+    zona.appendChild(ctx.texto('p', 'Archivo: ' + (vista.nombreArchivo || '(sin nombre)') +
+      ' · columnas: ' + r.resumen.columnas + ' · ' + r.resumen.ms + ' ms', 'resumen-linea'));
+
+    if (!r.ok) {
+      var cajaErr = ctx.texto('div', null, 'aviso aviso-error');
+      cajaErr.appendChild(ctx.texto('p', 'Ingesta abortada: no se ha escrito nada.'));
+      var ul = ctx.texto('ul');
+      r.errores.forEach(function (e) {
+        ul.appendChild(ctx.texto('li', (e.columna ? 'Columna ' + e.columna + ': ' : '') + e.motivo));
+      });
+      cajaErr.appendChild(ul);
+      zona.appendChild(cajaErr);
+      return;
+    }
+
+    var tabla = ctx.texto('table', null, 'tabla');
+    var filas = [
+      ['Filas leídas', r.resumen.leidas],
+      ['Descartadas por no ser de la central', r.resumen.fueraDeCentral],
+      ['Ya existentes en el maestro (duplicadas)', r.resumen.duplicadasEnMaestro],
+      ['Duplicadas dentro del archivo', r.resumen.duplicadasEnLote],
+      ['Rechazadas (con motivo)', r.resumen.rechazadas.length],
+      ['Casos nuevos a insertar', r.resumen.insertadas],
+      ['Quedarían en PEND', r.resumen.pend],
+      ['Quedarían en GESTION (bandeja telefónica)', r.resumen.gestion],
+      ['Con palabras clave de fibra', r.resumen.conClaves],
+      ['Sin palabras clave', r.resumen.sinClaves],
+      ['Con sector asignado', r.resumen.conSector],
+      ['A la cola de sectores (CU-09)', r.resumen.sinSector]
+    ];
+    var tbody = ctx.texto('tbody');
+    filas.forEach(function (f) {
+      var tr = ctx.texto('tr');
+      tr.appendChild(ctx.texto('th', f[0]));
+      tr.appendChild(ctx.texto('td', String(f[1])));
+      tbody.appendChild(tr);
+    });
+    tabla.appendChild(tbody);
+    zona.appendChild(tabla);
+
+    if (r.resumen.rechazadas.length) {
+      var rech = ctx.texto('div', null, 'aviso aviso-alerta');
+      rech.appendChild(ctx.texto('p', 'Filas rechazadas:'));
+      var ul2 = ctx.texto('ul');
+      r.resumen.rechazadas.slice(0, 20).forEach(function (x) {
+        ul2.appendChild(ctx.texto('li', 'Fila ' + x.fila + ': ' + x.motivo));
+      });
+      rech.appendChild(ul2);
+      zona.appendChild(rech);
+    }
+
+    if (r.resumen.sinSector) {
+      zona.appendChild(ctx.texto('p',
+        r.resumen.sinSector + ' dirección(es) sin sector quedarán en la cola de CU-09: el operador propone el sector y el supervisor lo aprueba (D-60).',
+        'aviso aviso-info'));
+    }
+
+    if (r.resumen.ms > 3000) {
+      zona.appendChild(ctx.texto('p',
+        'Aviso de rendimiento: la revisión tardó ' + r.resumen.ms + ' ms (el umbral S-RNF-02b es 3000 ms).',
+        'aviso aviso-alerta'));
+    }
+  }
+
+  /** Escribe el maestro y el historial. */
+  function ejecutarIngesta(ctx, zona, boton) {
+    var r = vista.resultado;
+    if (!r || !r.ok || !r.casos.length) return;
+    boton.disabled = true;
+    vista.ingiriendo = true;
+
+    var marca = N.marcaAhora();
+    var lista = (ctx.almacen.datos[N.CONST.ARCHIVO_MAESTRO] || []).slice().concat(r.casos);
+    var lineas = r.casos.map(function (c) {
+      return N.lineaHistorial({
+        fecha_hora: marca,
+        operador: ctx.sesion.P00,
+        id_averia: c.id_averia,
+        campo: 'status',
+        valor_anterior: '',
+        valor_nuevo: c.status,
+        accion: 'ingesta'
+      });
+    });
+
+    function terminar() {
+      ctx.registrarLog('ingesta | ' + vista.nombreArchivo + ' | p00=' + ctx.sesion.P00 +
+        ' | insertadas=' + r.resumen.insertadas + ' | pend=' + r.resumen.pend +
+        ' | gestion=' + r.resumen.gestion + ' | sin_sector=' + r.resumen.sinSector);
+      ctx.avisar('Ingesta completada: ' + r.resumen.insertadas + ' casos nuevos (' +
+        r.resumen.pend + ' PEND, ' + r.resumen.gestion + ' GESTION).', 'aviso-info', { temporal: false });
+      vista.ingiriendo = false;
+      if (typeof ctx.recargarDatos === 'function') ctx.recargarDatos();
+    }
+
+    if (ctx.modoDescarga()) {
+      ctx.descargarArchivo(N.CONST.ARCHIVO_MAESTRO, lista).then(function () {
+        ctx.avisar('Modo descarga: se descargó ' + N.CONST.ARCHIVO_MAESTRO +
+          ' con los casos nuevos. Reemplácelo en C:\\GGTO\\datos al terminar. El historial no se puede escribir en este modo.',
+          'aviso-alerta', { temporal: false });
+        vista.ingiriendo = false;
+      });
+      return;
+    }
+
+    ctx.almacen.guardarArchivo(N.CONST.ARCHIVO_MAESTRO, lista, {}).then(function () {
+      return ctx.almacen.agregarHistorial(lineas);
+    }).then(function (res) {
+      terminar();
+      zona.appendChild(ctx.texto('p',
+        'Guardado y releído. Líneas añadidas al historial: ' + (res ? res.agregadas : 0), 'aviso aviso-ok'));
+    }).catch(function (e) {
+      if (e && e.tipo === 'conflicto') {
+        ctx.manejarConflicto(N.CONST.ARCHIVO_MAESTRO, lista, function () {
+          return ctx.almacen.guardarArchivo(N.CONST.ARCHIVO_MAESTRO, lista, { sobrescribir: true })
+            .then(function () { return ctx.almacen.agregarHistorial(lineas); })
+            .then(function () {
+              ctx.avisar('Ingesta guardada con sobrescritura consciente.', 'aviso-info');
+              terminar();
+            });
+        }, e);
+        boton.disabled = false;
+        vista.ingiriendo = false;
+        return;
+      }
+      ctx.avisar('No se pudo guardar la ingesta: ' + A.errorDe(e), 'aviso-error', { temporal: false });
+      boton.disabled = false;
+      vista.ingiriendo = false;
+    });
+  }
+
+  /** D-46: el archivo del día no llegó. */
+  function registrarSinIngesta(ctx, zona) {
+    var marca = N.marcaAhora();
+    ctx.registrarLog('ingesta | SIN INGESTA | p00=' + ctx.sesion.P00 + ' | fecha=' + marca +
+      ' | no llegó el archivo del día');
+    ctx.avisar('Novedad registrada: sin ingesta el ' + marca + '. La consulta y el despacho siguen disponibles.',
+      'aviso-alerta', { temporal: false });
+    if (zona) {
+      ctx.limpiar(zona);
+      zona.appendChild(ctx.texto('p', 'Sin ingesta registrada el ' + marca +
+        '. No se modificó el maestro.', 'aviso aviso-alerta'));
+    }
+  }
+
+  raiz.GGTO_INGESTA = {
+    ciclo: 'C2',
+    requisitos: 'RF-16 a RF-19, RF-27',
+    render: render,
+    calcular: calcular,
+    registrarSinIngesta: registrarSinIngesta
+  };
 })(window);
