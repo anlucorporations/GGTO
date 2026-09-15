@@ -30,19 +30,19 @@ const SECTORES = [{ id: 'S1', nombre: 'Cumbres', vias: ['CALLE FICTICIA'] }];
 
 const CASOS = [
   {
-    id_averia: '90000001', telefono: '90000117', nombre: 'ABONADO', direccion: 'CALLE FICTICIA',
+    id_averia: '90000001', telefono: '7000000001', nombre: 'ABONADO UNO', direccion: 'CALLE FICTICIA',
     sector: 'S1', status: 'GESTION', clase: 'REP', nivel: 'COM', tipo_abonado: 'RES',
     'Reparador Principal': 'C1', ingreso: '12/09/2026', problema_reporte: 'NAVEGA LENTO',
     resolucion: '', fechaResolucion: '', observaciones: '', sacas: ''
   },
   {
-    id_averia: '28516505', telefono: '4000000002', nombre: 'ABONADO DOS', direccion: 'CALLE DEMO',
+    id_averia: '90000002', telefono: '4000000002', nombre: 'ABONADO DOS', direccion: 'CALLE DEMO',
     sector: '', status: 'PEND', clase: 'REP', nivel: 'REF', tipo_abonado: 'EMP',
     'Reparador Principal': 'C2', ingreso: '10/09/2026', problema_reporte: 'SIN TONO',
     resolucion: '', fechaResolucion: '', observaciones: '', sacas: ''
   },
   {
-    id_averia: '28516506', telefono: '4000000002', nombre: 'OTRO CON EL MISMO TELEFONO',
+    id_averia: '90000003', telefono: '4000000002', nombre: 'OTRO CON EL MISMO TELEFONO',
     direccion: 'OTRA DIRECCION', sector: 'S1', status: 'GESTION', clase: 'CNS', nivel: 'COM',
     tipo_abonado: 'RES', 'Reparador Principal': 'C1', ingreso: '11/09/2026',
     problema_reporte: 'FALLA DE FIBRA', resolucion: '', fechaResolucion: '', observaciones: '', sacas: ''
@@ -60,7 +60,7 @@ const CASOS = [
 // ---------------------------------------------------------------------------
 
 test('busca por id de avería exacto', () => {
-  const r = P.buscarCaso(CASOS, '28516505');
+  const r = P.buscarCaso(CASOS, '90000002');
   assert.equal(r.encontrado, true);
   assert.equal(r.criterio, 'id_averia');
   assert.equal(r.caso.nombre, 'ABONADO DOS');
@@ -75,7 +75,7 @@ test('busca por teléfono y avisa si hay varios casos', () => {
 });
 
 test('busca por teléfono con formato y sin encontrar', () => {
-  assert.equal(P.buscarCaso(CASOS, '701-400.0848').caso.id_averia, '90000001');
+  assert.equal(P.buscarCaso(CASOS, '700-000.0001').caso.id_averia, '90000001');
   const r = P.buscarCaso(CASOS, '99999999');
   assert.equal(r.encontrado, false);
   assert.ok(r.motivo.length > 0);
@@ -195,7 +195,7 @@ test('la bandeja solo contiene los casos en GESTION', () => {
 
 test('ordena la cola por antigüedad, sector y dirección', () => {
   const porAntiguedad = G.ordenarGestion(G.casosEnGestion(CASOS), 'antiguedad');
-  assert.deepEqual(porAntiguedad.map((c) => c.id_averia), ['28516506', '90000001']);
+  assert.deepEqual(porAntiguedad.map((c) => c.id_averia), ['90000003', '90000001']);
   // Por sector: los que están en la cola de CU-09 (sin sector) van al final.
   const porSector = G.ordenarGestion([{ sector: 'S2' }, { sector: '' }, { sector: 'S1' }], 'sector');
   assert.deepEqual(porSector.map((c) => c.sector), ['S1', 'S2', '']);
