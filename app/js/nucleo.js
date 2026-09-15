@@ -793,11 +793,66 @@
       'flota.json': [],
       'cuadrillas.json': [],
       'sectores.json': [],
+      // Catálogo por defecto de D-65: incluye las formas que usa el CSV real
+      // («LOS ROJO» y «FALLA DE FIBRA», además de las variantes del fuente).
+      // Con esta lista, una instalación nueva reproduce el reparto documentado
+      // del archivo del 12/09/2026: 18 PEND + 33 GESTION.
       'claves_clasificacion.json': {
-        claves: ['LOSS ROJO', 'FALLA FIBRA', 'FIBRA DAÑADA'],
+        claves: ['LOSS ROJO', 'LOS ROJO', 'FALLA FIBRA', 'FALLA DE FIBRA', 'FIBRA DAÑADA', 'FIBRA DANADA'],
         normalizacion: 'normalizada',
         campos_evaluados: ['ultimo_comentario', 'problema_reporte', 'informacion_1', 'informacion_2'],
         umbral_concentracion: 3
+      },
+      // Contrato POSICIONAL completo del CSV diario (D-12, D-44): 25 columnas
+      // declaradas con su nombre de cabecera para la validación bloqueante, más
+      // el filtro por central y las columnas que no se persisten (D-53, D-54).
+      // La semilla debe ser fiel al contrato real: si falta `estatus` (col. 27)
+      // no se aplica la precedencia de `ASGN` (D-38) y el reparto documentado
+      // (18 PEND + 33 GESTION) no se reproduce en una instalación nueva.
+      'estructura.json': {
+        version: 2,
+        columnas_esperadas: 80,
+        separador: ';',
+        codificacion: 'UTF-8',
+        nota: 'Mapa POSICIONAL del CSV diario (D-12). Se declaran solo las columnas necesarias; ' +
+          'la validación es bloqueante (D-44) y compara posición y nombre. No se persisten las ' +
+          'columnas 18, 53 ni 80 (D-53, D-54).',
+        campos: [
+          { json: 'id_averia', columna: 11, tipo: 'T', obligatorio: true, cabecera: 'id_averia' },
+          { json: 'telefono', columna: 14, tipo: 'T', obligatorio: true, cabecera: 'telefono' },
+          { json: 'fecha_reporte', columna: 15, tipo: 'F', obligatorio: false, cabecera: 'fecha_reporte' },
+          { json: 'persona_reporta', columna: 16, tipo: 'T', obligatorio: false, cabecera: 'persona_reporta' },
+          { json: 'contacto', columna: 17, tipo: 'T', obligatorio: false, cabecera: 'contacto' },
+          { json: 'fecha_cita', columna: 19, tipo: 'F', obligatorio: false, cabecera: 'fecha_cita' },
+          { json: 'ultimo_usuario', columna: 20, tipo: 'T', obligatorio: false, cabecera: 'ultimo_usuario' },
+          { json: 'ultimo_comentario', columna: 21, tipo: 'T', obligatorio: false, cabecera: 'ultimo_comentario' },
+          { json: 'estatus', columna: 27, tipo: 'E', obligatorio: false, cabecera: 'estatus' },
+          { json: 'problema_reporte', columna: 28, tipo: 'T', obligatorio: false, cabecera: 'problema_reporte' },
+          { json: 'informacion_1', columna: 31, tipo: 'T', obligatorio: false, cabecera: 'informacion' },
+          { json: 'informacion_2', columna: 32, tipo: 'T', obligatorio: false, cabecera: 'informacion' },
+          { json: 'nombre', columna: 33, tipo: 'T', obligatorio: false, cabecera: 'nombre' },
+          // La dirección NO es bloqueante en la ingesta (D-69): el archivo real
+          // trae 4 de 51 filas sin ella y esas filas entran y van a la cola de
+          // sectores (CU-09).
+          { json: 'direccion', columna: 34, tipo: 'T', obligatorio: false, cabecera: 'direccion' },
+          { json: 'olt', columna: 36, tipo: 'T', obligatorio: false, cabecera: 'olt' },
+          { json: 'plan', columna: 39, tipo: 'T', obligatorio: false, cabecera: 'plan' },
+          { json: 'slot', columna: 40, tipo: 'T', obligatorio: false, cabecera: 'slot' },
+          { json: 'puerto', columna: 41, tipo: 'T', obligatorio: false, cabecera: 'puerto' },
+          { json: 'fat', columna: 43, tipo: 'T', obligatorio: false, cabecera: 'fat' },
+          { json: 'serial', columna: 44, tipo: 'T', obligatorio: false, cabecera: 'serial' },
+          { json: 'extra', columna: 46, tipo: 'T', obligatorio: false, cabecera: 'extra' },
+          { json: 'unidad_negocio', columna: 61, tipo: 'T', obligatorio: false, cabecera: 'unidad_negocio' },
+          { json: 'ups', columna: 62, tipo: 'T', obligatorio: false, cabecera: 'ups' },
+          { json: 'codigos_sin_gestion_en_VENAPP', columna: 64, tipo: 'T', obligatorio: false, cabecera: 'codigos_sin_gestion_en_VENAPP' },
+          { json: 'Reparador Principal', columna: 65, tipo: 'T', obligatorio: false, cabecera: 'Reparador Principal' }
+        ],
+        filtro_central: {
+          columnas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          claves: ['region', 'estado_geografico', 'capital_estado', 'municipio', 'parroquia',
+            'estado_operativo', 'distrito', 'area', 'central', 'nombre_central']
+        },
+        no_se_persisten: [18, 53, 80]
       },
       'historial.jsonl': ''
     };

@@ -196,6 +196,33 @@ test('la tabla del despacho cabe en el área imprimible de la hoja (RNF-05)', ()
     ' mm del área imprimible');
 });
 
+test('una instalación nueva reproduce el reparto documentado (D-65, RN-03)', () => {
+  // Con la SEMILLA del núcleo (puesto recién creado, sin pasar por C:\GGTO\datos),
+  // el archivo debe seguir dando 51 casos y 18 PEND + 33 GESTION. Es lo que fija
+  // D-65: el catálogo de claves por defecto tiene que incluir «LOS ROJO» y
+  // «FALLA DE FIBRA».
+  const semilla = N.estructurasIniciales();
+  const clavesSemilla = semilla['claves_clasificacion.json'].claves;
+  assert.ok(clavesSemilla.indexOf('LOS ROJO') >= 0, 'falta «LOS ROJO» en el catálogo por defecto');
+  assert.ok(clavesSemilla.indexOf('FALLA DE FIBRA') >= 0, 'falta «FALLA DE FIBRA» en el catálogo por defecto');
+
+  const r = I.ingerir({
+    texto: CSV,
+    estructura: semilla['estructura.json'],
+    central: semilla['central.json'],
+    claves: clavesSemilla,
+    maestro: [],
+    sectores: [],
+    opciones: {
+      fecha: '13/09/2026', marca: '13/09/2026 18:00', operador: '12345',
+      clase: 'REP', nivel: 'COM', modo: semilla['claves_clasificacion.json'].normalizacion
+    }
+  });
+  assert.equal(r.resumen.insertadas, 51);
+  assert.equal(r.resumen.pend, 18, 'una instalación nueva debe dar 18 PEND');
+  assert.equal(r.resumen.gestion, 33, 'una instalación nueva debe dar 33 GESTION');
+});
+
 // ===========================================================================
 // 4. Inventario y contratos de los archivos de trabajo (D-49, D-56)
 // ===========================================================================

@@ -288,7 +288,7 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — entregados y probados: **respaldo y restauración (CU-21)** en `app/js/respaldo.js` (copia de cierre de los 10 archivos verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita y RTO/RPO); **control documental del despacho (CU-17)**: entrega, recogida y destrucción por cuadrilla, con estado de sesión y asientos en `incidencias.log` (**D-68**); y **diagnóstico del puesto (CU-22)** en `app/js/entorno.js`, subpestaña **ENTORNO** de CONFIGURACION. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **142 pruebas automatizadas en verde**, más **50 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **143 pruebas automatizadas en verde**, más **50 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
 
 ### 11.2 Fase 4 (Pruebas) — cerrada
 
@@ -303,6 +303,20 @@ Informe completo: `RepoTecnico/informe_pruebas_fase4.md`; logs en `RepoTecnico/l
 | Riesgos residuales | Prueba con los datos reales de una semana, impresión física y modo degradado real: exigen el puesto de la central (criterio de terminado de **C7**) |
 
 **Fase 5 (Manuales): omitida por decisión del usuario** (14/09/2026).
+
+### 11.3 Fase 2 (Auditoría) — reauditoría del documento técnico y purga de datos personales
+
+Informe: `RepoTecnico/reauditoria_documento_tecnico.md` (skill `equipo-auditoria`: 7 lentes en paralelo → 7 verificadores adversariales → síntesis; 15 agentes).
+
+| Aspecto | Resultado |
+|---|---|
+| Objeto | `documento_tecnico.md` (1.176 líneas, 14 módulos, D-01 a D-70), contra la auditoría previa de la v1 |
+| Veredicto de la reauditoría | **Fase 2 no cerrable todavía — cierre condicionado**: 2 bloqueantes (RN-01 y RN-02) y 22 hallazgos nuevos verificados (2 críticos, 6 altos, 10 medios, 4 bajos) |
+| Cierre de la auditoría previa | **6 cerrados** (A-01, A-03, A-04, A-07, A-08, A-10) · 3 necesitan verificación (A-02, A-05, A-06) · 1 parcial (A-09); las **8 preguntas P1…P8 quedan resueltas** con su decisión |
+| **RN-01 (crítica)** | **Resuelto (D-71):** los repositorios son **públicos** —verificado contra las APIs de GitHub y GitLab—, así que los 6 archivos con datos de abonados (CSV diario, `alta_manual.csv`, 3 PDF de despacho y `.xlsm`) se sacaron del índice, entraron en `.gitignore` y se **purgaron de todo el historial**; se versiona una **muestra anonimizada** y las pruebas de C2 y de contratos pasan a ser autocontenidas. Verificado: 0 commits con esos archivos y 0 de los 168 identificadores reales en el historial. GitHub limpio; **GitLab: `main` protegida impide el force push** y queda pendiente de desproteger para completar la purga |
+| **RN-03 y RN-04** (altas) | **Resueltos en el código:** la semilla siembra el catálogo de D-65 y el **contrato completo** de `estructura.json` (25 campos con `cabecera`, `version: 2`). El defecto era real: sin la columna `estatus` una instalación nueva no aplicaba la precedencia de `ASGN` (D-38) y daba 17 PEND + 34 GESTION en lugar de 18 + 33. Ahora una prueba acredita que **una instalación nueva reproduce el reparto documentado** |
+| Pendiente | **RN-02** (criterio de C2 sin medir su punto de medida) y **RN-05 a RN-22** (contrato, medición, legal y coherencia documental); destacan RN-05 (nombre del receptor en el log, contra cuatro afirmaciones de «sin datos personales») y RN-06 (base de licitud y plazo en la ficha de tratamiento) |
+| Métricas | **143 pruebas** de módulos y contratos + **50 comprobaciones E2E** en verde, sin regresiones |
 
 ### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
 

@@ -404,10 +404,20 @@ test('valida enums, teléfono, tipo calculado y estructuras iniciales', () => {
   assert.equal(base['central.json'].capital_estado, 'LOS TEQUES');
   assert.equal(base['central.json'].distrito, '10204');
   assert.equal(base['central.json'].estado_operativo, 'MIRANDA-2');
-  assert.equal(base['claves_clasificacion.json'].claves.length, 3);
+  // Catálogo por defecto de D-65: incluye las formas que usa el CSV real.
+  assert.deepEqual(base['claves_clasificacion.json'].claves, [
+    'LOSS ROJO', 'LOS ROJO', 'FALLA FIBRA', 'FALLA DE FIBRA', 'FIBRA DAÑADA', 'FIBRA DANADA'
+  ]);
   assert.equal(base['claves_clasificacion.json'].normalizacion, 'normalizada');
   assert.equal(base['claves_clasificacion.json'].umbral_concentracion, 3);
+  // El contrato del CSV se siembra completo (D-12, D-44): sin `estatus` no se
+  // aplicaría la precedencia de ASGN (D-38) en una instalación nueva.
   assert.equal(base['estructura.json'].columnas_esperadas, 80);
+  assert.equal(base['estructura.json'].version, 2);
+  assert.equal(base['estructura.json'].campos.length, 25);
+  assert.ok(base['estructura.json'].campos.some((c) => c.json === 'estatus' && c.columna === 27),
+    'la semilla debe declarar la columna 27 (estatus)');
+  assert.deepEqual(base['estructura.json'].no_se_persisten, [18, 53, 80]);
 
   // Serialización estable con salto de línea final (UTF-8 sin BOM).
   const serializado = N.serializarJSON(base['central.json']);

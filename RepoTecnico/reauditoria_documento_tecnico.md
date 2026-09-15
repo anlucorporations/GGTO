@@ -401,4 +401,35 @@ La Fase 2 podrá declararse **cerrada** cuando se cumplan **todos** los criterio
 
 ---
 
+## 10. Estado de resolución al 14/09/2026
+
+> **Sección añadida después de emitir el informe.** El veredicto de §1 y los 22 hallazgos se conservan
+> como registro de lo que encontró la reauditoría; aquí se anota qué se ha corregido desde entonces.
+
+### Bloqueantes
+
+| Hallazgo | Estado | Detalle |
+|---|---|---|
+| **RN-01** (crítica) — repositorios declarados «privados» que son públicos con datos de abonados | **RESUELTO por decisión del usuario (D-71):** se mantiene la visibilidad **pública** y se **purgan** los archivos con datos personales | Los 6 archivos (CSV diario, `alta_manual.csv`, los 3 PDF de despacho y el `.xlsm`) salieron del índice, entraron en `.gitignore` y se **purgaron de todo el historial local** (`filter-branch` + limpieza de objetos; verificado: 0 commits los contienen y 0 de los 168 identificadores reales permanecen). Las pruebas dejaron de depender del archivo real: se versiona una **muestra anonimizada** (`pruebas/fixtures/detalle_averias_gpon_muestra.csv`, con 0 valores reales y las cifras documentadas 56/5/51 y 18 PEND + 33 GESTION) regenerable con `pruebas/herramientas/anonimizar_csv.mjs`. Además se detectaron y sustituyeron valores reales que quedaban en `pruebas_c3.mjs` y en un ejemplo de `app/js/panel.js`. **Subida:** GitHub limpio (ambas ramas). **GitLab:** rama `GGTOv1-DSH` limpia; **`main` sigue protegida** con `allow_force_push: false`, así que la reescritura fue rechazada: requiere que se permita el *force push* o se desproteja temporalmente para completar la purga. |
+| **RN-02** (crítica) — el criterio de C2 se declara verificado sin medir el punto de medida | **ABIERTO** | Pendiente de reescribir la prueba para reproducir el punto de medida (1.000 casos de maestro, 60 registros, catálogo de sectores poblado y cronómetro desde el clic hasta el resumen pintado) **o** rebajar la afirmación a «pendiente de medir en el puesto». |
+
+### De contrato de datos (código)
+
+| Hallazgo | Estado | Detalle |
+|---|---|---|
+| **RN-03** (alta) — D-65 no implementada: el código sembraba el catálogo antiguo | **RESUELTO** | `nucleo.js` siembra el catálogo de D-65 (`LOS ROJO`, `FALLA DE FIBRA` y variantes) y una **prueba nueva** acredita que una **instalación nueva reproduce 18 PEND + 33 GESTION** con la semilla del núcleo. |
+| **RN-04** (alta) — el contrato de `estructura.json` no coincide con el real y la semilla está incompleta | **RESUELTO en su parte de código** | La semilla pasa a ser el **contrato completo** (25 campos con `cabecera`, `version: 2`, `filtro_central` y `no_se_persisten`). El defecto era real y grave: al faltar `estatus` (col. 27), una instalación nueva **no aplicaba la precedencia de `ASGN` de D-38** y daba 17 PEND + 34 GESTION. Queda pendiente propagar el contrato a la documentación del diccionario (§4.3 del documento técnico). |
+
+### Pendientes
+
+Siguen **abiertos** los hallazgos **RN-02** y **RN-05 a RN-22** (contrato, medición, legal y coherencia
+documental). El plan y los criterios de aceptación de §9 siguen vigentes; el más relevante para el
+cierre es **RN-05** (el nombre del receptor en `incidencias.log`, contra cuatro afirmaciones de «sin
+datos personales») por su naturaleza legal.
+
+**Métricas tras las correcciones:** **143 pruebas** de módulos y contratos + **50 comprobaciones E2E**
+en verde, sin regresiones.
+
+---
+
 *Informe emitido por el equipo de auditoría (skill `equipo-auditoria`, 3 fases). Solo lectura sobre los insumos; el presente archivo es el único artefacto escrito. No se añadió ningún hallazgo ausente de los informes de verificación de las 7 dimensiones.*
