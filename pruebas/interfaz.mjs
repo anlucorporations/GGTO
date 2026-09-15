@@ -121,6 +121,7 @@ const sonda = `
       // lanzador (Node) para poder probar la ingesta de verdad.
       var CSV = "__CSV__";
       var DATOS_REALES = __DATOS_REALES__;
+      lineas.push('INFO :: CSV de la comprobacion: ' + __FUENTE_CSV__);
 
       var base = N.estructurasIniciales();
       var datos = {};
@@ -460,11 +461,21 @@ const RUTA_DATOS = 'C:\\GGTO\\datos';
 function leerSiExiste(ruta) {
   try { return fs.readFileSync(ruta, 'utf8'); } catch { return null; }
 }
-const csvCrudo = leerSiExiste(path.join(raiz, 'detalle_averias_gpon 12_09_2026.csv'));
+// CSV de la comprobación. Se prefiere la muestra real del 12/09/2026 cuando está
+// en la raíz (el archivo que documenta el reparto 56/5/51 y 18 PEND + 33 GESTION);
+// si no está —no se versiona, D-71— se usa la MUESTRA ANONIMIZADA versionada, que
+// reproduce ese mismo contrato. Así la comprobación de la ingesta NUNCA se salta:
+// antes, al retirar el archivo real, el paso quedaba en SKIP silencioso.
+const rutaCsvReal = path.join(raiz, 'detalle_averias_gpon 12_09_2026.csv');
+const rutaFixture = path.join(raiz, 'pruebas', 'fixtures', 'detalle_averias_gpon_muestra.csv');
+const csvReal = leerSiExiste(rutaCsvReal);
+const csvCrudo = csvReal || leerSiExiste(rutaFixture);
+const fuenteCsv = csvReal ? 'muestra real del 12/09/2026' : 'muestra anonimizada versionada (pruebas/fixtures)';
 const estructuraCruda = leerSiExiste(path.join(RUTA_DATOS, 'estructura.json'));
 const centralCruda = leerSiExiste(path.join(RUTA_DATOS, 'central.json'));
 const clavesCruda = leerSiExiste(path.join(RUTA_DATOS, 'claves_clasificacion.json'));
 const datosReales = !!(csvCrudo && estructuraCruda && centralCruda && clavesCruda);
+if (!csvCrudo) console.error('Aviso: no hay CSV de comprobación (ni real ni muestra anonimizada).');
 
 const html = fs.readFileSync(indexHtml, 'utf8');
 if (!html.includes('</body>')) {
@@ -474,6 +485,7 @@ if (!html.includes('</body>')) {
 // El CSV se inyecta como literal de JavaScript (JSON lo escapa por nosotros).
 const sondaFinal = sonda
   .replace('"__CSV__"', JSON.stringify(csvCrudo || ''))
+  .replace('__FUENTE_CSV__', JSON.stringify(fuenteCsv))
   .replace('__ESTRUCTURA__', estructuraCruda || 'null')
   .replace('__CENTRAL__', centralCruda || 'null')
   .replace('__CLAVES__', clavesCruda || 'null')
@@ -555,6 +567,9 @@ const texto = crudo
 
 const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
 lineas.forEach((l) => console.log(l));
-const fallos = lineas.filter((l) => l.startsWith('FAIL')).length;
-console.log('\nComprobación de interfaz: ' + (lineas.length - fallos) + '/' + lineas.length + ' correctas.');
+// El recuento cuenta solo comprobaciones evaluadas (PASS/FAIL): las lineas INFO y
+// SKIP se informan pero no inflan el total, que es lo que se cita en el corpus.
+const evaluadas = lineas.filter((l) => /^(PASS|FAIL) ::/.test(l));
+const fallos = evaluadas.filter((l) => l.startsWith('FAIL')).length;
+console.log('\nComprobación de interfaz: ' + (evaluadas.length - fallos) + '/' + evaluadas.length + ' correctas.');
 process.exit(fallos === 0 ? 0 : 1);

@@ -1,4 +1,5 @@
-﻿PASS :: ctx.almacen entrega la instancia y no el módulo
+﻿INFO :: CSV de la comprobacion: muestra anonimizada versionada (pruebas/fixtures)
+PASS :: ctx.almacen entrega la instancia y no el módulo
 PASS :: ctx.almacen.datos está disponible
 PASS :: ctx.almacen expone guardarArchivo
 PASS :: Chart.js cargado por la página (RT-07)

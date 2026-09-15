@@ -6,7 +6,7 @@
 - **Versión:** v1.
 - **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54**, **D-56** y **D-61 a D-64** incorporadas; A-01, el destino de la col. 18, el historial inmutable —H-10—, el campo `rol` del padrón, el arranque en frío, el formato de la credencial y la rotación del log de accesos quedan cerrados).
 - **Ubicación del proyecto:** `C:\GGTO\proyecto` (clon local de GitHub, D-51); Google Drive queda fuera del flujo (§7.1).
-- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-76**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
+- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-77**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
 - **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-64**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta), **D-56** (historial inmutable `historial.jsonl`, con H-10 cerrado y RNF-09 completo; §4.4) y **D-61 a D-64** (campo `rol` del padrón —§4.5—, arranque en frío del primer supervisor —§3.4—, formato de la credencial SHA-256 —§4.5— y rotación del log de accesos `incidencias.log` —§4.5.1 y §5.4—), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
 - **Alcance de este documento:** especificar la arquitectura, los contratos de datos, los procedimientos y la trazabilidad del sistema. **No** fija precios, calendario ni asignación de personas. Las afirmaciones se apoyan en los documentos citados; lo aún no implementado se marca como **pendiente técnico** con su ID (§8.3).
 
@@ -69,12 +69,15 @@ El MVP es la decisión **D-02**: CONFIGURACION + CASOS + INGESTA + PANEL. Se sir
 
 ```
 C:\GGTO\proyecto\            # raiz del proyecto: clon local, fuera de Google Drive (D-51)
+|- GGTO.bat                  # LANZADOR DE LA JORNADA: doble clic (D-77)
+|- GGTO.ps1                  # despliegue + rutina diaria + servidor (D-77)
 |- servir-ggto.ps1           # lanzador: servidor local en loopback + navegador
 |- app/                      # UNICO subdirectorio publicado por HTTP (D-15)
 |  |- index.html
 |  |- css/estilos.css
 |  |- js/                    # los 16 archivos .js de la aplicacion: 14 modulos + 2 nucleos puros
 |  \- lib/                   # 2 librerias locales (Chart.js y jsPDF), sin CDN
+|- pruebas/                  # 12 baterias de modulos y contratos + interfaz.mjs (E2E)
 \- RepoTecnico/              # documentacion: FUERA del alcance HTTP
 
 C:\GGTO\datos\               # JSON de trabajo + historial + log: FUERA del alcance HTTP y fuera de Drive (D-19)
@@ -86,7 +89,7 @@ C:\GGTO\despachos\           # RUTA CONTROLADA de los PDF del despacho (D-67): l
                              # datos personales impresos; nunca se usa la carpeta de Descargas
 ```
 
-> **Nota de coherencia:** `entornos_globales.md` §1.1 dibuja `index.html`, `css/`, `js/` y `lib/` en la raíz y, a la vez, exige `--directory app`. Para que el lanzador funcione, esos cuatro elementos deben vivir dentro de `app/` (así lo indica la nota de seguridad del propio documento). Este documento adopta la variante `app/`.
+> **Nota de coherencia:** la estructura vigente es la de arriba (`app/` con `index.html`, `css/`, `js/` y `lib/`), que es la que publica el lanzador con `--directory app`; `entornos_globales.md` §1.1 la reproduce ya con el árbol entregado.
 
 ### 2.3 Módulos y responsabilidades
 
@@ -199,7 +202,17 @@ flowchart TB
 
 ## 3. Ejecución y seguridad
 
-### 3.1 Lanzador `servir-ggto.ps1`
+### 3.1 Lanzador de la jornada y servidor local
+
+**Entrada del operador: `GGTO.bat` (doble clic) → `GGTO.ps1` (D-77).** Antes de arrancar nada,
+comprueba el despliegue: que la aplicación esté completa (16 archivos `.js` y 2 librerías), que haya
+runtime (Python 3.7+ o Node.js), que existan las tres carpetas (`datos`, `respaldo`, `despachos`), que
+los **10 archivos de trabajo** estén presentes y legibles —sembrando desde `nucleo.js` los que falten—,
+que `estructura.json` sea el contrato **v2** (80 columnas, 25 campos con `cabecera`,
+`no_se_persisten = [18, 30, 53, 80]`) y **dónde está el CSV del día**. Después imprime la rutina diaria
+y llama a `servir-ggto.ps1`. Modos: `desplegar`, `abrir`, `pruebas`, `cierre`, `estado`, `ayuda`.
+**No hace copias de seguridad**: la copia de cierre es la verificada de CONFIGURACION → RESPALDO (D-49).
+Procedimiento completo en `entornos_globales.md` §4.5.
 
 ```powershell
 # servir-ggto.ps1 - servidor local del proyecto (solo loopback y solo app/)
@@ -1074,7 +1087,7 @@ Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas v
 
 ### 8.3 Pendientes técnicos de implementación
 
-**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-76** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
+**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-77** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
 
 Los **4 pendientes técnicos** que siguen son los de implementación ya conocidos; el requisito derivado **S-RNF-02b** (umbral de rendimiento de la ingesta) es el **n.º 4**, que `casos_uso.md` §5.1/§5.4 declara **pendiente técnico de calibración, no decisión del usuario**. **Estado real de cada uno:** el **n.º 1 está cerrado** (las librerías locales son **Chart.js 4.4.7** y **jsPDF 2.5.2**, y **PapaParse no se usa**: la ingesta parsea el CSV posicionalmente en `ingesta_nucleo.js`); el **n.º 2 sigue abierto** (es un acuerdo de proceso con el emisor del CSV, no una decisión técnica); el **n.º 3 está cerrado** por **D-66** (convención de semanas) y **D-72** (corte y umbral de las averías concentradas); y el **n.º 4 sigue abierto**: está implementado, pero la medición hecha hasta ahora **no reproduce el punto de medida declarado** (ver la fila 4 y la nota siguiente). El destino de la col. 18 `fecha_compromiso` quedó cerrado por **D-54**, y el **historial inmutable** —antes el n.º 2— por **D-56** (`historial.jsonl` *append-only*, §4.4). **Ninguna decisión de usuario queda abierta en este documento.**
 
@@ -1136,7 +1149,7 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 
 ---
 
-## 11. Anexo — Decisiones D-01 a D-76
+## 11. Anexo — Decisiones D-01 a D-77
 
 | ID | Decisión (una línea) |
 |---|---|
@@ -1216,3 +1229,4 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-74 | **Riesgos de operación aceptados:** el log se escribe sin el protocolo de escritura verificada de D-42 (RN-19); el respaldo sale del equipo por un acto manual sin verificación de salida y el RTO de 1 h no es alcanzable sin equipo sustituto (RN-11) (§8.1) |
 | D-75 | **Ajustes de contrato y permisos (reauditoría, actores):** la col. 30 `cliente_notificado` no se persiste (`no_se_persisten = [18, 30, 53, 80]`); la cola de sectores de CU-09 la resuelve el supervisor porque la propuesta de D-60 no está implementada; y §3.4 se alinea con la matriz de `casos_uso.md` §2.1 (el operador no ve MONITOREO, GRAFICOS ni reportes) (§3.4, §7.3) |
 | D-76 | **REPORTES (CU-19, CU-20) no es una pestaña propia: vive en la sub-pestaña «REPORTES y seguimiento» de MONITOREO.** RF-01 fija siete pestañas y MONITOREO ya exige `monitoreo.ver` (supervisor), la misma audiencia que `concentradas.ver`; `metricas.js` invoca a `reportes.js` con el mismo patrón con que CONFIGURACION aloja RESPALDO y ENTORNO (D-70). Cierra el hallazgo **R2-03** de la reauditoría: el módulo de reportes no tenía ninguna ruta que lo renderizara (§2.3, §6.1, CU-19) |
+| D-77 | **Lanzador de la jornada `GGTO.bat` + `GGTO.ps1`:** el doble clic **despliega** el puesto (comprueba la aplicación, el runtime y las tres carpetas; siembra desde `nucleo.js` los archivos de trabajo que falten y valida los existentes, incluido el contrato **v2** de `estructura.json`) y **arranca la jornada**: informa de dónde está el CSV del día, imprime la rutina diaria y delega el servidor en `servir-ggto.ps1`. Modos `desplegar`, `abrir`, `pruebas`, `cierre` y `estado`. **No hace copias de seguridad** —la copia de cierre verificada sigue siendo la de CONFIGURACION → RESPALDO, D-49— **ni escribe en los archivos de trabajo** (§3.1, `entornos_globales.md` §4.5) |

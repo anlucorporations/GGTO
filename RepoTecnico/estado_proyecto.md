@@ -14,7 +14,7 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **76 decisiones** (**D-01 a D-76**; D-08 y D-13 quedaron sin efecto)
+Se realizaron **9 bloques de entrevista** con los que se fijaron **77 decisiones** (**D-01 a D-77**; D-08 y D-13 quedaron sin efecto)
 y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados (son **públicos**, D-71), y GCP quedó descartado.
 
 ---
@@ -29,7 +29,7 @@ y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna 
 | `RepoTecnico/diccionario_datos.md` | Diccionario de `averias.json` (**36 campos**), `despacho.json`, `estructura.json` y los 6 archivos de configuración, con integridad y formatos. | Completado |
 | `RepoTecnico/entornos_globales.md` | Rutas, estructura de carpetas, stack, lanzador del servidor local, constantes y notas del host. | Completado |
 | `RepoTecnico/casos_uso.md` + `casos_uso/diagramas.md` | 22 casos de uso con Gherkin/EARS, trazabilidad y los diagramas Mermaid. | Completado y auditado |
-| `RepoTecnico/documento_tecnico.md` | Arquitectura, contratos de datos, procedimientos, trazabilidad módulo → CU → RF/RNF/RT, riesgos y el anexo de decisiones D-01 a D-76. | Completado (**reauditado** el 14/09/2026) |
+| `RepoTecnico/documento_tecnico.md` | Arquitectura, contratos de datos, procedimientos, trazabilidad módulo → CU → RF/RNF/RT, riesgos y el anexo de decisiones D-01 a D-77. | Completado (**reauditado** el 14/09/2026) |
 | `RepoTecnico/informe_pruebas_fase4.md` + `RepoTecnico/logs/` | Informe de la Fase 4 (201 comprobaciones) con los logs de las dos ejecuciones. | Completado |
 | `RepoTecnico/guia_prueba_manual.md` | Guía de prueba manual para el puesto de la central (bloque a bloque). | Completado |
 | `RepoTecnico/estado_proyecto.md` | Este documento (índice vivo del proyecto). | Vivo |
@@ -80,7 +80,7 @@ ingesta debe rediseñarse.
 | Regla RN-03 en datos reales: 17 registros con palabras clave de fibra y 39 sin ellas. | Búsqueda sobre `ultimo_comentario`, `problema_reporte` e `informacion`. | Dividiría el día en 17 casos a PEND y 39 a GESTION. |
 | `alta_manual.csv` (42 columnas) parece el registro manual vigente. | Caso `REF-REP-05`, `Sector` = «Prados del Este», «1ª Vez / Última Vez visto», «Historial (fecha:Grupo)». | Candidato a modelo de campos de CASOS y de casos especiales (A-17); su `Sector` es un **nombre**, no un número (A-04). |
 | El proyecto **no tiene** `averias.json`, `despacho.json` ni `estructura.json`. | Listado de la raíz y de `RepoTecnico/`. | Los tres archivos se crean desde cero en el ciclo C1/C2. |
-## 3. Decisiones tomadas (D-01 a D-76)
+## 3. Decisiones tomadas (D-01 a D-77)
 
 | ID | Decisión | Bloque |
 |---|---|---|
@@ -157,6 +157,7 @@ ingesta debe rediseñarse.
 | D-74 | **Riesgos de operación aceptados y declarados:** log sin escritura verificada (RN-19) y respaldo fuera del equipo sin verificación de salida con RTO no alcanzable sin equipo sustituto (RN-11). | reauditoría |
 | D-75 | **Ajustes de contrato y permisos:** la col. 30 `cliente_notificado` no se persiste (`no_se_persisten = [18, 30, 53, 80]`); la cola de sectores de CU-09 la resuelve el supervisor; y la matriz de §3.4 se alinea con `casos_uso.md` §2.1 (el operador no ve MONITOREO, GRAFICOS ni reportes). | reauditoría |
 | D-76 | **REPORTES no es una pestaña propia:** el bloque de CU-19 y CU-20 se renderiza en la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (junto a TABLERO), con el mismo patrón que RESPALDO/ENTORNO en CONFIGURACION. Cierra el hallazgo **R2-03**: el módulo no tenía ruta que lo renderizara. | reauditoría (R2) |
+| D-77 | **Lanzador de la jornada:** `GGTO.bat` (doble clic) + `GGTO.ps1` despliegan el puesto —aplicación, runtime, las tres carpetas y los 10 archivos de trabajo, sembrando los que falten y validando el contrato v2 de `estructura.json`—, localizan el CSV del día, imprimen la rutina e inician el servidor. **No** hacen copias de seguridad (sigue siendo la verificada de D-49). | herramienta de puesto |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -288,7 +289,7 @@ completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-2
 | 2 | Diagramas Mermaid | `RepoTecnico/casos_uso/diagramas.md` (8 bloques: CU por actor, 3 secuencias y estados del caso) | **Completado** |
 | 3 | Auditoría de los casos de uso | `RepoTecnico/casos_uso/auditoria_casos_uso.md` (y `reauditoria_casos_uso.md`) | **Completado** — 22 hallazgos resueltos o declarados |
 | 4 | Resolución de las dudas de la auditoría con el usuario | decisiones nuevas en `requerimientos.md` (**D-42 a D-76**) | **Completado** |
-| 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` (D-01 a D-76) | **Completado y reauditado** |
+| 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` (D-01 a D-77) | **Completado y reauditado** |
 | 6 | Auditoría del documento técnico y cierre de Fase 2 | `RepoTecnico/reauditoria_documento_tecnico.md` (2 lentes: R1…R7 y R2) | **Completado** — Fase 2 **cerrada** el 14/09/2026 |
 
 **Supuestos en los casos de uso:** ninguno pendiente. Las 6 ambigüedades que los originaban quedaron cerradas (A-05→D-30, A-08→D-34, A-09→D-33, A-10→D-32, A-11→D-29, A-14→D-31), por lo que `casos_uso.md` debe actualizarse para sustituir las marcas `[SUPUESTO: A-xx]` por las decisiones correspondientes.
@@ -330,7 +331,7 @@ Informe: `RepoTecnico/reauditoria_documento_tecnico.md` (skill `equipo-auditoria
 
 | Aspecto | Resultado |
 |---|---|
-| Objeto | `documento_tecnico.md` (16 archivos `.js`, 14 módulos y 2 núcleos puros, decisiones D-01 a D-76), contra la auditoría previa de la v1. Se renuncia a citar el número de líneas como métrica: el documento es vivo y cambia en cada pasada |
+| Objeto | `documento_tecnico.md` (16 archivos `.js`, 14 módulos y 2 núcleos puros, decisiones D-01 a D-77), contra la auditoría previa de la v1. Se renuncia a citar el número de líneas como métrica: el documento es vivo y cambia en cada pasada |
 | Veredicto de la reauditoría | **Fase 2 no cerrable todavía — cierre condicionado**: 2 bloqueantes (RN-01 y RN-02) y 22 hallazgos nuevos verificados (2 críticos, 6 altos, 10 medios, 4 bajos). **Cerrada el 14/09/2026** tras resolver o declarar los 22 y añadir el **lente R2** (consistencia documento ↔ código) con sus 13 hallazgos |
 | Cierre de la auditoría previa | **6 cerrados** (A-01, A-03, A-04, A-07, A-08, A-10) · 3 necesitan verificación (A-02, A-05, A-06) · 1 parcial (A-09); las **8 preguntas P1…P8 quedan resueltas** con su decisión |
 | **RN-01 (crítica)** | **Resuelto (D-71):** los repositorios son **públicos** —verificado contra las APIs de GitHub y GitLab—, así que los 6 archivos con datos de abonados (CSV diario, `alta_manual.csv`, 3 PDF de despacho y `.xlsm`) se sacaron del índice, entraron en `.gitignore` y se **purgaron de todo el historial**; se versiona una **muestra anonimizada** y las pruebas de C2 y de contratos pasan a ser autocontenidas. Verificado: 0 commits con esos archivos y 0 de los 168 identificadores reales en el historial. GitHub limpio; **GitLab: `main` protegida impide el force push** y queda pendiente de desproteger para completar la purga |
@@ -351,22 +352,25 @@ La comprobación de interfaz se creó **después** de descubrir que la página n
 
 **Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y renderiza las 7 pestañas (exigiendo que cada una tenga su **sección real**) más la sub-pestaña REPORTES de MONITOREO con el `contexto()` real, así que estos defectos ya no pueden volver sin que la comprobación falle.
 
-**Código entregado (ciclos C1 a C7 en curso):** `app/index.html`, `app/css/estilos.css`,
-`app/js/nucleo.js`, `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, `ingesta_nucleo.js`,
+**Lanzador de la jornada (D-77):** `GGTO.bat` (doble clic, envoltorio) + `GGTO.ps1` (despliegue, CSV del
+día, rutina diaria y arranque), junto a los lanzadores del servidor `servir-ggto.ps1` y `servir-ggto.bat`.
+
+**Código entregado (ciclos C1 a C7 en curso):** `app/index.html`, `app/css/estilos.css`, `app/js/nucleo.js`, `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, `ingesta_nucleo.js`,
 `ingesta.js`, `panel.js`, `gestion.js`, `despacho.js`, `pdf.js`, `metricas.js`, `graficos.js`,
 `reportes.js`, `respaldo.js` y `entorno.js`; `app/lib/` con las librerías locales fijadas (Chart.js 4.4.7 y
 jsPDF 2.5.2 — RT-07; la ingesta no usa PapaParse: parsea el CSV posicionalmente); las pruebas
 `pruebas/pruebas_c1.mjs`, `pruebas_almacen_c1.mjs`, `pruebas_c1b.mjs`, `pruebas_c2.mjs` a
 `pruebas_c7.mjs`, `pruebas_c4b.mjs`, `pruebas_cu22.mjs`, `pruebas_contratos.mjs` y la comprobación de
-interfaz `pruebas/interfaz.mjs`; y los lanzadores `servir-ggto.ps1` y `servir-ggto.bat`.
+interfaz `pruebas/interfaz.mjs`; y los lanzadores `GGTO.bat`/`GGTO.ps1` (jornada, D-77), `servir-ggto.ps1` y `servir-ggto.bat`.
 
 **Datos de trabajo:** `C:\GGTO\datos` con los 10 archivos (el maestro, `despacho.json`,
 `estructura.json`, los 6 de configuración y `historial.jsonl`), `C:\GGTO\respaldo` para la copia de
 cierre, **`C:\GGTO\despachos` como ruta controlada de los PDF (D-67)** y `central.json` ya completado
 con los datos reales de la central (`region = CAPITAL`).
 
-**Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
-`http://localhost:8787/index.html`. Pruebas de módulos:
+**Ejecución:** doble clic en **`GGTO.bat`** (o `GGTO.bat jornada`), que verifica el despliegue y abre
+`http://localhost:8787/index.html`; alternativamente `pwsh -File .\servir-ggto.ps1` desde
+`C:\GGTO\proyecto`. Pruebas de módulos:
 `node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs` (149 pruebas).
 Comprobación de interfaz (necesita Chrome o Edge; sirve la página por HTTP en loopback):
 `node pruebas/interfaz.mjs` (52 comprobaciones).

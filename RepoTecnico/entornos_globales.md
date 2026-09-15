@@ -13,56 +13,58 @@
 |---|---|
 | Raíz del proyecto (workspace) | `C:\GGTO\proyecto` — clon local desde GitHub (D-51); la copia en Google Drive quedó fuera de uso |
 | Documentación técnica | `C:\GGTO\proyecto\RepoTecnico` |
-| Página (a crear en C1) | `C:\GGTO\proyecto\app\index.html` |
-| Hojas de estilo (a crear) | `...\app\css\estilos.css` |
-| Módulos JavaScript (a crear) | `...\app\js\` |
+| Página | `C:\GGTO\proyecto\app\index.html` |
+| Hojas de estilo | `...\app\css\estilos.css` |
+| Módulos JavaScript (16 archivos `.js`) | `...\app\js\` |
 | Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56) y `incidencias.log` (log de accesos con rotación 5 MB × 5 archivos, D-58, **D-64**); respaldo **manual** a demanda del supervisor (D-36) |
 | Ruta controlada de los PDF de despacho | `C:\GGTO\despachos\` — carpeta autorizada aparte, **nunca** la carpeta de Descargas (**D-67**, D-27); ver §4.3 |
-| Librerías locales (a crear) | `...\app\lib\` |
-| Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
+| Librerías locales | `...\app\lib\` (Chart.js 4.4.7 y jsPDF 2.5.2, RT-07) |
+| Lanzador de la jornada | `...\GGTO.bat` (doble clic) + `...\GGTO.ps1` (**D-77**); ver §4.5 |
+| Lanzador del entorno | `...\servir-ggto.ps1` (servidor local) y `...\servir-ggto.bat` (alternativa mínima con Python) |
 | Metadata de git (fuera de Google Drive) | `C:\GGTO\proyecto\.git` (directorio de git del proyecto; el antiguo `C:\GGTO\git\GGTO-v1.git` se conserva como copia histórica) |
 
-### 1.1 Estructura objetivo
+### 1.1 Estructura del proyecto (entregada)
 
 ```
 GGTO-v1/
-|- index.html
-|- servir-ggto.ps1            # lanzador: servidor local + navegador
+|- GGTO.bat                   # LANZADOR DE LA JORNADA (doble clic; D-77)
+|- GGTO.ps1                   # despliegue + rutina diaria + servidor (D-77)
+|- servir-ggto.ps1            # servidor local + navegador (uso directo)
+|- servir-ggto.bat            # alternativa minima con Python
+|- README.md
 |- RepoTecnico/               # documentacion (Fase 1 en adelante)
-|- css/
-|  \- estilos.css
-|- js/
-|  |- app.js                  # arranque, pestanas, estado global
-|  |- almacen.js              # lectura/escritura de JSON (File System Access API)
-|  |- ingesta.js              # RF-16 a RF-19, RF-27
-|  |- despacho.js             # RF-08, RF-09, RF-20
-|  |- pdf.js                  # RF-10
-|  |- metricas.js             # agregaciones del MONITOREO
-|  |- graficos.js             # RF-06 (Chart.js)
-|  |- casos.js                # tabla maestra + flotante
-|  |- panel.js                # RF-02 a RF-04
-|  |- gestion.js              # RF-15
-|  |- configuracion.js        # RF-11 a RF-14, RF-27
-|  |- reportes.js             # RF-25, RF-26
-|  |- respaldo.js             # CU-21: bloque RESPALDO (copia de cierre y restauracion)
-|  \- entorno.js              # CU-22: bloque ENTORNO (diagnostico y contingencia)
-|- datos/
-|  |- averias.json            # maestro (L56)
-|  |- despacho.json           # vista de campo (L57)
-|  |- estructura.json         # contrato del CSV (L58)
-|  |- central.json            # RF-11
-|  |- tecnicos.json           # RF-12
-|  |- flota.json              # RF-13
-|  |- cuadrillas.json         # RF-14
-|  |- sectores.json           # D-03
-|  |- claves_clasificacion.json  # D-11
-|  |- historial.jsonl         # historial inmutable de cambios (append-only, D-56)
-|  |- incidencias.log         # log de accesos; rota a incidencias.1..5.log (D-64)
-|  \- incidencias.1.log ... incidencias.5.log   # copias rotadas (5 MB × 5, D-64)
-\- lib/
-   |- chart.umd.min.js      # Chart.js 4.4.7 (RT-07)
-   \- jspdf.umd.min.js      # jsPDF 2.5.2 (RT-07); el parser del CSV es propio, sin PapaParse
+|- pruebas/                   # 12 baterias de modulos y contratos + interfaz.mjs (E2E)
+|  |- fixtures/               # muestra anonimizada del CSV (D-71)
+|  \- herramientas/           # anonimizador del CSV
+\- app/                       # lo unico que se publica por HTTP
+   |- index.html
+   |- css/
+   |  \- estilos.css
+   |- lib/
+   |  |- chart.umd.min.js     # Chart.js 4.4.7 (RT-07)
+   |  \- jspdf.umd.min.js     # jsPDF 2.5.2 (RT-07); el parser del CSV es propio (sin PapaParse)
+   \- js/                     # 14 modulos + 2 nucleos puros = 16 archivos
+      |- app.js               # arranque, pestanas, estado global
+      |- nucleo.js            # reglas y utilidades de dominio (nucleo puro)
+      |- almacen.js           # lectura/escritura de JSON (File System Access API)
+      |- ingesta_nucleo.js    # parser posicional del CSV y clasificacion (nucleo puro)
+      |- ingesta.js           # RF-16 a RF-19, RF-27
+      |- despacho.js          # RF-08, RF-09, RF-20
+      |- pdf.js               # RF-10
+      |- metricas.js          # MONITOREO (TABLERO + sub-pestana REPORTES)
+      |- graficos.js          # RF-06 (Chart.js)
+      |- casos.js             # tabla maestra + flotante
+      |- panel.js             # RF-02 a RF-04 (+ bloque INGESTA, D-70)
+      |- gestion.js           # RF-15
+      |- configuracion.js     # RF-11 a RF-14, RF-27 (+ RESPALDO y ENTORNO)
+      |- reportes.js          # CU-19, CU-20 (sub-pestana de MONITOREO, D-76)
+      |- respaldo.js          # CU-21: bloque RESPALDO (copia de cierre y restauracion)
+      \- entorno.js           # CU-22: bloque ENTORNO (diagnostico y contingencia)
 ```
+
+Las rutas de datos **no** viven dentro del proyecto: los 10 archivos de trabajo están en
+`C:\GGTO\datos`, la copia de cierre en `C:\GGTO\respaldo` y los PDF emitidos en `C:\GGTO\despachos`
+(§4.1 y §4.3).
 
 ---
 
@@ -245,6 +247,43 @@ de §4.1 sigue siendo de **10 archivos**—. Cada acción deja su **asiento en `
 «Pendiente de entrega»; la constancia son los asientos del log y el papel. Los asientos **no** llevan
 datos personales del abonado (D-58).
 
+### 4.5 Lanzador de la jornada (`GGTO.bat` + `GGTO.ps1`, D-77)
+
+Es el **punto de entrada del operador**: doble clic en `GGTO.bat` (raíz del proyecto). `GGTO.bat` es
+solo el envoltorio: busca PowerShell 7 y, si no está, usa Windows PowerShell 5.1 —el que trae Windows—
+y llama a `GGTO.ps1`. No necesita instalación, no usa CDN y no deja nada fuera del equipo.
+
+```bat
+GGTO.bat                 :: jornada: despliegue + CSV del dia + rutina + servidor y navegador
+GGTO.bat desplegar       :: solo el despliegue (carpetas y los 10 archivos de trabajo)
+GGTO.bat abrir           :: solo el servidor local
+GGTO.bat pruebas         :: 149 pruebas de modulos y contratos + 52 comprobaciones E2E
+GGTO.bat cierre          :: rutina de cierre del dia y apertura de las carpetas de salida
+GGTO.bat estado          :: diagnostico del puesto, de los datos y de la copia de cierre
+GGTO.bat ayuda
+:: opciones:  -Puerto 8787   -SinNavegador
+```
+
+**Qué hace el despliegue** (idempotente: solo crea lo que falta y nunca sobrescribe):
+
+| Paso | Comprobación |
+|---|---|
+| Aplicación | `app\index.html`, `app\css`, **16** archivos `.js` en `app\js` y **2** librerías en `app\lib` (RT-07). Si el recuento no cuadra, avisa |
+| Runtime | Python 3.7+ y/o Node.js: sin uno de los dos no hay servidor local y la página no puede leer ni escribir los JSON (RT-06) |
+| Carpetas | Crea `C:\GGTO\datos`, `C:\GGTO\respaldo` y `C:\GGTO\despachos` si faltan (el selector de carpetas del navegador no puede elegir una carpeta inexistente) |
+| Archivos de trabajo | Siembra desde `app\js\nucleo.js` (`estructurasIniciales()`) los que falten y **valida** los que ya existen (JSON legible e `historial.jsonl` línea a línea) |
+| Contrato del CSV | Comprueba que `estructura.json` sea la **v2**: 80 columnas, 25 campos con `cabecera` y `no_se_persisten = [18, 30, 53, 80]`. Si no, avisa de que la ingesta abortará (D-44, D-69) |
+| CSV del día | Busca `*gpon*.csv` en el proyecto, en `C:\GGTO`, en Descargas y en el Escritorio, y **nombra el archivo de hoy** en la rutina diaria (el archivo se elige en la página: el navegador no permite saltarse ese gesto) |
+
+**Qué NO hace:** no hace copias de seguridad propias ni escribe en los archivos de trabajo. La copia de
+cierre es la **verificada por relectura** de CONFIGURACION → RESPALDO (D-49, RNF-16), y el respaldo
+sale del equipo por un acto manual del supervisor. El lanzador se limita a recordarlo y a abrir las
+carpetas. Tampoco arranca el servidor antes de comprobar el despliegue: si falta el runtime, falla con
+un mensaje claro en lugar de abrir una pestaña en error (RN-12 de la reauditoría).
+
+**Códigos de salida:** `0` si el despliegue es correcto (y las pruebas pasan, en modo `pruebas`); `1` si
+hay un error —una carpeta que no se pudo crear, un archivo ilegible o el contrato del CSV incompleto—.
+
 ---
 
 ## 5. Constantes y variables globales del front-end
@@ -278,7 +317,11 @@ datos personales del abonado (D-58).
 
 | Acción | Comando |
 |---|---|
-| Levantar el entorno | `pwsh -File .\servir-ggto.ps1` |
+| **Abrir la jornada (lo habitual)** | doble clic en `GGTO.bat` (o `GGTO.bat jornada` desde la consola) |
+| Verificar el despliegue sin arrancar nada | `GGTO.bat desplegar` |
+| Diagnóstico del puesto y de los datos | `GGTO.bat estado` |
+| Ejecutar la batería completa | `GGTO.bat pruebas` |
+| Levantar el entorno (uso directo) | `pwsh -File .\servir-ggto.ps1` |
 | Verificar el puerto | `Get-NetTCPConnection -LocalPort 8787 -ErrorAction SilentlyContinue` |
 | Copiar un archivo al proyecto (evita el fallo de escritura de G:) | `Copy-Item <origen> "<destino>" -Force` |
 | Listar el estado de la documentación | `Get-ChildItem RepoTecnico` |

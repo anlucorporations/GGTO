@@ -43,6 +43,13 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 > La comprobación E2E se sirve por **HTTP** y no por `file://` porque la propia página **aborta su
 > arranque** en `file://` (D-15: no se pueden leer ni escribir los JSON): por ese camino no se
 > conectarían los eventos de la interfaz y no se podría probar ni la sesión ni la ingesta.
+>
+> **CSV de la comprobación.** Se usa la **muestra real del 12/09/2026** si está en la raíz del proyecto
+> y, si no —no se versiona, D-71—, la **muestra anonimizada** versionada (`pruebas/fixtures/`), que
+> reproduce el mismo reparto 56/5/51 y 18 PEND + 33 GESTION. El paso de la ingesta **nunca se salta**
+> (antes quedaba en `SKIP` silencioso al retirar el archivo real) y el log publica qué muestra usó en
+> una línea `INFO`. El recuento final cuenta solo comprobaciones evaluadas (`PASS`/`FAIL`), de modo que
+> las líneas `INFO` y `SKIP` no inflan el total.
 
 ---
 

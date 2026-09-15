@@ -24,6 +24,13 @@
 
 ## 2. Levantar la página
 
+**Lo habitual:** doble clic en **`GGTO.bat`** (raíz del proyecto). El lanzador verifica el despliegue
+(carpetas y los 10 archivos de trabajo), localiza el **CSV del día** si está en el proyecto, en
+`C:\GGTO`, en Descargas o en el Escritorio, imprime la rutina diaria y abre el navegador. Para
+detenerlo, `Ctrl+C` en su ventana.
+
+También se puede arrancar el servidor a mano:
+
 ```powershell
 cd C:\GGTO\proyecto
 pwsh -File .\servir-ggto.ps1
@@ -32,6 +39,10 @@ pwsh -File .\servir-ggto.ps1
 Se abre el navegador en `http://localhost:8787/index.html`. El servidor escucha **solo en loopback**
 y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 `http://localhost:8787/datos/averias.json` y debe responder **404** (los datos no se exponen por HTTP).
+
+Otros modos del lanzador: `GGTO.bat desplegar` (solo prepara el puesto), `GGTO.bat estado`
+(diagnóstico), `GGTO.bat pruebas` (batería completa) y `GGTO.bat cierre` (rutina de cierre y apertura
+de las carpetas de salida). Ver `entornos_globales.md` §4.5.
 
 ---
 
