@@ -1,8 +1,8 @@
 # Estado del Proyecto — GGTO-v1
 
 - **Proyecto:** Página HTML de gestión de averías — Central Francisco Salias (Área 4)
-- **Fase actual:** 1 (Concepto) — en cierre
-- **Última actualización:** 2026-09-12
+- **Fase actual:** 4 (Pruebas) cerrada · Fase 2 cerrada tras la reauditoría · Fase 5 (Manuales) omitida por decisión del usuario
+- **Última actualización:** 2026-09-14 (lente R2 de la reauditoría: ruta de REPORTES, catálogo de claves y cifras del corpus)
 - **Fuente primaria:** `RepoTecnico/PAGINA-GGTO-INICIAL.md`
 
 ---
@@ -14,8 +14,8 @@ HTML que gestione los reportes de avería de la central: 7 pestañas funcionales
 un CSV, dosificación del despacho por cuadrillas, sectores de averías concentradas, seguimiento
 de casos especiales y reportes diario y semanal.
 
-Se realizaron **9 bloques de entrevista** con los que se fijaron **66 decisiones**
-y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados, y GCP quedó descartado.
+Se realizaron **9 bloques de entrevista** con los que se fijaron **76 decisiones** (**D-01 a D-76**; D-08 y D-13 quedaron sin efecto)
+y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna abierta** (las seis que tocaban el MVP se resolvieron con D-29 a D-35). No hay pendientes administrativos: los repositorios remotos están creados y sincronizados (son **públicos**, D-71), y GCP quedó descartado.
 
 ---
 
@@ -24,21 +24,31 @@ y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna 
 | Archivo | Contenido | Estado |
 |---|---|---|
 | `RepoTecnico/PAGINA-GGTO-INICIAL.md` | Fuente primaria del usuario (concepto y estructuras). | Recibido |
-| `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` | Análisis, requerimientos, arquitectura, ciclos, decisiones D-01 a D-11 y ambigüedades A-01 a A-14. | Completado |
-| `RepoTecnico/requerimientos.md` | 27 RF, 7 RNF, 7 RT, 8 reglas de negocio, glosario, alcance por ciclo y criterios de Fase 1. | Completado |
-| `RepoTecnico/diccionario_datos.md` | Diccionario de `averias.json` (29 campos), `despacho.json`, `estructura.json` y 6 archivos de configuración, con integridad y formatos. | Completado |
+| `RepoTecnico/PROPUESTA-PAGINA-GGTO.md` | Análisis, requerimientos, arquitectura, ciclos, decisiones D-01 a D-11 y ambigüedades A-01 a A-14 (documento de la Fase 1, superado por `requerimientos.md` y el documento técnico). | Completado |
+| `RepoTecnico/requerimientos.md` | **29 RF, 16 RNF, 11 RT**, 8 reglas de negocio, glosario, alcance por ciclo y criterios de Fase 1. | Completado |
+| `RepoTecnico/diccionario_datos.md` | Diccionario de `averias.json` (**36 campos**), `despacho.json`, `estructura.json` y los 6 archivos de configuración, con integridad y formatos. | Completado |
 | `RepoTecnico/entornos_globales.md` | Rutas, estructura de carpetas, stack, lanzador del servidor local, constantes y notas del host. | Completado |
-| `RepoTecnico/estado_proyecto.md` | Este documento. | Vivo |
+| `RepoTecnico/casos_uso.md` + `casos_uso/diagramas.md` | 22 casos de uso con Gherkin/EARS, trazabilidad y los diagramas Mermaid. | Completado y auditado |
+| `RepoTecnico/documento_tecnico.md` | Arquitectura, contratos de datos, procedimientos, trazabilidad módulo → CU → RF/RNF/RT, riesgos y el anexo de decisiones D-01 a D-76. | Completado (**reauditado** el 14/09/2026) |
+| `RepoTecnico/informe_pruebas_fase4.md` + `RepoTecnico/logs/` | Informe de la Fase 4 (201 comprobaciones) con los logs de las dos ejecuciones. | Completado |
+| `RepoTecnico/guia_prueba_manual.md` | Guía de prueba manual para el puesto de la central (bloque a bloque). | Completado |
+| `RepoTecnico/estado_proyecto.md` | Este documento (índice vivo del proyecto). | Vivo |
 
 ---
 
 ## 2.1 Repositorio local
 
-- Se inicializó el repositorio git en la raíz del proyecto (`G:\Mi unidad\CANTV PDE\GGTO-v1`),
+- Se inicializó el repositorio git en la raíz original del proyecto (`G:\Mi unidad\CANTV PDE\GGTO-v1`),
   rama `main`, con `.gitignore` (excluye `desktop.ini`, `.env*`, logs y respaldos de `datos/`).
+- **Disposición vigente (verificado con `git rev-parse --git-dir`):** el repositorio de trabajo es
+  **`C:\GGTO\proyecto\.git`**, que es un **directorio** normal de git; el antiguo
+  `C:\GGTO\git\GGTO-v1.git` se conserva **solo como copia histórica** del repositorio anterior, no
+  como la raíz de trabajo (la afirmación contraria —una raíz con un archivo `.git` que apunta allí con
+  `gitdir:`— describía la disposición **anterior** a la mudanza de D-51 y quedó corregida el 14/09/2026
+  tras el hallazgo **R2-11** de la reauditoría).
 - Primer commit: `Fase 1: documentacion de concepto, propuesta y requerimientos de la pagina GGTO`.
 - **Repositorios remotos: creados y sincronizados.** GitHub `https://github.com/anlucorporations/GGTO.git` (`origin`) y GitLab `https://gitlab.com/anlucorporations/ggto.git` (`gitlab`), ambos con las ramas `main` y `GGTOv1-DSH` en el mismo commit. Tenian solo un `README.md` inicial: la historia local se integro por merge, sin force-push.
-- **Incidente resuelto (D-22):** Google Drive inyecto 75 archivos `desktop.ini` dentro de `.git` (incluido `.git\refs\`), lo que rompio `git fetch` con `fatal: bad object refs/desktop.ini`. El directorio de git se movio a `C:\GGTO\git\GGTO-v1.git` y la raiz apunta alli con un archivo `.git` (`gitdir:`). No se perdio ningun commit.
+- **Incidente resuelto (D-22):** Google Drive inyecto 75 archivos `desktop.ini` dentro de `.git` (incluido `.git\refs\`), lo que rompio `git fetch` con `fatal: bad object refs/desktop.ini`. El directorio de git se movio primero a `C:\GGTO\git\GGTO-v1.git`; tras la mudanza de D-51 el repositorio de trabajo es `C:\GGTO\proyecto\.git` (ver arriba) y aquel queda como copia histórica. No se perdio ningun commit.
 - **Incidente de cuota (13/09/2026):** Google Drive se quedó sin cuota y `Copy-Item` truncó `casos_uso.md` y `diagramas.md` a 0 bytes. Se recuperó el contenido desde la copia de la entrega y se commiteó por índice, sin escribir en Drive. Consecuencia: **D-51**, el proyecto pasa a `C:\GGTO\proyecto`.
 
 ### Archivos operativos detectados en la raíz (aún no analizados)
@@ -70,7 +80,7 @@ ingesta debe rediseñarse.
 | Regla RN-03 en datos reales: 17 registros con palabras clave de fibra y 39 sin ellas. | Búsqueda sobre `ultimo_comentario`, `problema_reporte` e `informacion`. | Dividiría el día en 17 casos a PEND y 39 a GESTION. |
 | `alta_manual.csv` (42 columnas) parece el registro manual vigente. | Caso `REF-REP-05`, `Sector` = «Prados del Este», «1ª Vez / Última Vez visto», «Historial (fecha:Grupo)». | Candidato a modelo de campos de CASOS y de casos especiales (A-17); su `Sector` es un **nombre**, no un número (A-04). |
 | El proyecto **no tiene** `averias.json`, `despacho.json` ni `estructura.json`. | Listado de la raíz y de `RepoTecnico/`. | Los tres archivos se crean desde cero en el ciclo C1/C2. |
-## 3. Decisiones tomadas (D-01 a D-11)
+## 3. Decisiones tomadas (D-01 a D-76)
 
 | ID | Decisión | Bloque |
 |---|---|---|
@@ -141,6 +151,12 @@ ingesta debe rediseñarse.
 | D-68 | El control documental del despacho (entrega, recogida y destrucción) **no se persiste**: estado de sesión, asientos en `incidencias.log`, y el papel/`.xlsm` como soporte oficial. | C4 |
 | D-69 | La **dirección** no es obligatoria en el contrato del CSV (el archivo real trae 4 de 51 sin ella): esas filas entran y quedan en la cola de sectores. | C2 |
 | D-70 | El **bloque INGESTA** (CU-08) se aloja en la pestaña **PANEL** y lo pueden ejecutar operador y supervisor (§2.1). | C2 |
+| D-71 | **Los repositorios son públicos y los datos reales no se versionan:** el CSV, `alta_manual.csv`, los PDF de despacho y el `.xlsm` se purgan del índice y del historial; se versiona una muestra anonimizada. Sustituye al supuesto de D-36/D-58. | reauditoría |
+| D-72 | **Averías concentradas:** el conteo incluye todas las clases (sin excluir CNS), el umbral admite 1 y el corte semanal usa `ingreso` con respaldo en `fecha_reporte`. | reauditoría |
+| D-73 | **El asiento de entrega del PDF no lleva el nombre del receptor** (el log no tiene datos personales). | reauditoría |
+| D-74 | **Riesgos de operación aceptados y declarados:** log sin escritura verificada (RN-19) y respaldo fuera del equipo sin verificación de salida con RTO no alcanzable sin equipo sustituto (RN-11). | reauditoría |
+| D-75 | **Ajustes de contrato y permisos:** la col. 30 `cliente_notificado` no se persiste (`no_se_persisten = [18, 30, 53, 80]`); la cola de sectores de CU-09 la resuelve el supervisor; y la matriz de §3.4 se alinea con `casos_uso.md` §2.1 (el operador no ve MONITOREO, GRAFICOS ni reportes). | reauditoría |
+| D-76 | **REPORTES no es una pestaña propia:** el bloque de CU-19 y CU-20 se renderiza en la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (junto a TABLERO), con el mismo patrón que RESPALDO/ENTORNO en CONFIGURACION. Cierra el hallazgo **R2-03**: el módulo no tenía ruta que lo renderizara. | reauditoría (R2) |
 | D-09 | El maestro de casos se llama `averias.json`. | 4 |
 | D-10 | La `informacion` duplicada son dos columnas: `informacion_1` e `informacion_2`. | 4 |
 | D-11 | Palabras clave de clasificación editables en CONFIGURACION con búsqueda normalizada. | 4 |
@@ -173,13 +189,13 @@ A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-1
 
 | Ciclo | Entrega | Estado |
 |---|---|---|
-| C1 | Armazón de pestañas + CONFIGURACION + tabla CASOS + flotante de cierre + persistencia JSON. | No iniciado |
-| C2 | INGESTA del CSV diario (filtro, mapeo, dedupe, clasificación, sectores). | No iniciado |
-| C3 | PANEL (búsqueda, actualización, alta) + GESTION telefónica. | No iniciado |
-| C4 | DESPACHO por sector y cuadrilla + PDF por cuadrilla. | No iniciado |
-| C5 | MONITOREO + GRAFICOS. | No iniciado |
-| C6 | Reportes diario/semanal + casos especiales y averías concentradas. | No iniciado |
-| C7 | Pruebas funcionales con datos reales, impresión y manual de usuario. | No iniciado |
+| C1 | Armazón de pestañas + CONFIGURACION + tabla CASOS + flotante de cierre + persistencia JSON. | **Cerrado** |
+| C2 | INGESTA del CSV diario (filtro, mapeo, dedupe, clasificación, sectores). | **Cerrado** |
+| C3 | PANEL (búsqueda, actualización, alta) + GESTION telefónica. | **Cerrado** |
+| C4 | DESPACHO por sector y cuadrilla + PDF por cuadrilla. | **Cerrado** |
+| C5 | MONITOREO + GRAFICOS. | **Cerrado** |
+| C6 | Reportes diario/semanal + casos especiales y averías concentradas. | **Cerrado** |
+| C7 | Pruebas funcionales con datos reales, impresión y manual de usuario. | **En curso** (respaldo, control documental y diagnóstico entregados; faltan la prueba en el puesto, la impresión y el manual) |
 
 ---
 
@@ -187,19 +203,23 @@ A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-1
 
 - [x] URLs de los repositorios remotos (GitHub y GitLab) y ramas: `main` y `GGTOv1-DSH`.
 - [x] GCP no aplica: la página se ejecuta localmente en la central (decisión del 12/09/2026).
-- [ ] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su
-      diferimiento explícito a los ciclos C4–C6.
+- [x] Respuestas al bloque 4 de preguntas (A-04, A-05, A-08, A-09, A-10, A-11, A-14) o su
+      diferimiento explícito a los ciclos C4–C6: **las 18 ambigüedades están cerradas** (§4) y la
+      Fase 1 se dio por cerrada el 14/09/2026.
 
 ---
 
 ## 7. Próximos pasos
 
-1. **Cerrar Fase 1** con los pendientes del §6.
-2. **Fase 2 (Auditoría):** desplegar el equipo de auditoría sobre `requerimientos.md`,
-   `diccionario_datos.md` y `entornos_globales.md`; elaborar los casos de uso con criterios
-   Gherkin/EARS y trazabilidad a los RF; generar los diagramas (Mermaid/SVG); redactar y auditar
-   el documento técnico.
-3. **Fase 3 (Desarrollo):** iniciar el ciclo C1 (armazón + CONFIGURACION + CASOS).
+1. ~~**Cerrar Fase 1**~~ — **cerrada**.
+2. ~~**Fase 2 (Auditoría)**~~ — **cerrada** el 14/09/2026 tras la reauditoría del documento técnico
+   (`reauditoria_documento_tecnico.md`) y el cierre de sus hallazgos (§11.3).
+3. ~~**Fase 3 (Desarrollo)**~~ — **cerrada**: los ciclos **C1 a C6** están entregados y C7 está en curso.
+4. ~~**Fase 4 (Pruebas)**~~ — **cerrada** el 14/09/2026 (201 comprobaciones, 0 fallos).
+5. **Fase 5 (Manuales): omitida por decisión del usuario.**
+6. **Lo que queda** es la parte que exige el puesto de la central: prueba con los datos reales de una
+   semana completa, impresión física del despacho, medición de los umbrales de desempeño, modo degradado
+   real y el **manual de usuario** (criterio de terminado de C7).
 
 ---
 
@@ -213,10 +233,10 @@ A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-1
 | Pérdida de datos por edición concurrente o cierre accidental. | Casos perdidos. | Escritura inmediata en cada cambio (RN-07) y exportación de respaldo del JSON. |
 | Typos en los textos del CSV. | Clasificación incorrecta. | Búsqueda normalizada y lista de claves editable (D-11). |
 | Fallo de escritura por trabajar sobre Google Drive (`G:`). | No se guardan los documentos. | Escribir en `%TEMP%` y copiar al destino (ver `entornos_globales.md` §9). |
-| Corrupción del repositorio por `desktop.ini` de Google Drive dentro de `.git`. | Fallan fetch/push y se pueden perder referencias. | **Ocurrió y se corrigió (D-22):** el directorio de git vive en `C:\GGTO\git\GGTO-v1.git`, fuera de la unidad sincronizada. |
+| Corrupción del repositorio por `desktop.ini` de Google Drive dentro de `.git`. | Fallan fetch/push y se pueden perder referencias. | **Ocurrió y se corrigió (D-22):** el directorio de git vive en disco local, fuera de la unidad sincronizada; hoy es `C:\GGTO\proyecto\.git` (D-51). |
 | Retención indefinida de datos personales sin base legal documentada (H-13). | Riesgo de incumplimiento normativo y de reclamos. | **Riesgo aceptado (D-28):** se documenta finalidad y responsable; sin purga automática. Revisar con el área legal de CANTV antes de ampliar el uso. |
 | Sin respaldo automático del maestro (H-09, H-25). | Una pérdida del archivo local se recupera hasta el cierre del día anterior. | **Atendido (D-42 + D-49):** escritura verificada con 10 versiones `.bak` y copia fechada al cerrar la jornada en `C:\GGTO\respaldo\` (RTO 1 h, RPO del día anterior). El maestro nunca está en Google Drive. |
-| CSV, PDF de despacho y `.xlsm` versionados en GitHub y GitLab, con datos personales de abonados (H-13, P9). | Exposición de datos personales en repositorios y crecimiento del historial. | **Riesgo aceptado (D-36):** se mantiene el repositorio como está; revisar con el área legal antes de dar acceso a terceros. |
+| CSV, PDF de despacho y `.xlsm` versionados en GitHub y GitLab, con datos personales de abonados (H-13, P9). | Exposición de datos personales en repositorios públicos (verificado: GitHub `private = false`, GitLab `visibility = public`) y crecimiento del historial. | **Corregido (D-71), con riesgo residual declarado:** los archivos con datos de abonados **dejaron de versionarse y se purgaron del historial** el 14/09/2026 (0 commits con esos archivos y 0 de los 168 identificadores reales); se versiona una muestra anonimizada. **Privarlos ahora no deshace la exposición previa** (clones y cachés de terceros pueden conservar objetos): la ficha de tratamiento lo recoge como posible incidente para el área legal de CANTV. |
 
 ---
 
@@ -266,10 +286,10 @@ completo de valores anteriores. **Actualización (bloques 8 y 9):** H-05 con D-2
 |---|---|---|---|
 | 1 | Casos de uso con Gherkin/EARS y trazabilidad | `RepoTecnico/casos_uso.md` (22 CU, 130 criterios Gherkin, 96 restricciones EARS, 29/29 RF) | **Completado** (commit `d0c5933`) |
 | 2 | Diagramas Mermaid | `RepoTecnico/casos_uso/diagramas.md` (8 bloques: CU por actor, 3 secuencias y estados del caso) | **Completado** |
-| 3 | Auditoría de los casos de uso | `RepoTecnico/casos_uso/auditoria_casos_uso.md` | **En curso** |
-| 4 | Resolución de las dudas de la auditoría con el usuario | decisiones nuevas en `requerimientos.md` | Pendiente |
-| 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` | Pendiente |
-| 6 | Auditoría del documento técnico y cierre de Fase 2 | informe + preguntas | Pendiente |
+| 3 | Auditoría de los casos de uso | `RepoTecnico/casos_uso/auditoria_casos_uso.md` (y `reauditoria_casos_uso.md`) | **Completado** — 22 hallazgos resueltos o declarados |
+| 4 | Resolución de las dudas de la auditoría con el usuario | decisiones nuevas en `requerimientos.md` (**D-42 a D-76**) | **Completado** |
+| 5 | Documento técnico del proyecto | `RepoTecnico/documento_tecnico.md` (D-01 a D-76) | **Completado y reauditado** |
+| 6 | Auditoría del documento técnico y cierre de Fase 2 | `RepoTecnico/reauditoria_documento_tecnico.md` (2 lentes: R1…R7 y R2) | **Completado** — Fase 2 **cerrada** el 14/09/2026 |
 
 **Supuestos en los casos de uso:** ninguno pendiente. Las 6 ambigüedades que los originaban quedaron cerradas (A-05→D-30, A-08→D-34, A-09→D-33, A-10→D-32, A-11→D-29, A-14→D-31), por lo que `casos_uso.md` debe actualizarse para sustituir las marcas `[SUPUESTO: A-xx]` por las decisiones correspondientes.
 ---
@@ -285,10 +305,10 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C3** | PANEL (búsqueda por `id_averia` o teléfono, actualización de gestión con cierre bloqueante y alta manual con id `MAN-`) y bandeja GESTION con reclasificación | **Cerrado** — 17 pruebas, incluida la matriz de permisos operador/supervisor |
 | **C4** | DESPACHO por sector y cuadrilla (reglas RN-05/RN-06 y desempate D-32) con el PDF por cuadrilla en carta horizontal y su registro de entrega | **Cerrado** — 17 pruebas, incluida la paginación del PDF y el reparto completo sin pérdidas; **jsPDF 2.5.2** fijado en `app/lib/` (RT-07). **Ampliado (D-67 y D-68):** el PDF se guarda en la **ruta controlada `C:\GGTO\despachos`** —nunca en Descargas— con verificación por relectura, reemisiones que no pisan la anterior y lista de archivos generados; y el **control documental** de entrega, recogida y destrucción por cuadrilla, con estado de sesión y asientos en el log. **13 pruebas** en `pruebas_c4b.mjs` |
 | **C5** | MONITOREO y GRAFICOS: las 6 zonas con tabla (RF-05) y con gráficos de barras, barras + línea y torta (RF-06), más la serie semanal lunes–sábado con la línea de pendientes al cierre y selector Sem 1 a Sem 36 (D-34) | **Cerrado** — 15 pruebas; **Chart.js 4.4.7** fijado en `app/lib/` (RT-07) y tablas equivalentes en cada gráfico (RNF-13) |
-| **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 9 pruebas |
+| **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 11 pruebas. La salida se renderiza en la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (**D-76**, cierra el hallazgo R2-03: antes el módulo no tenía ruta) |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — entregados y probados: **respaldo y restauración (CU-21)** en `app/js/respaldo.js` (copia de cierre de los 10 archivos verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita y RTO/RPO); **control documental del despacho (CU-17)**: entrega, recogida y destrucción por cuadrilla, con estado de sesión y asientos en `incidencias.log` (**D-68**); y **diagnóstico del puesto (CU-22)** en `app/js/entorno.js`, subpestaña **ENTORNO** de CONFIGURACION. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **143 pruebas automatizadas en verde**, más **50 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **149 pruebas automatizadas en verde** (módulos y contratos), más **52 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
 
 ### 11.2 Fase 4 (Pruebas) — cerrada
 
@@ -296,10 +316,10 @@ Informe completo: `RepoTecnico/informe_pruebas_fase4.md`; logs en `RepoTecnico/l
 
 | Aspecto | Resultado |
 |---|---|
-| Veredicto | **Fase 4 cumplida** — **192 comprobaciones, 0 fallos** (142 de módulos y contratos + 50 E2E) |
-| Pruebas nuevas de la fase | `pruebas/pruebas_contratos.mjs` (9 pruebas de contrato contra el CSV real) y la comprobación E2E ampliada de 34 a **50** (sesión con credencial real, ingesta del CSV real, respaldo y reporte) |
-| Defectos encontrados | **7**: la **ingesta del CSV era inalcanzable** (no la invocaba nadie), la **hoja del despacho** no llevaba 4 columnas canónicas y se salía del área imprimible, el **recorte de texto** del PDF mezclaba puntos y milímetros, `COLUMNAS_DESPACHO` contradecía las 15 canónicas, y `estructura.json` declaraba obligatoria la `direccion` contra el dato real |
-| Correcciones | Todas aplicadas y con prueba de regresión; decisiones nuevas **D-69** (la dirección no es obligatoria en el contrato del CSV) y **D-70** (el bloque INGESTA vive en el PANEL y lo ejecutan los dos roles) |
+| Veredicto | **Fase 4 cumplida** — **201 comprobaciones, 0 fallos** (149 de módulos y contratos + 52 E2E) |
+| Pruebas nuevas de la fase | `pruebas/pruebas_contratos.mjs` (14 pruebas de contrato contra el CSV real) y la comprobación E2E ampliada de 34 a **52** (sesión con credencial real, ingesta del CSV real, respaldo, reporte por su ruta real y sección real de cada pestaña) |
+| Defectos encontrados | **10**: la **ingesta del CSV era inalcanzable** (no la invocaba nadie), la **hoja del despacho** no llevaba 4 columnas canónicas y se salía del área imprimible, el **recorte de texto** del PDF mezclaba puntos y milímetros, `COLUMNAS_DESPACHO` contradecía las 15 canónicas, `estructura.json` declaraba obligatoria la `direccion` contra el dato real, **REPORTES no tenía ruta** (R2-03), el **respaldo de claves** de CONFIGURACION traía 3 en vez de 6 (R2-07) y cuatro defectos documentales de cifras, versiones y referencias del lente **R2** |
+| Correcciones | Todas aplicadas y con prueba de regresión; decisiones nuevas **D-69** (la dirección no es obligatoria en el contrato del CSV), **D-70** (el bloque INGESTA vive en el PANEL y lo ejecutan los dos roles) y **D-76** (REPORTES es la sub-pestaña de MONITOREO) |
 | Riesgos residuales | Prueba con los datos reales de una semana, impresión física y modo degradado real: exigen el puesto de la central (criterio de terminado de **C7**) |
 
 **Fase 5 (Manuales): omitida por decisión del usuario** (14/09/2026).
@@ -310,14 +330,15 @@ Informe: `RepoTecnico/reauditoria_documento_tecnico.md` (skill `equipo-auditoria
 
 | Aspecto | Resultado |
 |---|---|
-| Objeto | `documento_tecnico.md` (1.190 líneas, 16 archivos `.js`, D-01 a D-74), contra la auditoría previa de la v1 |
-| Veredicto de la reauditoría | **Fase 2 no cerrable todavía — cierre condicionado**: 2 bloqueantes (RN-01 y RN-02) y 22 hallazgos nuevos verificados (2 críticos, 6 altos, 10 medios, 4 bajos) |
+| Objeto | `documento_tecnico.md` (16 archivos `.js`, 14 módulos y 2 núcleos puros, decisiones D-01 a D-76), contra la auditoría previa de la v1. Se renuncia a citar el número de líneas como métrica: el documento es vivo y cambia en cada pasada |
+| Veredicto de la reauditoría | **Fase 2 no cerrable todavía — cierre condicionado**: 2 bloqueantes (RN-01 y RN-02) y 22 hallazgos nuevos verificados (2 críticos, 6 altos, 10 medios, 4 bajos). **Cerrada el 14/09/2026** tras resolver o declarar los 22 y añadir el **lente R2** (consistencia documento ↔ código) con sus 13 hallazgos |
 | Cierre de la auditoría previa | **6 cerrados** (A-01, A-03, A-04, A-07, A-08, A-10) · 3 necesitan verificación (A-02, A-05, A-06) · 1 parcial (A-09); las **8 preguntas P1…P8 quedan resueltas** con su decisión |
 | **RN-01 (crítica)** | **Resuelto (D-71):** los repositorios son **públicos** —verificado contra las APIs de GitHub y GitLab—, así que los 6 archivos con datos de abonados (CSV diario, `alta_manual.csv`, 3 PDF de despacho y `.xlsm`) se sacaron del índice, entraron en `.gitignore` y se **purgaron de todo el historial**; se versiona una **muestra anonimizada** y las pruebas de C2 y de contratos pasan a ser autocontenidas. Verificado: 0 commits con esos archivos y 0 de los 168 identificadores reales en el historial. GitHub limpio; **GitLab: `main` protegida impide el force push** y queda pendiente de desproteger para completar la purga |
 | **RN-03 y RN-04** (altas) | **Resueltos en el código:** la semilla siembra el catálogo de D-65 y el **contrato completo** de `estructura.json` (25 campos con `cabecera`, `version: 2`). El defecto era real: sin la columna `estatus` una instalación nueva no aplicaba la precedencia de `ASGN` (D-38) y daba 17 PEND + 34 GESTION en lugar de 18 + 33. Ahora una prueba acredita que **una instalación nueva reproduce el reparto documentado** |
 | Pendiente | **Ninguno bloqueante.** Los 22 hallazgos quedan **resueltos o declarados**: RN-02 (el criterio de C2 ya no se declara verificado: se anota como implementado y **pendiente de medir en el puesto**), RN-05 (el asiento de entrega ya no escribe el receptor: **D-73**), RN-06 (la ficha declara base de licitud pendiente y plazo por categoría), RN-07/RN-15 (contrato del diccionario alineado), RN-08 (volumen de referencia de RNF-05 y criterios de C4/C5 rebajados a «pendiente de medir»), RN-09 (18/33 y rango D-74 en todo el corpus, incluido el diagrama de secuencia), RN-10 (16 archivos y 2 librerías), RN-11/RN-19 (aceptados y declarados: **D-74**), RN-12 (el lanzador ya no abre el navegador antes que el servidor y falla rápido sin runtime), RN-13/RN-14 (categorías ISO y RNF-13 declaradas con su aceptación y sus módulos), RN-16 (referencias de D-67/D-68 y procedimiento), RN-17 (§8.3 sin duplicidades), RN-18 (§4.7.1 conforme a D-69), RN-21 (conteo y umbral conforme a RF-26/CU-20: **D-72**, con pruebas) y RN-22 (`C:\GGTO\despachos` en el árbol y las rutas) |
-| Riesgos residuales declarados | Medición en el puesto de RNF-02/S-RNF-02b, RNF-05 y RNF-13; continuidad del puesto y RTO (RN-11); validación legal de la base de licitud (RN-06) |
-| Métricas | **145 pruebas** de módulos y contratos + **50 comprobaciones E2E** en verde, sin regresiones |
+| Riesgos residuales declarados | Medición en el puesto de RNF-02/S-RNF-02b, RNF-05 y RNF-13; continuidad del puesto y RTO (RN-11); validación legal de la base de licitud (RN-06); exposición previa de los repositorios públicos (D-71) |
+| Lente **R2** (consistencia documento ↔ código) | **13 hallazgos**: 1 crítico (la cifra 14/37 de §1.2 frente a 18/33), 3 altos (la constante `COLUMNAS_DESPACHO`, **REPORTES sin ruta** y los recuentos de pruebas), 4 medios (los 10 archivos del directorio, §4.3 como v1 de 19 campos, el respaldo de claves con 3 en vez de 6 y las referencias de D-65/D-66) y 5 bajos (conteos de `estado_proyecto.md`, metadatos de git, recuentos de líneas y el residuo de §7.2 contra D-71). **Todos corregidos o verificados como falsos positivos** |
+| Métricas | **149 pruebas** de módulos y contratos + **52 comprobaciones E2E** en verde, sin regresiones |
 
 ### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
 
@@ -328,7 +349,7 @@ La comprobación de interfaz se creó **después** de descubrir que la página n
 | **Toda pestaña lanzaba `TypeError`** al renderizar (`Cannot read properties of undefined (reading 'cuadrillas.json')`) | `contexto()` entregaba `almacen: A` —el **módulo** `GGTO_ALMACEN`— mientras los 10 módulos usan `ctx.almacen.datos`, `guardarArchivo`, `agregarHistorial` e `historialTexto`, que son de la **instancia** | `app.js`: `contexto()` pasa `estado.almacen` (la instancia autorizada) con un `almacenVacio()` defensivo para antes de autorizar la carpeta |
 | **GRAFICOS nunca dibujaba** («falta la librería Chart.js») | `app/lib/chart.umd.min.js` existía y estaba fijado (RT-07), pero **`index.html` no lo cargaba** | `index.html`: se añade `<script src="lib/chart.umd.min.js">` junto a jsPDF |
 
-**Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y renderiza las 8 vistas con el `contexto()` real, así que estos dos defectos ya no pueden volver sin que la comprobación falle.
+**Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y renderiza las 7 pestañas (exigiendo que cada una tenga su **sección real**) más la sub-pestaña REPORTES de MONITOREO con el `contexto()` real, así que estos defectos ya no pueden volver sin que la comprobación falle.
 
 **Código entregado (ciclos C1 a C7 en curso):** `app/index.html`, `app/css/estilos.css`,
 `app/js/nucleo.js`, `almacen.js`, `app.js`, `casos.js`, `configuracion.js`, `ingesta_nucleo.js`,
@@ -346,6 +367,6 @@ con los datos reales de la central (`region = CAPITAL`).
 
 **Ejecución:** `pwsh -File .\servir-ggto.ps1` desde `C:\GGTO\proyecto` y abrir
 `http://localhost:8787/index.html`. Pruebas de módulos:
-`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs` (142 pruebas).
+`node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs` (149 pruebas).
 Comprobación de interfaz (necesita Chrome o Edge; sirve la página por HTTP en loopback):
-`node pruebas/interfaz.mjs` (50 comprobaciones).
+`node pruebas/interfaz.mjs` (52 comprobaciones).

@@ -20,7 +20,7 @@
 | Ruta controlada de los PDF de despacho | `C:\GGTO\despachos\` — carpeta autorizada aparte, **nunca** la carpeta de Descargas (**D-67**, D-27); ver §4.3 |
 | Librerías locales (a crear) | `...\app\lib\` |
 | Lanzador del entorno (a crear) | `...\servir-ggto.ps1` |
-| Metadata de git (fuera de Google Drive) | `C:\GGTO\git\GGTO-v1.git` (la raíz apunta con un archivo `.git` que contiene `gitdir:`) |
+| Metadata de git (fuera de Google Drive) | `C:\GGTO\proyecto\.git` (directorio de git del proyecto; el antiguo `C:\GGTO\git\GGTO-v1.git` se conserva como copia histórica) |
 
 ### 1.1 Estructura objetivo
 
@@ -296,8 +296,13 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 
 ### 7.1 Ubicación del directorio git
 
-El repositorio de trabajo es el clon local **`C:\GGTO\proyecto`** (con su `.git` en `C:\GGTO\proyecto\.git`). El directorio anterior, `C:\GGTO\git\GGTO-v1.git`, queda como respaldo del historial previo; la raíz antigua en Google Drive ya no se usa y
-proyecto apunta a él con un archivo `.git` que contiene `gitdir: C:/GGTO/git/GGTO-v1.git`.
+El repositorio de trabajo es el clon local **`C:\GGTO\proyecto`**, con su metadata en
+**`C:\GGTO\proyecto\.git`**, que es un **directorio** normal de git (verificado con
+`git rev-parse --git-dir` → `.git`, y con `HEAD`, `objects/`, `refs/` dentro). El directorio anterior,
+`C:\GGTO\git\GGTO-v1.git`, se conserva **solo como copia histórica** del repositorio previo; la raíz
+antigua en Google Drive ya no se usa. *(La redacción anterior —«la raíz apunta a él con un archivo
+`.git` que contiene `gitdir:`»— describía la disposición previa a la mudanza de D-51 y se corrigió el
+14/09/2026 tras el hallazgo **R2-11** de la reauditoría.)*
 
 **Motivo (D-22):** Google Drive inyectó 75 archivos `desktop.ini` dentro de `.git` —incluido
 `.git\refs\desktop.ini`— y rompió la resolución de referencias con
@@ -355,11 +360,16 @@ e historial. Se usa como referencia de campos (A-17), no como entrada de la inge
 ---
 ## 11. Pendientes de este documento
 
-- Fijar versiones exactas de las librerías al descargarlas en C1.
-- Registrar la URL de los repositorios remotos y la rama de trabajo.
-- Definir el uso de GCP y, si aplica, credenciales y tipo de servicio.
-- Confirmar en el puesto real de la central que Edge/Chrome están disponibles y que se autoriza
-  un servidor local en el puerto 8787.
+- ~~Fijar versiones exactas de las librerías al descargarlas en C1.~~ **Cerrado:** Chart.js 4.4.7 y
+  jsPDF 2.5.2 en `app/lib/`; el parser del CSV es propio (sin PapaParse).
+- ~~Registrar la URL de los repositorios remotos y la rama de trabajo.~~ **Cerrado:** GitHub
+  `anlucorporations/GGTO` y GitLab `anlucorporations/ggto`, ramas `main` y `GGTOv1-DSH` (§7).
+- ~~Definir el uso de GCP y, si aplica, credenciales y tipo de servicio.~~ **Cerrado:** no aplica
+  (ejecución local en la central).
+- **Confirmar en el puesto real de la central** que Edge/Chrome están disponibles y que se autoriza
+  un servidor local en el puerto 8787. **Dueño: el Soporte TI del puesto** (RN-N-01 de la
+  reauditoría), con evidencia anotada aquí: navegador y versión, Python 3.7+ o Node.js disponibles,
+  puerto 8787 libre (o el alterno 8788–8807), impresora y política de ejecución de `.ps1`.
 
 **Cerrado en este documento:** la carpeta `C:\GGTO\datos\` incluye `historial.jsonl` (historial
 inmutable *append-only*, **D-56**) en el árbol de estructura (§1.1), en la tabla de rutas (§1) y en
@@ -391,5 +401,6 @@ Materializa la «finalidad documentada» que exige D-28 y la política acordada 
 | **Plazo de conservación por categoría** | Casos del maestro (`averias.json`): **indefinido, sin purga automática** (D-28, riesgo aceptado por escrito). Historial (`historial.jsonl`): indefinido *append-only* (D-56). Log de la aplicación: **5 MB × 5 archivos** por rotación, sin datos personales (D-58, D-64). Respaldos: 10 versiones `.bak` del maestro (D-42) más la copia de cierre (D-49), sin purga automática. **Hojas impresas: se recogen y destruyen al cierre del día** (D-27). Datos de trabajadores: mientras dure el vínculo con la central. |
 | **Dato que NO se registra** | El **nombre del receptor** de la hoja de despacho **no entra en el log** (D-73): vive solo en la hoja impresa y en el control documental de la sesión. |
 | **Retención** | Casos: histórica, sin purga automática (D-28). CSV procesado: se conserva junto al caso. Log de aplicación: rotación por tamaño, 5 MB y 5 archivos (D-58), sin datos personales. |
-| **Derechos del titular** | Canal único: el supervisor de la central, que localiza el caso por `id_averia` o teléfono y aplica la corrección dejando rastro en `historial.jsonl`. |
+| **Derechos del titular** | Canal único: el **supervisor de la central**, que localiza el caso por `id_averia` o teléfono y aplica la corrección dejando rastro en `historial.jsonl`. **Declarado con sus límites (RN-N-02):** cubre **acceso** y **rectificación**; la **supresión** no es posible sin borrar el rastro de auditoría, así que se atiende como **bloqueo del uso** y se documenta la negativa motivada; se exige **verificación de identidad** del solicitante (titular o su representante) y se fija un **plazo de respuesta de 10 días hábiles**, con constancia en el log de la aplicación. **Limitación reconocida:** en un puesto único, quien atiende la solicitud es también quien ejecuta el cambio; no hay separación de funciones. |
+| **Notificación al abonado** | El CSV trae la columna 30 (`cliente_notificado`), que **no se persiste ni se usa** (D-53, **D-75**): el sistema **no notifica** al abonado, ni al abrir ni al cerrar el caso. La comunicación con el abonado es telefónica y la lleva la cuadrilla o el supervisor fuera del sistema. |
 | **Revisión pendiente** | Confirmar con el área legal de CANTV la normativa aplicable, la **base de licitud** y esta ficha antes de ampliar el uso de la página. **Además:** la purga del 14/09/2026 (D-71) quitó los datos de los repositorios, pero GitHub y GitLab **fueron públicos** desde el 13/09/2026, así que la exposición anterior debe valorarse como incidente con el área legal. |

@@ -2,7 +2,8 @@
  * GGTO-v1 · pruebas/interfaz.mjs
  * Comprobación de INTERFAZ de la página completa: carga `app/index.html` real en
  * Chrome/Edge headless, sustituye la carpeta de datos por un almacén simulado y
- * renderiza las 8 vistas con el `contexto()` **real** de `app.js`.
+ * renderiza las 8 vistas (las 7 pestañas de RF-01 y la sub-pestaña REPORTES de
+ * MONITOREO, D-76) con el `contexto()` **real** de `app.js`.
  *
  * Existe porque `node --test` valida los módulos por separado y no ve los
  * defectos del contrato entre `app.js` y los módulos: así se detectaron (a) que
@@ -68,10 +69,17 @@ const sonda = `
     fin.textContent = 'FIN-INTERFAZ';
     document.body.appendChild(fin);
   }
+  // Las secciones NO se fabrican: si falta la sección real de una pestaña, la
+  // comprobación lo registra como fallo. Se devuelve un contenedor suelto para
+  // que la comprobación continúe y no se pierdan las demás verificaciones.
   function seccion(id) {
     var c = document.getElementById('seccion-' + id);
-    if (!c) { c = document.createElement('div'); c.id = 'seccion-' + id; document.body.appendChild(c); }
-    return c;
+    if (c) return c;
+    lineas.push('FAIL :: falta la sección real #seccion-' + id + ' en index.html');
+    var suelto = document.createElement('div');
+    suelto.id = 'seccion-' + id + '-ausente';
+    document.body.appendChild(suelto);
+    return suelto;
   }
   function botonesDe(raiz, texto) {
     var todos = raiz.querySelectorAll('button');
@@ -186,12 +194,17 @@ const sonda = `
       ok('entorno.js cargado por la página (CU-22)', !!(window.GGTO_ENTORNO && window.GGTO_ENTORNO.render));
 
       // --- las 8 vistas renderizan con el contexto real ---
+      // Siete son pestañas (RF-01) y la octava, REPORTES, es una sub-pestaña de
+      // MONITOREO (D-76): se comprueba navegando, no fabricando la sección.
       var modulos = [
         ['CASOS', 'GGTO_CASOS', 'casos'], ['PANEL', 'GGTO_PANEL', 'panel'],
         ['GESTION', 'GGTO_GESTION', 'gestion'], ['DESPACHO', 'GGTO_DESPACHO', 'despacho'],
         ['MONITOREO', 'GGTO_METRICAS', 'monitoreo'], ['GRAFICOS', 'GGTO_GRAFICOS', 'graficos'],
-        ['REPORTES', 'GGTO_REPORTES', 'reportes'], ['CONFIGURACION', 'GGTO_CONFIGURACION', 'configuracion']
+        ['CONFIGURACION', 'GGTO_CONFIGURACION', 'configuracion']
       ];
+      var idsPestanas = ['panel', 'monitoreo', 'graficos', 'casos', 'despacho', 'configuracion', 'gestion'];
+      ok('cada pestaña de RF-01 tiene su sección real en index.html',
+        idsPestanas.every(function (id) { return !!document.getElementById('seccion-' + id); }));
       modulos.forEach(function (m) {
         var cont = seccion(m[2]);
         var mod = window[m[1]];
@@ -200,6 +213,14 @@ const sonda = `
         try { mod.render(cont, nuevoCtx()); } catch (e) { err = e.name + ': ' + e.message; }
         ok('render ' + m[0] + (err ? ' -> ' + err : ''), err === null);
       });
+      // REPORTES: la ruta real es MONITOREO → sub-pestaña «REPORTES y seguimiento».
+      var contMon = seccion('monitoreo');
+      window.GGTO_METRICAS.render(contMon, nuevoCtx());
+      var subReportes = document.getElementById('subtab-monitoreo-reportes');
+      ok('MONITOREO aloja la sub-pestaña REPORTES (CU-19/CU-20, D-76)', !!subReportes);
+      if (subReportes) subReportes.click();
+      ok('la sub-pestaña REPORTES renderiza con la ruta real de la aplicación',
+        botonesDe(contMon, 'Emitir el parte del día').length === 1);
       ok('GRAFICOS dibuja los 6 lienzos',
         seccion('graficos').querySelectorAll('canvas').length === 6);
       var subids = (window.GGTO_CONFIGURACION.subsecciones || []).map(function (s) { return s.id; });
@@ -331,10 +352,12 @@ const sonda = `
             }, 220);
           }, 220);
         },
-        // --- REPORTES: emisión del parte del día (CU-19) ---
+        // --- REPORTES: emisión del parte del día (CU-19) por su ruta real ---
         function (sig) {
-          var cont = seccion('reportes');
-          window.GGTO_REPORTES.render(cont, nuevoCtx());
+          var cont = seccion('monitoreo');
+          window.GGTO_METRICAS.render(cont, nuevoCtx());
+          var sub = document.getElementById('subtab-monitoreo-reportes');
+          if (sub) sub.click();
           var boton = botonesDe(cont, 'Emitir el parte del día')[0];
           ok('REPORTES ofrece emitir el parte del día', !!boton);
           var antes = logs.length;

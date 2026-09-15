@@ -247,3 +247,60 @@ test('cada línea del historial lleva los 7 campos documentados (D-56)', () => {
     'accion', 'campo', 'fecha_hora', 'id_averia', 'operador', 'valor_anterior', 'valor_nuevo'
   ]);
 });
+
+// ===========================================================================
+// 5. Contratos derivados de la reauditoría (lente R2, D-76)
+// ===========================================================================
+test('la constante COLUMNAS_DESPACHO del módulo son las 15 canónicas (D-31, R2-02)', () => {
+  assert.equal(D.COLUMNAS_DESPACHO.length, 15,
+    'la constante debe declarar las 15 columnas canónicas, no una lista parcial');
+  assert.deepEqual(D.COLUMNAS_DESPACHO, COLUMNAS_CANONICAS,
+    'la constante debe coincidir, y en el mismo orden, con lo que escribe `filasDespacho`');
+  const filas = D.filasDespacho({ reparto: [{ cuadrilla: { id: 'C1' }, asignaciones: [{ caso: {
+    id_averia: 'A-1', nivel: 'COM', clase: 'REP', sector: 'S1'
+  }, motivo: 'reparación' }] }] }, '13/09/2025');
+  assert.deepEqual(Object.keys(filas[0]), D.COLUMNAS_DESPACHO,
+    'la constante debe ser la lista de referencia de lo que se escribe en despacho.json');
+});
+
+test('el catálogo de claves por defecto es uno solo y tiene las 6 claves de D-65 (R2-07)', () => {
+  const porDefecto = N.CONST.CLAVES_CLASIFICACION;
+  assert.equal(porDefecto.length, 6, 'el catálogo por defecto documentado tiene seis claves');
+  ['LOSS ROJO', 'LOS ROJO', 'FALLA FIBRA', 'FALLA DE FIBRA', 'FIBRA DAÑADA', 'FIBRA DANADA']
+    .forEach((c) => assert.ok(porDefecto.indexOf(c) >= 0, 'falta «' + c + '» en el catálogo por defecto'));
+  const configJs = leer(path.join(raizProyecto, 'app', 'js', 'configuracion.js'));
+  assert.ok(configJs.indexOf('CONST.CLAVES_CLASIFICACION') >= 0,
+    'el respaldo de CONFIGURACION → PALABRAS CLAVE debe usar la constante del núcleo, no una lista propia');
+  assert.deepEqual(N.estructurasIniciales()['claves_clasificacion.json'].claves, porDefecto,
+    'la semilla debe usar la misma constante (una instalación nueva clasifica igual que el contrato)');
+});
+
+test('las cifras documentadas del archivo real cuadran entre sí (R2-01)', () => {
+  const r = ingerir(CSV);
+  assert.equal(r.resumen.pend + r.resumen.gestion, r.resumen.insertadas,
+    'el reparto de estados debe sumar los casos insertados: ' +
+    r.resumen.pend + ' + ' + r.resumen.gestion + ' != ' + r.resumen.insertadas);
+  assert.equal(r.resumen.insertadas + r.resumen.fueraDeCentral, r.resumen.leidas,
+    'las filas leídas deben ser las insertadas más las descartadas por no ser de la central');
+  assert.deepEqual([r.resumen.leidas, r.resumen.insertadas, r.resumen.pend, r.resumen.gestion],
+    [56, 51, 18, 33],
+    'las cifras documentadas del archivo del 12/09/2026 son 56 leídas / 51 de la central / 18 PEND + 33 GESTION');
+});
+
+test('REPORTES se alcanza desde MONITOREO y no como pestaña propia (RF-01, D-76)', () => {
+  const html = leer(path.join(raizProyecto, 'app', 'index.html'));
+  const appJs = leer(path.join(raizProyecto, 'app', 'js', 'app.js'));
+  const pestanas = ['panel', 'monitoreo', 'graficos', 'casos', 'despacho', 'configuracion', 'gestion'];
+  pestanas.forEach((id) => {
+    assert.ok(appJs.indexOf("id: '" + id + "'") >= 0,
+      'la pestaña ' + id + ' no está enrutada en PESTANAS (app.js)');
+    assert.ok(html.indexOf('id="seccion-' + id + '"') >= 0,
+      'index.html no declara la sección #seccion-' + id + ' que la pestaña necesita');
+  });
+  assert.ok(appJs.indexOf("id: 'reportes'") < 0,
+    'REPORTES no debe ser una pestaña propia: RF-01 fija siete');
+  assert.ok(html.indexOf('js/reportes.js') >= 0, 'index.html debe cargar reportes.js');
+  const M = require(path.join(raizProyecto, 'app', 'js', 'metricas.js'));
+  assert.deepEqual(M.subsecciones.map((s) => s.id), ['tablero', 'reportes'],
+    'MONITOREO debe alojar la sub-pestaña REPORTES (CU-19, CU-20)');
+});

@@ -54,6 +54,13 @@
       'observaciones'
     ],
     CAMPOS_CIERRE: ['resolucion', 'fechaResolucion'],
+    // Catálogo por defecto de la clasificación RN-03 (D-65): incluye las formas
+    // que usa el CSV real («LOS ROJO» y «FALLA DE FIBRA», además de las
+    // variantes del fuente). Es la fuente única: la usan la semilla de
+    // `estructurasIniciales()` y el respaldo de CONFIGURACION → PALABRAS CLAVE,
+    // de modo que una instalación nueva reproduce el reparto documentado del
+    // archivo del 12/09/2026 (18 PEND + 33 GESTION).
+    CLAVES_CLASIFICACION: ['LOSS ROJO', 'LOS ROJO', 'FALLA FIBRA', 'FALLA DE FIBRA', 'FIBRA DAÑADA', 'FIBRA DANADA'],
     COLUMNAS_TABLA: ['nivel', 'clase', 'sector', 'id_averia', 'nombre', 'direccion', 'plan'],
     CAMPOS_MAESTRO: [
       'ingreso', 'nivel', 'clase', 'sector', 'Reparador Principal', 'id_averia',
@@ -315,7 +322,12 @@
     'casos.alta': { etiqueta: 'Alta manual de caso (CU-14)', Operador: true, Supervisor: true },
     'casos.auditoria': { etiqueta: 'Consulta de auditoría (CU-15)', Operador: false, Supervisor: true },
     'ingesta.ejecutar': { etiqueta: 'Ingesta del CSV (CU-08)', Operador: true, Supervisor: true },
-    'sector.cola': { etiqueta: 'Resolver direcciones sin sector (CU-09)', Operador: true, Supervisor: true },
+    // CU-09 (D-60): el operador solo PROPONE el sector y el supervisor aprueba.
+    // Esa propuesta con aprobación no está implementada en el MVP, así que la
+    // acción de resolver la cola queda en el supervisor (D-75). Si se implementa
+    // la propuesta, esta matriz debe volver a admitir al operador con el flujo
+    // de aprobación.
+    'sector.cola': { etiqueta: 'Resolver direcciones sin sector (CU-09)', Operador: false, Supervisor: true },
     'gestion.bandeja': { etiqueta: 'Bandeja GESTION (CU-13)', Operador: false, Supervisor: true },
     'config.central': { etiqueta: 'Configuración de la central (CU-02)', Operador: false, Supervisor: true },
     'config.tecnicos': { etiqueta: 'Padrón de técnicos (CU-03)', Operador: false, Supervisor: true },
@@ -798,7 +810,7 @@
       // Con esta lista, una instalación nueva reproduce el reparto documentado
       // del archivo del 12/09/2026: 18 PEND + 33 GESTION.
       'claves_clasificacion.json': {
-        claves: ['LOSS ROJO', 'LOS ROJO', 'FALLA FIBRA', 'FALLA DE FIBRA', 'FIBRA DAÑADA', 'FIBRA DANADA'],
+        claves: CONST.CLAVES_CLASIFICACION.slice(),
         normalizacion: 'normalizada',
         campos_evaluados: ['ultimo_comentario', 'problema_reporte', 'informacion_1', 'informacion_2'],
         umbral_concentracion: 3
@@ -852,7 +864,7 @@
           claves: ['region', 'estado_geografico', 'capital_estado', 'municipio', 'parroquia',
             'estado_operativo', 'distrito', 'area', 'central', 'nombre_central']
         },
-        no_se_persisten: [18, 53, 80]
+        no_se_persisten: [18, 30, 53, 80]
       },
       'historial.jsonl': ''
     };

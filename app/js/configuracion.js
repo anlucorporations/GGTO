@@ -762,7 +762,9 @@
   function renderClaves(cuerpo, ctx) {
     var actual = ctx.almacen.datos['claves_clasificacion.json'];
     var datos = (actual && typeof actual === 'object' && !Array.isArray(actual)) ? actual : {};
-    var claves = Array.isArray(datos.claves) ? datos.claves.slice() : ['LOSS ROJO', 'FALLA FIBRA', 'FIBRA DAÑADA'];
+    // Sin catálogo en disco, el respaldo es el mismo de la semilla (D-65): una
+    // instalación recién creada debe clasificar igual que el contrato documentado.
+    var claves = Array.isArray(datos.claves) ? datos.claves.slice() : CONST.CLAVES_CLASIFICACION.slice();
     var campos = Array.isArray(datos.campos_evaluados) && datos.campos_evaluados.length
       ? datos.campos_evaluados.slice()
       : ['ultimo_comentario', 'problema_reporte', 'informacion_1', 'informacion_2'];

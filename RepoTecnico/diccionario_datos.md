@@ -358,6 +358,11 @@ Muestra analizada: `detalle_averias_gpon 12_09_2026.csv` (56 registros, 3 centra
 
 **Las 80 columnas del CSV, en orden**
 
+> **Columnas que no se persisten (D-53, D-54, D-75):** las 10 del filtro de central, la **18**
+> (`fecha_compromiso`), la **30** (`cliente_notificado`), la **53** (`usuario_acciona`) y la **80**
+> (`Fecha Hora Asignacion`) se leen y se descartan: `estructura.json` las declara en
+> `no_se_persisten = [18, 30, 53, 80]` y ninguna llega al maestro.
+
 | # | Columna | # | Columna | # | Columna | # | Columna |
 |---|---|---|---|---|---|---|---|
 | 1 | region | 21 | ultimo_comentario | 41 | puerto | 61 | unidad_negocio |
@@ -400,7 +405,7 @@ del caso o para el despacho (columnas 65-80).
 sector es una entidad con `id` y `nombre`; el `id` es texto único, D-52), A-11 (D-17 y D-29: `ups` es el
 tipo de abonado y `P00` el código de empleado), A-12 (D-12: mapa posicional), A-14 (D-31: `despacho.json`
 ampliado), A-15 (D-13, revisada por D-38: `ASGN` entra como `PEND`) y A-16 (D-21: fechas recortadas con
-el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.csv`). Además, **D-53** y **D-54** fijan que las columnas 18, 53 y 80 del CSV **no se persisten**.
+el original conservado), y A-17 (D-14: se descartan los datos de `alta_manual.csv`). Además, **D-53**, **D-54** y **D-75** fijan que las columnas 18 (`fecha_compromiso`), 30 (`cliente_notificado`), 53 (`usuario_acciona`) y 80 (`Fecha Hora Asignacion`) del CSV **no se persisten**: `estructura.json` las declara en `no_se_persisten = [18, 30, 53, 80]`. La col. 30 se descarta porque el aviso al abonado se gestiona fuera del sistema y no debe entrar en el maestro; queda registrada en `entornos_globales.md` §12 junto al procedimiento de derechos.
 
 **Pendientes técnicos de implementación (no de decisión):**
 

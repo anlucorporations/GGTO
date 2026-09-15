@@ -4,14 +4,16 @@ PASS :: ctx.almacen expone guardarArchivo
 PASS :: Chart.js cargado por la página (RT-07)
 PASS :: jsPDF cargado por la página (RT-07)
 PASS :: entorno.js cargado por la página (CU-22)
+PASS :: cada pestaña de RF-01 tiene su sección real en index.html
 PASS :: render CASOS
 PASS :: render PANEL
 PASS :: render GESTION
 PASS :: render DESPACHO
 PASS :: render MONITOREO
 PASS :: render GRAFICOS
-PASS :: render REPORTES
 PASS :: render CONFIGURACION
+PASS :: MONITOREO aloja la sub-pestaña REPORTES (CU-19/CU-20, D-76)
+PASS :: la sub-pestaña REPORTES renderiza con la ruta real de la aplicación
 PASS :: GRAFICOS dibuja los 6 lienzos
 PASS :: CONFIGURACION tiene 8 sub-pestañas (RESPALDO y ENTORNO incluidas)
 PASS :: el PDF se guarda en la ruta controlada
@@ -49,4 +51,4 @@ PASS :: quedan 51 casos nuevos de Francisco Salias
 PASS :: el reparto es 18 PEND + 33 GESTION
 PASS :: la revisión NO escribe el maestro
 
-Comprobación de interfaz: 50/50 correctas.
+Comprobación de interfaz: 52/52 correctas.

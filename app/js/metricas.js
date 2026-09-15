@@ -216,6 +216,45 @@
     return caja;
   }
 
+  // ------------------------------------------------------------------ UI
+  //
+  // MONITOREO aloja dos sub-pestañas (mismo patrón que CONFIGURACION, D-70):
+  // TABLERO con el tablero del día y REPORTES con el seguimiento y los
+  // reportes de CU-19 y CU-20. REPORTES **no** es una pestaña propia: RF-01
+  // fija siete pestañas, así que el bloque vive dentro de MONITOREO, que ya
+  // exige `monitoreo.ver` (supervisor) —la misma audiencia que `concentradas.ver`
+  // (D-76)—.
+  var SUBSECCIONES = [
+    { id: 'tablero', etiqueta: 'TABLERO' },
+    { id: 'reportes', etiqueta: 'REPORTES y seguimiento' }
+  ];
+  var subActiva = 'tablero';
+  var cuerpoSub = null;
+  var ctxSub = null;
+
+  function pintarSub() {
+    if (!cuerpoSub) return;
+    SUBSECCIONES.forEach(function (s) {
+      var b = document.getElementById('subtab-monitoreo-' + s.id);
+      if (b) b.setAttribute('aria-selected', s.id === subActiva ? 'true' : 'false');
+    });
+    cuerpoSub.innerHTML = '';
+    if (subActiva === 'reportes') renderReportes(cuerpoSub, ctxSub);
+    else renderTablero(cuerpoSub, ctxSub);
+  }
+
+  /** Bloque REPORTES (CU-19, CU-20, ciclo C6): delega en `reportes.js`. */
+  function renderReportes(cuerpo, ctx) {
+    var R = raiz.GGTO_REPORTES;
+    if (!R || typeof R.render !== 'function') {
+      cuerpo.appendChild(ctx.texto('p',
+        'El módulo de reportes no está cargado: revise que reportes.js esté incluido en la página.',
+        'aviso aviso-error'));
+      return;
+    }
+    R.render(cuerpo, ctx);
+  }
+
   function render(contenedor, ctx) {
     contenedor.innerHTML = '';
     if (!ctx.sesion) {
@@ -227,6 +266,32 @@
       contenedor.appendChild(ctx.texto('p', permiso.mensaje, 'aviso aviso-error'));
       return;
     }
+
+    cuerpoSub = null;
+    ctxSub = ctx;
+    var bloque = ctx.texto('div', null, 'bloque');
+    var nav = ctx.texto('div', null, 'subpestanas');
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-label', 'Sub-pestañas del monitoreo');
+    SUBSECCIONES.forEach(function (s) {
+      var b = ctx.boton(s.etiqueta, null, function () { subActiva = s.id; pintarSub(); });
+      b.id = 'subtab-monitoreo-' + s.id;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', s.id === subActiva ? 'true' : 'false');
+      nav.appendChild(b);
+    });
+    bloque.appendChild(nav);
+    var cuerpo = ctx.texto('div');
+    cuerpo.id = 'monitoreo-cuerpo';
+    cuerpo.setAttribute('role', 'tabpanel');
+    bloque.appendChild(cuerpo);
+    contenedor.appendChild(bloque);
+    cuerpoSub = cuerpo;
+    pintarSub();
+  }
+
+  /** Sub-pestaña TABLERO (CU-18, ciclo C5). */
+  function renderTablero(contenedor, ctx) {
     var casos = ctx.almacen.datos[N.CONST.ARCHIVO_MAESTRO] || [];
     var cuadrillas = ctx.almacen.datos['cuadrillas.json'] || [];
     var fecha = String(N.marcaAhora()).split(' ')[0];
@@ -329,6 +394,7 @@
     serieDeSemana: serieDeSemana,
     resumenPorSemana: resumenPorSemana,
     tablero: tablero,
+    subsecciones: SUBSECCIONES,
     render: render
   };
 

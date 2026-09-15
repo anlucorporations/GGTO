@@ -87,7 +87,7 @@ test('el contrato estructura.json declara 80 columnas y las necesarias', () => {
   assert.equal(porJson.id_averia, 11);
   assert.equal(porJson.estatus, 27);
   assert.equal(porJson['Reparador Principal'], 65);
-  assert.deepEqual(ESTRUCTURA.no_se_persisten, [18, 53, 80]);
+  assert.deepEqual(ESTRUCTURA.no_se_persisten, [18, 30, 53, 80]);
 });
 
 test('valida el contrato posicional del archivo real', () => {

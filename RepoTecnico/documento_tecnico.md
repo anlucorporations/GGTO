@@ -6,7 +6,7 @@
 - **Versión:** v1.
 - **Fecha:** 13/09/2026 (revisión de cierre de auditoría: **D-53**, **D-54**, **D-56** y **D-61 a D-64** incorporadas; A-01, el destino de la col. 18, el historial inmutable —H-10—, el campo `rol` del padrón, el arranque en frío, el formato de la credencial y la rotación del log de accesos quedan cerrados).
 - **Ubicación del proyecto:** `C:\GGTO\proyecto` (clon local de GitHub, D-51); Google Drive queda fuera del flujo (§7.1).
-- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-74**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
+- **Fuentes normativas (leídas completas, no modificadas):** `RepoTecnico/requerimientos.md` (29 RF, **16 RNF**, 11 RT, 8 RN, **D-01 a D-76**), `RepoTecnico/PROPUESTA-PAGINA-GGTO.md`, `RepoTecnico/diccionario_datos.md`, `RepoTecnico/entornos_globales.md`, `RepoTecnico/casos_uso.md` (**CU-01 a CU-22; revisión del 15/09/2026**, con **D-42 a D-50**, **RNF-15** y **RNF-16** aplicados), `RepoTecnico/casos_uso/diagramas.md`, `RepoTecnico/estado_proyecto.md` y `RepoTecnico/auditoria_fase1.md` (29 hallazgos H-01 a H-29).
 - **Nota de sincronización con `casos_uso.md`:** este documento se redactó contra la **revisión del 15/09/2026** de `casos_uso.md` (rango de decisiones de ese documento: **D-01 a D-64**). Son **posteriores** a esa revisión las decisiones **D-51** (mudanza a `C:\GGTO\proyecto`), **D-52** (`sectores.id` como texto único e inicialización del rastro de auditoría), **D-53/D-54** (destino de las columnas 53/80 y de la col. 18 del CSV en la ingesta), **D-56** (historial inmutable `historial.jsonl`, con H-10 cerrado y RNF-09 completo; §4.4) y **D-61 a D-64** (campo `rol` del padrón —§4.5—, arranque en frío del primer supervisor —§3.4—, formato de la credencial SHA-256 —§4.5— y rotación del log de accesos `incidencias.log` —§4.5.1 y §5.4—), ya incorporadas aquí y en `requerimientos.md`. De la revisión del 15/09/2026 proviene además el requisito derivado **S-RNF-02b** (umbral de desempeño de la ingesta; §6.3 y §8.3, pendiente técnico n.º 4). Por último, **RF-26 figura como «Parcial»** en la base normativa (`casos_uso.md` §5, fila RF-26): su dueño funcional está cubierto, pero el conteo de averías concentradas queda sujeto al corte de la semana (pendiente técnico n.º 3 de §8.3, con valor por defecto declarado).
 - **Alcance de este documento:** especificar la arquitectura, los contratos de datos, los procedimientos y la trazabilidad del sistema. **No** fija precios, calendario ni asignación de personas. Las afirmaciones se apoyan en los documentos citados; lo aún no implementado se marca como **pendiente técnico** con su ID (§8.3).
 
@@ -33,7 +33,7 @@ El MVP es la decisión **D-02**: CONFIGURACION + CASOS + INGESTA + PANEL. Se sir
 | Ciclo | Entrega | Requisitos | Criterio de terminado |
 |---|---|---|---|
 | C1 | Armazón de 7 pestañas, CONFIGURACION completa, tabla CASOS + flotante de cierre, persistencia JSON | RF-01, RF-07 (tabla), RF-11 a RF-14, RF-21 a RF-24, RF-29 | La página abre en `http://localhost:8787`, la sesión se valida contra el `P00` y el hash con sal de `tecnicos.json` (D-39) y un cambio de caso queda escrito y releído en `averias.json` |
-| C2 | INGESTA del CSV: carga, filtro por central, mapeo posicional, dedupe, clasificación, sector | RF-16 a RF-19, RF-27 | El CSV del 12/09/2026 inserta 51 casos de Francisco Salias (14 `PEND` + 37 `GESTION`, D-38), descarta 5 por central y una segunda ingesta informa 0 nuevos |
+| C2 | INGESTA del CSV: carga, filtro por central, mapeo posicional, dedupe, clasificación, sector | RF-16 a RF-19, RF-27 | El CSV del 12/09/2026 inserta 51 casos de Francisco Salias (18 `PEND` + 33 `GESTION`, D-38/D-65), descarta 5 por central y una segunda ingesta informa 0 nuevos |
 | C3 | PANEL (búsqueda, actualización, alta manual) + GESTION telefónica + reclasificación | RF-02 a RF-04, RF-07 (clasificación), RF-15, RF-23, RF-28 | Un operador busca por `id_averia`, cierra un caso con resolución y fecha, da de alta un caso `MAN-` y vacía la bandeja GESTION |
 
 ### 1.3 Ciclos posteriores (C4–C7)
@@ -99,13 +99,13 @@ Son **14 módulos** (`app.js`, `almacen.js`, `ingesta.js`, `despacho.js`, `pdf.j
 | `ingesta.js` | Carga del CSV con el **parser posicional propio** de `ingesta_nucleo.js` (separador `;`, UTF-8; sin PapaParse), validación bloqueante de las 80 columnas, filtro de central, extracción por `estructura.json`, dedupe, clasificación RN-03 y sector (RN-04) | RF-16 a RF-19, RF-27; RNF-02, RNF-04, RNF-06, RNF-10; RT-02, RT-03, RT-07, RT-08 |
 | `despacho.js` | Agrupación por sector y `Reparador Principal`, reglas RN-05/RN-06, desempate D-32, edición manual y persistencia en el maestro | RF-08, RF-09, RF-20; RNF-01, RNF-05 (proyección impresa en carta horizontal), RNF-10, RNF-11; RT-05 |
 | `pdf.js` | PDF del despacho por cuadrilla en carta horizontal con paginación, marca de fecha/cuadrilla/copia (jsPDF + autoTable) y registro de entrega y recogida; **se guarda en la ruta controlada `C:\GGTO\despachos`** (D-67), verificado por relectura y sin pisar las reemisiones del día | RF-10; RNF-05, RNF-11 |
-| `metricas.js` | Agregaciones del MONITOREO y del seguimiento semanal (ingreso vs. reparadas, línea de pendiente, Sem 1 a Sem 36) | RF-05 (tablas), RF-25 |
+| `metricas.js` | Agregaciones del MONITOREO y del seguimiento semanal (ingreso vs. reparadas, línea de pendiente, Sem 1 a Sem 36). Aloja la sub-pestaña **TABLERO** y la sub-pestaña **REPORTES y seguimiento**, que delega en `reportes.js` (D-76) | RF-05 (tablas), RF-25 |
 | `graficos.js` | Gráficos de las 6 zonas con Chart.js: barras, barras + línea y torta | RF-05, RF-06 |
 | `casos.js` | Tabla maestra (7 columnas resumen), agrupación y filtrado (abiertos/cerrados, cuadrilla, tipo, clase, nivel, estatus), edición en línea de `clase`/`nivel`/`tipo_abonado`, flotante de detalle y **cierre bloqueante**; **consulta de la auditoría de CU-15 leyendo `historial.jsonl`** (secuencia de cambios por caso: fecha/hora, operador, campo, valor anterior y valor nuevo, D-56); navegación y foco accesibles (RNF-13) | RF-07, RF-21 a RF-24, RF-28; RNF-01, RNF-02, RNF-07, RNF-09, RNF-10, RNF-13 |
 | `panel.js` | Búsqueda por `id_averia` o `telefono`, actualización de gestión y alta manual con `id_averia` `MAN-` | RF-02, RF-03, RF-04, RF-28 |
 | `gestion.js` | Bandeja telefónica de `status = GESTION`: cola por antigüedad y sector, guion de verificación y reclasificación | RF-15, RF-07 (clasificación), RF-28 |
 | `configuracion.js` | Subpestañas CENTRAL, TECNICOS, FLOTA, CUADRILLA, SECTORES (CRUD), PALABRAS CLAVE y **RESPALDO** (que delega en `respaldo.js`), más la cola de asignación de sector | RF-11 a RF-14, RF-18 (cola), RF-27, RF-29 |
-| `reportes.js` | Reporte de trabajo diario y de gestión semanal; vigilancia de casos especiales y averías concentradas | RF-25, RF-26 |
+| `reportes.js` | Reporte de trabajo diario y de gestión semanal; vigilancia de casos especiales y averías concentradas. **No tiene pestaña propia**: se renderiza en la sub-pestaña «REPORTES y seguimiento» de MONITOREO (D-76) | RF-25, RF-26 |
 | `respaldo.js` | Bloque **RESPALDO** de CONFIGURACION: estado del último respaldo, **copia de cierre de los 10 archivos** (9 JSON + `historial.jsonl` íntegro) verificada por relectura, **restauración** con respaldo previo `.bak`, confirmación escrita cuando la copia pierde casos, detección de conflicto (D-41) y registro de las horas de inicio y fin para comprobar el **RTO de 1 hora** y el **RPO** del cierre anterior | RF-24; RNF-04, RNF-10, RNF-12, RNF-14, RNF-15, RNF-16; RT-10 |
 | `entorno.js` | Bloque **ENTORNO** de CONFIGURACION: diagnóstico del puesto (navegador y versión, soporte de la API de archivos, origen de la página, modo de trabajo, rutas y versión), informe de los archivos de datos ausentes o ilegibles, resumen del registro `incidencias.log` con descarga del detalle y **verificación del cierre de la jornada** (última escritura confirmada, último respaldo e incidencias del día); solo lectura | RF-01 (CU-22); RNF-03, RNF-04, RNF-08, RNF-10, RNF-16; RT-06, RT-09 |
 
@@ -202,20 +202,25 @@ flowchart TB
 ### 3.1 Lanzador `servir-ggto.ps1`
 
 ```powershell
-# servir-ggto.ps1 - servidor local de la pagina GGTO (solo loopback, solo app/)
-$puerto = 8787
-$raiz   = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$app    = Join-Path $raiz "app"
-
-Write-Host "Sirviendo $app en http://localhost:$puerto (solo loopback) ..."
-Start-Process "http://localhost:$puerto/index.html"
-
-# Opcion A: Python
-python -m http.server $puerto --bind 127.0.0.1 --directory $app
-
-# Opcion B (si no hay Python): Node.js
-# npx --yes serve -l $puerto $app
+# servir-ggto.ps1 - servidor local del proyecto (solo loopback y solo app/)
+# Fuente de verdad: el script del repositorio (servir-ggto.ps1). Comportamiento:
+#  1. Comprueba que exista app/index.html.
+#  2. Si el puerto 8787 esta ocupado, busca uno libre (8788..8807) y AVISA del
+#     puerto alterno antes de continuar.
+#  3. Comprueba el runtime (Python 3.7+ o Node.js) ANTES de abrir el navegador:
+#     si no hay ninguno, avisa y sale SIN abrir una pestana que daria error.
+#  4. Levanta el servidor en 127.0.0.1 publicando unicamente app/.
+#  5. Abre el navegador cuando el puerto YA escucha (no antes).
+#     Con -SinNavegador no abre nada.
 ```
+
+> **Dueño del arranque (RN-N-01).** Estas incidencias —puerto ocupado, ausencia de
+> Python/Node, política de ejecución de scripts `.ps1`, autorización del navegador—
+> las atiende el **Soporte TI del puesto**, actor secundario de CU-01, CU-21 y CU-22
+> (`casos_uso.md` §2.1): **no entra en la matriz de permisos de datos** porque no
+> escribe en el sistema, y su criterio de aceptación es el de CU-22 (el servidor
+> responde en `127.0.0.1:8787` sirviendo solo `app/`). **Pendiente de confirmar en la
+> máquina real** (ver §7.3 y `entornos_globales.md` §11).
 
 | Control | Efecto | Requisito |
 |---|---|---|
@@ -254,7 +259,7 @@ Restricciones conocidas: Firefox y Safari no soportan la API → la página avis
 
 ### 3.4 Matriz de permisos operador / supervisor (D-35, **D-61**, RNF-12)
 
-El rol «administrador» queda **absorbido por el supervisor** (D-35); los casos de uso todavía lo listan como actor, y su actualización es un trabajo de Fase 2 en curso.
+El rol «administrador» queda **absorbido por el supervisor** (D-35, D-55), **sin residuo** en `casos_uso.md` ni en los diagramas: el corpus solo lo menciona para decir que fue absorbido.
 
 **De dónde sale el rol (D-61).** El rol de cada sesión **no se deduce del nombre ni del `P00`**: se lee del campo **`rol` de `tecnicos.json`**, cuyos dos únicos valores son **`Operador`** y **`Supervisor`**, con **`Operador` por defecto** —un registro sin `rol` (padrón heredado) se lee como operador y una sesión de operador nunca queda habilitada como supervisora por accidente—. El rol se resuelve al iniciar sesión (CU-01 paso 10) y, **junto con `status` (Activo/Inactivo)**, es lo que determina esta matriz (D-35, RNF-12). El supervisor **crea y edita ese campo** en CONFIGURACION → TECNICOS (CU-03, D-61).
 
@@ -269,12 +274,12 @@ El rol «administrador» queda **absorbido por el supervisor** (D-35); los casos
 | Bandeja GESTION (RF-15) | No | Sí |
 | Ingesta del CSV (RF-16 a RF-19) | Sí | Sí |
 | Alta manual de casos (RF-04) | Sí | Sí |
-| Asignar o cambiar sector (RF-18) | Sí | Sí |
+| Asignar o cambiar sector (RF-18) | **No resuelve la cola**: solo *propone*; la cola la resuelve el supervisor (D-60, **D-75**) | Sí |
 | Generar y ajustar el despacho (RF-08, RF-09, RF-20) | No | Sí |
 | Emitir PDF del despacho y registrar entrega (RF-10) | No | Sí |
 | Padrones CENTRAL / TECNICOS / FLOTA / CUADRILLA / SECTORES (RF-11 a RF-14, RF-29) | No | Sí |
 | Palabras clave de clasificación (RF-27) | No | Sí |
-| MONITOREO, GRAFICOS y reportes (RF-05, RF-06, RF-25, RF-26) | Solo lectura | Sí |
+| MONITOREO, GRAFICOS y reportes (RF-05, RF-06, RF-25, RF-26). **REPORTES no es pestaña propia: es la sub-pestaña «REPORTES y seguimiento» de MONITOREO** (D-76), así que el operador no la alcanza | **No** (así lo fija la matriz de `casos_uso.md` §2.1 y `monitoreo.ver` en `nucleo.js`) | Sí |
 | Respaldo y restauración (D-36, D-49) | No | Sí |
 | Restablecer la contraseña de un técnico (D-39) | No | Sí |
 | Asignar o cambiar el campo `rol` de un técnico (`Operador`/`Supervisor`, D-61) | No | Sí |
@@ -374,44 +379,58 @@ Conserva las **12 columnas del fuente** (L57) y añade 3 campos por D-31: **15 c
 
 El CSV real tiene **80 columnas**, separador `;`, UTF-8, con encabezados repetidos (`informacion` ×2 col. 31-32, `nombre` ×2 col. 33 y 76, `descripcion` ×3 col. 52, 57 y 59); por eso el contrato **no puede ser por nombre** y es **posicional** (D-12, D-21): declara solo las columnas necesarias, no las 80.
 
-**Forma del archivo** (una entrada por campo; `tipo` usa `T`, `F`, `E`, `N`):
+**Forma del archivo** (contrato **v2**: una entrada por campo; `tipo` usa `T`, `F`, `E`, `N`; cada campo declara además el nombre de `cabecera` que debe tener esa columna del CSV, porque la validación es **bloqueante y compara posición y nombre** —D-44—):
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "columnas_esperadas": 80,
   "separador": ";",
   "codificacion": "UTF-8",
   "campos": [
-    { "json": "id_averia", "columna": 11, "tipo": "T", "obligatorio": true },
-    { "json": "informacion_1", "columna": 31, "tipo": "T", "obligatorio": false },
-    { "json": "fecha_cita", "columna": 19, "tipo": "F", "obligatorio": false }
+    { "json": "id_averia", "columna": 11, "tipo": "T", "obligatorio": true, "cabecera": "id_averia" },
+    { "json": "ultimo_usuario", "columna": 20, "tipo": "T", "obligatorio": false, "cabecera": "ultimo_usuario" },
+    { "json": "direccion", "columna": 34, "tipo": "T", "obligatorio": false, "cabecera": "direccion" },
+    { "json": "Reparador Principal", "columna": 65, "tipo": "T", "obligatorio": false, "cabecera": "Reparador Principal" }
   ],
-  "filtro_central": { "columnas": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+  "filtro_central": {
+    "columnas": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "claves": ["region", "estado_geografico", "capital_estado", "municipio", "parroquia",
+      "estado_operativo", "distrito", "area", "central", "nombre_central"]
+  },
+  "no_se_persisten": [18, 30, 53, 80]
 }
 ```
 
-| # | Campo JSON | Col. CSV | Columna del CSV | Notas |
+> **Nota de versiones.** La **v1** del contrato (solo `json`, `columna`, `tipo` y `obligatorio`, sin `cabecera` ni `no_se_persisten`) queda superada: el contrato vivo de `C:\GGTO\datos\estructura.json` y la semilla de `nucleo.js` (`estructurasIniciales()`) son la **v2**, con los **25 campos** de la tabla siguiente. La aplicación valida la v2 de forma bloqueante (D-44), así que un `estructura.json` v1 se considera incompleto.
+
+| # | Campo JSON | Col. CSV | `cabecera` del CSV | Notas |
 |---|---|---|---|---|
-| 1 | `id_averia` | 11 | `id_averia` | PK |
-| 2 | `telefono` | 14 | `telefono` | — |
-| 3 | `persona_reporta` | 16 | `persona_reporta` | — |
-| 4 | `contacto` | 17 | `contacto` | — |
-| 5 | `ultimo_comentario` | 21 | `ultimo_comentario` | RN-03 |
-| 6 | `problema_reporte` | 28 | `problema_reporte` | RN-03 |
-| 7 | `informacion_1` | 31 | `informacion` (1.ª) | D-10 |
-| 8 | `informacion_2` | 32 | `informacion` (2.ª) | D-10 |
-| 9 | `nombre` | 33 | `nombre` (abonado) | — |
-| 10 | `direccion` | 34 | `direccion` | Base del sector |
-| 11 | `olt` | 36 | `olt` | — |
-| 12 | `plan` | 39 | `plan` | — |
-| 13 | `slot` | 40 | `slot` | — |
-| 14 | `puerto` | 41 | `puerto` | — |
-| 15 | `fat` | 43 | `fat` | — |
-| 16 | `serial` | 44 | `serial` | — |
-| 17 | `extra` | 46 | `extra` | Red / planta externa |
-| 18 | `ups` | 62 | `ups` | Planta externa |
-| 19 | `codigos_sin_gestion_en_VENAPP` | 64 | `codigos_sin_gestion_en_VENAPP` | — |
+| 1 | `id_averia` | 11 | `id_averia` | PK; **obligatoria** |
+| 2 | `telefono` | 14 | `telefono` | **Obligatoria** |
+| 3 | `fecha_reporte` | 15 | `fecha_reporte` | Produce también `fecha_reporte_original` (D-21) |
+| 4 | `persona_reporta` | 16 | `persona_reporta` | — |
+| 5 | `contacto` | 17 | `contacto` | — |
+| 6 | `fecha_cita` | 19 | `fecha_cita` | Base de los «citados» del día (D-30) |
+| 7 | `ultimo_usuario` | 20 | `ultimo_usuario` | Único componente del rastro de origen → `usuario_modificacion` (D-52, D-53) |
+| 8 | `ultimo_comentario` | 21 | `ultimo_comentario` | RN-03 |
+| 9 | `estatus` | 27 | `estatus` | Solo decide `status` (D-38) |
+| 10 | `problema_reporte` | 28 | `problema_reporte` | RN-03 |
+| 11 | `informacion_1` | 31 | `informacion` (1.ª) | D-10 |
+| 12 | `informacion_2` | 32 | `informacion` (2.ª) | D-10 |
+| 13 | `nombre` | 33 | `nombre` (abonado) | — |
+| 14 | `direccion` | 34 | `direccion` | Base del sector; **no obligatoria** (D-69) |
+| 15 | `olt` | 36 | `olt` | — |
+| 16 | `plan` | 39 | `plan` | — |
+| 17 | `slot` | 40 | `slot` | — |
+| 18 | `puerto` | 41 | `puerto` | — |
+| 19 | `fat` | 43 | `fat` | — |
+| 20 | `serial` | 44 | `serial` | — |
+| 21 | `extra` | 46 | `extra` | Red / planta externa |
+| 22 | `unidad_negocio` | 61 | `unidad_negocio` | `tipo_abonado` (D-17) |
+| 23 | `ups` | 62 | `ups` | `tipo_abonado` y planta externa (D-17) |
+| 24 | `codigos_sin_gestion_en_VENAPP` | 64 | `codigos_sin_gestion_en_VENAPP` | — |
+| 25 | `Reparador Principal` | 65 | `Reparador Principal` | Cuadrilla asignada (D-31) |
 
 **Columnas del CSV, su uso y su destino en el maestro** (las que producen campo quedan además declaradas en `estructura.json`, tabla anterior)
 
@@ -976,7 +995,7 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | Datos de trabajo (JSON + historial + log) | `C:\GGTO\datos` (incluye `historial.jsonl`, *append-only*, D-56, y `incidencias.log` con rotación 5 MB × 5 archivos, **D-64**) | D-19, RT-10 |
 | Respaldo del maestro | `C:\GGTO\respaldo` (copia fechada al cierre; el supervisor la lleva a la red o a un pendrive) | D-49, RNF-16; D-36 (respaldo manual a demanda) |
 | **Ruta controlada de los PDF del despacho** | **`C:\GGTO\despachos`** — carpeta autorizada aparte; es la única con datos personales impresos y **nunca** se usa la carpeta de Descargas | **D-67**; D-27, RNF-11 |
-| Metadata de git | `C:\GGTO\proyecto\.git` (el directorio anterior `C:\GGTO\git\GGTO-v1.git` queda como respaldo del historial) | D-22, D-51, RT-11 |
+| Metadata de git | `C:\GGTO\proyecto\.git` es el **directorio** de git del proyecto (verificado con `git rev-parse --git-dir`); `C:\GGTO\git\GGTO-v1.git` se conserva **solo como copia histórica** del repositorio anterior, no como la raíz de trabajo | D-22, D-51, RT-11 |
 | CSV diario de entrada | lo aporta el emisor cada día y **no se versiona** (el repositorio es público): el operador lo elige con el selector de archivos; para las pruebas se usa la muestra anonimizada de `pruebas/fixtures/` | RT-02, RT-08; **D-71** |
 
 > **Regla operativa (D-51, `entornos_globales.md` §9):** **no trabajar ni copiar archivos sobre `G:`**. Tras el incidente de cuota del 13/09/2026, el cliente del volumen de Google Drive rechaza toda escritura de 1 KB o más y dos archivos de documentación quedaron en 0 bytes al copiarlos. Google Drive **sale del flujo**: el proyecto vive en `C:\GGTO\proyecto`, los datos en `C:\GGTO\datos`, el respaldo en `C:\GGTO\respaldo` y la copia compartida son los repositorios GitHub/GitLab.
@@ -988,18 +1007,23 @@ La rotación se prueba con el límite parametrizado en `pruebas/pruebas_c1b.mjs`
 | GitHub (`origin`) | https://github.com/anlucorporations/GGTO.git | `main` (estable), `GGTOv1-DSH` (desarrollo) |
 | GitLab (`gitlab`) | https://gitlab.com/anlucorporations/ggto.git | `main` (estable), `GGTOv1-DSH` (desarrollo) |
 
-Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.** El CSV, los PDF de despacho y el `.xlsm` se mantienen versionados (D-36, riesgo aceptado).
+Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.** Los repositorios son **públicos**, así que el CSV diario, `alta_manual.csv`, los PDF de despacho y el `.xlsm` **no se versionan** y se purgaron del historial el 14/09/2026 (**D-71**; sustituye al supuesto de D-36). Lo único versionado con datos es la **muestra anonimizada** de `pruebas/fixtures/`, que reproduce el contrato sin valores reales.
 
 ### 7.3 Puesto de trabajo
 
-| Requisito | Detalle |
-|---|---|
-| Navegador | **Edge o Chrome** Chromium ≥ 86 (File System Access API). Firefox y Safari solo en modo descarga |
-| Resolución | Mínima 1366 × 768; diseño para 1440 × 900 |
-| Impresión | Impresora con papel carta; el PDF del despacho se genera horizontal |
-| Software de apoyo | Python 3.7+ **o** Node.js, solo para el lanzador |
-| Puerto | 8787 en loopback (`Get-NetTCPConnection -LocalPort 8787` para verificar) |
-| GCP | **No aplica:** ejecución local en la central |
+| Requisito | Detalle | Responsable de provisionarlo y confirmarlo |
+|---|---|---|
+| Navegador | **Edge o Chrome** Chromium ≥ 86 (File System Access API). Firefox y Safari solo en modo descarga | Soporte TI del puesto (RN-N-01) |
+| Resolución | Mínima 1366 × 768; diseño para 1440 × 900 | Soporte TI del puesto |
+| Impresión | Impresora con papel carta; el PDF del despacho se genera horizontal | Soporte TI del puesto |
+| Software de apoyo | Python 3.7+ **o** Node.js, solo para el lanzador | Soporte TI del puesto |
+| Puerto | 8787 en loopback (`Get-NetTCPConnection -LocalPort 8787` para verificar); si está ocupado el lanzador usa un puerto alterno 8788–8807 | Soporte TI del puesto |
+| GCP | **No aplica:** ejecución local en la central | — |
+
+> **Confirmación en el puesto (pendiente, con dueño).** Antes de cerrar la implantación, el
+> **Soporte TI del puesto** confirma en la máquina real: navegador y versión, Python o Node
+> disponibles, puerto 8787 libre (o el alterno elegido), impresora y política de ejecución de
+> scripts habilitada; la evidencia se anota en `entornos_globales.md` §11.
 
 ### 7.4 Procedimiento de respaldo (D-36, D-42, D-49)
 
@@ -1013,6 +1037,8 @@ Regla del proyecto: **no se hace push ni pull sin orden explícita del usuario.*
 | 6 | Al cierre de la jornada, la página **ofrece** la copia fechada del maestro en `C:\GGTO\respaldo\` (sin cifrado); el supervisor la lleva a la red o a un pendrive | Página / Supervisor |
 
 Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas versiones `.bak`** del maestro (D-42, §5.3). El **historial `historial.jsonl` se copia junto con el maestro** en el respaldo y **nunca se recorta** (D-49, D-56). El **log de accesos `incidencias.log`** (y sus copias rotadas) **no** entra en esta copia: su retención es su propia rotación de 5 MB × 5 archivos (D-58, **D-64**, §4.5.1). **Objetivos (D-49, RNF-16): RTO 1 hora y RPO = cierre del día anterior.** El respaldo va a disco local **sin cifrado** y se conserva el **riesgo aceptado** de pérdida entre cierres. Los datos nunca viven en Google Drive ni en la nube; **no se copia nada sobre `G:`** (D-51).
+
+> **Qué significa «10 archivos» (aclaración del lente R2).** El 10 es una **lista blanca** —los 9 JSON de trabajo y `historial.jsonl`—, **no** el número de entradas del directorio: `C:\GGTO\datos` puede contener además respaldos `.bak` del maestro (rotación D-42) y copias manuales de otros archivos, que **no entran** en la copia de cierre. El protocolo de rotación `.bak` es del **maestro** (`averias.json`, D-42); una copia manual de otro archivo (por ejemplo `estructura_......_manual.bak`) es un archivo de trabajo del supervisor, ajeno a la copia de cierre y no verificado por la página.
 
 ---
 
@@ -1033,6 +1059,9 @@ Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas v
 | **Log sin escritura verificada** (RN-19) | Cada asiento de `incidencias.log` se escribe releyendo y reescribiendo el archivo **sin el protocolo de D-42**: una caída a mitad de escritura puede truncar evidencia de auditoría | **Aceptado y declarado (D-74)** |
 | **Control documental de sesión** (RN-20) | Al recargar la página el control de entrega/recogida/destrucción vuelve a empezar: solo quedan los asientos del log | **Decidido y declarado (D-68)**; la página lo advierte y el soporte oficial es el papel |
 | **Cuatro categorías ISO 25010 sin RNF** (RN-13) | Mantenibilidad, disponibilidad/continuidad, observabilidad formal y cumplimiento legal/privacidad no tienen requisito propio | **Declarado en `requerimientos.md` §5**; no bloquea el cierre, debe resolverse o aceptarse antes de ampliar el uso |
+| **El abonado no es actor del sistema** (RN-N-02) | El titular de los datos no tiene rol, ni procedimiento de derechos, ni notificación del cierre; el rastro lo consulta y lo corrige el propio responsable del tratamiento | **Declarado:** canal único en la ficha (`entornos_globales.md` §12), con derechos, plazos y responsable distintos de quien ejecuta el cambio **pendientes de validación legal**; `cliente_notificado` (col. 30) **no se persiste** (**D-75**) |
+| **Validación legal pendiente sin dueño ni fecha** (RN-N-03) | La base de licitud y los plazos están declarados como pendientes, pero sin responsable nombrado ni artefacto de salida | **Pendiente con dueño:** la **jefatura de la central** escala al **área legal de CANTV**, que devuelve la validación por escrito de base de licitud, finalidad y plazos (`entornos_globales.md` §12) |
+| **Auditoría retirada por decisión** (RN-N-04) | D-55 retira al auditor: **quien produce el rastro es quien lo audita**, sin rol de solo lectura ni entrega de evidencia a terceros, y el log no registra consultas ni exportaciones | **Aceptado y declarado (D-55, D-74):** si se requiere auditoría externa, habrá que definir la entrega de `historial.jsonl` e `incidencias.log` con responsable y constancia |
 
 ### 8.2 Riesgos de Google Drive (ya corregidos)
 
@@ -1045,14 +1074,14 @@ Además de la copia a demanda (D-36), cada guardado conserva las **10 últimas v
 
 ### 8.3 Pendientes técnicos de implementación
 
-**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-74** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
+**No hay decisiones de diseño pendientes:** las decisiones vigentes son **D-01 a D-76** y las ambigüedades están cerradas (A-01 con D-53, A-04 con D-25/D-54, A-05 con D-30, A-08 con D-34, A-09 con D-33, A-10 con D-32, A-11 con D-17/D-29, A-12 con D-12, A-14 con D-31, A-15 con D-13/D-38, A-16 y A-18 con D-21, A-17 con D-14). Los puntos que quedan son **técnicos**, se resuelven al implementar y ninguno exige una decisión nueva del usuario.
 
 Los **4 pendientes técnicos** que siguen son los de implementación ya conocidos; el requisito derivado **S-RNF-02b** (umbral de rendimiento de la ingesta) es el **n.º 4**, que `casos_uso.md` §5.1/§5.4 declara **pendiente técnico de calibración, no decisión del usuario**. **Estado real de cada uno:** el **n.º 1 está cerrado** (las librerías locales son **Chart.js 4.4.7** y **jsPDF 2.5.2**, y **PapaParse no se usa**: la ingesta parsea el CSV posicionalmente en `ingesta_nucleo.js`); el **n.º 2 sigue abierto** (es un acuerdo de proceso con el emisor del CSV, no una decisión técnica); el **n.º 3 está cerrado** por **D-66** (convención de semanas) y **D-72** (corte y umbral de las averías concentradas); y el **n.º 4 sigue abierto**: está implementado, pero la medición hecha hasta ahora **no reproduce el punto de medida declarado** (ver la fila 4 y la nota siguiente). El destino de la col. 18 `fecha_compromiso` quedó cerrado por **D-54**, y el **historial inmutable** —antes el n.º 2— por **D-56** (`historial.jsonl` *append-only*, §4.4). **Ninguna decisión de usuario queda abierta en este documento.**
 
 | # | Pendiente técnico | Referencia |
 |---|---|---|
 | 1 | Fijar las **versiones** exactas de las librerías de `app/lib/` al descargarlas en C1 y registrarlas en `entornos_globales.md` §2. **Cerrado:** son **Chart.js 4.4.7** y **jsPDF 2.5.2**; PapaParse y jsPDF-AutoTable **no se usan** | `entornos_globales.md` §2 y §11 |
-| 2 | Definir el **canal y registro del escalamiento** con el emisor del CSV cuando el archivo del día no llega (hoy solo se registra la novedad en `datos/incidencias.log`, D-46, con la rotación de D-64) | H-15 / H-24 |
+| 2 | Definir el **canal y registro del escalamiento** con el emisor del CSV cuando el archivo del día no llega (hoy solo se registra la novedad en `datos/incidencias.log`, D-46, con la rotación de D-64). **Abierto, con dueño: el supervisor de la central**, que reclama el archivo al emisor corporativo y deja la constancia local; falta acordar por escrito el canal, la hora límite de entrega y el procedimiento de reclamo | H-15 / H-24; **RN-N-01** de la reauditoría (actores) |
 | 3 | Fijar el **corte semanal exacto** de la métrica de averías concentradas. **Cerrado por D-66 y D-72:** semana operativa de **lunes a sábado** (Sem 1 = primer lunes del año), umbral editable en `claves_clasificacion.umbral_concentracion` (3 por defecto, admite **1**), **sin excluir ninguna clase** del conteo y con el corte por **`ingreso`** (respaldo `fecha_reporte`) | **D-66, D-72**; D-25, RF-26, RN-08, RNF-06; CU-20 |
 | 4 | Fijar el **umbral de rendimiento propio de la ingesta** (criterio derivado **S-RNF-02b**): leer el CSV, validar el contrato posicional de 80 columnas, deduplicar e insertar la jornada en **menos de 3 s**, con punto de medida explícito (desde el clic en *Confirmar ingesta* hasta que el resumen aparece en pantalla, con 1.000 casos de maestro y 60 registros de CSV), alineado con D-24 y con RNF-02. **ABIERTO:** implementado, pero la prueba actual mide la **función pura** (`ingerir`) con el maestro y el catálogo de sectores **vacíos**, así que no cubre el punto de medida declarado | **`casos_uso.md` CU-08 CA-14 y §5.1/§5.4** (requisito derivado); RNF-02, D-24; §6.3 (`ingesta.js`) |
 
@@ -1107,7 +1136,7 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 
 ---
 
-## 11. Anexo — Decisiones D-01 a D-74
+## 11. Anexo — Decisiones D-01 a D-76
 
 | ID | Decisión (una línea) |
 |---|---|
@@ -1175,8 +1204,8 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-62 | **Arranque en frío:** si `tecnicos.json` está vacío, la página ofrece crear el **primer supervisor** —único caso en que se crea un padrón sin sesión—, que queda con `rol = Supervisor` y `clave_cambio_obligatorio = SI` (§3.4 y §4.5) |
 | D-63 | **Formato de la credencial:** `clave_hash` es el **SHA-256 en hexadecimal (64 caracteres)** de `clave_sal + ":" + contraseña` codificada en **UTF-8**, y `clave_sal` es aleatoria por técnico (§4.5) |
 | D-64 | **Log de accesos:** `C:\GGTO\datos\incidencias.log` registra los intentos fallidos y las acciones denegadas (fecha y hora, `P00` intentado y motivo), **sin datos personales**, con rotación de **5 MB × 5 archivos** (§4.5.1 y §5.4) |
-| D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»** (las formas que usa el CSV); con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION** (§4.6, §5.2) |
-| D-66 | **Convención de semanas:** **Sem 1** es la semana que empieza el **primer lunes del año** y la semana operativa va de **lunes a sábado** (RN-08); con 2026, la **Sem 36** es la del 07/09 al 12/09 (§5.2, CU-18 a CU-20) |
+| D-65 | **Claves por defecto ajustadas a los datos reales:** la lista incluye **«LOS ROJO»** y **«FALLA DE FIBRA»** (las formas que usa el CSV); con ese catálogo, el archivo del 12/09/2026 da **17 con claves / 34 sin claves → 18 PEND + 33 GESTION** (§4.5 y §4.7.3). El catálogo es una **constante única** del núcleo (`CONST.CLAVES_CLASIFICACION`), que usan la semilla y el respaldo de CONFIGURACION → PALABRAS CLAVE |
+| D-66 | **Convención de semanas:** **Sem 1** es la semana que empieza el **primer lunes del año** y la semana operativa va de **lunes a sábado** (RN-08); con 2026, la **Sem 36** es la del 07/09 al 12/09 (§8.3, §9 y §10; CU-18 a CU-20) |
 | D-67 | **Ruta controlada de los PDF del despacho:** se guardan en **`C:\GGTO\despachos`** —carpeta autorizada aparte, como `datos` y `respaldo`—, con **verificación por relectura** (tamaño y suma de control), **nunca** en la carpeta de Descargas (D-27); las reemisiones del mismo día usan el sufijo `_rN` y **no pisan** la versión anterior. *Procedimiento completo en `entornos_globales.md` §4.3; módulo en §2.3 (`pdf.js`); CU-17 flujo 6a* |
 | D-68 | **El control documental del despacho no se persiste:** la entrega, la recogida y la destrucción de las hojas por cuadrilla viven en la **sesión** y cada acción deja su **asiento en `datos/incidencias.log`**; **no se añade ningún archivo** a `datos/` (la copia de cierre de D-49 sigue siendo de 10 archivos) y el **soporte oficial del día es la hoja impresa y el `.xlsm`**. Al recargar, el control vuelve a empezar y la página lo advierte. *Procedimiento y asientos en `entornos_globales.md` §4.4; módulo en §2.3 (`despacho.js`); CU-17 flujo 8c* |
 | D-69 | **La dirección no es obligatoria en el contrato del CSV:** `estructura.json` la declaraba obligatoria, pero el archivo real trae 4 de 51 filas sin ella y CU-08 exige insertar las 51; esas filas entran y quedan en la cola de sectores (CU-09, RN-04). Sigue siendo obligatoria en el maestro (§4.3) |
@@ -1185,3 +1214,5 @@ Cada ciclo es un **hito vertical usable**: al terminarlo, el sistema se puede op
 | D-72 | **Averías concentradas (RF-26, CU-20):** el conteo es el total de **casos abiertos** del sector, **sin excluir ninguna clase** (la construcción cuenta igual) y el **umbral admite 1**; el corte semanal usa **`ingreso`** con respaldo en `fecha_reporte` (§5.2, RN-21) |
 | D-73 | **El asiento de entrega no lleva el nombre del receptor:** `incidencias.log` no tiene datos personales (D-58); el receptor queda en la hoja impresa y en el control documental de la sesión (§4.7, RN-05) |
 | D-74 | **Riesgos de operación aceptados:** el log se escribe sin el protocolo de escritura verificada de D-42 (RN-19); el respaldo sale del equipo por un acto manual sin verificación de salida y el RTO de 1 h no es alcanzable sin equipo sustituto (RN-11) (§8.1) |
+| D-75 | **Ajustes de contrato y permisos (reauditoría, actores):** la col. 30 `cliente_notificado` no se persiste (`no_se_persisten = [18, 30, 53, 80]`); la cola de sectores de CU-09 la resuelve el supervisor porque la propuesta de D-60 no está implementada; y §3.4 se alinea con la matriz de `casos_uso.md` §2.1 (el operador no ve MONITOREO, GRAFICOS ni reportes) (§3.4, §7.3) |
+| D-76 | **REPORTES (CU-19, CU-20) no es una pestaña propia: vive en la sub-pestaña «REPORTES y seguimiento» de MONITOREO.** RF-01 fija siete pestañas y MONITOREO ya exige `monitoreo.ver` (supervisor), la misma audiencia que `concentradas.ver`; `metricas.js` invoca a `reportes.js` con el mismo patrón con que CONFIGURACION aloja RESPALDO y ENTORNO (D-70). Cierra el hallazgo **R2-03** de la reauditoría: el módulo de reportes no tenía ninguna ruta que lo renderizara (§2.3, §6.1, CU-19) |

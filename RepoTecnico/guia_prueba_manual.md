@@ -15,7 +15,7 @@
 |---|---|
 | Navegador Edge o Chrome actualizado | La página usa la File System Access API; Firefox no la soporta (solo permitiría el modo descarga). |
 | Python 3.7 o superior | `python --version`. Es lo que levanta el servidor local. |
-| La carpeta de datos existe | `C:\GGTO\datos` con sus 10 archivos. Si falta, la propia página ofrece crearla. |
+| La carpeta de datos existe | `C:\GGTO\datos` con sus **10 archivos de trabajo** (los 9 JSON y `historial.jsonl`). Si falta, la propia página ofrece crearla. El directorio puede contener además respaldos `.bak` del maestro: no cuentan en esa lista y no entran en la copia de cierre. |
 
 > **Importante:** no abras `index.html` con doble clic. En `file://` el navegador bloquea la lectura
 > de los archivos de datos. Usa siempre `http://localhost:8787`.
@@ -167,17 +167,21 @@ y sirve **solo** el subdirectorio `app/`; si además quieres comprobarlo, abre
 
 ### 3.10 REPORTES y seguimiento (CU-19, CU-20, ciclo C6)
 
-- [ ] La pestaña **REPORTES** muestra el **parte de trabajo del día**: ingresos, resueltos (por tipo),
+> **REPORTES no es una pestaña propia** (las pestañas siguen siendo 7, RF-01): es la **sub-pestaña
+> «REPORTES y seguimiento»** de la pestaña **MONITOREO**, junto a TABLERO, con el mismo patrón que
+> RESPALDO y ENTORNO en CONFIGURACION (D-76). Como MONITOREO, es **exclusiva del supervisor**.
+
+- [ ] En **MONITOREO**, la sub-pestaña **REPORTES y seguimiento** muestra el **parte de trabajo del día**: ingresos, resueltos (por tipo),
       pendientes al cierre, total del maestro y casos especiales abiertos.
 - [ ] **Casos especiales**: lista de los empresariales (EMP) y referidos (REF) que siguen abiertos, con
       su sector, tipo y cuadrilla (D-33).
 - [ ] **Averías concentradas**: por sector, los casos abiertos ingresados en la **semana operativa**, y
       la marca de **concentrada** cuando alcanza el umbral (por defecto 3, editable en CONFIGURACION →
       palabras clave; D-25).
-- [ ] Cambiar el umbral en CONFIGURACION cambia la marca de concentración al volver a la pestaña.
+- [ ] Cambiar el umbral en CONFIGURACION cambia la marca de concentración al volver a la sub-pestaña.
 - [ ] **Emitir el parte del día** deja constancia en `incidencias.log` e informa cuántos cambios hubo en
       el historial desde la emisión anterior.
-- [ ] Un operador **no** puede abrir la pestaña (es del supervisor) y el intento queda registrado.
+- [ ] Un operador **no** puede abrir MONITOREO (la sub-pestaña REPORTES es del supervisor) y el intento queda registrado.
 
 ### 3.11 Respaldo y restauración (CU-21, ciclo C7)
 
@@ -285,14 +289,15 @@ contra el CSV real**: la ruta controlada de los PDF (D-67), el control documenta
 el diagnóstico de CU-22, la copia de cierre y la restauración de CU-21.
 
 Además hay una **comprobación de interfaz** que sí abre la página real en un navegador headless y
-renderiza las 8 vistas (necesita Chrome o Edge instalado):
+renderiza las 8 vistas —las 7 pestañas y la sub-pestaña REPORTES de MONITOREO— (necesita Chrome o Edge
+instalado):
 
 ```powershell
 cd C:\GGTO\proyecto
 node pruebas/interfaz.mjs
 ```
 
-Deben pasar **50 de 50**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
-(por ejemplo, que una pestaña no renderice, que falte cargar una librería local o que un bloque no
-tenga punto de entrada), y recorre de verdad la **sesión con credencial**, la **ingesta del CSV real**,
+Deben pasar **52 de 52**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+(por ejemplo, que una pestaña no tenga su sección real, que falte cargar una librería local o que un
+bloque no tenga punto de entrada), y recorre de verdad la **sesión con credencial**, la **ingesta del CSV real**,
 el alta del despacho, la entrega, la recogida y la destrucción de las hojas, el respaldo y el reporte.

@@ -217,12 +217,15 @@ test('aplica la matriz de permisos y el ámbito de cuadrilla', async () => {
   // La matriz: prohibido para el operador, permitido para el supervisor.
   ['config.central', 'config.tecnicos', 'config.flota', 'config.cuadrillas',
     'config.sectores', 'config.claves', 'gestion.bandeja', 'despacho.generar',
-    'respaldo.ejecutar', 'casos.auditoria', 'monitoreo.ver'].forEach((accion) => {
+    'respaldo.ejecutar', 'casos.auditoria', 'monitoreo.ver',
+    // CU-09: en el MVP la cola de sectores la resuelve el supervisor, porque la
+    // propuesta con aprobación de D-60 no está implementada (D-75).
+    'sector.cola'].forEach((accion) => {
     assert.equal(N.permite('Operador', accion), false, accion + ' debe estar prohibida al operador');
     assert.equal(N.permite('Supervisor', accion), true, accion + ' debe estar permitida al supervisor');
   });
   ['sesion.iniciar', 'casos.consultar', 'casos.editar', 'casos.cerrar', 'casos.alta',
-    'ingesta.ejecutar', 'sector.cola', 'entorno.diagnostico'].forEach((accion) => {
+    'ingesta.ejecutar', 'entorno.diagnostico'].forEach((accion) => {
     assert.equal(N.permite('Operador', accion), true, accion + ' debe estar permitida al operador');
   });
   assert.equal(N.permite('Administrador', 'config.central'), false);
@@ -417,7 +420,7 @@ test('valida enums, teléfono, tipo calculado y estructuras iniciales', () => {
   assert.equal(base['estructura.json'].campos.length, 25);
   assert.ok(base['estructura.json'].campos.some((c) => c.json === 'estatus' && c.columna === 27),
     'la semilla debe declarar la columna 27 (estatus)');
-  assert.deepEqual(base['estructura.json'].no_se_persisten, [18, 53, 80]);
+  assert.deepEqual(base['estructura.json'].no_se_persisten, [18, 30, 53, 80]);
 
   // Serialización estable con salto de línea final (UTF-8 sin BOM).
   const serializado = N.serializarJSON(base['central.json']);

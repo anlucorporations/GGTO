@@ -1,11 +1,23 @@
 # Reauditoría del Documento Técnico — GGTO-v1
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías, central Francisco Salias (Área 4), CANTV.
-- **Documento reauditado:** `RepoTecnico/documento_tecnico.md` — **1.176 líneas**, 16 módulos en `app/js/`, decisiones **D-01 a D-70**.
+- **Documento reauditado:** `RepoTecnico/documento_tecnico.md` — 16 archivos `.js` en `app/js/` (14 módulos y 2 núcleos puros), decisiones **D-01 a D-70** en el momento de emitir este informe (el anexo llega hoy a **D-76**). No se cita el número de líneas: es un documento vivo (hallazgo **R2-10**).
 - **Informe previo:** `RepoTecnico/auditoria_documento_tecnico.md` (10 hallazgos A-01…A-10, 8 preguntas P1…P8).
 - **Método:** skill `equipo-auditoria` — Fase 1 (7 lentes en paralelo), Fase 2 (verificación adversarial por dimensión: filtra falsos positivos, deduplica, ajusta severidades), Fase 3 (esta síntesis).
 - **Alcance:** solo lectura y verificación. La única escritura es este informe. Cada afirmación cita `ruta:línea`.
 - **Regla de admisión:** *ante la duda, DESCARTA*. Solo se promueven hallazgos con evidencia confirmada en los informes de verificación de las 7 dimensiones. No se añadió ningún hallazgo ausente de ellos.
+
+> ### ESTADO FINAL (14/09/2026) — FASE 2 CERRADA
+>
+> El veredicto condicionado de §1 y los 22 hallazgos RN-01…RN-22 se conservan **como registro** de lo que
+> encontró la reauditoría. Desde entonces: **RN-01** se resolvió con **D-71** (repositorios públicos +
+> purga de datos personales), **RN-02** se resolvió **reformulando la evidencia** (S-RNF-02b queda
+> «implementado y pendiente de medir en el puesto»), **RN-03/RN-04** se corrigieron en el código y
+> **RN-05 a RN-22** quedaron resueltos o declarados con su riesgo aceptado (**D-72 a D-75**); el detalle
+> está en **§10**. Además se **re-ejecutó el lente R2**, que en la primera pasada no había producido un
+> pase válido: sus **13 hallazgos** de consistencia documento ↔ código están en **§11**, todos resueltos,
+> verificados como falsos positivos o corregidos. Métricas finales: **149 pruebas** de módulos y
+> contratos + **52 comprobaciones E2E**, sin fallos.
 
 ---
 
@@ -26,7 +38,7 @@
 | Dimensión | Lente | Hallazgos verificados | Observación |
 |---|---|---|---|
 | R1 | Ambigüedad y testabilidad | 7 | El revisor entregó `null`; el verificador rehízo la comprobación y confirmó 7 defectos |
-| R2 | Consistencia | 0 | El revisor entregó una prueba mínima inválida; **sin pase real** |
+| R2 | Consistencia | 0 (1.ª pasada) → **13** (re-ejecutado, §11) | El revisor entregó una prueba mínima inválida; **sin pase real**. Re-ejecutado el 14/09/2026 contra el código vivo: 1 crítica, 3 altas, 4 medias y 5 bajas |
 | R3 | Completitud RNF (ISO 25010) | 8 | 10 hallazgos del revisor; ninguno descartado por completo, todos fusionados/ajustados |
 | R4 | Stakeholders | 0 | El revisor entregó un conjunto **vacío**; **dimensión sin revisar de origen** |
 | R5 | Trazabilidad con el brief | 6 | 6 supervivientes con severidad ajustada (1 ALTA, 2 MEDIA, 3 BAJA) |
@@ -405,30 +417,70 @@ La Fase 2 podrá declararse **cerrada** cuando se cumplan **todos** los criterio
 
 > **Sección añadida después de emitir el informe.** El veredicto de §1 y los 22 hallazgos se conservan
 > como registro de lo que encontró la reauditoría; aquí se anota qué se ha corregido desde entonces.
+> **Estado final: los 22 hallazgos quedan resueltos o declarados y la Fase 2 se cierra.**
 
 ### Bloqueantes
 
 | Hallazgo | Estado | Detalle |
 |---|---|---|
 | **RN-01** (crítica) — repositorios declarados «privados» que son públicos con datos de abonados | **RESUELTO por decisión del usuario (D-71):** se mantiene la visibilidad **pública** y se **purgan** los archivos con datos personales | Los 6 archivos (CSV diario, `alta_manual.csv`, los 3 PDF de despacho y el `.xlsm`) salieron del índice, entraron en `.gitignore` y se **purgaron de todo el historial local** (`filter-branch` + limpieza de objetos; verificado: 0 commits los contienen y 0 de los 168 identificadores reales permanecen). Las pruebas dejaron de depender del archivo real: se versiona una **muestra anonimizada** (`pruebas/fixtures/detalle_averias_gpon_muestra.csv`, con 0 valores reales y las cifras documentadas 56/5/51 y 18 PEND + 33 GESTION) regenerable con `pruebas/herramientas/anonimizar_csv.mjs`. Además se detectaron y sustituyeron valores reales que quedaban en `pruebas_c3.mjs` y en un ejemplo de `app/js/panel.js`. **Subida:** GitHub limpio (ambas ramas). **GitLab:** rama `GGTOv1-DSH` limpia; **`main` sigue protegida** con `allow_force_push: false`, así que la reescritura fue rechazada: requiere que se permita el *force push* o se desproteja temporalmente para completar la purga. |
-| **RN-02** (crítica) — el criterio de C2 se declara verificado sin medir el punto de medida | **ABIERTO** | Pendiente de reescribir la prueba para reproducir el punto de medida (1.000 casos de maestro, 60 registros, catálogo de sectores poblado y cronómetro desde el clic hasta el resumen pintado) **o** rebajar la afirmación a «pendiente de medir en el puesto». |
+| **RN-02** (crítica) — el criterio de C2 se declara verificado sin medir el punto de medida | **RESUELTO por reformulación honesta de la evidencia** | El criterio de terminado de C2 (§1.3 y §9 del documento técnico) ya **no declara verificado** S-RNF-02b: se anota como **implementado y pendiente de medir en el puesto** con el punto de medida declarado (1.000 casos de maestro, 60 registros de CSV, catálogo de sectores poblado y cronómetro desde el clic hasta el resumen pintado), y la limitación consta en §8.3 (pendiente n.º 4) y en los riesgos residuales de la Fase 4. |
 
 ### De contrato de datos (código)
 
 | Hallazgo | Estado | Detalle |
 |---|---|---|
-| **RN-03** (alta) — D-65 no implementada: el código sembraba el catálogo antiguo | **RESUELTO** | `nucleo.js` siembra el catálogo de D-65 (`LOS ROJO`, `FALLA DE FIBRA` y variantes) y una **prueba nueva** acredita que una **instalación nueva reproduce 18 PEND + 33 GESTION** con la semilla del núcleo. |
-| **RN-04** (alta) — el contrato de `estructura.json` no coincide con el real y la semilla está incompleta | **RESUELTO en su parte de código** | La semilla pasa a ser el **contrato completo** (25 campos con `cabecera`, `version: 2`, `filtro_central` y `no_se_persisten`). El defecto era real y grave: al faltar `estatus` (col. 27), una instalación nueva **no aplicaba la precedencia de `ASGN` de D-38** y daba 17 PEND + 34 GESTION. Queda pendiente propagar el contrato a la documentación del diccionario (§4.3 del documento técnico). |
+| **RN-03** (alta) — D-65 no implementada: el código sembraba el catálogo antiguo | **RESUELTO** | `nucleo.js` siembra el catálogo de D-65 (`LOS ROJO`, `FALLA DE FIBRA` y variantes) y una **prueba nueva** acredita que una **instalación nueva reproduce 18 PEND + 33 GESTION** con la semilla del núcleo. El lente **R2** encontró después un segundo frente del mismo defecto (**R2-07**, el respaldo de CONFIGURACION con 3 claves): **resuelto** con una **constante única** (`CONST.CLAVES_CLASIFICACION`) que usan la semilla y la interfaz. |
+| **RN-04** (alta) — el contrato de `estructura.json` no coincide con el real y la semilla está incompleta | **RESUELTO** | La semilla pasa a ser el **contrato completo** (25 campos con `cabecera`, `version: 2`, `filtro_central` y `no_se_persisten`). El defecto era real y grave: al faltar `estatus` (col. 27), una instalación nueva **no aplicaba la precedencia de `ASGN` de D-38** y daba 17 PEND + 34 GESTION. La propagación a la documentación que quedaba pendiente la cerró el lente **R2-06**: §4.3 del documento técnico ya describe la **v2 con sus 25 campos** y una nota de versiones. |
 
-### Pendientes
+### Resueltos o declarados en el resto del plan
 
-Siguen **abiertos** los hallazgos **RN-02** y **RN-05 a RN-22** (contrato, medición, legal y coherencia
-documental). El plan y los criterios de aceptación de §9 siguen vigentes; el más relevante para el
-cierre es **RN-05** (el nombre del receptor en `incidencias.log`, contra cuatro afirmaciones de «sin
-datos personales») por su naturaleza legal.
+| Bloque | Hallazgos | Estado |
+|---|---|---|
+| Contrato, permisos y datos personales | **RN-05** (el asiento de entrega escribía el receptor) → **D-73**; **RN-10** (16 archivos y 2 librerías), **RN-15**/**RN-07** (contrato del diccionario con `umbral_concentracion`), **RN-17**, **RN-18**, **RN-22** | **Corregidos** con prueba de regresión |
+| Comportamiento en el puesto | **RN-08** (volumen de referencia y criterios de C4/C5), **RN-12** (el lanzador abría el navegador antes que el servidor) | **RN-12 corregido en código**; **RN-08 rebajado a «pendiente de medir»** y declarado como riesgo residual |
+| Riesgos y legal | **RN-06** (base de licitud y plazo por categoría, pendiente de validación legal), **RN-11**/**RN-19** (continuidad/RTO y log sin escritura verificada) → **D-74**, **RN-N-02**, **RN-N-04** | **Declarados y aceptados** (D-74) con su constancia documental |
+| Coherencia documental | **RN-09**, **RN-13**, **RN-14**, **RN-16**, **RN-21** → **D-72** | **Corregidos**; el resto de coherencia lo cerró el lente **R2** (§11) |
 
-**Métricas tras las correcciones:** **143 pruebas** de módulos y contratos + **50 comprobaciones E2E**
+**Métricas tras las correcciones:** **149 pruebas** de módulos y contratos + **52 comprobaciones E2E**
 en verde, sin regresiones.
+
+---
+
+## 11. Lente R2 (consistencia documento ↔ código) — hallazgos y resolución
+
+> **Sección añadida después de emitir el informe.** El lente **R2** de la reauditoría se ejecutó sobre el
+> documento técnico **comparándolo con el código vivo** (`app/js/*.js`, `pruebas/`, `index.html`) y con
+> los archivos de `C:\GGTO\datos`. Emitió **13 hallazgos** (1 crítico, 3 altos, 4 medios y 5 bajos),
+> descartó explícitamente 3 falsos positivos y marcó 2 que ya se habían corregido en paralelo. Aquí se
+> anota la resolución de cada uno.
+
+| # | Sev. | Hallazgo | Resolución |
+|---|---|---|---|
+| **R2-01** | Crítica | §1.2 declaraba «14 `PEND` + 37 `GESTION`» frente al **18 + 33** del resto del mismo documento, de D-38/D-65 y de las pruebas | **Corregido** en §1.2 (18 + 33, D-38/D-65) y **blindado**: la prueba `las cifras documentadas del archivo real cuadran entre sí` verifica que 51 = 18 + 33 y que 56 = 51 + 5 |
+| **R2-02** | Alta | `COLUMNAS_DESPACHO` declaraba 9 columnas frente a las 15 documentadas | **Verificado como corregido**: la constante tiene las **15 canónicas en su orden** y es la lista de referencia de `filasDespacho`. Se añade la comprobación `la constante COLUMNAS_DESPACHO del módulo son las 15 canónicas` para que no vuelva a divergir |
+| **R2-03** | Alta | El módulo **REPORTES no era alcanzable**: `reportes.js` se exportaba pero ninguna ruta lo renderizaba, no había sección y el E2E **fabricaba** la que faltaba | **Corregido (D-76):** REPORTES es la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (patrón de CONFIGURACION con RESPALDO/ENTORNO). El E2E **ya no fabrica secciones**: exige la sección real de cada pestaña y navega por la sub-pestaña. Añadida la prueba de contrato `REPORTES se alcanza desde MONITOREO y no como pestaña propia` |
+| **R2-04** | Alta | El informe de Fase 4 y `estado_proyecto.md` daban tres totales de pruebas distintos y desgloses desactualizados | **Corregido**: una **única ejecución** como fuente (**149** módulos y contratos + **52** E2E = **201**), con el desglose real por batería en el informe, en `estado_proyecto.md` (§11, §11.2, §11.3) y en la guía (§7) |
+| **R2-05** | Media | El documento afirmaba «10 archivos» en `C:\GGTO\datos` y el directorio tiene 11 (incluido un `.bak` de `estructura.json`) | **Aclarado** en §5.4 y en la guía §1: el 10 es la **lista blanca** que se copia (9 JSON + `historial.jsonl`), los `.bak` del maestro son la rotación de D-42 y una copia manual de otro archivo queda **fuera** de la copia de cierre |
+| **R2-06** | Media | §4.3 describía `estructura.json` como **v1 con 19 campos**, cuando el contrato vivo es **v2 con 25 campos y `cabecera`** | **Corregido**: §4.3 muestra la **v2** (con `cabecera`, `filtro_central` y `no_se_persisten`), enumera los **25 campos** y añade una **nota de versiones** que explica qué era la v1 |
+| **R2-07** | Media | El respaldo de claves de CONFIGURACION traía **3 claves** y el catálogo por defecto documentado es de **6** | **Corregido en código**: catálogo **único** en `CONST.CLAVES_CLASIFICACION`, usado por la semilla y por la interfaz; prueba `el catálogo de claves por defecto es uno solo y tiene las 6 claves de D-65` |
+| **R2-08** | Media | **D-65** y **D-66** apuntaban a §§ que no contenían lo que afirmaban (§4.6/§5.2) | **Corregido**: D-65 → «§4.5 y §4.7.3»; D-66 → «§8.3, §9 y §10». Revisado el resto de referencias del anexo |
+| **R2-09** | Baja | `estado_proyecto.md` declaraba 66 decisiones, «27 RF, 7 RNF, 7 RT» y el documento técnico «Pendiente», con ciclos «No iniciado» | **Corregido**: **76 decisiones** (D-01 a D-76), **29 RF, 16 RNF y 11 RT**, artefactos al día (documento técnico reauditado, informe de pruebas, guía), ciclos C1–C6 cerrados y C7 en curso, y Fase 2 cerrada |
+| **R2-10** | Baja | No cuadraban los recuentos de líneas que se citaban como métrica de estado | **Corregido**: se **renuncia a citar el número de líneas** como métrica (el documento es vivo) y se fechan las cifras que se conservan |
+| **R2-11** | Baja | La ubicación del metadata de git difería entre documentos y con el filesystem | **Corregido** en los tres documentos y en RT-11: verificado con `git rev-parse --git-dir`, **`.git` es un directorio** en `C:\GGTO\proyecto` y el antiguo `C:\GGTO\git\GGTO-v1.git` se conserva **solo como copia histórica** |
+| **R2-12** | Baja | La tabla de Fase 2 de `estado_proyecto.md` seguía marcando los pasos 3, 5 y 6 como «En curso»/«Pendiente» | **Corregido**: los seis pasos figuran **completados** y la Fase 2 **cerrada** |
+| **R2-13** | Baja | §7.2 afirmaba que el CSV y el `.xlsm` siguen versionados, contra **D-71** | **Corregido** en §7.2 y en la fila **D-36** de `requerimientos.md`: el CSV diario, `alta_manual.csv`, los PDF y el `.xlsm` **no se versionan** y se purgaron; solo se versiona la muestra anonimizada |
+
+**Falsos positivos descartados por el propio lente (no requieren acción):** que `despacho.json` no se
+escribiera (`despacho.js` lo guarda y lo verifica), los recuentos de 16 archivos `.js` / 14 módulos /
+2 núcleos puros / 7 pestañas / 8 subpestañas de CONFIGURACION, y los recuentos de campos de
+`averias.json` (36) y `tecnicos.json` (12).
+
+**Criterio de cierre cumplido:** los 22 hallazgos de la reauditoría y los 13 del lente R2 quedan
+**resueltos, verificados como falsos positivos o declarados con su riesgo aceptado**, la batería de
+**149 pruebas de módulos y contratos** y las **52 comprobaciones E2E** pasan sin fallos, y el corpus
+no conserva ninguna cifra, referencia o contrato que contradiga al código. **La Fase 2 se declara
+CERRADA.**
 
 ---
 
