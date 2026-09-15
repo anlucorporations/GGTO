@@ -35,10 +35,20 @@ const A = (() => {
 })();
 
 const leer = (ruta) => fs.readFileSync(ruta, 'utf8');
-const CSV = leer(path.join(raizProyecto, 'detalle_averias_gpon 12_09_2026.csv'));
-const ESTRUCTURA = JSON.parse(leer(path.join(RUTA_DATOS, 'estructura.json')));
-const CENTRAL = JSON.parse(leer(path.join(RUTA_DATOS, 'central.json')));
-const CLAVES = JSON.parse(leer(path.join(RUTA_DATOS, 'claves_clasificacion.json')));
+/** Configuración de trabajo: la del puesto si existe; si no, la semilla del núcleo. */
+function configuracion(nombre) {
+  const enDisco = path.join(RUTA_DATOS, nombre);
+  if (fs.existsSync(enDisco)) return JSON.parse(leer(enDisco));
+  const semilla = N.estructurasIniciales()[nombre];
+  if (semilla === undefined) throw new Error('No hay configuración para ' + nombre);
+  return semilla;
+}
+// Muestra ANONIMIZADA versionada (el CSV real no se versiona: el repositorio es
+// público y lleva datos personales). Conserva estructura, filtro y clasificación.
+const CSV = leer(path.join(raizProyecto, 'pruebas', 'fixtures', 'detalle_averias_gpon_muestra.csv'));
+const ESTRUCTURA = configuracion('estructura.json');
+const CENTRAL = configuracion('central.json');
+const CLAVES = configuracion('claves_clasificacion.json');
 
 /** Las 15 columnas canónicas de `despacho.json` (D-31, RT-05, CU-17). */
 const COLUMNAS_CANONICAS = [
@@ -65,17 +75,18 @@ const ingerir = (csv, extras) => I.ingerir(Object.assign({
 // ===========================================================================
 // 1. Contrato del CSV y de `estructura.json` (RF-16, D-12, D-44)
 // ===========================================================================
-test('la cabecera del CSV real tiene las 80 columnas que declara estructura.json', () => {
-  const cabecera = I.parsearCSV(CSV, ';').filas[0];
+test('la cabecera del CSV tiene las 80 columnas que declara estructura.json', () => {
+  const p = I.parsearCSV(CSV, ';');
   assert.equal(ESTRUCTURA.columnas_esperadas, 80);
   assert.equal(ESTRUCTURA.separador, ';');
-  assert.equal(cabecera.length, ESTRUCTURA.columnas_esperadas,
-    'la cabecera real debe tener 80 columnas separadas por «;»');
+  assert.equal(p.cabecera.length, ESTRUCTURA.columnas_esperadas,
+    'la cabecera debe tener 80 columnas separadas por «;»');
+  assert.equal(p.cabecera[10], 'id_averia', 'la columna 11 es el id del caso');
 });
 
 test('cada campo declarado apunta a una columna existente y los obligatorios se cumplen', () => {
   const p = I.parsearCSV(CSV, ';');
-  const filas = p.filas.slice(1).filter((f) => f.length > 1);
+  const filas = p.filas.filter((f) => f.length > 1);
   (ESTRUCTURA.campos || []).forEach((campo) => {
     assert.ok(campo.columna >= 1 && campo.columna <= ESTRUCTURA.columnas_esperadas,
       campo.json + ' declara la columna ' + campo.columna + ', fuera del rango 1..80');
@@ -96,7 +107,7 @@ test('una fila sin dirección entra igualmente y queda en la cola de sectores (C
   assert.equal(r.resumen.insertadas, 51, 'y aun así entran los 51: la dirección no bloquea la ingesta');
   assert.equal(r.resumen.rechazadas.length, 0, 'ninguna fila se rechaza por venir sin dirección');
 
-  const conSectores = ingerir(CSV, { sectores: [{ id: 'S1', nombre: 'Cumbres', vias: ['CUMBRES'] }] });
+  const conSectores = ingerir(CSV, { sectores: [{ id: 'S1', nombre: 'Demo', vias: ['CALLE FICTICIA'] }] });
   assert.ok(conSectores.casos.some((c) => String(c.sector || '').trim() !== ''),
     'con un catálogo de sectores, los casos con dirección sí se asignan');
   sinDireccion.forEach((c) => {

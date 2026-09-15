@@ -19,20 +19,34 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 const raizProyecto = path.join(aqui, '..');
-const RUTA_CSV = path.join(raizProyecto, 'detalle_averias_gpon 12_09_2026.csv');
+// Muestra ANONIMIZADA versionada en el repositorio: conserva la cabecera de 80
+// columnas, el filtro por central, el estatus, las fechas y las palabras clave
+// de RN-03, y no lleva datos personales. El CSV real NO se versiona (el
+// repositorio es público). Se regenera con pruebas/herramientas/anonimizar_csv.mjs.
+const RUTA_CSV = path.join(raizProyecto, 'pruebas', 'fixtures', 'detalle_averias_gpon_muestra.csv');
 const RUTA_DATOS = 'C:\\GGTO\\datos';
 
 const I = require(path.join(raizProyecto, 'app', 'js', 'ingesta_nucleo.js'));
+const N = require(path.join(raizProyecto, 'app', 'js', 'nucleo.js'));
 
 function leer(ruta) {
   if (!fs.existsSync(ruta)) throw new Error('Falta el archivo requerido: ' + ruta);
   return fs.readFileSync(ruta, 'utf8');
 }
 
+/** Configuración de trabajo: la del puesto si existe; si no, la semilla del núcleo. */
+function configuracion(nombre) {
+  const enDisco = path.join(RUTA_DATOS, nombre);
+  if (fs.existsSync(enDisco)) return JSON.parse(leer(enDisco));
+  const semilla = N.estructurasIniciales()[nombre];
+  if (semilla === undefined) throw new Error('No hay configuración para ' + nombre);
+  return semilla;
+}
+
 const CSV = leer(RUTA_CSV);
-const ESTRUCTURA = JSON.parse(leer(path.join(RUTA_DATOS, 'estructura.json')));
-const CENTRAL = JSON.parse(leer(path.join(RUTA_DATOS, 'central.json')));
-const CLAVES = JSON.parse(leer(path.join(RUTA_DATOS, 'claves_clasificacion.json')));
+const ESTRUCTURA = configuracion('estructura.json');
+const CENTRAL = configuracion('central.json');
+const CLAVES = configuracion('claves_clasificacion.json');
 
 const FECHA = '13/09/2026';
 const MARCA = '13/09/2026 18:00';
@@ -168,24 +182,27 @@ test('la ingesta del día tarda menos de 3 s (S-RNF-02b)', () => {
 // ---------------------------------------------------------------------------
 
 test('mapea el primer registro insertado campo a campo', () => {
+  const p = I.parsearCSV(CSV, ';');
+  const fila = p.filas[0];              // primera fila de datos del archivo
   const r = ingerir(CSV);
   const c = r.casos[0];
-  assert.equal(c.id_averia, '90000001');
-  assert.equal(c.telefono, '90000117');
-  assert.equal(c.nombre, 'ABONADO');
-  assert.equal(c.persona_reporta, 'ABONADO');
-  assert.equal(c.contacto, '90000097');
-  assert.equal(c.olt, 'olt-ficticia');
-  assert.equal(c.plan, 'PLAN FICTICIO');
-  assert.equal(c.slot, '1');
-  assert.equal(c.puerto, '7');
-  assert.equal(c.serial, 'SERIALFICTICIO');
+
+  // Los campos que se copian tal cual deben venir de su columna declarada.
+  ['id_averia', 'telefono', 'persona_reporta', 'contacto', 'nombre', 'direccion',
+    'olt', 'plan', 'slot', 'puerto', 'fat', 'serial'].forEach((json) => {
+    const campo = I.campoPorJson(ESTRUCTURA, json);
+    assert.ok(campo, 'la estructura debe declarar el campo ' + json);
+    assert.equal(c[json], String(fila[campo.columna - 1] || '').trim(),
+      json + ' debe ser el valor de la columna ' + campo.columna);
+  });
+
   assert.equal(c.status, 'GESTION');
   assert.equal(c.clase, 'REP');
   assert.equal(c.nivel, 'COM');
   assert.equal(c.ingreso, FECHA);
   assert.equal(c.fecha_modificacion, MARCA);
-  assert.equal(c.usuario_modificacion, 'OPERADOR01');
+  assert.ok(String(c.usuario_modificacion || '').trim() !== '',
+    'la ingesta inicializa el rastro de origen con la columna 20 (D-52, D-53)');
   assert.equal(c.tipo_abonado, 'RES');
   assert.equal(c.fecha_reporte, '17/07/2026');
   assert.equal(c.fecha_reporte_original, '17/07/2026 11:38:20 a.m.');
@@ -267,15 +284,17 @@ test('clasifica respetando el estatus del CSV', () => {
 });
 
 test('asigna sector por coincidencia de vías', () => {
+  // Catálogo sintético: las direcciones de la muestra son ficticias.
   const sectores = [
     { id: 'S1', nombre: 'Cumbres', vias: ['CALLE FICTICIA'] },
-    { id: 'S2', nombre: 'Prados', vias: ['CALLE DEMO', 'Av. Principal'] }
+    { id: 'S2', nombre: 'Prados', vias: ['RESIDENCIA DEMO', 'Av. Principal'] }
   ];
-  const a = I.asignarSector('CALLE FICTICIA AVENIDA PRINCIPAL CALLE FICTICIA', sectores);
+  const a = I.asignarSector('CALLE FICTICIA 0000 RESIDENCIA DEMO', sectores);
   assert.equal(a.id, 'S1');
   assert.equal(I.asignarSector('CALLE QUE NO EXISTE 123', sectores), null);
 
   const r = ingerir(CSV, { sectores: sectores });
-  assert.ok(r.resumen.conSector >= 1);
+  assert.ok(r.resumen.conSector >= 1, 'con catálogo, alguna dirección debe casar');
   assert.equal(r.resumen.conSector + r.resumen.sinSector, 51);
+  assert.ok(r.resumen.sinSector >= 1, 'las 4 filas sin dirección quedan en la cola (D-69)');
 });

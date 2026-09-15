@@ -15,3 +15,17 @@ Thumbs.db
 # Respaldos generados por la pagina
 datos/backup/
 RepoTecnico/*.bak
+
+# ---- Datos operativos reales: NO se versionan ----
+# El repositorio es PUBLICO y estos archivos llevan datos personales de abonados
+# (nombre, telefono, direccion, C.I., correo): el CSV diario, el registro manual,
+# los PDF de despacho y el libro con macros. La muestra ANONIMIZADA que usan las
+# pruebas vive en pruebas/fixtures/detalle_averias_gpon_muestra.csv y se regenera
+# con pruebas/herramientas/anonimizar_csv.mjs (RN-01 de la reauditoria).
+detalle_averias_gpon*.csv
+alta_manual.csv
+Despacho_Cuadrilla_*.pdf
+CONTROL_DESPACHO_GGTO*.xlsm
+*.xlsm
+# …salvo la muestra anonimizada que usan las pruebas
+!pruebas/fixtures/detalle_averias_gpon_muestra.csv
