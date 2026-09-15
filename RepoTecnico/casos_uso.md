@@ -1335,7 +1335,7 @@
 
 **Restricciones del sistema (EARS)**
 
-- **El sistema deberá** contar como avería concentrada todo sector con 3 o más casos abiertos ingresados en la semana operativa en curso. [D-25]
+- **El sistema deberá** contar como avería concentrada todo sector con 3 o más casos abiertos ingresados en la semana operativa en curso, **sin excluir ninguna clase** y con el corte por `ingreso` (respaldo `fecha_reporte`); el umbral admite enteros **≥ 1**. [D-25, **D-72**]
 - **El sistema deberá** considerar «abierto» todo caso con `status` distinto de `CERRADO`. [D-23]
 - **El sistema deberá** definir los casos especiales como los casos **abiertos** con `tipo_abonado = EMP` o `nivel = REF`, con carácter **definitivo**, y no deberá rotular esa lista como provisional ni permitir redefinirla manualmente. [D-33]
 - **Si** el umbral informado no es un entero mayor o igual a 1, entonces el sistema deberá rechazarlo y conservar el valor vigente. [RNF-10]
@@ -1587,6 +1587,9 @@
 | **D-68** (el control documental no se persiste: estado de sesión, asientos en el log, papel y `.xlsm` como soporte oficial) | **CU-17** |
 | **D-69** (la dirección no es obligatoria en el contrato del CSV: esas filas entran y van a la cola de sectores) | **CU-08**, **CU-09** |
 | **D-70** (el bloque INGESTA vive en la pestaña PANEL y lo ejecutan operador y supervisor) | **CU-08**, **CU-01** |
+| **D-72** (el conteo de averías concentradas incluye todas las clases, el umbral admite 1 y el corte semanal usa `ingreso` con respaldo en `fecha_reporte`) | **CU-20** |
+| **D-73** (el asiento de entrega no lleva el nombre del receptor: el log no tiene datos personales) | **CU-17** |
+| **D-74** (riesgos de operación aceptados: log sin escritura verificada y respaldo fuera del equipo sin verificación de salida) | **CU-21**, **CU-22** |
 | D-28 (retención indefinida, riesgo aceptado y ficha de tratamiento) | CU-12, CU-15, CU-19, CU-21 |
 | D-29 (`P00` = código de empleado único, obligatorio y parte de la credencial) | CU-01, CU-03, CU-10, CU-11, CU-12, CU-13 |
 | D-30 (citados = `fecha_cita` del día, con prioridad y marca CITADO) | CU-13, CU-16 |
