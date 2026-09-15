@@ -61,7 +61,7 @@ ingesta debe rediseñarse.
 | Hallazgo | Evidencia | Consecuencia |
 |---|---|---|
 | El CSV tiene **80 columnas**, no 19. | Fila de encabezado completa. | `estructura.json` debe rehacerse; se incorporó el Anexo A con las 80 columnas. |
-| Separador `;` y codificación UTF-8 con acentos. | Verificado en ambos CSV. | Configurar PapaParse con `delimiter: ';'`. |
+| Separador `;` y codificación UTF-8 con acentos. | Verificado en ambos CSV. | El parser posicional propio lee el `;` y el UTF-8 (sin PapaParse). |
 | Encabezados repetidos: `informacion` ×2, `nombre` ×2, `descripcion` ×3. | Agrupación de la cabecera. | El mapeo no puede ser por nombre: debe ser **posicional** (A-12). |
 | Fechas con hora (`17/07/2026 11:38:20 a.m.`). | Columnas `fecha_reporte`, `fecha_compromiso`, `fecha_despacho`. | Definir si se recorta a fecha (A-16). |
 | `estatus` del CSV: `PEND` (53) y **`ASGN`** (3). | Agrupación de la columna 27. | `ASGN` no está en el enum del fuente (A-15). |
@@ -310,13 +310,14 @@ Informe: `RepoTecnico/reauditoria_documento_tecnico.md` (skill `equipo-auditoria
 
 | Aspecto | Resultado |
 |---|---|
-| Objeto | `documento_tecnico.md` (1.176 líneas, 14 módulos, D-01 a D-70), contra la auditoría previa de la v1 |
+| Objeto | `documento_tecnico.md` (1.190 líneas, 16 archivos `.js`, D-01 a D-74), contra la auditoría previa de la v1 |
 | Veredicto de la reauditoría | **Fase 2 no cerrable todavía — cierre condicionado**: 2 bloqueantes (RN-01 y RN-02) y 22 hallazgos nuevos verificados (2 críticos, 6 altos, 10 medios, 4 bajos) |
 | Cierre de la auditoría previa | **6 cerrados** (A-01, A-03, A-04, A-07, A-08, A-10) · 3 necesitan verificación (A-02, A-05, A-06) · 1 parcial (A-09); las **8 preguntas P1…P8 quedan resueltas** con su decisión |
 | **RN-01 (crítica)** | **Resuelto (D-71):** los repositorios son **públicos** —verificado contra las APIs de GitHub y GitLab—, así que los 6 archivos con datos de abonados (CSV diario, `alta_manual.csv`, 3 PDF de despacho y `.xlsm`) se sacaron del índice, entraron en `.gitignore` y se **purgaron de todo el historial**; se versiona una **muestra anonimizada** y las pruebas de C2 y de contratos pasan a ser autocontenidas. Verificado: 0 commits con esos archivos y 0 de los 168 identificadores reales en el historial. GitHub limpio; **GitLab: `main` protegida impide el force push** y queda pendiente de desproteger para completar la purga |
 | **RN-03 y RN-04** (altas) | **Resueltos en el código:** la semilla siembra el catálogo de D-65 y el **contrato completo** de `estructura.json` (25 campos con `cabecera`, `version: 2`). El defecto era real: sin la columna `estatus` una instalación nueva no aplicaba la precedencia de `ASGN` (D-38) y daba 17 PEND + 34 GESTION en lugar de 18 + 33. Ahora una prueba acredita que **una instalación nueva reproduce el reparto documentado** |
-| Pendiente | **RN-02** (criterio de C2 sin medir su punto de medida) y **RN-05 a RN-22** (contrato, medición, legal y coherencia documental); destacan RN-05 (nombre del receptor en el log, contra cuatro afirmaciones de «sin datos personales») y RN-06 (base de licitud y plazo en la ficha de tratamiento) |
-| Métricas | **143 pruebas** de módulos y contratos + **50 comprobaciones E2E** en verde, sin regresiones |
+| Pendiente | **Ninguno bloqueante.** Los 22 hallazgos quedan **resueltos o declarados**: RN-02 (el criterio de C2 ya no se declara verificado: se anota como implementado y **pendiente de medir en el puesto**), RN-05 (el asiento de entrega ya no escribe el receptor: **D-73**), RN-06 (la ficha declara base de licitud pendiente y plazo por categoría), RN-07/RN-15 (contrato del diccionario alineado), RN-08 (volumen de referencia de RNF-05 y criterios de C4/C5 rebajados a «pendiente de medir»), RN-09 (18/33 y rango D-74 en todo el corpus, incluido el diagrama de secuencia), RN-10 (16 archivos y 2 librerías), RN-11/RN-19 (aceptados y declarados: **D-74**), RN-12 (el lanzador ya no abre el navegador antes que el servidor y falla rápido sin runtime), RN-13/RN-14 (categorías ISO y RNF-13 declaradas con su aceptación y sus módulos), RN-16 (referencias de D-67/D-68 y procedimiento), RN-17 (§8.3 sin duplicidades), RN-18 (§4.7.1 conforme a D-69), RN-21 (conteo y umbral conforme a RF-26/CU-20: **D-72**, con pruebas) y RN-22 (`C:\GGTO\despachos` en el árbol y las rutas) |
+| Riesgos residuales declarados | Medición en el puesto de RNF-02/S-RNF-02b, RNF-05 y RNF-13; continuidad del puesto y RTO (RN-11); validación legal de la base de licitud (RN-06) |
+| Métricas | **145 pruebas** de módulos y contratos + **50 comprobaciones E2E** en verde, sin regresiones |
 
 ### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
 

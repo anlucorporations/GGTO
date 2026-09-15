@@ -474,7 +474,8 @@
               fecha_hora: N.marcaAhora(), operador: operador(), receptor: receptor.value, copias: 1
             });
             ctx.registrarLog('despacho | ENTREGA HOJA | ' + fecha + ' | cuadrilla=' + id +
-              ' | copias=1 | receptor=' + (receptor.value || '(no informado)') + ' | p00=' + operador());
+              ' | copias=1 | p00=' + operador() +
+              ' | receptor en la hoja impresa (D-58: el log no lleva datos personales)');
             pintar();
           }));
           td.appendChild(ctx.boton('Justificar la falta', null, function () {

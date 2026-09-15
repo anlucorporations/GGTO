@@ -800,7 +800,7 @@
       { valor: 'normalizada', etiqueta: 'normalizada (por defecto)' },
       { valor: 'estricta', etiqueta: 'estricta (literal, con mayúsculas y tildes)' }
     ], datos.normalizacion || 'normalizada');
-    var iUmbral = ctx.entrada('number', datos.umbral_concentracion === undefined ? 3 : datos.umbral_concentracion, { min: '2' });
+    var iUmbral = ctx.entrada('number', datos.umbral_concentracion === undefined ? 3 : datos.umbral_concentracion, { min: '1' });
     var camposTexto = ctx.entrada('text', campos.join(', '));
     camposTexto.classList.add('rejilla-ancha');
     var rejilla = ctx.texto('div', null, 'rejilla');

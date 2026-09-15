@@ -125,6 +125,42 @@ test('las direcciones sin sector se vigilan aparte', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 2b. Conteo y umbral conforme a RF-26 y CU-20 (D-72, RN-21)
+// ---------------------------------------------------------------------------
+
+test('el conteo de concentradas incluye todas las clases y el umbral admite 1', () => {
+  // Antes se excluían las construcciones (CNS) sin decisión que lo respaldara y
+  // el formulario no admitía el umbral 1 que CU-20 CA-3 declara válido.
+  const sectores = [{ id: 'S9', nombre: 'Nueve', vias: ['NUEVE'] }];
+  const tres = [
+    caso(901, { clase: 'REP', ingreso: '09/09/2026', sector: 'S9' }),
+    caso(902, { clase: 'REP', ingreso: '09/09/2026', sector: 'S9' }),
+    caso(903, { clase: 'CNS', ingreso: '09/09/2026', sector: 'S9' })
+  ];
+  const conTres = R.averiasConcentradas(tres, sectores, 3, '2026', SEMANA);
+  assert.equal(conTres.concentradas.length, 1, 'un CNS cuenta igual que una reparación');
+  assert.equal(conTres.concentradas[0].sector, 'S9');
+
+  const conUno = R.averiasConcentradas(tres, sectores, 1, '2026', SEMANA);
+  assert.equal(conUno.umbral, 1, 'el umbral 1 debe ser válido (CU-20 CA-3)');
+  assert.equal(conUno.concentradas.length, 1);
+
+  const sinAlcanzar = R.averiasConcentradas(tres, sectores, 4, '2026', SEMANA);
+  assert.equal(sinAlcanzar.concentradas.length, 0, 'con 3 casos y umbral 4 no hay concentrada');
+});
+
+test('el corte semanal usa ingreso y, si falta, fecha_reporte (D-72)', () => {
+  const sectores = [{ id: 'S9', nombre: 'Nueve', vias: ['NUEVE'] }];
+  const dentro = caso(911, { ingreso: '09/09/2026', fecha_reporte: '', sector: 'S9' });
+  const fuera = caso(912, { ingreso: '01/09/2026', fecha_reporte: '', sector: 'S9' });
+  const sinIngreso = caso(913, { ingreso: '', fecha_reporte: '09/09/2026', sector: 'S9' });
+  const r = R.averiasConcentradas([dentro, fuera, sinIngreso], sectores, 2, '2026', SEMANA);
+  const s9 = r.sectores.filter((s) => s.sector === 'S9')[0];
+  assert.equal(s9.total, 2, 'entran el del ingreso en la semana y el que solo trae fecha_reporte');
+  assert.equal(r.concentradas.length, 1);
+});
+
+// ---------------------------------------------------------------------------
 // 3. Parte diario y cambios desde la última emisión
 // ---------------------------------------------------------------------------
 

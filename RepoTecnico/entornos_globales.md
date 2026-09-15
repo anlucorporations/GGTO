@@ -60,10 +60,8 @@ GGTO-v1/
 |  |- incidencias.log         # log de accesos; rota a incidencias.1..5.log (D-64)
 |  \- incidencias.1.log ... incidencias.5.log   # copias rotadas (5 MB × 5, D-64)
 \- lib/
-   |- papaparse.min.js
-   |- chart.umd.min.js
-   |- jspdf.umd.min.js
-   \- jspdf.autotable.min.js
+   |- chart.umd.min.js      # Chart.js 4.4.7 (RT-07)
+   \- jspdf.umd.min.js      # jsPDF 2.5.2 (RT-07); el parser del CSV es propio, sin PapaParse
 ```
 
 ---
@@ -73,9 +71,9 @@ GGTO-v1/
 | Componente | Elección | Motivo |
 |---|---|---|
 | Interfaz | HTML5 + CSS3 + JavaScript (ES2020), sin framework | RNF-03: página autónoma, sin build ni instalación. |
-| Lectura de CSV | PapaParse (local en `lib/`) | Maneja comillas, comas y BOM; funciona offline (RT-07). |
-| Gráficos | Chart.js (local) | Barras, línea y torta para MONITOREO y GRAFICOS (RF-05, RF-06). |
-| PDF | jsPDF + jspdf-autotable (local) | Despacho por cuadrilla en carta horizontal (RF-10, RNF-05). |
+| Lectura de CSV | **Parser posicional propio** (`ingesta_nucleo.js`), sin librería | Respeta comillas dobles y el escape `""`, quita el BOM y usa `;` como separador; funciona offline (RT-07, RT-08). **PapaParse no se usa** (RN-10). |
+| Gráficos | Chart.js **4.4.7** (local en `lib/`) | Barras, línea y torta para MONITOREO y GRAFICOS (RF-05, RF-06). |
+| PDF | jsPDF **2.5.2** (local), sin autoTable | Despacho por cuadrilla en carta horizontal; la tabla se dibuja con `rect`/`text` (RF-10, RNF-05). |
 | Persistencia | File System Access API (`showOpenFilePicker` / `showSaveFilePicker`, o `showDirectoryPicker`) | Permite leer y **escribir** los JSON del disco (D-01, RT-06). |
 | Respaldo de persistencia | Descarga manual del JSON actualizado + `<input type="file">` | Para navegadores sin File System Access API. |
 | Servidor local | `python -m http.server` o `npx serve` | Evita las restricciones de `file://`; `http://localhost` es contexto seguro y habilita la API de archivos. |
@@ -343,7 +341,7 @@ unidad sincronizada el problema no puede repetirse; además se reforzaron las ex
 | Característica | Valor |
 |---|---|
 | Nombre típico | `detalle_averias_gpon DD_MM_AAAA.csv` (en la raíz del proyecto). |
-| Separador | `;` (punto y coma) → configurar PapaParse con `delimiter: ';'`. |
+| Separador | `;` (punto y coma) → así lo espera el parser posicional propio de `ingesta_nucleo.js`. |
 | Codificación | UTF-8 (con acentos). |
 | Encabezado | Una fila, 80 columnas; hay nombres repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3), por lo que la lectura debe ser **posicional**. |
 | Fechas | `DD/MM/AAAA hh:mm:ss a.m./p.m.` (incluyen hora). |
@@ -389,6 +387,9 @@ Materializa la «finalidad documentada» que exige D-28 y la política acordada 
 | **Datos impresos** | El PDF de despacho lleva fecha, cuadrilla y número de copia; se registra la entrega y las hojas se recogen y destruyen al cierre del día (D-27, RNF-11). |
 | **Respaldo** | Copia fechada del maestro y del historial en `C:\GGTO\respaldo\` al cerrar la jornada, sin cifrado, bajo custodia del supervisor (D-49); RTO 1 hora, RPO del día anterior. |
 | **Paquete versionado** | **Los datos operativos reales NO se versionan (D-71).** El CSV diario, el registro manual (`alta_manual.csv`), los PDF de despacho y el `.xlsm` llevan datos personales de abonados y quedaron **fuera del control de versiones y purgados del historial** el 14/09/2026: los repositorios de GitHub y GitLab son **PÚBLICOS** (verificado contra sus APIs), de modo que el supuesto de «repositorios privados» de D-36/D-58 **no se cumple**. Lo que se versiona es una **muestra anonimizada** para las pruebas (`pruebas/fixtures/detalle_averias_gpon_muestra.csv`, regenerable con `pruebas/herramientas/anonimizar_csv.mjs`). |
+| **Base de licitud** | **Pendiente de validación por el área legal de CANTV (RN-06, H-13).** Candidata declarada: **ejecución del contrato de servicio** con el abonado para la gestión de su avería. No está fijada por escrito, de modo que la ficha **no puede considerarse completa** hasta que el área legal la confirme o imponga otra. |
+| **Plazo de conservación por categoría** | Casos del maestro (`averias.json`): **indefinido, sin purga automática** (D-28, riesgo aceptado por escrito). Historial (`historial.jsonl`): indefinido *append-only* (D-56). Log de la aplicación: **5 MB × 5 archivos** por rotación, sin datos personales (D-58, D-64). Respaldos: 10 versiones `.bak` del maestro (D-42) más la copia de cierre (D-49), sin purga automática. **Hojas impresas: se recogen y destruyen al cierre del día** (D-27). Datos de trabajadores: mientras dure el vínculo con la central. |
+| **Dato que NO se registra** | El **nombre del receptor** de la hoja de despacho **no entra en el log** (D-73): vive solo en la hoja impresa y en el control documental de la sesión. |
 | **Retención** | Casos: histórica, sin purga automática (D-28). CSV procesado: se conserva junto al caso. Log de aplicación: rotación por tamaño, 5 MB y 5 archivos (D-58), sin datos personales. |
 | **Derechos del titular** | Canal único: el supervisor de la central, que localiza el caso por `id_averia` o teléfono y aplica la corrección dejando rastro en `historial.jsonl`. |
-| **Revisión pendiente** | Confirmar con el área legal de CANTV la normativa aplicable y esta ficha antes de ampliar el uso de la página. |
+| **Revisión pendiente** | Confirmar con el área legal de CANTV la normativa aplicable, la **base de licitud** y esta ficha antes de ampliar el uso de la página. **Además:** la purga del 14/09/2026 (D-71) quitó los datos de los repositorios, pero GitHub y GitLab **fueron públicos** desde el 13/09/2026, así que la exposición anterior debe valorarse como incidente con el área legal. |

@@ -165,12 +165,18 @@
     return { doc: doc, paginas: paginas, filas: asignaciones.length, anchoTabla: totalAncho };
   }
 
-  /** Línea de registro de entrega para el log (RNF-11, D-27, D-58). */
-  function registroEntrega(fecha, bloque, numeroCopia, receptor, operador, marca) {
+  /**
+   * Línea de registro de entrega para el log (RNF-11, D-27, D-58).
+   * NO incluye el nombre del receptor: `incidencias.log` se declara **sin datos
+   * personales** (D-58, §12 de entornos) y el receptor queda en la hoja impresa
+   * y en el control documental de la sesión, no en el log (RN-05).
+   */
+  function registroEntrega(fecha, bloque, numeroCopia, operador, marca) {
     var cuadrilla = (bloque && bloque.cuadrilla) || {};
     return 'despacho | ENTREGA PDF | ' + fecha + ' | cuadrilla=' + String(cuadrilla.id || '') +
-      ' | copias=' + numeroCopia + ' | receptor=' + String(receptor || '(no informado)') +
+      ' | copias=' + numeroCopia +
       ' | p00=' + String(operador || '') + ' | ' + String(marca || '') +
+      ' | receptor en la hoja impresa (D-58: el log no lleva datos personales)' +
       ' | recoger y destruir al cierre (D-27)';
   }
 
@@ -205,7 +211,7 @@
     var operador = ctx.sesion ? ctx.sesion.P00 : '';
 
     function registrar(ruta) {
-      ctx.registrarLog(registroEntrega(fecha, bloque, copias || 1, receptor, operador, marca) +
+      ctx.registrarLog(registroEntrega(fecha, bloque, copias || 1, operador, marca) +
         (ruta ? ' | ruta=' + ruta : ' | ruta=DESCARGA (fuera de la ruta controlada)'));
     }
 

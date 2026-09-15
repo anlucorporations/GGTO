@@ -44,19 +44,40 @@ $url = "http://localhost:$Puerto/index.html"
 Write-Host "Sirviendo $app en $url (solo loopback; datos\ no se publica)." -ForegroundColor Cyan
 Write-Host 'Para detener el servidor, pulse Ctrl+C.' -ForegroundColor DarkGray
 
+# --- Runtime disponible (se comprueba ANTES de abrir el navegador) ---------
+# Si no hay Python ni Node no se puede levantar el servidor: se avisa y se sale
+# SIN abrir una pestaña que daria error (RN-12 de la reauditoria).
+$python = Get-Command python -ErrorAction SilentlyContinue
+$node = Get-Command node -ErrorAction SilentlyContinue
+if (-not $python -and -not $node) {
+  Write-Host 'No se encontro Python 3.7+ ni Node.js.' -ForegroundColor Red
+  Write-Host 'Instale uno de los dos o trabaje en modo descarga desde el navegador (RNF-03, CU-22).'
+  exit 1
+}
+
+# --- Navegador: se abre cuando el puerto YA escucha ------------------------
+# Se hace desde un trabajo en segundo plano para no bloquear el servidor, que
+# queda en primer plano (asi Ctrl+C lo detiene). Antes se abria la pestana antes
+# de arrancar el servidor y el navegador mostraba un error de conexion.
 if (-not $SinNavegador) {
-  Start-Process $url
+  Start-Job -ScriptBlock {
+    param($direccion, $puertoAbrir)
+    for ($i = 0; $i -lt 80; $i++) {
+      Start-Sleep -Milliseconds 250
+      $escucha = $null
+      try { $escucha = Get-NetTCPConnection -LocalPort $puertoAbrir -State Listen -ErrorAction Stop } catch { $escucha = $null }
+      if ($escucha) { Start-Process $direccion; return }
+    }
+  } -ArgumentList $url, $Puerto | Out-Null
 }
 
 # --- Opcion A: Python ------------------------------------------------------
-$python = Get-Command python -ErrorAction SilentlyContinue
 if ($python) {
   & python -m http.server $Puerto --bind 127.0.0.1 --directory $app
   exit $LASTEXITCODE
 }
 
 # --- Opcion B: Node.js -----------------------------------------------------
-$node = Get-Command node -ErrorAction SilentlyContinue
 if ($node) {
   $servidor = Join-Path $env:TEMP 'servir-ggto-node.mjs'
   $codigo = @'
@@ -92,6 +113,6 @@ servidor.listen(puerto, '127.0.0.1', () => {
   exit $LASTEXITCODE
 }
 
-Write-Host 'No se encontro Python 3.7+ ni Node.js.' -ForegroundColor Red
-Write-Host 'Instale uno de los dos o trabaje en modo descarga desde el navegador (RNF-03, CU-22).'
+Write-Host 'El servidor no pudo arrancar con Python ni con Node.js.' -ForegroundColor Red
+Write-Host 'Revise la instalacion del runtime o trabaje en modo descarga desde el navegador (RNF-03, CU-22).'
 exit 1

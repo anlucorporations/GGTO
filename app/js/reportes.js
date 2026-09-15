@@ -84,8 +84,12 @@
         nombre: f.nombre,
         casos: f.casos,
         total: f.casos.length,
-        concentrada: f.casos.filter(function (c) { return String(c.clase || '') !== 'CNS'; }).length >= limite &&
-          f.casos.length >= limite,
+        // RF-26 y CU-20: «3 o más casos ABIERTOS del mismo sector en la semana
+        // operativa». No se excluye ninguna clase: el conteo es el total de casos
+        // abiertos del sector (el desglose de construcción se informa aparte). El
+        // corte por `ingreso` con respaldo en `fecha_reporte` queda registrado en
+        // la decisión D-72.
+        concentrada: f.casos.length >= limite,
         construccion: f.casos.filter(function (c) { return String(c.clase || '') === 'CNS'; }).length
       };
     });

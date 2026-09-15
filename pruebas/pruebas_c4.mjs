@@ -246,11 +246,13 @@ test('una cuadrilla sin casos produce una hoja con el aviso', () => {
 test('nombre del archivo y registro de entrega (RNF-11, D-27)', () => {
   const bloque = { cuadrilla: { id: 'C1', nombre: 'Cuadrilla 1' }, asignaciones: [] };
   assert.equal(PDF.nombreArchivo(bloque, HOY), 'Despacho_Cuadrilla_C1_20260913.pdf');
-  const linea = PDF.registroEntrega(HOY, bloque, 2, 'Supervisor PDE', '12345', MARCA);
+  const linea = PDF.registroEntrega(HOY, bloque, 2, '12345', MARCA);
   assert.ok(/ENTREGA PDF/.test(linea));
   assert.ok(/cuadrilla=C1/.test(linea));
   assert.ok(/copias=2/.test(linea));
-  assert.ok(/receptor=Supervisor PDE/.test(linea));
+  assert.ok(/p00=12345/.test(linea));
+  // RN-05: el log NO lleva el nombre del receptor (D-58: sin datos personales).
+  assert.equal(/receptor=/.test(linea), false, 'el asiento no debe incluir el receptor');
   assert.ok(/recoger y destruir al cierre \(D-27\)/.test(linea));
 });
 

@@ -338,7 +338,7 @@ sequenceDiagram
             else Verificación correcta
                 UI->>MAE: Relee el archivo y verifica el conteo
                 MAE-->>UI: 51 id_averia presentes
-                UI-->>OP: "Ingesta completada: 51 casos nuevos (14 PEND + 37 GESTION)"
+                UI-->>OP: "Ingesta completada: 51 casos nuevos (18 PEND + 33 GESTION)"
             end
         end
     end

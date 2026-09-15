@@ -252,8 +252,9 @@ H-10») y completa el **RNF-09**.
 
 | Campo | Tipo | OBL | Notas |
 |---|---|---|---|
-| `claves` | L | Sí | Por defecto: `LOSS ROJO`, `FALLA FIBRA`, `FIBRA DAÑADA`. |
-| `normalizacion` | E | Sí | `estricta` (texto literal) / `normalizada` (mayúsculas, sin tildes, variantes LOSS/LOS y DAÑADA/DANADA). Por defecto `normalizada`. |
+| `claves` | L | Sí | Por defecto (**D-65**): `LOSS ROJO`, `LOS ROJO`, `FALLA FIBRA`, `FALLA DE FIBRA`, `FIBRA DAÑADA`, `FIBRA DANADA`. |
+| `normalizacion` | E | Sí | `estricta` (texto literal, D-43) / `normalizada` (**mayúsculas, sin tildes y con espacios colapsados**: `sinTildes → toUpperCase → replace(/\s+/g,' ')`). **Las variantes LOSS/LOS y DAÑADA/DANADA no las resuelve la normalización: se cubren enumerándolas en `claves` (D-65).** Por defecto `normalizada`. |
+| `umbral_concentracion` | N | Sí | **Parámetro de RF-26 (D-25, D-72):** nº de casos abiertos del mismo sector en la semana operativa que marca la avería como concentrada. Por defecto **3**; admite **enteros ≥ 1** (CU-20 CA-3) y es editable en CONFIGURACION. |
 | `campos_evaluados` | L | Sí | `ultimo_comentario`, `problema_reporte`, `informacion_1`, `informacion_2`. |
 
 ### 5.7 `incidencias.log` — registro de accesos (D-57, D-58, D-64)
