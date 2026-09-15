@@ -210,6 +210,19 @@ input[readonly], input:disabled, select:disabled, textarea:disabled {
 }
 .bloque > h2 { margin-top: 0; }
 
+/* INGESTA: lista de los CSV de la carpeta de datos y selector del navegador (D-79) */
+.entrada-desde-datos {
+  border: 1px solid var(--gris-300);
+  border-radius: var(--radio);
+  padding: .6rem .8rem;
+  margin-bottom: .8rem;
+  background: var(--gris-100);
+}
+.entrada-desde-datos > h4 { margin: 0 0 .5rem; }
+.entrada-desde-archivo > h4 { margin: 0 0 .25rem; }
+.lista-csv { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.seleccion-archivo { min-width: min(520px, 100%); }
+
 .rejilla {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

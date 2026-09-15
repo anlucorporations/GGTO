@@ -333,3 +333,31 @@ test('el lanzador solo busca los CSV de ingesta en C:\\GGTO\\datos (D-78)', () =
   assert.ok(!/Get-ChildItem[^\r\n]*-Filter '\.csv'[^\r\n]*\$Raiz/.test(ps),
     'el proyecto no es un sitio de búsqueda del CSV de ingesta');
 });
+
+// ===========================================================================
+// 7. La INGESTA elige el CSV de la carpeta de datos (D-79)
+// ===========================================================================
+test('la INGESTA lista los CSV de la carpeta y conserva el selector (D-79)', () => {
+  const almacenJs = leer(path.join(raizProyecto, 'app', 'js', 'almacen.js'));
+  const appJs = leer(path.join(raizProyecto, 'app', 'js', 'app.js'));
+  const ingestaJs = leer(path.join(raizProyecto, 'app', 'js', 'ingesta.js'));
+
+  // Los dos almacenes (carpeta autorizada y archivos sueltos) exponen la lista y
+  // la lectura; el respaldo sin carpeta las expone igual para no romper la vista.
+  assert.equal((almacenJs.match(/listarCSV: listarCSVCarpeta/g) || []).length, 2,
+    'los dos almacenes deben exponer listarCSV');
+  assert.equal((almacenJs.match(/leerTextoDeDatos: leerTextoDeDatos/g) || []).length, 2,
+    'los dos almacenes deben exponer leerTextoDeDatos');
+  assert.ok(appJs.indexOf('listarCSV: function () { return Promise.resolve([]); }') >= 0,
+    'almacenVacio() debe exponer listarCSV: sin carpeta la lista es vacía, no un TypeError');
+  assert.ok(appJs.indexOf('leerTextoDeDatos: rechazar') >= 0,
+    'almacenVacio() debe exponer leerTextoDeDatos');
+
+  // La vista: lista de la carpeta + selector del navegador como alternativa.
+  assert.ok(ingestaJs.indexOf("seleccion.id = 'csv-datos'") >= 0,
+    'la INGESTA debe listar los .csv de la carpeta de datos');
+  assert.ok(ingestaJs.indexOf("entrada.id = 'archivo-csv'") >= 0,
+    'la INGESTA debe conservar el selector de archivos para los que no están en la carpeta');
+  assert.ok(ingestaJs.indexOf('listarCSV') >= 0 && ingestaJs.indexOf('leerTextoDeDatos') >= 0,
+    'la INGESTA debe usar la lista y la lectura del almacén');
+});

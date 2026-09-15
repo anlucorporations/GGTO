@@ -141,6 +141,10 @@ const sonda = `
       var salidas = { registradas: [] };
       var copias = { n: 0 };
       var logIncidencias = '13/09/2026 09:00 | sesion | intento fallido | p00=999 | credencial' + NL;
+      // Nombre del CSV del día calculado con la fecha real del equipo, para que la
+      // comprobación de la lista no dependa del día en que se ejecute.
+      var hoyPartes = N.marcaAhora().split(' ')[0].split('/');
+      var NOMBRE_CSV_HOY = 'detalle_averias_gpon ' + hoyPartes[0] + '_' + hoyPartes[1] + '_' + hoyPartes[2] + '.csv';
       window.GGTO.estado.resumen = [{ archivo: 'averias.json', existe: true, invalido: null, registros: 1 }];
       window.GGTO.estado.almacen = {
         tipo: 'carpeta', carpeta: {}, carpetaRespaldo: null, carpetaDespachos: {},
@@ -149,6 +153,16 @@ const sonda = `
         guardarArchivo: function () { return Promise.resolve(null); },
         agregarHistorial: function () { return Promise.resolve({ agregadas: 0, verificadas: 0 }); },
         crearEstructura: function () { return Promise.resolve({ creados: [] }); },
+        // CSV de la carpeta de datos (D-78, D-79): la lista y la lectura del elegido.
+        listarCSV: function () {
+          return Promise.resolve([
+            { nombre: NOMBRE_CSV_HOY, tamano: CSV.length, modificado: null, ruta: N.CONST.RUTA_DATOS }
+          ]);
+        },
+        leerTextoDeDatos: function (nombre) {
+          if (nombre === NOMBRE_CSV_HOY) return Promise.resolve(CSV);
+          return Promise.reject(new Error('no encontrado: ' + nombre));
+        },
         estadoRespaldo: function () {
           return Promise.resolve({
             autorizada: !!window.GGTO.estado.almacen.carpetaRespaldo, hay: false, copias: [],
@@ -477,6 +491,34 @@ const sonda = `
               (window.GGTO.estado.almacen.datos['averias.json'] || []).length === 1);
             sig();
           }, 600);
+        },
+        // --- INGESTA desde la lista de la carpeta de datos (D-78, D-79) ---
+        function (sig) {
+          var cont = seccion('panel');
+          window.GGTO_PANEL.render(cont, nuevoCtx());
+          setTimeout(function () {
+            var sel = document.getElementById('csv-datos');
+            ok('INGESTA lista los .csv de la carpeta de datos (D-78, D-79)',
+              !!sel && sel.options.length === 1 && sel.options[0].value === NOMBRE_CSV_HOY);
+            ok('la lista preselecciona el archivo del día',
+              !!sel && sel.value === NOMBRE_CSV_HOY);
+            var boton = botonesDe(cont, 'Revisar el archivo elegido')[0];
+            ok('la lista ofrece revisar el archivo elegido', !!boton);
+            if (!boton) { sig(); return; }
+            boton.click();
+            setTimeout(function () {
+              var filas = tablaPlana(cont);
+              ok('la revisión desde la carpeta de datos da los 51 casos de la central',
+                filas['Casos nuevos a insertar'] === '51' && filas['Quedarían en PEND'] === '18' &&
+                filas['Quedarían en GESTION (bandeja telefónica)'] === '33');
+              var ingerir = botonesDe(cont, 'Ingestar los casos nuevos')[0];
+              ok('tras la revisión desde la lista se habilita la ingesta',
+                !!ingerir && ingerir.disabled === false);
+              ok('la revisión desde la lista tampoco escribe el maestro',
+                (window.GGTO.estado.almacen.datos['averias.json'] || []).length === 1);
+              sig();
+            }, 400);
+          }, 500);
         }
       ]);
     } catch (e) {

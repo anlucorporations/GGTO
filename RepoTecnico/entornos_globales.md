@@ -17,7 +17,7 @@
 | Hojas de estilo | `...\app\css\estilos.css` |
 | Módulos JavaScript (16 archivos `.js`) | `...\app\js\` |
 | Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56) y `incidencias.log` (log de accesos con rotación 5 MB × 5 archivos, D-58, **D-64**); respaldo **manual** a demanda del supervisor (D-36) |
-| CSV de ingesta (el del día) | `C:\GGTO\datos\detalle_averias_gpon DD_MM_YYYY.csv` — **única** carpeta donde se buscan los `.csv` de ingesta (**D-78**); el operador lo elige desde ahí con el selector de INGESTA. El almacén ignora lo que no sea uno de los 10 archivos de trabajo, así que el `.csv` no entra en la copia de cierre |
+| CSV de ingesta (el del día) | `C:\GGTO\datos\detalle_averias_gpon DD_MM_YYYY.csv` — **única** carpeta donde se buscan los `.csv` de ingesta (**D-78**); la INGESTA **los lista dentro de la propia página**, preseleccionando el del día, y lee el elegido sin pasar por el explorador (**D-79**), con el selector del navegador como alternativa. El almacén ignora lo que no sea uno de los 10 archivos de trabajo, así que el `.csv` no entra en la copia de cierre |
 | Ruta controlada de los PDF de despacho | `C:\GGTO\despachos\` — carpeta autorizada aparte, **nunca** la carpeta de Descargas (**D-67**, D-27); ver §4.3 |
 | Librerías locales | `...\app\lib\` (Chart.js 4.4.7 y jsPDF 2.5.2, RT-07) |
 | Lanzador de la jornada | `...\GGTO.bat` (doble clic) + `...\GGTO.ps1` (**D-77**); ver §4.5 |
@@ -258,7 +258,7 @@ y llama a `GGTO.ps1`. No necesita instalación, no usa CDN y no deja nada fuera 
 GGTO.bat                 :: jornada: despliegue + CSV del dia + rutina + servidor y navegador
 GGTO.bat desplegar       :: solo el despliegue (carpetas y los 10 archivos de trabajo)
 GGTO.bat abrir           :: solo el servidor local
-GGTO.bat pruebas         :: 150 pruebas de modulos y contratos + 58 comprobaciones E2E
+GGTO.bat pruebas         :: 153 pruebas de modulos y contratos + 64 comprobaciones E2E
 GGTO.bat cierre          :: rutina de cierre del dia y apertura de las carpetas de salida
 GGTO.bat estado          :: diagnostico del puesto, de los datos y de la copia de cierre
 GGTO.bat ayuda
@@ -274,7 +274,7 @@ GGTO.bat ayuda
 | Carpetas | Crea `C:\GGTO\datos`, `C:\GGTO\respaldo` y `C:\GGTO\despachos` si faltan (el selector de carpetas del navegador no puede elegir una carpeta inexistente) |
 | Archivos de trabajo | Siembra desde `app\js\nucleo.js` (`estructurasIniciales()`) los que falten y **valida** los que ya existen (JSON legible e `historial.jsonl` línea a línea) |
 | Contrato del CSV | Comprueba que `estructura.json` sea la **v2**: 80 columnas, 25 campos con `cabecera` y `no_se_persisten = [18, 30, 53, 80]`. Si no, avisa de que la ingesta abortará (D-44, D-69) |
-| CSV del día | Lista los `.csv` de **`C:\GGTO\datos` y solo de ahí** (señalando el del día, `detalle_averias_gpon DD_MM_YYYY.csv`) y avisa si no hay ninguno o si el que hay no es el de hoy. **No** busca en el proyecto, en Descargas ni en el Escritorio: son datos de abonados (**D-78**). El archivo se elige en la página, desde esa misma carpeta, con el selector de INGESTA |
+| CSV del día | Lista los `.csv` de **`C:\GGTO\datos` y solo de ahí** (señalando el del día, `detalle_averias_gpon DD_MM_YYYY.csv`) y avisa si no hay ninguno o si el que hay no es el de hoy. **No** busca en el proyecto, en Descargas ni en el Escritorio: son datos de abonados (**D-78**). Dentro de la página, la INGESTA ofrece esa misma lista —con tamaño y fecha, preseleccionando el del día— y lee el elegido sin abrir el explorador (**D-79**) |
 
 **Qué NO hace:** no hace copias de seguridad propias ni escribe en los archivos de trabajo. La copia de
 cierre es la **verificada por relectura** de CONFIGURACION → RESPALDO (D-49, RNF-16), y el respaldo

@@ -744,6 +744,10 @@
       guardarArchivo: rechazar,
       agregarHistorial: rechazar,
       crearEstructura: rechazar,
+      // Sin carpeta no hay nada que listar ni que leer (D-78, D-79): se responde
+      // con una lista vacía en lugar de dejar el método ausente.
+      listarCSV: function () { return Promise.resolve([]); },
+      leerTextoDeDatos: rechazar,
       describir: function () { return 'sin carpeta de datos autorizada'; }
     };
   }

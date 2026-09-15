@@ -97,8 +97,13 @@ de las carpetas de salida). Ver `entornos_globales.md` §4.5.
 
 - [ ] El bloque **INGESTA** está **dentro de la pestaña PANEL** (no es una pestaña propia: siguen siendo 7) y
       lo pueden usar **operador y supervisor** (la matriz de §2.1 lo permite a los dos roles; D-70).
-- [ ] El CSV del día está en **`C:\GGTO\datos`** —única carpeta donde el lanzador lo busca (**D-78**)—;
-      el archivo se elige desde ahí con el selector de INGESTA (el navegador exige ese gesto).
+- [ ] El CSV del día está en **`C:\GGTO\datos`** —única carpeta donde se busca (**D-78**)—. El bloque
+      INGESTA **lista los `.csv` de esa carpeta** con su tamaño y su fecha, **preselecciona el del día**
+      y lo avisa; *Revisar el archivo elegido* hace la revisión **sin salir de la página** (**D-79**).
+- [ ] Si la carpeta no tiene ningún `.csv`, el bloque lo dice y ofrece *Actualizar la lista* (tras copiar
+      el archivo) y el selector de archivos de abajo.
+- [ ] El selector de archivos del navegador sigue disponible para un archivo que no está en la carpeta
+      (un pendrive, la red): al elegirlo hace la misma revisión.
 - [ ] Al elegir `detalle_averias_gpon 12_09_2026.csv` aparece la revisión **sin escribir nada**: filas
       leídas, descartadas por no ser de la central, duplicadas, rechazadas, casos nuevos y el reparto
       PEND/GESTION (con ese archivo: 56 leídas, **51 de la central**, 5 descartadas y
@@ -310,7 +315,7 @@ cd C:\GGTO\proyecto
 node pruebas/interfaz.mjs
 ```
 
-Deben pasar **58 de 58**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+Deben pasar **64 de 64**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
 (por ejemplo, que una pestaña no tenga su sección real, que falte cargar una librería local o que un
 bloque no tenga punto de entrada) y los de **visibilidad** (que la capa de acceso no desaparezca tras
 identificarse, o que un elemento con `hidden` siga pintado —defecto **D-13**—), y recorre de verdad la

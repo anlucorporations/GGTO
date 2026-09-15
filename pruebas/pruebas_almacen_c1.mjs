@@ -225,3 +225,42 @@ test('expide las versiones .bak más antiguas para conservar las 10 últimas', a
   assert.ok(!despues.includes('averias_2026-09-01_0900.bak'), 'la más antigua se expide');
   assert.ok(archivos.has('central.json'), 'los archivos que no son .bak no se tocan');
 });
+
+// ---------------------------------------------------------------------------
+// 7. CSV de ingesta de la carpeta de datos (D-78, D-79)
+// ---------------------------------------------------------------------------
+test('lista solo los .csv de la carpeta de datos y lee el elegido', async () => {
+  const archivos = new Map();
+  archivos.set('averias.json', new ArchivoFalso('averias.json', '[]\n'));
+  archivos.set('historial.jsonl', new ArchivoFalso('historial.jsonl', ''));
+  archivos.set('detalle_averias_gpon 12_09_2026.csv',
+    new ArchivoFalso('detalle_averias_gpon 12_09_2026.csv', 'a;b\n1;2\n'));
+  archivos.set('OTRO.CSV', new ArchivoFalso('OTRO.CSV', 'x'));
+  archivos.set('notas.txt', new ArchivoFalso('notas.txt', 'hola'));
+  archivos.set('averias_2026-09-15_0900.bak', new ArchivoFalso('averias_2026-09-15_0900.bak', '[]'));
+  const almacen = A.crearAlmacen(new CarpetaFalsa(archivos));
+  await almacen.cargar();
+
+  const lista = await almacen.listarCSV();
+  assert.deepEqual(lista.map((f) => f.nombre).sort(),
+    ['OTRO.CSV', 'detalle_averias_gpon 12_09_2026.csv'],
+    'solo los .csv de la carpeta, sin distinguir mayúsculas ni confundir .bak o .txt');
+  const principal = lista.filter((f) => f.nombre === 'detalle_averias_gpon 12_09_2026.csv')[0];
+  assert.equal(principal.tamano, 8, 'informa del tamaño del archivo');
+  assert.equal(principal.ruta, N.CONST.RUTA_DATOS);
+  assert.ok('modificado' in principal, 'informa de la fecha de modificación');
+
+  assert.equal(await almacen.leerTextoDeDatos('detalle_averias_gpon 12_09_2026.csv'), 'a;b\n1;2\n',
+    'lee el texto del CSV elegido sin pasar por el selector del navegador');
+  await assert.rejects(() => almacen.leerTextoDeDatos('no-existe.csv'),
+    'un archivo que no está en la carpeta no se puede leer');
+});
+
+test('sin carpeta autorizada no hay lista de CSV y la lectura se rechaza', async () => {
+  const almacen = A.crearAlmacen(new CarpetaFalsa(new Map()));
+  almacen.carpeta = null;
+  assert.deepEqual(await almacen.listarCSV(), [],
+    'sin carpeta de datos la lista es vacía (no se rompe la INGESTA)');
+  await assert.rejects(() => almacen.leerTextoDeDatos('x.csv'), /autorizada/,
+    'sin carpeta la lectura se rechaza con un mensaje claro');
+});

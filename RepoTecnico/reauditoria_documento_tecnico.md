@@ -16,8 +16,8 @@
 > **RN-05 a RN-22** quedaron resueltos o declarados con su riesgo aceptado (**D-72 a D-75**); el detalle
 > está en **§10**. Además se **re-ejecutó el lente R2**, que en la primera pasada no había producido un
 > pase válido: sus **13 hallazgos** de consistencia documento ↔ código están en **§11**, todos resueltos,
-> verificados como falsos positivos o corregidos. Métricas finales: **150 pruebas** de módulos y
-> contratos + **58 comprobaciones E2E**, sin fallos.
+> verificados como falsos positivos o corregidos. Métricas finales: **153 pruebas** de módulos y
+> contratos + **64 comprobaciones E2E**, sin fallos.
 
 ---
 
@@ -442,7 +442,7 @@ La Fase 2 podrá declararse **cerrada** cuando se cumplan **todos** los criterio
 | Riesgos y legal | **RN-06** (base de licitud y plazo por categoría, pendiente de validación legal), **RN-11**/**RN-19** (continuidad/RTO y log sin escritura verificada) → **D-74**, **RN-N-02**, **RN-N-04** | **Declarados y aceptados** (D-74) con su constancia documental |
 | Coherencia documental | **RN-09**, **RN-13**, **RN-14**, **RN-16**, **RN-21** → **D-72** | **Corregidos**; el resto de coherencia lo cerró el lente **R2** (§11) |
 
-**Métricas tras las correcciones:** **150 pruebas** de módulos y contratos + **58 comprobaciones E2E**
+**Métricas tras las correcciones:** **153 pruebas** de módulos y contratos + **64 comprobaciones E2E**
 en verde, sin regresiones.
 
 ---
@@ -465,7 +465,7 @@ en verde, sin regresiones.
 | **R2-06** | Media | §4.3 describía `estructura.json` como **v1 con 19 campos**, cuando el contrato vivo es **v2 con 25 campos y `cabecera`** | **Corregido**: §4.3 muestra la **v2** (con `cabecera`, `filtro_central` y `no_se_persisten`), enumera los **25 campos** y añade una **nota de versiones** que explica qué era la v1 |
 | **R2-07** | Media | El respaldo de claves de CONFIGURACION traía **3 claves** y el catálogo por defecto documentado es de **6** | **Corregido en código**: catálogo **único** en `CONST.CLAVES_CLASIFICACION`, usado por la semilla y por la interfaz; prueba `el catálogo de claves por defecto es uno solo y tiene las 6 claves de D-65` |
 | **R2-08** | Media | **D-65** y **D-66** apuntaban a §§ que no contenían lo que afirmaban (§4.6/§5.2) | **Corregido**: D-65 → «§4.5 y §4.7.3»; D-66 → «§8.3, §9 y §10». Revisado el resto de referencias del anexo |
-| **R2-09** | Baja | `estado_proyecto.md` declaraba 66 decisiones, «27 RF, 7 RNF, 7 RT» y el documento técnico «Pendiente», con ciclos «No iniciado» | **Corregido**: **78 decisiones** (D-01 a D-78), **29 RF, 16 RNF y 11 RT**, artefactos al día (documento técnico reauditado, informe de pruebas, guía), ciclos C1–C6 cerrados y C7 en curso, y Fase 2 cerrada |
+| **R2-09** | Baja | `estado_proyecto.md` declaraba 66 decisiones, «27 RF, 7 RNF, 7 RT» y el documento técnico «Pendiente», con ciclos «No iniciado» | **Corregido**: **79 decisiones** (D-01 a D-79), **29 RF, 16 RNF y 11 RT**, artefactos al día (documento técnico reauditado, informe de pruebas, guía), ciclos C1–C6 cerrados y C7 en curso, y Fase 2 cerrada |
 | **R2-10** | Baja | No cuadraban los recuentos de líneas que se citaban como métrica de estado | **Corregido**: se **renuncia a citar el número de líneas** como métrica (el documento es vivo) y se fechan las cifras que se conservan |
 | **R2-11** | Baja | La ubicación del metadata de git difería entre documentos y con el filesystem | **Corregido** en los tres documentos y en RT-11: verificado con `git rev-parse --git-dir`, **`.git` es un directorio** en `C:\GGTO\proyecto` y el antiguo `C:\GGTO\git\GGTO-v1.git` se conserva **solo como copia histórica** |
 | **R2-12** | Baja | La tabla de Fase 2 de `estado_proyecto.md` seguía marcando los pasos 3, 5 y 6 como «En curso»/«Pendiente» | **Corregido**: los seis pasos figuran **completados** y la Fase 2 **cerrada** |
@@ -478,7 +478,7 @@ escribiera (`despacho.js` lo guarda y lo verifica), los recuentos de 16 archivos
 
 **Criterio de cierre cumplido:** los 22 hallazgos de la reauditoría y los 13 del lente R2 quedan
 **resueltos, verificados como falsos positivos o declarados con su riesgo aceptado**, la batería de
-**150 pruebas de módulos y contratos** y las **58 comprobaciones E2E** pasan sin fallos, y el corpus
+**153 pruebas de módulos y contratos** y las **64 comprobaciones E2E** pasan sin fallos, y el corpus
 no conserva ninguna cifra, referencia o contrato que contradiga al código. **La Fase 2 se declara
 CERRADA.**
 

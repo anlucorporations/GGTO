@@ -57,5 +57,11 @@ PASS :: descarta los 5 registros de otras centrales
 PASS :: quedan 51 casos nuevos de Francisco Salias
 PASS :: el reparto es 18 PEND + 33 GESTION
 PASS :: la revisión NO escribe el maestro
+PASS :: INGESTA lista los .csv de la carpeta de datos (D-78, D-79)
+PASS :: la lista preselecciona el archivo del día
+PASS :: la lista ofrece revisar el archivo elegido
+PASS :: la revisión desde la carpeta de datos da los 51 casos de la central
+PASS :: tras la revisión desde la lista se habilita la ingesta
+PASS :: la revisión desde la lista tampoco escribe el maestro
 
-Comprobación de interfaz: 58/58 correctas.
+Comprobación de interfaz: 64/64 correctas.

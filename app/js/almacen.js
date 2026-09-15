@@ -11,6 +11,8 @@
  *    (C7: CU-21, D-49, RNF-16);
  *  - ruta controlada de las salidas C:\GGTO\despachos para los PDF del
  *    despacho, con relectura verificada (C4: CU-17, D-27, D-67);
+ *  - CSV de ingesta de la carpeta de datos: listarlos (nombre, tamano y fecha) y
+ *    leer el elegido, sin pasar por el selector del navegador (D-78, D-79);
  *  - modo descarga para navegadores sin la API (RNF-03), exigiendo sesion.
  *
  * Depende de GGTO_NUCLEO (carga previa por <script>).
@@ -120,6 +122,8 @@
       autorizarDespachos: autorizarDespachosCarpeta,
       guardarSalida: guardarSalidaCarpeta,
       listarSalidas: listarSalidasCarpeta,
+      listarCSV: listarCSVCarpeta,
+      leerTextoDeDatos: leerTextoDeDatos,
       leerIncidencias: leerIncidenciasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (carpeta autorizada)'; }
     };
@@ -152,6 +156,9 @@
       autorizarDespachos: autorizarDespachosCarpeta,
       guardarSalida: guardarSalidaCarpeta,
       listarSalidas: listarSalidasCarpeta,
+      // Los archivos se autorizaron uno a uno: no hay carpeta que listar.
+      listarCSV: listarCSVCarpeta,
+      leerTextoDeDatos: leerTextoDeDatos,
       leerIncidencias: leerIncidenciasCarpeta,
       describir: function () { return CONST.RUTA_DATOS + ' (archivos elegidos uno a uno)'; }
     };
@@ -440,6 +447,75 @@
         ? archivo.text().then(function (t) { return t.length; })
         : archivo.size;
     }).catch(function () { return 0; });
+  }
+
+  /** Tamano y fecha de modificacion de un archivo de una carpeta autorizada. */
+  function datosDeArchivo(carpeta, nombre) {
+    return carpeta.getFileHandle(nombre).then(function (h) {
+      return h.getFile();
+    }).then(function (archivo) {
+      var tamano = (archivo.size === undefined || archivo.size === null)
+        ? archivo.text().then(function (t) { return t.length; })
+        : Promise.resolve(archivo.size);
+      return tamano.then(function (t) {
+        return {
+          tamano: t,
+          modificado: archivo.lastModified === undefined ? null : archivo.lastModified
+        };
+      });
+    }).catch(function () { return { tamano: 0, modificado: null }; });
+  }
+
+  // ------------------------------------------------------------------
+  // CSV de ingesta de la carpeta de datos (D-78, D-79)
+  // ------------------------------------------------------------------
+  /** Un archivo de ingesta es cualquier `*.csv` de la carpeta de datos. */
+  function esCSVDeIngesta(nombre) {
+    return /\.csv$/i.test(String(nombre || ''));
+  }
+
+  /**
+   * Los `*.csv` presentes en la carpeta de datos autorizada (D-78), con su tamano
+   * y su fecha, del mas reciente al mas antiguo. **Solo mira nombre, tamano y
+   * fecha: no abre ni interpreta el contenido.** Devuelve [] si la carpeta no
+   * esta autorizada (modo por archivos o modo descarga).
+   */
+  function listarCSVCarpeta() {
+    var almacen = this;
+    if (!almacen.carpeta) return Promise.resolve([]);
+    return nombresDeCarpeta(almacen.carpeta).then(function (nombres) {
+      var lista = [];
+      var cadena = Promise.resolve();
+      nombres.filter(esCSVDeIngesta).forEach(function (nombre) {
+        cadena = cadena.then(function () {
+          return datosDeArchivo(almacen.carpeta, nombre).then(function (d) {
+            lista.push({ nombre: nombre, tamano: d.tamano, modificado: d.modificado, ruta: CONST.RUTA_DATOS });
+          });
+        });
+      });
+      return cadena.then(function () {
+        lista.sort(function (a, b) {
+          if (a.modificado !== b.modificado) return (b.modificado || 0) - (a.modificado || 0);
+          return a.nombre < b.nombre ? 1 : -1;
+        });
+        return lista;
+      });
+    }).catch(function () { return []; });
+  }
+
+  /**
+   * Lee el texto de un archivo de la carpeta de datos autorizada: es la via por la
+   * que la INGESTA toma el CSV elegido de la lista, sin pasar por el selector del
+   * navegador (D-79). Rechaza con `tipo = 'sinCarpeta'` si no hay carpeta.
+   */
+  function leerTextoDeDatos(nombre) {
+    var almacen = this;
+    if (!almacen.carpeta) {
+      var e = new Error('La carpeta de datos ' + CONST.RUTA_DATOS + ' no está autorizada');
+      e.tipo = 'sinCarpeta';
+      return Promise.reject(e);
+    }
+    return leerDeCarpeta(almacen.carpeta, nombre).then(function (lectura) { return lectura.texto; });
   }
 
   /**

@@ -64,6 +64,30 @@
     var bloque = ctx.texto('div', null, 'bloque');
     bloque.appendChild(ctx.texto('h3', '1. Elegir el archivo del día'));
 
+    var zona = ctx.texto('div', null, 'zona-ingesta');
+    var acciones = ctx.texto('div', null, 'acciones');
+    var botonIngerir = ctx.boton('Ingestar los casos nuevos', 'boton-primario', function () {
+      ejecutarIngesta(ctx, zona, botonIngerir);
+    });
+    botonIngerir.disabled = true;
+
+    // --- via 1: los CSV que ya estan en la carpeta de datos (D-78, D-79) ----
+    // Es el camino normal: el archivo del dia vive en C:\GGTO\datos, que es la
+    // carpeta que la pagina ya tiene autorizada, asi que no hace falta navegar
+    // por el explorador de Windows.
+    var cajaDatos = ctx.texto('div', null, 'entrada-desde-datos');
+    cajaDatos.appendChild(ctx.texto('h4', 'Desde la carpeta de datos ' + RUTA_DATOS()));
+    var zonaLista = ctx.texto('div', null, 'lista-csv');
+    cajaDatos.appendChild(zonaLista);
+    bloque.appendChild(cajaDatos);
+
+    // --- via 2: el selector del navegador (archivo fuera de la carpeta) ----
+    var cajaArchivo = ctx.texto('div', null, 'entrada-desde-archivo');
+    cajaArchivo.appendChild(ctx.texto('h4', 'Desde este equipo'));
+    cajaArchivo.appendChild(ctx.texto('p',
+      'Para un archivo que todavía no está en ' + RUTA_DATOS() +
+      ' (un pendrive, la red…): lo normal es copiarlo antes a esa carpeta (D-78).', 'ayuda'));
+
     var entrada = document.createElement('input');
     entrada.type = 'file';
     entrada.accept = '.csv,text/csv';
@@ -74,20 +98,13 @@
     etiqueta.setAttribute('for', 'archivo-csv');
     etiqueta.textContent = 'Archivo CSV (separador «;», 80 columnas)';
 
-    bloque.appendChild(etiqueta);
-    bloque.appendChild(entrada);
+    cajaArchivo.appendChild(etiqueta);
+    cajaArchivo.appendChild(entrada);
+    bloque.appendChild(cajaArchivo);
     seccion.appendChild(bloque);
 
-    var zona = ctx.texto('div', null, 'zona-ingesta');
     seccion.appendChild(zona);
-
-    var acciones = ctx.texto('div', null, 'acciones');
-    var botonIngerir = ctx.boton('Ingestar los casos nuevos', 'boton-primario', function () {
-      ejecutarIngesta(ctx, zona, botonIngerir);
-    });
-    botonIngerir.disabled = true;
     acciones.appendChild(botonIngerir);
-
     acciones.appendChild(ctx.boton('Registrar que el CSV no llegó', 'boton-secundario', function () {
       registrarSinIngesta(ctx, zona);
     }));
@@ -95,15 +112,81 @@
 
     contenedor.appendChild(seccion);
 
+    /** Revisa un texto ya leído, venga de la lista o del selector. */
+    function revisar(ctx2, nombre, texto, zonaDestino, boton) {
+      vista.nombreArchivo = nombre;
+      vista.texto = texto;
+      vista.resultado = calcular(ctx2, texto);
+      pintarResultado(ctx2, zonaDestino, vista.resultado);
+      boton.disabled = !(vista.resultado && vista.resultado.ok && vista.resultado.casos.length > 0);
+    }
+
+    // Pinta la lista de CSV de la carpeta de datos (o explica por qué no hay).
+    function pintarLista() {
+      ctx.limpiar(zonaLista);
+      zonaLista.appendChild(ctx.texto('p', 'Buscando archivos .csv…', 'ayuda'));
+      var listar = ctx.almacen && typeof ctx.almacen.listarCSV === 'function'
+        ? ctx.almacen.listarCSV()
+        : Promise.resolve([]);
+      listar.then(function (lista) {
+        ctx.limpiar(zonaLista);
+        if (!lista.length) {
+          zonaLista.appendChild(ctx.texto('p',
+            'No hay ningún archivo .csv en esa carpeta: copie ahí el que entrega el emisor y pulse ' +
+            '«Actualizar la lista», o use el selector de abajo.', 'aviso aviso-alerta'));
+          return;
+        }
+        var seleccion = document.createElement('select');
+        seleccion.id = 'csv-datos';
+        seleccion.className = 'seleccion-archivo';
+        var deHoy = null;
+        lista.forEach(function (f, i) {
+          var opcion = document.createElement('option');
+          opcion.value = f.nombre;
+          opcion.textContent = f.nombre + '  (' + tamanoLegible(f.tamano) +
+            (f.modificado ? ', ' + fechaLegible(f.modificado) : '') + ')';
+          if (esDeHoy(f.nombre)) { opcion.textContent += '  ← el de hoy'; deHoy = f.nombre; }
+          seleccion.appendChild(opcion);
+        });
+        // Se preselecciona el archivo del día si está; si no, el más reciente.
+        seleccion.value = deHoy || lista[0].nombre;
+        zonaLista.appendChild(seleccion);
+
+        var botonRevisar = ctx.boton('Revisar el archivo elegido', 'boton-primario', function () {
+          var elegido = seleccion.value;
+          botonRevisar.disabled = true;
+          ctx.almacen.leerTextoDeDatos(elegido).then(function (texto) {
+            revisar(ctx, elegido, texto, zona, botonIngerir);
+          }).catch(function (e) {
+            ctx.avisar('No se pudo leer ' + elegido + ': ' +
+              (e && e.message ? e.message : e), 'aviso-error', { temporal: false });
+          }).then(function () { botonRevisar.disabled = false; });
+        });
+        zonaLista.appendChild(botonRevisar);
+
+        if (deHoy) {
+          zonaLista.appendChild(ctx.texto('p',
+            'El archivo del día (' + deHoy + ') está en la carpeta de datos.', 'aviso aviso-ok'));
+        } else {
+          zonaLista.appendChild(ctx.texto('p',
+            'Ninguno de los archivos de la carpeta corresponde a hoy (' + nombreDeHoy() + ').', 'aviso aviso-alerta'));
+        }
+      }).catch(function (e) {
+        ctx.limpiar(zonaLista);
+        zonaLista.appendChild(ctx.texto('p',
+          'No se pudo consultar la carpeta de datos: ' + (e && e.message ? e.message : e) +
+          '. Use el selector de abajo.', 'aviso aviso-alerta'));
+      });
+    }
+
+    cajaDatos.appendChild(ctx.boton('Actualizar la lista', 'boton-secundario', function () { pintarLista(); }));
+    pintarLista();
+
     entrada.addEventListener('change', function () {
       var archivo = entrada.files && entrada.files[0];
       if (!archivo) return;
-      vista.nombreArchivo = archivo.name;
       leerArchivo(archivo).then(function (texto) {
-        vista.texto = texto;
-        vista.resultado = calcular(ctx, texto);
-        pintarResultado(ctx, zona, vista.resultado);
-        botonIngerir.disabled = !(vista.resultado && vista.resultado.ok && vista.resultado.casos.length > 0);
+        revisar(ctx, archivo.name, texto, zona, botonIngerir);
       }).catch(function (e) {
         ctx.avisar('No se pudo leer el archivo: ' + (e && e.message ? e.message : e), 'aviso-error', { temporal: false });
       });
@@ -111,6 +194,33 @@
   }
 
   function CONST_MAESTRO() { return N.CONST.ARCHIVO_MAESTRO; }
+
+  function RUTA_DATOS() { return N.CONST.RUTA_DATOS; }
+
+  /** `detalle_averias_gpon DD_MM_AAAA.csv` del día de hoy. */
+  function nombreDeHoy() {
+    var partes = fechaDeHoy().split('/');
+    return 'detalle_averias_gpon ' + partes[0] + '_' + partes[1] + '_' + partes[2] + '.csv';
+  }
+
+  /** ¿El nombre corresponde al archivo del día (DD_MM_AAAA)? */
+  function esDeHoy(nombre) {
+    var partes = fechaDeHoy().split('/');
+    return String(nombre || '').indexOf(partes[0] + '_' + partes[1] + '_' + partes[2]) >= 0;
+  }
+
+  function tamanoLegible(bytes) {
+    var n = Number(bytes) || 0;
+    if (n < 1024) return n + ' B';
+    return Math.round(n / 1024) + ' KB';
+  }
+
+  function fechaLegible(marca) {
+    var d = new Date(Number(marca));
+    if (isNaN(d.getTime())) return '';
+    var p = function (x) { return String(x).length < 2 ? '0' + x : String(x); };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
 
   function leerArchivo(archivo) {
     if (typeof archivo.text === 'function') return archivo.text();
