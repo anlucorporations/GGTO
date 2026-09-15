@@ -16,7 +16,7 @@
 > **RN-05 a RN-22** quedaron resueltos o declarados con su riesgo aceptado (**D-72 a D-75**); el detalle
 > está en **§10**. Además se **re-ejecutó el lente R2**, que en la primera pasada no había producido un
 > pase válido: sus **13 hallazgos** de consistencia documento ↔ código están en **§11**, todos resueltos,
-> verificados como falsos positivos o corregidos. Métricas finales: **149 pruebas** de módulos y
+> verificados como falsos positivos o corregidos. Métricas finales: **150 pruebas** de módulos y
 > contratos + **58 comprobaciones E2E**, sin fallos.
 
 ---
@@ -442,7 +442,7 @@ La Fase 2 podrá declararse **cerrada** cuando se cumplan **todos** los criterio
 | Riesgos y legal | **RN-06** (base de licitud y plazo por categoría, pendiente de validación legal), **RN-11**/**RN-19** (continuidad/RTO y log sin escritura verificada) → **D-74**, **RN-N-02**, **RN-N-04** | **Declarados y aceptados** (D-74) con su constancia documental |
 | Coherencia documental | **RN-09**, **RN-13**, **RN-14**, **RN-16**, **RN-21** → **D-72** | **Corregidos**; el resto de coherencia lo cerró el lente **R2** (§11) |
 
-**Métricas tras las correcciones:** **149 pruebas** de módulos y contratos + **58 comprobaciones E2E**
+**Métricas tras las correcciones:** **150 pruebas** de módulos y contratos + **58 comprobaciones E2E**
 en verde, sin regresiones.
 
 ---
@@ -460,12 +460,12 @@ en verde, sin regresiones.
 | **R2-01** | Crítica | §1.2 declaraba «14 `PEND` + 37 `GESTION`» frente al **18 + 33** del resto del mismo documento, de D-38/D-65 y de las pruebas | **Corregido** en §1.2 (18 + 33, D-38/D-65) y **blindado**: la prueba `las cifras documentadas del archivo real cuadran entre sí` verifica que 51 = 18 + 33 y que 56 = 51 + 5 |
 | **R2-02** | Alta | `COLUMNAS_DESPACHO` declaraba 9 columnas frente a las 15 documentadas | **Verificado como corregido**: la constante tiene las **15 canónicas en su orden** y es la lista de referencia de `filasDespacho`. Se añade la comprobación `la constante COLUMNAS_DESPACHO del módulo son las 15 canónicas` para que no vuelva a divergir |
 | **R2-03** | Alta | El módulo **REPORTES no era alcanzable**: `reportes.js` se exportaba pero ninguna ruta lo renderizaba, no había sección y el E2E **fabricaba** la que faltaba | **Corregido (D-76):** REPORTES es la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (patrón de CONFIGURACION con RESPALDO/ENTORNO). El E2E **ya no fabrica secciones**: exige la sección real de cada pestaña y navega por la sub-pestaña. Añadida la prueba de contrato `REPORTES se alcanza desde MONITOREO y no como pestaña propia` |
-| **R2-04** | Alta | El informe de Fase 4 y `estado_proyecto.md` daban tres totales de pruebas distintos y desgloses desactualizados | **Corregido**: una **única ejecución** como fuente (**149** módulos y contratos + **52** E2E = **201**), con el desglose real por batería en el informe, en `estado_proyecto.md` (§11, §11.2, §11.3) y en la guía (§7) |
+| **R2-04** | Alta | El informe de Fase 4 y `estado_proyecto.md` daban tres totales de pruebas distintos y desgloses desactualizados | **Corregido**: una **única ejecución** como fuente (**150** módulos y contratos + **58** E2E = **208**), con el desglose real por batería en el informe, en `estado_proyecto.md` (§11, §11.2, §11.3) y en la guía (§7) |
 | **R2-05** | Media | El documento afirmaba «10 archivos» en `C:\GGTO\datos` y el directorio tiene 11 (incluido un `.bak` de `estructura.json`) | **Aclarado** en §5.4 y en la guía §1: el 10 es la **lista blanca** que se copia (9 JSON + `historial.jsonl`), los `.bak` del maestro son la rotación de D-42 y una copia manual de otro archivo queda **fuera** de la copia de cierre |
 | **R2-06** | Media | §4.3 describía `estructura.json` como **v1 con 19 campos**, cuando el contrato vivo es **v2 con 25 campos y `cabecera`** | **Corregido**: §4.3 muestra la **v2** (con `cabecera`, `filtro_central` y `no_se_persisten`), enumera los **25 campos** y añade una **nota de versiones** que explica qué era la v1 |
 | **R2-07** | Media | El respaldo de claves de CONFIGURACION traía **3 claves** y el catálogo por defecto documentado es de **6** | **Corregido en código**: catálogo **único** en `CONST.CLAVES_CLASIFICACION`, usado por la semilla y por la interfaz; prueba `el catálogo de claves por defecto es uno solo y tiene las 6 claves de D-65` |
 | **R2-08** | Media | **D-65** y **D-66** apuntaban a §§ que no contenían lo que afirmaban (§4.6/§5.2) | **Corregido**: D-65 → «§4.5 y §4.7.3»; D-66 → «§8.3, §9 y §10». Revisado el resto de referencias del anexo |
-| **R2-09** | Baja | `estado_proyecto.md` declaraba 66 decisiones, «27 RF, 7 RNF, 7 RT» y el documento técnico «Pendiente», con ciclos «No iniciado» | **Corregido**: **77 decisiones** (D-01 a D-77), **29 RF, 16 RNF y 11 RT**, artefactos al día (documento técnico reauditado, informe de pruebas, guía), ciclos C1–C6 cerrados y C7 en curso, y Fase 2 cerrada |
+| **R2-09** | Baja | `estado_proyecto.md` declaraba 66 decisiones, «27 RF, 7 RNF, 7 RT» y el documento técnico «Pendiente», con ciclos «No iniciado» | **Corregido**: **78 decisiones** (D-01 a D-78), **29 RF, 16 RNF y 11 RT**, artefactos al día (documento técnico reauditado, informe de pruebas, guía), ciclos C1–C6 cerrados y C7 en curso, y Fase 2 cerrada |
 | **R2-10** | Baja | No cuadraban los recuentos de líneas que se citaban como métrica de estado | **Corregido**: se **renuncia a citar el número de líneas** como métrica (el documento es vivo) y se fechan las cifras que se conservan |
 | **R2-11** | Baja | La ubicación del metadata de git difería entre documentos y con el filesystem | **Corregido** en los tres documentos y en RT-11: verificado con `git rev-parse --git-dir`, **`.git` es un directorio** en `C:\GGTO\proyecto` y el antiguo `C:\GGTO\git\GGTO-v1.git` se conserva **solo como copia histórica** |
 | **R2-12** | Baja | La tabla de Fase 2 de `estado_proyecto.md` seguía marcando los pasos 3, 5 y 6 como «En curso»/«Pendiente» | **Corregido**: los seis pasos figuran **completados** y la Fase 2 **cerrada** |
@@ -478,7 +478,7 @@ escribiera (`despacho.js` lo guarda y lo verifica), los recuentos de 16 archivos
 
 **Criterio de cierre cumplido:** los 22 hallazgos de la reauditoría y los 13 del lente R2 quedan
 **resueltos, verificados como falsos positivos o declarados con su riesgo aceptado**, la batería de
-**149 pruebas de módulos y contratos** y las **58 comprobaciones E2E** pasan sin fallos, y el corpus
+**150 pruebas de módulos y contratos** y las **58 comprobaciones E2E** pasan sin fallos, y el corpus
 no conserva ninguna cifra, referencia o contrato que contradiga al código. **La Fase 2 se declara
 CERRADA.**
 

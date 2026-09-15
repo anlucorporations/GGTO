@@ -304,3 +304,32 @@ test('REPORTES se alcanza desde MONITOREO y no como pestaña propia (RF-01, D-76
   assert.deepEqual(M.subsecciones.map((s) => s.id), ['tablero', 'reportes'],
     'MONITOREO debe alojar la sub-pestaña REPORTES (CU-19, CU-20)');
 });
+
+// ===========================================================================
+// 6. El CSV de ingesta vive en la carpeta de datos (D-78)
+// ===========================================================================
+test('el lanzador solo busca los CSV de ingesta en C:\\GGTO\\datos (D-78)', () => {
+  const ps = leer(path.join(raizProyecto, 'GGTO.ps1'));
+  assert.ok(/\$Datos\s*=\s*'C:\\GGTO\\datos'/.test(ps),
+    'la carpeta de datos del lanzador debe ser C:\\GGTO\\datos');
+
+  // La búsqueda está en Buscar-Csv y debe limitarse a la carpeta de datos.
+  const desde = ps.indexOf('function Buscar-Csv');
+  const hasta = ps.indexOf('function Mostrar-Csv');
+  assert.ok(desde > 0 && hasta > desde, 'GGTO.ps1 debe declarar Buscar-Csv antes de Mostrar-Csv');
+  const bloque = ps.slice(desde, hasta);
+  assert.ok(bloque.indexOf('Get-ChildItem -LiteralPath $Datos') >= 0,
+    'la búsqueda del CSV de ingesta debe leer la carpeta de datos');
+  assert.ok(bloque.indexOf("-Filter '*.csv'") >= 0,
+    'la búsqueda debe limitarse a los archivos .csv');
+  assert.ok(bloque.indexOf('$Raiz') < 0 && bloque.indexOf('$Respaldo') < 0 &&
+    bloque.indexOf('$Despachos') < 0,
+    'la búsqueda no debe recorrer otras carpetas del sistema');
+
+  // Y en ningún punto el lanzador mira Descargas, el Escritorio ni el proyecto:
+  // los datos de abonados no salen de C:\GGTO\datos (D-71, D-78).
+  assert.ok(!/Downloads|Desktop|USERPROFILE/.test(ps),
+    'el lanzador no debe buscar en Descargas ni en el Escritorio');
+  assert.ok(!/Get-ChildItem[^\r\n]*-Filter '\.csv'[^\r\n]*\$Raiz/.test(ps),
+    'el proyecto no es un sitio de búsqueda del CSV de ingesta');
+});

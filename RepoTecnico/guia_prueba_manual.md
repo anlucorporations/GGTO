@@ -97,6 +97,8 @@ de las carpetas de salida). Ver `entornos_globales.md` §4.5.
 
 - [ ] El bloque **INGESTA** está **dentro de la pestaña PANEL** (no es una pestaña propia: siguen siendo 7) y
       lo pueden usar **operador y supervisor** (la matriz de §2.1 lo permite a los dos roles; D-70).
+- [ ] El CSV del día está en **`C:\GGTO\datos`** —única carpeta donde el lanzador lo busca (**D-78**)—;
+      el archivo se elige desde ahí con el selector de INGESTA (el navegador exige ese gesto).
 - [ ] Al elegir `detalle_averias_gpon 12_09_2026.csv` aparece la revisión **sin escribir nada**: filas
       leídas, descartadas por no ser de la central, duplicadas, rechazadas, casos nuevos y el reparto
       PEND/GESTION (con ese archivo: 56 leídas, **51 de la central**, 5 descartadas y

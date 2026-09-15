@@ -10,13 +10,13 @@
 
 ## 1. Resumen global
 
-> ### VEREDICTO: **FASE 4 CUMPLIDA** — 207 comprobaciones, 0 fallos.
+> ### VEREDICTO: **FASE 4 CUMPLIDA** — 208 comprobaciones, 0 fallos.
 
 | Conjunto | Comprobaciones | Pasan | Fallan |
 |---|---|---|---|
-| Pruebas de módulos y contratos (`node --test`) | **149** | **149** | **0** |
+| Pruebas de módulos y contratos (`node --test`) | **150** | **150** | **0** |
 | Comprobación de interfaz E2E (Chrome/Edge headless sobre `index.html` real) | **58** | **58** | **0** |
-| **Total** | **207** | **207** | **0** |
+| **Total** | **208** | **208** | **0** |
 
 > **Nota de recuento.** Las cifras de este informe se regeneran de una **única ejecución** de los dos
 > arneses (los logs de §3 son la fuente); el desglose por batería es el número real de pruebas de cada
@@ -69,10 +69,10 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 | `pruebas_c6.mjs` — reportes y averías concentradas | 11 | 11 | 0 |
 | `pruebas_c7.mjs` — respaldo y restauración | 12 | 12 | 0 |
 | `pruebas_cu22.mjs` — diagnóstico del entorno | 6 | 6 | 0 |
-| `pruebas_contratos.mjs` — contratos de datos y de la hoja impresa | 14 | 14 | 0 |
-| **Subtotal de módulos y contratos** | **149** | **149** | **0** |
+| `pruebas_contratos.mjs` — contratos de datos, de la hoja impresa y del lanzador | 15 | 15 | 0 |
+| **Subtotal de módulos y contratos** | **150** | **150** | **0** |
 | **`pruebas/interfaz.mjs`** — comprobaciones E2E en navegador | 58 | 58 | 0 |
-| **Total** | **207** | **207** | **0** |
+| **Total** | **208** | **208** | **0** |
 
 **Cobertura E2E destacada** (lo que la interfaz hace de verdad, extremo a extremo):
 
@@ -146,7 +146,7 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 
 ## 6. Conclusión
 
-El sistema pasa **las 207 comprobaciones** (149 de módulos y contratos + 58 E2E) y los **11 defectos**
+El sistema pasa **las 208 comprobaciones** (150 de módulos y contratos + 58 E2E) y los **11 defectos**
 detectados en la fase quedan corregidos, con su prueba de regresión correspondiente y su constancia en
 `estado_proyecto.md`. Se cumple el criterio de aceptación de la Fase 4 («100% de pruebas pasando, sin
 errores funcionales») para todo lo verificable **sin el puesto de la central**; lo que exige el puesto

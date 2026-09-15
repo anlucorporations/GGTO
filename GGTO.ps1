@@ -231,6 +231,15 @@ function Invoke-Despliegue {
   Escribir ''
   Escribir '  Archivos de trabajo:' 'White'
   Probar-Datos
+  Escribir ''
+  Escribir '  Ingesta del dia:' 'White'
+  $csvDatos = @(Buscar-Csv)
+  if ($csvDatos.Count -gt 0) {
+    Dato ($csvDatos.Count.ToString() + ' archivo(s) .csv en ' + $Datos +
+      ' (el mas reciente: ' + $csvDatos[0].Name + ')')
+  } else {
+    Dato ('sin ningun .csv en ' + $Datos + ': copie ahi el archivo que entrega el emisor (D-78)')
+  }
   return ($okApp -and $okRuntime)
 }
 
@@ -238,41 +247,31 @@ function Invoke-Despliegue {
 # El CSV del dia
 # --------------------------------------------------------------------------
 function Buscar-Csv {
-  $sitios = @($Raiz, 'C:\GGTO', (Join-Path $env:USERPROFILE 'Downloads'), (Join-Path $env:USERPROFILE 'Desktop'))
-  $vistos = @{}
-  $lista = @()
-  foreach ($s in $sitios) {
-    if (-not $s -or -not (Test-Path -LiteralPath $s)) { continue }
-    foreach ($f in (Get-ChildItem -LiteralPath $s -Filter '*gpon*.csv' -File -ErrorAction SilentlyContinue)) {
-      if ($vistos.ContainsKey($f.FullName)) { continue }
-      $vistos[$f.FullName] = $true
-      $lista += $f
-    }
-  }
-  return @($lista | Sort-Object LastWriteTime -Descending)
+  # SOLO la carpeta de datos (D-78): el CSV de ingesta vive en C:\GGTO\datos, junto a
+  # los archivos de trabajo. No se busca en el proyecto, ni en Descargas, ni en el
+  # Escritorio: son datos de abonados y no deben dispersarse por el equipo.
+  if (-not (Test-Path -LiteralPath $Datos)) { return @() }
+  return @(Get-ChildItem -LiteralPath $Datos -Filter '*.csv' -File -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending)
 }
 
 function Mostrar-Csv {
   $hoy = Get-Date -Format 'dd_MM_yyyy'
-  $esperado = 'detalle_averias_gpon ' + $hoy + '.csv'
   $lista = Buscar-Csv
   Escribir ''
-  Escribir ('  CSV de entrada de hoy (' + $hoy + '):') 'White'
-  $deHoy = @($lista | Where-Object { $_.Name -like ('*' + $hoy + '*') })
-  if ($deHoy.Count -gt 0) {
-    foreach ($f in $deHoy) { Bien ($f.FullName + '  (' + [math]::Round($f.Length / 1KB) + ' KB)') }
-  } else {
-    Aviso ('no se encontro el archivo de hoy (' + $esperado + ').')
-    if ($lista.Count -gt 0) {
-      Escribir '  Ultimos archivos encontrados (se elige igualmente desde el navegador):' 'Yellow'
-      foreach ($f in ($lista | Select-Object -First 3)) {
-        Dato ($f.FullName + '  -  ' + $f.LastWriteTime.ToString('dd/MM/yyyy HH:mm'))
-      }
-    } else {
-      Dato 'no hay ningun *gpon*.csv en el proyecto, en C:\GGTO, en Descargas ni en el Escritorio.'
-    }
-    Dato 'El archivo lo aporta el emisor cada dia; en la pagina se elige con el selector de archivos.'
+  Escribir ('  Archivos de ingesta (.csv) en ' + $Datos + ':') 'White'
+  if ($lista.Count -eq 0) {
+    Aviso ('no hay ningun .csv en ' + $Datos + '.')
+    Dato ('Copie ahi el archivo que entrega el emisor (el de hoy seria detalle_averias_gpon ' + $hoy + '.csv)')
+    Dato 'y vuelva a ejecutar el lanzador; en la pagina se elige con el selector de archivos.'
+    return @()
   }
+  $deHoy = @($lista | Where-Object { $_.Name -like ('*' + $hoy + '*') })
+  foreach ($f in $lista) {
+    $detalle = $f.Name + '  (' + [math]::Round($f.Length / 1KB) + ' KB, ' + $f.LastWriteTime.ToString('dd/MM/yyyy HH:mm') + ')'
+    if ($f.Name -like ('*' + $hoy + '*')) { Bien ($detalle + '  [del dia]') } else { Dato $detalle }
+  }
+  if ($deHoy.Count -eq 0) { Aviso ('ninguno corresponde a hoy (' + $hoy + '): confirme que el archivo del dia ya esta en la carpeta.') }
   return $deHoy
 }
 
@@ -290,9 +289,9 @@ function Mostrar-RutinaDiaria {
   Escribir '  RUTINA DIARIA (en la pagina, una sola pestana por vez):' 'White'
   Dato '1. Iniciar sesion con el P00 y la contrasena (8+ caracteres; la sesion dura 8 horas).'
   if ($csv.Count -gt 0) {
-    Dato ('2. PANEL -> INGESTA: elegir el CSV del dia (' + $csv[0].Name + '); revisar el resumen y confirmar.')
+    Dato ('2. PANEL -> INGESTA: elegir el CSV del dia de ' + $Datos + ' (' + $csv[0].Name + '); revisar el resumen y confirmar.')
   } else {
-    Dato '2. PANEL -> INGESTA: elegir el CSV que entrego el emisor; revisar el resumen y confirmar.'
+    Dato ('2. PANEL -> INGESTA: copie el CSV que entrego el emisor a ' + $Datos + ' y elijalo ahi; revise el resumen y confirme.')
   }
   Dato '3. DESPACHO: generar el reparto, ajustarlo y emitir el PDF por cuadrilla (va a C:\GGTO\despachos).'
   Dato '4. DESPACHO -> control documental: entregar, recoger y destruir las hojas del dia.'

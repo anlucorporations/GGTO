@@ -17,6 +17,7 @@
 | Hojas de estilo | `...\app\css\estilos.css` |
 | Módulos JavaScript (16 archivos `.js`) | `...\app\js\` |
 | Datos de trabajo (fuera de Google Drive) | `C:\GGTO\datos\` — incluye `historial.jsonl` (historial inmutable *append-only*, D-56) y `incidencias.log` (log de accesos con rotación 5 MB × 5 archivos, D-58, **D-64**); respaldo **manual** a demanda del supervisor (D-36) |
+| CSV de ingesta (el del día) | `C:\GGTO\datos\detalle_averias_gpon DD_MM_YYYY.csv` — **única** carpeta donde se buscan los `.csv` de ingesta (**D-78**); el operador lo elige desde ahí con el selector de INGESTA. El almacén ignora lo que no sea uno de los 10 archivos de trabajo, así que el `.csv` no entra en la copia de cierre |
 | Ruta controlada de los PDF de despacho | `C:\GGTO\despachos\` — carpeta autorizada aparte, **nunca** la carpeta de Descargas (**D-67**, D-27); ver §4.3 |
 | Librerías locales | `...\app\lib\` (Chart.js 4.4.7 y jsPDF 2.5.2, RT-07) |
 | Lanzador de la jornada | `...\GGTO.bat` (doble clic) + `...\GGTO.ps1` (**D-77**); ver §4.5 |
@@ -257,7 +258,7 @@ y llama a `GGTO.ps1`. No necesita instalación, no usa CDN y no deja nada fuera 
 GGTO.bat                 :: jornada: despliegue + CSV del dia + rutina + servidor y navegador
 GGTO.bat desplegar       :: solo el despliegue (carpetas y los 10 archivos de trabajo)
 GGTO.bat abrir           :: solo el servidor local
-GGTO.bat pruebas         :: 149 pruebas de modulos y contratos + 58 comprobaciones E2E
+GGTO.bat pruebas         :: 150 pruebas de modulos y contratos + 58 comprobaciones E2E
 GGTO.bat cierre          :: rutina de cierre del dia y apertura de las carpetas de salida
 GGTO.bat estado          :: diagnostico del puesto, de los datos y de la copia de cierre
 GGTO.bat ayuda
@@ -273,7 +274,7 @@ GGTO.bat ayuda
 | Carpetas | Crea `C:\GGTO\datos`, `C:\GGTO\respaldo` y `C:\GGTO\despachos` si faltan (el selector de carpetas del navegador no puede elegir una carpeta inexistente) |
 | Archivos de trabajo | Siembra desde `app\js\nucleo.js` (`estructurasIniciales()`) los que falten y **valida** los que ya existen (JSON legible e `historial.jsonl` línea a línea) |
 | Contrato del CSV | Comprueba que `estructura.json` sea la **v2**: 80 columnas, 25 campos con `cabecera` y `no_se_persisten = [18, 30, 53, 80]`. Si no, avisa de que la ingesta abortará (D-44, D-69) |
-| CSV del día | Busca `*gpon*.csv` en el proyecto, en `C:\GGTO`, en Descargas y en el Escritorio, y **nombra el archivo de hoy** en la rutina diaria (el archivo se elige en la página: el navegador no permite saltarse ese gesto) |
+| CSV del día | Lista los `.csv` de **`C:\GGTO\datos` y solo de ahí** (señalando el del día, `detalle_averias_gpon DD_MM_YYYY.csv`) y avisa si no hay ninguno o si el que hay no es el de hoy. **No** busca en el proyecto, en Descargas ni en el Escritorio: son datos de abonados (**D-78**). El archivo se elige en la página, desde esa misma carpeta, con el selector de INGESTA |
 
 **Qué NO hace:** no hace copias de seguridad propias ni escribe en los archivos de trabajo. La copia de
 cierre es la **verificada por relectura** de CONFIGURACION → RESPALDO (D-49, RNF-16), y el respaldo
@@ -388,7 +389,7 @@ unidad sincronizada el problema no puede repetirse; además se reforzaron las ex
 
 | Característica | Valor |
 |---|---|
-| Nombre típico | `detalle_averias_gpon DD_MM_AAAA.csv` (en la raíz del proyecto). |
+| Nombre típico | `detalle_averias_gpon DD_MM_AAAA.csv`, en **`C:\GGTO\datos`** (única carpeta donde se busca, **D-78**). |
 | Separador | `;` (punto y coma) → así lo espera el parser posicional propio de `ingesta_nucleo.js`. |
 | Codificación | UTF-8 (con acentos). |
 | Encabezado | Una fila, 80 columnas; hay nombres repetidos (`informacion` ×2, `nombre` ×2, `descripcion` ×3), por lo que la lectura debe ser **posicional**. |
@@ -434,6 +435,7 @@ Materializa la «finalidad documentada» que exige D-28 y la política acordada 
 | **Responsable** | Supervisor de la central (rol único elevado, D-55), que administra accesos, respaldos y consultas de auditoría. |
 | **Datos tratados** | De abonados: `nombre`, `telefono`, `persona_reporta`, `contacto`, `direccion` y `ultimo_comentario` (texto libre). De trabajadores: `nombre`, `cedula`, `P00`, `telefono`, `correo`. |
 | **Origen** | El `.csv` diario que emite el área corporativa (`RT-02`). |
+| **Ubicación del CSV** | **`C:\GGTO\datos` es la única carpeta donde vive y donde el lanzador lo busca** (**D-78**): no se busca en Descargas, ni en el Escritorio, ni en el proyecto. El `.csv` no entra en la copia de cierre (esa copia son los 10 archivos de trabajo) y no se versiona (**D-71**). |
 | **Controles de acceso** | Servidor local solo en loopback sirviendo únicamente `app/`; `datos/` fuera del alcance HTTP; sesión obligatoria con `P00` + contraseña (hash con sal, caducidad 90 días); sin sesión válida no se muestra ningún dato (D-50); permisos por rol (D-35, RNF-12). |
 | **Trazabilidad** | `historial.jsonl` inmutable con cada cambio (D-56) y registro de intentos fallidos (D-57). |
 | **Registro de accesos** | Los intentos fallidos de sesión y las acciones denegadas por permisos se anotan en el log de la aplicación `C:\GGTO\datos\incidencias.log` (fecha y hora, `P00` intentado y motivo, **sin datos personales**), con rotación por tamaño de **5 MB × 5 archivos** (D-57, D-58, **D-64**; procedimiento en §4.2). |
