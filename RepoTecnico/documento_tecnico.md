@@ -65,6 +65,8 @@ El MVP es la decisión **D-02**: CONFIGURACION + CASOS + INGESTA + PANEL. Se sir
 
 **SPA estática**: HTML5 + CSS3 + JavaScript (ES2020), **sin framework** (RNF-03). Sin paso de compilación: los archivos se editan y se sirven tal cual. El estado vive en memoria (`almacen.js`) y la verdad vive en los JSON del disco (RT-01), leídos y escritos con File System Access API (D-01, RT-06). Las librerías son locales (RT-07): la central puede no tener internet.
 
+**Regla de presentación del atributo `hidden` (defecto D-13, `informe_pruebas_fase4.md` §4.1).** Ocultar y mostrar con el atributo `hidden` es el mecanismo de toda la interfaz (capa de acceso, pasos del diálogo, pestañas, avisos). Como **una regla de autor con `display` (flex/grid/block) gana al `[hidden] { display: none }` del navegador**, `estilos.css` fija la regla global **`[hidden] { display: none !important; }`**: ningún elemento con `hidden` puede quedar pintado, sea cual sea su clase. El arnés E2E lo comprueba en cada pasada (recorre todos los elementos con `hidden` y exige `display: none`). El 15/09/2026 este fallo dejó al usuario con el formulario de acceso encima de la aplicación después de identificarse, porque `.capa-acceso` (que sí tiene `display: flex`) no estaba en la lista de guardas.
+
 ### 2.2 Estructura de archivos
 
 ```

@@ -5,6 +5,8 @@ PASS :: ctx.almacen expone guardarArchivo
 PASS :: Chart.js cargado por la página (RT-07)
 PASS :: jsPDF cargado por la página (RT-07)
 PASS :: entorno.js cargado por la página (CU-22)
+PASS :: al abrir, la capa de acceso se ve
+PASS :: al abrir, el armazón de la aplicación está oculto (D-50)
 PASS :: cada pestaña de RF-01 tiene su sección real en index.html
 PASS :: render CASOS
 PASS :: render PANEL
@@ -45,6 +47,10 @@ PASS :: el intento fallido queda registrado
 PASS :: la sesión se abre con la credencial válida (P00 + contraseña con hash)
 PASS :: el armazón construye las 7 pestañas
 PASS :: el supervisor tiene habilitadas DESPACHO y CONFIGURACION
+PASS :: tras acceder, la capa de acceso desaparece de la pantalla
+PASS :: tras acceder se ve el armazón de la aplicación
+PASS :: tras acceder la página de inicio (PANEL) tiene contenido
+PASS :: ningún elemento con hidden queda visible (ninguno)
 PASS :: el PANEL aloja el bloque INGESTA del CSV (CU-08)
 PASS :: la revisión lee las 56 filas del archivo real
 PASS :: descarta los 5 registros de otras centrales
@@ -52,4 +58,4 @@ PASS :: quedan 51 casos nuevos de Francisco Salias
 PASS :: el reparto es 18 PEND + 33 GESTION
 PASS :: la revisión NO escribe el maestro
 
-Comprobación de interfaz: 52/52 correctas.
+Comprobación de interfaz: 58/58 correctas.

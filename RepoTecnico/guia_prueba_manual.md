@@ -308,7 +308,9 @@ cd C:\GGTO\proyecto
 node pruebas/interfaz.mjs
 ```
 
-Deben pasar **52 de 52**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
+Deben pasar **58 de 58**. Es la que detecta los defectos de contrato entre `app.js` y los módulos
 (por ejemplo, que una pestaña no tenga su sección real, que falte cargar una librería local o que un
-bloque no tenga punto de entrada), y recorre de verdad la **sesión con credencial**, la **ingesta del CSV real**,
-el alta del despacho, la entrega, la recogida y la destrucción de las hojas, el respaldo y el reporte.
+bloque no tenga punto de entrada) y los de **visibilidad** (que la capa de acceso no desaparezca tras
+identificarse, o que un elemento con `hidden` siga pintado —defecto **D-13**—), y recorre de verdad la
+**sesión con credencial**, la **ingesta del CSV real**, el alta del despacho, la entrega, la recogida y
+la destrucción de las hojas, el respaldo y el reporte.

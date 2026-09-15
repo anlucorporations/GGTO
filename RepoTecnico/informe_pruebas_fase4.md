@@ -1,7 +1,7 @@
 # Informe de pruebas — Fase 4 (GGTO-v1)
 
 - **Proyecto:** GGTO-v1 — Página HTML de gestión de averías, central Francisco Salias (Área 4), CANTV.
-- **Fase:** 4 (Pruebas). **Fecha del informe:** 14/09/2026. **Última regeneración:** 14/09/2026 (tras la reauditoría del documento técnico y los hallazgos del lente R2).
+- **Fase:** 4 (Pruebas). **Fecha del informe:** 14/09/2026. **Última regeneración:** 15/09/2026 (defecto **D-13** de visibilidad de la capa de acceso, encontrado en el puesto, y comprobaciones de visibilidad del arnés E2E).
 - **Alcance:** verificación completa del sistema entregado en la Fase 3 (ciclos C1 a C7) antes de darlo por cerrado.
 - **Logs de la ejecución:** `RepoTecnico/logs/pruebas_fase4_modulos.log` (pruebas de módulos) y
   `RepoTecnico/logs/pruebas_fase4_interfaz.log` (comprobación de interfaz).
@@ -10,22 +10,23 @@
 
 ## 1. Resumen global
 
-> ### VEREDICTO: **FASE 4 CUMPLIDA** — 201 comprobaciones, 0 fallos.
+> ### VEREDICTO: **FASE 4 CUMPLIDA** — 207 comprobaciones, 0 fallos.
 
 | Conjunto | Comprobaciones | Pasan | Fallan |
 |---|---|---|---|
 | Pruebas de módulos y contratos (`node --test`) | **149** | **149** | **0** |
-| Comprobación de interfaz E2E (Chrome/Edge headless sobre `index.html` real) | **52** | **52** | **0** |
-| **Total** | **201** | **201** | **0** |
+| Comprobación de interfaz E2E (Chrome/Edge headless sobre `index.html` real) | **58** | **58** | **0** |
+| **Total** | **207** | **207** | **0** |
 
 > **Nota de recuento.** Las cifras de este informe se regeneran de una **única ejecución** de los dos
 > arneses (los logs de §3 son la fuente); el desglose por batería es el número real de pruebas de cada
 > archivo. Las cifras anteriores (142 + 50) quedaron desactualizadas al añadirse las pruebas de contrato
 > de los hallazgos **R2-01, R2-02, R2-07 y R2-03** y las dos comprobaciones E2E de la ruta de REPORTES.
 
-**Defectos encontrados y corregidos en esta fase: 10** (2 de contrato de datos, 3 de la hoja impresa,
-1 de accesibilidad de funcionalidad, 1 de ruta de la interfaz, 1 de valores por defecto y 4 documentales,
-estos últimos del lente R2 de la reauditoría). Ninguno queda abierto.
+**Defectos encontrados y corregidos en esta fase: 11** (2 de contrato de datos, 3 de la hoja impresa,
+1 de accesibilidad de funcionalidad, 1 de ruta de la interfaz, 1 de valores por defecto, 1 de
+**visibilidad de la interfaz** —encontrado en el puesto el 15/09/2026— y 4 documentales, estos últimos
+del lente R2 de la reauditoría). Ninguno queda abierto.
 Dos de ellos hacían que una funcionalidad completa fuera **inalcanzable** o **incorrecta** para el
 usuario, y ninguno era visible con las pruebas unitarias que ya existían: los destapó la combinación de
 **pruebas de contrato** y **pruebas E2E sobre la página real**.
@@ -70,8 +71,8 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 | `pruebas_cu22.mjs` — diagnóstico del entorno | 6 | 6 | 0 |
 | `pruebas_contratos.mjs` — contratos de datos y de la hoja impresa | 14 | 14 | 0 |
 | **Subtotal de módulos y contratos** | **149** | **149** | **0** |
-| **`pruebas/interfaz.mjs`** — comprobaciones E2E en navegador | 52 | 52 | 0 |
-| **Total** | **201** | **201** | **0** |
+| **`pruebas/interfaz.mjs`** — comprobaciones E2E en navegador | 58 | 58 | 0 |
+| **Total** | **207** | **207** | **0** |
 
 **Cobertura E2E destacada** (lo que la interfaz hace de verdad, extremo a extremo):
 
@@ -100,6 +101,7 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 | **D-3** | **La tabla del PDF se salía del área imprimible**: medía 276 mm sobre 263,4 mm disponibles, de modo que la última columna se imprimía fuera del margen | El ancho de la última columna se forzaba a un mínimo de 30 mm sin comprobar el total | La última columna absorbe el resto exacto del área imprimible (`anchoTabla()`), y el ancho total se verifica | `la tabla del despacho cabe en el área imprimible de la hoja (RNF-05)` |
 | **D-4** | **El texto de las celdas se recortaba a un tercio de lo que cabía**: se veían 5 caracteres donde caben 14, con pérdida de direcciones y comentarios | `truncar()` mezclaba **puntos** (cuerpo de letra) con **milímetros** (ancho): dividía por 3,75 en lugar de 1,32 | Se convierte el cuerpo de letra a milímetros (`MM_POR_PUNTO`) y se descuenta el relleno de la celda | Contrato de la hoja + paginación de `pruebas_c4` |
 | **D-8** | **El módulo de REPORTES no era alcanzable**: `reportes.js` se exportaba pero **ninguna ruta de `app.js` lo invocaba**, no tenía sección en `index.html` y el E2E **fabricaba** la sección que faltaba, así que la comprobación pasaba sin que la ruta existiera (hallazgo **R2-03**) | El fuente describe REPORTES como salida de CU-19/CU-20, pero al implementar C6 solo se enrutaron las 7 pestañas de RF-01 | REPORTES pasa a ser la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** —el mismo patrón con que CONFIGURACION aloja RESPALDO y ENTORNO— (**D-76**), y el arnés E2E deja de fabricar secciones: exige la **sección real** de cada pestaña y navega por la sub-pestaña | `REPORTES se alcanza desde MONITOREO y no como pestaña propia (RF-01, D-76)`, `cada pestaña de RF-01 tiene su sección real en index.html` y `la sub-pestaña REPORTES renderiza con la ruta real de la aplicación` |
+| **D-13** | **Tras acceder, el formulario de acceso seguía tapando la aplicación**: la sesión se abría (el log registraba `sesion \| inicio`), las 7 pestañas se construían y el PANEL se renderizaba, pero el usuario **no veía nada**: la capa de acceso, que tiene `display: flex` en `.capa-acceso`, no se ocultaba al ponerle el atributo `hidden`, porque **una regla de autor gana al `[hidden]` del navegador**. Lo encontró el usuario en el puesto el 15/09/2026 (`incidencias.log`: cuatro `sesion \| inicio` seguidos) | El CSS protegía con `X[hidden] { display: none }` a `.app`, `.paso`, `.aviso` y `.panel-pestana`, pero **se olvidó de `.capa-acceso`**; y el E2E comprobaba `estado.sesion` y el número de pestañas, nunca la **visibilidad real** | Regla global en `estilos.css`: **`[hidden] { display: none !important; }`** (más `.capa-acceso[hidden]`), de modo que ningún elemento pueda quedar pintado con `hidden`; y el E2E pasa a comprobar la **visibilidad calculada**: capa de acceso visible al abrir, oculta tras acceder, armazón y PANEL visibles con contenido, y **ningún elemento con `hidden` pintado** | `al abrir, la capa de acceso se ve`, `al abrir, el armazón de la aplicación está oculto (D-50)`, `tras acceder, la capa de acceso desaparece de la pantalla`, `tras acceder se ve el armazón de la aplicación`, `tras acceder la página de inicio (PANEL) tiene contenido` y `ningún elemento con hidden queda visible` |
 
 ### 4.2 De contrato de datos
 
@@ -144,7 +146,7 @@ usuario, y ninguno era visible con las pruebas unitarias que ya existían: los d
 
 ## 6. Conclusión
 
-El sistema pasa **las 201 comprobaciones** (149 de módulos y contratos + 52 E2E) y los **10 defectos**
+El sistema pasa **las 207 comprobaciones** (149 de módulos y contratos + 58 E2E) y los **11 defectos**
 detectados en la fase quedan corregidos, con su prueba de regresión correspondiente y su constancia en
 `estado_proyecto.md`. Se cumple el criterio de aceptación de la Fase 4 («100% de pruebas pasando, sin
 errores funcionales») para todo lo verificable **sin el puesto de la central**; lo que exige el puesto

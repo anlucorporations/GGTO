@@ -30,7 +30,7 @@ y se cerraron **las 18 ambigüedades** del documento fuente: **no queda ninguna 
 | `RepoTecnico/entornos_globales.md` | Rutas, estructura de carpetas, stack, lanzador del servidor local, constantes y notas del host. | Completado |
 | `RepoTecnico/casos_uso.md` + `casos_uso/diagramas.md` | 22 casos de uso con Gherkin/EARS, trazabilidad y los diagramas Mermaid. | Completado y auditado |
 | `RepoTecnico/documento_tecnico.md` | Arquitectura, contratos de datos, procedimientos, trazabilidad módulo → CU → RF/RNF/RT, riesgos y el anexo de decisiones D-01 a D-77. | Completado (**reauditado** el 14/09/2026) |
-| `RepoTecnico/informe_pruebas_fase4.md` + `RepoTecnico/logs/` | Informe de la Fase 4 (201 comprobaciones) con los logs de las dos ejecuciones. | Completado |
+| `RepoTecnico/informe_pruebas_fase4.md` + `RepoTecnico/logs/` | Informe de la Fase 4 (207 comprobaciones) con los logs de las dos ejecuciones. | Completado |
 | `RepoTecnico/guia_prueba_manual.md` | Guía de prueba manual para el puesto de la central (bloque a bloque). | Completado |
 | `RepoTecnico/estado_proyecto.md` | Este documento (índice vivo del proyecto). | Vivo |
 
@@ -216,7 +216,7 @@ A-01 a A-18: **todas cerradas** (A-04 D-25, A-05 D-30, A-08 D-34, A-09 D-33, A-1
 2. ~~**Fase 2 (Auditoría)**~~ — **cerrada** el 14/09/2026 tras la reauditoría del documento técnico
    (`reauditoria_documento_tecnico.md`) y el cierre de sus hallazgos (§11.3).
 3. ~~**Fase 3 (Desarrollo)**~~ — **cerrada**: los ciclos **C1 a C6** están entregados y C7 está en curso.
-4. ~~**Fase 4 (Pruebas)**~~ — **cerrada** el 14/09/2026 (201 comprobaciones, 0 fallos).
+4. ~~**Fase 4 (Pruebas)**~~ — **cerrada** el 14/09/2026 (207 comprobaciones, 0 fallos).
 5. **Fase 5 (Manuales): omitida por decisión del usuario.**
 6. **Lo que queda** es la parte que exige el puesto de la central: prueba con los datos reales de una
    semana completa, impresión física del despacho, medición de los umbrales de desempeño, modo degradado
@@ -309,7 +309,7 @@ Plan vertical acordado (D-02): el MVP son los ciclos **C1 a C3**.
 | **C6** | Reportes y seguimiento: parte de trabajo diario, casos especiales (EMP/REF abiertos, D-33) y averías concentradas por sector con umbral editable (D-25) sobre la semana operativa (D-66) | **Cerrado** — 11 pruebas. La salida se renderiza en la **sub-pestaña «REPORTES y seguimiento» de MONITOREO** (**D-76**, cierra el hallazgo R2-03: antes el módulo no tenía ruta) |
 | **C7** | Pruebas con datos reales, impresión, respaldo y restauración probados, y manual de usuario | **En curso** — entregados y probados: **respaldo y restauración (CU-21)** en `app/js/respaldo.js` (copia de cierre de los 10 archivos verificada por relectura, restauración con respaldo previo `.bak`, confirmación escrita y RTO/RPO); **control documental del despacho (CU-17)**: entrega, recogida y destrucción por cuadrilla, con estado de sesión y asientos en `incidencias.log` (**D-68**); y **diagnóstico del puesto (CU-22)** en `app/js/entorno.js`, subpestaña **ENTORNO** de CONFIGURACION. Quedan la prueba con datos reales en el puesto, la impresión y el manual de usuario |
 
-**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **149 pruebas automatizadas en verde** (módulos y contratos), más **52 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
+**MVP completo:** con C1, C2 y C3 entregados, el alcance del MVP de D-02 está operativo; los ciclos **C4, C5 y C6** (despacho y PDF, monitoreo y gráficos, y reportes) también están cerrados y **C7 está en curso** con el respaldo, el control documental y el diagnóstico ya entregados. **149 pruebas automatizadas en verde** (módulos y contratos), más **58 comprobaciones de interfaz** en Chrome/Edge headless (`pruebas/interfaz.mjs`).
 
 ### 11.2 Fase 4 (Pruebas) — cerrada
 
@@ -317,9 +317,9 @@ Informe completo: `RepoTecnico/informe_pruebas_fase4.md`; logs en `RepoTecnico/l
 
 | Aspecto | Resultado |
 |---|---|
-| Veredicto | **Fase 4 cumplida** — **201 comprobaciones, 0 fallos** (149 de módulos y contratos + 52 E2E) |
-| Pruebas nuevas de la fase | `pruebas/pruebas_contratos.mjs` (14 pruebas de contrato contra el CSV real) y la comprobación E2E ampliada de 34 a **52** (sesión con credencial real, ingesta del CSV real, respaldo, reporte por su ruta real y sección real de cada pestaña) |
-| Defectos encontrados | **10**: la **ingesta del CSV era inalcanzable** (no la invocaba nadie), la **hoja del despacho** no llevaba 4 columnas canónicas y se salía del área imprimible, el **recorte de texto** del PDF mezclaba puntos y milímetros, `COLUMNAS_DESPACHO` contradecía las 15 canónicas, `estructura.json` declaraba obligatoria la `direccion` contra el dato real, **REPORTES no tenía ruta** (R2-03), el **respaldo de claves** de CONFIGURACION traía 3 en vez de 6 (R2-07) y cuatro defectos documentales de cifras, versiones y referencias del lente **R2** |
+| Veredicto | **Fase 4 cumplida** — **207 comprobaciones, 0 fallos** (149 de módulos y contratos + 58 E2E) |
+| Pruebas nuevas de la fase | `pruebas/pruebas_contratos.mjs` (14 pruebas de contrato contra el CSV real) y la comprobación E2E ampliada de 34 a **58** (sesión con credencial real, ingesta del CSV real, respaldo, reporte por su ruta real, sección real de cada pestaña y, tras el defecto **D-13**, **visibilidad calculada** de la capa de acceso, del armazón y del PANEL, más la red que exige que ningún elemento con `hidden` quede pintado) |
+| Defectos encontrados | **11**: la **ingesta del CSV era inalcanzable** (no la invocaba nadie), la **hoja del despacho** no llevaba 4 columnas canónicas y se salía del área imprimible, el **recorte de texto** del PDF mezclaba puntos y milímetros, `COLUMNAS_DESPACHO` contradecía las 15 canónicas, `estructura.json` declaraba obligatoria la `direccion` contra el dato real, **REPORTES no tenía ruta** (R2-03), el **respaldo de claves** de CONFIGURACION traía 3 en vez de 6 (R2-07), cuatro defectos documentales de cifras, versiones y referencias del lente **R2**, y **D-13**: tras acceder, **el formulario de acceso seguía tapando la aplicación** porque `.capa-acceso` fijaba `display: flex` y anulaba el atributo `hidden` (lo encontró el usuario en el puesto el 15/09/2026) |
 | Correcciones | Todas aplicadas y con prueba de regresión; decisiones nuevas **D-69** (la dirección no es obligatoria en el contrato del CSV), **D-70** (el bloque INGESTA vive en el PANEL y lo ejecutan los dos roles) y **D-76** (REPORTES es la sub-pestaña de MONITOREO) |
 | Riesgos residuales | Prueba con los datos reales de una semana, impresión física y modo degradado real: exigen el puesto de la central (criterio de terminado de **C7**) |
 
@@ -339,18 +339,25 @@ Informe: `RepoTecnico/reauditoria_documento_tecnico.md` (skill `equipo-auditoria
 | Pendiente | **Ninguno bloqueante.** Los 22 hallazgos quedan **resueltos o declarados**: RN-02 (el criterio de C2 ya no se declara verificado: se anota como implementado y **pendiente de medir en el puesto**), RN-05 (el asiento de entrega ya no escribe el receptor: **D-73**), RN-06 (la ficha declara base de licitud pendiente y plazo por categoría), RN-07/RN-15 (contrato del diccionario alineado), RN-08 (volumen de referencia de RNF-05 y criterios de C4/C5 rebajados a «pendiente de medir»), RN-09 (18/33 y rango D-74 en todo el corpus, incluido el diagrama de secuencia), RN-10 (16 archivos y 2 librerías), RN-11/RN-19 (aceptados y declarados: **D-74**), RN-12 (el lanzador ya no abre el navegador antes que el servidor y falla rápido sin runtime), RN-13/RN-14 (categorías ISO y RNF-13 declaradas con su aceptación y sus módulos), RN-16 (referencias de D-67/D-68 y procedimiento), RN-17 (§8.3 sin duplicidades), RN-18 (§4.7.1 conforme a D-69), RN-21 (conteo y umbral conforme a RF-26/CU-20: **D-72**, con pruebas) y RN-22 (`C:\GGTO\despachos` en el árbol y las rutas) |
 | Riesgos residuales declarados | Medición en el puesto de RNF-02/S-RNF-02b, RNF-05 y RNF-13; continuidad del puesto y RTO (RN-11); validación legal de la base de licitud (RN-06); exposición previa de los repositorios públicos (D-71) |
 | Lente **R2** (consistencia documento ↔ código) | **13 hallazgos**: 1 crítico (la cifra 14/37 de §1.2 frente a 18/33), 3 altos (la constante `COLUMNAS_DESPACHO`, **REPORTES sin ruta** y los recuentos de pruebas), 4 medios (los 10 archivos del directorio, §4.3 como v1 de 19 campos, el respaldo de claves con 3 en vez de 6 y las referencias de D-65/D-66) y 5 bajos (conteos de `estado_proyecto.md`, metadatos de git, recuentos de líneas y el residuo de §7.2 contra D-71). **Todos corregidos o verificados como falsos positivos** |
-| Métricas | **149 pruebas** de módulos y contratos + **52 comprobaciones E2E** en verde, sin regresiones |
+| Métricas | **149 pruebas** de módulos y contratos + **58 comprobaciones E2E** en verde, sin regresiones |
 
-### 11.1 Defectos de integración encontrados y corregidos (18/09/2026)
+### 11.1 Defectos de integración encontrados y corregidos
 
-La comprobación de interfaz se creó **después** de descubrir que la página no llegaba a renderizar ninguna pestaña, aunque las 114 pruebas de módulos pasaban. Los dos defectos eran de **contrato entre `app.js` y los módulos**, invisibles para las pruebas unitarias:
+Dos tandas de defectos que **ninguna prueba unitaria veía**, porque son de contrato entre piezas
+(`app.js` ↔ módulos) o de **presentación** (CSS ↔ atributo `hidden`).
 
-| Defecto | Causa | Corrección |
-|---|---|---|
-| **Toda pestaña lanzaba `TypeError`** al renderizar (`Cannot read properties of undefined (reading 'cuadrillas.json')`) | `contexto()` entregaba `almacen: A` —el **módulo** `GGTO_ALMACEN`— mientras los 10 módulos usan `ctx.almacen.datos`, `guardarArchivo`, `agregarHistorial` e `historialTexto`, que son de la **instancia** | `app.js`: `contexto()` pasa `estado.almacen` (la instancia autorizada) con un `almacenVacio()` defensivo para antes de autorizar la carpeta |
-| **GRAFICOS nunca dibujaba** («falta la librería Chart.js») | `app/lib/chart.umd.min.js` existía y estaba fijado (RT-07), pero **`index.html` no lo cargaba** | `index.html`: se añade `<script src="lib/chart.umd.min.js">` junto a jsPDF |
+| # | Defecto | Causa | Corrección |
+|---|---|---|---|
+| **Defecto 1** (18/09/2026) | **Toda pestaña lanzaba `TypeError`** al renderizar (`Cannot read properties of undefined (reading 'cuadrillas.json')`) | `contexto()` entregaba `almacen: A` —el **módulo** `GGTO_ALMACEN`— mientras los 10 módulos usan `ctx.almacen.datos`, `guardarArchivo`, `agregarHistorial` e `historialTexto`, que son de la **instancia** | `app.js`: `contexto()` pasa `estado.almacen` (la instancia autorizada) con un `almacenVacio()` defensivo para antes de autorizar la carpeta |
+| **Defecto 2** (18/09/2026) | **GRAFICOS nunca dibujaba** («falta la librería Chart.js») | `app/lib/chart.umd.min.js` existía y estaba fijado (RT-07), pero **`index.html` no lo cargaba** | `index.html`: se añade `<script src="lib/chart.umd.min.js">` junto a jsPDF |
+| **D-13** (15/09/2026, **en el puesto**) | **Tras acceder no se veía la aplicación**: el formulario de acceso seguía tapando el armazón. La sesión **sí** se abría —`incidencias.log` registró cuatro `sesion \| inicio` seguidos—, las 7 pestañas se construían y el PANEL se renderizaba detrás | `.capa-acceso` fija `display: flex` y **una regla de autor gana al `[hidden] { display: none }` del navegador**; el CSS protegía `.app`, `.paso`, `.aviso` y `.panel-pestana`, pero no la capa de acceso. El E2E miraba el estado (`estado.sesion`, número de pestañas), nunca la **visibilidad calculada** | `estilos.css`: regla global **`[hidden] { display: none !important; }`** (más `.capa-acceso[hidden]`), que impide el fallo para cualquier elemento presente o futuro. E2E: seis comprobaciones de visibilidad, incluida la red que exige que **ningún elemento con `hidden` quede pintado** (ver `informe_pruebas_fase4.md` §4.1, defecto **D-13**) |
 
-**Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y renderiza las 7 pestañas (exigiendo que cada una tenga su **sección real**) más la sub-pestaña REPORTES de MONITOREO con el `contexto()` real, así que estos defectos ya no pueden volver sin que la comprobación falle.
+**Regresión:** `pruebas/interfaz.mjs` carga el `index.html` real en Chrome/Edge headless y exige que cada
+pestaña tenga su **sección real**, que la capa de acceso **desaparezca** tras acceder, que el armazón y el
+PANEL queden **visibles con contenido** y que **ningún** elemento con `hidden` esté pintado, además de
+renderizar la sub-pestaña REPORTES de MONITOREO con el `contexto()` real. Verificado que las
+comprobaciones **fallan** si se retira el arreglo del CSS: sin él, la comprobación de la capa de acceso
+y la red de `hidden` acusan `acceso`.
 
 **Lanzador de la jornada (D-77):** `GGTO.bat` (doble clic, envoltorio) + `GGTO.ps1` (despliegue, CSV del
 día, rutina diaria y arranque), junto a los lanzadores del servidor `servir-ggto.ps1` y `servir-ggto.bat`.
@@ -373,4 +380,4 @@ con los datos reales de la central (`region = CAPITAL`).
 `C:\GGTO\proyecto`. Pruebas de módulos:
 `node --test pruebas/pruebas_c1.mjs pruebas/pruebas_almacen_c1.mjs pruebas/pruebas_c1b.mjs pruebas/pruebas_c2.mjs pruebas/pruebas_c3.mjs pruebas/pruebas_c4.mjs pruebas/pruebas_c4b.mjs pruebas/pruebas_c5.mjs pruebas/pruebas_c6.mjs pruebas/pruebas_c7.mjs pruebas/pruebas_cu22.mjs pruebas/pruebas_contratos.mjs` (149 pruebas).
 Comprobación de interfaz (necesita Chrome o Edge; sirve la página por HTTP en loopback):
-`node pruebas/interfaz.mjs` (52 comprobaciones).
+`node pruebas/interfaz.mjs` (58 comprobaciones).

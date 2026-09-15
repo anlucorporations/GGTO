@@ -68,6 +68,15 @@ textarea:focus-visible,
 .salto-contenido:focus { left: .5rem; top: .5rem; }
 
 /* ------------------------------------------------------------------ Acceso */
+/* REGLA DE ORO del atributo `hidden`: una regla de autor con `display`
+   (flex/grid/block) ANULA el `[hidden] { display: none }` del navegador, porque
+   la hoja del autor gana a la del navegador. Ocurrió con `.capa-acceso`
+   (`display: flex`): la sesión se abría y el formulario de acceso seguía encima
+   de la aplicación (defecto del 15/09/2026). Esta regla global lo impide para
+   cualquier elemento presente o futuro; las reglas `X[hidden]` de más abajo se
+   conservan como documentación de la intención. */
+[hidden] { display: none !important; }
+
 .capa-acceso {
   position: fixed;
   inset: 0;
@@ -79,6 +88,7 @@ textarea:focus-visible,
   overflow: auto;
   z-index: 50;
 }
+.capa-acceso[hidden] { display: none; }
 .tarjeta-acceso {
   background: var(--blanco);
   border-radius: var(--radio);

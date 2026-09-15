@@ -17,7 +17,7 @@
 > está en **§10**. Además se **re-ejecutó el lente R2**, que en la primera pasada no había producido un
 > pase válido: sus **13 hallazgos** de consistencia documento ↔ código están en **§11**, todos resueltos,
 > verificados como falsos positivos o corregidos. Métricas finales: **149 pruebas** de módulos y
-> contratos + **52 comprobaciones E2E**, sin fallos.
+> contratos + **58 comprobaciones E2E**, sin fallos.
 
 ---
 
@@ -442,7 +442,7 @@ La Fase 2 podrá declararse **cerrada** cuando se cumplan **todos** los criterio
 | Riesgos y legal | **RN-06** (base de licitud y plazo por categoría, pendiente de validación legal), **RN-11**/**RN-19** (continuidad/RTO y log sin escritura verificada) → **D-74**, **RN-N-02**, **RN-N-04** | **Declarados y aceptados** (D-74) con su constancia documental |
 | Coherencia documental | **RN-09**, **RN-13**, **RN-14**, **RN-16**, **RN-21** → **D-72** | **Corregidos**; el resto de coherencia lo cerró el lente **R2** (§11) |
 
-**Métricas tras las correcciones:** **149 pruebas** de módulos y contratos + **52 comprobaciones E2E**
+**Métricas tras las correcciones:** **149 pruebas** de módulos y contratos + **58 comprobaciones E2E**
 en verde, sin regresiones.
 
 ---
@@ -478,7 +478,7 @@ escribiera (`despacho.js` lo guarda y lo verifica), los recuentos de 16 archivos
 
 **Criterio de cierre cumplido:** los 22 hallazgos de la reauditoría y los 13 del lente R2 quedan
 **resueltos, verificados como falsos positivos o declarados con su riesgo aceptado**, la batería de
-**149 pruebas de módulos y contratos** y las **52 comprobaciones E2E** pasan sin fallos, y el corpus
+**149 pruebas de módulos y contratos** y las **58 comprobaciones E2E** pasan sin fallos, y el corpus
 no conserva ninguna cifra, referencia o contrato que contradiga al código. **La Fase 2 se declara
 CERRADA.**
 

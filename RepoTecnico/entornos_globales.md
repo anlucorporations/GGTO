@@ -257,7 +257,7 @@ y llama a `GGTO.ps1`. No necesita instalación, no usa CDN y no deja nada fuera 
 GGTO.bat                 :: jornada: despliegue + CSV del dia + rutina + servidor y navegador
 GGTO.bat desplegar       :: solo el despliegue (carpetas y los 10 archivos de trabajo)
 GGTO.bat abrir           :: solo el servidor local
-GGTO.bat pruebas         :: 149 pruebas de modulos y contratos + 52 comprobaciones E2E
+GGTO.bat pruebas         :: 149 pruebas de modulos y contratos + 58 comprobaciones E2E
 GGTO.bat cierre          :: rutina de cierre del dia y apertura de las carpetas de salida
 GGTO.bat estado          :: diagnostico del puesto, de los datos y de la copia de cierre
 GGTO.bat ayuda

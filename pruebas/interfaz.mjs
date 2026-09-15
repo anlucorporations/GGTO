@@ -194,6 +194,14 @@ const sonda = `
       ok('jsPDF cargado por la página (RT-07)', !!(window.jspdf && window.jspdf.jsPDF));
       ok('entorno.js cargado por la página (CU-22)', !!(window.GGTO_ENTORNO && window.GGTO_ENTORNO.render));
 
+      // --- visibilidad real de las dos capas (defecto del 15/09/2026) ---
+      var capaAcceso = document.getElementById('acceso');
+      var armazon = document.getElementById('app');
+      ok('al abrir, la capa de acceso se ve',
+        !!capaAcceso && window.getComputedStyle(capaAcceso).display !== 'none');
+      ok('al abrir, el armazón de la aplicación está oculto (D-50)',
+        !!armazon && window.getComputedStyle(armazon).display === 'none');
+
       // --- las 8 vistas renderizan con el contexto real ---
       // Siete son pestañas (RF-01) y la octava, REPORTES, es una sub-pestaña de
       // MONITOREO (D-76): se comprueba navegando, no fabricando la sección.
@@ -407,6 +415,30 @@ const sonda = `
                 var conf = document.getElementById('tab-configuracion');
                 ok('el supervisor tiene habilitadas DESPACHO y CONFIGURACION',
                   !!desp && desp.disabled === false && !!conf && conf.disabled === false);
+
+                // 3) lo que de verdad ve el usuario tras acceder (defecto del 15/09/2026:
+                //    la clase .capa-acceso fijaba display:flex y anulaba el atributo
+                //    hidden, así que la sesión se abría pero el formulario seguía encima).
+                var capa = document.getElementById('acceso');
+                var app = document.getElementById('app');
+                var panel = document.getElementById('seccion-panel');
+                ok('tras acceder, la capa de acceso desaparece de la pantalla',
+                  !!capa && window.getComputedStyle(capa).display === 'none');
+                ok('tras acceder se ve el armazón de la aplicación',
+                  !!app && window.getComputedStyle(app).display !== 'none' &&
+                  app.hidden === false);
+                ok('tras acceder la página de inicio (PANEL) tiene contenido',
+                  !!panel && panel.hidden === false && (panel.textContent || '').trim().length > 0);
+                // Y una red de seguridad general: ningún elemento con el atributo hidden
+                // puede quedar pintado, sea cual sea su clase (es el fallo que se coló).
+                var colados = [];
+                Array.prototype.slice.call(document.querySelectorAll('[hidden]')).forEach(function (el) {
+                  if (window.getComputedStyle(el).display !== 'none') {
+                    colados.push(el.id || el.className || el.tagName);
+                  }
+                });
+                ok('ningún elemento con hidden queda visible (' + (colados.join(', ') || 'ninguno') + ')',
+                  colados.length === 0);
                 sig();
               }, 350);
             }, 250);
