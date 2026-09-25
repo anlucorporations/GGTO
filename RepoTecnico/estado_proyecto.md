@@ -4,8 +4,9 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 1 — Concepto** (en curso) |
+| Fase actual | **Fase 1 — Concepto: COMPLETA**, a la espera de confirmación para pasar a Fase 2 |
 | Última actualización | 2026-09-25 |
+| Rama git | `GGTOv2-DSH-GCP` (commit inicial `f3d3cf7`) |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
 
 > Memoria de trabajo del proyecto. Se actualiza de forma incremental, sin recargar todo el contexto.
@@ -135,7 +136,18 @@
 ## 6. Criterios de aceptación — Fase 1
 
 - [x] Los 3 archivos `.md` base existen en `RepoTecnico/`.
-- [ ] Todas las preguntas de la entrevista respondidas.
-- [ ] URLs de repositorios almacenadas.
-- [ ] Credenciales/configuración GCP almacenadas.
-- [ ] Confirmación del usuario para pasar a Fase 2.
+- [x] Preguntas de la entrevista respondidas (bloques 1–5).
+- [x] URLs de repositorios definidas (GitHub `GGTO`, GitLab `ggto`, rama `GGTOv2-DSH-GCP`).
+- [x] Configuración GCP confirmada (base `ggtov2` en `truekeate-db-dev`, despliegue local).
+- [x] Repositorio git local inicializado con la rama `GGTOv2-DSH-GCP` y commit inicial `f3d3cf7`.
+- [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
+- [ ] Confirmación del usuario para pasar a **Fase 2 (Auditoría)**.
+
+---
+
+## 7. Historial
+
+| Fecha | Evento |
+|---|---|
+| 2026-09-25 | Fase 1 iniciada: brief analizado, `requerimientos.md`, `diccionario_datos.md`, `entornos_globales.md`, `estado_proyecto.md` generados. |
+| 2026-09-25 | Entrevista Fase 1 completada (bloques 1–5). Repositorio git local creado en la rama `GGTOv2-DSH-GCP`. |
