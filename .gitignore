@@ -1,0 +1,49 @@
+# --- Entornos y secretos ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+*-sa.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# --- Flutter / Android ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.apk
+*.aab
+*.jks
+*.keystore
+local.properties
+
+# --- Datos de ingesta y evidencias ---
+RepoTecnico/entrada/
+RepoTecnico/salida/
+RepoTecnico/evidencias/
+*.zip
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
+*.log
