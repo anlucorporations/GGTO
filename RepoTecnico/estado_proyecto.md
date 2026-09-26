@@ -45,6 +45,7 @@
 | `entornos_globales.md` | Configuración, rutas, variables, comandos. | **v0.1** |
 | `modelo_er.md` | Diagrama Entidad-Relación completo en Mermaid (7 diagramas). | **v0.1** |
 | `db/schema.sql` | Script DDL PostgreSQL (35 tablas + índices + triggers + datos iniciales). | **v0.1** |
+| `muestras/detalle_averias_gpon_EJEMPLO.csv` | Muestra **pseudonimizada** (56×80, ISO-8859-1) para pruebas de ingesta. | **v1** |
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
@@ -75,6 +76,9 @@
 | D-19 | Fallas masivas: **detección automática por concentración** (tras la ingesta) **+ reporte manual** de técnico vía MCP/Telegram; asignación por **proximidad de sector**. | Entrevista P5.3 |
 | D-20 | Repositorios: GitHub `anlucorporations/GGTO`, GitLab `anlucorporations/ggto`, rama **`GGTOv2-DSH-GCP`**. | Entrevista P4.1 |
 | D-21 | Modelo E-R documentado en **Mermaid** (`modelo_er.md`) y DDL PostgreSQL editable en `db/schema.sql` (35 tablas, se mantienen sincronizados). | Solicitud del usuario |
+| D-22 | **Cuadrilla 0 = criterio combinado (H-04):** va al supervisor si **no** contiene frases de campo (`despacho.frases_campo`) **o** contiene frases de no-atención en casa (`despacho.frases_supervisor`) o está en otra cola. Modo configurable `despacho.criterio_cuadrilla0` = `CAMPO`/`SUPERVISOR`/`UNION` (por defecto `UNION`). | Entrevista H-04 |
+| D-23 | **Referidos sin incidencia (H-09):** reciben identificador sintético `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (función `generar_id_averia_ref`); `caso.id_averia` sigue `NOT NULL UNIQUE`. | Entrevista H-09 |
+| D-24 | **Quick wins de auditoría ejecutados:** QW-1 (PII fuera de git + historial purgado + muestra pseudonimizada), QW-2 (encoding ISO-8859-1 + parser de fecha), QW-3 (conteos) y QW-5 (`Falla Reportada` aclarada en RF-25). | Aprobación del usuario |
 
 ---
 
@@ -167,8 +171,11 @@ H-16 (RNF sin umbral), H-17 (PII sin retención ni base legal), H-18 (fallas mas
 ### 6.3 Plan de acción
 
 
-Quick wins propuestos (pendientes de aprobación del usuario): QW-1 (retirar CSV/PII de git),
-QW-2 (codificación ISO-8859 + parser de fechas), QW-3 (corregir conteos) y QW-5 (aclarar `Falla Reportada` en RF-25).El detalle completo (Quick wins QW-1..QW-7, Mejoras M-1..M-13, Roadmap R-1..R-10) está en el informe §7.
+Quick wins **ejecutados** (D-24): QW-1 (retirar CSV/PII de git + purga de historial + muestra
+pseudonimizada en `muestras/`), QW-2 (codificación ISO-8859-1 + parser de fecha), QW-3 (conteos) y
+QW-5 (aclarar `Falla Reportada` en RF-25).
+Quick wins **pendientes**: QW-4 (alinear enums/WhatsApp v3 — H-07/H-24), QW-6 (revocar privilegios de
+`ggtov2_app` — H-33) y QW-7 (binding de secretos).El detalle completo (Quick wins QW-1..QW-7, Mejoras M-1..M-13, Roadmap R-1..R-10) está en el informe §7.
 Los 24 criterios de aceptación para cerrar la Fase 1 están en el informe §8.
 
 ### 6.4 Erratas del informe
@@ -192,9 +199,9 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 
 ### 7.2 Criterios de auditoría (ver informe §8: C1–C5)
 
-- [ ] **C1 Seguridad** — H-01 (PII fuera de git), H-33 (privilegios de BD), binding de secretos, H-03 (backup/PITR/SSL).
-- [ ] **C2 Ingesta** — H-02 (encoding/parser), H-05 (columnas de causa), H-06 (`Falla Reportada`).
-- [ ] **C3 Requisitos y alcance** — H-04/H-19 (cuadrilla 0), H-07 (WhatsApp v3), H-09/H-11 (referidos), H-08 (sincronización de docs).
+- [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [ ] H-33 (privilegios de BD); [ ] binding de secretos; [ ] H-03 (backup/PITR/SSL).
+- [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [ ] H-05 (columnas de causa); [x] H-06 (`Falla Reportada` aclarada en RF-25).
+- [ ] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [ ] H-07 (WhatsApp v3); [x] H-09/H-11 (referidos `REF-…`, D-23); [ ] H-08 (sincronización de docs).
 - [ ] **C4 RNF** — H-16 (umbrales), H-03 (backup), H-17 (PII/legal), H-14/H-26/H-27 (observabilidad/disponibilidad), H-15/H-30/H-31 (seguridad), H-28 (usabilidad/accesibilidad), H-13/H-29 (mantenibilidad).
 - [ ] **C5 Gobernanza** — RBAC y ámbito por central, dueños de catálogos/flota/almacén/auditoría/privacidad, RF de PANEL/GOBIERNO, acuerdo con el sistema origen.
 - [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
@@ -210,3 +217,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | Entrevista Fase 1 completada (bloques 1–5). Repositorio git local creado en la rama `GGTOv2-DSH-GCP`. |
 | 2026-09-25 | Generados `modelo_er.md` (diagramas Mermaid) y `db/schema.sql` (DDL PostgreSQL, 35 tablas). |
 | 2026-09-25 | Auditoría de Fase 1 ejecutada (7 lentes + verificación adversarial) → `INFORME_OPTIMIZACION_V1.md`: 43 hallazgos (4 CRÍTICA, 14 ALTA, 19 MEDIA, 6 BAJA), veredicto "apta bajo condiciones". |
+| 2026-09-25 | Quick wins aprobados y ejecutados (D-24): PII fuera de git e **historial purgado**, codificación ISO-8859-1, conteos corregidos, `Falla Reportada` aclarada. Decisiones D-22 (cuadrilla 0 combinada) y D-23 (`REF-…`). |
+| 2026-09-25 | ⚠️ La purga de historial (`git filter-branch`) eliminó también el **CSV real del disco**; no hay copia local. Se conserva la muestra pseudonimizada. Pendiente: que el usuario re-aporte un archivo diario real (quedará fuera de git). |

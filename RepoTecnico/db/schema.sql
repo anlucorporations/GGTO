@@ -32,6 +32,29 @@ BEGIN
 END;
 $$;
 
+-- Genera el identificador sintético de los casos sin incidencia de origen
+-- (REFERIDOS, EMPRESAS, GOBIERNOS, altas manuales) — decisión D-23.
+-- Formato: REF-<CÓDIGO_CENTRAL>-<NNNNNN>
+CREATE SEQUENCE IF NOT EXISTS seq_caso_ref;
+
+CREATE OR REPLACE FUNCTION generar_id_averia_ref(p_id_central integer)
+RETURNS varchar
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_codigo varchar(20);
+BEGIN
+    SELECT codigo_central INTO v_codigo
+    FROM central WHERE id_central = p_id_central;
+
+    IF v_codigo IS NULL THEN
+        RAISE EXCEPTION 'Central % no existe', p_id_central;
+    END IF;
+
+    RETURN 'REF-' || upper(v_codigo) || '-'
+           || lpad(nextval('seq_caso_ref')::text, 6, '0');
+END;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 1. Catálogos base
 -- -----------------------------------------------------------------------------
@@ -262,7 +285,7 @@ CREATE TABLE IF NOT EXISTS caso (
     id_central              integer      NOT NULL REFERENCES central(id_central),
 
     -- Clasificación del sistema
-    id_averia               varchar(30)  NOT NULL UNIQUE,   -- único GLOBAL (P1.3)
+    id_averia               varchar(30)  NOT NULL UNIQUE,   -- único GLOBAL (P1.3). Manuales: REF-<CENTRAL>-<NNNNNN> (D-23)
     origen                  varchar(20)  NOT NULL DEFAULT 'INGESTA_CSV'
                             CHECK (origen IN ('INGESTA_CSV','MANUAL','TELEGRAM','MCP_IA')),
     tipo_caso               varchar(20)  NOT NULL DEFAULT 'AVERIA'
@@ -726,11 +749,18 @@ ON CONFLICT (id_central, codigo) DO NOTHING;
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('ingesta.central_codigo',      '"2324X"'::jsonb,           'Código de central usado como filtro de ingesta'),
     ('ingesta.delimitador',         '";"'::jsonb,               'Delimitador del archivo detalle_averias_gpon'),
+    ('ingesta.encoding',            '"iso-8859-1"'::jsonb,      'Codificación real del CSV (H-02); decodificar a UTF-8 en la frontera'),
+    ('ingesta.fecha_formato',       '"%d/%m/%Y %I:%M:%S %p"'::jsonb, 'Formato de fecha del CSV; zona America/Caracas'),
     ('despacho.hora_reporte',       '"16:00"'::jsonb,           'Hora de generación del reporte de producción'),
     ('despacho.min_referidos',      '2'::jsonb,                 'Mínimo de reparaciones de referidos por despacho'),
     ('despacho.min_empresas',       '1'::jsonb,                 'Mínimo de reparaciones de empresas por despacho'),
-    ('despacho.frases_excluir',     '["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]'::jsonb,
-     'Frases que excluyen un caso del despacho de calle (van a la cuadrilla 0)'),
+    ('despacho.criterio_cuadrilla0','"UNION"'::jsonb,           'CAMPO | SUPERVISOR | UNION (D-22, criterio combinado)'),
+    ('despacho.frases_campo',       '["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]'::jsonb,
+     'Frases que indican que el caso SÍ amerita maniobra de campo (PROCEDIMIENTO 3)'),
+    ('despacho.frases_supervisor',  '["NAVEGACION LENTA","PON INTERMITENTE","SIN TONO"]'::jsonb,
+     'Frases que indican que el caso NO amerita maniobra en casa (GENERALIDADES 3.5)'),
+    ('despacho.columnas_evaluar',   '["problema_reporte","ultimo_comentario","informacion_1","informacion_2"]'::jsonb,
+     'Columnas donde se buscan las frases (el brief citaba "Falla Reportada", inexistente en el CSV)'),
     ('seguridad.max_intentos',      '3'::jsonb,                 'Intentos de login antes del bloqueo'),
     ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación')
 ON CONFLICT (clave) DO NOTHING;

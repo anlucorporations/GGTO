@@ -15,6 +15,19 @@
 > - `PK` = clave primaria, `FK` = clave foránea, `UQ` = único, `NN` = no nulo.
 > - Tipos PostgreSQL. Fechas del archivo origen en `dd/mm/aaaa hh:mm:ss a.m./p.m.` → se normalizan a `timestamp`.
 > - Estados y catálogos enumerados se modelan como **tablas de catálogo** (configurables), no como `ENUM`.
+>
+> **Codificación e ingesta (H-02):** el archivo real `detalle_averias_gpon_*.csv` está en
+> **ISO-8859-1 (latin-1/cp1252)**, no UTF-8 (verificado: fallo en el byte `0xd1`). La ingesta
+> debe **decodificar latin-1 → UTF-8** en la frontera, con fallo ruidoso ante bytes inválidos
+> (nunca `errors='ignore'`), y **normalizar mayúsculas/acentos** antes de comparar frases de negocio
+> (`Fibra Dañada`). Formato de fecha a parsear: `%d/%m/%Y %I:%M:%S %p` con zona `America/Caracas`,
+> tolerando celdas vacías (p. ej. `fecha_cita`). Las columnas del CSV tienen **encabezados
+> duplicados** (`informacion` ×2, `descripcion` ×3) y se mapean **por posición**.
+>
+> **Identificador de casos manuales (H-09 / D-23):** los casos sin `id_averia` de origen
+> (REFERIDOS, EMPRESAS, GOBIERNOS, altas manuales) reciben un **identificador sintético**
+> `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` generado por el sistema, de modo que `caso.id_averia` puede
+> seguir siendo `NOT NULL UNIQUE` (deduplicación global de RF-22).
 
 ---
 
@@ -231,7 +244,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | 8 | area | `area` | varchar(20) | Filtro. |
 | 9 | central | `codigo_central` | varchar(20) | Filtro (ej. `2324X`). |
 | 10 | nombre central | `nombre_central` | varchar(120) | Filtro (ej. `FRANCISCO SALIAS`). |
-| 11 | id_averia | `id_averia` | varchar(30) | **UQ natural** (deduplicación). |
+| 11 | id_averia | `id_averia` | varchar(30) | **UQ natural** (deduplicación global). Para casos manuales/REFERIDO/EMPRESA/GOBIERNO sin incidencia se genera `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (D-23). |
 | 12 | tipo_reporte | `tipo_reporte` | varchar(20) | Ej. `INTERNO`. |
 | 13 | dac | `dac` | varchar(20) | |
 | 14 | telefono | `telefono` | varchar(30) | Búsqueda en PANEL. |

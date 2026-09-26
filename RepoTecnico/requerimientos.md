@@ -32,7 +32,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 
 > El brief menciona originalmente "almacenamiento basado en hoja de Excel". El contexto y la
 > infraestructura ya preparada (`GGTOv2_GCP.md`) establecen **PostgreSQL** como base de datos.
-> *(Confirmar en entrevista: RF-0.)*
+> **Confirmado en la entrevista** (P1.1 / decisión D-01): se descarta Excel como almacenamiento.
 
 ---
 
@@ -105,7 +105,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-22** | Insertar **solo los casos nuevos**, usando `id_averia` como clave de comparación (deduplicación). | Alta | Ingesta |
 | **RF-23** | Actualizar los sectores de trabajo según el documento central, a partir de las direcciones de los casos activos. | Alta | Despacho |
 | **RF-24** | Proponer la distribución de los casos (despacho diario) entre las cuadrillas declaradas. | Alta | Despacho |
-| **RF-25** | Asignar a la **cuadrilla del supervisor (cuadrilla 0)** los casos que no ameritan maniobra de campo: sin `LOSS ROJO`, sin `FALLA FIBRA` y sin `Fibra Dañada` en las columnas de información (`Falla Reportada`, `Último Comentario`, `problema_reporte`), **antes** de preparar el despacho. | Alta | Gestión automatizada |
+| **RF-25** | **Cuadrilla 0 (supervisor) — criterio combinado (D-22).** Un caso va a la cuadrilla 0 si cumple **cualquiera** de: **(a) PROCEDIMIENTO 3** — no contiene ninguna frase de `despacho.frases_campo` (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`), es decir, no amerita maniobra en casa; **o (b) GENERALIDADES 3.5** — contiene alguna frase de `despacho.frases_supervisor` (`NAVEGACION LENTA`, `PON INTERMITENTE`, `SIN TONO`…) o el caso fue enviado a otra cola (tabla `seguimiento`). Ambas listas y el modo (`CAMPO` / `SUPERVISOR` / `UNION`) son **configurables**. Se aplica **antes** de preparar el despacho. ⚠️ La columna `Falla Reportada` citada por el brief **no existe** en el CSV real; se evalúan `problema_reporte`, `ultimo_comentario` e `informacion_1/2` (pendiente de confirmar con CANTV). | Alta | Gestión automatizada |
 | **RF-26** | Alimentar los tableros de MONITOREO y GRÁFICOS con las métricas de gestión diaria/semanal, casos globales, reparación, construcción y cuadrilla. | Media | Monitoreo |
 | **RF-27** | Generar reporte de producción a las 04:00 p.m. (casos atendidos, citados, referidos, etc.) y enviarlo por WhatsApp/correo/Telegram. | Media | Despacho |
 | **RF-28** | Generar reporte de trabajo diario, semanal y mensual. | Alta | Monitoreo |

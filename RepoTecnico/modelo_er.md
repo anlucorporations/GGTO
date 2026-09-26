@@ -621,7 +621,8 @@ erDiagram
 
 | Regla | Implementación |
 |---|---|
-| `id_averia` único **global** (P1.3) | `UNIQUE (id_averia)` en `caso`. |
+| `id_averia` único **global** (P1.3) | `UNIQUE (id_averia)` en `caso`. Los casos manuales sin incidencia reciben `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (D-23). |
+| Cuadrilla 0 por criterio combinado (D-22) | `configuracion`: `despacho.frases_campo`, `despacho.frases_supervisor` y `despacho.criterio_cuadrilla0` (`CAMPO`/`SUPERVISOR`/`UNION`). |
 | Sector por coincidencia de dirección (P1.2) | `sector_direccion.patron` + `caso.id_sector`; asignación en la capa de servicio. |
 | Una cita no se solapa | Validación en servicio + índice `(id_cuadrilla, fecha_hora)`; `EXCLUDE` con `btree_gist` opcional. |
 | Cuadrilla del supervisor = cuadrilla 0 | `cuadrilla.es_supervisor = true` (una por central). |

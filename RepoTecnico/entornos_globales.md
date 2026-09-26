@@ -120,7 +120,15 @@ DB_SSLMODE=require
 
 # --- Ingesta ---
 INGESTA_CSV_DELIMITER=;
-INGESTA_CSV_ENCODING=utf-8
+# El archivo real detalle_averias_gpon_*.csv es ISO-8859-1 (latin-1/cp1252),
+# NO UTF-8. Verificado con `file` y decodificación estricta (falla en 0xd1).
+# La ingesta debe decodificar latin-1 -> UTF-8 en la frontera y fallar ruidosamente
+# ante bytes inválidos (nunca errors='ignore').
+INGESTA_CSV_ENCODING=iso-8859-1
+INGESTA_CSV_ENCODING_DESTINO=utf-8
+INGESTA_CSV_FECHA_FORMATO=%d/%m/%Y %I:%M:%S %p
+INGESTA_CSV_TIMEZONE=America/Caracas
+INGESTA_CSV_MAPEO=por_posicion
 INGESTA_CENTRAL_CODIGO=2324X
 INGESTA_CENTRAL_NOMBRE=FRANCISCO SALIAS
 INGESTA_ESTADO_OPERATIVO=MIRANDA-2
