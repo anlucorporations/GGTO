@@ -276,16 +276,15 @@ erDiagram
         bool     en_gestion_supervisor
         bool     es_falla_masiva
         varchar  olt
-        varchar  tarjeta
         varchar  slot
         varchar  puerto
-        varchar  ont_id
         varchar  fat
         varchar  serial
         varchar  plan
         varchar  tipo_servicio
         varchar  problema_reporte
         varchar  ultimo_comentario
+        varchar  informacion "unifica cols 31,32,52 (D-27)"
         timestamp fecha_reporte
         timestamp fecha_cita
         timestamp fecha_compromiso

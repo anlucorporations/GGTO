@@ -81,6 +81,7 @@
 | D-24 | **Quick wins de auditoría ejecutados:** QW-1 (PII fuera de git + historial purgado + muestra pseudonimizada), QW-2 (encoding ISO-8859-1 + parser de fecha), QW-3 (conteos), QW-5 (`Falla Reportada` aclarada), QW-6 (privilegios de BD endurecidos) y QW-7 (binding de secretos retirado). | Aprobación del usuario |
 | D-25 | **H-33 aceptado con mitigación:** `ggtov2_app` conserva la membresía `cloudsqlsuperuser` (no revocable vía SQL en Cloud SQL) pero con `NOINHERIT`, sin `CREATEROLE`/`CREATEDB` y sin acceso a `truekeate`/`postgres`/`template1`. No se resetea la contraseña de `postgres`. | Aprobación del usuario |
 | D-26 | **H-03 riesgo aceptado:** no se modifican backups/PITR/SSL de `truekeate-db-dev` (instancia compartida de TrueKeate). Dueño: Dirección del proyecto · Fecha: 2026-09-25 · Cierre: migrar a `ggtov2-pg` con backups+PITR+SSL al desbloquear facturación. **No cargar datos reales** hasta entonces. RNF-16/RNF-17 definidos. | Aprobación del usuario |
+| D-27 | **Depuración del CSV (H-05):** se descartan **21 columnas** (`tipo_reporte`, `dac`, `ultimo_usuario`, `fecha_despacho`, `ciudad`, `servicio_off_on`, `cliente_notificado`, `fecha_instalacion`, `ip`, `tarjeta`, `ont_id`, `cvlan`, `dias transcurrido desde la apertura`, `area_resolutoria`, `usuario_acciona`, `fecha_acciona`, `codigo_causa`, `descripcion`×2, `Subcodigo_causa`, `con_serv_aba`) y se **unifican** `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion`. Quedan **49 campos destino**. El catálogo `causa` pasa a ser **administrable** (ya no se puebla del CSV). | Entrevista H-05 |
 
 ---
 
@@ -202,7 +203,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 ### 7.2 Criterios de auditoría (ver informe §8: C1–C5)
 
 - [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [~] H-33 (mitigado con `NOINHERIT` + aislamiento, D-25); [x] binding de secretos; [~] H-03 (**riesgo aceptado**, D-26 → RNF-16/RNF-17).
-- [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [ ] H-05 (columnas de causa); [x] H-06 (`Falla Reportada` aclarada en RF-25).
+- [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [x] H-05 (columnas de causa descartadas y `informacion` unificada, D-27); [x] H-06 (`Falla Reportada` aclarada en RF-25).
 - [ ] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [ ] H-07 (WhatsApp v3); [x] H-09/H-11 (referidos `REF-…`, D-23); [ ] H-08 (sincronización de docs).
 - [ ] **C4 RNF** — H-16 (umbrales), H-03 (backup), H-17 (PII/legal), H-14/H-26/H-27 (observabilidad/disponibilidad), H-15/H-30/H-31 (seguridad), H-28 (usabilidad/accesibilidad), H-13/H-29 (mantenibilidad).
 - [ ] **C5 Gobernanza** — RBAC y ámbito por central, dueños de catálogos/flota/almacén/auditoría/privacidad, RF de PANEL/GOBIERNO, acuerdo con el sistema origen.
@@ -221,5 +222,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | Auditoría de Fase 1 ejecutada (7 lentes + verificación adversarial) → `INFORME_OPTIMIZACION_V1.md`: 43 hallazgos (4 CRÍTICA, 14 ALTA, 19 MEDIA, 6 BAJA), veredicto "apta bajo condiciones". |
 | 2026-09-25 | Quick wins aprobados y ejecutados (D-24): PII fuera de git e **historial purgado**, codificación ISO-8859-1, conteos corregidos, `Falla Reportada` aclarada. Decisiones D-22 (cuadrilla 0 combinada) y D-23 (`REF-…`). |
 | 2026-09-25 | ⚠️ La purga de historial (`git filter-branch`) eliminó también el **CSV real del disco**; no hay copia local. Se conserva la muestra pseudonimizada. Pendiente: que el usuario re-aporte un archivo diario real (quedará fuera de git). |
-| 2026-09-25 | **QW-6/QW-7 sobre `truekeate-main`:** revocados `CREATEROLE`/`CREATEDB` y aplicado `NOINHERIT` a `ggtov2_app`; revocado `PUBLIC` en `truekeate`/`postgres`/`template1` (ggtov2_app ya no puede acceder a la base de TrueKeate, que sigue operando); retirado el binding de `truekeate-app-sa` sobre los secretos de GGTO. Riesgo residual: membresía `cloudsqlsuperuser` no revocable vía SQL. |
+| 2026-09-25 | **QW-6/QW-7 sobre `truekeate-main`:** revocados `CREATEROLE`/`CREATEDB` y aplicado `NOINHERIT` a `ggtov2_app`; revocado `PUBLIC` en `truekeate`/`postgres`/`template1` (ggtov2_app ya no puede acceder a la base de TrueKeate, que sigue operando); retirado el binding de `truekeate-app-sa` sobre los secretos de GGTO. Riesgo residual: membresía `cloudsqlsuperuser` no revocable vía SQL (D-25). |
 | 2026-09-25 | ⚠️ **Exposición de secreto (RESUELTA):** un error de Node imprimió la contraseña del usuario `app` de `truekeate-main`. Se rotó la contraseña, se creó la versión 3 del secreto `DATABASE_URL` y se desplegó `truekeate-api-00034-hvk` (Ready, 100 % tráfico, sin errores de auth). |
+| 2026-09-25 | **H-03 riesgo aceptado (D-26):** no se modifican backups/PITR/SSL de la instancia compartida; se añaden RNF-16 (backup, RPO/RTO) y RNF-17 (disponibilidad). |
+| 2026-09-25 | **H-05 resuelto (D-27):** depurado el mapeo del CSV (se descartan 21 columnas y se unifica `informacion`); actualizados `diccionario_datos.md`, `db/schema.sql`, `modelo_er.md` y `requerimientos.md` (RF-25, RT-05). C2 completado. |

@@ -5,9 +5,9 @@
 | Proyecto | **GGTO** — Gestión de averías y puntos ópticos |
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor | **PostgreSQL** |
-| Fuente | `BRIEF-GGTO-INICIAL.md` + muestra `detalle_averias_gpon 12_09_2026.csv` |
+| Fuente | `BRIEF-GGTO-INICIAL.md` + muestra pseudonimizada `muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas → 49 campos destino) |
 | Fase | Fase 1 — Concepto |
-| Estado | Borrador v0.1 — **sujeto a validación** |
+| Estado | Borrador v0.2 — **sujeto a validación** |
 | Modelo E-R | [`modelo_er.md`](modelo_er.md) (diagramas Mermaid) |
 | Script DDL | [`db/schema.sql`](db/schema.sql) (PostgreSQL) |
 
@@ -228,9 +228,19 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 ### 3.2 Mapeo del CSV de ingesta (por posición)
 
-> El archivo tiene **80 columnas con `;` como delimitador** y **encabezados duplicados**:
-> `informacion` aparece 2 veces (col. 31–32) y `descripcion` 3 veces (col. 52, 57, 59).
+> El archivo tiene **80 columnas con `;` como delimitador** y **encabezados duplicados**
+> (`informacion` ×2 en cols. 31–32, `descripcion` ×3 en cols. 52, 57 y 59).
 > Por robustez, la ingesta mapea **por índice de columna**, no por nombre.
+>
+> **Depuración del mapeo (D-27):** se **descartan 21 columnas** del CSV (no se almacenan ni se
+> migran) y se **unifican** las columnas `informacion` (31), `informacion` (32) y `descripcion` (52)
+> en un único campo `informacion`. De las 80 columnas originales quedan **49 campos destino**.
+>
+> **Columnas descartadas:** `tipo_reporte` (12), `dac` (13), `ultimo_usuario` (20), `fecha_despacho` (25),
+> `ciudad` (26), `servicio_off_on` (29), `cliente_notificado` (30), `fecha_instalacion` (35), `ip` (37),
+> `tarjeta` (38), `ont_id` (42), `cvlan` (45), `dias transcurrido desde la apertura` (48),
+> `area_resolutoria` (49), `usuario_acciona` (53), `fecha_acciona` (54), `codigo_causa` (56),
+> `descripcion` (57), `Subcodigo_causa` (58), `descripcion` (59), `con_serv_aba` (60).
 
 | # | Columna CSV | Campo destino | Tipo | Notas |
 |---|---|---|---|---|
@@ -245,67 +255,49 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | 9 | central | `codigo_central` | varchar(20) | Filtro (ej. `2324X`). |
 | 10 | nombre central | `nombre_central` | varchar(120) | Filtro (ej. `FRANCISCO SALIAS`). |
 | 11 | id_averia | `id_averia` | varchar(30) | **UQ natural** (deduplicación global). Para casos manuales/REFERIDO/EMPRESA/GOBIERNO sin incidencia se genera `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (D-23). |
-| 12 | tipo_reporte | `tipo_reporte` | varchar(20) | Ej. `INTERNO`. |
-| 13 | dac | `dac` | varchar(20) | |
 | 14 | telefono | `telefono` | varchar(30) | Búsqueda en PANEL. |
-| 15 | fecha_reporte | `fecha_reporte` | timestamp | |
+| 15 | fecha_reporte | `fecha_reporte` | timestamp | Formato `%d/%m/%Y %I:%M:%S %p`. |
 | 16 | persona_reporta | `persona_reporta` | varchar(120) | |
 | 17 | contacto | `contacto_cliente` | varchar(60) | |
 | 18 | fecha_compromiso | `fecha_compromiso` | timestamp | |
-| 19 | fecha_cita | `fecha_cita` | timestamp | |
-| 20 | ultimo_usuario | `ultimo_usuario` | varchar(60) | |
-| 21 | ultimo_comentario | `ultimo_comentario` | text | Frases de exclusión (RF-25). |
+| 19 | fecha_cita | `fecha_cita` | timestamp | Puede venir vacía. |
+| 21 | ultimo_comentario | `ultimo_comentario` | text | Se evalúa para RF-25. |
 | 22 | results | `results` | text | |
 | 23 | asignado_a | `asignado_a` | varchar(60) | |
 | 24 | cuadrilla | `cuadrilla_externa` | varchar(40) | Cuadrilla del sistema origen. |
-| 25 | fecha_despacho | `fecha_despacho_externo` | timestamp | |
-| 26 | ciudad | `ciudad` | varchar(80) | |
 | 27 | estatus | `estatus_origen` | varchar(20) | Ej. `PEND`. |
-| 28 | problema_reporte | `problema_reporte` | text | Frases de exclusión (RF-25). |
-| 29 | servicio_off_on | `servicio_off_on` | varchar(20) | |
-| 30 | cliente_notificado | `cliente_notificado` | boolean/varchar | `0`/`1`. |
-| 31 | informacion (1.ª) | `informacion_1` | text | |
-| 32 | informacion (2.ª) | `informacion_2` | text | Duplicado de encabezado. |
+| 28 | problema_reporte | `problema_reporte` | text | Se evalúa para RF-25. |
+| 31, 32, 52 | informacion + informacion + descripcion | `informacion` | text | **Unificadas** (D-27); se concatenan con separador. |
 | 33 | nombre | `nombre_cliente` | varchar(160) | |
 | 34 | direccion | `direccion` | text | Base de sectorización. |
-| 35 | fecha_instalacion | `fecha_instalacion` | date | |
 | 36 | olt | `olt` | varchar(40) | |
-| 37 | ip | `ip` | inet/varchar(20) | |
-| 38 | tarjeta | `tarjeta` | varchar(40) | |
 | 39 | plan | `plan` | varchar(60) | |
 | 40 | slot | `slot` | varchar(10) | |
 | 41 | puerto | `puerto` | varchar(10) | |
-| 42 | ont_id | `ont_id` | varchar(20) | |
 | 43 | fat | `fat` | varchar(80) | |
 | 44 | serial | `serial` | varchar(60) | Serial del equipo. |
-| 45 | cvlan | `cvlan` | varchar(20) | |
 | 46 | extra | `extra` | varchar(40) | |
 | 47 | area_trabajo | `area_trabajo` | varchar(40) | Ej. `PTAEXT`. |
-| 48 | dias transcurrido desde la apertura | `dias_desde_apertura` | int | |
-| 49 | area_resolutoria | `area_resolutoria` | varchar(20) | |
 | 50 | tipo_servicio | `tipo_servicio` | varchar(40) | Ej. `ABA ULTRA`. |
 | 51 | tipo_problema | `tipo_problema` | varchar(20) | Ej. `NL`. |
-| 52 | descripcion (1.ª) | `descripcion_problema` | text | |
-| 53 | usuario_acciona | `usuario_acciona` | varchar(60) | |
-| 54 | fecha_acciona | `fecha_acciona` | timestamp | |
 | 55 | dias transcurrido en area resolutoria | `dias_area_resolutoria` | int | |
-| 56 | codigo_causa | `codigo_causa` | varchar(20) | |
-| 57 | descripcion (2.ª) | `descripcion_causa` | text | |
-| 58 | Subcodigo_causa | `subcodigo_causa` | varchar(20) | |
-| 59 | descripcion (3.ª) | `descripcion_subcausa` | text | |
-| 60 | con_serv_aba | `con_serv_aba` | varchar(5) | `Y`/`N`. |
 | 61 | unidad_negocio | `unidad_negocio` | varchar(40) | Ej. `CANTV RESIDENCIAL`. |
 | 62 | ups | `ups` | varchar(10) | |
 | 63 | codigos_gestionados_en_VENAPP | `codigos_gestionados_venapp` | varchar(60) | |
 | 64 | codigos_sin_gestion_en_VENAPP | `codigos_sin_gestion_venapp` | varchar(60) | |
 | 65 | Reparador Principal | `reparador_principal` | varchar(20) | P00. |
-| 66–74 | Ayudante 1..9 | `ayudantes` | jsonb/text[] | Hasta 9 ayudantes. |
+| 66–74 | Ayudante 1..9 | `ayudantes` | jsonb | Hasta 9 ayudantes. |
 | 75 | Flota (CAN) | `flota_can` | varchar(20) | |
 | 76 | Nombre | `despacho_nombre` | varchar(80) | Nombre del despachador/asignado. |
 | 77 | Apellido | `despacho_apellido` | varchar(80) | |
 | 78 | Telefono Oficina | `telefono_oficina` | varchar(30) | |
 | 79 | Telefono Movil | `telefono_movil` | varchar(30) | |
 | 80 | Fecha Hora Asignacion | `fecha_hora_asignacion` | timestamp | |
+
+> **Nota (H-05 → D-27):** el catálogo `causa` **ya no se puebla desde el CSV**. Se mantiene como
+> catálogo administrable (usado por `actividad.id_causa` en ENRUTAR/DIFERIR) y su mantenimiento
+> corresponde al administrador de catálogos (H-35).
+
 
 ### 3.3 `caso_estado_hist`
 
@@ -412,7 +404,8 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | resultado | varchar(20) | | `CONTACTADO`/`CERRADO`/`ENRUTADO`/`DIFERIDO`. |
 | reporte_corto | text | | Descripción de la actividad/justificación. |
 | metodo | varchar(20) | | Cierre: `IVR`/`COS`/`SACAS`. Enrutado: cola. |
-| codigo_causa | varchar(20) | FK→causa | Para enrute/diferido. |
+| id_metodo | int | FK→catalogo_metodo | Método de cierre/enrutado/contacto. |
+| id_causa | int | FK→causa | Para enrute/diferido. |
 | fecha_hora | timestamptz | NN | Del dispositivo. |
 | latitud / longitud | numeric(10,7) | | GPS. |
 | sincronizado | boolean | default false | Origen offline. |
@@ -448,7 +441,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 ## 7. Catálogos y soporte
 
-- **`causa`**: `codigo_causa` PK · `descripcion` · `subcodigo` · `descripcion_subcodigo` · `tipo` · `activo`.
+- **`causa`** (H-23, alineado con el DDL): `id_causa` serial PK · `codigo_causa` · `subcodigo_causa` · `descripcion` · `descripcion_subcodigo` · `tipo` · `activo` · **UQ `(codigo_causa, subcodigo_causa)`**. Catálogo administrable; **no** se puebla desde el CSV (D-27).
 - **`catalogo_metodo`**: `id` · `dominio` (`CIERRE`/`ENRUTE`/`DIFERIDO`) · `codigo` · `nombre` · `activo`.
 - **`notificacion`**: `id` · `canal` (`WHATSAPP`/`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `enviado_en`.
 - **`incidente`**: `id` · `tipo` (`FLOTA`/`HERRAMIENTA`) · `id_flota`/`id_herramienta` · `descripcion` · `id_actividad` · `estado`.
@@ -490,7 +483,11 @@ dispositivo_seguridad 1──N sincronizacion
 3. **Sectorización**: ✅ **resuelto (P1.2)** — el supervisor define sectores con nombre y una lista
    de direcciones/alias; el caso se asigna por coincidencia sobre `direccion`.
 4. **Referidos**: estructura exacta de la ficha (Unidad + Nombre + Contacto) y niveles de prioridad.
-5. **Causas**: catálogo oficial (código/subcódigo) y quién lo mantiene.
+5. **Causas**: ✅ **resuelto (D-27)** — el catálogo `causa` **no** se puebla desde el CSV; es
+   administrable y su dueño es el administrador de catálogos (H-35). Pendiente: cargar el listado oficial
+   de causas para ENRUTAR/DIFERIR.
+6. **Columnas descartadas**: ✅ **resuelto (D-27)** — se descartan 21 columnas del CSV y se unifica
+   `informacion` + `informacion` + `descripcion` en un solo campo `informacion`.
 6. **Insumos**: confirmar que quedan para v2 (RF-05).
 7. **Histórico**: ¿se conservan todos los CSV cargados y sus versiones?
 8. **Multi-central**: ¿`central` única en v1 o multi-central desde el inicio?

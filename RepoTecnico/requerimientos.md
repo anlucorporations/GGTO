@@ -5,7 +5,7 @@
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
 | Fuente | `RepoTecnico/BRIEF-GGTO-INICIAL.md` |
-| Muestra de datos | `RepoTecnico/detalle_averias_gpon 12_09_2026.csv` (80 columnas, delimitador `;`) |
+| Muestra de datos | `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas, pseudonimizada, delimitador `;`) |
 | Infraestructura | Proyecto GCP **GGTOv2** (`ggtov2`) + PostgreSQL (Cloud SQL) — ver `GGTOv2_GCP.md` |
 | Fase | Fase 1 — Concepto |
 | Estado | Borrador v0.1 — **requiere validación del usuario** |
@@ -105,7 +105,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-22** | Insertar **solo los casos nuevos**, usando `id_averia` como clave de comparación (deduplicación). | Alta | Ingesta |
 | **RF-23** | Actualizar los sectores de trabajo según el documento central, a partir de las direcciones de los casos activos. | Alta | Despacho |
 | **RF-24** | Proponer la distribución de los casos (despacho diario) entre las cuadrillas declaradas. | Alta | Despacho |
-| **RF-25** | **Cuadrilla 0 (supervisor) — criterio combinado (D-22).** Un caso va a la cuadrilla 0 si cumple **cualquiera** de: **(a) PROCEDIMIENTO 3** — no contiene ninguna frase de `despacho.frases_campo` (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`), es decir, no amerita maniobra en casa; **o (b) GENERALIDADES 3.5** — contiene alguna frase de `despacho.frases_supervisor` (`NAVEGACION LENTA`, `PON INTERMITENTE`, `SIN TONO`…) o el caso fue enviado a otra cola (tabla `seguimiento`). Ambas listas y el modo (`CAMPO` / `SUPERVISOR` / `UNION`) son **configurables**. Se aplica **antes** de preparar el despacho. ⚠️ La columna `Falla Reportada` citada por el brief **no existe** en el CSV real; se evalúan `problema_reporte`, `ultimo_comentario` e `informacion_1/2` (pendiente de confirmar con CANTV). | Alta | Gestión automatizada |
+| **RF-25** | **Cuadrilla 0 (supervisor) — criterio combinado (D-22).** Un caso va a la cuadrilla 0 si cumple **cualquiera** de: **(a) PROCEDIMIENTO 3** — no contiene ninguna frase de `despacho.frases_campo` (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`), es decir, no amerita maniobra en casa; **o (b) GENERALIDADES 3.5** — contiene alguna frase de `despacho.frases_supervisor` (`NAVEGACION LENTA`, `PON INTERMITENTE`, `SIN TONO`…) o el caso fue enviado a otra cola (tabla `seguimiento`). Ambas listas y el modo (`CAMPO` / `SUPERVISOR` / `UNION`) son **configurables**. Se aplica **antes** de preparar el despacho. ⚠️ La columna `Falla Reportada` citada por el brief **no existe** en el CSV real; se evalúan `problema_reporte`, `ultimo_comentario` e `informacion` (pendiente de confirmar con CANTV). | Alta | Gestión automatizada |
 | **RF-26** | Alimentar los tableros de MONITOREO y GRÁFICOS con las métricas de gestión diaria/semanal, casos globales, reparación, construcción y cuadrilla. | Media | Monitoreo |
 | **RF-27** | Generar reporte de producción a las 04:00 p.m. (casos atendidos, citados, referidos, etc.) y enviarlo por WhatsApp/correo/Telegram. | Media | Despacho |
 | **RF-28** | Generar reporte de trabajo diario, semanal y mensual. | Alta | Monitoreo |
@@ -179,7 +179,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RT-02** | Backend | API web con autenticación, RBAC y capa de servicios para ingesta, despacho y reportes. |
 | **RT-03** | Frontend web | Aplicación web responsive (PC + móvil). |
 | **RT-04** | App móvil | APK Android con almacenamiento local, sincronización asíncrona y cámara. |
-| **RT-05** | Ingesta CSV | Parser robusto del archivo `;`-delimitado de **80 columnas**, con encabezados duplicados (`informacion` ×2, `descripcion` ×3) que deben mapearse por posición. Codificación y fechas variadas. |
+| **RT-05** | Ingesta CSV | Parser robusto del archivo `;`-delimitado de **80 columnas** (encabezados duplicados: `informacion` ×2, `descripcion` ×3) mapeadas **por posición** a **49 campos destino**. Se **descartan 21 columnas** y se unifican `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion` (D-27). Codificación ISO-8859-1 y fechas `dd/mm/aaaa hh:mm:ss a.m./p.m.`. |
 | **RT-06** | Mensajería | Integración WhatsApp (API/Business), Telegram Bot y correo (SMTP). |
 | **RT-07** | IA / MCP | Servidor **WEB-MCP** para ingesta conversacional de casos especiales. |
 | **RT-08** | Reportes | Generación de reportes diario/semanal/mensual y despacho imprimible tamaño carta (PDF/HTML). |
