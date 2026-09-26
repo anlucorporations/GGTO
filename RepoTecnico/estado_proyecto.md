@@ -91,6 +91,7 @@
 | D-34 | **RNF-18 + retención (H-17):** definidos base legal/finalidad, inventario de PII, minimización, enmascaramiento por rol, derechos del titular y DPA. Retención propuesta: `caso`/`actividad`/`solicitante` 5 años · `evidencia` 2 años · `auditoria` 3 años · `notificacion` 1 año. **Validación legal con CANTV pendiente (tarea externa).** | Entrevista H-17 |
 | D-35 | **RNF-19 y RNF-20 (H-14/H-26/H-27):** observabilidad (logs con request-id, métricas de negocio, health checks, alertas, retención ≥ 30 días) y resiliencia (patrón outbox, reintentos, correo como respaldo de Telegram, alerta si el reporte de las 16:00 no se confirma). | Entrevista H-14/H-26/H-27 |
 | D-36 | **RBAC y multi-central (H-15/H-30/H-31/H-32):** 3 roles (ADMIN/SUPERVISOR/TECNICO) + matriz rol×módulo×acción; `usuario.id_central`; **RLS** en `caso` y `despacho` como patrón; RNF-21 y RNF-22 (Argon2id, MFA para ADMIN/SUPERVISOR, sesiones, rate limiting, CSRF/CORS). | Entrevista H-15/H-30/H-31/H-32 |
+| D-37 | **Usabilidad y accesibilidad (H-28):** RNF-09 reescrito con tareas medibles (≤3 toques/20 s contactar; ≤10 s localizar ficha; ≤60 s alta manual) y RNF-23 de accesibilidad (WCAG 2.1 AA en web; ≥48 dp, contraste ≥4.5:1 y ≥16 sp en APK). | Entrevista H-28 |
 
 ---
 
