@@ -90,6 +90,7 @@
 | D-33 | **SLO provisionales (H-16):** ingesta ≤ 5 min (p95) para 20 000 filas · PANEL/despacho ≤ 2 s (p95) · 30 usuarios concurrentes · 20 000 casos/día y 3 años de histórico. Se instala `pg_trgm` con índices GIN sobre `caso.direccion` y `sector_direccion.patron`. Revisable con la volumetría real de CANTV. | Entrevista H-16 |
 | D-34 | **RNF-18 + retención (H-17):** definidos base legal/finalidad, inventario de PII, minimización, enmascaramiento por rol, derechos del titular y DPA. Retención propuesta: `caso`/`actividad`/`solicitante` 5 años · `evidencia` 2 años · `auditoria` 3 años · `notificacion` 1 año. **Validación legal con CANTV pendiente (tarea externa).** | Entrevista H-17 |
 | D-35 | **RNF-19 y RNF-20 (H-14/H-26/H-27):** observabilidad (logs con request-id, métricas de negocio, health checks, alertas, retención ≥ 30 días) y resiliencia (patrón outbox, reintentos, correo como respaldo de Telegram, alerta si el reporte de las 16:00 no se confirma). | Entrevista H-14/H-26/H-27 |
+| D-36 | **RBAC y multi-central (H-15/H-30/H-31/H-32):** 3 roles (ADMIN/SUPERVISOR/TECNICO) + matriz rol×módulo×acción; `usuario.id_central`; **RLS** en `caso` y `despacho` como patrón; RNF-21 y RNF-22 (Argon2id, MFA para ADMIN/SUPERVISOR, sesiones, rate limiting, CSRF/CORS). | Entrevista H-15/H-30/H-31/H-32 |
 
 ---
 

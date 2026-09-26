@@ -139,6 +139,7 @@ erDiagram
         varchar  clave_hash
         int      id_rol FK
         int      id_tecnico FK
+        int      id_central FK
         int      intentos_fallidos
         bool     bloqueado
         bool     bloqueo_cliente

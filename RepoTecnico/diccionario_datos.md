@@ -137,6 +137,7 @@ Accesos (RF-02, RF-20, RNF-01).
 | clave_hash | varchar(255) | NN | Hash (bcrypt/argon2). |
 | id_rol | int | FK→rol, NN | |
 | id_tecnico | int | FK→tecnico, null | Datos del trabajador asociado. |
+| id_central | int | FK→central, null | **Alcance por central (D-36)**; refuerza RLS. |
 | intentos_fallidos | smallint | NN, default 0 | Hasta 3 (RF-20). |
 | bloqueado | boolean | NN, default false | Bloqueo por intentos. |
 | bloqueo_cliente | boolean | NN, default false | Oculta datos del cliente (RNF-05). |

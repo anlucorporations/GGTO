@@ -166,6 +166,8 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-18** | Privacidad / Cumplimiento | **Protección de datos personales (H-17):** base legal y finalidad declaradas; inventario y clasificación de PII; minimización (solo los campos necesarios); **retención por entidad** (ver §5.1); **enmascaramiento** de teléfono, dirección y serial para roles no autorizados; cifrado en reposo (CMEK) y en tránsito; derechos del titular (acceso, rectificación, supresión); DPA con proveedores (SendGrid/Gmail, Telegram); evaluación de transferencia internacional. | Inventario de PII revisado + prueba de enmascaramiento por rol + política de retención aprobada por CANTV. |
 | **RNF-19** | Observabilidad | **Logs y monitoreo (H-26):** logs estructurados con `request-id` y usuario en todas las operaciones; métricas de negocio (ingestas ejecutadas/fallidas, casos nuevos, despachos emitidos, notificaciones fallidas, sincronizaciones); `/health` y `/ready`; alertas ante ingesta diaria no ejecutada, error de sincronización o fallo de notificación crítica; retención de logs ≥ 30 días. | Panel de métricas + prueba de alerta disparada. |
 | **RNF-20** | Fiabilidad / Resiliencia | **Dependencias externas (H-14):** patrón *outbox* para notificaciones con reintentos exponenciales y estado terminal; **correo como canal de respaldo de Telegram**; alerta al supervisor si el reporte de producción de las 16:00 no se confirma; el MCP no puede bloquear el flujo principal. | Prueba de caída simulada de Telegram/correo + verificación de reintento y de la alerta. |
+| **RNF-21** | Seguridad / Autorización | **RBAC y alcance por central (H-15/H-32):** matriz rol × módulo × acción (ver §5.2); `usuario.id_central` acota el alcance; **RLS** en PostgreSQL como defensa en profundidad; pruebas negativas (central A no accede a datos de central B). | Matriz RBAC aprobada + pruebas de acceso denegado entre centrales. |
+| **RNF-22** | Seguridad / Autenticación y sesión | **Endurecimiento de acceso (H-31):** hash `Argon2id` (o bcrypt con coste ≥ 12) + *pepper*; política de complejidad/caducidad/historial de claves; **MFA obligatorio para ADMIN y SUPERVISOR**; bloqueo y *rate limiting* del lado servidor con backoff; expiración, rotación y revocación de sesión/token; protección CSRF/CORS; registro de eventos de login; autenticación de canales externos (`MCP_API_KEY`, token del bot). | Pruebas de fuerza bruta (bloqueo), expiración de sesión y MFA; revisión de configuración. |
 
 > ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`truekeate-db-dev`) **no** cumple RNF-16/SSL
 > obligatorio. El usuario aceptó el riesgo el 2026-09-25 con dueño **Dirección del proyecto** y condición
@@ -187,6 +189,29 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
 
 > Los plazos son **propuesta** y deben validarse con CANTV/asesoría legal (tarea externa de H-17).
+
+### 5.2 Matriz RBAC (RNF-21 / D-36)
+
+Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a **una central**
+(`usuario.id_central`), y el alcance se refuerza con RLS.
+
+| Módulo / acción | ADMIN | SUPERVISOR | TECNICO |
+|---|---|---|---|
+| CONFIGURACIÓN (central, sectores, catálogos, usuarios, flota, cuadrillas) | CRUD | Lectura + edición operativa | — |
+| INGESTA (cargar y procesar CSV) | CRUD | CRUD | — |
+| PANEL (buscar, editar, alta manual) | CRUD | CRUD | Lectura de sus casos |
+| CASOS / SEGUIMIENTO / EMPRESAS / REFERIDOS | CRUD | CRUD | Lectura + gestión de su cuadrilla |
+| DESPACHO (armar, publicar, reporte 16:00) | CRUD | CRUD | Lectura de su despacho |
+| GESTIÓN (cuadrilla 0) | CRUD | CRUD | — |
+| MONITOREO / GRÁFICOS | Lectura | Lectura | — |
+| GESTIÓN TÉCNICA (contactar, atender, cerrar, enrutar, diferir, evidencias) | — | Lectura | CRUD (solo sus casos y offline) |
+| ALERTAS (falla masiva, incidentes, solicitud de material) | Lectura | Lectura | CRUD |
+| INSUMOS (v2) | CRUD | CRUD | Solicitud |
+| AUDITORÍA | Lectura | — | — |
+| USUARIOS y accesos | CRUD | Alta/baja de técnicos | — |
+
+> **MFA obligatorio** para ADMIN y SUPERVISOR (RNF-22). El TÉCNICO usa `P00` + clave con bloqueo a los
+> 3 intentos y recuperación con 3 de las 12 palabras (RF-20).
 
 ---
 

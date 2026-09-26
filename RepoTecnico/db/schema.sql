@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     clave_hash          varchar(255) NOT NULL,
     id_rol              integer      NOT NULL REFERENCES rol(id_rol),
     id_tecnico          integer      REFERENCES tecnico(id_tecnico),
+    id_central          integer      REFERENCES central(id_central),  -- alcance por central (D-36)
     intentos_fallidos   smallint     NOT NULL DEFAULT 0,
     bloqueado           boolean      NOT NULL DEFAULT false,
     bloqueo_cliente     boolean      NOT NULL DEFAULT false,
@@ -670,6 +671,38 @@ CREATE INDEX IF NOT EXISTS ix_caso_direccion_trgm   ON caso USING gin (direccion
 CREATE INDEX IF NOT EXISTS ix_sector_patron_trgm    ON sector_direccion USING gin (patron gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS ix_notificacion_caso       ON notificacion (id_caso);
 CREATE INDEX IF NOT EXISTS ix_auditoria_fecha         ON auditoria (fecha_hora);
+
+-- -----------------------------------------------------------------------------
+-- 9.1 Row Level Security multi-central (D-36) — defensa en profundidad
+-- -----------------------------------------------------------------------------
+-- La aplicación debe fijar el alcance de la central en cada conexión:
+--     SET LOCAL app.id_central = '<id_central>';
+-- Si el parámetro NO está definido, la política permite todo (modo compatibilidad
+-- para desarrollo/migraciones). ANTES DE PRODUCCIÓN: eliminar la cláusula
+-- `app_central_actual() IS NULL` de las políticas para que sea "denegar por defecto".
+--
+-- Se aplica a `caso` y `despacho` como patrón; extender al resto de tablas con
+-- `id_central` (sector, tecnico, flota, cuadrilla, insumo) en la Fase 3.
+
+CREATE OR REPLACE FUNCTION app_central_actual()
+RETURNS integer
+LANGUAGE sql STABLE AS $$
+    SELECT nullif(current_setting('app.id_central', true), '')::integer;
+$$;
+
+ALTER TABLE caso     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE caso     FORCE  ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_caso_central ON caso;
+CREATE POLICY p_caso_central ON caso
+    USING      (app_central_actual() IS NULL OR id_central = app_central_actual())
+    WITH CHECK (app_central_actual() IS NULL OR id_central = app_central_actual());
+
+ALTER TABLE despacho     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE despacho     FORCE  ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_despacho_central ON despacho;
+CREATE POLICY p_despacho_central ON despacho
+    USING      (app_central_actual() IS NULL OR id_central = app_central_actual())
+    WITH CHECK (app_central_actual() IS NULL OR id_central = app_central_actual());
 
 -- -----------------------------------------------------------------------------
 -- 10. Triggers: actualizado_en automático
