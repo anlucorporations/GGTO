@@ -37,11 +37,16 @@ build/
 *.keystore
 local.properties
 
-# --- Datos de ingesta y evidencias ---
+# --- Datos de ingesta reales (PII de clientes CANTV): NUNCA versionar ---
+detalle_averias_gpon*.csv
+RepoTecnico/detalle_averias_gpon*.csv
 RepoTecnico/entrada/
 RepoTecnico/salida/
 RepoTecnico/evidencias/
 *.zip
+
+# --- Muestras pseudonimizadas (SÍ se versionan con fines de prueba) ---
+!RepoTecnico/muestras/*.csv
 
 # --- Sistema ---
 .DS_Store
