@@ -195,7 +195,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | Ciclo | Estado | Pruebas | Desplegado |
 |---|---|---|---|
 | 1 — Núcleo + Autenticación | ✅ **completado** | 17/17 en verde | rev. `ggto-web-00002-rbl` |
-| 2 — Configuración | ⏳ pendiente | — | — |
+| 2 — Configuración | ✅ **completado** | 28/28 acumuladas | rev. `ggto-web-00003-6zb` |
 | 3 — Ingesta CSV | ⏳ pendiente | — | — |
 | 4 — PANEL y CASOS | ⏳ pendiente | — | — |
 | 5 — DESPACHO | ⏳ pendiente | — | — |
@@ -208,6 +208,34 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 2 — Configuración ✅
+
+**Backend (API) ✅**
+
+| Aspecto | Resultado |
+|---|---|
+| Endpoints | `central`, `sectores` (+`direcciones`), `tecnicos`, `flota`, `cuadrillas` (+`integrantes`), `catalogos/causas`, `catalogos/metodos`, `configuracion` |
+| RBAC | Escritura solo `ADMIN`/`SUPERVISOR`; lectura para cualquier usuario autenticado; `403` para `TECNICO` |
+| Reglas | Baja lógica (`activa`/`activo`/`status`), `409` en duplicados, `404` en inexistentes |
+| Pruebas | +11 de integración (`test_config.py`) → **28/28 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ |
+| Seguridad | `/api/v1/resumen` pasó a exigir token; `GET /` se movió a `/api/v1/info` para que la SPA ocupe la raíz |
+
+**Web de administración (React + Vite + TypeScript) ✅**
+
+| Aspecto | Resultado |
+|---|---|
+| Secciones | Login (+ desbloqueo con 3 palabras), PANEL, CENTRAL, SECTORES, TÉCNICOS, FLOTA, CUADRILLAS, CATÁLOGOS, PARÁMETROS |
+| Sesión | Token en `localStorage`; valida `GET /auth/me` al montar; rutas protegidas con redirección a `/login` |
+| RBAC en UI | Con rol `TECNICO` se ocultan formularios y botones y se muestra "Modo solo lectura" |
+| Servido | Mismo contenedor: `index.html` y `/assets/*` desde `app/web/dist` vía `SPAStaticFiles` (deep links OK) |
+| Build | `tsc` (strict) + `vite build` ✅ · 49 módulos · 226 kB JS (66 kB gzip) |
+
+**Despliegue y verificación en vivo ✅** — revisión `ggto-web-00003-6zb` (imagen `v3`):
+`GET /` sirve la SPA y `/assets/*` responde `200`; `/api/v1/info` OK; `setup` → `login` OK;
+`/api/v1/resumen` con token `200` y sin token `401`; creación de **central, sector con 2 direcciones,
+técnico, flota y cuadrilla** → todos `201`. Datos temporales eliminados tras la prueba.
 
 ### Ciclo 1 — Núcleo + Autenticación ✅
 

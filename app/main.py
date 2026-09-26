@@ -2,12 +2,17 @@
 
 CANTV C.A. — Central Francisco Salias (Área 4).
 Fase 3 · Ciclo 1: núcleo + autenticación.
+Fase 3 · Ciclo 2: configuración del entorno operativo + web de administración.
 """
+
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .api import routes_auth, routes_health
+from .api import routes_auth, routes_config, routes_health
 from .core.config import get_settings
 
 settings = get_settings()
@@ -18,7 +23,8 @@ app = FastAPI(
     description=(
         "Plataforma de gestión de averías GPON y construcción de puntos ópticos. "
         "Ciclo 1: autenticación con P00 + clave, bloqueo a los 3 intentos y "
-        "recuperación con 3 de las 12 palabras de seguridad."
+        "recuperación con 3 de las 12 palabras de seguridad. "
+        "Ciclo 2: configuración de central, sectores, técnicos, flota, cuadrillas y catálogos."
     ),
 )
 
@@ -32,3 +38,24 @@ app.add_middleware(
 
 app.include_router(routes_health.router)
 app.include_router(routes_auth.router)
+app.include_router(routes_config.router)
+
+
+# --------------------------------------------------------------------------- #
+# Web de administración (SPA React). Se monta al final para no tapar la API.
+# --------------------------------------------------------------------------- #
+class SPAStaticFiles(StaticFiles):
+    """Sirve `index.html` ante rutas del cliente (deep links de React Router)."""
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404:
+                return await super().get_response("index.html", scope)
+            raise
+
+
+WEB_DIST = Path(__file__).resolve().parent / "web" / "dist"
+if WEB_DIST.is_dir():
+    app.mount("/", SPAStaticFiles(directory=str(WEB_DIST), html=True), name="web")

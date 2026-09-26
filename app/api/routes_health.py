@@ -8,11 +8,13 @@ from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
 from ..core.db import get_db
+from ..models import Usuario
+from .deps import get_current_user
 
 router = APIRouter(tags=["salud"])
 
 
-@router.get("/")
+@router.get("/api/v1/info")
 def root() -> dict:
     s = get_settings()
     return {
@@ -56,7 +58,7 @@ def ready(db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/api/v1/resumen")
-def resumen(db: Session = Depends(get_db)) -> dict:
+def resumen(db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> dict:
     """Conteo de entidades principales (evidencia del esquema desplegado)."""
     try:
         row = db.execute(

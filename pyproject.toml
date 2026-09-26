@@ -1,7 +1,7 @@
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-extend-exclude = [".venv", "venv"]
+extend-exclude = [".venv", "venv", "app/web"]
 
 [tool.ruff.lint]
 # B008: FastAPI usa `Depends(...)` como valor por defecto (patrón oficial).
@@ -15,3 +15,4 @@ select = ["E", "F", "I", "B", "UP", "RUF"]
 python_version = "3.12"
 ignore_missing_imports = true
 warn_unused_ignores = true
+exclude = ["app/web/"]
