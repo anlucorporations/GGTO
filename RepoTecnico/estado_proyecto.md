@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1 y 2 completados y desplegados |
+| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1, 2 y 3 completados y desplegados |
 | Última actualización | 2026-09-26 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
@@ -51,7 +51,7 @@
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
 | `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
 | `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
-| `../app/` | Backend FastAPI + web React (Ciclos 1 y 2) con pruebas y CI. | **v0.2.0** |
+| `../app/` | Backend FastAPI + web React (Ciclos 1–3) con pruebas y CI. | **v0.3.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -105,6 +105,9 @@
 | D-43 | **Despliegue web (esqueleto) en GCP:** servicio **Cloud Run `ggto-web`** en `truekeate-main`/`europe-west1` → https://ggto-web-593453426217.europe-west1.run.app, con SA propia `ggto-web-sa`, conectado a `ggtov2` por el conector de Cloud SQL. Código en `app/` (FastAPI + psycopg2). **Acceso público (smoke test); restringir antes de producción.** Migrar a `ggtov2` al desbloquear facturación. | Orden del usuario |
 | D-44 | **Fase 3 iniciada — Ciclo 1 (Núcleo + Autenticación) completado:** plan vertical en `plan_desarrollo.md` (10 ciclos); backend `app/` con Argon2id, JWT, bloqueo a los 3 intentos, 12 palabras, rate limiting y RBAC; **17/17 pruebas** en verde; CI en GitHub Actions; desplegado como revisión `ggto-web-00002-rbl` (imagen `v2`) con el secreto `ggto-secret-key`. Flujo verificado en vivo (setup → login → me → bloqueo → desbloqueo). | Fase 3 |
 | D-45 | **Ciclo 2 (Configuración) completado:** CRUD de central, sectores (+direcciones), técnicos, flota, cuadrillas (+integrantes), catálogos y parámetros, con RBAC de escritura `ADMIN`/`SUPERVISOR`; **web React** (login, panel y 8 secciones) servida por el mismo contenedor; `/api/v1/resumen` pasa a exigir token; **28/28 pruebas**; desplegado como `ggto-web-00003-6zb` (imagen `v3`, build multi-etapa Node+Python) y verificado en vivo. | Fase 3 |
+| D-46 | **Ciclo 3 (Ingesta CSV + Gestión automatizada) completado:** parser ISO-8859-1 de 80 columnas por posición (49 campos destino), fechas `a.m./p.m.`, normalización de acentos y recorte defensivo; filtro por central, deduplicación por `id_averia`, sectorización por dirección (`pg_trgm`) y criterio combinado de cuadrilla 0; endpoints de preview/carga/lotes y página web INGESTA; **62/62 pruebas**; desplegado como `ggto-web-00004-cj9` (imagen `v4`) y verificado en vivo. | Fase 3 |
+| D-47 | **`caso.extra` ampliado a `varchar(120)`** (la muestra real traía valores de hasta 50 caracteres) y añadido recorte con aviso para que ningún valor inesperado aborte la ingesta. | Ciclo 3 |
+| D-48 | **Criterio de cuadrilla 0 a revisar:** con modo `UNION` la muestra arrojó **51 de 51** casos al supervisor (H-04/H-19). Queda parametrizado; debe ajustarse con CANTV antes del despacho real. | Ciclo 3 |
 
 ---
 
@@ -257,3 +260,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-26 | **Aplicación desplegada en GCP (D-43):** esqueleto FastAPI en Cloud Run `ggto-web` (proyecto `truekeate-main`) conectado a `ggtov2`; endpoints `/health`, `/ready`, `/api/v1/central` y `/api/v1/resumen` verificados en producción. |
 | 2026-09-26 | **Fase 3 iniciada (D-44):** plan de desarrollo vertical en `plan_desarrollo.md` (10 ciclos) y **Ciclo 1 completado**: autenticación P00 + clave con Argon2id, JWT, bloqueo a los 3 intentos, 12 palabras, rate limiting y RBAC; **17/17 pruebas**; CI en GitHub Actions; desplegado (`ggto-web-00002-rbl`, imagen `v2`) y verificado en vivo. |
 | 2026-09-26 | **Ciclo 2 completado (D-45):** CRUD de configuración (central, sectores+direcciones, técnicos, flota, cuadrillas, catálogos, parámetros) + **web React** integrada en el mismo contenedor; **28/28 pruebas**; desplegado (`ggto-web-00003-6zb`, imagen `v3`) y verificado en vivo (SPA, login y CRUD). |
+| 2026-09-26 | **Ciclo 3 completado (D-46..D-48):** ingesta del CSV diario (ISO-8859-1, 80 columnas por posición), filtro por central, deduplicación por `id_averia`, sectorización por dirección y cuadrilla 0 configurable; página web INGESTA; **62/62 pruebas**; desplegado (`ggto-web-00004-cj9`, imagen `v4`) y verificado con la muestra real (56 filas → 51 de la central, 5 descartadas, 15 sectorizadas, 51 duplicadas en la segunda carga). |

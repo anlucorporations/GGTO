@@ -1,9 +1,9 @@
 """Configuración de pruebas.
 
-Las pruebas unitarias no necesitan base de datos.
-Las de integración se ejecutan si está definida `GGTO_TEST_DB_URL`; en ese caso se
-crea el esquema completo a partir de `RepoTecnico/db/schema.sql` en el esquema
-indicado por `GGTO_TEST_SCHEMA` (por defecto `public`).
+- Las pruebas unitarias no necesitan base de datos.
+- Las de integración se ejecutan si está definida `GGTO_TEST_DB_URL`; el esquema
+  completo se crea a partir de `RepoTecnico/db/schema.sql` en el esquema indicado
+  por `GGTO_TEST_SCHEMA` (por defecto `public`).
 """
 
 from __future__ import annotations
@@ -12,13 +12,38 @@ import os
 import pathlib
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
+
+from app.core.security import hash_password
+from app.models import Central, Rol, Tecnico, Usuario
 
 RAIZ = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA_SQL = RAIZ / "RepoTecnico" / "db" / "schema.sql"
+MUESTRA_CSV = RAIZ / "RepoTecnico" / "muestras" / "detalle_averias_gpon_EJEMPLO.csv"
 TEST_URL = os.environ.get("GGTO_TEST_DB_URL")
 TEST_SCHEMA = os.environ.get("GGTO_TEST_SCHEMA", "public")
+
+P00_ADMIN = "TESTADM"
+P00_TEC = "TESTTEC"
+CLAVE_TEST = "config12345"
+
+# Orden respetando las claves foráneas.
+SQL_LIMPIEZA = """
+DELETE FROM caso              WHERE id_averia LIKE 'DEMO-%';
+DELETE FROM ingesta_lote      WHERE id_central IN (SELECT id_central FROM central WHERE codigo_central LIKE 'TST%');
+DELETE FROM cuadrilla_herramienta WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');
+DELETE FROM cuadrilla_tecnico   WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');
+DELETE FROM cuadrilla          WHERE codigo LIKE 'TC%';
+DELETE FROM sector_direccion    WHERE id_sector IN (SELECT id_sector FROM sector WHERE codigo LIKE 'TS%');
+DELETE FROM sector              WHERE codigo LIKE 'TS%';
+DELETE FROM flota               WHERE can LIKE 'TCAN%';
+DELETE FROM causa               WHERE codigo_causa LIKE 'T9%';
+DELETE FROM dispositivo_seguridad WHERE p00 IN ('TESTADM','TESTTEC');
+DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC');
+DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC');
+DELETE FROM central             WHERE codigo_central LIKE 'TST%';
+"""
 
 
 @pytest.fixture(autouse=True)
@@ -84,3 +109,46 @@ def client(engine):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+def _limpiar(db) -> None:
+    db.execute(text(SQL_LIMPIEZA))
+    db.commit()
+
+
+@pytest.fixture()
+def admin_token(client, db_session):
+    """Crea un ADMIN y un TECNICO y devuelve sus cabeceras de autenticación."""
+    _limpiar(db_session)
+
+    id_central = db_session.scalar(
+        select(Central.id_central).where(Central.codigo_central == "2324X")
+    )
+    rol_admin = db_session.scalar(select(Rol).where(Rol.codigo == "ADMIN"))
+    rol_tec = db_session.scalar(select(Rol).where(Rol.codigo == "TECNICO"))
+
+    admin_tec = Tecnico(id_central=id_central, nombre="ADMIN", apellido="TEST", p00=P00_ADMIN)
+    tec_tec = Tecnico(id_central=id_central, nombre="TECNICO", apellido="TEST", p00=P00_TEC)
+    db_session.add_all([admin_tec, tec_tec])
+    db_session.flush()
+
+    db_session.add_all([
+        Usuario(p00=P00_ADMIN, clave_hash=hash_password(CLAVE_TEST), id_rol=rol_admin.id_rol,
+                id_tecnico=admin_tec.id_tecnico, id_central=id_central),
+        Usuario(p00=P00_TEC, clave_hash=hash_password(CLAVE_TEST), id_rol=rol_tec.id_rol,
+                id_tecnico=tec_tec.id_tecnico, id_central=id_central),
+    ])
+    db_session.commit()
+
+    admin = client.post("/api/v1/auth/login", json={"p00": P00_ADMIN, "clave": CLAVE_TEST})
+    assert admin.status_code == 200, admin.text
+    tecnico = client.post("/api/v1/auth/login", json={"p00": P00_TEC, "clave": CLAVE_TEST})
+    assert tecnico.status_code == 200, tecnico.text
+
+    yield {
+        "admin": {"Authorization": f"Bearer {admin.json()['access_token']}"},
+        "tecnico": {"Authorization": f"Bearer {tecnico.json()['access_token']}"},
+        "id_central": id_central,
+    }
+
+    _limpiar(db_session)

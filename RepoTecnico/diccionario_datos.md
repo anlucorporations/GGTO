@@ -277,7 +277,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | 41 | puerto | `puerto` | varchar(10) | |
 | 43 | fat | `fat` | varchar(80) | |
 | 44 | serial | `serial` | varchar(60) | Serial del equipo. |
-| 46 | extra | `extra` | varchar(40) | |
+| 46 | extra | `extra` | varchar(120) | |
 | 47 | area_trabajo | `area_trabajo` | varchar(40) | Ej. `PTAEXT`. |
 | 50 | tipo_servicio | `tipo_servicio` | varchar(40) | Ej. `ABA ULTRA`. |
 | 51 | tipo_problema | `tipo_problema` | varchar(20) | Ej. `NL`. |

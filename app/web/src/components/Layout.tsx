@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 
 const SECCIONES = [
   { ruta: '/', etiqueta: 'PANEL', fin: true },
+  { ruta: '/ingesta', etiqueta: 'INGESTA', fin: false },
   { ruta: '/central', etiqueta: 'CENTRAL', fin: false },
   { ruta: '/sectores', etiqueta: 'SECTORES', fin: false },
   { ruta: '/tecnicos', etiqueta: 'TÉCNICOS', fin: false },

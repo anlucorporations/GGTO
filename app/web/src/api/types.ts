@@ -259,6 +259,48 @@ export interface ParametroUpdate {
 }
 
 /* ------------------------------------------------------------------ */
+/* INGESTA                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface EjemploCaso {
+  id_averia: string;
+  direccion: string | null;
+  sector: number | null;
+  cuadrilla0: boolean;
+}
+
+export interface ResumenIngesta {
+  archivo: string;
+  filas_leidas: number;
+  filas_central: number;
+  casos_nuevos: number;
+  casos_duplicados: number;
+  casos_descartados: number;
+  sectorizados: number;
+  sin_sector: number;
+  cuadrilla0: number;
+  avisos: string[];
+  ejemplos: EjemploCaso[];
+  id_lote: number | null;
+}
+
+export interface IngestaLoteOut {
+  id_lote: number;
+  archivo: string;
+  fecha_archivo: string | null;
+  id_central: number | null;
+  filas_leidas: number;
+  filas_central: number;
+  casos_nuevos: number;
+  casos_duplicados: number;
+  casos_descartados: number;
+  estado: string;
+  detalle_error: string | null;
+  usuario: string | null;
+  creado_en: string | null;
+}
+
+/* ------------------------------------------------------------------ */
 /* RESUMEN                                                             */
 /* ------------------------------------------------------------------ */
 

@@ -1,69 +1,9 @@
-"""Pruebas de integración del Ciclo 2: configuración y RBAC."""
+"""Pruebas de integración del Ciclo 2: configuración y RBAC.
 
-from __future__ import annotations
-
-import pytest
-from sqlalchemy import select, text
-
-from app.core.security import hash_password
-from app.models import Central, Rol, Tecnico, Usuario
-
-P00_ADMIN = "TESTADM"
-P00_TEC = "TESTTEC"
-CLAVE = "config12345"
-
-SQL_LIMPIEZA = """
-DELETE FROM cuadrilla_herramienta WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');
-DELETE FROM cuadrilla_tecnico   WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');
-DELETE FROM cuadrilla          WHERE codigo LIKE 'TC%';
-DELETE FROM sector_direccion    WHERE id_sector IN (SELECT id_sector FROM sector WHERE codigo LIKE 'TS%');
-DELETE FROM sector              WHERE codigo LIKE 'TS%';
-DELETE FROM flota               WHERE can LIKE 'TCAN%';
-DELETE FROM causa               WHERE codigo_causa LIKE 'T9%';
-DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC');
-DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC');
-DELETE FROM central             WHERE codigo_central LIKE 'TST%';
+Los fixtures `client`, `admin_token` y `db_session` viven en `conftest.py`.
 """
 
-
-@pytest.fixture()
-def admin_token(client, db_session):
-    """Crea un ADMIN y devuelve su token; limpia los datos de prueba al final."""
-    db_session.execute(text(SQL_LIMPIEZA))
-    db_session.commit()
-
-    id_central = db_session.scalar(
-        select(Central.id_central).where(Central.codigo_central == "2324X")
-    )
-    rol_admin = db_session.scalar(select(Rol).where(Rol.codigo == "ADMIN"))
-    rol_tec = db_session.scalar(select(Rol).where(Rol.codigo == "TECNICO"))
-
-    admin_tec = Tecnico(id_central=id_central, nombre="ADMIN", apellido="TEST", p00=P00_ADMIN)
-    tec_tec = Tecnico(id_central=id_central, nombre="TECNICO", apellido="TEST", p00=P00_TEC)
-    db_session.add_all([admin_tec, tec_tec])
-    db_session.flush()
-
-    db_session.add_all([
-        Usuario(p00=P00_ADMIN, clave_hash=hash_password(CLAVE), id_rol=rol_admin.id_rol,
-                id_tecnico=admin_tec.id_tecnico, id_central=id_central),
-        Usuario(p00=P00_TEC, clave_hash=hash_password(CLAVE), id_rol=rol_tec.id_rol,
-                id_tecnico=tec_tec.id_tecnico, id_central=id_central),
-    ])
-    db_session.commit()
-
-    admin = client.post("/api/v1/auth/login", json={"p00": P00_ADMIN, "clave": CLAVE})
-    assert admin.status_code == 200, admin.text
-    tecnico = client.post("/api/v1/auth/login", json={"p00": P00_TEC, "clave": CLAVE})
-    assert tecnico.status_code == 200, tecnico.text
-
-    yield {
-        "admin": {"Authorization": f"Bearer {admin.json()['access_token']}"},
-        "tecnico": {"Authorization": f"Bearer {tecnico.json()['access_token']}"},
-        "id_central": id_central,
-    }
-
-    db_session.execute(text(SQL_LIMPIEZA))
-    db_session.commit()
+from __future__ import annotations
 
 
 def test_sin_token_devuelve_401(client):

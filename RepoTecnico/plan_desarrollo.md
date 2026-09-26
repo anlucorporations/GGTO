@@ -196,7 +196,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 |---|---|---|---|
 | 1 — Núcleo + Autenticación | ✅ **completado** | 17/17 en verde | rev. `ggto-web-00002-rbl` |
 | 2 — Configuración | ✅ **completado** | 28/28 acumuladas | rev. `ggto-web-00003-6zb` |
-| 3 — Ingesta CSV | ⏳ pendiente | — | — |
+| 3 — Ingesta CSV | ✅ **completado** | 62/62 acumuladas | rev. `ggto-web-00004-cj9` |
 | 4 — PANEL y CASOS | ⏳ pendiente | — | — |
 | 5 — DESPACHO | ⏳ pendiente | — | — |
 | 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ⏳ pendiente | — | — |
@@ -208,6 +208,39 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 3 — Ingesta CSV + Gestión automatizada ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Parser | `app/services/ingesta.py`: ISO-8859-1, delimitador `;`, **80 columnas por posición**, **49 campos destino**, `informacion` = cols. 31+32+52, ayudantes como lista |
+| Fechas | `%d/%m/%Y %I:%M:%S %p` con variantes `a.m./p.m.`, ISO y fecha sola; celdas vacías toleradas |
+| Robustez | Normalización de acentos; **recorte defensivo** con aviso si un valor excede su columna (`extra` se amplió a `varchar(120)`) |
+| Filtro de central | Solo se cargan los casos de la central configurada (RF-21) |
+| Deduplicación | Por `id_averia`, incluyendo duplicados dentro del mismo archivo (RF-22) |
+| Sectorización | `app/services/sectorizacion.py`: coincidencia CONTIENE/EXACTO/REGEX sobre `direccion`, sin acentos, gana el patrón más específico (RF-23) |
+| Cuadrilla 0 | `app/services/cuadrilla0.py`: modos `CAMPO`/`SUPERVISOR`/`UNION` con listas y columnas configurables (RF-25 / D-22) |
+| Endpoints | `POST /ingesta/preview` (simulación), `POST /ingesta` (carga), `GET /ingesta/lotes`, `GET /ingesta/lotes/{id}` |
+| Trazabilidad | Cada carga queda en `ingesta_lote` con filas leídas, de la central, nuevas, duplicadas y descartadas (RF-29) |
+| Web | Página **INGESTA**: simular, cargar con confirmación, resumen por tarjetas, avisos, ejemplos e historial de lotes |
+| Pruebas | **62/62** acumuladas (+34 del Ciclo 3: 16 del parser, 12 de sectorización/cuadrilla 0, 6 de la API) |
+| Calidad | `ruff` ✅ · `mypy` ✅ · `tsc` strict ✅ |
+
+**Verificación en vivo** (muestra real de 56 filas, 3 centrales):
+
+| Prueba | Resultado |
+|---|---|
+| `preview` | `filas_leidas=56`, `filas_central=51`, `casos_descartados=5`, `sectorizados=15`, `sin_sector=36` |
+| Carga real | `id_lote=1`, `casos_nuevos=51` |
+| Segunda carga | `casos_nuevos=0`, `casos_duplicados=51` ✅ deduplicación |
+| Historial | 2 lotes en `OK` |
+| SPA `/ingesta` | `200` |
+
+> ⚠️ **Hallazgo de la prueba real:** con el modo `UNION` (D-22), **51 de 51** casos quedaron marcados para la
+> cuadrilla 0, porque casi ninguno contiene frases de campo (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`).
+> Es exactamente el riesgo señalado en la auditoría (H-04/H-19). Está **parametrizado** en
+> `despacho.criterio_cuadrilla0` y las listas de frases: debe ajustarse con CANTV antes de usar el
+> despacho real (candidato: modo `SUPERVISOR` o una lista de frases de campo más completa).
 
 ### Ciclo 2 — Configuración ✅
 

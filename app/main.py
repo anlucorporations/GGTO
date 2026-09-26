@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .api import routes_auth, routes_config, routes_health
+from .api import routes_auth, routes_config, routes_health, routes_ingesta
 from .core.config import get_settings
 
 settings = get_settings()
@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(routes_health.router)
 app.include_router(routes_auth.router)
 app.include_router(routes_config.router)
+app.include_router(routes_ingesta.router)
 
 
 # --------------------------------------------------------------------------- #

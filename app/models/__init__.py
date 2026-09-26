@@ -1,3 +1,4 @@
+from .caso_entities import Caso, IngestaLote
 from .config_entities import (
     CatalogoMetodo,
     Causa,
@@ -13,6 +14,7 @@ from .config_entities import (
 from .entities import Central, DispositivoSeguridad, Rol, Tecnico, Usuario
 
 __all__ = [
+    "Caso",
     "CatalogoMetodo",
     "Causa",
     "Central",
@@ -23,6 +25,7 @@ __all__ = [
     "DispositivoSeguridad",
     "Flota",
     "Herramienta",
+    "IngestaLote",
     "Rol",
     "Sector",
     "SectorDireccion",

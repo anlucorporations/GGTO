@@ -295,8 +295,8 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
 | URL | **https://ggto-web-593453426217.europe-west1.run.app** (API + web) |
-| Revisión | `ggto-web-00003-6zb` (100 % del tráfico) — Ciclo 2 |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v3` (multi-etapa: Node compila la SPA, Python la sirve) |
+| Revisión | `ggto-web-00004-cj9` (100 % del tráfico) — Ciclo 3 |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v4` (multi-etapa: Node compila la SPA, Python la sirve) |
 | SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
@@ -315,10 +315,11 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 | `POST /api/v1/auth/login` | `P00` + clave → JWT (8 h); bloqueo al **3.º** intento (423) |
 | `GET /api/v1/auth/me` · `POST /auth/unlock` · `POST /auth/reset-password` | 🔒 sesión / recuperación con 3 palabras |
 | `/api/v1/central`, `/sectores`, `/tecnicos`, `/flota`, `/cuadrillas`, `/catalogos/*`, `/configuracion` | 🔒 CRUD de CONFIGURACIÓN (escritura solo `ADMIN`/`SUPERVISOR`) |
+| `POST /api/v1/ingesta/preview` · `POST /api/v1/ingesta` · `GET /api/v1/ingesta/lotes` | 🔒 Ingesta del CSV diario y su historial (escritura solo `ADMIN`/`SUPERVISOR`) |
 
-> **Pruebas:** 28/28 en verde (Ciclos 1 y 2) contra el esquema aislado `ggto_test`.
-> CI en `.github/workflows/ci.yml`. **Ciclo 2 verificado en vivo**: creación de central, sector con
-> direcciones, técnico, flota y cuadrilla (todos `201`), `resumen` con token `200` y sin token `401`.
+> **Pruebas:** 62/62 en verde (Ciclos 1–3) contra el esquema aislado `ggto_test`.
+> CI en `.github/workflows/ci.yml`. **Ciclo 3 verificado en vivo** con la muestra real: 56 filas leídas,
+> 51 de la central, 5 descartadas, 15 sectorizadas; segunda carga con 51 duplicados y 0 nuevos.
 
 > ⚠️ **Pendiente:** mover el servicio a `ggtov2` (Cloud Run + Artifact Registry propios) cuando se
 > desbloquee la facturación, y **restringir el acceso** (IAP o invocación autenticada), porque hoy

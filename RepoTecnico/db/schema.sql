@@ -340,7 +340,7 @@ CREATE TABLE IF NOT EXISTS caso (
     puerto                  varchar(10),
     fat                     varchar(80),
     serial                  varchar(60),
-    extra                   varchar(40),
+    extra                   varchar(120),
     area_trabajo            varchar(40),
     tipo_servicio           varchar(40),
     tipo_problema           varchar(20),

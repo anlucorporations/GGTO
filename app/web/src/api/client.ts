@@ -22,12 +22,14 @@ import type {
   Flota,
   FlotaCreate,
   FlotaUpdate,
+  IngestaLoteOut,
   Metodo,
   MetodoCreate,
   PalabraPosicion,
   Parametro,
   ParametroUpdate,
   Resumen,
+  ResumenIngesta,
   Sector,
   SectorCreate,
   SectorDireccion,
@@ -132,7 +134,12 @@ function construirQuery(
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json');
-  if (options.body !== undefined && !headers.has('Content-Type')) {
+  // `FormData` fija su propio `Content-Type` (con boundary); no lo pisamos.
+  if (
+    options.body !== undefined &&
+    !(options.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json');
   }
   const token = getToken();
@@ -371,6 +378,40 @@ export function actualizarConfiguracion(
   data: ParametroUpdate,
 ): Promise<Parametro> {
   return conCuerpo<Parametro>(`/configuracion/${encodeURIComponent(clave)}`, 'PUT', data);
+}
+
+/* ------------------------------------------------------------------ */
+/* INGESTA                                                             */
+/* ------------------------------------------------------------------ */
+
+function subirCsv(
+  path: string,
+  archivo: File,
+  idCentral: number | null,
+): Promise<ResumenIngesta> {
+  const datos = new FormData();
+  datos.append('archivo', archivo);
+  if (idCentral !== null) datos.append('id_central', String(idCentral));
+  return request<ResumenIngesta>(path, { method: 'POST', body: datos });
+}
+
+/** Simula la carga del CSV diario sin guardar nada. */
+export function previewIngesta(archivo: File, idCentral: number | null = null): Promise<ResumenIngesta> {
+  return subirCsv('/ingesta/preview', archivo, idCentral);
+}
+
+/** Carga real del CSV diario: inserta los casos nuevos y registra el lote. */
+export function cargarIngesta(archivo: File, idCentral: number | null = null): Promise<ResumenIngesta> {
+  return subirCsv('/ingesta', archivo, idCentral);
+}
+
+/** Historial de cargas, más recientes primero. */
+export function listarLotes(limite = 50): Promise<IngestaLoteOut[]> {
+  return request<IngestaLoteOut[]>(`/ingesta/lotes${construirQuery({ limite })}`);
+}
+
+export function obtenerLote(idLote: number): Promise<IngestaLoteOut> {
+  return request<IngestaLoteOut>(`/ingesta/lotes/${idLote}`);
 }
 
 /* ------------------------------------------------------------------ */

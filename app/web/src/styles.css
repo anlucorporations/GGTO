@@ -595,6 +595,21 @@ tbody tr:hover {
   color: var(--gris-texto);
 }
 
+/* ------------------------------ Ingesta --------------------------- */
+
+.avisos-ingesta {
+  margin-top: 16px;
+}
+
+input[type='file'] {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+}
+
 .mono {
   font-family: 'Consolas', 'Menlo', monospace;
   font-size: 12.5px;
