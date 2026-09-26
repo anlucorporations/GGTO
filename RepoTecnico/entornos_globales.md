@@ -239,6 +239,12 @@ head -1 "RepoTecnico/detalle_averias_gpon 12_09_2026.csv" | awk -F';' '{print NF
 - Convención de remotos: `origin` → GitHub, `gitlab` → GitLab.
 - **No se hace push sin orden explícita del usuario** (comando `/push`).
 
+### 6.1 Contrato de interfaz del archivo diario
+
+La entrega del CSV `detalle_averias_gpon_<fecha>.csv` por parte del sistema origen CANTV se rige por
+[`interfaz_csv_origen.md`](interfaz_csv_origen.md) (D-41): nombre, periodicidad, canal, codificación
+ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confidencialidad de la PII.
+
 ---
 
 ## 7. Pendientes de entorno

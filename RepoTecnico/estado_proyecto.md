@@ -47,6 +47,7 @@
 | `db/schema.sql` | Script DDL PostgreSQL (35 tablas + índices + triggers + datos iniciales). | **v0.1** |
 | `muestras/detalle_averias_gpon_EJEMPLO.csv` | Muestra **pseudonimizada** (56×80, ISO-8859-1) para pruebas de ingesta. | **v1** |
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
+| `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -95,6 +96,7 @@
 | D-38 | **Stack y DevOps (H-13/H-29):** **Python + FastAPI**, migraciones con **Alembic** (baseline `db/schema.sql`), **React** (Vite/Recharts), **Flutter + SQLite**, **GitHub Actions** (espejo GitLab) con pytest/Ruff/mypy y cobertura ≥ 70 %. RNF-24 y RNF-25. | Entrevista H-13/H-29 |
 | D-39 | **Gobierno v1 (H-34/H-35/H-36/H-42):** catálogos, flota/mantenimiento, almacén y soporte los cubre el **SUPERVISOR**; la auditoría interna la ejerce **ADMIN** en solo lectura. **No se crea rol AUDITOR en v1.** El responsable de protección de datos y el dueño del sistema origen quedan del lado CANTV (pendientes de designar). | Entrevista H-34/35/36/42 |
 | D-40 | **Trazabilidad RF (H-38/H-40/H-43):** añadidos **RF-30…RF-38** (PANEL, CASOS, SEGUIMIENTO, EMPRESAS, REFERIDOS, GESTIÓN, CONFIGURACIÓN), GOBIERNO nombrado en RF-06, catálogo §3 reestructurado (10 secciones + 7 módulos funcionales) y numeración corregida (GESTIÓN 8→7). Total: **38 RF / 25 RNF / 14 RT**. | Entrevista H-38/40/43 |
+| D-41 | **Contrato de interfaz (H-32/C24):** redactado `interfaz_csv_origen.md` (nombre, periodicidad, `;`, ISO-8859-1, 80 columnas por posición, validaciones, errores, confidencialidad y responsabilidades). **Pendiente de firma por CANTV.** | Entrevista H-32/C24 |
 
 ---
 
@@ -219,7 +221,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 - [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [x] H-05 (columnas de causa descartadas y `informacion` unificada, D-27); [x] H-06 (`Falla Reportada` aclarada en RF-25).
 - [x] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [x] H-07 (canales v1 = Telegram+correo+MCP, D-28); [x] H-09/H-11 (referidos `REF-…`, D-23); [x] H-08 (`requerimientos.md` v1.0 sincronizado, D-29..D-31).
 - [x] **C4 RNF** — [x] H-16 (SLO de rendimiento/capacidad, D-33); [x] H-03 (backup: RNF-16, riesgo aceptado D-26); [x] H-17 (privacidad/retención: RNF-18, D-34); [x] H-14/H-26/H-27 (observabilidad y resiliencia: RNF-17/19/20, D-35); [x] H-15/H-30/H-31 (RBAC, sesiones, MFA: RNF-21/22, D-36); [x] H-28 (usabilidad/accesibilidad: RNF-09/23, D-37); [x] H-13/H-29 (migraciones/CI/portabilidad: RNF-24/25, D-38).
-- [~] **C5 Gobernanza** — [x] dueños de catálogos/flota/almacén/auditoría/soporte definidos (SUPERVISOR/ADMIN, D-39); [x] RF de PANEL/GOBIERNO y trazabilidad de módulos (RF-30…RF-38, D-40); [ ] acuerdo de interfaz con el sistema origen CANTV.
+- [x] **C5 Gobernanza** — [x] dueños de catálogos/flota/almacén/auditoría/soporte definidos (SUPERVISOR/ADMIN, D-39); [x] RF de PANEL/GOBIERNO y trazabilidad de módulos (RF-30…RF-38, D-40); [x] contrato de interfaz redactado (D-41, pendiente de firma de CANTV).
 - [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
 - [ ] Confirmación del usuario para pasar a **Fase 2**.
 
@@ -242,3 +244,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | **H-07 resuelto (D-28):** canales v1 alineados a Telegram + correo + MCP; WhatsApp retirado de RF/RNF/RT, actores y enums, reservado a la v3. |
 | 2026-09-25 | **H-08 resuelto (D-29..D-31):** `requerimientos.md` subido a **v1.0 validado**; S-01..S-12 cerrados con su decisión; §10 actualizado. **C3 completado.** |
 | 2026-09-25 | **C4 completado (D-33..D-38):** SLO de rendimiento, privacidad/retención (RNF-18), observabilidad y resiliencia (RNF-19/20), RBAC + RLS + MFA (RNF-21/22), usabilidad/accesibilidad (RNF-09/23) y mantenibilidad/portabilidad (RNF-24/25). Stack definido: FastAPI + Alembic + React + Flutter + GitHub Actions. |
+| 2026-09-25 | **C5 completado (D-39..D-41):** gobierno v1 (SUPERVISOR/ADMIN), RF-30…RF-38 y catálogo de módulos, y contrato de interfaz `interfaz_csv_origen.md` (pendiente de firma de CANTV). **Auditoría de Fase 1 cerrada en sus 5 criterios.** |

@@ -269,7 +269,7 @@ Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a
 | **RT-02** | Backend | API web con autenticación, RBAC y capa de servicios para ingesta, despacho y reportes. |
 | **RT-03** | Frontend web | Aplicación web responsive (PC + móvil). |
 | **RT-04** | App móvil | APK Android con almacenamiento local, sincronización asíncrona y cámara. |
-| **RT-05** | Ingesta CSV | Parser robusto del archivo `;`-delimitado de **80 columnas** (encabezados duplicados: `informacion` ×2, `descripcion` ×3) mapeadas **por posición** a **49 campos destino**. Se **descartan 21 columnas** y se unifican `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion` (D-27). Codificación ISO-8859-1 y fechas `dd/mm/aaaa hh:mm:ss a.m./p.m.`. |
+| **RT-05** | Ingesta CSV | Parser robusto del archivo `;`-delimitado de **80 columnas** (encabezados duplicados: `informacion` ×2, `descripcion` ×3) mapeadas **por posición** a **49 campos destino**. Se **descartan 21 columnas** y se unifican `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion` (D-27). Codificación ISO-8859-1 y fechas `dd/mm/aaaa hh:mm:ss a.m./p.m.`. Contrato de interfaz con el sistema origen: [`interfaz_csv_origen.md`](interfaz_csv_origen.md) (D-41). |
 | **RT-06** | Mensajería | Integración **Telegram Bot** y **correo (SMTP)**. WhatsApp reservado a la **v3** (D-12/P3.1). |
 | **RT-07** | IA / MCP | Servidor **WEB-MCP** para ingesta conversacional de casos especiales. |
 | **RT-08** | Reportes | Generación de reportes diario/semanal/mensual y despacho imprimible tamaño carta (PDF/HTML). |
