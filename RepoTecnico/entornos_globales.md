@@ -80,6 +80,25 @@ Variables relevantes de `.env.global` (entorno **MCC**, distinto de GGTOv2):
 ⚠️ Riesgos pendientes sobre la instancia compartida (ver `GGTOv2_GCP.md` §6.5):
 SSL no obligatorio, sin backups/PITR, sin protección de borrado, datos compartidos por base.
 
+### 2.1.1 Roles y privilegios de base de datos (endurecidos — H-33 / QW-6)
+
+Estado aplicado el 2026-09-25 sobre `ggtov2_app`:
+
+| Cambio | Estado | Evidencia |
+|---|---|---|
+| `CREATEROLE` revocado | ✅ | `rolcreaterole = false` |
+| `CREATEDB` revocado | ✅ | `rolcreatedb = false` |
+| `NOINHERIT` aplicado (neutraliza `cloudsqlsuperuser`) | ✅ | `rolinherit = false` |
+| Membresía `cloudsqlsuperuser` revocada | ⚠️ **No posible vía SQL** | Cloud SQL no otorga `ADMIN OPTION` a ningún miembro; la pertenencia persiste pero **no se hereda** |
+| `CONNECT/TEMPORARY/CREATE` de `PUBLIC` revocados en `truekeate`, `postgres`, `template1` | ✅ | `ggtov2_app → truekeate`: `permission denied for database` |
+| `CONNECT` re-otorgado a `app` y `postgres` en esas bases | ✅ | TrueKeate sigue operando (39 tablas) |
+| `CONNECT` + `CREATE` en la base `ggtov2` y en el esquema `public` | ✅ | DDL de prueba OK |
+| `truekeate-app-sa` sin acceso a los secretos de GGTO | ✅ | solo `ggtov2-app@ggtov2` en el IAM de ambos secretos |
+
+**Riesgo residual:** al ser miembro de `cloudsqlsuperuser`, `ggtov2_app` podría recuperar privilegios con un `SET ROLE cloudsqlsuperuser` explícito. La corrección definitiva requiere **recrear el rol** (no es posible con los privilegios actuales: `DROP ROLE` exige ser miembro o superusuario, y `postgres` no es `rolsuper`). Queda como decisión pendiente (§8).
+
+**⚠️ Incidente de exposición:** durante la verificación, un mensaje de error de Node imprimió la contraseña del usuario `app` (TrueKeate) contenida en el secreto `DATABASE_URL`. Se recomienda **rotar esa contraseña** en `truekeate-main`.
+
 ### 2.2 Scripts de aprovisionamiento
 
 Todos en `RepoTecnico/scripts/` (idempotentes, autenticación por token `gcloud`):

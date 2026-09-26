@@ -199,7 +199,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 
 ### 7.2 Criterios de auditoría (ver informe §8: C1–C5)
 
-- [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [ ] H-33 (privilegios de BD); [ ] binding de secretos; [ ] H-03 (backup/PITR/SSL).
+- [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [~] H-33 (privilegios de BD: `CREATEROLE`/`CREATEDB` revocados, `NOINHERIT`, aislamiento de `truekeate`; membresía `cloudsqlsuperuser` no revocable vía SQL); [x] binding de secretos; [ ] H-03 (backup/PITR/SSL).
 - [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [ ] H-05 (columnas de causa); [x] H-06 (`Falla Reportada` aclarada en RF-25).
 - [ ] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [ ] H-07 (WhatsApp v3); [x] H-09/H-11 (referidos `REF-…`, D-23); [ ] H-08 (sincronización de docs).
 - [ ] **C4 RNF** — H-16 (umbrales), H-03 (backup), H-17 (PII/legal), H-14/H-26/H-27 (observabilidad/disponibilidad), H-15/H-30/H-31 (seguridad), H-28 (usabilidad/accesibilidad), H-13/H-29 (mantenibilidad).
@@ -219,3 +219,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | Auditoría de Fase 1 ejecutada (7 lentes + verificación adversarial) → `INFORME_OPTIMIZACION_V1.md`: 43 hallazgos (4 CRÍTICA, 14 ALTA, 19 MEDIA, 6 BAJA), veredicto "apta bajo condiciones". |
 | 2026-09-25 | Quick wins aprobados y ejecutados (D-24): PII fuera de git e **historial purgado**, codificación ISO-8859-1, conteos corregidos, `Falla Reportada` aclarada. Decisiones D-22 (cuadrilla 0 combinada) y D-23 (`REF-…`). |
 | 2026-09-25 | ⚠️ La purga de historial (`git filter-branch`) eliminó también el **CSV real del disco**; no hay copia local. Se conserva la muestra pseudonimizada. Pendiente: que el usuario re-aporte un archivo diario real (quedará fuera de git). |
+| 2026-09-25 | **QW-6/QW-7 sobre `truekeate-main`:** revocados `CREATEROLE`/`CREATEDB` y aplicado `NOINHERIT` a `ggtov2_app`; revocado `PUBLIC` en `truekeate`/`postgres`/`template1` (ggtov2_app ya no puede acceder a la base de TrueKeate, que sigue operando); retirado el binding de `truekeate-app-sa` sobre los secretos de GGTO. Riesgo residual: membresía `cloudsqlsuperuser` no revocable vía SQL. |
+| 2026-09-25 | ⚠️ **Exposición de secreto:** un error de Node imprimió la contraseña del usuario `app` de `truekeate-main` (secreto `DATABASE_URL`). **Recomendado rotarla.** |
