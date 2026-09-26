@@ -10,7 +10,7 @@
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
 | Decisiones | **D-01…D-41** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
-| Pendientes externos | Firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP |
+| Pendientes externos | Firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP (migrar `ggto-web` a `ggtov2`) · restringir el acceso público de `ggto-web` |
 
 > Memoria de trabajo del proyecto. Se actualiza de forma incremental, sin recargar todo el contexto.
 
@@ -99,7 +99,8 @@
 | D-39 | **Gobierno v1 (H-34/H-35/H-36/H-42):** catálogos, flota/mantenimiento, almacén y soporte los cubre el **SUPERVISOR**; la auditoría interna la ejerce **ADMIN** en solo lectura. **No se crea rol AUDITOR en v1.** El responsable de protección de datos y el dueño del sistema origen quedan del lado CANTV (pendientes de designar). | Entrevista H-34/35/36/42 |
 | D-40 | **Trazabilidad RF (H-38/H-40/H-43):** añadidos **RF-30…RF-38** (PANEL, CASOS, SEGUIMIENTO, EMPRESAS, REFERIDOS, GESTIÓN, CONFIGURACIÓN), GOBIERNO nombrado en RF-06, catálogo §3 reestructurado (10 secciones + 7 módulos funcionales) y numeración corregida (GESTIÓN 8→7). Total: **38 RF / 25 RNF / 14 RT**. | Entrevista H-38/40/43 |
 | D-41 | **Contrato de interfaz (H-32/C24):** redactado `interfaz_csv_origen.md` (nombre, periodicidad, `;`, ISO-8859-1, 80 columnas por posición, validaciones, errores, confidencialidad y responsabilidades). **Pendiente de firma por CANTV.** | Entrevista H-32/C24 |
-| D-42 | **Despliegue de la capa de datos en GCP:** `db/schema.sql` aplicado sobre la base **`ggtov2`** de la instancia disponible `truekeate-db-dev`. Verificado: 35 tablas, `pgcrypto`+`pg_trgm`, RLS en `caso`/`despacho`, 14 triggers, 2 índices trigram, semillas y función `REF-…` operativa. **La aplicación web no se despliega:** no existe código (Fase 3 pendiente) y `ggtov2` sigue sin facturación (Cloud Run/Artifact Registry bloqueados). | Orden del usuario |
+| D-42 | **Despliegue de la capa de datos en GCP:** `db/schema.sql` aplicado sobre la base **`ggtov2`** de la instancia disponible `truekeate-db-dev`. Verificado: 35 tablas, `pgcrypto`+`pg_trgm`, RLS en `caso`/`despacho`, 14 triggers, 2 índices trigram, semillas y función `REF-…` operativa. | Orden del usuario |
+| D-43 | **Despliegue web (esqueleto) en GCP:** servicio **Cloud Run `ggto-web`** en `truekeate-main`/`europe-west1` → https://ggto-web-593453426217.europe-west1.run.app, con SA propia `ggto-web-sa`, conectado a `ggtov2` por el conector de Cloud SQL. Código en `app/` (FastAPI + psycopg2). **Acceso público (smoke test); restringir antes de producción.** Migrar a `ggtov2` al desbloquear facturación. | Orden del usuario |
 
 ---
 
@@ -248,4 +249,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | **C4 completado (D-33..D-38):** SLO de rendimiento, privacidad/retención (RNF-18), observabilidad y resiliencia (RNF-19/20), RBAC + RLS + MFA (RNF-21/22), usabilidad/accesibilidad (RNF-09/23) y mantenibilidad/portabilidad (RNF-24/25). Stack definido: FastAPI + Alembic + React + Flutter + GitHub Actions. |
 | 2026-09-25 | **C5 completado (D-39..D-41):** gobierno v1 (SUPERVISOR/ADMIN), RF-30…RF-38 y catálogo de módulos, y contrato de interfaz `interfaz_csv_origen.md` (pendiente de firma de CANTV). **Auditoría de Fase 1 cerrada en sus 5 criterios.** |
 | 2026-09-26 | **Proyecto publicado:** force-push de la rama `GGTOv2-DSH-GCP` (commit `72200e8`, 25 archivos) a GitHub `anlucorporations/GGTO` y GitLab `anlucorporations/ggto`, con remotos migrados a SSH. Repos públicos por decisión del usuario. |
-| 2026-09-26 | **Base de datos desplegada en GCP (D-42):** `db/schema.sql` aplicado a la base `ggtov2` de `truekeate-db-dev`; verificados 35 tablas, extensiones, RLS, triggers, semillas y `REF-…`. **Aplicación web no desplegada** (sin código y con facturación de `ggtov2` bloqueada). |
+| 2026-09-26 | **Base de datos desplegada en GCP (D-42):** `db/schema.sql` aplicado a la base `ggtov2` de `truekeate-db-dev`; verificados 35 tablas, extensiones, RLS, triggers, semillas y `REF-…`. |
+| 2026-09-26 | **Aplicación desplegada en GCP (D-43):** esqueleto FastAPI en Cloud Run `ggto-web` (proyecto `truekeate-main`) conectado a `ggtov2`; endpoints `/health`, `/ready`, `/api/v1/central` y `/api/v1/resumen` verificados en producción. |

@@ -286,22 +286,48 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
 | Semillas | 3 roles · 1 central (`2324X` FRANCISCO SALIAS) · 1 cuadrilla (`C-00`) · 9 métodos · 13 parámetros · 0 causas |
 | Función `generar_id_averia_ref` | ✅ devolvió `REF-2324X-000001` (secuencia reiniciada a 1) |
 
-### 8.2 Aplicación web — ⛔ NO DESPLEGADA (bloqueo)
+### 8.2 Aplicación web — ✅ DESPLEGADA (esqueleto, 2026-09-26)
+
+Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`truekeate-main`**
+(que sí tiene facturación), apuntando a la base **`ggtov2`** de la instancia compartida.
+
+| Dato | Valor |
+|---|---|
+| Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
+| URL | **https://ggto-web-593453426217.europe-west1.run.app** |
+| Revisión | `ggto-web-00001-gn4` (100 % del tráfico) |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v1` |
+| SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` solo sobre `ggtov2-db-password`) |
+| Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
+| Código | `app/` (FastAPI + psycopg2) · build con Cloud Build |
+| Acceso | Público (`allUsers`) — **smoke test; endurecer antes de producción** |
+
+**Endpoints verificados en producción:**
+
+| Endpoint | Respuesta |
+|---|---|
+| `GET /` | `{"servicio":"GGTO API","version":"0.1.0",...}` |
+| `GET /health` | `{"status":"ok"}` |
+| `GET /ready` | `{"status":"ready","base":"ggtov2","usuario":"ggtov2_app","postgres":"PostgreSQL 15.18","tablas":35}` |
+| `GET /api/v1/central` | Central `2324X` FRANCISCO SALIAS (BARUTA) |
+| `GET /api/v1/resumen` | `{"tablas":35,"centrales":1,"roles":3,"cuadrillas":1,"causas":0,"parametros":13}` |
+
+> ⚠️ **Pendiente:** mover el servicio a `ggtov2` (Cloud Run + Artifact Registry propios) cuando se
+> desbloquee la facturación, y **restringir el acceso** (IAP o invocación autenticada), porque hoy
+> `/api/v1/*` expone datos de la base sin autenticación.
+
+### 8.3 Bloqueo pendiente en `ggtov2` (histórico)
 
 | Requisito | Estado |
 |---|---|
-| Código de aplicación | ❌ **No existe** (la Fase 3 — Desarrollo no ha comenzado; solo hay documentación, DDL y modelo E-R) |
 | Facturación en `ggtov2` | ❌ `billingEnabled: false` (cupo de 5 proyectos agotado) |
 | APIs de despliegue en `ggtov2` | ❌ `run`, `artifactregistry`, `cloudbuild`, `secretmanager` no habilitables sin facturación |
 | Cloud Run / Artifact Registry en `ggtov2` | ❌ No existen |
 
-**Rutas posibles (pendiente de decisión):**
+**Al desbloquearse:** migrar el servicio a `ggtov2` con `scripts/07_cloudrun_web.sh` y su propio
+Cloud SQL `ggtov2-pg` (REGIONAL, SSL `ENCRYPTED_ONLY`, backups + PITR).
 
-1. **Desbloquear facturación de `ggtov2`** (liberar cupo o solicitar aumento) → desplegar Cloud Run + Artifact Registry propios según `scripts/07_cloudrun_web.sh`.
-2. **Desplegar provisionalmente en `truekeate-main`** (tiene facturación activa) apuntando a la base `ggtov2` → mezcla de proyectos, solo como *smoke test*.
-3. **Ejecución local** (uvicorn/Docker) contra la base ya desplegada, hasta cerrar la Fase 3.
-
-### 8.3 Conexión de la futura aplicación
+### 8.4 Conexión de la aplicación
 
 ```dotenv
 DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
