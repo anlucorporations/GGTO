@@ -95,9 +95,15 @@ Estado aplicado el 2026-09-25 sobre `ggtov2_app`:
 | `CONNECT` + `CREATE` en la base `ggtov2` y en el esquema `public` | ✅ | DDL de prueba OK |
 | `truekeate-app-sa` sin acceso a los secretos de GGTO | ✅ | solo `ggtov2-app@ggtov2` en el IAM de ambos secretos |
 
-**Riesgo residual:** al ser miembro de `cloudsqlsuperuser`, `ggtov2_app` podría recuperar privilegios con un `SET ROLE cloudsqlsuperuser` explícito. La corrección definitiva requiere **recrear el rol** (no es posible con los privilegios actuales: `DROP ROLE` exige ser miembro o superusuario, y `postgres` no es `rolsuper`). Queda como decisión pendiente (§8).
+**Riesgo residual:** al ser miembro de `cloudsqlsuperuser`, `ggtov2_app` podría recuperar privilegios con un `SET ROLE cloudsqlsuperuser` explícito. La corrección definitiva requiere **recrear el rol** (no es posible con los privilegios actuales: `DROP ROLE` exige ser miembro o superusuario, y `postgres` no es `rolsuper`). Decisión adoptada: **aceptar el residual con `NOINHERIT`** y documentarlo (§8).
 
-**⚠️ Incidente de exposición:** durante la verificación, un mensaje de error de Node imprimió la contraseña del usuario `app` (TrueKeate) contenida en el secreto `DATABASE_URL`. Se recomienda **rotar esa contraseña** en `truekeate-main`.
+**Incidente de exposición — RESUELTO:** durante la verificación, un mensaje de error de Node imprimió la contraseña del usuario `app` (TrueKeate) contenida en el secreto `DATABASE_URL`. Se **rotó la contraseña**:
+
+1. `ALTER ROLE app PASSWORD '<nueva>'` (32 caracteres aleatorios).
+2. Nueva versión del secreto `DATABASE_URL` (`versions/3`) en `truekeate-main`.
+3. Nueva revisión de Cloud Run `truekeate-api-00034-hvk` para tomar el valor `latest` → `Ready`, 100 % del tráfico, sin errores de autenticación en logs.
+
+> `truekeate-web` no consume `DATABASE_URL`, por lo que no requirió revisión nueva.
 
 ### 2.2 Scripts de aprovisionamiento
 

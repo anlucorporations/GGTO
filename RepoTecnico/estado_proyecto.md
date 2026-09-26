@@ -78,7 +78,8 @@
 | D-21 | Modelo E-R documentado en **Mermaid** (`modelo_er.md`) y DDL PostgreSQL editable en `db/schema.sql` (35 tablas, se mantienen sincronizados). | Solicitud del usuario |
 | D-22 | **Cuadrilla 0 = criterio combinado (H-04):** va al supervisor si **no** contiene frases de campo (`despacho.frases_campo`) **o** contiene frases de no-atención en casa (`despacho.frases_supervisor`) o está en otra cola. Modo configurable `despacho.criterio_cuadrilla0` = `CAMPO`/`SUPERVISOR`/`UNION` (por defecto `UNION`). | Entrevista H-04 |
 | D-23 | **Referidos sin incidencia (H-09):** reciben identificador sintético `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (función `generar_id_averia_ref`); `caso.id_averia` sigue `NOT NULL UNIQUE`. | Entrevista H-09 |
-| D-24 | **Quick wins de auditoría ejecutados:** QW-1 (PII fuera de git + historial purgado + muestra pseudonimizada), QW-2 (encoding ISO-8859-1 + parser de fecha), QW-3 (conteos) y QW-5 (`Falla Reportada` aclarada en RF-25). | Aprobación del usuario |
+| D-24 | **Quick wins de auditoría ejecutados:** QW-1 (PII fuera de git + historial purgado + muestra pseudonimizada), QW-2 (encoding ISO-8859-1 + parser de fecha), QW-3 (conteos), QW-5 (`Falla Reportada` aclarada), QW-6 (privilegios de BD endurecidos) y QW-7 (binding de secretos retirado). | Aprobación del usuario |
+| D-25 | **H-33 aceptado con mitigación:** `ggtov2_app` conserva la membresía `cloudsqlsuperuser` (no revocable vía SQL en Cloud SQL) pero con `NOINHERIT`, sin `CREATEROLE`/`CREATEDB` y sin acceso a `truekeate`/`postgres`/`template1`. No se resetea la contraseña de `postgres`. | Aprobación del usuario |
 
 ---
 
@@ -220,4 +221,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | Quick wins aprobados y ejecutados (D-24): PII fuera de git e **historial purgado**, codificación ISO-8859-1, conteos corregidos, `Falla Reportada` aclarada. Decisiones D-22 (cuadrilla 0 combinada) y D-23 (`REF-…`). |
 | 2026-09-25 | ⚠️ La purga de historial (`git filter-branch`) eliminó también el **CSV real del disco**; no hay copia local. Se conserva la muestra pseudonimizada. Pendiente: que el usuario re-aporte un archivo diario real (quedará fuera de git). |
 | 2026-09-25 | **QW-6/QW-7 sobre `truekeate-main`:** revocados `CREATEROLE`/`CREATEDB` y aplicado `NOINHERIT` a `ggtov2_app`; revocado `PUBLIC` en `truekeate`/`postgres`/`template1` (ggtov2_app ya no puede acceder a la base de TrueKeate, que sigue operando); retirado el binding de `truekeate-app-sa` sobre los secretos de GGTO. Riesgo residual: membresía `cloudsqlsuperuser` no revocable vía SQL. |
-| 2026-09-25 | ⚠️ **Exposición de secreto:** un error de Node imprimió la contraseña del usuario `app` de `truekeate-main` (secreto `DATABASE_URL`). **Recomendado rotarla.** |
+| 2026-09-25 | ⚠️ **Exposición de secreto (RESUELTA):** un error de Node imprimió la contraseña del usuario `app` de `truekeate-main`. Se rotó la contraseña, se creó la versión 3 del secreto `DATABASE_URL` y se desplegó `truekeate-api-00034-hvk` (Ready, 100 % tráfico, sin errores de auth). |
