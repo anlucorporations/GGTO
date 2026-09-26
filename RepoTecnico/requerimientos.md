@@ -163,12 +163,28 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-15** | Capacidad | **SLO provisional (D-33):** soportar **20 000 casos/día** de pico y un histórico de **3 años** sin degradar RNF-08; índice GIN (`pg_trgm`) sobre `caso.direccion` y `sector_direccion.patron` para la sectorización. Revisar con la volumetría real. | Pruebas de carga con histórico simulado de 3 años. |
 | **RNF-16** | Fiabilidad / Respaldo | **Backup y recuperación:** backups automáticos diarios, *point-in-time recovery* y protección de borrado; **RPO ≤ 24 h** y **RTO ≤ 4 h**; prueba de restauración documentada al menos trimestral. (H-03) | Restauración real en entorno de pruebas + registro de la prueba. |
 | **RNF-17** | Fiabilidad / Disponibilidad | **Disponibilidad** del backend/web ≥ 99 % en horario operativo (06:00–20:00), con reintentos y degradación controlada ante caída de dependencias externas (Telegram, correo, MCP). (H-27) | Monitoreo de uptime + prueba de caída de dependencia. |
+| **RNF-18** | Privacidad / Cumplimiento | **Protección de datos personales (H-17):** base legal y finalidad declaradas; inventario y clasificación de PII; minimización (solo los campos necesarios); **retención por entidad** (ver §5.1); **enmascaramiento** de teléfono, dirección y serial para roles no autorizados; cifrado en reposo (CMEK) y en tránsito; derechos del titular (acceso, rectificación, supresión); DPA con proveedores (SendGrid/Gmail, Telegram); evaluación de transferencia internacional. | Inventario de PII revisado + prueba de enmascaramiento por rol + política de retención aprobada por CANTV. |
 
 > ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`truekeate-db-dev`) **no** cumple RNF-16/SSL
 > obligatorio. El usuario aceptó el riesgo el 2026-09-25 con dueño **Dirección del proyecto** y condición
 > de cierre: **migrar a `ggtov2-pg` propio** (REGIONAL, SSL `ENCRYPTED_ONLY`, backups + PITR +
 > `deletionProtectionEnabled`) al resolver la cuota de facturación de GCP. **No se cargan datos reales
 > de producción en la instancia compartida** hasta que exista respaldo.
+
+### 5.1 Retención de datos (RNF-18 / D-34)
+
+| Entidad | Contiene PII | Retención propuesta | Acción al vencer |
+|---|---|---|---|
+| `caso` | Sí (nombre, teléfono, dirección, serial) | 5 años | Anonimizar y archivar |
+| `actividad` | Sí (reporte libre, GPS) | 5 años | Anonimizar |
+| `evidencia` | Sí (imagen + GPS + hora) | 2 años | Eliminar imagen y metadatos |
+| `auditoria` | Sí (datos_antes/después) | 3 años | Archivar sin PII |
+| `notificacion` | Sí (destinatario, cuerpo) | 1 año | Eliminar |
+| `solicitante` | Sí (nombre, contacto) | 5 años | Anonimizar |
+| `dispositivo_seguridad` | No (hashes) | Mientras la cuenta esté activa | Eliminar con la cuenta |
+| `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
+
+> Los plazos son **propuesta** y deben validarse con CANTV/asesoría legal (tarea externa de H-17).
 
 ---
 

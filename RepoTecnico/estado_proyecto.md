@@ -88,6 +88,7 @@
 | D-31 | **Umbral de falla masiva (S-12):** configurable; valor y ventana se definen en la **Fase 3** junto con las métricas (S-08/D-17). | Sincronización H-08 |
 | D-32 | **H-11 resuelto por decisión:** la tabla `caso` se mantiene **plana** (63 columnas) como tabla caliente; no se separa `caso_origen_csv` ni se extrae la geografía. La reducción 84→63 (D-27) se considera suficiente. | Entrevista H-11 |
 | D-33 | **SLO provisionales (H-16):** ingesta ≤ 5 min (p95) para 20 000 filas · PANEL/despacho ≤ 2 s (p95) · 30 usuarios concurrentes · 20 000 casos/día y 3 años de histórico. Se instala `pg_trgm` con índices GIN sobre `caso.direccion` y `sector_direccion.patron`. Revisable con la volumetría real de CANTV. | Entrevista H-16 |
+| D-34 | **RNF-18 + retención (H-17):** definidos base legal/finalidad, inventario de PII, minimización, enmascaramiento por rol, derechos del titular y DPA. Retención propuesta: `caso`/`actividad`/`solicitante` 5 años · `evidencia` 2 años · `auditoria` 3 años · `notificacion` 1 año. **Validación legal con CANTV pendiente (tarea externa).** | Entrevista H-17 |
 
 ---
 
