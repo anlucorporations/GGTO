@@ -21,7 +21,7 @@
 - [x] Muestra de datos `detalle_averias_gpon 12_09_2026.csv` inspeccionada: **80 columnas**,
   delimitador `;`, 56 registros, encabezados duplicados (`informacion` ×2, `descripcion` ×3).
 - [x] Contexto GCP revisado (`GGTOv2_GCP.md`, `.env.global`, `gcp-env.sh`, scripts).
-- [x] `requerimientos.md` generado (29 RF, 15 RNF, 12 RT, 6 actores, 10 módulos, trazabilidad).
+- [x] `requerimientos.md` generado (29 RF, **17 RNF** tras añadir RNF-16/17, 12 RT, 6 actores, 10 módulos, trazabilidad).
 - [x] `diccionario_datos.md` generado (33 entidades lógicas → 35 tablas física; mapeo de las 80 columnas del CSV).
 - [x] `entornos_globales.md` generado (GCP, PostgreSQL, variables, comandos, stack propuesto).
 - [x] Entrevista Fase 1 respondida (bloques 1–5, respuestas en §5).
@@ -80,6 +80,7 @@
 | D-23 | **Referidos sin incidencia (H-09):** reciben identificador sintético `REF-<CÓDIGO_CENTRAL>-<NNNNNN>` (función `generar_id_averia_ref`); `caso.id_averia` sigue `NOT NULL UNIQUE`. | Entrevista H-09 |
 | D-24 | **Quick wins de auditoría ejecutados:** QW-1 (PII fuera de git + historial purgado + muestra pseudonimizada), QW-2 (encoding ISO-8859-1 + parser de fecha), QW-3 (conteos), QW-5 (`Falla Reportada` aclarada), QW-6 (privilegios de BD endurecidos) y QW-7 (binding de secretos retirado). | Aprobación del usuario |
 | D-25 | **H-33 aceptado con mitigación:** `ggtov2_app` conserva la membresía `cloudsqlsuperuser` (no revocable vía SQL en Cloud SQL) pero con `NOINHERIT`, sin `CREATEROLE`/`CREATEDB` y sin acceso a `truekeate`/`postgres`/`template1`. No se resetea la contraseña de `postgres`. | Aprobación del usuario |
+| D-26 | **H-03 riesgo aceptado:** no se modifican backups/PITR/SSL de `truekeate-db-dev` (instancia compartida de TrueKeate). Dueño: Dirección del proyecto · Fecha: 2026-09-25 · Cierre: migrar a `ggtov2-pg` con backups+PITR+SSL al desbloquear facturación. **No cargar datos reales** hasta entonces. RNF-16/RNF-17 definidos. | Aprobación del usuario |
 
 ---
 
@@ -200,7 +201,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 
 ### 7.2 Criterios de auditoría (ver informe §8: C1–C5)
 
-- [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [~] H-33 (privilegios de BD: `CREATEROLE`/`CREATEDB` revocados, `NOINHERIT`, aislamiento de `truekeate`; membresía `cloudsqlsuperuser` no revocable vía SQL); [x] binding de secretos; [ ] H-03 (backup/PITR/SSL).
+- [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [~] H-33 (mitigado con `NOINHERIT` + aislamiento, D-25); [x] binding de secretos; [~] H-03 (**riesgo aceptado**, D-26 → RNF-16/RNF-17).
 - [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [ ] H-05 (columnas de causa); [x] H-06 (`Falla Reportada` aclarada en RF-25).
 - [ ] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [ ] H-07 (WhatsApp v3); [x] H-09/H-11 (referidos `REF-…`, D-23); [ ] H-08 (sincronización de docs).
 - [ ] **C4 RNF** — H-16 (umbrales), H-03 (backup), H-17 (PII/legal), H-14/H-26/H-27 (observabilidad/disponibilidad), H-15/H-30/H-31 (seguridad), H-28 (usabilidad/accesibilidad), H-13/H-29 (mantenibilidad).

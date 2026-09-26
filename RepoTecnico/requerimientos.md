@@ -160,6 +160,14 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-13** | Localización | Interfaz en español; fechas en `dd/mm/aaaa hh:mm`; coordenadas GPS en evidencias. | Revisión de UI y metadatos EXIF/sidecar. |
 | **RNF-14** | Escalabilidad | Arquitectura que permita incorporar otras centrales (multi-central). | Análisis de diseño; configuración por central. |
 | **RNF-15** | Capacidad | Soportar el volumen diario de averías del área 4 y su histórico. | Pruebas de carga con datos reales. |
+| **RNF-16** | Fiabilidad / Respaldo | **Backup y recuperación:** backups automáticos diarios, *point-in-time recovery* y protección de borrado; **RPO ≤ 24 h** y **RTO ≤ 4 h**; prueba de restauración documentada al menos trimestral. (H-03) | Restauración real en entorno de pruebas + registro de la prueba. |
+| **RNF-17** | Fiabilidad / Disponibilidad | **Disponibilidad** del backend/web ≥ 99 % en horario operativo (06:00–20:00), con reintentos y degradación controlada ante caída de dependencias externas (Telegram, correo, MCP). (H-27) | Monitoreo de uptime + prueba de caída de dependencia. |
+
+> ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`truekeate-db-dev`) **no** cumple RNF-16/SSL
+> obligatorio. El usuario aceptó el riesgo el 2026-09-25 con dueño **Dirección del proyecto** y condición
+> de cierre: **migrar a `ggtov2-pg` propio** (REGIONAL, SSL `ENCRYPTED_ONLY`, backups + PITR +
+> `deletionProtectionEnabled`) al resolver la cuota de facturación de GCP. **No se cargan datos reales
+> de producción en la instancia compartida** hasta que exista respaldo.
 
 ---
 
