@@ -249,7 +249,7 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
 
 ## 7. Pendientes de entorno
 
-1. **Repositorios remotos**: ✅ URLs y rama definidas (§6). Pendiente `git init` + push bajo orden `/push`.
+1. **Repositorios remotos**: ✅ publicados en GitHub y GitLab (§6).
 2. **`.env.ggto`**: crear el archivo de entorno del proyecto (separado de `.env.global` de MCC).
 3. **Cliente PostgreSQL** (`psql`) y/o dependencia `psycopg2`/`asyncpg` para pruebas.
 4. **Fase de facturación GCP**: liberar cupo o solicitar aumento de cuota para habilitar
@@ -257,3 +257,61 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
 5. **Credenciales de mensajería**: token del **bot de Telegram** (v1), servicio de **correo**
    (SendGrid free tier / Gmail app password) y clave del **MCP**.
 6. **Habilitar backups/PITR/protección de borrado** en `truekeate-db-dev` antes de datos reales.
+
+---
+
+## 8. Estado de despliegue
+
+### 8.1 Base de datos — ✅ DESPLEGADA (2026-09-26)
+
+`RepoTecnico/db/schema.sql` se aplicó sobre el PostgreSQL disponible en GCP.
+
+| Dato | Valor |
+|---|---|
+| Instancia | `truekeate-main:southamerica-east1:truekeate-db-dev` (PostgreSQL 15.18) |
+| Base | `ggtov2` |
+| Usuario | `ggtov2_app` |
+| Conexión usada | IP pública `34.39.180.101:5432` con SSL (red autorizada `35.232.138.181/32`) |
+| Script | `RepoTecnico/db/schema.sql` (38 821 bytes) aplicado en una transacción, sin errores |
+
+**Verificación posterior a la aplicación:**
+
+| Comprobación | Resultado |
+|---|---|
+| Tablas en `public` | **35** |
+| Extensiones | `pgcrypto 1.3`, `pg_trgm 1.6` |
+| RLS | `caso` y `despacho` con `relrowsecurity=true` y `relforcerowsecurity=true`; **2 políticas** |
+| Triggers `actualizado_en` | **14** |
+| Índices trigram | **2** (`caso.direccion`, `sector_direccion.patron`) |
+| Semillas | 3 roles · 1 central (`2324X` FRANCISCO SALIAS) · 1 cuadrilla (`C-00`) · 9 métodos · 13 parámetros · 0 causas |
+| Función `generar_id_averia_ref` | ✅ devolvió `REF-2324X-000001` (secuencia reiniciada a 1) |
+
+### 8.2 Aplicación web — ⛔ NO DESPLEGADA (bloqueo)
+
+| Requisito | Estado |
+|---|---|
+| Código de aplicación | ❌ **No existe** (la Fase 3 — Desarrollo no ha comenzado; solo hay documentación, DDL y modelo E-R) |
+| Facturación en `ggtov2` | ❌ `billingEnabled: false` (cupo de 5 proyectos agotado) |
+| APIs de despliegue en `ggtov2` | ❌ `run`, `artifactregistry`, `cloudbuild`, `secretmanager` no habilitables sin facturación |
+| Cloud Run / Artifact Registry en `ggtov2` | ❌ No existen |
+
+**Rutas posibles (pendiente de decisión):**
+
+1. **Desbloquear facturación de `ggtov2`** (liberar cupo o solicitar aumento) → desplegar Cloud Run + Artifact Registry propios según `scripts/07_cloudrun_web.sh`.
+2. **Desplegar provisionalmente en `truekeate-main`** (tiene facturación activa) apuntando a la base `ggtov2` → mezcla de proyectos, solo como *smoke test*.
+3. **Ejecución local** (uvicorn/Docker) contra la base ya desplegada, hasta cerrar la Fase 3.
+
+### 8.3 Conexión de la futura aplicación
+
+```dotenv
+DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+DB_PORT=5432
+DB_NAME=ggtov2
+DB_USER=ggtov2_app
+DB_PASSWORD=<Secret Manager: truekeate-main/ggtov2-db-password>
+DB_SSLMODE=require
+```
+
+> En Cloud Run se monta la instancia con
+> `--add-cloudsql-instances=truekeate-main:southamerica-east1:truekeate-db-dev`; la SA
+> `ggtov2-app@ggtov2` ya tiene `roles/cloudsql.client` en `truekeate-main`.
