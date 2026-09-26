@@ -295,22 +295,29 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
 | URL | **https://ggto-web-593453426217.europe-west1.run.app** |
-| Revisión | `ggto-web-00001-gn4` (100 % del tráfico) |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v1` |
-| SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` solo sobre `ggtov2-db-password`) |
+| Revisión | `ggto-web-00002-rbl` (100 % del tráfico) — Ciclo 1 |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v2` |
+| SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
-| Código | `app/` (FastAPI + psycopg2) · build con Cloud Build |
+| Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · build con Cloud Build |
 | Acceso | Público (`allUsers`) — **smoke test; endurecer antes de producción** |
 
 **Endpoints verificados en producción:**
 
 | Endpoint | Respuesta |
 |---|---|
-| `GET /` | `{"servicio":"GGTO API","version":"0.1.0",...}` |
+| `GET /` | `{"servicio":"GGTO API","version":"0.2.0",...}` |
 | `GET /health` | `{"status":"ok"}` |
 | `GET /ready` | `{"status":"ready","base":"ggtov2","usuario":"ggtov2_app","postgres":"PostgreSQL 15.18","tablas":35}` |
-| `GET /api/v1/central` | Central `2324X` FRANCISCO SALIAS (BARUTA) |
 | `GET /api/v1/resumen` | `{"tablas":35,"centrales":1,"roles":3,"cuadrillas":1,"causas":0,"parametros":13}` |
+| `POST /api/v1/auth/setup` | Fija la clave del P00 y devuelve las **12 palabras** (una sola vez) |
+| `POST /api/v1/auth/login` | `P00` + clave → JWT (8 h); bloqueo al **3.º** intento (423) |
+| `GET /api/v1/auth/me` | Datos del usuario autenticado |
+| `POST /api/v1/auth/unlock` | Desbloqueo con **3 de las 12 palabras** |
+| `POST /api/v1/auth/reset-password` | Restablece la clave con 3 palabras |
+
+> **Pruebas del Ciclo 1:** 17/17 en verde (unitarias + integración contra el esquema aislado
+> `ggto_test` de la misma base). CI en `.github/workflows/ci.yml`.
 
 > ⚠️ **Pendiente:** mover el servicio a `ggtov2` (Cloud Run + Artifact Registry propios) cuando se
 > desbloquee la facturación, y **restringir el acceso** (IAP o invocación autenticada), porque hoy

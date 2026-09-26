@@ -1,0 +1,97 @@
+"""Modelos SQLAlchemy del Ciclo 1 (se mapean al esquema ya desplegado en `db/schema.sql`)."""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, SmallInteger, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from ..core.db import Base
+
+
+class Rol(Base):
+    __tablename__ = "rol"
+
+    id_rol: Mapped[int] = mapped_column(Integer, primary_key=True)
+    codigo: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
+    nombre: Mapped[str] = mapped_column(String(80), nullable=False)
+    descripcion: Mapped[str | None] = mapped_column(Text)
+    permisos: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Central(Base):
+    __tablename__ = "central"
+
+    id_central: Mapped[int] = mapped_column(Integer, primary_key=True)
+    region: Mapped[str] = mapped_column(String(80), nullable=False)
+    estado_geografico: Mapped[str] = mapped_column(String(80), nullable=False)
+    capital_estado: Mapped[str | None] = mapped_column(String(80))
+    municipio: Mapped[str] = mapped_column(String(80), nullable=False)
+    parroquia: Mapped[str] = mapped_column(String(80), nullable=False)
+    estado_operativo: Mapped[str | None] = mapped_column(String(80))
+    distrito: Mapped[str | None] = mapped_column(String(40))
+    area: Mapped[str] = mapped_column(String(20), nullable=False)
+    codigo_central: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    nombre_central: Mapped[str] = mapped_column(String(120), nullable=False)
+    activa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Tecnico(Base):
+    __tablename__ = "tecnico"
+
+    id_tecnico: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_central: Mapped[int] = mapped_column(ForeignKey("central.id_central"), nullable=False)
+    nombre: Mapped[str] = mapped_column(String(80), nullable=False)
+    apellido: Mapped[str | None] = mapped_column(String(80))
+    cedula: Mapped[str | None] = mapped_column(String(20), unique=True)
+    p00: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    telefono: Mapped[str | None] = mapped_column(String(30))
+    correo: Mapped[str | None] = mapped_column(String(120))
+    especialidad: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVO")
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Usuario(Base):
+    __tablename__ = "usuario"
+
+    id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True)
+    p00: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    correo: Mapped[str | None] = mapped_column(String(120), unique=True)
+    clave_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    id_rol: Mapped[int] = mapped_column(ForeignKey("rol.id_rol"), nullable=False)
+    id_tecnico: Mapped[int | None] = mapped_column(ForeignKey("tecnico.id_tecnico"))
+    id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
+    intentos_fallidos: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    bloqueado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    bloqueo_cliente: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    requiere_cambio_clave: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    rol: Mapped[Rol] = relationship(lazy="joined")
+    tecnico: Mapped[Tecnico | None] = relationship(lazy="joined")
+
+
+class DispositivoSeguridad(Base):
+    __tablename__ = "dispositivo_seguridad"
+
+    id_dispositivo: Mapped[int] = mapped_column(Integer, primary_key=True)
+    p00: Mapped[str] = mapped_column(
+        ForeignKey("usuario.p00", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    palabras_hash: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    clave_privada_ref: Mapped[str | None] = mapped_column(String(255))
+    documento_cifrado: Mapped[str | None] = mapped_column(Text)
+    bloqueado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

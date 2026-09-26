@@ -52,3 +52,9 @@ RepoTecnico/evidencias/
 .DS_Store
 Thumbs.db
 *.log
+
+# --- Python (backend) ---
+.venv/
+*.egg-info/
+.ruff_cache/
+.mypy_cache/

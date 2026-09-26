@@ -4,9 +4,9 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 1 — Concepto: COMPLETA, AUDITADA Y CERRADA** (criterios C1–C5 del informe resueltos) |
+| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclo 1 (Núcleo + Autenticación) completado y desplegado |
 | Última actualización | 2026-09-26 |
-| Rama git | `GGTOv2-DSH-GCP` · 22 commits · **publicada en GitHub y GitLab** (commit `72200e8`) |
+| Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
 | Decisiones | **D-01…D-41** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
@@ -50,6 +50,8 @@
 | `muestras/detalle_averias_gpon_EJEMPLO.csv` | Muestra **pseudonimizada** (56×80, ISO-8859-1) para pruebas de ingesta. | **v1** |
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
 | `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
+| `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
+| `../app/` | Backend FastAPI (Ciclo 1: núcleo + autenticación) con pruebas y CI. | **v0.2.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -101,6 +103,7 @@
 | D-41 | **Contrato de interfaz (H-32/C24):** redactado `interfaz_csv_origen.md` (nombre, periodicidad, `;`, ISO-8859-1, 80 columnas por posición, validaciones, errores, confidencialidad y responsabilidades). **Pendiente de firma por CANTV.** | Entrevista H-32/C24 |
 | D-42 | **Despliegue de la capa de datos en GCP:** `db/schema.sql` aplicado sobre la base **`ggtov2`** de la instancia disponible `truekeate-db-dev`. Verificado: 35 tablas, `pgcrypto`+`pg_trgm`, RLS en `caso`/`despacho`, 14 triggers, 2 índices trigram, semillas y función `REF-…` operativa. | Orden del usuario |
 | D-43 | **Despliegue web (esqueleto) en GCP:** servicio **Cloud Run `ggto-web`** en `truekeate-main`/`europe-west1` → https://ggto-web-593453426217.europe-west1.run.app, con SA propia `ggto-web-sa`, conectado a `ggtov2` por el conector de Cloud SQL. Código en `app/` (FastAPI + psycopg2). **Acceso público (smoke test); restringir antes de producción.** Migrar a `ggtov2` al desbloquear facturación. | Orden del usuario |
+| D-44 | **Fase 3 iniciada — Ciclo 1 (Núcleo + Autenticación) completado:** plan vertical en `plan_desarrollo.md` (10 ciclos); backend `app/` con Argon2id, JWT, bloqueo a los 3 intentos, 12 palabras, rate limiting y RBAC; **17/17 pruebas** en verde; CI en GitHub Actions; desplegado como revisión `ggto-web-00002-rbl` (imagen `v2`) con el secreto `ggto-secret-key`. Flujo verificado en vivo (setup → login → me → bloqueo → desbloqueo). | Fase 3 |
 
 ---
 
@@ -251,3 +254,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-26 | **Proyecto publicado:** force-push de la rama `GGTOv2-DSH-GCP` (commit `72200e8`, 25 archivos) a GitHub `anlucorporations/GGTO` y GitLab `anlucorporations/ggto`, con remotos migrados a SSH. Repos públicos por decisión del usuario. |
 | 2026-09-26 | **Base de datos desplegada en GCP (D-42):** `db/schema.sql` aplicado a la base `ggtov2` de `truekeate-db-dev`; verificados 35 tablas, extensiones, RLS, triggers, semillas y `REF-…`. |
 | 2026-09-26 | **Aplicación desplegada en GCP (D-43):** esqueleto FastAPI en Cloud Run `ggto-web` (proyecto `truekeate-main`) conectado a `ggtov2`; endpoints `/health`, `/ready`, `/api/v1/central` y `/api/v1/resumen` verificados en producción. |
+| 2026-09-26 | **Fase 3 iniciada (D-44):** plan de desarrollo vertical en `plan_desarrollo.md` (10 ciclos) y **Ciclo 1 completado**: autenticación P00 + clave con Argon2id, JWT, bloqueo a los 3 intentos, 12 palabras, rate limiting y RBAC; **17/17 pruebas**; CI en GitHub Actions; desplegado (`ggto-web-00002-rbl`, imagen `v2`) y verificado en vivo. |

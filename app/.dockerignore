@@ -6,3 +6,5 @@ venv/
 .env.*
 *.log
 .pytest_cache/
+tests/
+requirements-dev.txt
