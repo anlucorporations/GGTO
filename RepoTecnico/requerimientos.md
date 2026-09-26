@@ -28,7 +28,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
    REFERIDOS, EMPRESAS y GOBIERNOS, ingresados manualmente por personal externo.
 5. Genere reportes de gestión diaria, semanal y mensual, con tableros y gráficos.
 6. Opere desde **PC, web móvil, app Android (APK con sincronización asíncrona/offline)**,
-   **WhatsApp/Telegram** y un canal de **IA vía WEB-MCP**.
+   **Telegram** y un canal de **IA vía WEB-MCP**.
 
 > El brief menciona originalmente "almacenamiento basado en hoja de Excel". El contexto y la
 > infraestructura ya preparada (`GGTOv2_GCP.md`) establecen **PostgreSQL** como base de datos.
@@ -41,8 +41,8 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | ID | Actor | Descripción | Canal |
 |---|---|---|---|
 | **ACT-01** | **Supervisor de la central** | Carga el CSV diario, crea perfiles/accesos, gestiona flota, cuadrillas e insumos, genera reportes, ejecuta el despacho diario, gestiona fallas masivas y la "cuadrilla 0". | Web PC / App móvil |
-| **ACT-02** | **Técnico de campo** | Miembro de una cuadrilla. Consulta casos, contacta y agenda, documenta actividad/resolución, captura evidencias, alerta fallas masivas e incidentes, solicita material, sincroniza el dispositivo. | App Android / Web móvil / WhatsApp/Telegram |
-| **ACT-03** | **Personal externo solicitante** | Reporta casos especiales (referidos, empresas, gobiernos) indicando **Unidad + Nombre + Contacto**; recibe notificación de lo realizado. | WhatsApp / Telegram / WEB-MCP (IA) |
+| **ACT-02** | **Técnico de campo** | Miembro de una cuadrilla. Consulta casos, contacta y agenda, documenta actividad/resolución, captura evidencias, alerta fallas masivas e incidentes, solicita material, sincroniza el dispositivo. | App Android / Web móvil / Telegram |
+| **ACT-03** | **Personal externo solicitante** | Reporta casos especiales (referidos, empresas, gobiernos) indicando **Unidad + Nombre + Contacto**; recibe notificación de lo realizado. | Telegram / WEB-MCP (IA) |
 | **ACT-04** | **Administrador del sistema** | Configura el entorno (central, técnicos, flota, cuadrillas, catálogos, roles). | Web PC |
 | **ACT-05** | **Sistema (automático)** | Ingesta, detección de duplicados, sectorización, propuesta de despacho, gestión automatizada, mensajería, generación de reportes. | Backend |
 | **ACT-06** | **Integración IA (WEB-MCP)** | Canal conversacional que interpreta y registra casos especiales y consultas. | MCP sobre web |
@@ -77,11 +77,11 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-03** | Gestionar las flotas (vehículos de la central). | Alta | Configuración |
 | **RF-04** | Gestionar las cuadrillas (trabajadores + flota + herramientas). | Alta | Configuración |
 | **RF-05** | Gestionar insumos: inventario, ingreso por orden de material y entrega a trabajadores. **Para una 2.ª versión.** | Baja (v2) | Insumos |
-| **RF-06** | Gestionar la ingesta/asignación de casos especiales solicitados por otras instancias (Referidos de reparación, construcción residencial, construcción empresa, etc.) vía WhatsApp, Telegram o IA (WEB-MCP). | Alta | Referidos/Empresas |
+| **RF-06** | Gestionar la ingesta/asignación de casos especiales solicitados por otras instancias (Referidos de reparación, construcción residencial, construcción empresa, etc.) vía Telegram o IA (WEB-MCP). | Alta | Referidos/Empresas |
 | **RF-07** | Generar reportes de: Capacidad Operativa (cuadrilla + sectores), estado de flotas y herramientas, y función diaria (cuadrilla + despacho del día). | Alta | Monitoreo |
 | **RF-08** | Gestionar el **Despacho Diario**: asignar un grupo de casos a las cuadrillas activas por día, agrupando por áreas geográficas/sectores. | Alta | Despacho |
 | **RF-09** | Gestionar las **fallas masivas**: detectarlas automáticamente por **concentración de casos** tras la ingesta y también por **reporte manual** del técnico vía MCP/Telegram; asignarlas a la cuadrilla con mayor **proximidad de sector**. | Media | Despacho |
-| **RF-10** | Enviar por **Telegram o correo** (v1) la ficha de la cuadrilla y los sectores a atender en el día. *WhatsApp queda para la v3 (P3.1).* | Media | Despacho |
+| **RF-10** | Enviar por **Telegram o correo** la ficha de la cuadrilla y los sectores a atender en el día. | Media | Despacho |
 
 ### 4.2 Funciones del Técnico de campo (ACT-02)
 
@@ -92,7 +92,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-13** | Documentar la actividad realizada en cada caso. | Alta | Gestión técnica |
 | **RF-14** | Capturar registro fotográfico marcado con GPS + fecha y hora. **No se permite cargar imágenes desde galería.** | Alta | Gestión técnica |
 | **RF-15** | Documentar la resolución del caso. | Alta | Gestión técnica |
-| **RF-16** | Alertar casos de **falla masiva** por **Telegram** o WEB-MCP. *WhatsApp: v3.* | Media | Alertas |
+| **RF-16** | Alertar casos de **falla masiva** por **Telegram** o WEB-MCP. | Media | Alertas |
 | **RF-17** | Documentar la planificación de atención (reporte simple + evidencias fotográficas) para fallas masivas. | Media | Alertas |
 | **RF-18** | Preparar la **solicitud de material** según el caso. | Media | Insumos |
 | **RF-19** | Alertar incidentes con flotas o herramientas (reporte simple + evidencias fotográficas). | Media | Alertas |
@@ -107,7 +107,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-24** | Proponer la distribución de los casos (despacho diario) entre las cuadrillas declaradas. | Alta | Despacho |
 | **RF-25** | **Cuadrilla 0 (supervisor) — criterio combinado (D-22).** Un caso va a la cuadrilla 0 si cumple **cualquiera** de: **(a) PROCEDIMIENTO 3** — no contiene ninguna frase de `despacho.frases_campo` (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`), es decir, no amerita maniobra en casa; **o (b) GENERALIDADES 3.5** — contiene alguna frase de `despacho.frases_supervisor` (`NAVEGACION LENTA`, `PON INTERMITENTE`, `SIN TONO`…) o el caso fue enviado a otra cola (tabla `seguimiento`). Ambas listas y el modo (`CAMPO` / `SUPERVISOR` / `UNION`) son **configurables**. Se aplica **antes** de preparar el despacho. ⚠️ La columna `Falla Reportada` citada por el brief **no existe** en el CSV real; se evalúan `problema_reporte`, `ultimo_comentario` e `informacion` (pendiente de confirmar con CANTV). | Alta | Gestión automatizada |
 | **RF-26** | Alimentar los tableros de MONITOREO y GRÁFICOS con las métricas de gestión diaria/semanal, casos globales, reparación, construcción y cuadrilla. | Media | Monitoreo |
-| **RF-27** | Generar reporte de producción a las 04:00 p.m. (casos atendidos, citados, referidos, etc.) y enviarlo por WhatsApp/correo/Telegram. | Media | Despacho |
+| **RF-27** | Generar reporte de producción a las 04:00 p.m. (casos atendidos, citados, referidos, etc.) y enviarlo por Telegram o correo. | Media | Despacho |
 | **RF-28** | Generar reporte de trabajo diario, semanal y mensual. | Alta | Monitoreo |
 | **RF-29** | Documentar cada carga de archivo diferenciando los casos nuevos. | Media | Ingesta |
 
@@ -118,7 +118,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 **RF-DESPACHO (2):** el despacho diario debe:
 1. Incluir los casos citados del día + al menos 2 reparaciones de referidos + 1 o más reparaciones de empresas.
 2. Asignar la construcción (si existe) a **una sola** cuadrilla, preferentemente la que tenga reparaciones en el sector de la construcción.
-3. Enviarse por WhatsApp/correo/Telegram (ficha de cuadrilla + sectores).
+3. Enviarse por Telegram o correo (ficha de cuadrilla + sectores).
 4. Generar a las 04:00 p.m. el reporte de producción y notificarlo.
 5. Omitir casos en gestión o asignados a la cuadrilla del supervisor.
 
@@ -151,11 +151,11 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-04** | Seguridad | Solo lectura de las imágenes por cámara; bloqueo de selección desde galería. | Prueba en APK: galería no disponible en el flujo. |
 | **RNF-05** | Privacidad | La app puede bloquearse para no exponer información confidencial del cliente. | Prueba de bloqueo/desbloqueo. |
 | **RNF-06** | Confiabilidad / Disponibilidad | Operación **offline** en campo con sincronización asíncrona al recuperar conexión. | Prueba sin red: alta de actividad y evidencias; sincronización posterior sin pérdida. |
-| **RNF-07** | Compatibilidad / Portabilidad | Multiplataforma: PC, web móvil, APK Android, WhatsApp/Telegram y WEB-MCP. | Matriz de pruebas por plataforma. |
+| **RNF-07** | Compatibilidad / Portabilidad | Multiplataforma: PC, web móvil, APK Android, Telegram y WEB-MCP. | Matriz de pruebas por plataforma. |
 | **RNF-08** | Rendimiento | Ingesta del CSV diario (universo de averías del área operativa) sin degradar la operación. | Tiempo de procesamiento medible; objetivo por definir. |
 | **RNF-09** | Usabilidad | Fichas de caso "cómodas y visibles" con nombre y sector; flujo de campo con pocos toques. | Prueba heurística / tiempo de tarea. |
 | **RNF-10** | Mantenibilidad | Catálogos y reglas (central, causas, columnas de filtro, frases de exclusión) configurables sin cambiar código. | Cambio de configuración sin despliegue. |
-| **RNF-11** | Interoperabilidad | Integración con WhatsApp, Telegram, correo y un servidor MCP/IA. | Pruebas de envío/recepción en cada canal. |
+| **RNF-11** | Interoperabilidad | Integración con Telegram, correo y un servidor MCP/IA. | Pruebas de envío/recepción en cada canal. |
 | **RNF-12** | Trazabilidad / Auditabilidad | Registrar usuario, fecha/hora y cambios sobre cada caso; historial de despachos. | Consulta de bitácora por caso y por despacho. |
 | **RNF-13** | Localización | Interfaz en español; fechas en `dd/mm/aaaa hh:mm`; coordenadas GPS en evidencias. | Revisión de UI y metadatos EXIF/sidecar. |
 | **RNF-14** | Escalabilidad | Arquitectura que permita incorporar otras centrales (multi-central). | Análisis de diseño; configuración por central. |
@@ -180,7 +180,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RT-03** | Frontend web | Aplicación web responsive (PC + móvil). |
 | **RT-04** | App móvil | APK Android con almacenamiento local, sincronización asíncrona y cámara. |
 | **RT-05** | Ingesta CSV | Parser robusto del archivo `;`-delimitado de **80 columnas** (encabezados duplicados: `informacion` ×2, `descripcion` ×3) mapeadas **por posición** a **49 campos destino**. Se **descartan 21 columnas** y se unifican `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion` (D-27). Codificación ISO-8859-1 y fechas `dd/mm/aaaa hh:mm:ss a.m./p.m.`. |
-| **RT-06** | Mensajería | Integración WhatsApp (API/Business), Telegram Bot y correo (SMTP). |
+| **RT-06** | Mensajería | Integración **Telegram Bot** y **correo (SMTP)**. WhatsApp reservado a la **v3** (D-12/P3.1). |
 | **RT-07** | IA / MCP | Servidor **WEB-MCP** para ingesta conversacional de casos especiales. |
 | **RT-08** | Reportes | Generación de reportes diario/semanal/mensual y despacho imprimible tamaño carta (PDF/HTML). |
 | **RT-09** | Geolocalización | GPS del dispositivo; geocodificación/rutas por sectores. |

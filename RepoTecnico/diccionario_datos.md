@@ -61,7 +61,7 @@
 | 24 | Orden de material | `orden_material` / `orden_material_detalle` | Solicitudes de material (v2). |
 | 25 | Falla masiva | `falla_masiva` | Evento de falla masiva y su atención. |
 | 26 | Incidente | `incidente` | Incidentes de flota/herramienta. |
-| 27 | Notificación | `notificacion` | Mensajes enviados por WhatsApp/Telegram/correo/MCP. |
+| 27 | Notificación | `notificacion` | Mensajes enviados por Telegram/correo/MCP. |
 | 28 | Seguridad del dispositivo | `dispositivo_seguridad` | 12 palabras, clave privada, estado de bloqueo. |
 | 29 | Sincronización | `sincronizacion` | Paquetes ZIP y estado de sync del dispositivo. |
 | 30 | Catálogo de causas | `causa` | Código/subcódigo/descripción de causa. |
@@ -217,7 +217,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 |---|---|---|---|
 | id_caso | bigserial | PK | Identificador interno. |
 | id_central | int | FK→central, NN | Central propietaria del caso. |
-| origen | varchar(20) | NN | `INGESTA_CSV` / `MANUAL` / `WHATSAPP` / `TELEGRAM` / `MCP_IA`. |
+| origen | varchar(20) | NN | `INGESTA_CSV` / `MANUAL` / `TELEGRAM` / `MCP_IA`. |
 | tipo_caso | varchar(20) | NN | `AVERIA` / `REPARACION` / `CONSTRUCCION`. |
 | categoria | varchar(20) | NN | `RESIDENCIAL` / `EMPRESA` / `REFERIDO` / `GOBIERNO`. |
 | en_gestion_supervisor | boolean | NN, default false | Asignado a cuadrilla 0 (RF-25). |
@@ -317,7 +317,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | unidad | varchar(120) | NN | Unidad/área de la empresa. |
 | nombre | varchar(120) | NN | Nombre del contacto. |
 | contacto | varchar(60) | NN | Teléfono/correo. |
-| canal | varchar(20) | | `WHATSAPP`/`TELEGRAM`/`MCP_IA`/`MANUAL`. |
+| canal | varchar(20) | | `TELEGRAM`/`CORREO`/`MCP_IA`/`MANUAL`. |
 | creado_en | timestamptz | | |
 
 ### 4.2 `caso_especial`
@@ -370,7 +370,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | id_cuadrilla | int | FK→cuadrilla | Cuadrilla destino (puede ser la 0). |
 | estado | varchar(20) | | `BORRADOR`/`PUBLICADO`/`CERRADO`. |
 | generado_auto | boolean | | Propuesto por el sistema (RF-24). |
-| enviado_canal | varchar(20) | | `WHATSAPP`/`CORREO`/`TELEGRAM`. |
+| enviado_canal | varchar(20) | | `TELEGRAM`/`CORREO`. |
 | enviado_en | timestamptz | | |
 | reporte_produccion_en | timestamptz | | Cierre 04:00 p.m. (RF-27). |
 | usuario_crea | varchar(20) | | |
@@ -443,7 +443,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 - **`causa`** (H-23, alineado con el DDL): `id_causa` serial PK · `codigo_causa` · `subcodigo_causa` · `descripcion` · `descripcion_subcodigo` · `tipo` · `activo` · **UQ `(codigo_causa, subcodigo_causa)`**. Catálogo administrable; **no** se puebla desde el CSV (D-27).
 - **`catalogo_metodo`**: `id` · `dominio` (`CIERRE`/`ENRUTE`/`DIFERIDO`) · `codigo` · `nombre` · `activo`.
-- **`notificacion`**: `id` · `canal` (`WHATSAPP`/`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `enviado_en`.
+- **`notificacion`**: `id` · `canal` (`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `enviado_en`.
 - **`incidente`**: `id` · `tipo` (`FLOTA`/`HERRAMIENTA`) · `id_flota`/`id_herramienta` · `descripcion` · `id_actividad` · `estado`.
 - **`ingesta_lote`**: `id_lote` · `archivo` · `fecha_archivo` · `id_central` · `filas_leidas` · `filas_central` · `casos_nuevos` · `casos_duplicados` · `casos_descartados` · `estado` · `usuario` · `creado_en`.
 - **`configuracion`**: `clave` PK · `valor` (jsonb) · `descripcion`. Ej.: frases de exclusión `["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]`, reglas de despacho (≥2 referidos, ≥1 empresa), hora de corte (16:00).
