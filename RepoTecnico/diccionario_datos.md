@@ -8,6 +8,8 @@
 | Fuente | `BRIEF-GGTO-INICIAL.md` + muestra `detalle_averias_gpon 12_09_2026.csv` |
 | Fase | Fase 1 — Concepto |
 | Estado | Borrador v0.1 — **sujeto a validación** |
+| Modelo E-R | [`modelo_er.md`](modelo_er.md) (diagramas Mermaid) |
+| Script DDL | [`db/schema.sql`](db/schema.sql) (PostgreSQL) |
 
 > Convenciones:
 > - `PK` = clave primaria, `FK` = clave foránea, `UQ` = único, `NN` = no nulo.

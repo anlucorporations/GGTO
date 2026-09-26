@@ -40,6 +40,8 @@
 | `requerimientos.md` | RF/RNF/RT, actores, módulos, trazabilidad. | **v0.1** |
 | `diccionario_datos.md` | Entidades, campos, mapeo CSV. | **v0.1** |
 | `entornos_globales.md` | Configuración, rutas, variables, comandos. | **v0.1** |
+| `modelo_er.md` | Diagrama Entidad-Relación completo en Mermaid (7 diagramas). | **v0.1** |
+| `db/schema.sql` | Script DDL PostgreSQL (35 tablas + índices + triggers + datos iniciales). | **v0.1** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -68,6 +70,7 @@
 | D-18 | **Insumos = v2**; el modelo de datos los reserva. | Entrevista P5.2 |
 | D-19 | Fallas masivas: **detección automática por concentración** (tras la ingesta) **+ reporte manual** de técnico vía MCP/Telegram; asignación por **proximidad de sector**. | Entrevista P5.3 |
 | D-20 | Repositorios: GitHub `anlucorporations/GGTO`, GitLab `anlucorporations/ggto`, rama **`GGTOv2-DSH-GCP`**. | Entrevista P4.1 |
+| D-21 | Modelo E-R documentado en **Mermaid** (`modelo_er.md`) y DDL PostgreSQL editable en `db/schema.sql` (35 tablas, se mantienen sincronizados). | Solicitud del usuario |
 
 ---
 
@@ -151,3 +154,4 @@
 |---|---|
 | 2026-09-25 | Fase 1 iniciada: brief analizado, `requerimientos.md`, `diccionario_datos.md`, `entornos_globales.md`, `estado_proyecto.md` generados. |
 | 2026-09-25 | Entrevista Fase 1 completada (bloques 1–5). Repositorio git local creado en la rama `GGTOv2-DSH-GCP`. |
+| 2026-09-25 | Generados `modelo_er.md` (diagramas Mermaid) y `db/schema.sql` (DDL PostgreSQL, 35 tablas). |
