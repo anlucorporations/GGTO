@@ -153,14 +153,14 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-05** | Privacidad | La app puede bloquearse para no exponer información confidencial del cliente. | Prueba de bloqueo/desbloqueo. |
 | **RNF-06** | Confiabilidad / Disponibilidad | Operación **offline** en campo con sincronización asíncrona al recuperar conexión. | Prueba sin red: alta de actividad y evidencias; sincronización posterior sin pérdida. |
 | **RNF-07** | Compatibilidad / Portabilidad | Multiplataforma: PC, web móvil, APK Android, Telegram y WEB-MCP. | Matriz de pruebas por plataforma. |
-| **RNF-08** | Rendimiento | Ingesta del CSV diario (universo de averías del área operativa) sin degradar la operación. | Tiempo de procesamiento medible; objetivo por definir. |
+| **RNF-08** | Rendimiento | **SLO provisional (D-33):** ingesta del CSV diario en **≤ 5 min (p95)** para hasta **20 000 filas**; consultas de PANEL y generación de despacho en **≤ 2 s (p95)**; **30 usuarios concurrentes**. Se revisa cuando CANTV entregue la volumetría real. | Prueba de carga con dataset versionado de 20 000 filas; medición p95. |
 | **RNF-09** | Usabilidad | Fichas de caso "cómodas y visibles" con nombre y sector; flujo de campo con pocos toques. | Prueba heurística / tiempo de tarea. |
 | **RNF-10** | Mantenibilidad | Catálogos y reglas (central, causas, columnas de filtro, frases de exclusión) configurables sin cambiar código. | Cambio de configuración sin despliegue. |
 | **RNF-11** | Interoperabilidad | Integración con Telegram, correo y un servidor MCP/IA. | Pruebas de envío/recepción en cada canal. |
 | **RNF-12** | Trazabilidad / Auditabilidad | Registrar usuario, fecha/hora y cambios sobre cada caso; historial de despachos. | Consulta de bitácora por caso y por despacho. |
 | **RNF-13** | Localización | Interfaz en español; fechas en `dd/mm/aaaa hh:mm`; coordenadas GPS en evidencias. | Revisión de UI y metadatos EXIF/sidecar. |
 | **RNF-14** | Escalabilidad | Arquitectura que permita incorporar otras centrales (multi-central). | Análisis de diseño; configuración por central. |
-| **RNF-15** | Capacidad | Soportar el volumen diario de averías del área 4 y su histórico. | Pruebas de carga con datos reales. |
+| **RNF-15** | Capacidad | **SLO provisional (D-33):** soportar **20 000 casos/día** de pico y un histórico de **3 años** sin degradar RNF-08; índice GIN (`pg_trgm`) sobre `caso.direccion` y `sector_direccion.patron` para la sectorización. Revisar con la volumetría real. | Pruebas de carga con histórico simulado de 3 años. |
 | **RNF-16** | Fiabilidad / Respaldo | **Backup y recuperación:** backups automáticos diarios, *point-in-time recovery* y protección de borrado; **RPO ≤ 24 h** y **RTO ≤ 4 h**; prueba de restauración documentada al menos trimestral. (H-03) | Restauración real en entorno de pruebas + registro de la prueba. |
 | **RNF-17** | Fiabilidad / Disponibilidad | **Disponibilidad** del backend/web ≥ 99 % en horario operativo (06:00–20:00), con reintentos y degradación controlada ante caída de dependencias externas (Telegram, correo, MCP). (H-27) | Monitoreo de uptime + prueba de caída de dependencia. |
 

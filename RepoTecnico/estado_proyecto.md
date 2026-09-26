@@ -86,6 +86,8 @@
 | D-29 | **Estados del caso (S-10):** `NUEVO, ASIGNADO, CONTACTADO, CITADO, DIFERIDO, EN_GESTION, ENRUTADO, CERRADO, CANCELADO` fijos en el DDL. | Sincronización H-08 |
 | D-30 | **Ficha de casos especiales (S-11):** `solicitante` (unidad + nombre + contacto + canal) y prioridad `ALTA/MEDIA/BAJA`; clasificación `REFERIDO/EMPRESA/GOBIERNO`. | Sincronización H-08 |
 | D-31 | **Umbral de falla masiva (S-12):** configurable; valor y ventana se definen en la **Fase 3** junto con las métricas (S-08/D-17). | Sincronización H-08 |
+| D-32 | **H-11 resuelto por decisión:** la tabla `caso` se mantiene **plana** (63 columnas) como tabla caliente; no se separa `caso_origen_csv` ni se extrae la geografía. La reducción 84→63 (D-27) se considera suficiente. | Entrevista H-11 |
+| D-33 | **SLO provisionales (H-16):** ingesta ≤ 5 min (p95) para 20 000 filas · PANEL/despacho ≤ 2 s (p95) · 30 usuarios concurrentes · 20 000 casos/día y 3 años de histórico. Se instala `pg_trgm` con índices GIN sobre `caso.direccion` y `sector_direccion.patron`. Revisable con la volumetría real de CANTV. | Entrevista H-16 |
 
 ---
 

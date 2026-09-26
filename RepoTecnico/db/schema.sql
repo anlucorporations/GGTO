@@ -21,6 +21,7 @@ BEGIN;
 -- 0. Extensiones y utilidades
 -- -----------------------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid(), digest()
+CREATE EXTENSION IF NOT EXISTS pg_trgm;    -- búsqueda difusa por dirección (RF-23 / D-33)
 
 -- Actualiza automáticamente la columna actualizado_en en cada UPDATE.
 CREATE OR REPLACE FUNCTION set_actualizado_en()
@@ -664,6 +665,9 @@ CREATE INDEX IF NOT EXISTS ix_evidencia_actividad     ON evidencia (id_actividad
 CREATE INDEX IF NOT EXISTS ix_cita_cuadrilla_fecha    ON cita (id_cuadrilla, fecha_hora);
 CREATE INDEX IF NOT EXISTS ix_seguimiento_caso        ON seguimiento (id_caso);
 CREATE INDEX IF NOT EXISTS ix_sector_direccion_sector ON sector_direccion (id_sector);
+-- Sectorización por coincidencia de texto (RF-23 / D-33): búsqueda trigram.
+CREATE INDEX IF NOT EXISTS ix_caso_direccion_trgm   ON caso USING gin (direccion gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS ix_sector_patron_trgm    ON sector_direccion USING gin (patron gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS ix_notificacion_caso       ON notificacion (id_caso);
 CREATE INDEX IF NOT EXISTS ix_auditoria_fecha         ON auditoria (fecha_hora);
 
