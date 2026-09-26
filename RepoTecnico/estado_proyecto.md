@@ -83,6 +83,9 @@
 | D-26 | **H-03 riesgo aceptado:** no se modifican backups/PITR/SSL de `truekeate-db-dev` (instancia compartida de TrueKeate). Dueño: Dirección del proyecto · Fecha: 2026-09-25 · Cierre: migrar a `ggtov2-pg` con backups+PITR+SSL al desbloquear facturación. **No cargar datos reales** hasta entonces. RNF-16/RNF-17 definidos. | Aprobación del usuario |
 | D-27 | **Depuración del CSV (H-05):** se descartan **21 columnas** (`tipo_reporte`, `dac`, `ultimo_usuario`, `fecha_despacho`, `ciudad`, `servicio_off_on`, `cliente_notificado`, `fecha_instalacion`, `ip`, `tarjeta`, `ont_id`, `cvlan`, `dias transcurrido desde la apertura`, `area_resolutoria`, `usuario_acciona`, `fecha_acciona`, `codigo_causa`, `descripcion`×2, `Subcodigo_causa`, `con_serv_aba`) y se **unifican** `informacion`(31) + `informacion`(32) + `descripcion`(52) en `informacion`. Quedan **49 campos destino**. El catálogo `causa` pasa a ser **administrable** (ya no se puebla del CSV). | Entrevista H-05 |
 | D-28 | **H-07 alineado:** canales de la v1 = **Telegram + correo + MCP/IA**. WhatsApp retirado de RF-06, RF-10, RF-16, RF-27, RNF-07, RNF-11, RT-06, ACT-02/ACT-03 y de los enums del diccionario; reservado a la **v3**. | Entrevista H-07 |
+| D-29 | **Estados del caso (S-10):** `NUEVO, ASIGNADO, CONTACTADO, CITADO, DIFERIDO, EN_GESTION, ENRUTADO, CERRADO, CANCELADO` fijos en el DDL. | Sincronización H-08 |
+| D-30 | **Ficha de casos especiales (S-11):** `solicitante` (unidad + nombre + contacto + canal) y prioridad `ALTA/MEDIA/BAJA`; clasificación `REFERIDO/EMPRESA/GOBIERNO`. | Sincronización H-08 |
+| D-31 | **Umbral de falla masiva (S-12):** configurable; valor y ventana se definen en la **Fase 3** junto con las métricas (S-08/D-17). | Sincronización H-08 |
 
 ---
 
@@ -205,7 +208,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 
 - [ ] **C1 Seguridad** — [x] H-01 (PII fuera de git + historial purgado); [~] H-33 (mitigado con `NOINHERIT` + aislamiento, D-25); [x] binding de secretos; [~] H-03 (**riesgo aceptado**, D-26 → RNF-16/RNF-17).
 - [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [x] H-05 (columnas de causa descartadas y `informacion` unificada, D-27); [x] H-06 (`Falla Reportada` aclarada en RF-25).
-- [ ] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [x] H-07 (canales v1 = Telegram+correo+MCP, D-28); [x] H-09/H-11 (referidos `REF-…`, D-23); [ ] H-08 (sincronización de docs).
+- [x] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [x] H-07 (canales v1 = Telegram+correo+MCP, D-28); [x] H-09/H-11 (referidos `REF-…`, D-23); [x] H-08 (`requerimientos.md` v1.0 sincronizado, D-29..D-31).
 - [ ] **C4 RNF** — H-16 (umbrales), H-03 (backup), H-17 (PII/legal), H-14/H-26/H-27 (observabilidad/disponibilidad), H-15/H-30/H-31 (seguridad), H-28 (usabilidad/accesibilidad), H-13/H-29 (mantenibilidad).
 - [ ] **C5 Gobernanza** — RBAC y ámbito por central, dueños de catálogos/flota/almacén/auditoría/privacidad, RF de PANEL/GOBIERNO, acuerdo con el sistema origen.
 - [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
@@ -228,3 +231,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | **H-03 riesgo aceptado (D-26):** no se modifican backups/PITR/SSL de la instancia compartida; se añaden RNF-16 (backup, RPO/RTO) y RNF-17 (disponibilidad). |
 | 2026-09-25 | **H-05 resuelto (D-27):** depurado el mapeo del CSV (se descartan 21 columnas y se unifica `informacion`); actualizados `diccionario_datos.md`, `db/schema.sql`, `modelo_er.md` y `requerimientos.md` (RF-25, RT-05). C2 completado. |
 | 2026-09-25 | **H-07 resuelto (D-28):** canales v1 alineados a Telegram + correo + MCP; WhatsApp retirado de RF/RNF/RT, actores y enums, reservado a la v3. |
+| 2026-09-25 | **H-08 resuelto (D-29..D-31):** `requerimientos.md` subido a **v1.0 validado**; S-01..S-12 cerrados con su decisión; §10 actualizado. **C3 completado.** |

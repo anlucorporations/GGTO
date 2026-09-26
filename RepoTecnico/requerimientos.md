@@ -8,7 +8,8 @@
 | Muestra de datos | `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas, pseudonimizada, delimitador `;`) |
 | Infraestructura | Proyecto GCP **GGTOv2** (`ggtov2`) + PostgreSQL (Cloud SQL) — ver `GGTOv2_GCP.md` |
 | Fase | Fase 1 — Concepto |
-| Estado | Borrador v0.1 — **requiere validación del usuario** |
+| Estado | **v1.0 — validado por el cliente** (entrevista bloques 1–5 + auditoría V1) |
+| Decisiones | D-01..D-31 (ver `estado_proyecto.md` y §8) |
 
 > Este documento es la **guía principal de desarrollo**. Se actualiza de forma incremental.
 > Convención de identificadores: `RF-xxx` (funcional), `RNF-xxx` (no funcional, ISO 25010), `RT-xxx` (técnico).
@@ -204,22 +205,27 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 
 ---
 
-## 8. Supuestos y decisiones abiertas
+## 8. Supuestos y decisiones (cerrados en la entrevista)
 
-| # | Tema | Supuesto actual | Estado |
+| # | Tema | Resolución | Decisión |
 |---|---|---|---|
-| S-01 | Almacenamiento | PostgreSQL (no Excel) como fuente de verdad. | **A confirmar** |
-| S-02 | Cliente | La plataforma sirve primero a **Francisco Salias (Área 4)** y debe ser extensible a otras centrales. | A confirmar |
-| S-03 | Multi-central | Modelo con tabla `central` y filtro por configuración. | A confirmar |
-| S-04 | Insumos | Fuera del MVP (v2), pero el modelo de datos se reserva. | A confirmar |
-| S-05 | App móvil | APK Android nativo/híbrido con SQLite local. | A confirmar |
-| S-06 | Autenticación web | Usuario/`P00` + clave para todos los perfiles. | A confirmar |
-| S-07 | Definición de "sector" | Agrupación geográfica (parroquia/municipio/área de trabajo/FAT). | A confirmar |
-| S-08 | Métricas exactas | "Gestionado", "Cerrado", "Citado", "Referido", etc. requieren fórmula explícita. | A confirmar |
-| S-09 | Catálogo de causas | Origen: VENAPP / sistema interno CANTV. | A confirmar |
-| S-10 | Estados del caso | Ciclo de vida exacto (PEND, EN GESTIÓN, CERRADO, ENRUTADO, DIFERIDO…). | A confirmar |
-| S-11 | Casos especiales | Estructura de "Unidad + Nombre + Contacto" y niveles de prioridad. | A confirmar |
-| S-12 | Fallas masivas | Origen, detección y criterio de "mayor cercanía". | A confirmar |
+| S-01 | Almacenamiento | **PostgreSQL**, se descarta Excel. | D-01 / P1.1 ✅ |
+| S-02 | Cliente | Primero **Francisco Salias (Área 4)**, extensible a otras centrales. | D-06 / P1.1 ✅ |
+| S-03 | Multi-central | Tabla `central` + filtro por configuración, diseñado multi-central desde el inicio. | D-06 / P1.1 ✅ |
+| S-04 | Insumos | **Fuera del MVP (v2)**; el modelo de datos los reserva. | D-18 / P5.2 ✅ |
+| S-05 | App móvil | **Flutter + SQLite** con sincronización offline. | D-11 / P2.3 ✅ |
+| S-06 | Autenticación | **`P00` + clave** para web y APK (3 intentos, 12 palabras). | D-10 / P2.2 ✅ |
+| S-07 | Definición de "sector" | Definido por el supervisor (nombre + direcciones/alias); asignación por coincidencia sobre `direccion`. | D-07 / P1.2 ✅ |
+| S-08 | Métricas exactas | **Diferidas a la Fase 3** (fórmulas de Gestionado/Cerrado/Resuelto/Casos Globales). | D-17 / P5.1 ⏳ |
+| S-09 | Catálogo de causas | **Administrable** (ya no se puebla del CSV); falta cargar el listado oficial. | D-27 / H-05 ✅ |
+| S-10 | Estados del caso | Fijados en el DDL: `NUEVO, ASIGNADO, CONTACTADO, CITADO, DIFERIDO, EN_GESTION, ENRUTADO, CERRADO, CANCELADO`. | **D-29** |
+| S-11 | Casos especiales | Ficha `solicitante` (Unidad + Nombre + Contacto) y prioridad `ALTA/MEDIA/BAJA`; clasificación `REFERIDO/EMPRESA/GOBIERNO`. | **D-30** |
+| S-12 | Fallas masivas | Detección automática por concentración tras la ingesta **+** reporte manual del técnico vía MCP/Telegram; asignación por proximidad de sector. Falta fijar el umbral. | D-19 / P5.3 ✅ / **D-31** |
+
+> **D-29:** los 9 estados de `caso.estado_actual` quedan fijos en el DDL y se confirman con el cliente.
+> **D-30:** la ficha del solicitante externo se modela en `solicitante` (unidad, nombre, contacto, canal).
+> **D-31:** el umbral y la ventana de detección de falla masiva se configuran vía `configuracion` y se
+> **definen en la Fase 3** junto con las métricas (S-08).
 
 ---
 
@@ -236,10 +242,14 @@ Ver los bloques activos en `estado_proyecto.md` §Preguntas pendientes.
 ## 10. Criterios de aceptación de la Fase 1
 
 - [x] Brief analizado y requerimientos extraídos.
-- [x] `requerimientos.md` generado.
-- [ ] `diccionario_datos.md` generado.
-- [ ] `entornos_globales.md` generado.
-- [ ] Preguntas de la entrevista respondidas (bloques 1–5).
-- [ ] URLs de repositorios GitLab/GitHub definidas.
-- [ ] Credenciales/configuración GCP confirmadas.
-- [ ] Confirmación del usuario para pasar a Fase 2 (Auditoría).
+- [x] `requerimientos.md` generado y sincronizado con las respuestas (S-01..S-12 cerrados).
+- [x] `diccionario_datos.md` generado.
+- [x] `entornos_globales.md` generado.
+- [x] `modelo_er.md` y `db/schema.sql` generados.
+- [x] Preguntas de la entrevista respondidas (bloques 1–5).
+- [x] URLs de repositorios GitLab/GitHub definidas (rama `GGTOv2-DSH-GCP`).
+- [x] Credenciales/configuración GCP confirmadas.
+- [x] Auditoría de Fase 1 ejecutada (`INFORME_OPTIMIZACION_V1.md`).
+- [ ] Criterios C1–C5 del informe de auditoría (§8) — C2 y C3 completos; C1 con riesgos aceptados; C4 y C5 pendientes.
+- [ ] Push a remotos (orden `/push`).
+- [ ] Confirmación del usuario para pasar a Fase 2 (Auditoría / casos de uso).
