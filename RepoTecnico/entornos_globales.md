@@ -210,18 +210,21 @@ head -1 "RepoTecnico/detalle_averias_gpon 12_09_2026.csv" | awk -F';' '{print NF
 
 ---
 
-## 5. Stack tecnológico (propuesto — a confirmar)
+## 5. Stack tecnológico (definido — D-38)
 
-| Capa | Propuesta | Alternativas |
-|---|---|---|
-| Backend | Python (FastAPI) o Node.js (NestJS) | Django REST |
-| Frontend web | React + librería de gráficos | Vue, Svelte |
-| App móvil | APK Android híbrido (Flutter / React Native) con SQLite | Kotlin nativo |
-| Base de datos | PostgreSQL (Cloud SQL) | — |
-| Reportes PDF | WeasyPrint / wkhtmltopdf / Puppeteer | — |
-| Mensajería | Telegram Bot + correo (SendGrid/Gmail SMTP) | WhatsApp Business API (v3) |
-| IA | Servidor **MCP** expuesto por web | — |
-| Despliegue | Cloud Run `ggtov2-web` + Cloud SQL | GCE / App Engine |
+| Capa | Tecnología |
+|---|---|
+| Backend | **Python + FastAPI** (API REST, Pydantic, SQLAlchemy 2.x, `asyncpg`) |
+| Migraciones | **Alembic** (baseline = `db/schema.sql`; versiones en `db/migrations/`) |
+| Frontend web | **React** (Vite) + librería de gráficos (Recharts) |
+| App móvil | **Flutter + SQLite** (offline-first, sincronización asíncrona) |
+| Base de datos | **PostgreSQL** (Cloud SQL), `pgcrypto` + `pg_trgm`, RLS multi-central |
+| Reportes PDF | WeasyPrint (plantillas HTML/CSS tamaño carta) |
+| Mensajería | **Telegram Bot** + correo (SendGrid free tier / Gmail SMTP) |
+| IA | Servidor **MCP** expuesto por web |
+| CI/CD | **GitHub Actions** (espejo en GitLab CI): tests, Ruff/mypy, cobertura, build de imagen |
+| Contenedores | Imagen Docker → Artifact Registry → Cloud Run `ggtov2-web` |
+| Testing | `pytest` + `httpx` (API), Vitest/Playwright (web), `flutter_test` (APK) |
 
 ---
 

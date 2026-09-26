@@ -169,6 +169,8 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-21** | Seguridad / Autorización | **RBAC y alcance por central (H-15/H-32):** matriz rol × módulo × acción (ver §5.2); `usuario.id_central` acota el alcance; **RLS** en PostgreSQL como defensa en profundidad; pruebas negativas (central A no accede a datos de central B). | Matriz RBAC aprobada + pruebas de acceso denegado entre centrales. |
 | **RNF-22** | Seguridad / Autenticación y sesión | **Endurecimiento de acceso (H-31):** hash `Argon2id` (o bcrypt con coste ≥ 12) + *pepper*; política de complejidad/caducidad/historial de claves; **MFA obligatorio para ADMIN y SUPERVISOR**; bloqueo y *rate limiting* del lado servidor con backoff; expiración, rotación y revocación de sesión/token; protección CSRF/CORS; registro de eventos de login; autenticación de canales externos (`MCP_API_KEY`, token del bot). | Pruebas de fuerza bruta (bloqueo), expiración de sesión y MFA; revisión de configuración. |
 | **RNF-23** | Accesibilidad | **Accesibilidad (H-28):** web conforme a **WCAG 2.1 AA**; en la APK objetivos táctiles **≥ 48 dp**, contraste **≥ 4.5:1**, fuente base **≥ 16 sp** y compatibilidad con lector de pantalla en los flujos de campo. | Auditoría automatizada (axe/Lighthouse) + revisión manual en APK. |
+| **RNF-24** | Mantenibilidad / DevOps | **Calidad y entrega (H-13/H-29):** **migraciones versionadas** con Alembic (baseline = `db/schema.sql`); CI con `pytest`, Ruff y mypy en cada PR; **cobertura mínima 70 %**; API versionada (`/api/v1`) con OpenAPI; entornos separados `dev`/`staging`/`prod`. | Pipeline en verde + informe de cobertura + `alembic upgrade head` reproducible. |
+| **RNF-25** | Portabilidad / Despliegue | **Paridad de entornos (H-29):** mismas versiones de PostgreSQL/Python en dev y prod; configuración solo por variables de entorno; imagen Docker reproducible; despliegue automatizado a Cloud Run. | Comparación de versiones dev/prod + despliegue reproducible desde cero. |
 
 > ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`truekeate-db-dev`) **no** cumple RNF-16/SSL
 > obligatorio. El usuario aceptó el riesgo el 2026-09-25 con dueño **Dirección del proyecto** y condición
@@ -232,6 +234,8 @@ Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a
 | **RT-10** | Gráficos | Librería de gráficos (barras, curva, torta) para MONITOREO/GRÁFICOS. |
 | **RT-11** | Infraestructura | GCP `ggtov2` (Cloud Run + Cloud SQL + Secret Manager) según `GGTOv2_GCP.md`. |
 | **RT-12** | Seguridad de datos | Cifrado en tránsito, secretos gestionados, control de acceso por rol. |
+| **RT-13** | Migraciones | **Alembic** sobre SQLAlchemy; `db/schema.sql` es la línea base y cada cambio se versiona en `db/migrations/`. (D-38) |
+| **RT-14** | CI/CD | **GitHub Actions** (espejo GitLab CI): lint, tipos, tests, cobertura, build de imagen y despliegue a Cloud Run. (D-38) |
 
 ---
 
