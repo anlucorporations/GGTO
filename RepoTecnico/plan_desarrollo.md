@@ -197,7 +197,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | 1 — Núcleo + Autenticación | ✅ **completado** | 17/17 en verde | rev. `ggto-web-00002-rbl` |
 | 2 — Configuración | ✅ **completado** | 28/28 acumuladas | rev. `ggto-web-00003-6zb` |
 | 3 — Ingesta CSV | ✅ **completado** | 62/62 acumuladas | rev. `ggto-web-00004-cj9` |
-| 4 — PANEL y CASOS | ⏳ pendiente | — | — |
+| 4 — PANEL y CASOS | ✅ **completado** | 79/79 acumuladas | rev. `ggto-web-00005-rxm` |
 | 5 — DESPACHO | ⏳ pendiente | — | — |
 | 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ⏳ pendiente | — | — |
 | 7 — MONITOREO/REPORTES | ⏳ pendiente | — | — |
@@ -208,6 +208,22 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 4 — PANEL y CASOS ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Búsqueda (RF-30) | `GET /casos/buscar?id_averia=` o `?telefono=` (al menos uno; si no, `422`) |
+| Listado (RF-33) | `GET /casos` con filtros `q`, `id_averia`, `telefono`, `id_central`, `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, `tipo_caso`, `categoria`, `origen`, `en_gestion_supervisor`, `es_falla_masiva`, `desde`, `hasta` + paginación (`page`, `page_size`, `total`, `pages`) |
+| Ficha y edición (RF-31) | `GET /casos/{id}` y `PATCH /casos/{id}` (envía solo lo modificado); si cambia la dirección se **recalcula el sector** |
+| Alta manual (RF-32) | `POST /casos`; sin `id_averia` genera **`REF-<CENTRAL>-<NNNNNN>`**; `409` si el identificador ya existe |
+| Bitácora (RNF-12) | `caso_estado_hist`: cambio de estado con motivo y usuario; `GET /casos/{id}/historial`; no se registra si el estado no cambia |
+| Validación | `422` en estado no permitido (los 9 estados del DDL) |
+| Web | Página **CASOS**: búsqueda directa, filtros, paginación, ficha agrupada, edición, cambio de estado, historial y alta manual con `REF-` destacado; el PANEL añade búsqueda rápida que navega a CASOS |
+| Pruebas | +17 de integración (`test_casos_api.py`) → **79/79 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ · `tsc` strict ✅ |
+
+**Verificación en vivo:** alta manual → `REF-2324X-000001` · búsqueda por `id_averia` y por teléfono (`1`) · sin parámetros `422` · edición a `CONTACTADO` con motivo · historial con 2 entradas (`None→NUEVO`, `NUEVO→CONTACTADO`) · estado inválido `422` · listado filtrado `total=1` · tras ingerir, `DEMO-0001` localizado con su lote · SPA `/casos` `200`.
 
 ### Ciclo 3 — Ingesta CSV + Gestión automatizada ✅
 

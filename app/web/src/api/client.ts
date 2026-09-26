@@ -8,6 +8,11 @@
  */
 
 import type {
+  CasoEstadoHistOut,
+  CasoManualCreate,
+  CasoOut,
+  CasosFiltros,
+  CasoUpdate,
   Causa,
   CausaCreate,
   Central,
@@ -25,6 +30,7 @@ import type {
   IngestaLoteOut,
   Metodo,
   MetodoCreate,
+  PaginaCasos,
   PalabraPosicion,
   Parametro,
   ParametroUpdate,
@@ -412,6 +418,44 @@ export function listarLotes(limite = 50): Promise<IngestaLoteOut[]> {
 
 export function obtenerLote(idLote: number): Promise<IngestaLoteOut> {
   return request<IngestaLoteOut>(`/ingesta/lotes/${idLote}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* CASOS (Ciclo 4)                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Listado paginado con filtros (RF-33). */
+export function listarCasos(filtros: CasosFiltros = {}): Promise<PaginaCasos> {
+  return request<PaginaCasos>(`/casos${construirQuery(filtros)}`);
+}
+
+/** Búsqueda directa por `id_averia` y/o `telefono` (RF-30). */
+export function buscarCasos(params: {
+  id_averia?: string;
+  telefono?: string;
+  limite?: number;
+}): Promise<CasoOut[]> {
+  return request<CasoOut[]>(`/casos/buscar${construirQuery(params)}`);
+}
+
+/** Ficha completa de un caso (RF-31). */
+export function obtenerCaso(idCaso: number): Promise<CasoOut> {
+  return request<CasoOut>(`/casos/${idCaso}`);
+}
+
+/** Alta manual (RF-32). Si no se envía `id_averia` el backend genera `REF-…`. */
+export function crearCaso(data: CasoManualCreate): Promise<CasoOut> {
+  return conCuerpo<CasoOut>('/casos', 'POST', data);
+}
+
+/** Edición parcial (RF-31); el cambio de estado registra bitácora. */
+export function actualizarCaso(idCaso: number, data: CasoUpdate): Promise<CasoOut> {
+  return conCuerpo<CasoOut>(`/casos/${idCaso}`, 'PATCH', data);
+}
+
+/** Bitácora de cambios de estado, más reciente primero (RNF-12). */
+export function obtenerHistorialCaso(idCaso: number): Promise<CasoEstadoHistOut[]> {
+  return request<CasoEstadoHistOut[]>(`/casos/${idCaso}/historial`);
 }
 
 /* ------------------------------------------------------------------ */

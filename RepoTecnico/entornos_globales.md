@@ -295,8 +295,8 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
 | URL | **https://ggto-web-593453426217.europe-west1.run.app** (API + web) |
-| Revisión | `ggto-web-00004-cj9` (100 % del tráfico) — Ciclo 3 |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v4` (multi-etapa: Node compila la SPA, Python la sirve) |
+| Revisión | `ggto-web-00005-rxm` (100 % del tráfico) — Ciclo 4 |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v5` (multi-etapa: Node compila la SPA, Python la sirve) |
 | SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
@@ -316,10 +316,12 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 | `GET /api/v1/auth/me` · `POST /auth/unlock` · `POST /auth/reset-password` | 🔒 sesión / recuperación con 3 palabras |
 | `/api/v1/central`, `/sectores`, `/tecnicos`, `/flota`, `/cuadrillas`, `/catalogos/*`, `/configuracion` | 🔒 CRUD de CONFIGURACIÓN (escritura solo `ADMIN`/`SUPERVISOR`) |
 | `POST /api/v1/ingesta/preview` · `POST /api/v1/ingesta` · `GET /api/v1/ingesta/lotes` | 🔒 Ingesta del CSV diario y su historial (escritura solo `ADMIN`/`SUPERVISOR`) |
+| `GET /api/v1/casos` · `/casos/buscar` · `/casos/{id}` · `/casos/{id}/historial` | 🔒 Listado con filtros, búsqueda por avería/teléfono y bitácora |
+| `POST /api/v1/casos` · `PATCH /api/v1/casos/{id}` | 🔒 Alta manual (genera `REF-…`) y edición con registro de estado |
 
-> **Pruebas:** 62/62 en verde (Ciclos 1–3) contra el esquema aislado `ggto_test`.
-> CI en `.github/workflows/ci.yml`. **Ciclo 3 verificado en vivo** con la muestra real: 56 filas leídas,
-> 51 de la central, 5 descartadas, 15 sectorizadas; segunda carga con 51 duplicados y 0 nuevos.
+> **Pruebas:** 79/79 en verde (Ciclos 1–4) contra el esquema aislado `ggto_test`.
+> CI en `.github/workflows/ci.yml`. **Ciclo 4 verificado en vivo**: alta manual `REF-2324X-000001`,
+> búsqueda por avería y teléfono, cambio de estado con bitácora y listado filtrado.
 
 > ⚠️ **Pendiente:** mover el servicio a `ggtov2` (Cloud Run + Artifact Registry propios) cuando se
 > desbloquee la facturación, y **restringir el acceso** (IAP o invocación autenticada), porque hoy

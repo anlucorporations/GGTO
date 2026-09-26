@@ -116,3 +116,21 @@ class Caso(Base):
     fecha_hora_asignacion: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CasoEstadoHist(Base):
+    """Bitácora de cambios de estado de un caso (RNF-12)."""
+
+    __tablename__ = "caso_estado_hist"
+
+    id_hist: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_caso: Mapped[int] = mapped_column(
+        ForeignKey("caso.id_caso", ondelete="CASCADE"), nullable=False
+    )
+    estado_anterior: Mapped[str | None] = mapped_column(String(20))
+    estado_nuevo: Mapped[str] = mapped_column(String(20), nullable=False)
+    motivo: Mapped[str | None] = mapped_column(Text)
+    usuario: Mapped[str | None] = mapped_column(String(20))
+    fecha_hora: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

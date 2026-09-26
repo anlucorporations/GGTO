@@ -9,10 +9,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Central, Configuracion, IngestaLote, Sector, SectorDireccion, Usuario
+from ..models import Central, IngestaLote, Usuario
 from ..models.caso_entities import Caso
 from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta
 from ..services import cuadrilla0
+from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.ingesta import ESPECIFICACION, filtrar_por_central, parsear
 from ..services.sectorizacion import Patron, asignar_sector
 from .deps import get_current_user, require_roles
@@ -27,33 +28,6 @@ TAMANO_LOTE_CONSULTA = 1000
 # --------------------------------------------------------------------------- #
 # Apoyo
 # --------------------------------------------------------------------------- #
-def _cargar_config(db: Session) -> dict[str, Any]:
-    return {c.clave: c.valor for c in db.scalars(select(Configuracion)).all()}
-
-
-def _resolver_central(db: Session, id_central: int | None, config: dict[str, Any]) -> Central:
-    if id_central is not None:
-        central = db.get(Central, id_central)
-    else:
-        codigo = str(config.get("ingesta.central_codigo") or "2324X").strip('"')
-        central = db.scalar(select(Central).where(Central.codigo_central == codigo))
-    if central is None:
-        raise HTTPException(status_code=404, detail="Central no encontrada o no configurada")
-    return central
-
-
-def _cargar_patrones(db: Session, id_central: int) -> list[Patron]:
-    filas = db.execute(
-        select(SectorDireccion.id_sector, SectorDireccion.patron,
-               SectorDireccion.tipo_coincidencia, SectorDireccion.normalizar)
-        .join(Sector, Sector.id_sector == SectorDireccion.id_sector)
-        .where(Sector.id_central == id_central, Sector.activo.is_(True),
-               SectorDireccion.activo.is_(True))
-        .order_by(Sector.prioridad, Sector.nombre)
-    ).all()
-    return [Patron(id_sector=f[0], patron=f[1], tipo_coincidencia=f[2], normalizar=f[3]) for f in filas]
-
-
 def _existentes(db: Session, ids: list[str]) -> set[str]:
     encontrados: set[str] = set()
     for i in range(0, len(ids), TAMANO_LOTE_CONSULTA):
@@ -66,9 +40,9 @@ def _existentes(db: Session, ids: list[str]) -> set[str]:
 def _analizar(
     db: Session, contenido: bytes, id_central: int | None
 ) -> tuple[dict[str, Any], list[dict[str, Any]], Central, list[Patron], dict[str, Any]]:
-    config = _cargar_config(db)
-    central = _resolver_central(db, id_central, config)
-    patrones = _cargar_patrones(db, central.id_central)
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    patrones = cargar_patrones(db, central.id_central)
 
     filas, avisos = parsear(contenido)
     del_central = filtrar_por_central(filas, central.codigo_central)

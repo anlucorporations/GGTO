@@ -301,6 +301,165 @@ export interface IngestaLoteOut {
 }
 
 /* ------------------------------------------------------------------ */
+/* CASOS (Ciclo 4)                                                     */
+/* ------------------------------------------------------------------ */
+
+export type EstadoCaso =
+  | 'NUEVO'
+  | 'ASIGNADO'
+  | 'CONTACTADO'
+  | 'CITADO'
+  | 'DIFERIDO'
+  | 'EN_GESTION'
+  | 'ENRUTADO'
+  | 'CERRADO'
+  | 'CANCELADO';
+
+export type TipoCaso = 'AVERIA' | 'REPARACION' | 'CONSTRUCCION';
+
+export type CategoriaCaso = 'RESIDENCIAL' | 'EMPRESA' | 'REFERIDO' | 'GOBIERNO';
+
+export type OrigenCaso = 'INGESTA_CSV' | 'MANUAL' | 'TELEGRAM' | 'MCP_IA';
+
+export interface CasoOut {
+  id_caso: number;
+  id_averia: string;
+  id_central: number;
+  origen: string;
+  tipo_caso: string;
+  categoria: string;
+  estado_actual: string;
+  id_sector: number | null;
+  id_causa: number | null;
+  id_lote_ingesta: number | null;
+  en_gestion_supervisor: boolean;
+  es_falla_masiva: boolean;
+
+  region: string | null;
+  estado_geografico: string | null;
+  municipio: string | null;
+  parroquia: string | null;
+  area: string | null;
+  codigo_central: string | null;
+  nombre_central: string | null;
+
+  telefono: string | null;
+  nombre_cliente: string | null;
+  direccion: string | null;
+  persona_reporta: string | null;
+  contacto_cliente: string | null;
+
+  fecha_reporte: string | null;
+  fecha_compromiso: string | null;
+  fecha_cita: string | null;
+
+  problema_reporte: string | null;
+  ultimo_comentario: string | null;
+  informacion: string | null;
+  results: string | null;
+  estatus_origen: string | null;
+
+  olt: string | null;
+  plan: string | null;
+  slot: string | null;
+  puerto: string | null;
+  fat: string | null;
+  serial: string | null;
+  tipo_servicio: string | null;
+  tipo_problema: string | null;
+  area_trabajo: string | null;
+  unidad_negocio: string | null;
+
+  cuadrilla_externa: string | null;
+  reparador_principal: string | null;
+  ayudantes: unknown[];
+  flota_can: string | null;
+
+  creado_en: string | null;
+  actualizado_en: string | null;
+}
+
+export interface PaginaCasos {
+  items: CasoOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface CasoManualCreate {
+  id_central?: number | null;
+  id_averia?: string | null;
+  categoria?: CategoriaCaso;
+  tipo_caso?: TipoCaso;
+  nombre_cliente?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
+  informacion?: string | null;
+  problema_reporte?: string | null;
+  persona_reporta?: string | null;
+  contacto_cliente?: string | null;
+  fecha_reporte?: string | null;
+  fecha_cita?: string | null;
+  fecha_compromiso?: string | null;
+  id_sector?: number | null;
+  tipo_servicio?: string | null;
+}
+
+export interface CasoUpdate {
+  nombre_cliente?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
+  informacion?: string | null;
+  problema_reporte?: string | null;
+  ultimo_comentario?: string | null;
+  persona_reporta?: string | null;
+  contacto_cliente?: string | null;
+  tipo_caso?: TipoCaso;
+  categoria?: CategoriaCaso;
+  estado_actual?: EstadoCaso;
+  motivo_estado?: string | null;
+  id_sector?: number | null;
+  id_causa?: number | null;
+  en_gestion_supervisor?: boolean;
+  es_falla_masiva?: boolean;
+  fecha_cita?: string | null;
+  fecha_compromiso?: string | null;
+  tipo_servicio?: string | null;
+}
+
+export interface CasoEstadoHistOut {
+  id_hist: number;
+  id_caso: number;
+  estado_anterior: string | null;
+  estado_nuevo: string;
+  motivo: string | null;
+  usuario: string | null;
+  fecha_hora: string | null;
+}
+
+/** Parámetros del listado paginado de casos (RF-33). */
+export type CasosFiltros = {
+  q?: string;
+  id_averia?: string;
+  telefono?: string;
+  id_central?: number;
+  id_sector?: number;
+  id_causa?: number;
+  id_lote_ingesta?: number;
+  estado_actual?: string;
+  tipo_caso?: string;
+  categoria?: string;
+  origen?: string;
+  en_gestion_supervisor?: boolean;
+  es_falla_masiva?: boolean;
+  desde?: string;
+  hasta?: string;
+  page?: number;
+  page_size?: number;
+};
+
+/* ------------------------------------------------------------------ */
 /* RESUMEN                                                             */
 /* ------------------------------------------------------------------ */
 
