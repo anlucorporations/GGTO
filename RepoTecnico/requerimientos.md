@@ -52,18 +52,32 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 
 ## 3. Módulos / secciones funcionales
 
-| Sección | Nombre | Descripción (del brief) |
+### 3.1 Secciones de la interfaz (10)
+
+| Sección | Nombre | Descripción (del brief) | RF |
+|---|---|---|---|
+| 0 | **PANEL** | Búsqueda de caso por `id_averia` o `teléfono`; actualización de casos; alta manual de casos nuevos. | RF-30, RF-31, RF-32 |
+| 0.1 | **MONITOREO** | Tarjetas/zonas con datos y tablas: GESTIÓN DIARIA, GESTIÓN SEMANAL, CASOS GLOBALES, REPARACIÓN, CONSTRUCCIÓN, CUADRILLA. | RF-26, RF-28 |
+| 0.2 | **GRÁFICOS** | Visualizaciones: barras, curva y torta. | RF-26 |
+| 1 | **CASOS** | Data principal de casos y su resolución (Construcción/Reparación · Residencial/Empresa/Referidos). | RF-33 |
+| 2 | **DESPACHO** | Distribución del universo de averías entre cuadrillas por sectores; despacho imprimible + histórico. | RF-08, RF-09, RF-10, RF-24, RF-27 |
+| 3 | **SEGUIMIENTO** | Casos pasados a otras instancias (en cola) para seguimiento. | RF-34 |
+| 4 | **EMPRESAS** | Resumen de reparación/construcción tipo Empresa + registro de cita. | RF-35 |
+| 5 | **REFERIDOS** | Resumen de reparación/construcción tipo Referido sin `id_averia`, priorizados + cita. | RF-36 |
+| 6 | **CONFIGURACIÓN** | CENTRAL · TÉCNICOS · FLOTA · CUADRILLA. | RF-02, RF-03, RF-04, RF-38 |
+| 7 | **GESTIÓN** | Casos de la "cuadrilla 0" (supervisor) que no se despachan a calle. | RF-25, RF-37 |
+
+### 3.2 Módulos funcionales transversales (7)
+
+| Módulo | Descripción | RF |
 |---|---|---|
-| 0 | **PANEL** | Búsqueda de caso por `id_averia` o `teléfono`; actualización de casos; alta manual de casos nuevos (Fecha, Tipo, Actividad, Contacto, Nombre, Dirección, Información, etc.). |
-| 0.1 | **MONITOREO** | Tarjetas/zonas con datos y tablas: GESTIÓN DIARIA, GESTIÓN SEMANAL, CASOS GLOBALES, REPARACIÓN, CONSTRUCCIÓN, CUADRILLA. |
-| 0.2 | **GRÁFICOS** | Visualizaciones: barras (Gestión diaria, Casos globales, Construcción, Cuadrilla), curva (Semanal), torta (Reparación). |
-| 1 | **CASOS** | Data principal de casos y su resolución (Construcción/Reparación · Residencial/Empresa/Referidos). |
-| 2 | **DESPACHO** | Distribución del universo de averías entre cuadrillas por sectores; despacho del día en tabla imprimible (carta) + histórico. |
-| 3 | **SEGUIMIENTO** | Casos pasados a otras instancias (en cola) para seguimiento. |
-| 4 | **EMPRESAS** | Resumen de reparación/construcción tipo Empresa + registro de cita. |
-| 5 | **REFERIDOS** | Resumen de reparación/construcción tipo Referido sin `id_averia`, priorizados + cita. |
-| 6 | **CONFIGURACIÓN** | 6.1 CENTRAL · 6.2 TÉCNICOS · 6.3 FLOTA · 6.4 CUADRILLA. |
-| 8 | **GESTIÓN** | Casos de la "cuadrilla 0" (supervisor) que no se despachan a calle. |
+| **INGESTA** | Carga y depuración del CSV diario, deduplicación y sectorización. | RF-01, RF-21, RF-22, RF-23, RF-29 |
+| **GESTIÓN AUTOMATIZADA** | Criterio combinado de la cuadrilla 0. | RF-25 |
+| **GESTIÓN TÉCNICA** | Flujo de campo de la app móvil (contactar, atender, cerrar, enrutar, diferir, evidencias, offline). | RF-11…RF-15, RF-20 |
+| **ALERTAS** | Fallas masivas, incidentes de flota/herramientas, solicitud de material. | RF-16…RF-19 |
+| **SEGURIDAD** | Autenticación, bloqueo, 12 palabras, roles y sesiones. | RF-20, RNF-01…RNF-05, RNF-21, RNF-22 |
+| **INSUMOS** (v2) | Inventario, órdenes de material y entrega. | RF-05, RF-18 |
+| **REPORTES** | Reportes de capacidad, función diaria, producción y trabajo diario/semanal/mensual. | RF-07, RF-27, RF-28 |
 
 ---
 
@@ -78,7 +92,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-03** | Gestionar las flotas (vehículos de la central). | Alta | Configuración |
 | **RF-04** | Gestionar las cuadrillas (trabajadores + flota + herramientas). | Alta | Configuración |
 | **RF-05** | Gestionar insumos: inventario, ingreso por orden de material y entrega a trabajadores. **Para una 2.ª versión.** | Baja (v2) | Insumos |
-| **RF-06** | Gestionar la ingesta/asignación de casos especiales solicitados por otras instancias (Referidos de reparación, construcción residencial, construcción empresa, etc.) vía Telegram o IA (WEB-MCP). | Alta | Referidos/Empresas |
+| **RF-06** | Gestionar la ingesta/asignación de casos especiales solicitados por otras instancias (**Referidos** de reparación, **construcción residencial**, **construcción empresa**, **GOBIERNOS**, etc.) vía Telegram o IA (WEB-MCP). | Alta | Referidos/Empresas |
 | **RF-07** | Generar reportes de: Capacidad Operativa (cuadrilla + sectores), estado de flotas y herramientas, y función diaria (cuadrilla + despacho del día). | Alta | Monitoreo |
 | **RF-08** | Gestionar el **Despacho Diario**: asignar un grupo de casos a las cuadrillas activas por día, agrupando por áreas geográficas/sectores. | Alta | Despacho |
 | **RF-09** | Gestionar las **fallas masivas**: detectarlas automáticamente por **concentración de casos** tras la ingesta y también por **reporte manual** del técnico vía MCP/Telegram; asignarlas a la cuadrilla con mayor **proximidad de sector**. | Media | Despacho |
@@ -112,7 +126,24 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-28** | Generar reporte de trabajo diario, semanal y mensual. | Alta | Monitoreo |
 | **RF-29** | Documentar cada carga de archivo diferenciando los casos nuevos. | Media | Ingesta |
 
-### 4.4 Procedimientos detallados
+### 4.4 Funciones por módulo de interfaz (RF-30…RF-38)
+
+> Añadidas al cerrar H-38/H-40/H-43: los módulos PANEL, CASOS, SEGUIMIENTO, EMPRESAS, REFERIDOS,
+> GESTIÓN y CONFIGURACIÓN no tenían RF asociado.
+
+| ID | Requerimiento | Prioridad | Módulo |
+|---|---|---|---|
+| **RF-30** | **Buscar** un caso por `id_averia` o por `teléfono` y mostrar su ficha completa. | Alta | PANEL |
+| **RF-31** | **Actualizar/editar** un caso existente (contacto, dirección, clasificación, estado y campos de gestión). | Alta | PANEL |
+| **RF-32** | **Alta manual** de un caso nuevo con información sencilla (fecha, tipo, actividad, contacto, nombre, dirección, información). | Alta | PANEL |
+| **RF-33** | **Administrar el universo de casos**: listado con filtros (central, sector, estado, tipo, fechas), detalle y registro de resolución. | Alta | CASOS |
+| **RF-34** | **Gestionar el seguimiento** de casos derivados a otras instancias/colas (instancia, motivo, fechas, estado). | Media | SEGUIMIENTO |
+| **RF-35** | **Gestionar los casos de tipo EMPRESA** (reparación/construcción) y su cita de atención. | Media | EMPRESAS |
+| **RF-36** | **Gestionar los casos de tipo REFERIDO** sin `id_averia` (prioridad y cita), con identificador `REF-…`. | Media | REFERIDOS |
+| **RF-37** | **Gestionar los casos de la cuadrilla 0** sin despacharlos a calle (bandeja GESTIÓN y cierre administrativo). | Alta | GESTIÓN |
+| **RF-38** | **Configurar la central y los sectores de trabajo** (datos operativos de la central y direcciones/alias por sector). | Alta | CONFIGURACIÓN |
+
+### 4.5 Procedimientos detallados
 
 **RF-INGESTA (1):** filtrar por datos operativos de la central → extraer datos → descartar duplicados por `id_averia` → insertar nuevos → documentar la carga.
 
@@ -216,6 +247,18 @@ Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a
 > **MFA obligatorio** para ADMIN y SUPERVISOR (RNF-22). El TÉCNICO usa `P00` + clave con bloqueo a los
 > 3 intentos y recuperación con 3 de las 12 palabras (RF-20).
 
+### 5.3 Gobierno de datos en la v1 (D-39)
+
+| Función | Responsable en v1 | Estado |
+|---|---|---|
+| Administración de catálogos (causas, métodos, sectores, frases de exclusión) | **SUPERVISOR** | Cubierto por ACT-01 |
+| Gestión y mantenimiento de flota | **SUPERVISOR** | Cubierto por RF-03 |
+| Almacén / insumos (órdenes de material) | **SUPERVISOR** | v2 (RF-05) |
+| Auditoría interna de la bitácora | **ADMIN** (solo lectura de `auditoria`) | Sin rol AUDITOR en v1 |
+| Soporte / helpdesk de la plataforma y la APK | **SUPERVISOR** (registro por correo) | Informal en v1 |
+| Responsable de protección de datos | CANTV (externo) | Pendiente de designar |
+| Dueño del sistema origen CANTV (entrega del CSV) | CANTV (externo) | Pendiente de formalizar |
+
 ---
 
 ## 6. Requerimientos Técnicos
@@ -237,18 +280,20 @@ Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a
 | **RT-13** | Migraciones | **Alembic** sobre SQLAlchemy; `db/schema.sql` es la línea base y cada cambio se versiona en `db/migrations/`. (D-38) |
 | **RT-14** | CI/CD | **GitHub Actions** (espejo GitLab CI): lint, tipos, tests, cobertura, build de imagen y despliegue a Cloud Run. (D-38) |
 
+**Totales:** **38 RF** (RF-01…RF-38) · **25 RNF** (RNF-01…RNF-25) · **14 RT** (RT-01…RT-14) · 6 actores · 10 secciones + 7 módulos funcionales.
+
 ---
 
 ## 7. Trazabilidad preliminar Brief → Requerimientos
 
 | Sección del brief | Requerimiento(s) |
 |---|---|
-| OBJETIVO / CONTEXTO | RF-01…RF-29, RT-01…RT-12 |
+| OBJETIVO / CONTEXTO | RF-01…RF-38, RT-01…RT-14 |
 | GENERALIDADES 1.1–1.7 | RF-01…RF-10 |
 | GENERALIDADES 2.1–2.3 | RF-11…RF-19 |
 | GENERALIDADES 3.1–3.5 | RF-21…RF-25 |
-| DETALLE 0–0.2 | RF-26, RF-28, RT-08, RT-10 |
-| DETALLE 1–8 | RF-06, RF-11, RF-25, Módulos §3 |
+| DETALLE 0–0.2 | RF-26, RF-28, RF-30…RF-32, RT-08, RT-10 |
+| DETALLE 1–7 | RF-06, RF-11, RF-25, RF-33…RF-38, Módulos §3 |
 | PROCEDIMIENTOS 1–4 | RF-21…RF-29, RNF-06 |
 
 ---

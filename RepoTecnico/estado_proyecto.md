@@ -21,7 +21,7 @@
 - [x] Muestra de datos `detalle_averias_gpon 12_09_2026.csv` inspeccionada: **80 columnas**,
   delimitador `;`, 56 registros, encabezados duplicados (`informacion` ×2, `descripcion` ×3).
 - [x] Contexto GCP revisado (`GGTOv2_GCP.md`, `.env.global`, `gcp-env.sh`, scripts).
-- [x] `requerimientos.md` generado (29 RF, **25 RNF**, 14 RT, 6 actores, 10 módulos, trazabilidad).
+- [x] `requerimientos.md` generado (38 RF, 25 RNF, 14 RT, 6 actores, 10 secciones + 7 módulos funcionales, trazabilidad).
 - [x] `diccionario_datos.md` generado (33 entidades lógicas → 35 tablas física; mapeo de las 80 columnas del CSV).
 - [x] `entornos_globales.md` generado (GCP, PostgreSQL, variables, comandos, stack propuesto).
 - [x] Entrevista Fase 1 respondida (bloques 1–5, respuestas en §5).
@@ -93,6 +93,8 @@
 | D-36 | **RBAC y multi-central (H-15/H-30/H-31/H-32):** 3 roles (ADMIN/SUPERVISOR/TECNICO) + matriz rol×módulo×acción; `usuario.id_central`; **RLS** en `caso` y `despacho` como patrón; RNF-21 y RNF-22 (Argon2id, MFA para ADMIN/SUPERVISOR, sesiones, rate limiting, CSRF/CORS). | Entrevista H-15/H-30/H-31/H-32 |
 | D-37 | **Usabilidad y accesibilidad (H-28):** RNF-09 reescrito con tareas medibles (≤3 toques/20 s contactar; ≤10 s localizar ficha; ≤60 s alta manual) y RNF-23 de accesibilidad (WCAG 2.1 AA en web; ≥48 dp, contraste ≥4.5:1 y ≥16 sp en APK). | Entrevista H-28 |
 | D-38 | **Stack y DevOps (H-13/H-29):** **Python + FastAPI**, migraciones con **Alembic** (baseline `db/schema.sql`), **React** (Vite/Recharts), **Flutter + SQLite**, **GitHub Actions** (espejo GitLab) con pytest/Ruff/mypy y cobertura ≥ 70 %. RNF-24 y RNF-25. | Entrevista H-13/H-29 |
+| D-39 | **Gobierno v1 (H-34/H-35/H-36/H-42):** catálogos, flota/mantenimiento, almacén y soporte los cubre el **SUPERVISOR**; la auditoría interna la ejerce **ADMIN** en solo lectura. **No se crea rol AUDITOR en v1.** El responsable de protección de datos y el dueño del sistema origen quedan del lado CANTV (pendientes de designar). | Entrevista H-34/35/36/42 |
+| D-40 | **Trazabilidad RF (H-38/H-40/H-43):** añadidos **RF-30…RF-38** (PANEL, CASOS, SEGUIMIENTO, EMPRESAS, REFERIDOS, GESTIÓN, CONFIGURACIÓN), GOBIERNO nombrado en RF-06, catálogo §3 reestructurado (10 secciones + 7 módulos funcionales) y numeración corregida (GESTIÓN 8→7). Total: **38 RF / 25 RNF / 14 RT**. | Entrevista H-38/40/43 |
 
 ---
 
@@ -217,7 +219,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 - [ ] **C2 Ingesta** — [x] H-02 (encoding/parser); [x] H-05 (columnas de causa descartadas y `informacion` unificada, D-27); [x] H-06 (`Falla Reportada` aclarada en RF-25).
 - [x] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [x] H-07 (canales v1 = Telegram+correo+MCP, D-28); [x] H-09/H-11 (referidos `REF-…`, D-23); [x] H-08 (`requerimientos.md` v1.0 sincronizado, D-29..D-31).
 - [x] **C4 RNF** — [x] H-16 (SLO de rendimiento/capacidad, D-33); [x] H-03 (backup: RNF-16, riesgo aceptado D-26); [x] H-17 (privacidad/retención: RNF-18, D-34); [x] H-14/H-26/H-27 (observabilidad y resiliencia: RNF-17/19/20, D-35); [x] H-15/H-30/H-31 (RBAC, sesiones, MFA: RNF-21/22, D-36); [x] H-28 (usabilidad/accesibilidad: RNF-09/23, D-37); [x] H-13/H-29 (migraciones/CI/portabilidad: RNF-24/25, D-38).
-- [ ] **C5 Gobernanza** — RBAC y ámbito por central, dueños de catálogos/flota/almacén/auditoría/privacidad, RF de PANEL/GOBIERNO, acuerdo con el sistema origen.
+- [~] **C5 Gobernanza** — [x] dueños de catálogos/flota/almacén/auditoría/soporte definidos (SUPERVISOR/ADMIN, D-39); [x] RF de PANEL/GOBIERNO y trazabilidad de módulos (RF-30…RF-38, D-40); [ ] acuerdo de interfaz con el sistema origen CANTV.
 - [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
 - [ ] Confirmación del usuario para pasar a **Fase 2**.
 
