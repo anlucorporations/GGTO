@@ -4,11 +4,13 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 1 — Concepto: COMPLETA. AUDITADA** — veredicto: apta **bajo condiciones** (4 CRÍTICOS abiertos) |
-| Última actualización | 2026-09-25 |
-| Rama git | `GGTOv2-DSH-GCP` (commits `f3d3cf7`, `b60b766`, `e5dcf81`) |
-| Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos: 4 CRÍTICA · 14 ALTA · 19 MEDIA · 6 BAJA) |
+| Fase actual | **Fase 1 — Concepto: COMPLETA, AUDITADA Y CERRADA** (criterios C1–C5 del informe resueltos) |
+| Última actualización | 2026-09-26 |
+| Rama git | `GGTOv2-DSH-GCP` (16 commits; sin push a remotos) |
+| Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
+| Decisiones | **D-01…D-41** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
+| Pendientes externos | Firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP · push a GitHub/GitLab |
 
 > Memoria de trabajo del proyecto. Se actualiza de forma incremental, sin recargar todo el contexto.
 
