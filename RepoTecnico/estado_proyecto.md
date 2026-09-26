@@ -6,11 +6,11 @@
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
 | Fase actual | **Fase 1 — Concepto: COMPLETA, AUDITADA Y CERRADA** (criterios C1–C5 del informe resueltos) |
 | Última actualización | 2026-09-26 |
-| Rama git | `GGTOv2-DSH-GCP` (16 commits; sin push a remotos) |
+| Rama git | `GGTOv2-DSH-GCP` · 22 commits · **publicada en GitHub y GitLab** (commit `72200e8`) |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
 | Decisiones | **D-01…D-41** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
-| Pendientes externos | Firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP · push a GitHub/GitLab |
+| Pendientes externos | Firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP |
 
 > Memoria de trabajo del proyecto. Se actualiza de forma incremental, sin recargar todo el contexto.
 
@@ -108,8 +108,7 @@
 2. Ejecutar los **Quick wins** aprobados (QW-1, QW-2, QW-3, QW-5) y los de infraestructura (QW-6, QW-7).
 3. Sincronizar `requerimientos.md` con las respuestas de la entrevista y las decisiones D-22..D-24 (H-08).
 4. Completar los RNF faltantes y la matriz RBAC (criterios §8 del informe).
-5. Publicar en GitHub/GitLab bajo orden `/push` (rama `GGTOv2-DSH-GCP` limpia).
-6. **Fase 2** — casos de uso (analista funcional, Gherkin/EARS), gráficos y documento técnico con `@audita`.
+5. **Fase 2** — casos de uso (analista funcional, Gherkin/EARS), gráficos y documento técnico con `@audita`.
 
 ---
 
@@ -224,7 +223,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 - [x] **C3 Requisitos y alcance** — [x] H-04/H-19 (cuadrilla 0 combinada, D-22); [x] H-07 (canales v1 = Telegram+correo+MCP, D-28); [x] H-09/H-11 (referidos `REF-…`, D-23); [x] H-08 (`requerimientos.md` v1.0 sincronizado, D-29..D-31).
 - [x] **C4 RNF** — [x] H-16 (SLO de rendimiento/capacidad, D-33); [x] H-03 (backup: RNF-16, riesgo aceptado D-26); [x] H-17 (privacidad/retención: RNF-18, D-34); [x] H-14/H-26/H-27 (observabilidad y resiliencia: RNF-17/19/20, D-35); [x] H-15/H-30/H-31 (RBAC, sesiones, MFA: RNF-21/22, D-36); [x] H-28 (usabilidad/accesibilidad: RNF-09/23, D-37); [x] H-13/H-29 (migraciones/CI/portabilidad: RNF-24/25, D-38).
 - [x] **C5 Gobernanza** — [x] dueños de catálogos/flota/almacén/auditoría/soporte definidos (SUPERVISOR/ADMIN, D-39); [x] RF de PANEL/GOBIERNO y trazabilidad de módulos (RF-30…RF-38, D-40); [x] contrato de interfaz redactado (D-41, pendiente de firma de CANTV).
-- [ ] **Push a remotos** (requiere orden explícita `/push`; la rama remota `GGTOv2-DSH-GCP` ya tiene contenido que debe reemplazarse).
+- [x] **Push a remotos**: rama `GGTOv2-DSH-GCP` publicada por force-push en GitHub (`anlucorporations/GGTO`) y GitLab (`anlucorporations/ggto`), commit `72200e8`, 25 archivos. Repos **públicos** (decisión del usuario).
 - [ ] Confirmación del usuario para pasar a **Fase 2**.
 
 ---
@@ -247,3 +246,4 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-25 | **H-08 resuelto (D-29..D-31):** `requerimientos.md` subido a **v1.0 validado**; S-01..S-12 cerrados con su decisión; §10 actualizado. **C3 completado.** |
 | 2026-09-25 | **C4 completado (D-33..D-38):** SLO de rendimiento, privacidad/retención (RNF-18), observabilidad y resiliencia (RNF-19/20), RBAC + RLS + MFA (RNF-21/22), usabilidad/accesibilidad (RNF-09/23) y mantenibilidad/portabilidad (RNF-24/25). Stack definido: FastAPI + Alembic + React + Flutter + GitHub Actions. |
 | 2026-09-25 | **C5 completado (D-39..D-41):** gobierno v1 (SUPERVISOR/ADMIN), RF-30…RF-38 y catálogo de módulos, y contrato de interfaz `interfaz_csv_origen.md` (pendiente de firma de CANTV). **Auditoría de Fase 1 cerrada en sus 5 criterios.** |
+| 2026-09-26 | **Proyecto publicado:** force-push de la rama `GGTOv2-DSH-GCP` (commit `72200e8`, 25 archivos) a GitHub `anlucorporations/GGTO` y GitLab `anlucorporations/ggto`, con remotos migrados a SSH. Repos públicos por decisión del usuario. |
