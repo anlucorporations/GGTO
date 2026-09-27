@@ -48,6 +48,11 @@ RepoTecnico/evidencias/
 # --- Muestras pseudonimizadas (SÍ se versionan con fines de prueba) ---
 !RepoTecnico/muestras/*.csv
 
+# --- Credenciales locales: NUNCA versionar ---
+RepoTecnico/credenciales/
+*credenciales*.md
+*CREDENCIALES*.md
+
 # --- Sistema ---
 .DS_Store
 Thumbs.db
