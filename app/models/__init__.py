@@ -11,6 +11,7 @@ from .config_entities import (
     Sector,
     SectorDireccion,
 )
+from .despacho_entities import Despacho, DespachoCasos, FallaMasiva, Notificacion
 from .entities import Central, DispositivoSeguridad, Rol, Tecnico, Usuario
 
 __all__ = [
@@ -23,10 +24,14 @@ __all__ = [
     "Cuadrilla",
     "CuadrillaHerramienta",
     "CuadrillaTecnico",
+    "Despacho",
+    "DespachoCasos",
     "DispositivoSeguridad",
+    "FallaMasiva",
     "Flota",
     "Herramienta",
     "IngestaLote",
+    "Notificacion",
     "Rol",
     "Sector",
     "SectorDireccion",

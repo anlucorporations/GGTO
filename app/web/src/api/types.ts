@@ -460,6 +460,153 @@ export type CasosFiltros = {
 };
 
 /* ------------------------------------------------------------------ */
+/* DESPACHO (Ciclo 5)                                                  */
+/* ------------------------------------------------------------------ */
+
+export type EstadoDespacho = 'BORRADOR' | 'PUBLICADO' | 'CERRADO';
+
+export type EstadoDespachoCaso =
+  | 'ASIGNADO'
+  | 'GESTIONADO'
+  | 'CERRADO'
+  | 'CITADO'
+  | 'DIFERIDO';
+
+export type CanalDespacho = 'TELEGRAM' | 'CORREO';
+
+export type TipoAsignacionDespacho =
+  | 'REPARACION'
+  | 'CONSTRUCCION'
+  | 'REFERIDO'
+  | 'EMPRESA'
+  | 'FALLA_MASIVA';
+
+export type OrigenFallaMasiva = 'AUTOMATICA' | 'REPORTE_TECNICO' | 'MCP';
+
+export interface CasoAsignadoOut {
+  id_caso: number;
+  id_averia: string;
+  id_sector: number | null;
+  sector_nombre: string | null;
+  tipo_asignacion: string;
+  orden_visita: number;
+  direccion: string | null;
+  telefono: string | null;
+  nombre_cliente: string | null;
+  problema_reporte: string | null;
+  estado_actual: string;
+  categoria: string;
+  tipo_caso: string;
+  es_cita: boolean;
+}
+
+export interface GrupoCuadrillaOut {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  total: number;
+  casos: CasoAsignadoOut[];
+}
+
+export interface PropuestaOut {
+  fecha: string;
+  id_central: number;
+  grupos: GrupoCuadrillaOut[];
+  sin_asignar: CasoAsignadoOut[];
+  reglas: Record<string, unknown>;
+  resumen: Record<string, unknown>;
+}
+
+export interface DespachoCasoOut {
+  id_despacho_caso: number;
+  id_caso: number;
+  id_sector: number | null;
+  orden_visita: number | null;
+  tipo_asignacion: string | null;
+  estado: string;
+  observacion: string | null;
+}
+
+export interface DespachoDetalleOut {
+  id_despacho: number;
+  id_central: number;
+  fecha: string;
+  id_cuadrilla: number;
+  estado: string;
+  generado_auto: boolean;
+  enviado_canal: string | null;
+  enviado_en: string | null;
+  reporte_produccion_en: string | null;
+  usuario_crea: string | null;
+  creado_en: string | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
+  casos: DespachoCasoOut[];
+}
+
+export interface DespachoUpdate {
+  estado?: EstadoDespacho;
+  enviado_canal?: CanalDespacho;
+}
+
+export interface CasoAgregar {
+  id_caso: number;
+  tipo_asignacion?: TipoAsignacionDespacho;
+  orden_visita?: number;
+  observacion?: string;
+}
+
+export interface CasoEstadoUpdate {
+  estado: EstadoDespachoCaso;
+  observacion?: string;
+}
+
+export interface NotificacionOut {
+  id_notificacion: number;
+  canal: string;
+  destinatario: string | null;
+  asunto: string | null;
+  cuerpo: string | null;
+  estado: string;
+  error: string | null;
+  enviado_en: string | null;
+  creado_en: string | null;
+}
+
+export interface EnvioOut {
+  id_despacho: number;
+  canal: string;
+  estado: string;
+  error: string | null;
+  notificacion: NotificacionOut | null;
+}
+
+export interface ReporteProduccionOut {
+  fecha: string;
+  id_central: number;
+  por_cuadrilla: Record<string, unknown>[];
+  totales: Record<string, number>;
+}
+
+export interface FallaMasivaCreate {
+  descripcion: string;
+  id_sector?: number | null;
+  origen?: OrigenFallaMasiva;
+}
+
+export interface FallaMasivaOut {
+  id_falla: number;
+  id_central: number;
+  descripcion: string;
+  fecha_deteccion: string | null;
+  origen: string;
+  id_sector: number | null;
+  id_cuadrilla: number | null;
+  estado: string;
+  planificacion: string | null;
+}
+
+/* ------------------------------------------------------------------ */
 /* RESUMEN                                                             */
 /* ------------------------------------------------------------------ */
 

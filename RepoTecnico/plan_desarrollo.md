@@ -198,7 +198,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | 2 — Configuración | ✅ **completado** | 28/28 acumuladas | rev. `ggto-web-00003-6zb` |
 | 3 — Ingesta CSV | ✅ **completado** | 62/62 acumuladas | rev. `ggto-web-00004-cj9` |
 | 4 — PANEL y CASOS | ✅ **completado** | 79/79 acumuladas | rev. `ggto-web-00005-rxm` |
-| 5 — DESPACHO | ⏳ pendiente | — | — |
+| 5 — DESPACHO | ✅ **completado** | 96/96 acumuladas | rev. `ggto-web-00007-vsr` |
 | 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ⏳ pendiente | — | — |
 | 7 — MONITOREO/REPORTES | ⏳ pendiente | — | — |
 | 8 — App móvil Flutter | ⏳ pendiente | — | — |
@@ -208,6 +208,37 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 5 — DESPACHO ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Propuesta (RF-24) | `POST /despachos/propuesta`: agrupa por **sector** y reparte con balanceo *greedy* a la cuadrilla con menor carga; devuelve `resumen` y `reglas` |
+| Reglas del brief | Incluye **citados del día** (aunque sean de cuadrilla 0), **≥2 referidos**, **≥1 empresa** y toda la **construcción a una sola cuadrilla** (prefiere la que ya trabaja en el sector) |
+| Exclusión (RF-25) | Fuera los casos de la **cuadrilla 0** y los ya asignados a un despacho no cerrado |
+| Generación (RF-08) | `POST /despachos` persiste en BORRADOR; `409` si ya existe la fecha; `reemplazar=true` regenera. `PATCH` publica/cierra |
+| Edición | Agregar/quitar casos y cambiar el estado de cada caso (`ASIGNADO/GESTIONADO/CERRADO/CITADO/DIFERIDO`) |
+| Impresión (RT-08) | `GET /despachos/{id}/imprimible` → HTML con `@page { size: letter }`, tabla con firma/resultado |
+| Reporte de producción (RF-27) | Global del día y por despacho: asignados, cerrados, citados, diferidos, gestionados, referidos y empresas |
+| Envío (RF-10) | `POST /despachos/{id}/enviar?canal=TELEGRAM|CORREO`: intenta enviar y, si no hay credenciales, la notificación queda **PENDIENTE** con el motivo (patrón *outbox*, RNF-20) |
+| Fallas masivas (RF-09) | Registrar y listar; asigna la cuadrilla más cercana por sector |
+| Corrección | Los indicadores `cumple_min_referidos`/`cumple_min_empresas` eran tautológicos; ahora comparan contra los **disponibles** en el universo |
+| Web | Página **DESPACHO**: fecha, simular, generar (con flujo 409/Reemplazar), detalle editable, imprimir, enviar, notificaciones, reportes y fallas masivas |
+| Pruebas | +17 de integración → **96/96 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ · `tsc` strict ✅ |
+
+**Verificación en vivo** (2 sectores, 2 cuadrillas, 10 casos: 4 Alfa, 2 Beta, 2 referidos, 1 empresa, 1 construcción):
+
+| Prueba | Resultado |
+|---|---|
+| Propuesta | `total_casos=10`, `asignados=10` · **TCD1: 6** (Alfa + empresa + construcción) y **TCD2: 4** (Beta + 2 referidos) |
+| Reglas | `referidos_asignados=2/2` ✅ · `empresas_asignadas=1/1` ✅ · `construccion_en_una_sola=true` (TCD1) ✅ |
+| Generar | `201`, 2 despachos |
+| Imprimible | `200` · `size: letter` ✅ · tabla con `ID avería` ✅ |
+| Reporte | `asignados=10`, `referidos=2`, `empresas=1` |
+| Publicar / enviar | `200` / `PENDIENTE` con motivo «Sin TELEGRAM_BOT_TOKEN configurado (se habilita en el Ciclo 9)» |
+| Falla masiva | `201` y listado con 1 registro |
+| SPA `/despacho` | `200` |
 
 ### Ciclo 4 — PANEL y CASOS ✅
 

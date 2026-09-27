@@ -8,7 +8,10 @@
  */
 
 import type {
+  CanalDespacho,
+  CasoAgregar,
   CasoEstadoHistOut,
+  CasoEstadoUpdate,
   CasoManualCreate,
   CasoOut,
   CasosFiltros,
@@ -23,7 +26,15 @@ import type {
   CuadrillaIntegrante,
   CuadrillaIntegranteCreate,
   CuadrillaUpdate,
+  DespachoDetalleOut,
+  DespachoUpdate,
   DominioMetodo,
+  EnvioOut,
+  FallaMasivaCreate,
+  FallaMasivaOut,
+  NotificacionOut,
+  PropuestaOut,
+  ReporteProduccionOut,
   Flota,
   FlotaCreate,
   FlotaUpdate,
@@ -183,6 +194,37 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 function conCuerpo<T>(path: string, method: string, data: unknown): Promise<T> {
   return request<T>(path, { method, body: JSON.stringify(data) });
+}
+
+/**
+ * Como `request`, pero devuelve el cuerpo sin parsear (p. ej. el HTML del
+ * despacho imprimible, RT-08).
+ */
+async function requestTexto(path: string): Promise<string> {
+  const headers = new Headers();
+  headers.set('Accept', 'text/html, application/json');
+  const token = getToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${API_BASE}${path}`, { headers });
+  } catch {
+    throw new ApiError(0, 'No se pudo contactar con el servidor. Verifique su conexión.');
+  }
+  if (!respuesta.ok) {
+    let payload: unknown = null;
+    try {
+      payload = await respuesta.json();
+    } catch {
+      payload = null;
+    }
+    throw new ApiError(
+      respuesta.status,
+      extraerDetail(payload, `Error ${respuesta.status} del servidor`),
+    );
+  }
+  return respuesta.text();
 }
 
 /* ------------------------------------------------------------------ */
@@ -456,6 +498,134 @@ export function actualizarCaso(idCaso: number, data: CasoUpdate): Promise<CasoOu
 /** Bitácora de cambios de estado, más reciente primero (RNF-12). */
 export function obtenerHistorialCaso(idCaso: number): Promise<CasoEstadoHistOut[]> {
   return request<CasoEstadoHistOut[]>(`/casos/${idCaso}/historial`);
+}
+
+/* ------------------------------------------------------------------ */
+/* DESPACHO (Ciclo 5)                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Simula el despacho del día sin guardar nada (RF-24). */
+export function simularPropuesta(
+  fecha: string,
+  idCentral?: number,
+): Promise<PropuestaOut> {
+  return request<PropuestaOut>(
+    `/despachos/propuesta${construirQuery({ fecha, id_central: idCentral })}`,
+    { method: 'POST' },
+  );
+}
+
+/** Genera y guarda el despacho del día; `409` si ya existe (salvo `reemplazar`). */
+export function generarDespacho(
+  fecha: string,
+  reemplazar = false,
+  idCentral?: number,
+): Promise<DespachoDetalleOut[]> {
+  return request<DespachoDetalleOut[]>(
+    `/despachos${construirQuery({ fecha, reemplazar, id_central: idCentral })}`,
+    { method: 'POST' },
+  );
+}
+
+/** Despachos de una fecha (RF-24). */
+export function listarDespachos(
+  params: { fecha?: string; id_central?: number } = {},
+): Promise<DespachoDetalleOut[]> {
+  return request<DespachoDetalleOut[]>(`/despachos${construirQuery(params)}`);
+}
+
+export function obtenerDespacho(idDespacho: number): Promise<DespachoDetalleOut> {
+  return request<DespachoDetalleOut>(`/despachos/${idDespacho}`);
+}
+
+/** Publica, cierra o marca el canal del despacho (RF-25). */
+export function actualizarDespacho(
+  idDespacho: number,
+  data: DespachoUpdate,
+): Promise<DespachoDetalleOut> {
+  return conCuerpo<DespachoDetalleOut>(`/despachos/${idDespacho}`, 'PATCH', data);
+}
+
+export function agregarCasoDespacho(
+  idDespacho: number,
+  data: CasoAgregar,
+): Promise<DespachoDetalleOut> {
+  return conCuerpo<DespachoDetalleOut>(`/despachos/${idDespacho}/casos`, 'POST', data);
+}
+
+export function quitarCasoDespacho(
+  idDespacho: number,
+  idCaso: number,
+): Promise<DespachoDetalleOut> {
+  return request<DespachoDetalleOut>(`/despachos/${idDespacho}/casos/${idCaso}`, {
+    method: 'DELETE',
+  });
+}
+
+export function actualizarCasoDespacho(
+  idDespacho: number,
+  idCaso: number,
+  data: CasoEstadoUpdate,
+): Promise<DespachoDetalleOut> {
+  return conCuerpo<DespachoDetalleOut>(
+    `/despachos/${idDespacho}/casos/${idCaso}`,
+    'PATCH',
+    data,
+  );
+}
+
+/**
+ * Devuelve el HTML de la ficha imprimible (RT-08). Se pide con `Bearer` y se
+ * abre en una pestaña nueva; la URL directa no puede llevar la cabecera.
+ */
+export function obtenerImprimible(idDespacho: number): Promise<string> {
+  return requestTexto(`/despachos/${idDespacho}/imprimible`);
+}
+
+/** Reporte de producción global del día (RF-27). */
+export function reporteProduccion(
+  fecha: string,
+  idCentral?: number,
+): Promise<ReporteProduccionOut> {
+  return request<ReporteProduccionOut>(
+    `/despachos/reporte/produccion${construirQuery({ fecha, id_central: idCentral })}`,
+  );
+}
+
+/** Reporte de producción del despacho seleccionado (RF-27). */
+export function reporteDespacho(idDespacho: number): Promise<ReporteProduccionOut> {
+  return request<ReporteProduccionOut>(`/despachos/${idDespacho}/reporte`);
+}
+
+/** Envía la ficha por Telegram o correo (RF-10). */
+export function enviarDespacho(
+  idDespacho: number,
+  canal: CanalDespacho,
+  destinatario?: string,
+): Promise<EnvioOut> {
+  return request<EnvioOut>(
+    `/despachos/${idDespacho}/enviar${construirQuery({ canal, destinatario })}`,
+    { method: 'POST' },
+  );
+}
+
+export function listarNotificaciones(idDespacho: number): Promise<NotificacionOut[]> {
+  return request<NotificacionOut[]>(`/despachos/${idDespacho}/notificaciones`);
+}
+
+export function crearFallaMasiva(
+  data: FallaMasivaCreate,
+  idCentral?: number,
+): Promise<FallaMasivaOut> {
+  return conCuerpo<FallaMasivaOut>(
+    `/despachos/fallas-masivas${construirQuery({ id_central: idCentral })}`,
+    'POST',
+    data,
+  );
+}
+
+export function listarFallasMasivas(): Promise<FallaMasivaOut[]> {
+  return request<FallaMasivaOut[]>('/despachos/fallas-masivas');
 }
 
 /* ------------------------------------------------------------------ */

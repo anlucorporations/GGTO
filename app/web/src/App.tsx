@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Panel from './pages/Panel';
 import Ingesta from './pages/Ingesta';
 import Casos from './pages/Casos';
+import Despacho from './pages/Despacho';
 import Centrales from './pages/Centrales';
 import Sectores from './pages/Sectores';
 import Tecnicos from './pages/Tecnicos';
@@ -23,6 +24,7 @@ export default function App() {
           <Route index element={<Panel />} />
           <Route path="ingesta" element={<Ingesta />} />
           <Route path="casos" element={<Casos />} />
+          <Route path="despacho" element={<Despacho />} />
           <Route path="central" element={<Centrales />} />
           <Route path="sectores" element={<Sectores />} />
           <Route path="tecnicos" element={<Tecnicos />} />

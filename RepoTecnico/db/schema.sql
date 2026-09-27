@@ -773,6 +773,8 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('despacho.min_referidos',      '2'::jsonb,                 'Mínimo de reparaciones de referidos por despacho'),
     ('despacho.min_empresas',       '1'::jsonb,                 'Mínimo de reparaciones de empresas por despacho'),
     ('despacho.criterio_cuadrilla0','"UNION"'::jsonb,           'CAMPO | SUPERVISOR | UNION (D-22, criterio combinado)'),
+    ('despacho.destino_telegram',  '""'::jsonb,                 'Chat/canal de Telegram que recibe las fichas de despacho (Ciclo 9)'),
+    ('despacho.destino_correo',    '""'::jsonb,                 'Correo que recibe las fichas de despacho (Ciclo 9)'),
     ('despacho.frases_campo',       '["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]'::jsonb,
      'Frases que indican que el caso SÍ amerita maniobra de campo (PROCEDIMIENTO 3)'),
     ('despacho.frases_supervisor',  '["NAVEGACION LENTA","PON INTERMITENTE","SIN TONO"]'::jsonb,

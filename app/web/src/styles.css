@@ -666,6 +666,44 @@ input[type='file'] {
   font-weight: 700;
 }
 
+/* ------------------------------ Despacho -------------------------- */
+
+.rejilla-mini {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lista-clave-valor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lista-reglas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-regla {
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gris-borde);
+  background: #f7f9fc;
+  font-size: 12px;
+}
+
+.chip-regla.regla-alerta {
+  background: var(--ambar-claro);
+  border-color: #ecd48c;
+  color: var(--ambar);
+}
+
 @media (max-width: 760px) {
   .app-cuerpo {
     flex-direction: column;

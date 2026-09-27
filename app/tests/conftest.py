@@ -31,6 +31,9 @@ CLAVE_TEST = "config12345"
 
 # Orden respetando las claves foráneas.
 SQL_LIMPIEZA = """
+DELETE FROM despacho;
+DELETE FROM notificacion;
+DELETE FROM falla_masiva;
 DELETE FROM caso              WHERE id_averia LIKE 'DEMO-%' OR id_averia LIKE 'REF-%'
                                  OR id_averia LIKE 'MAN-%' OR id_averia LIKE 'TST%';
 DELETE FROM ingesta_lote;

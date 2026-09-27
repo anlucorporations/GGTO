@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–4 completados y desplegados |
+| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–5 completados y desplegados |
 | Última actualización | 2026-09-26 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
@@ -51,7 +51,7 @@
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
 | `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
 | `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
-| `../app/` | Backend FastAPI + web React (Ciclos 1–4) con pruebas y CI. | **v0.4.0** |
+| `../app/` | Backend FastAPI + web React (Ciclos 1–5) con pruebas y CI. | **v0.5.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -111,6 +111,7 @@
 | D-49 | **Ciclo 4 (PANEL y CASOS) completado:** búsqueda por `id_averia`/teléfono (RF-30), listado con filtros y paginación (RF-33), ficha y edición con re-sectorización automática (RF-31), alta manual que genera `REF-<CENTRAL>-<NNNNNN>` (RF-32) y bitácora de estados `caso_estado_hist` (RNF-12); páginas web CASOS y búsqueda rápida en PANEL; **79/79 pruebas**; desplegado como `ggto-web-00005-rxm` (imagen `v5`) y verificado en vivo. | Fase 3 |
 | D-50 | **Super Usuario con acceso total:** nuevo rol **`SUPER`** en el catálogo; `app/api/deps.py` le concede **cualquier operación** sin enumerarlo por endpoint (acceso total permanente, también en ciclos futuros). Cuenta `123456` / `anlucorporations@gmail.com` / **ANLUcorporations Super Usuario** creada con `scripts/inyectar_super_usuario.py` (idempotente, con confirmación y log) y **verificada en producción**: lectura en las 11 secciones y escritura en configuración, casos y parámetros. Desplegado como `ggto-web-00006-htl` (imagen `v6`). Documentación en `RepoTecnico/BaseOperaciones/`. | Orden del usuario |
 | D-51 | **12 palabras de seguridad del Super Usuario generadas** (`--con-palabras`) y almacenadas como hashes Argon2id en `dispositivo_seguridad`; el listado en claro vive **solo** en `RepoTecnico/credenciales/CREDENCIALES-GGTO.md` (ignorado por git, permisos `600`). Verificado en producción: `unlock` con 3 palabras correctas → `200`; con incorrectas → `401`. | Orden del usuario |
+| D-52 | **Ciclo 5 (DESPACHO) completado:** propuesta automática por sector con balanceo *greedy* y las reglas del brief (citados del día, ≥2 referidos, ≥1 empresa, construcción a una sola cuadrilla), exclusión de la cuadrilla 0, generación/edición/publicación, **impresión tamaño carta**, reporte de producción, envío por Telegram/correo con patrón *outbox* (queda `PENDIENTE` sin credenciales, que llegan en el Ciclo 9) y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado como `ggto-web-00007-vsr` (imagen `v7`) y verificado en vivo. | Fase 3 |
 
 ---
 
@@ -266,3 +267,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-26 | **Ciclo 3 completado (D-46..D-48):** ingesta del CSV diario (ISO-8859-1, 80 columnas por posición), filtro por central, deduplicación por `id_averia`, sectorización por dirección y cuadrilla 0 configurable; página web INGESTA; **62/62 pruebas**; desplegado (`ggto-web-00004-cj9`, imagen `v4`) y verificado con la muestra real (56 filas → 51 de la central, 5 descartadas, 15 sectorizadas, 51 duplicadas en la segunda carga). |
 | 2026-09-26 | **Ciclo 4 completado (D-49):** PANEL y CASOS con búsqueda por avería/teléfono, listado filtrado y paginado, ficha, edición, alta manual con `REF-…` y bitácora de estados; **79/79 pruebas**; desplegado (`ggto-web-00005-rxm`, imagen `v5`) y verificado en vivo (`REF-2324X-000001`, historial de 2 entradas). |
 | 2026-09-27 | **Super Usuario inyectado (D-50):** rol `SUPER` con acceso total (bypass en `require_roles`); cuenta `123456` (ANLUcorporations) creada con `scripts/inyectar_super_usuario.py` y verificada en producción; documentación en `RepoTecnico/BaseOperaciones/` (`estructura_datos.md`, `casos_uso_inyeccion.md`, `estado_inyeccion.md`). Credenciales registradas en `RepoTecnico/credenciales/` (ignorado por git). |
+| 2026-09-27 | **12 palabras de seguridad del Super Usuario (D-51)** generadas y documentadas; verificado `unlock` con 3 palabras (`200`) y con incorrectas (`401`). |
+| 2026-09-27 | **Ciclo 5 completado (D-52):** propuesta de despacho por sector con las reglas del brief, generación/edición/publicación, imprimible tamaño carta, reporte de producción, envío con patrón *outbox* y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado (`ggto-web-00007-vsr`, imagen `v7`) y verificado en vivo (reparto 6/4, construcción en una sola cuadrilla, envío PENDIENTE sin credenciales). |
