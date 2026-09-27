@@ -46,7 +46,8 @@
 | Clave | **No se almacena en claro**; se fijó con Argon2id. Ver `RepoTecnico/credenciales/CREDENCIALES-GGTO.md` (ignorado por git) |
 | Estado | Activo · sin bloqueo · 0 intentos fallidos |
 | Central | `2324X` FRANCISCO SALIAS |
-| Verificado | ✅ login correcto y acceso total comprobado |
+| 12 palabras de seguridad | **Registradas** (hashes Argon2id en `dispositivo_seguridad`); el listado está en `RepoTecnico/credenciales/CREDENCIALES-GGTO.md` (ignorado por git) |
+| Verificado | ✅ login correcto, acceso total y **desbloqueo con 3 de las 12 palabras** comprobados en producción |
 
 > **Acceso total:** `app/api/deps.py` concede cualquier operación a quien tenga el rol
 > `SUPER`, sin necesidad de enumerarlo en cada endpoint. Queda cubierto de forma permanente
@@ -97,8 +98,9 @@ python3 scripts/inyectar_super_usuario.py --p00 123456 --correo correo@dominio \
 1. **La clave del Super Usuario se compartió en el chat** al hacer esta solicitud: cámbiala
    tras el primer acceso (`POST /api/v1/auth/reset-password` con las palabras, o re-ejecutando
    el script con una clave nueva).
-2. **No se generaron las 12 palabras** para el Super Usuario (se puede repetir el script con
-   `--con-palabras`); sin ellas, la recuperación se hace recreando la cuenta.
+2. ✅ **Las 12 palabras de seguridad ya están generadas** y documentadas; se verificó que
+   `POST /api/v1/auth/unlock` acepta 3 correctas (`200`) y rechaza incorrectas (`401`).
+   La copia en claro solo existe en el documento de credenciales (ignorado por git y con permisos `600`).
 3. El Super Usuario **no debe usarse como cuenta operativa diaria**: para el trabajo normal se
    crean usuarios `SUPERVISOR`/`TECNICO` (RF-02).
 4. El servicio de Cloud Run es **público**; conviene restringirlo antes de cargar datos reales.
