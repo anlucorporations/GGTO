@@ -4,11 +4,11 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–7 completados y desplegados |
-| Última actualización | 2026-09-26 |
+| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–7 y 9 completados y desplegados (Ciclo 8 pospuesto) |
+| Última actualización | 2026-09-27 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
-| Decisiones | **D-01…D-41** |
+| Decisiones | **D-01…D-59** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
 | Pendientes externos | ⚠️ **Restringir el acceso público** (ya hay PII real) · firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP (migrar `ggto-web` a `ggtov2`) · restringir el acceso público de `ggto-web` |
 
@@ -52,7 +52,7 @@
 | `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
 | `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
 | `metricas.md` | Definición formal de las métricas de MONITOREO y REPORTES. | **v1.0** |
-| `../app/` | Backend FastAPI + web React (Ciclos 1–7) con pruebas y CI. | **v0.7.0** |
+| `../app/` | Backend FastAPI + web React (Ciclos 1–7 y 9) con pruebas y CI. | **v0.9.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -284,3 +284,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-27 | **Ciclo 6 completado (D-53):** casos especiales, agenda sin solapamiento y seguimiento; páginas ESPECIALES y AGENDA; **111/111 pruebas**; desplegado (`ggto-web-00008-vr5`, imagen `v8`) y verificado en vivo. |
 | 2026-09-27 | **Datos reales detectados (D-54):** el Super Usuario cargó `detalle_averias_gpon 15_09_2026.csv` → **42 casos reales** con PII. Verificado que las limpiezas de prueba no los afectaron. Política de limpieza corregida (D-55). |
 | 2026-09-27 | **Ciclo 5 completado (D-52):** propuesta de despacho por sector con las reglas del brief, generación/edición/publicación, imprimible tamaño carta, reporte de producción, envío con patrón *outbox* y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado (`ggto-web-00007-vsr`, imagen `v7`) y verificado en vivo (reparto 6/4, construcción en una sola cuadrilla, envío PENDIENTE sin credenciales). |
+| 2026-09-27 | **Ciclo 9 completado (D-60):** ALERTAS, Telegram y MCP — detección automática de fallas por concentración (idempotente), reporte manual, planificación (RF-17), material (RF-18), *outbox* con backoff (RNF-20), bot de Telegram (`/ayuda`, `/estado`, `/caso`, `/falla`), servidor MCP JSON-RPC y `ObservabilidadMiddleware` + `/metricas` (RNF-19); página web ALERTAS; **152/152 pruebas**; desplegado (`ggto-web-00014-zqx`, imagen `v14`) y verificado en vivo (42 casos, 0 fallas, outbox vacío, 73 endpoints, SPA `/alertas` `200`). |
+| 2026-09-27 | **Concentración real detectada (D-61):** los 42 casos se reparten en 4 OLT (`pde-olt-00…03` con 14/12/10/6) y superan el umbral de 5; la próxima ingesta declarará automáticamente esas 4 fallas masivas y encolará sus alertas. Telegram y correo siguen sin credenciales (`canales_configurados=false`), por lo que las notificaciones quedarán PENDIENTES en la bandeja. |

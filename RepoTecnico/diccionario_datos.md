@@ -385,8 +385,8 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 ### 5.3 `falla_masiva`
 
-`id_falla` PK · `id_central` FK · `descripcion` · `fecha_deteccion` · `id_sector` FK ·
-`id_cuadrilla` FK (mayor cercanía) · `estado` · `planificacion` (texto) ·
+`id_falla` PK · `id_central` FK · **`clave_concentracion`** (clave del grupo que la originó) · `descripcion` · `fecha_deteccion` · `id_sector` FK ·
+`id_cuadrilla` FK (mayor cercanía) · `estado` · `planificacion` (texto) · **`planificada_en`** (RF-17) ·
 `reporte_simple` · `creado_en`.
 
 ---
@@ -444,7 +444,7 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 - **`causa`** (H-23, alineado con el DDL): `id_causa` serial PK · `codigo_causa` · `subcodigo_causa` · `descripcion` · `descripcion_subcodigo` · `tipo` · `activo` · **UQ `(codigo_causa, subcodigo_causa)`**. Catálogo administrable; **no** se puebla desde el CSV (D-27).
 - **`catalogo_metodo`**: `id` · `dominio` (`CIERRE`/`ENRUTE`/`DIFERIDO`) · `codigo` · `nombre` · `activo`.
-- **`notificacion`**: `id` · `canal` (`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `enviado_en`.
+- **`notificacion`**: `id` · `canal` (`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `error` · `enviado_en` · **`intentos`** · **`proximo_intento`** (patrón *outbox* con reintentos, RNF-20) · `creado_en`.
 - **`incidente`**: `id` · `tipo` (`FLOTA`/`HERRAMIENTA`) · `id_flota`/`id_herramienta` · `descripcion` · `id_actividad` · `estado`.
 - **`ingesta_lote`**: `id_lote` · `archivo` · `fecha_archivo` · `id_central` · `filas_leidas` · `filas_central` · `casos_nuevos` · `casos_duplicados` · `casos_descartados` · `estado` · `usuario` · `creado_en`.
 - **`configuracion`**: `clave` PK · `valor` (jsonb) · `descripcion`. Ej.: frases de exclusión `["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]`, reglas de despacho (≥2 referidos, ≥1 empresa), hora de corte (16:00).

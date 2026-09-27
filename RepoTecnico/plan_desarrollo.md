@@ -202,12 +202,40 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ✅ **completado** | 111/111 acumuladas | rev. `ggto-web-00008-vr5` |
 | 7 — MONITOREO/REPORTES | ✅ **completado** | 127/127 acumuladas | rev. `ggto-web-00009-fvc` |
 | 8 — App móvil Flutter | ⏳ pendiente | — | — |
-| 9 — ALERTAS/Telegram/MCP | ⏳ pendiente | — | — |
+| 9 — ALERTAS/Telegram/MCP | ✅ **completado** | 152/152 acumuladas | rev. `ggto-web-00014-zqx` |
 | 10 — INSUMOS (v2) | ⏳ pendiente | — | — |
 
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 9 — ALERTAS, Telegram y MCP ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Detección de fallas (RF-09) | `services/fallas.py`: agrupa por `fallas.campo_concentracion` (`olt`\|`fat`\|`id_sector`), umbral y ventana configurables; **idempotente** por `falla_masiva.clave_concentracion` |
+| Reporte manual (RF-16) | `POST /fallas-masivas` (web) y comandos `/falla` (Telegram) y `reportar_falla` (MCP) |
+| Planificación (RF-17) | `POST /fallas-masivas/{id}/planificacion` con plan, reporte simple y evidencias; guarda `planificada_en` |
+| Material (RF-18) | `POST /fallas-masivas/{id}/material` → `orden_material` en estado `SOLICITADA` |
+| Outbox (RNF-20) | `services/outbox.py`: persiste primero, reintenta con **backoff** 1,2,4,8… min (tope 60) hasta `outbox.max_intentos`; sin credenciales queda **PENDIENTE** (no se pierde) |
+| Telegram (RF-10/RF-16) | Webhook `/telegram/webhook` con comandos `/ayuda`, `/estado`, `/caso <avería>`, `/falla <descripción>` y **secreto** opcional |
+| MCP (RF-06) | Servidor JSON-RPC 2.0 en `/mcp`: `initialize`, `tools/list`, `tools/call` (`estado_central`, `consultar_caso`, `reportar_falla`, `procesar_notificaciones`) |
+| Observabilidad (RNF-19) | `ObservabilidadMiddleware` (`X-Request-ID` + log de latencia) y `GET /metricas` con estados, outbox y canales configurados |
+| Migración | `notificacion.intentos`, `notificacion.proximo_intento`, `falla_masiva.planificada_en`, `falla_masiva.clave_concentracion`; 8 parámetros nuevos en `configuracion` |
+| Web | Página **ALERTAS** con métricas, tabla de fallas (planificar/material/estado), bandeja del *outbox* y formularios flotantes |
+| Pruebas | +23 de integración → **152/152 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ (56 archivos) · `tsc` strict ✅ · 73 endpoints OpenAPI |
+
+**Verificación en vivo (solo lectura, sobre los datos reales):**
+
+| Prueba | Resultado |
+|---|---|
+| `/health` y `/ready` | `200` |
+| `/metricas` | casos y outbox coherentes; `canales_configurados` = `{telegram:false, correo:false}` |
+| `/fallas-masivas` | `200` (sin fallas registradas hasta la próxima ingesta) |
+| `/notificaciones` | `200` (bandeja del outbox) |
+| Concentración real detectada | 4 OLT con 14/12/10/6 casos ≥ umbral 5 (se declararán en la próxima ingesta) |
+| SPA `/alertas` | `200` |
 
 ### Ciclo 7 — MONITOREO, GRÁFICOS y REPORTES ✅
 

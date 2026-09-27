@@ -27,6 +27,7 @@ class ResumenIngesta(BaseModel):
     avisos: list[str] = Field(default_factory=list)
     ejemplos: list[EjemploCaso] = Field(default_factory=list)
     id_lote: int | None = None
+    fallas_masivas: int = 0
 
 
 class IngestaLoteOut(BaseModel):

@@ -384,6 +384,7 @@ erDiagram
     FALLA_MASIVA {
         bigserial id_falla PK
         int      id_central FK
+        varchar  clave_concentracion
         text     descripcion
         timestamp fecha_deteccion
         varchar  origen "AUTOMATICA|REPORTE_TECNICO|MCP"
@@ -392,6 +393,7 @@ erDiagram
         varchar  estado
         text     planificacion
         text     reporte_simple
+        timestamp planificada_en
     }
     CASO {
         bigserial id_caso PK
@@ -606,6 +608,8 @@ erDiagram
         bigint   id_caso FK
         varchar  estado
         timestamp enviado_en
+        int      intentos
+        timestamp proximo_intento
     }
     CASO {
         bigserial id_caso PK

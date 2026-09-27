@@ -620,6 +620,27 @@ textarea {
   font-size: 12px;
 }
 
+/* Acciones dentro de una fila de tabla y casillas (Ciclo 9 — ALERTAS). */
+.acciones-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.casilla-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.casilla-fila input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 /* ------------------------------ Tablas ---------------------------- */
 
 .tabla-envoltura {

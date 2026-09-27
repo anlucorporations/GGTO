@@ -9,6 +9,7 @@ import Despacho from './pages/Despacho';
 import Especiales from './pages/Especiales';
 import Agenda from './pages/Agenda';
 import Monitoreo from './pages/Monitoreo';
+import Alertas from './pages/Alertas';
 import Centrales from './pages/Centrales';
 import Sectores from './pages/Sectores';
 import Tecnicos from './pages/Tecnicos';
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="especiales" element={<Especiales />} />
           <Route path="agenda" element={<Agenda />} />
           <Route path="monitoreo" element={<Monitoreo />} />
+          <Route path="alertas" element={<Alertas />} />
           <Route path="central" element={<Centrales />} />
           <Route path="sectores" element={<Sectores />} />
           <Route path="tecnicos" element={<Tecnicos />} />

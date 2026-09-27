@@ -473,6 +473,7 @@ CREATE TABLE IF NOT EXISTS despacho_caso (
 CREATE TABLE IF NOT EXISTS falla_masiva (
     id_falla            bigserial    PRIMARY KEY,
     id_central          integer      NOT NULL REFERENCES central(id_central),
+    clave_concentracion varchar(120),  -- ej. 'olt:pde-olt-00' (detección idempotente)
     descripcion         text         NOT NULL,
     fecha_deteccion     timestamptz  NOT NULL DEFAULT now(),
     origen              varchar(20)  NOT NULL DEFAULT 'AUTOMATICA'
@@ -483,6 +484,7 @@ CREATE TABLE IF NOT EXISTS falla_masiva (
                         CHECK (estado IN ('DETECTADA','PLANIFICADA','ATENDIDA','CERRADA')),
     planificacion       text,
     reporte_simple      text,
+    planificada_en      timestamptz,   -- RF-17: cuándo se documentó la planificación
     creado_en           timestamptz  NOT NULL DEFAULT now(),
     actualizado_en      timestamptz  NOT NULL DEFAULT now()
 );
@@ -632,6 +634,8 @@ CREATE TABLE IF NOT EXISTS notificacion (
                     CHECK (estado IN ('PENDIENTE','ENVIADO','FALLIDO')),
     error           text,
     enviado_en      timestamptz,
+    intentos        smallint     NOT NULL DEFAULT 0,   -- reintentos del outbox (RNF-20)
+    proximo_intento timestamptz,                       -- backoff exponencial
     creado_en       timestamptz  NOT NULL DEFAULT now()
 );
 
@@ -781,6 +785,13 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
      'Frases que indican que el caso NO amerita maniobra en casa (GENERALIDADES 3.5)'),
     ('despacho.columnas_evaluar',   '["problema_reporte","ultimo_comentario","informacion"]'::jsonb,
      'Columnas donde se buscan las frases (el brief citaba "Falla Reportada", inexistente en el CSV)'),
+    ('fallas.activo',               'true'::jsonb,              'Detección automática de fallas masivas tras la ingesta (RF-09)'),
+    ('fallas.umbral_casos',         '5'::jsonb,                 'Nº de casos en el mismo OLT/sector para declarar falla masiva'),
+    ('fallas.ventana_horas',        '24'::jsonb,                'Ventana temporal del análisis de concentración'),
+    ('fallas.campo_concentracion',  '"olt"'::jsonb,            'olt | fat | id_sector'),
+    ('outbox.max_intentos',         '5'::jsonb,                 'Reintentos máximos por notificación (RNF-20)'),
+    ('telegram.webhook_secret',     '""'::jsonb,               'Secreto del webhook del bot (X-Telegram-Bot-Api-Secret-Token)'),
+    ('mcp.api_key',                 '""'::jsonb,               'Clave del servidor MCP (si está vacía no se exige)'),
     ('seguridad.max_intentos',      '3'::jsonb,                 'Intentos de login antes del bloqueo'),
     ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación')
 ON CONFLICT (clave) DO NOTHING;

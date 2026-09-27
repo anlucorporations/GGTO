@@ -39,8 +39,15 @@ import type {
   DominioMetodo,
   EnvioOut,
   FallaMasivaCreate,
+  FallaMasivaManual,
   FallaMasivaOut,
+  FallaMasivaUpdate,
+  MaterialFalla,
+  MetricasOut,
   NotificacionOut,
+  OrdenMaterialOut,
+  PlanificacionFalla,
+  ProcesarOutboxOut,
   PropuestaOut,
   ReporteProduccionOut,
   Flota,
@@ -811,4 +818,69 @@ export function obtenerReporteTrabajoImprimible(
   fecha: string,
 ): Promise<string> {
   return requestTexto(`/reportes/trabajo/imprimible${construirQuery({ periodo, fecha })}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* ALERTAS, FALLAS MASIVAS Y OUTBOX (Ciclo 9) — RNF-19, RNF-20         */
+/* ------------------------------------------------------------------ */
+
+/** Fallas masivas registradas; `soloActivas` filtra DETECTADA/PLANIFICADA. */
+export function listarFallasMasivasAlertas(
+  filtros: { estado?: string; solo_activas?: boolean } = {},
+): Promise<FallaMasivaOut[]> {
+  return request<FallaMasivaOut[]>(`/fallas-masivas${construirQuery(filtros)}`);
+}
+
+/** Fuerza la detección automática por concentración (RF-09). Idempotente. */
+export function detectarFallasMasivas(): Promise<FallaMasivaOut[]> {
+  return request<FallaMasivaOut[]>('/fallas-masivas/detectar', { method: 'POST' });
+}
+
+/** Reporte manual de una falla masiva (RF-16). */
+export function reportarFallaManual(data: FallaMasivaManual): Promise<FallaMasivaOut> {
+  return conCuerpo<FallaMasivaOut>('/fallas-masivas', 'POST', data);
+}
+
+/** Cambia estado o cuadrilla de la falla (RF-09). */
+export function actualizarFallaMasiva(
+  idFalla: number,
+  data: FallaMasivaUpdate,
+): Promise<FallaMasivaOut> {
+  return conCuerpo<FallaMasivaOut>(`/fallas-masivas/${idFalla}`, 'PATCH', data);
+}
+
+/** Documenta la planificación de la atención (RF-17). */
+export function planificarFallaMasiva(
+  idFalla: number,
+  data: PlanificacionFalla,
+): Promise<FallaMasivaOut> {
+  return conCuerpo<FallaMasivaOut>(`/fallas-masivas/${idFalla}/planificacion`, 'POST', data);
+}
+
+/** Solicita material asociado a la falla (RF-18). */
+export function solicitarMaterialFalla(
+  idFalla: number,
+  data: MaterialFalla,
+): Promise<OrdenMaterialOut> {
+  return conCuerpo<OrdenMaterialOut>(`/fallas-masivas/${idFalla}/material`, 'POST', data);
+}
+
+/** Bandeja del outbox de notificaciones. */
+export function listarOutbox(
+  filtros: { estado?: string; canal?: string; limite?: number } = {},
+): Promise<NotificacionOut[]> {
+  return request<NotificacionOut[]>(`/notificaciones${construirQuery(filtros)}`);
+}
+
+/** Procesa el outbox (reintentos con backoff). */
+export function procesarOutbox(limite = 50): Promise<ProcesarOutboxOut> {
+  return request<ProcesarOutboxOut>(
+    `/notificaciones/procesar${construirQuery({ limite })}`,
+    { method: 'POST' },
+  );
+}
+
+/** Métricas de negocio y estado de los canales (RNF-19). */
+export function obtenerMetricas(): Promise<MetricasOut> {
+  return request<MetricasOut>('/metricas');
 }

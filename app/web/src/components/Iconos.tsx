@@ -200,3 +200,40 @@ export function IconoGestion(props: Props) {
     </svg>
   );
 }
+
+/* --- Ciclo 9: ALERTAS --- */
+
+export function IconoAlertas(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5a5.5 5.5 0 0 0-5.5 5.5c0 4-1.5 5.5-1.5 5.5h14s-1.5-1.5-1.5-5.5A5.5 5.5 0 0 0 12 3.5z" />
+      <path d="M10 18a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+export function IconoFalla(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" />
+    </svg>
+  );
+}
+
+export function IconoSatelite(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 11a8 8 0 0 1 8-8M3 5a14 14 0 0 1 14 14M5.5 17.5a1.5 1.5 0 1 0 0 .01" />
+      <circle cx="5.5" cy="17.5" r="1.6" />
+    </svg>
+  );
+}
+
+export function IconoTelegram(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M21 4 3 11l5 1.8L10 19l2.8-3.4L18 19l3-15z" />
+      <path d="M8 12.8 21 4l-9.5 8.6" />
+    </svg>
+  );
+}

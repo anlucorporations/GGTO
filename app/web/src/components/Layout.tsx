@@ -7,6 +7,7 @@ import { useCerrarDesplegable } from './useCerrarDesplegable';
 import {
   IconoAgenda,
   IconoAgregar,
+  IconoAlertas,
   IconoCasos,
   IconoChevronAbajo,
   IconoConfig,
@@ -36,6 +37,7 @@ const SECCIONES: Seccion[] = [
   { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho },
   { ruta: '/ingesta', etiqueta: 'INGESTA', fin: false, Icono: IconoIngesta },
   { ruta: '/monitoreo', etiqueta: 'MONITOREO', fin: false, Icono: IconoMonitoreo },
+  { ruta: '/alertas', etiqueta: 'ALERTAS', fin: false, Icono: IconoAlertas },
 ];
 
 const CONFIGURACION: { ruta: string; etiqueta: string }[] = [

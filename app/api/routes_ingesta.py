@@ -12,7 +12,7 @@ from ..core.db import get_db
 from ..models import Central, IngestaLote, Usuario
 from ..models.caso_entities import Caso
 from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta
-from ..services import cuadrilla0
+from ..services import cuadrilla0, fallas
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.ingesta import ESPECIFICACION, filtrar_por_central, parsear
 from ..services.sectorizacion import Patron, asignar_sector
@@ -159,8 +159,17 @@ async def cargar(
     lote.detalle_error = "; ".join(resumen["avisos"]) or None
     db.commit()
 
-    return ResumenIngesta(**{k: v for k, v in resumen.items() if k != "ejemplos"},
-                          id_lote=lote.id_lote, ejemplos=resumen["ejemplos"])
+    # RF-09: detección automática de fallas masivas por concentración
+    creadas = fallas.detectar(db, central.id_central)
+    if creadas:
+        db.commit()
+        resumen["fallas_masivas"] = len(creadas)
+
+    return ResumenIngesta(
+        **{k: v for k, v in resumen.items() if k not in ("ejemplos", "fallas_masivas")},
+        id_lote=lote.id_lote, ejemplos=resumen["ejemplos"],
+        fallas_masivas=resumen.get("fallas_masivas", 0),
+    )
 
 
 @router.get("/lotes", response_model=list[IngestaLoteOut], summary="Historial de cargas")

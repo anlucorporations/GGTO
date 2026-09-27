@@ -37,6 +37,7 @@ DELETE FROM caso_especial;
 DELETE FROM solicitante;
 DELETE FROM despacho;
 DELETE FROM notificacion;
+DELETE FROM orden_material;
 DELETE FROM falla_masiva;
 DELETE FROM caso              WHERE id_averia LIKE 'DEMO-%' OR id_averia LIKE 'REF-%'
                                  OR id_averia LIKE 'MAN-%' OR id_averia LIKE 'TST%';

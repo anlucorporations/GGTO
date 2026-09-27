@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # --- Aplicación ---
     app_name: str = "GGTO API"
     app_env: str = "development"
-    app_version: str = "0.7.0"
+    app_version: str = "0.9.0"
     app_timezone: str = "America/Caracas"
 
     # --- Base de datos ---

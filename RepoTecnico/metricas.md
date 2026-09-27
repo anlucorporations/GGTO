@@ -103,14 +103,31 @@ disponible/en ruta/mantenimiento y herramientas disponibles. Una cuadrilla **sin
 Incluye el bloque de gestión diaria del periodo, la curva semanal, los globales, reparación,
 construcción, cuadrilla y capacidad. Se ofrece en **JSON** y en **HTML imprimible**.
 
-## 10. Redondeo y zonas horarias
+## 10. ALERTAS Y OUTBOX (Ciclo 9 — RNF-19/RNF-20)
+
+Se exponen en `GET /api/v1/metricas`, junto a los totales de casos y el estado de los canales.
+
+| Métrica | Fórmula | Entidad |
+|---|---|---|
+| **Falla masiva activa** | Falla en estado `DETECTADA` o `PLANIFICADA` | `falla_masiva.estado` |
+| **Notificación pendiente** | Notificación en estado `PENDIENTE` (incluye las diferidas por falta de credenciales) | `notificacion.estado` |
+| **Notificación enviada** | Notificación en estado `ENVIADO` | `notificacion.estado` |
+| **Notificación fallida** | Notificación en estado `FALLIDO` (agotó `outbox.max_intentos`) | `notificacion.estado` |
+| **Falla detectada por concentración** | Grupo de `fallas.umbral_casos` o más casos no cerrados en las últimas `fallas.ventana_horas`, agrupados por `fallas.campo_concentracion` | `caso` agrupado; `clave_concentracion` única por falla activa |
+| **Intentos de envío** | Contador por notificación; backoff exponencial `min(2^(n-1), 60)` minutos | `notificacion.intentos` / `notificacion.proximo_intento` |
+
+- Un canal **sin credenciales** no genera fallo: la notificación se **difiere** y no consume
+  intento, de modo que pueda reenviarse cuando se configure `TELEGRAM_BOT_TOKEN` / `SMTP_HOST`.
+- «Diferida» = `intentadas - enviadas - fallidas` en la respuesta de `POST /notificaciones/procesar`.
+
+## 11. Redondeo y zonas horarias
 
 - Todos los conteos son **enteros**; no hay promedios en v1.
 - Las fechas se interpretan en `America/Caracas`; el frontend muestra `dd/mm/aaaa`.
 - `despacho.fecha` es un `date` (sin hora); `caso.creado_en` y `caso_estado_hist.fecha_hora` son
   `timestamptz` y se truncan a día con `::date` en la zona del servidor.
 
-## 11. Pendiente de validación con CANTV
+## 12. Pendiente de validación con CANTV
 
 1. ¿«Ingreso nuevo» debe contar por `creado_en` (entrada al sistema) o por `fecha_reporte` (fecha
    del reporte en el sistema origen)?

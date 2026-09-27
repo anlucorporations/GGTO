@@ -183,6 +183,27 @@ MCP_API_KEY=<Secret Manager>
 STORAGE_BUCKET=ggtov2-assets-905974355709
 ```
 
+### 3.1 Parámetros del Ciclo 9 almacenados en `configuracion` (JSONB)
+
+Los canales y la detección de fallas se gobiernan desde la tabla `configuracion`, no desde
+el entorno. Hasta que existan credenciales (`TELEGRAM_BOT_TOKEN` / `SMTP_HOST`), el *outbox*
+mantiene las notificaciones en **PENDIENTE** en lugar de perderlas (RNF-20).
+
+| Clave | Valor inicial | Uso |
+|---|---|---|
+| `fallas.activo` | `true` | Habilita la detección automática por concentración (RF-09) |
+| `fallas.umbral_casos` | `5` | Casos mínimos del grupo para declarar falla masiva |
+| `fallas.ventana_horas` | `24` | Ventana temporal de la concentración |
+| `fallas.campo_concentracion` | `"olt"` | Campo agrupador: `olt` \| `fat` \| `id_sector` |
+| `despacho.destino_telegram` | `""` | `chat_id` destino de las alertas (vacío ⇒ PENDIENTE) |
+| `outbox.max_intentos` | `5` | Reintentos antes de marcar `FALLIDO` (backoff 1,2,4,8… min, tope 60) |
+| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ sin exigir |
+| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ sin exigir |
+
+> La detección es **idempotente** por `falla_masiva.clave_concentracion` (p. ej. `olt:pde-olt-00`):
+> mientras la falla siga activa (`DETECTADA`/`PLANIFICADA`) no se duplica. Se ejecuta
+> automáticamente tras cada ingesta y también bajo demanda (`POST /api/v1/fallas-masivas/detectar`).
+
 ---
 
 ## 4. Comandos importantes

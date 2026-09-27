@@ -574,8 +574,11 @@ export interface NotificacionOut {
   destinatario: string | null;
   asunto: string | null;
   cuerpo: string | null;
+  id_caso?: number | null;
   estado: string;
   error: string | null;
+  intentos?: number;
+  proximo_intento?: string | null;
   enviado_en: string | null;
   creado_en: string | null;
 }
@@ -604,6 +607,7 @@ export interface FallaMasivaCreate {
 export interface FallaMasivaOut {
   id_falla: number;
   id_central: number;
+  clave_concentracion?: string | null;
   descripcion: string;
   fecha_deteccion: string | null;
   origen: string;
@@ -611,6 +615,9 @@ export interface FallaMasivaOut {
   id_cuadrilla: number | null;
   estado: string;
   planificacion: string | null;
+  reporte_simple?: string | null;
+  planificada_en?: string | null;
+  actualizado_en?: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -911,4 +918,71 @@ export interface ReporteTrabajo {
   construccion: MonitoreoConstruccion;
   cuadrilla: MonitoreoCuadrillaOut;
   capacidad: MonitoreoCapacidad;
+}
+
+/* ------------------------------------------------------------------ */
+/* ALERTAS, TELEGRAM Y MCP (Ciclo 9)                                   */
+/* ------------------------------------------------------------------ */
+
+export type EstadoFallaMasiva = 'DETECTADA' | 'PLANIFICADA' | 'ATENDIDA' | 'CERRADA';
+
+export type EstadoNotificacion = 'PENDIENTE' | 'ENVIADO' | 'FALLIDO';
+
+/** Reporte manual de falla (`POST /fallas-masivas`). */
+export interface FallaMasivaManual {
+  descripcion: string;
+  id_sector?: number | null;
+  id_cuadrilla?: number | null;
+  origen?: OrigenFallaMasiva;
+}
+
+/** Cambio de estado o cuadrilla de una falla (RF-09/RF-17). */
+export interface FallaMasivaUpdate {
+  estado?: EstadoFallaMasiva;
+  id_cuadrilla?: number | null;
+  id_sector?: number | null;
+}
+
+/** Planificación de la atención (RF-17): plan, reporte simple y evidencias. */
+export interface PlanificacionFalla {
+  planificacion: string;
+  reporte_simple?: string | null;
+  evidencias?: string[];
+  id_cuadrilla?: number | null;
+}
+
+/** Solicitud de material de la falla (RF-18). */
+export interface MaterialFalla {
+  descripcion: string;
+  id_cuadrilla?: number | null;
+}
+
+export interface OrdenMaterialOut {
+  id_orden: number;
+  estado: string;
+  observacion: string;
+  id_falla: number;
+}
+
+/** Resultado de procesar el outbox de notificaciones (RNF-20). */
+export interface ProcesarOutboxOut {
+  intentadas: number;
+  enviadas: number;
+  diferidas: number;
+  fallidas: number;
+  detalle: Record<string, unknown>[];
+}
+
+/** Métricas de negocio y estado de los canales (RNF-19). */
+export interface MetricasOut {
+  casos_total: number;
+  casos_por_estado: Record<string, number>;
+  casos_por_categoria: Record<string, number>;
+  lotes_ingesta: number;
+  casos_ingeridos: number;
+  fallas_activas: number;
+  notificaciones_pendientes: number;
+  notificaciones_enviadas: number;
+  notificaciones_fallidas: number;
+  canales_configurados: Record<string, boolean>;
 }

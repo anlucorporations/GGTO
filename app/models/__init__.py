@@ -14,6 +14,7 @@ from .config_entities import (
 from .despacho_entities import Despacho, DespachoCasos, FallaMasiva, Notificacion
 from .entities import Central, DispositivoSeguridad, Rol, Tecnico, Usuario
 from .especiales_entities import CasoEspecial, Cita, Seguimiento, Solicitante
+from .insumos_entities import OrdenMaterial
 
 __all__ = [
     "Caso",
@@ -35,6 +36,7 @@ __all__ = [
     "Herramienta",
     "IngestaLote",
     "Notificacion",
+    "OrdenMaterial",
     "Rol",
     "Sector",
     "SectorDireccion",

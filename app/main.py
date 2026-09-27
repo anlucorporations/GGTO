@@ -1,18 +1,23 @@
 """GGTO API — Sistema de administración de reportes de avería y puntos ópticos.
 
 CANTV C.A. — Central Francisco Salias (Área 4).
-Fase 3 · Ciclos 1-7 completados (autenticación, configuración, ingesta, PANEL/CASOS,
-DESPACHO, casos especiales/agenda y MONITOREO/REPORTES).
+Fase 3 · Ciclos 1-7 y 9 completados (autenticación, configuración, ingesta, PANEL/CASOS,
+DESPACHO, casos especiales/agenda, MONITOREO/REPORTES y ALERTAS/Telegram/MCP).
 """
 
+import logging
+import time
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .api import (
+    routes_alertas,
     routes_auth,
     routes_casos,
     routes_config,
@@ -23,6 +28,10 @@ from .api import (
     routes_monitoreo,
 )
 from .core.config import get_settings
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logger = logging.getLogger('ggto')
 
 settings = get_settings()
 
@@ -37,6 +46,26 @@ app = FastAPI(
     ),
 )
 
+class ObservabilidadMiddleware(BaseHTTPMiddleware):
+    """Añade un `request-id` y registra cada petición (RNF-19)."""
+
+    async def dispatch(self, request, call_next):
+        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
+        inicio = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception("request_id=%s %s %s fallo", request_id,
+                             request.method, request.url.path)
+            raise
+        duracion = (time.perf_counter() - inicio) * 1000
+        response.headers["X-Request-ID"] = request_id
+        logger.info("request_id=%s %s %s -> %s %.1fms", request_id, request.method,
+                    request.url.path, response.status_code, duracion)
+        return response
+
+
+app.add_middleware(ObservabilidadMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -53,6 +82,7 @@ app.include_router(routes_casos.router)
 app.include_router(routes_despachos.router)
 app.include_router(routes_especiales.router)
 app.include_router(routes_monitoreo.router)
+app.include_router(routes_alertas.router)
 
 
 # --------------------------------------------------------------------------- #
