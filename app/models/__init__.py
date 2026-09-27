@@ -13,13 +13,16 @@ from .config_entities import (
 )
 from .despacho_entities import Despacho, DespachoCasos, FallaMasiva, Notificacion
 from .entities import Central, DispositivoSeguridad, Rol, Tecnico, Usuario
+from .especiales_entities import CasoEspecial, Cita, Seguimiento, Solicitante
 
 __all__ = [
     "Caso",
+    "CasoEspecial",
     "CasoEstadoHist",
     "CatalogoMetodo",
     "Causa",
     "Central",
+    "Cita",
     "Configuracion",
     "Cuadrilla",
     "CuadrillaHerramienta",
@@ -35,6 +38,8 @@ __all__ = [
     "Rol",
     "Sector",
     "SectorDireccion",
+    "Seguimiento",
+    "Solicitante",
     "Tecnico",
     "Usuario",
 ]

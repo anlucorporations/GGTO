@@ -17,6 +17,7 @@ from .api import (
     routes_casos,
     routes_config,
     routes_despachos,
+    routes_especiales,
     routes_health,
     routes_ingesta,
 )
@@ -49,6 +50,7 @@ app.include_router(routes_config.router)
 app.include_router(routes_ingesta.router)
 app.include_router(routes_casos.router)
 app.include_router(routes_despachos.router)
+app.include_router(routes_especiales.router)
 
 
 # --------------------------------------------------------------------------- #

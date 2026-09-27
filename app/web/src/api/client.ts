@@ -10,12 +10,20 @@
 import type {
   CanalDespacho,
   CasoAgregar,
+  CasoEspecialCreate,
+  CasoEspecialOut,
+  CasoEspecialUpdate,
   CasoEstadoHistOut,
   CasoEstadoUpdate,
   CasoManualCreate,
   CasoOut,
+  CasosEspecialesFiltros,
   CasosFiltros,
   CasoUpdate,
+  CitaCreate,
+  CitaOut,
+  CitasFiltros,
+  CitaUpdate,
   Causa,
   CausaCreate,
   Central,
@@ -52,6 +60,12 @@ import type {
   SectorDireccion,
   SectorDireccionCreate,
   SectorUpdate,
+  SeguimientoCreate,
+  SeguimientoFiltros,
+  SeguimientoOut,
+  SeguimientoUpdate,
+  Solicitante,
+  SolicitanteCreate,
   Tecnico,
   TecnicoCreate,
   TecnicoUpdate,
@@ -634,4 +648,92 @@ export function listarFallasMasivas(): Promise<FallaMasivaOut[]> {
 
 export function obtenerResumen(): Promise<Resumen> {
   return request<Resumen>('/resumen');
+}
+
+/* ------------------------------------------------------------------ */
+/* SEGUIMIENTO, ESPECIALES Y AGENDA (Ciclo 6)                          */
+/* ------------------------------------------------------------------ */
+
+/* --- Solicitantes ------------------------------------------------- */
+
+export function listarSolicitantes(): Promise<Solicitante[]> {
+  return request<Solicitante[]>('/solicitantes');
+}
+
+export function crearSolicitante(data: SolicitanteCreate): Promise<Solicitante> {
+  return conCuerpo<Solicitante>('/solicitantes', 'POST', data);
+}
+
+/* --- Casos especiales (RF-06/RF-35) ------------------------------- */
+
+/**
+ * Listado de casos especiales (empresas/referidos/gobierno). Si no se envía
+ * `id_caso` al crear, el backend genera un caso con `REF-<central>-<NNNNNN>`.
+ */
+export function listarCasosEspeciales(
+  filtros: CasosEspecialesFiltros = {},
+): Promise<CasoEspecialOut[]> {
+  return request<CasoEspecialOut[]>(`/casos-especiales${construirQuery(filtros)}`);
+}
+
+export function crearCasoEspecial(data: CasoEspecialCreate): Promise<CasoEspecialOut> {
+  return conCuerpo<CasoEspecialOut>('/casos-especiales', 'POST', data);
+}
+
+export function obtenerCasoEspecial(idCasoEspecial: number): Promise<CasoEspecialOut> {
+  return request<CasoEspecialOut>(`/casos-especiales/${idCasoEspecial}`);
+}
+
+export function actualizarCasoEspecial(
+  idCasoEspecial: number,
+  data: CasoEspecialUpdate,
+): Promise<CasoEspecialOut> {
+  return conCuerpo<CasoEspecialOut>(`/casos-especiales/${idCasoEspecial}`, 'PATCH', data);
+}
+
+/* --- Agenda de citas (RF-12 / RNF-04) ----------------------------- */
+
+/** Citas en un rango. `409` no aplica aquí; el `detail` llega en el alta/edición. */
+export function listarCitas(filtros: CitasFiltros = {}): Promise<CitaOut[]> {
+  return request<CitaOut[]>(`/citas${construirQuery(filtros)}`);
+}
+
+/** Crea una cita. Responde `409` si la cuadrilla ya tiene una cita en ese hueco. */
+export function crearCita(data: CitaCreate): Promise<CitaOut> {
+  return conCuerpo<CitaOut>('/citas', 'POST', data);
+}
+
+/** Reprograma o cambia el estado; valida solapamiento al cambiar fecha/cuadrilla. */
+export function actualizarCita(idCita: number, data: CitaUpdate): Promise<CitaOut> {
+  return conCuerpo<CitaOut>(`/citas/${idCita}`, 'PATCH', data);
+}
+
+/** `DELETE` lógico: la cita pasa a CANCELADA (responde `204`). */
+export function eliminarCita(idCita: number): Promise<void> {
+  return request<void>(`/citas/${idCita}`, { method: 'DELETE' });
+}
+
+/* --- Seguimiento (RF-34) ------------------------------------------ */
+
+export function listarSeguimiento(
+  filtros: SeguimientoFiltros = {},
+): Promise<SeguimientoOut[]> {
+  return request<SeguimientoOut[]>(`/seguimiento${construirQuery(filtros)}`);
+}
+
+/** Al crear en `EN_COLA`, el caso pasa a ENRUTADO y sale del despacho de calle. */
+export function crearSeguimiento(data: SeguimientoCreate): Promise<SeguimientoOut> {
+  return conCuerpo<SeguimientoOut>('/seguimiento', 'POST', data);
+}
+
+/** Con estado `DEVUELTO` el caso vuelve a NUEVO. */
+export function actualizarSeguimiento(
+  idSeguimiento: number,
+  data: SeguimientoUpdate,
+): Promise<SeguimientoOut> {
+  return conCuerpo<SeguimientoOut>(`/seguimiento/${idSeguimiento}`, 'PATCH', data);
+}
+
+export function obtenerSeguimiento(idSeguimiento: number): Promise<SeguimientoOut> {
+  return request<SeguimientoOut>(`/seguimiento/${idSeguimiento}`);
 }

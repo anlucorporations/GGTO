@@ -199,7 +199,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | 3 — Ingesta CSV | ✅ **completado** | 62/62 acumuladas | rev. `ggto-web-00004-cj9` |
 | 4 — PANEL y CASOS | ✅ **completado** | 79/79 acumuladas | rev. `ggto-web-00005-rxm` |
 | 5 — DESPACHO | ✅ **completado** | 96/96 acumuladas | rev. `ggto-web-00007-vsr` |
-| 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ⏳ pendiente | — | — |
+| 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ✅ **completado** | 111/111 acumuladas | rev. `ggto-web-00008-vr5` |
 | 7 — MONITOREO/REPORTES | ⏳ pendiente | — | — |
 | 8 — App móvil Flutter | ⏳ pendiente | — | — |
 | 9 — ALERTAS/Telegram/MCP | ⏳ pendiente | — | — |
@@ -208,6 +208,34 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 6 — SEGUIMIENTO, EMPRESAS y REFERIDOS ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Casos especiales (RF-35, RF-36) | `POST /casos-especiales` con `clasificacion` (REFERIDO/EMPRESA/GOBIERNO), `tipo_actividad`, `prioridad` y solicitante; si no se indica `id_caso` **crea el caso** con `REF-…`; filtros por clasificación/estado/prioridad y solo pendientes |
+| Solicitantes | `GET/POST /solicitantes` — unidad + nombre + contacto + canal (personal externo) |
+| Agenda (RF-12, RNF-04) | `GET/POST/PATCH/DELETE /citas`; **validación de solapamiento** por cuadrilla con duración configurable (`agenda.duracion_minutos`, 60 por defecto); `409` con el detalle del choque; `409`/`403` controlado para forzar solape (solo `SUPER`) |
+| Seguimiento (RF-34) | `GET/POST/PATCH /seguimiento`; al derivar a `EN_COLA` el caso pasa a **ENRUTADO** y **sale del despacho**; al `DEVUELTO` vuelve a `NUEVO` |
+| Web | Páginas **ESPECIALES** (filtros, alta con solicitante, edición) y **AGENDA** (rango de fechas, agrupada por día, alta con detección de solape) |
+| Pruebas | +15 de integración → **111/111 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ · `tsc` strict ✅ |
+
+**Verificación en vivo:**
+
+| Prueba | Resultado |
+|---|---|
+| Caso especial EMPRESA | `201` · caso asociado `REF-2324X-000002` · categoría `EMPRESA` |
+| Solicitante | 1 creado junto al caso |
+| Cita + solapamiento | `201` → `409` («La cuadrilla ya tiene una cita a las … (duración 60 min)») → cita libre `201` |
+| Cancelar cita | `204` y deja de bloquear |
+| Seguimiento | Caso → `ENRUTADO` y **excluido del despacho**; al `DEVUELTO` → `NUEVO` |
+| SPA `/especiales` y `/agenda` | `200` |
+
+> ⚠️ **Hallazgo durante la verificación:** la base de producción ya contiene **datos reales** — el
+> Super Usuario cargó `detalle_averias_gpon 15_09_2026.csv` (47 filas → **42 casos** de la central,
+> 5 descartadas). La ingesta funcionó correctamente. Esos casos **no se tocaron** (verificado con las
+> secuencias: todo lo eliminado en las pruebas coincidía con mis propios registros).
 
 ### Ciclo 5 — DESPACHO ✅
 

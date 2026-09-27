@@ -607,6 +607,174 @@ export interface FallaMasivaOut {
 }
 
 /* ------------------------------------------------------------------ */
+/* SEGUIMIENTO, ESPECIALES Y AGENDA (Ciclo 6)                          */
+/* ------------------------------------------------------------------ */
+
+export type ClasificacionEspecial = 'REFERIDO' | 'EMPRESA' | 'GOBIERNO';
+export type TipoActividadEspecial = 'REPARACION' | 'CONSTRUCCION';
+export type PrioridadEspecial = 'ALTA' | 'MEDIA' | 'BAJA';
+export type EstadoEspecial = 'ABIERTO' | 'EN_PROCESO' | 'ATENDIDO' | 'CERRADO';
+export type CanalSolicitante = 'TELEGRAM' | 'MCP_IA' | 'MANUAL' | 'CORREO';
+
+/* --- Solicitantes ------------------------------------------------- */
+
+export interface Solicitante {
+  id_solicitante: number;
+  unidad: string;
+  nombre: string;
+  contacto: string;
+  canal: CanalSolicitante | null;
+}
+
+export interface SolicitanteCreate {
+  unidad: string;
+  nombre: string;
+  contacto: string;
+  canal?: CanalSolicitante;
+}
+
+/* --- Casos especiales --------------------------------------------- */
+
+export interface CasoEspecialCreate {
+  clasificacion: ClasificacionEspecial;
+  tipo_actividad: TipoActividadEspecial;
+  prioridad?: PrioridadEspecial;
+  descripcion?: string | null;
+  requiere_informe?: boolean;
+  id_caso?: number | null;
+  id_solicitante?: number | null;
+  crear_solicitante?: SolicitanteCreate;
+  id_averia?: string | null;
+  nombre_cliente?: string | null;
+  telefono?: string | null;
+  direccion?: string | null;
+}
+
+export interface CasoEspecialUpdate {
+  clasificacion?: ClasificacionEspecial;
+  tipo_actividad?: TipoActividadEspecial;
+  prioridad?: PrioridadEspecial;
+  descripcion?: string | null;
+  requiere_informe?: boolean;
+  estado?: EstadoEspecial;
+  id_solicitante?: number | null;
+}
+
+export interface CasoEspecialOut {
+  id_caso_especial: number;
+  id_caso: number | null;
+  id_solicitante: number | null;
+  clasificacion: string;
+  tipo_actividad: string;
+  prioridad: string;
+  tiene_id_averia: boolean;
+  descripcion: string | null;
+  requiere_informe: boolean;
+  estado: string;
+  creado_en: string | null;
+  actualizado_en: string | null;
+}
+
+/** Filtros del listado de casos especiales (RF-06/RF-35). */
+export type CasosEspecialesFiltros = {
+  clasificacion?: string;
+  estado?: string;
+  prioridad?: string;
+  solo_pendientes?: boolean;
+};
+
+/* --- Agenda de citas ---------------------------------------------- */
+
+export type TipoCita = 'CONTACTO' | 'ATENCION';
+
+export type EstadoCita =
+  | 'PROPUESTA'
+  | 'CONFIRMADA'
+  | 'CUMPLIDA'
+  | 'REPROGRAMADA'
+  | 'DIFERIDA'
+  | 'CANCELADA';
+
+export interface CitaCreate {
+  fecha_hora: string;
+  tipo?: TipoCita;
+  estado?: EstadoCita;
+  id_caso?: number | null;
+  id_caso_especial?: number | null;
+  id_cuadrilla?: number | null;
+  observacion?: string | null;
+  permitir_solape?: boolean;
+}
+
+export interface CitaUpdate {
+  fecha_hora?: string;
+  tipo?: TipoCita;
+  estado?: EstadoCita;
+  id_cuadrilla?: number | null;
+  observacion?: string | null;
+  permitir_solape?: boolean;
+}
+
+export interface CitaOut {
+  id_cita: number;
+  id_caso: number | null;
+  id_caso_especial: number | null;
+  id_cuadrilla: number | null;
+  fecha_hora: string;
+  tipo: string;
+  estado: string;
+  observacion: string | null;
+  creado_por: string | null;
+  creado_en: string | null;
+}
+
+/** Filtros de la agenda (RF-12). `desde`/`hasta` son ISO con hora. */
+export type CitasFiltros = {
+  desde?: string;
+  hasta?: string;
+  id_cuadrilla?: number;
+  estado?: string;
+};
+
+/* --- Seguimiento (RF-34) ------------------------------------------ */
+
+export type EstadoSeguimiento = 'EN_COLA' | 'RESUELTO' | 'DEVUELTO';
+
+export interface SeguimientoCreate {
+  id_caso: number;
+  instancia_destino: string;
+  motivo?: string | null;
+  estado?: EstadoSeguimiento;
+  observacion?: string | null;
+}
+
+export interface SeguimientoUpdate {
+  instancia_destino?: string;
+  motivo?: string | null;
+  estado?: EstadoSeguimiento;
+  observacion?: string | null;
+  fecha_retorno?: string | null;
+}
+
+export interface SeguimientoOut {
+  id_seguimiento: number;
+  id_caso: number;
+  instancia_destino: string;
+  motivo: string | null;
+  fecha_envio: string | null;
+  fecha_retorno: string | null;
+  estado: string;
+  observacion: string | null;
+  usuario: string | null;
+}
+
+export type SeguimientoFiltros = {
+  id_caso?: number;
+  estado?: string;
+  instancia_destino?: string;
+};
+
+/* ------------------------------------------------------------------ */
 /* RESUMEN                                                             */
 /* ------------------------------------------------------------------ */
 

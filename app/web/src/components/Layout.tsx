@@ -6,6 +6,8 @@ const SECCIONES = [
   { ruta: '/ingesta', etiqueta: 'INGESTA', fin: false },
   { ruta: '/casos', etiqueta: 'CASOS', fin: false },
   { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false },
+  { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false },
+  { ruta: '/agenda', etiqueta: 'AGENDA', fin: false },
   { ruta: '/central', etiqueta: 'CENTRAL', fin: false },
   { ruta: '/sectores', etiqueta: 'SECTORES', fin: false },
   { ruta: '/tecnicos', etiqueta: 'TÉCNICOS', fin: false },

@@ -295,8 +295,8 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
 | URL | **https://ggto-web-593453426217.europe-west1.run.app** (API + web) |
-| Revisión | `ggto-web-00007-vsr` (100 % del tráfico) — Ciclo 5 |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v7` (multi-etapa: Node compila la SPA, Python la sirve) |
+| Revisión | `ggto-web-00008-vr5` (100 % del tráfico) — Ciclo 6 |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v8` (multi-etapa: Node compila la SPA, Python la sirve) |
 | SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
@@ -319,11 +319,16 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 | `GET /api/v1/casos` · `/casos/buscar` · `/casos/{id}` · `/casos/{id}/historial` | 🔒 Listado con filtros, búsqueda por avería/teléfono y bitácora |
 | `POST /api/v1/casos` · `PATCH /api/v1/casos/{id}` | 🔒 Alta manual (genera `REF-…`) y edición con registro de estado |
 | `/api/v1/despachos` (+`/propuesta`, `/{id}`, `/casos`, `/imprimible`, `/reporte`, `/enviar`, `/fallas-masivas`) | 🔒 Despacho diario: propuesta, generación, edición, impresión carta, reporte de producción y fallas masivas |
+| `/api/v1/casos-especiales`, `/solicitantes`, `/citas`, `/seguimiento` | 🔒 Casos EMPRESA/REFERIDO/GOBIERNO, agenda sin solapamiento y derivación a otras colas |
 
-> **Pruebas:** 96/96 en verde (Ciclos 1–5) contra el esquema aislado `ggto_test`.
-> CI en `.github/workflows/ci.yml`. **Ciclo 5 verificado en vivo**: reparto 6/4 entre dos cuadrillas,
-> reglas del brief cumplidas, imprimible con `size: letter`, reporte de producción y envío **PENDIENTE**
-> por falta de credenciales de Telegram (se habilitan en el Ciclo 9).
+> **Pruebas:** 111/111 en verde (Ciclos 1–6) contra el esquema aislado `ggto_test`.
+> CI en `.github/workflows/ci.yml`. **Ciclo 6 verificado en vivo**: caso especial con `REF-…`,
+> solapamiento de citas (`409`), cancelación y seguimiento con exclusión del despacho.
+>
+> ⚠️ **DATOS REALES EN PRODUCCIÓN:** hay **1 lote de ingesta** (`detalle_averias_gpon 15_09_2026.csv`)
+> con **42 casos reales** de la central, cargado por el Super Usuario. Contienen **PII de suscriptores**
+> y el servicio es **público**: conviene restringir el acceso y evaluar el traslado a una instancia
+> con respaldo (RNF-16) antes de seguir cargando información.
 
 > ⚠️ **Pendiente:** mover el servicio a `ggtov2` (Cloud Run + Artifact Registry propios) cuando se
 > desbloquee la facturación, y **restringir el acceso** (IAP o invocación autenticada), porque hoy

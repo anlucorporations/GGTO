@@ -89,7 +89,8 @@ python3 scripts/inyectar_super_usuario.py --p00 123456 --correo correo@dominio \
 | Técnicos | **1** (la ficha del Super Usuario) |
 | Centrales | 1 (`2324X`) |
 | Cuadrillas | 1 (`C-00`, cuadrilla del supervisor) |
-| Casos / lotes | 0 |
+| Casos | **42 reales** (ingesta del 2026-09-27) + 0 de prueba |
+| Lotes de ingesta | **1** (`detalle_averias_gpon 15_09_2026.csv`: 47 filas, 42 de la central, 5 descartadas) |
 
 ---
 
@@ -103,4 +104,7 @@ python3 scripts/inyectar_super_usuario.py --p00 123456 --correo correo@dominio \
    La copia en claro solo existe en el documento de credenciales (ignorado por git y con permisos `600`).
 3. El Super Usuario **no debe usarse como cuenta operativa diaria**: para el trabajo normal se
    crean usuarios `SUPERVISOR`/`TECNICO` (RF-02).
-4. El servicio de Cloud Run es **público**; conviene restringirlo antes de cargar datos reales.
+4. ⚠️ **El servicio de Cloud Run es público y ya contiene PII real** (42 casos de suscriptores).
+   Restringir el acceso es ahora prioritario, y conviene migrar a una instancia con respaldo (RNF-16).
+5. **Política de limpieza (D-55):** las verificaciones se limpian **solo con filtros** (`TST%`, ids
+   conocidos); nunca con `DELETE` sin filtro sobre tablas con datos reales.
