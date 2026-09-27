@@ -730,6 +730,7 @@ $$;
 
 -- 11.1 Roles
 INSERT INTO rol (codigo, nombre, descripcion) VALUES
+    ('SUPER',      'Super Usuario', 'Acceso total a todas las secciones y funciones de la plataforma'),
     ('ADMIN',      'Administrador', 'Configura el entorno, usuarios y catálogos'),
     ('SUPERVISOR', 'Supervisor',    'Ingesta, despacho, cuadrillas, reportes y GESTIÓN'),
     ('TECNICO',    'Técnico',       'Gestión de casos en campo (app móvil)')

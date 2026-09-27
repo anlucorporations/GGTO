@@ -226,23 +226,31 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 
 ### 5.2 Matriz RBAC (RNF-21 / D-36)
 
-Roles de la v1: **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a **una central**
+Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario pertenece a **una central**
 (`usuario.id_central`), y el alcance se refuerza con RLS.
 
-| Módulo / acción | ADMIN | SUPERVISOR | TECNICO |
-|---|---|---|---|
-| CONFIGURACIÓN (central, sectores, catálogos, usuarios, flota, cuadrillas) | CRUD | Lectura + edición operativa | — |
-| INGESTA (cargar y procesar CSV) | CRUD | CRUD | — |
-| PANEL (buscar, editar, alta manual) | CRUD | CRUD | Lectura de sus casos |
-| CASOS / SEGUIMIENTO / EMPRESAS / REFERIDOS | CRUD | CRUD | Lectura + gestión de su cuadrilla |
-| DESPACHO (armar, publicar, reporte 16:00) | CRUD | CRUD | Lectura de su despacho |
-| GESTIÓN (cuadrilla 0) | CRUD | CRUD | — |
-| MONITOREO / GRÁFICOS | Lectura | Lectura | — |
-| GESTIÓN TÉCNICA (contactar, atender, cerrar, enrutar, diferir, evidencias) | — | Lectura | CRUD (solo sus casos y offline) |
-| ALERTAS (falla masiva, incidentes, solicitud de material) | Lectura | Lectura | CRUD |
-| INSUMOS (v2) | CRUD | CRUD | Solicitud |
-| AUDITORÍA | Lectura | — | — |
-| USUARIOS y accesos | CRUD | Alta/baja de técnicos | — |
+> **`SUPER` (Super Usuario) — acceso total:** `app/api/deps.py` concede **cualquier operación** a quien
+> tenga este rol, sin necesidad de enumerarlo en cada endpoint (D-50). Cubre de forma permanente todas
+> las secciones y funciones presentes y futuras. Su cuenta se crea con
+> `scripts/inyectar_super_usuario.py`.
+
+| Módulo / acción | **SUPER** | ADMIN | SUPERVISOR | TECNICO |
+|---|---|---|---|---|
+| CONFIGURACIÓN (central, sectores, catálogos, usuarios, flota, cuadrillas) | **CRUD** | CRUD | Lectura + edición operativa | — |
+| INGESTA (cargar y procesar CSV) | **CRUD** | CRUD | CRUD | — |
+| PANEL (buscar, editar, alta manual) | **CRUD** | CRUD | CRUD | Lectura de sus casos |
+| CASOS / SEGUIMIENTO / EMPRESAS / REFERIDOS | **CRUD** | CRUD | CRUD | Lectura + gestión de su cuadrilla |
+| DESPACHO (armar, publicar, reporte 16:00) | **CRUD** | CRUD | CRUD | Lectura de su despacho |
+| GESTIÓN (cuadrilla 0) | **CRUD** | CRUD | CRUD | — |
+| MONITOREO / GRÁFICOS | **Lectura** | Lectura | Lectura | — |
+| GESTIÓN TÉCNICA (contactar, atender, cerrar, enrutar, diferir, evidencias) | **CRUD** | — | Lectura | CRUD (solo sus casos y offline) |
+| ALERTAS (falla masiva, incidentes, solicitud de material) | **CRUD** | Lectura | Lectura | CRUD |
+| INSUMOS (v2) | **CRUD** | CRUD | CRUD | Solicitud |
+| AUDITORÍA | **Lectura** | Lectura | — | — |
+| USUARIOS y accesos | **CRUD** | CRUD | Alta/baja de técnicos | — |
+
+> **El rol `SUPER` no se enumera en los endpoints**: el bypass en `require_roles` le concede
+> cualquier operación, por lo que la columna **SUPER** es siempre acceso total.
 
 > **MFA obligatorio** para ADMIN y SUPERVISOR (RNF-22). El TÉCNICO usa `P00` + clave con bloqueo a los
 > 3 intentos y recuperación con 3 de las 12 palabras (RF-20).

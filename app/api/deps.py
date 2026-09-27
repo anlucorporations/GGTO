@@ -16,6 +16,9 @@ from ..models import Usuario
 
 bearer = HTTPBearer(auto_error=False)
 
+#: Rol con acceso total a todas las secciones y funciones de la plataforma.
+ROL_SUPER = "SUPER"
+
 CREDENCIALES_INVALIDAS = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Credenciales inválidas o token expirado",
@@ -47,14 +50,23 @@ def get_current_user(
 
 
 def require_roles(*roles: str) -> Callable[[Usuario], Usuario]:
-    """Fábrica de dependencia para exigir uno de los roles indicados (RNF-21)."""
+    """Fábrica de dependencia para exigir uno de los roles indicados (RNF-21).
+
+    El rol **SUPER** (Super Usuario) tiene acceso total: se le concede cualquier
+    operación sin necesidad de enumerarlo en cada endpoint.
+    """
 
     def _check(usuario: Usuario = Depends(get_current_user)) -> Usuario:
-        if usuario.rol is None or usuario.rol.codigo not in roles:
+        if usuario.rol is None:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tiene permisos para esta operación",
             )
-        return usuario
+        if usuario.rol.codigo == ROL_SUPER or usuario.rol.codigo in roles:
+            return usuario
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permisos para esta operación",
+        )
 
     return _check

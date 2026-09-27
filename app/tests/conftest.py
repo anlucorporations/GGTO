@@ -26,6 +26,7 @@ TEST_SCHEMA = os.environ.get("GGTO_TEST_SCHEMA", "public")
 
 P00_ADMIN = "TESTADM"
 P00_TEC = "TESTTEC"
+P00_SUPER = "TESTSUP"
 CLAVE_TEST = "config12345"
 
 # Orden respetando las claves foráneas.
@@ -41,8 +42,8 @@ DELETE FROM sector              WHERE codigo LIKE 'TS%';
 DELETE FROM flota               WHERE can LIKE 'TCAN%';
 DELETE FROM causa               WHERE codigo_causa LIKE 'T9%';
 DELETE FROM dispositivo_seguridad WHERE p00 IN ('TESTADM','TESTTEC');
-DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC');
-DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC');
+DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP');
+DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP');
 DELETE FROM central             WHERE codigo_central LIKE 'TST%';
 """
 
@@ -127,10 +128,12 @@ def admin_token(client, db_session):
     )
     rol_admin = db_session.scalar(select(Rol).where(Rol.codigo == "ADMIN"))
     rol_tec = db_session.scalar(select(Rol).where(Rol.codigo == "TECNICO"))
+    rol_super = db_session.scalar(select(Rol).where(Rol.codigo == "SUPER"))
 
     admin_tec = Tecnico(id_central=id_central, nombre="ADMIN", apellido="TEST", p00=P00_ADMIN)
     tec_tec = Tecnico(id_central=id_central, nombre="TECNICO", apellido="TEST", p00=P00_TEC)
-    db_session.add_all([admin_tec, tec_tec])
+    sup_tec = Tecnico(id_central=id_central, nombre="SUPER", apellido="TEST", p00=P00_SUPER)
+    db_session.add_all([admin_tec, tec_tec, sup_tec])
     db_session.flush()
 
     db_session.add_all([
@@ -138,6 +141,8 @@ def admin_token(client, db_session):
                 id_tecnico=admin_tec.id_tecnico, id_central=id_central),
         Usuario(p00=P00_TEC, clave_hash=hash_password(CLAVE_TEST), id_rol=rol_tec.id_rol,
                 id_tecnico=tec_tec.id_tecnico, id_central=id_central),
+        Usuario(p00=P00_SUPER, clave_hash=hash_password(CLAVE_TEST), id_rol=rol_super.id_rol,
+                id_tecnico=sup_tec.id_tecnico, id_central=id_central),
     ])
     db_session.commit()
 
@@ -145,10 +150,13 @@ def admin_token(client, db_session):
     assert admin.status_code == 200, admin.text
     tecnico = client.post("/api/v1/auth/login", json={"p00": P00_TEC, "clave": CLAVE_TEST})
     assert tecnico.status_code == 200, tecnico.text
+    superu = client.post("/api/v1/auth/login", json={"p00": P00_SUPER, "clave": CLAVE_TEST})
+    assert superu.status_code == 200, superu.text
 
     yield {
         "admin": {"Authorization": f"Bearer {admin.json()['access_token']}"},
         "tecnico": {"Authorization": f"Bearer {tecnico.json()['access_token']}"},
+        "super": {"Authorization": f"Bearer {superu.json()['access_token']}"},
         "id_central": id_central,
     }
 

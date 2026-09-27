@@ -63,3 +63,6 @@ Thumbs.db
 *.egg-info/
 .ruff_cache/
 .mypy_cache/
+
+# --- Logs de operaciones de datos ---
+RepoTecnico/BaseOperaciones/*.log

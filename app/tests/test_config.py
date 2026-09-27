@@ -158,3 +158,42 @@ def test_rbac_tecnico_no_puede_crear(client, admin_token):
 def test_rbac_tecnico_puede_leer(client, admin_token):
     r = client.get("/api/v1/central", headers=admin_token["tecnico"])
     assert r.status_code == 200
+
+
+def test_super_usuario_tiene_acceso_total(client, admin_token):
+    """El rol SUPER puede leer y escribir en todas las secciones (D-50)."""
+    headers = admin_token["super"]
+    id_central = admin_token["id_central"]
+
+    # Lectura en los módulos existentes
+    for ruta in ("/api/v1/central", "/api/v1/sectores", "/api/v1/tecnicos",
+                 "/api/v1/flota", "/api/v1/cuadrillas", "/api/v1/catalogos/causas",
+                 "/api/v1/catalogos/metodos", "/api/v1/configuracion",
+                 "/api/v1/casos", "/api/v1/ingesta/lotes", "/api/v1/resumen"):
+        assert client.get(ruta, headers=headers).status_code == 200, ruta
+
+    # Escritura en CONFIGURACIÓN
+    flota = client.post("/api/v1/flota", json={"id_central": id_central, "can": "TCANSUP"},
+                        headers=headers)
+    assert flota.status_code == 201, flota.text
+
+    causa = client.post("/api/v1/catalogos/causas",
+                        json={"codigo_causa": "T9SUP", "descripcion": "causa super"},
+                        headers=headers)
+    assert causa.status_code == 201, causa.text
+
+    # Escritura en CASOS
+    caso = client.post("/api/v1/casos", json={"id_averia": "TSTSUP-1",
+                                              "nombre_cliente": "SUPER TEST"},
+                       headers=headers)
+    assert caso.status_code == 201, caso.text
+
+    # Escritura en parámetros
+    assert client.put("/api/v1/configuracion/despacho.min_referidos", json={"valor": 2},
+                      headers=headers).status_code == 200
+
+
+def test_super_usuario_aparece_en_me(client, admin_token):
+    r = client.get("/api/v1/auth/me", headers=admin_token["super"])
+    assert r.status_code == 200
+    assert r.json()["rol"] == "SUPER"
