@@ -1,8 +1,8 @@
 """GGTO API — Sistema de administración de reportes de avería y puntos ópticos.
 
 CANTV C.A. — Central Francisco Salias (Área 4).
-Fase 3 · Ciclo 1: núcleo + autenticación.
-Fase 3 · Ciclo 2: configuración del entorno operativo + web de administración.
+Fase 3 · Ciclos 1-7 completados (autenticación, configuración, ingesta, PANEL/CASOS,
+DESPACHO, casos especiales/agenda y MONITOREO/REPORTES).
 """
 
 from pathlib import Path
@@ -31,9 +31,9 @@ app = FastAPI(
     version=settings.app_version,
     description=(
         "Plataforma de gestión de averías GPON y construcción de puntos ópticos. "
-        "Ciclo 1: autenticación con P00 + clave, bloqueo a los 3 intentos y "
-        "recuperación con 3 de las 12 palabras de seguridad. "
-        "Ciclo 2: configuración de central, sectores, técnicos, flota, cuadrillas y catálogos."
+        "Ciclos 1-7: autenticación (P00 + clave, bloqueo y 12 palabras), configuración, "
+        "ingesta del CSV diario, PANEL/CASOS, DESPACHO, casos especiales y agenda, "
+        "y MONITOREO/REPORTES."
     ),
 )
 
