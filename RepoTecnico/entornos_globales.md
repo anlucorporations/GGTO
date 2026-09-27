@@ -294,9 +294,9 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 | Dato | Valor |
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
-| URL | **https://ggto-web-593453426217.europe-west1.run.app** (API + web) |
-| Revisión | `ggto-web-00010-dkg` (100 % del tráfico) — Ciclo 7 · versión `0.7.0` |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v10` (multi-etapa: Node compila la SPA, Python la sirve) |
+| URL | **https://ggto-web-593453426217.europe-west1.run.app** · alternativa `https://ggto-web-m33mjctj4a-ew.a.run.app` (API + web) |
+| Revisión | `ggto-web-00011-ksr` (100 % del tráfico) — Ciclo 7 · versión `0.7.0` · commit `638544d` |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v11` (multi-etapa: Node compila la SPA, Python la sirve) |
 | SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
