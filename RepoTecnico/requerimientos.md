@@ -317,7 +317,7 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 | S-05 | App móvil | **Flutter + SQLite** con sincronización offline. | D-11 / P2.3 ✅ |
 | S-06 | Autenticación | **`P00` + clave** para web y APK (3 intentos, 12 palabras). | D-10 / P2.2 ✅ |
 | S-07 | Definición de "sector" | Definido por el supervisor (nombre + direcciones/alias); asignación por coincidencia sobre `direccion`. | D-07 / P1.2 ✅ |
-| S-08 | Métricas exactas | **Diferidas a la Fase 3** (fórmulas de Gestionado/Cerrado/Resuelto/Casos Globales). | D-17 / P5.1 ⏳ |
+| S-08 | Métricas exactas | ✅ **Cerrada (D-56)** en `metricas.md` v1.0: fórmula, entidad, ventana y redondeo de cada indicador. Pendiente solo la validación con CANTV. | D-56 / P5.1 ✅ |
 | S-09 | Catálogo de causas | **Administrable** (ya no se puebla del CSV); falta cargar el listado oficial. | D-27 / H-05 ✅ |
 | S-10 | Estados del caso | Fijados en el DDL: `NUEVO, ASIGNADO, CONTACTADO, CITADO, DIFERIDO, EN_GESTION, ENRUTADO, CERRADO, CANCELADO`. | **D-29** |
 | S-11 | Casos especiales | Ficha `solicitante` (Unidad + Nombre + Contacto) y prioridad `ALTA/MEDIA/BAJA`; clasificación `REFERIDO/EMPRESA/GOBIERNO`. | **D-30** |

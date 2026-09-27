@@ -295,8 +295,8 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 |---|---|
 | Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
 | URL | **https://ggto-web-593453426217.europe-west1.run.app** (API + web) |
-| Revisión | `ggto-web-00008-vr5` (100 % del tráfico) — Ciclo 6 |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v8` (multi-etapa: Node compila la SPA, Python la sirve) |
+| Revisión | `ggto-web-00009-fvc` (100 % del tráfico) — Ciclo 7 |
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v9` (multi-etapa: Node compila la SPA, Python la sirve) |
 | SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
 | Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
@@ -320,8 +320,9 @@ Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`
 | `POST /api/v1/casos` · `PATCH /api/v1/casos/{id}` | 🔒 Alta manual (genera `REF-…`) y edición con registro de estado |
 | `/api/v1/despachos` (+`/propuesta`, `/{id}`, `/casos`, `/imprimible`, `/reporte`, `/enviar`, `/fallas-masivas`) | 🔒 Despacho diario: propuesta, generación, edición, impresión carta, reporte de producción y fallas masivas |
 | `/api/v1/casos-especiales`, `/solicitantes`, `/citas`, `/seguimiento` | 🔒 Casos EMPRESA/REFERIDO/GOBIERNO, agenda sin solapamiento y derivación a otras colas |
+| `/api/v1/monitoreo/*` y `/api/v1/reportes/trabajo` (+`/imprimible`) | 🔒 Monitoreo, gráficos y reportes (solo lectura para cualquier usuario autenticado) |
 
-> **Pruebas:** 111/111 en verde (Ciclos 1–6) contra el esquema aislado `ggto_test`.
+> **Pruebas:** 127/127 en verde (Ciclos 1–7) contra el esquema aislado `ggto_test`.
 > CI en `.github/workflows/ci.yml`. **Ciclo 6 verificado en vivo**: caso especial con `REF-…`,
 > solapamiento de citas (`409`), cancelación y seguimiento con exclusión del despacho.
 >

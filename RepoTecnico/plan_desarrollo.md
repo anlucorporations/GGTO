@@ -200,7 +200,7 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | 4 — PANEL y CASOS | ✅ **completado** | 79/79 acumuladas | rev. `ggto-web-00005-rxm` |
 | 5 — DESPACHO | ✅ **completado** | 96/96 acumuladas | rev. `ggto-web-00007-vsr` |
 | 6 — SEGUIMIENTO/EMPRESAS/REFERIDOS | ✅ **completado** | 111/111 acumuladas | rev. `ggto-web-00008-vr5` |
-| 7 — MONITOREO/REPORTES | ⏳ pendiente | — | — |
+| 7 — MONITOREO/REPORTES | ✅ **completado** | 127/127 acumuladas | rev. `ggto-web-00009-fvc` |
 | 8 — App móvil Flutter | ⏳ pendiente | — | — |
 | 9 — ALERTAS/Telegram/MCP | ⏳ pendiente | — | — |
 | 10 — INSUMOS (v2) | ⏳ pendiente | — | — |
@@ -208,6 +208,37 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 ---
 
 ## 5. Bitácora de ciclos
+
+### Ciclo 7 — MONITOREO, GRÁFICOS y REPORTES ✅
+
+| Aspecto | Resultado |
+|---|---|
+| Métricas (S-08/D-17) | Cerradas en **`RepoTecnico/metricas.md` v1.0**: fórmula, entidad, ventana y redondeo de cada indicador |
+| MONITOREO | `/monitoreo/diario`, `/semanal` (6 puntos lunes–sábado), `/globales`, `/reparacion`, `/construccion`, `/cuadrilla`, `/capacidad` |
+| Regla clave | **REPARACIÓN y CONSTRUCCIÓN son excluyentes** (`tipo_caso != 'CONSTRUCCION'` vs `= 'CONSTRUCCION'`) |
+| REPORTES (RF-28) | `/reportes/trabajo?periodo=diario|semanal|mensual` y versión **HTML imprimible** |
+| Capacidad (RF-07) | Cuadrillas activas con integrantes/flota y marca de `completa`, técnicos, flota, herramientas y sectores |
+| Web | Página **MONITOREO** con las 6 zonas del brief y **gráficos SVG propios** (barras, barras agrupadas, curva y torta), sin dependencias nuevas |
+| Pruebas | +16 de integración → **127/127 acumuladas** |
+| Calidad | `ruff` ✅ · `mypy` ✅ · `tsc` strict ✅ |
+
+**Verificación en vivo (solo lectura, sobre los datos reales):**
+
+| Prueba | Resultado |
+|---|---|
+| `/monitoreo/diario` | `ingresos_nuevos=42`, `pendientes_total=42` |
+| `/monitoreo/semanal` | 6 días (21→26 de septiembre), coherente con la semana lunes–sábado |
+| `/monitoreo/globales` | `pendientes=42`, `resueltos=0`, `por_estado={"NUEVO":42}` |
+| `/monitoreo/reparacion` | `residenciales_comunes=42`, total 42 |
+| `/monitoreo/capacidad` | 0 cuadrillas de calle, 2 técnicos, 0 sectores |
+| `/reportes/trabajo` (3 periodos) | `200` con las 7 secciones |
+| `/reportes/trabajo/imprimible` | `200` · `size: letter` ✅ |
+| SPA `/monitoreo` | `200` |
+
+> ⚠️ **Nota operativa:** hoy es **domingo**, y la semana operativa definida es **lunes–sábado**
+> (según el brief). Por eso la curva semanal no incluye el día de hoy y el despacho del día no
+> aparece en ella. Si CANTV trabaja domingos, hay que ajustar `DIAS_SEMANA` en
+> `app/services/monitoreo.py` (queda registrado en `metricas.md` §11).
 
 ### Ciclo 6 — SEGUIMIENTO, EMPRESAS y REFERIDOS ✅
 

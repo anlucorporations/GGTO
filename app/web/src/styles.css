@@ -779,3 +779,157 @@ input[type='file'] {
   padding: 4px 8px;
   font-size: 12.5px;
 }
+
+/* ------------------------------ Monitoreo ------------------------- */
+
+.monitoreo-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.monitoreo-columnas > .panel-bloque {
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .monitoreo-columnas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------ Gráficos SVG ---------------------- */
+
+.grafico {
+  margin-top: 6px;
+}
+
+.grafico-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.grafico-eje {
+  stroke: var(--gris-borde);
+  stroke-width: 1;
+}
+
+.grafico-etiqueta {
+  fill: var(--gris-texto);
+  font-size: 11px;
+}
+
+.grafico-valor {
+  fill: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.grafico-valor-mini {
+  font-size: 10.5px;
+}
+
+.grafico-linea {
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.grafico-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 10px;
+}
+
+.grafico-leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--gris-texto);
+}
+
+.grafico-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Torta */
+
+.grafico-torta-caja {
+  display: flex;
+  justify-content: center;
+}
+
+.grafico-torta {
+  max-width: 220px;
+}
+
+.grafico-torta-total {
+  fill: var(--azul);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.grafico-torta-sub {
+  fill: var(--gris-texto);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.grafico-torta-leyenda {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.grafico-torta-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #edf0f4;
+  font-size: 13px;
+}
+
+.grafico-torta-leyenda li:last-child {
+  border-bottom: none;
+}
+
+.grafico-torta-nombre {
+  flex: 1;
+  color: var(--gris-texto);
+}
+
+/* Estado booleano (¿completa?) */
+
+.chip-estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid var(--gris-borde);
+  background: #f7f9fc;
+  color: var(--gris-texto);
+}
+
+.chip-estado-ok {
+  background: var(--verde-claro);
+  border-color: #b3ddc5;
+  color: var(--verde);
+}
+
+.chip-estado-alerta {
+  background: var(--ambar-claro);
+  border-color: #ecd48c;
+  color: var(--ambar);
+}

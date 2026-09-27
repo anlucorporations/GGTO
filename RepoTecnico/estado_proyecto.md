@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–6 completados y desplegados |
+| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–7 completados y desplegados |
 | Última actualización | 2026-09-26 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
@@ -51,7 +51,8 @@
 | `INFORME_OPTIMIZACION_V1.md` | Auditoría de Fase 1 (7 lentes + verificación adversarial). | **V1** |
 | `interfaz_csv_origen.md` | Contrato de interfaz del archivo diario con el sistema origen CANTV. | **v0.1** |
 | `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
-| `../app/` | Backend FastAPI + web React (Ciclos 1–6) con pruebas y CI. | **v0.6.0** |
+| `metricas.md` | Definición formal de las métricas de MONITOREO y REPORTES. | **v1.0** |
+| `../app/` | Backend FastAPI + web React (Ciclos 1–7) con pruebas y CI. | **v0.7.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -111,6 +112,7 @@
 | D-49 | **Ciclo 4 (PANEL y CASOS) completado:** búsqueda por `id_averia`/teléfono (RF-30), listado con filtros y paginación (RF-33), ficha y edición con re-sectorización automática (RF-31), alta manual que genera `REF-<CENTRAL>-<NNNNNN>` (RF-32) y bitácora de estados `caso_estado_hist` (RNF-12); páginas web CASOS y búsqueda rápida en PANEL; **79/79 pruebas**; desplegado como `ggto-web-00005-rxm` (imagen `v5`) y verificado en vivo. | Fase 3 |
 | D-50 | **Super Usuario con acceso total:** nuevo rol **`SUPER`** en el catálogo; `app/api/deps.py` le concede **cualquier operación** sin enumerarlo por endpoint (acceso total permanente, también en ciclos futuros). Cuenta `123456` / `anlucorporations@gmail.com` / **ANLUcorporations Super Usuario** creada con `scripts/inyectar_super_usuario.py` (idempotente, con confirmación y log) y **verificada en producción**: lectura en las 11 secciones y escritura en configuración, casos y parámetros. Desplegado como `ggto-web-00006-htl` (imagen `v6`). Documentación en `RepoTecnico/BaseOperaciones/`. | Orden del usuario |
 | D-51 | **12 palabras de seguridad del Super Usuario generadas** (`--con-palabras`) y almacenadas como hashes Argon2id en `dispositivo_seguridad`; el listado en claro vive **solo** en `RepoTecnico/credenciales/CREDENCIALES-GGTO.md` (ignorado por git, permisos `600`). Verificado en producción: `unlock` con 3 palabras correctas → `200`; con incorrectas → `401`. | Orden del usuario |
+| D-56 | **Ciclo 7 (MONITOREO y REPORTES) completado:** métricas cerradas en `RepoTecnico/metricas.md` v1.0 (cierra **S-08 y D-17**); 7 endpoints de monitoreo, reporte de trabajo diario/semanal/mensual con versión imprimible y página web con gráficos SVG propios; REPARACIÓN y CONSTRUCCIÓN pasan a ser excluyentes; **127/127 pruebas**; desplegado como `ggto-web-00009-fvc` (imagen `v9`) y verificado en vivo en modo lectura. | Fase 3 |
 | D-53 | **Ciclo 6 (SEGUIMIENTO, EMPRESAS y REFERIDOS) completado:** casos especiales REFERIDO/EMPRESA/GOBIERNO con solicitante y creación automática del caso (`REF-…`), **agenda sin solapamiento** por cuadrilla (duración configurable, `409` con el choque, forzar solo `SUPER`), **seguimiento** que enruta el caso y lo saca del despacho (y lo devuelve a `NUEVO`); páginas web ESPECIALES y AGENDA; **111/111 pruebas**; desplegado como `ggto-web-00008-vr5` (imagen `v8`) y verificado en vivo. | Fase 3 |
 | D-54 | **Datos reales en producción:** el Super Usuario cargó `detalle_averias_gpon 15_09_2026.csv` (47 filas → **42 casos**, 5 descartadas) el 2026-09-27. La ingesta funcionó; los casos **no** se tocaron en las limpiezas (verificado con las secuencias de `public`, que coinciden solo con los registros de prueba). ⚠️ Contienen **PII de suscriptores** y el servicio es **público**: urge restringir el acceso y habilitar respaldo. | Operación |
 | D-55 | **Política de limpieza corregida:** desde este ciclo, las limpiezas de verificación en producción se hacen **solo con filtros/marcadores** (`TST%`, ids conocidos); quedan prohibidos los `DELETE` sin filtro sobre tablas que ya contienen datos reales. | Lección aprendida |
@@ -271,6 +273,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-26 | **Ciclo 4 completado (D-49):** PANEL y CASOS con búsqueda por avería/teléfono, listado filtrado y paginado, ficha, edición, alta manual con `REF-…` y bitácora de estados; **79/79 pruebas**; desplegado (`ggto-web-00005-rxm`, imagen `v5`) y verificado en vivo (`REF-2324X-000001`, historial de 2 entradas). |
 | 2026-09-27 | **Super Usuario inyectado (D-50):** rol `SUPER` con acceso total (bypass en `require_roles`); cuenta `123456` (ANLUcorporations) creada con `scripts/inyectar_super_usuario.py` y verificada en producción; documentación en `RepoTecnico/BaseOperaciones/` (`estructura_datos.md`, `casos_uso_inyeccion.md`, `estado_inyeccion.md`). Credenciales registradas en `RepoTecnico/credenciales/` (ignorado por git). |
 | 2026-09-27 | **12 palabras de seguridad del Super Usuario (D-51)** generadas y documentadas; verificado `unlock` con 3 palabras (`200`) y con incorrectas (`401`). |
+| 2026-09-27 | **Ciclo 7 completado (D-56):** métricas definidas (`metricas.md`), monitoreo, reportes imprimibles y página con gráficos; **127/127 pruebas**; desplegado (`ggto-web-00009-fvc`, imagen `v9`) y verificado en vivo sobre los datos reales. |
 | 2026-09-27 | **Ciclo 6 completado (D-53):** casos especiales, agenda sin solapamiento y seguimiento; páginas ESPECIALES y AGENDA; **111/111 pruebas**; desplegado (`ggto-web-00008-vr5`, imagen `v8`) y verificado en vivo. |
 | 2026-09-27 | **Datos reales detectados (D-54):** el Super Usuario cargó `detalle_averias_gpon 15_09_2026.csv` → **42 casos reales** con PII. Verificado que las limpiezas de prueba no los afectaron. Política de limpieza corregida (D-55). |
 | 2026-09-27 | **Ciclo 5 completado (D-52):** propuesta de despacho por sector con las reglas del brief, generación/edición/publicación, imprimible tamaño carta, reporte de producción, envío con patrón *outbox* y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado (`ggto-web-00007-vsr`, imagen `v7`) y verificado en vivo (reparto 6/4, construcción en una sola cuadrilla, envío PENDIENTE sin credenciales). |

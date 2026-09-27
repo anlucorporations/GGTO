@@ -49,12 +49,21 @@ import type {
   IngestaLoteOut,
   Metodo,
   MetodoCreate,
+  MonitoreoCapacidad,
+  MonitoreoConstruccion,
+  MonitoreoCuadrillaOut,
+  MonitoreoDiario,
+  MonitoreoGlobales,
+  MonitoreoReparacion,
+  MonitoreoSemanal,
   PaginaCasos,
   PalabraPosicion,
   Parametro,
   ParametroUpdate,
+  PeriodoReporte,
   Resumen,
   ResumenIngesta,
+  ReporteTrabajo,
   Sector,
   SectorCreate,
   SectorDireccion,
@@ -736,4 +745,66 @@ export function actualizarSeguimiento(
 
 export function obtenerSeguimiento(idSeguimiento: number): Promise<SeguimientoOut> {
   return request<SeguimientoOut>(`/seguimiento/${idSeguimiento}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* MONITOREO Y REPORTES (Ciclo 7) — solo lectura                       */
+/* ------------------------------------------------------------------ */
+
+/** Gestión de una jornada: ingresos, resoluciones, citas, diferidos y pendientes. */
+export function monitoreoDiario(fecha: string): Promise<MonitoreoDiario> {
+  return request<MonitoreoDiario>(`/monitoreo/diario${construirQuery({ fecha })}`);
+}
+
+/** Reporte semanal (6 puntos, lunes a sábado) a partir de `desde`. */
+export function monitoreoSemanal(desde: string): Promise<MonitoreoSemanal> {
+  return request<MonitoreoSemanal>(`/monitoreo/semanal${construirQuery({ desde })}`);
+}
+
+/** Totales globales de casos en el rango, con desglose por estado y categoría. */
+export function monitoreoGlobales(desde: string, hasta: string): Promise<MonitoreoGlobales> {
+  return request<MonitoreoGlobales>(`/monitoreo/globales${construirQuery({ desde, hasta })}`);
+}
+
+/** Reparaciones del periodo por tipo. */
+export function monitoreoReparacion(): Promise<MonitoreoReparacion> {
+  return request<MonitoreoReparacion>('/monitoreo/reparacion');
+}
+
+/** Construcciones del periodo por tipo. */
+export function monitoreoConstruccion(): Promise<MonitoreoConstruccion> {
+  return request<MonitoreoConstruccion>('/monitoreo/construccion');
+}
+
+/** Producción por cuadrilla a partir de `desde` durante `dias` (por defecto 6). */
+export function monitoreoCuadrilla(
+  desde: string,
+  dias = 6,
+): Promise<MonitoreoCuadrillaOut> {
+  return request<MonitoreoCuadrillaOut>(`/monitoreo/cuadrilla${construirQuery({ desde, dias })}`);
+}
+
+/** Capacidad operativa: cuadrillas, técnicos, flota, herramientas y sectores. */
+export function monitoreoCapacidad(): Promise<MonitoreoCapacidad> {
+  return request<MonitoreoCapacidad>('/monitoreo/capacidad');
+}
+
+/** Reporte consolidado de trabajo (diario, semanal o mensual). */
+export function reporteTrabajo(
+  periodo: PeriodoReporte,
+  fecha: string,
+): Promise<ReporteTrabajo> {
+  return request<ReporteTrabajo>(`/reportes/trabajo${construirQuery({ periodo, fecha })}`);
+}
+
+/**
+ * HTML del reporte imprimible (misma mecánica que el despacho RT-08): se pide
+ * con `Bearer` y se abre en una pestaña nueva, porque la URL directa no puede
+ * llevar la cabecera de autorización.
+ */
+export function obtenerReporteTrabajoImprimible(
+  periodo: PeriodoReporte,
+  fecha: string,
+): Promise<string> {
+  return requestTexto(`/reportes/trabajo/imprimible${construirQuery({ periodo, fecha })}`);
 }

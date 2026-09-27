@@ -786,3 +786,113 @@ export interface Resumen {
   causas: number;
   parametros: number;
 }
+
+/* ------------------------------------------------------------------ */
+/* MONITOREO Y REPORTES (Ciclo 7)                                      */
+/* ------------------------------------------------------------------ */
+
+/** Gestión de una jornada (`GET /monitoreo/diario`). */
+export interface MonitoreoDiario {
+  fecha: string;
+  ingresos_nuevos: number;
+  resueltos_residencial: number;
+  resueltos_empresarial: number;
+  resueltos_referidos: number;
+  citados: number;
+  diferidos: number;
+  gestionados: number;
+  pendientes_total: number;
+}
+
+/** Punto diario del reporte semanal (lunes a sábado). */
+export interface MonitoreoDiaSemanal {
+  fecha: string;
+  asignados: number;
+  cerrados: number;
+  gestionados: number;
+}
+
+export interface MonitoreoSemanal {
+  desde: string;
+  hasta: string;
+  dias: MonitoreoDiaSemanal[];
+}
+
+export interface MonitoreoGlobales {
+  desde: string;
+  hasta: string;
+  pendientes: number;
+  resueltos: number;
+  total: number;
+  por_estado: Record<string, number>;
+  por_categoria: Record<string, number>;
+}
+
+export interface MonitoreoReparacion {
+  residenciales_comunes: number;
+  residenciales_referidos: number;
+  empresariales: number;
+  total: number;
+}
+
+export interface MonitoreoConstruccion {
+  residenciales: number;
+  empresariales: number;
+  total: number;
+}
+
+export interface MonitoreoCuadrillaTotales {
+  asignados: number;
+  cerrados: number;
+  gestionados: number;
+}
+
+export interface MonitoreoCuadrilla {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  dias: MonitoreoDiaSemanal[];
+  totales: MonitoreoCuadrillaTotales;
+}
+
+export interface MonitoreoCuadrillaOut {
+  desde: string;
+  dias: number;
+  cuadrillas: MonitoreoCuadrilla[];
+}
+
+export interface CapacidadCuadrilla {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  es_supervisor: boolean;
+  integrantes: number;
+  flota: string | null;
+  completa: boolean;
+}
+
+export interface MonitoreoCapacidad {
+  cuadrillas_activas: number;
+  cuadrillas: CapacidadCuadrilla[];
+  tecnicos_activos: number;
+  flota_disponible: number;
+  herramientas_disponibles: number;
+  sectores_activos: number;
+}
+
+/** Periodo del reporte de trabajo (`GET /reportes/trabajo`). */
+export type PeriodoReporte = 'diario' | 'semanal' | 'mensual';
+
+/** Reporte consolidado: replica las respuestas de los endpoints de monitoreo. */
+export interface ReporteTrabajo {
+  periodo: string;
+  desde: string;
+  hasta: string;
+  diario: MonitoreoDiario;
+  semanal: MonitoreoSemanal;
+  globales: MonitoreoGlobales;
+  reparacion: MonitoreoReparacion;
+  construccion: MonitoreoConstruccion;
+  cuadrilla: MonitoreoCuadrillaOut;
+  capacidad: MonitoreoCapacidad;
+}

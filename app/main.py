@@ -20,6 +20,7 @@ from .api import (
     routes_especiales,
     routes_health,
     routes_ingesta,
+    routes_monitoreo,
 )
 from .core.config import get_settings
 
@@ -51,6 +52,7 @@ app.include_router(routes_ingesta.router)
 app.include_router(routes_casos.router)
 app.include_router(routes_despachos.router)
 app.include_router(routes_especiales.router)
+app.include_router(routes_monitoreo.router)
 
 
 # --------------------------------------------------------------------------- #
