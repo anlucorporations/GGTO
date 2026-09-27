@@ -3,7 +3,6 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import * as api from '../api/client';
 import type {
   CasoEstadoHistOut,
-  CasoManualCreate,
   CasoOut,
   CasosFiltros,
   CasoUpdate,
@@ -13,6 +12,7 @@ import type {
   TipoCaso,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import EstadoChips from '../components/EstadoChips';
 import { useAuth } from '../auth/AuthContext';
 import { fecha, nv } from '../utils';
 
@@ -93,26 +93,6 @@ const EDICION_VACIA: EdicionForm = {
   fecha_cita: '',
   fecha_compromiso: '',
   tipo_servicio: '',
-};
-
-interface AltaForm {
-  categoria: CategoriaCaso;
-  tipo_caso: TipoCaso;
-  nombre_cliente: string;
-  telefono: string;
-  direccion: string;
-  problema_reporte: string;
-  informacion: string;
-}
-
-const ALTA_VACIA: AltaForm = {
-  categoria: 'RESIDENCIAL',
-  tipo_caso: 'AVERIA',
-  nombre_cliente: '',
-  telefono: '',
-  direccion: '',
-  problema_reporte: '',
-  informacion: '',
 };
 
 function detalleDe(e: unknown, fallback: string): string {
@@ -211,45 +191,57 @@ function Grupo({ titulo }: { titulo: string }) {
   );
 }
 
+/** Listado resumido: ID, tipo, clase, sector y los cuatro iconos de estado. */
 function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number) => void }) {
   return (
     <div className="tabla-envoltura">
-      <table>
+      <table className="tabla-resumen">
         <thead>
           <tr>
             <th>ID avería</th>
-            <th>Estado</th>
-            <th>Categoría</th>
             <th>Tipo</th>
-            <th>Cliente</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
+            <th>Clase</th>
             <th>Sector</th>
-            <th>Fecha reporte</th>
-            <th>Cuadrilla 0</th>
+            <th>Estado</th>
             <th>Acción</th>
           </tr>
         </thead>
         <tbody>
           {items.map((c) => (
-            <tr key={c.id_caso}>
+            <tr
+              key={c.id_caso}
+              className="fila-clicable"
+              onClick={() => onVer(c.id_caso)}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onVer(c.id_caso);
+                }
+              }}
+            >
               <td className="mono">{c.id_averia}</td>
-              <td>{c.estado_actual}</td>
-              <td>{c.categoria}</td>
               <td>{c.tipo_caso}</td>
-              <td>{c.nombre_cliente ?? '—'}</td>
-              <td>{c.telefono ?? '—'}</td>
-              <td>{c.direccion ?? '—'}</td>
-              <td>{c.id_sector ?? '—'}</td>
-              <td>{fecha(c.fecha_reporte)}</td>
-              <td>{c.en_gestion_supervisor ? 'Sí' : 'No'}</td>
+              <td>{c.categoria}</td>
+              <td>{c.sector_nombre ?? '—'}</td>
+              <td>
+                <EstadoChips
+                  pendiente={c.pendiente}
+                  asignado={c.asignado}
+                  citado={c.citado}
+                  gestion={c.gestion}
+                />
+              </td>
               <td>
                 <button
                   type="button"
                   className="btn btn-mini btn-secundario"
-                  onClick={() => onVer(c.id_caso)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVer(c.id_caso);
+                  }}
                 >
-                  Ver
+                  Ver ficha
                 </button>
               </td>
             </tr>
@@ -266,19 +258,19 @@ export default function Casos() {
   const [searchParams] = useSearchParams();
 
   // Término inicial: query string `?q=` o el `state` que envía el PANEL.
-  const estadoNav = location.state as { q?: unknown } | null;
+  const estadoNav = location.state as { q?: unknown; abrirCaso?: unknown } | null;
   const terminoInicial = (
     searchParams.get('q') ?? (typeof estadoNav?.q === 'string' ? estadoNav.q : '')
   ).trim();
+  const idAbrirInicial =
+    typeof estadoNav?.abrirCaso === 'number'
+      ? estadoNav.abrirCaso
+      : typeof estadoNav?.abrirCaso === 'string' && /^\d+$/.test(estadoNav.abrirCaso)
+        ? Number(estadoNav.abrirCaso)
+        : null;
 
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
-
-  // Búsqueda directa (RF-30).
-  const [busqIdAveria, setBusqIdAveria] = useState('');
-  const [busqTelefono, setBusqTelefono] = useState('');
-  const [resultados, setResultados] = useState<CasoOut[] | null>(null);
-  const [buscando, setBuscando] = useState(false);
 
   // Filtros + listado (RF-33).
   const [borrador, setBorrador] = useState<Filtros>(() => ({
@@ -304,11 +296,6 @@ export default function Casos() {
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
   const [historial, setHistorial] = useState<CasoEstadoHistOut[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
-
-  // Alta manual (RF-32).
-  const [alta, setAlta] = useState<AltaForm>(ALTA_VACIA);
-  const [creando, setCreando] = useState(false);
-  const [idGenerado, setIdGenerado] = useState('');
 
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
@@ -352,31 +339,31 @@ export default function Casos() {
     }
   }, []);
 
-  async function buscarDirecto(evento: FormEvent) {
-    evento.preventDefault();
-    const id = busqIdAveria.trim();
-    const telefono = busqTelefono.trim();
-    setOk('');
-    setError('');
-    if (!id && !telefono) {
-      setError('Indique un ID de avería o un teléfono para la búsqueda directa.');
-      return;
-    }
-    setBuscando(true);
-    try {
-      setResultados(
-        await api.buscarCasos({
-          id_averia: id || undefined,
-          telefono: telefono || undefined,
-        }),
-      );
-    } catch (e) {
-      setResultados(null);
-      setError(detalleDe(e, 'Error en la búsqueda directa.'));
-    } finally {
-      setBuscando(false);
-    }
-  }
+  const abrirFicha = useCallback(
+    async (idCaso: number) => {
+      setCargandoFicha(true);
+      setError('');
+      setOk('');
+      try {
+        const caso = await api.obtenerCaso(idCaso);
+        setFicha(caso);
+        setEdicion(aEdicion(caso));
+        setNuevoEstado(caso.estado_actual);
+        setMotivoEstado('');
+        await cargarHistorial(idCaso);
+      } catch (e) {
+        setError(detalleDe(e, 'Error al obtener la ficha del caso.'));
+      } finally {
+        setCargandoFicha(false);
+      }
+    },
+    [cargarHistorial],
+  );
+
+  // Abre la ficha cuando se llega desde el buscador global o el PANEL.
+  useEffect(() => {
+    if (idAbrirInicial !== null) void abrirFicha(idAbrirInicial);
+  }, [idAbrirInicial, location.key, abrirFicha]);
 
   function filtrar(evento: FormEvent) {
     evento.preventDefault();
@@ -388,27 +375,8 @@ export default function Casos() {
     setBorrador(FILTROS_VACIOS);
     setAplicados(FILTROS_VACIOS);
     setPage(1);
-    setResultados(null);
     setOk('');
     setError('');
-  }
-
-  async function abrirFicha(idCaso: number) {
-    setCargandoFicha(true);
-    setError('');
-    setOk('');
-    try {
-      const caso = await api.obtenerCaso(idCaso);
-      setFicha(caso);
-      setEdicion(aEdicion(caso));
-      setNuevoEstado(caso.estado_actual);
-      setMotivoEstado('');
-      await cargarHistorial(idCaso);
-    } catch (e) {
-      setError(detalleDe(e, 'Error al obtener la ficha del caso.'));
-    } finally {
-      setCargandoFicha(false);
-    }
   }
 
   async function guardarEdicion(evento: FormEvent) {
@@ -468,43 +436,6 @@ export default function Casos() {
     }
   }
 
-  async function crearCaso(evento: FormEvent) {
-    evento.preventDefault();
-    setError('');
-    setOk('');
-    setIdGenerado('');
-    const payload: CasoManualCreate = {
-      categoria: alta.categoria,
-      tipo_caso: alta.tipo_caso,
-      nombre_cliente: nv(alta.nombre_cliente),
-      telefono: nv(alta.telefono),
-      direccion: nv(alta.direccion),
-      problema_reporte: nv(alta.problema_reporte),
-      informacion: nv(alta.informacion),
-    };
-    if (
-      !payload.nombre_cliente &&
-      !payload.telefono &&
-      !payload.direccion &&
-      !payload.problema_reporte
-    ) {
-      setError('Complete al menos nombre, teléfono, dirección o problema reportado.');
-      return;
-    }
-    setCreando(true);
-    try {
-      const creado = await api.crearCaso(payload);
-      setIdGenerado(creado.id_averia);
-      setAlta(ALTA_VACIA);
-      setOk('Caso creado correctamente.');
-      await cargarLista();
-    } catch (e) {
-      setError(detalleDe(e, 'Error al crear el caso.'));
-    } finally {
-      setCreando(false);
-    }
-  }
-
   const items = resultado?.items ?? [];
   const total = resultado?.total ?? 0;
   const pages = resultado?.pages ?? 0;
@@ -514,7 +445,10 @@ export default function Casos() {
       <div className="pagina-cabecera">
         <div>
           <h1>Casos</h1>
-          <p>Búsqueda directa, listado con filtros, ficha, bitácora y alta manual de averías.</p>
+          <p>
+            Listado con filtros y ficha completa. Para buscar por incidente o número use el buscador
+            global de la barra superior.
+          </p>
         </div>
       </div>
 
@@ -527,143 +461,6 @@ export default function Casos() {
             Modo solo lectura: su rol TECNICO no permite crear, editar ni cambiar el estado de los
             casos. Puede consultar la información y la bitácora.
           </span>
-        </div>
-      )}
-
-      {idGenerado && (
-        <div className="aviso aviso-ok" role="status">
-          <span>
-            Caso creado con ID de avería:{' '}
-            <strong className={idGenerado.startsWith('REF-') ? 'mono id-ref' : 'mono'}>
-              {idGenerado}
-            </strong>
-          </span>
-        </div>
-      )}
-
-      {/* Búsqueda directa (RF-30) */}
-      <div className="panel-bloque">
-        <h2>Búsqueda directa</h2>
-        <form className="formulario" onSubmit={(e) => void buscarDirecto(e)}>
-          <div className="campo">
-            <label htmlFor="busq-id-averia">ID de avería</label>
-            <input
-              id="busq-id-averia"
-              value={busqIdAveria}
-              onChange={(e) => setBusqIdAveria(e.target.value)}
-              placeholder="Ej.: 202401234567"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="busq-telefono">Teléfono</label>
-            <input
-              id="busq-telefono"
-              value={busqTelefono}
-              onChange={(e) => setBusqTelefono(e.target.value)}
-              placeholder="Ej.: 04141234567"
-            />
-          </div>
-          <div className="acciones-form">
-            <button className="btn" type="submit" disabled={buscando}>
-              {buscando ? 'Buscando…' : 'Buscar'}
-            </button>
-          </div>
-        </form>
-
-        {resultados !== null && (
-          <div className="subpanel">
-            <h3>Resultados ({resultados.length})</h3>
-            {resultados.length === 0 ? (
-              <p className="vacio">No se encontraron casos con esos criterios.</p>
-            ) : (
-              <TablaCasos items={resultados} onVer={(id) => void abrirFicha(id)} />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Alta manual (RF-32) */}
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>Alta manual de caso</h2>
-          <form className="formulario" onSubmit={(e) => void crearCaso(e)}>
-            <div className="campo">
-              <label htmlFor="alta-categoria">Categoría</label>
-              <select
-                id="alta-categoria"
-                value={alta.categoria}
-                onChange={(e) => setAlta({ ...alta, categoria: e.target.value as CategoriaCaso })}
-              >
-                {CATEGORIAS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="alta-tipo">Tipo de caso</label>
-              <select
-                id="alta-tipo"
-                value={alta.tipo_caso}
-                onChange={(e) => setAlta({ ...alta, tipo_caso: e.target.value as TipoCaso })}
-              >
-                {TIPOS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="alta-nombre">Nombre del cliente</label>
-              <input
-                id="alta-nombre"
-                value={alta.nombre_cliente}
-                onChange={(e) => setAlta({ ...alta, nombre_cliente: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="alta-telefono">Teléfono</label>
-              <input
-                id="alta-telefono"
-                value={alta.telefono}
-                onChange={(e) => setAlta({ ...alta, telefono: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="alta-direccion">Dirección</label>
-              <input
-                id="alta-direccion"
-                value={alta.direccion}
-                onChange={(e) => setAlta({ ...alta, direccion: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="alta-problema">Problema reportado</label>
-              <textarea
-                id="alta-problema"
-                value={alta.problema_reporte}
-                onChange={(e) => setAlta({ ...alta, problema_reporte: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="alta-informacion">Información adicional</label>
-              <textarea
-                id="alta-informacion"
-                value={alta.informacion}
-                onChange={(e) => setAlta({ ...alta, informacion: e.target.value })}
-              />
-            </div>
-            <div className="acciones-form">
-              <button className="btn" type="submit" disabled={creando}>
-                {creando ? 'Creando…' : 'Crear caso'}
-              </button>
-            </div>
-          </form>
-          <p className="texto-pequeno">
-            Si no se indica un ID de avería, el sistema genera uno con el prefijo «REF-».
-          </p>
         </div>
       )}
 
@@ -696,7 +493,7 @@ export default function Casos() {
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="filtro-categoria">Categoría</label>
+            <label htmlFor="filtro-categoria">Clase</label>
             <select
               id="filtro-categoria"
               value={borrador.categoria}
@@ -711,7 +508,7 @@ export default function Casos() {
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="filtro-tipo">Tipo de caso</label>
+            <label htmlFor="filtro-tipo">Tipo</label>
             <select
               id="filtro-tipo"
               value={borrador.tipo_caso}
@@ -905,9 +702,9 @@ export default function Casos() {
                 />
 
                 <Grupo titulo="Clasificación y geografía" />
-                <Fila etiqueta="Categoría" valor={ficha.categoria} />
-                <Fila etiqueta="Tipo de caso" valor={ficha.tipo_caso} />
-                <Fila etiqueta="ID sector" valor={ficha.id_sector} />
+                <Fila etiqueta="Clase" valor={ficha.categoria} />
+                <Fila etiqueta="Tipo" valor={ficha.tipo_caso} />
+                <Fila etiqueta="Sector" valor={ficha.sector_nombre ?? ficha.id_sector} />
                 <Fila etiqueta="ID causa" valor={ficha.id_causa} />
                 <Fila etiqueta="Región" valor={ficha.region} />
                 <Fila etiqueta="Estado geográfico" valor={ficha.estado_geografico} />
@@ -955,7 +752,7 @@ export default function Casos() {
                   />
                 </div>
                 <div className="campo">
-                  <label htmlFor="edit-categoria">Categoría</label>
+                  <label htmlFor="edit-categoria">Clase</label>
                   <select
                     id="edit-categoria"
                     value={edicion.categoria}
@@ -971,7 +768,7 @@ export default function Casos() {
                   </select>
                 </div>
                 <div className="campo">
-                  <label htmlFor="edit-tipo">Tipo de caso</label>
+                  <label htmlFor="edit-tipo">Tipo</label>
                   <select
                     id="edit-tipo"
                     value={edicion.tipo_caso}

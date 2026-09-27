@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
-import type {
-  CitaCreate,
-  CitaOut,
-  CitasFiltros,
-  CitaUpdate,
-  EstadoCita,
-  TipoCita,
-} from '../api/types';
+import type { CitaCreate, CitaOut, CitasFiltros, CitaUpdate, EstadoCita, TipoCita } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
+import {
+  IconoChevronDerecha,
+  IconoChevronIzquierda,
+  IconoCerrar,
+} from '../components/Iconos';
 
 const TIPOS: TipoCita[] = ['CONTACTO', 'ATENCION'];
 
@@ -30,7 +28,26 @@ const ACCIONES: { estado: EstadoCita; etiqueta: string }[] = [
   { estado: 'CANCELADA', etiqueta: 'Cancelar' },
 ];
 
-const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DIAS_LARGOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DIAS_CORTOS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+type Vista = 'DIA' | 'SEMANA' | 'MES';
+
+/* --------------------------- utilidades de fecha --------------------------- */
 
 function fechaLocal(d: Date): string {
   const y = d.getFullYear();
@@ -39,18 +56,33 @@ function fechaLocal(d: Date): string {
   return `${y}-${m}-${dd}`;
 }
 
-/** Lunes y domingo (fecha local, sin hora) de la semana en curso. */
-function rangoSemanaActual(): { desde: string; hasta: string } {
-  const hoy = new Date();
-  const desplazamiento = (hoy.getDay() + 6) % 7;
-  const lunes = new Date(hoy);
-  lunes.setDate(hoy.getDate() - desplazamiento);
-  const domingo = new Date(lunes);
-  domingo.setDate(lunes.getDate() + 6);
-  return { desde: fechaLocal(lunes), hasta: fechaLocal(domingo) };
+function parseLocal(valor: string): Date {
+  const [y, m, d] = valor.split('-').map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
 
-/** Valor para `datetime-local`: la próxima hora en punto. */
+function sumarDias(d: Date, dias: number): Date {
+  const copia = new Date(d);
+  copia.setDate(copia.getDate() + dias);
+  return copia;
+}
+
+/** Lunes de la semana que contiene `d`. */
+function inicioSemana(d: Date): Date {
+  const copia = new Date(d);
+  const desplazamiento = (copia.getDay() + 6) % 7;
+  copia.setDate(copia.getDate() - desplazamiento);
+  return copia;
+}
+
+function mismoDia(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 function proximaHoraLocal(): string {
   const d = new Date();
   d.setMinutes(0, 0, 0);
@@ -58,14 +90,12 @@ function proximaHoraLocal(): string {
   return `${fechaLocal(d)}T${String(d.getHours()).padStart(2, '0')}:00`;
 }
 
-function etiquetaDia(dia: string): string {
-  const d = new Date(`${dia}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return dia;
-  return `${DIAS_SEMANA[d.getDay()]} ${dia}`;
-}
-
 function hora(valor: string): string {
   return valor.length >= 16 ? valor.slice(11, 16) : valor;
+}
+
+function idValido(valor: string): boolean {
+  return /^[1-9]\d*$/.test(valor.trim());
 }
 
 function detalleDe(e: unknown, fallback: string): string {
@@ -82,25 +112,46 @@ function msjCita(e: unknown, fallback: string): string {
   return fallback;
 }
 
-function idValido(valor: string): boolean {
-  return /^[1-9]\d*$/.test(valor.trim());
+/* --------------------------------- subvistas ------------------------------- */
+
+interface TarjetaProps {
+  cita: CitaOut;
+  compacta?: boolean;
+  onAbrir: (c: CitaOut) => void;
 }
 
-const SEMANA = rangoSemanaActual();
-
-interface Filtros {
-  desde: string;
-  hasta: string;
-  id_cuadrilla: string;
-  estado: string;
+function TarjetaCita({ cita, compacta = false, onAbrir }: TarjetaProps) {
+  const referencia =
+    cita.id_caso !== null
+      ? `Caso #${cita.id_caso}`
+      : cita.id_caso_especial !== null
+        ? `Especial #${cita.id_caso_especial}`
+        : 'Sin caso';
+  const titulo = `${hora(cita.fecha_hora)} · ${cita.tipo} · ${cita.estado} · ${referencia}`;
+  return (
+    <button
+      type="button"
+      className={`cita cita-${cita.estado.toLowerCase()}${compacta ? ' cita-compacta' : ''}`}
+      onClick={() => onAbrir(cita)}
+      title={titulo}
+      aria-label={titulo}
+    >
+      <span className="cita-hora mono">{hora(cita.fecha_hora)}</span>
+      <span className="cita-tipo">{cita.tipo}</span>
+      <span className="cita-estado">{cita.estado}</span>
+      {!compacta && (
+        <>
+          <span className="cita-meta">
+            Cuadrilla: {cita.id_cuadrilla ?? '—'}
+          </span>
+          <span className="cita-meta mono">{referencia}</span>
+        </>
+      )}
+    </button>
+  );
 }
 
-const FILTROS_INICIALES: Filtros = {
-  desde: SEMANA.desde,
-  hasta: SEMANA.hasta,
-  id_cuadrilla: '',
-  estado: '',
-};
+/* ---------------------------------- página -------------------------------- */
 
 interface CitaForm {
   fecha_hora: string;
@@ -131,8 +182,12 @@ export default function Agenda() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
-  const [borrador, setBorrador] = useState<Filtros>(FILTROS_INICIALES);
-  const [aplicados, setAplicados] = useState<Filtros>(FILTROS_INICIALES);
+  const [vista, setVista] = useState<Vista>('SEMANA');
+  const [ancla, setAncla] = useState<string>(() => fechaLocal(new Date()));
+
+  const [filtroCuadrilla, setFiltroCuadrilla] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+
   const [citas, setCitas] = useState<CitaOut[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -140,18 +195,34 @@ export default function Agenda() {
   const [creando, setCreando] = useState(false);
   const [forzarSolape, setForzarSolape] = useState(false);
 
+  const [seleccion, setSeleccion] = useState<CitaOut | null>(null);
   const [guardandoId, setGuardandoId] = useState<number | null>(null);
-  const [reprogId, setReprogId] = useState<number | null>(null);
   const [reprogFecha, setReprogFecha] = useState('');
+
+  const base = useMemo(() => parseLocal(ancla), [ancla]);
+
+  /** Rango visible según la vista (día, semana lun-dom o rejilla mensual). */
+  const rango = useMemo(() => {
+    if (vista === 'DIA') return { desde: ancla, hasta: ancla };
+    if (vista === 'SEMANA') {
+      const lunes = inicioSemana(base);
+      return { desde: fechaLocal(lunes), hasta: fechaLocal(sumarDias(lunes, 6)) };
+    }
+    const primero = new Date(base.getFullYear(), base.getMonth(), 1);
+    const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const lunes = inicioSemana(primero);
+    return { desde: fechaLocal(lunes), hasta: fechaLocal(sumarDias(inicioSemana(ultimo), 6)) };
+  }, [vista, ancla, base]);
 
   const cargarCitas = useCallback(async () => {
     setCargando(true);
     try {
-      const filtros: CitasFiltros = {};
-      if (aplicados.desde) filtros.desde = `${aplicados.desde}T00:00:00`;
-      if (aplicados.hasta) filtros.hasta = `${aplicados.hasta}T23:59:59`;
-      if (idValido(aplicados.id_cuadrilla)) filtros.id_cuadrilla = Number(aplicados.id_cuadrilla);
-      if (aplicados.estado) filtros.estado = aplicados.estado;
+      const filtros: CitasFiltros = {
+        desde: `${rango.desde}T00:00:00`,
+        hasta: `${rango.hasta}T23:59:59`,
+      };
+      if (idValido(filtroCuadrilla)) filtros.id_cuadrilla = Number(filtroCuadrilla);
+      if (filtroEstado) filtros.estado = filtroEstado;
       setCitas(await api.listarCitas(filtros));
       setError('');
     } catch (e) {
@@ -159,13 +230,13 @@ export default function Agenda() {
     } finally {
       setCargando(false);
     }
-  }, [aplicados]);
+  }, [rango, filtroCuadrilla, filtroEstado]);
 
   useEffect(() => {
     void cargarCitas();
   }, [cargarCitas]);
 
-  const grupos = useMemo(() => {
+  const citasPorDia = useMemo(() => {
     const mapa = new Map<string, CitaOut[]>();
     for (const c of citas) {
       const dia = c.fecha_hora.slice(0, 10);
@@ -173,28 +244,49 @@ export default function Agenda() {
       lista.push(c);
       mapa.set(dia, lista);
     }
-    return [...mapa.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([dia, lista]) => ({
-        dia,
-        items: [...lista].sort((a, b) => a.fecha_hora.localeCompare(b.fecha_hora)),
-      }));
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => a.fecha_hora.localeCompare(b.fecha_hora));
+    }
+    return mapa;
   }, [citas]);
 
-  function filtrar(evento: FormEvent) {
-    evento.preventDefault();
-    if (borrador.id_cuadrilla.trim() !== '' && !idValido(borrador.id_cuadrilla)) {
-      setError('La cuadrilla debe ser un número entero positivo.');
-      return;
+  const diasSemana = useMemo(() => {
+    const lunes = inicioSemana(base);
+    return Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
+  }, [base]);
+
+  const diasMes = useMemo(() => {
+    const primero = new Date(base.getFullYear(), base.getMonth(), 1);
+    const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const inicio = inicioSemana(primero);
+    const fin = sumarDias(inicioSemana(ultimo), 6);
+    const dias: Date[] = [];
+    for (let d = new Date(inicio); d <= fin; d = sumarDias(d, 1)) dias.push(new Date(d));
+    return dias;
+  }, [base]);
+
+  const hoy = useMemo(() => new Date(), []);
+  const hoyKey = fechaLocal(hoy);
+
+  function etiquetaRango(): string {
+    if (vista === 'DIA') {
+      const d = base;
+      return `${DIAS_LARGOS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
     }
-    setAplicados({ ...borrador });
+    if (vista === 'SEMANA') {
+      const a = diasSemana[0];
+      const b = diasSemana[6];
+      return `${a.getDate()} ${MESES[a.getMonth()].slice(0, 3)} – ${b.getDate()} ${MESES[b.getMonth()].slice(0, 3)} ${b.getFullYear()}`;
+    }
+    return `${MESES[base.getMonth()]} ${base.getFullYear()}`;
   }
 
-  function limpiar() {
-    setBorrador(FILTROS_INICIALES);
-    setAplicados(FILTROS_INICIALES);
-    setOk('');
-    setError('');
+  function mover(paso: number) {
+    const nueva = parseLocal(ancla);
+    if (vista === 'DIA') nueva.setDate(nueva.getDate() + paso);
+    else if (vista === 'SEMANA') nueva.setDate(nueva.getDate() + 7 * paso);
+    else nueva.setMonth(nueva.getMonth() + paso);
+    setAncla(fechaLocal(nueva));
   }
 
   async function crearCita(evento: FormEvent) {
@@ -255,8 +347,9 @@ export default function Agenda() {
     setOk('');
     setGuardandoId(cita.id_cita);
     try {
-      await api.actualizarCita(cita.id_cita, { estado });
+      const actualizada = await api.actualizarCita(cita.id_cita, { estado });
       setOk(`Cita #${cita.id_cita} actualizada a ${estado}.`);
+      setSeleccion(actualizada);
       await cargarCitas();
     } catch (e) {
       setError(msjCita(e, 'Error al actualizar la cita.'));
@@ -276,9 +369,9 @@ export default function Agenda() {
     if (puedeForzar && forzarSolape) payload.permitir_solape = true;
     setGuardandoId(cita.id_cita);
     try {
-      await api.actualizarCita(cita.id_cita, payload);
+      const actualizada = await api.actualizarCita(cita.id_cita, payload);
       setOk(`Cita #${cita.id_cita} reprogramada.`);
-      setReprogId(null);
+      setSeleccion(actualizada);
       setReprogFecha('');
       await cargarCitas();
     } catch (e) {
@@ -296,6 +389,7 @@ export default function Agenda() {
     try {
       await api.eliminarCita(cita.id_cita);
       setOk(`Cita #${cita.id_cita} eliminada (pasa a CANCELADA).`);
+      setSeleccion(null);
       await cargarCitas();
     } catch (e) {
       setError(msjCita(e, 'Error al eliminar la cita.'));
@@ -304,12 +398,21 @@ export default function Agenda() {
     }
   }
 
+  function abrirSeleccion(c: CitaOut) {
+    setSeleccion(c);
+    setReprogFecha(c.fecha_hora.slice(0, 16));
+    setError('');
+    setOk('');
+  }
+
+  const totalRango = citas.length;
+
   return (
     <>
       <div className="pagina-cabecera">
         <div>
           <h1>Agenda</h1>
-          <p>Agenda de citas por día, con control de solapamiento por cuadrilla.</p>
+          <p>Calendario de citas por día, semana o mes, con control de solapamiento por cuadrilla.</p>
         </div>
       </div>
 
@@ -322,6 +425,284 @@ export default function Agenda() {
             Modo solo lectura: su rol TECNICO no permite agendar, reprogramar ni cancelar citas.
             Puede consultar la agenda.
           </span>
+        </div>
+      )}
+
+      {/* Calendario (RF-12): vistas Día / Semana / Mes */}
+      <div className="panel-bloque">
+        <div className="cal-barra">
+          <div className="cal-barra-izq">
+            <button
+              type="button"
+              className="btn btn-mini btn-secundario"
+              onClick={() => mover(-1)}
+              aria-label="Anterior"
+              title="Anterior"
+            >
+              <IconoChevronIzquierda width={16} height={16} />
+            </button>
+            <button
+              type="button"
+              className="btn btn-mini btn-secundario"
+              onClick={() => mover(1)}
+              aria-label="Siguiente"
+              title="Siguiente"
+            >
+              <IconoChevronDerecha width={16} height={16} />
+            </button>
+            <button type="button" className="btn btn-mini" onClick={() => setAncla(hoyKey)}>
+              Hoy
+            </button>
+            <strong className="cal-rango">{etiquetaRango()}</strong>
+          </div>
+
+          <div className="cal-segmento" role="group" aria-label="Vista del calendario">
+            {(['DIA', 'SEMANA', 'MES'] as Vista[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={`cal-segmento-btn${vista === v ? ' activo' : ''}`}
+                aria-pressed={vista === v}
+                onClick={() => setVista(v)}
+              >
+                {v === 'DIA' ? 'Día' : v === 'SEMANA' ? 'Semana' : 'Mes'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="cal-filtros">
+          <div className="campo">
+            <label htmlFor="cal-cuadrilla">Cuadrilla</label>
+            <input
+              id="cal-cuadrilla"
+              type="number"
+              min="1"
+              value={filtroCuadrilla}
+              onChange={(e) => setFiltroCuadrilla(e.target.value)}
+              placeholder="Todas"
+            />
+          </div>
+          <div className="campo">
+            <label htmlFor="cal-estado">Estado</label>
+            <select
+              id="cal-estado"
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="texto-pequeno cal-contador">
+            {cargando ? 'Cargando…' : `${totalRango} cita(s) en el rango visible`}
+          </span>
+        </div>
+
+        {cargando ? (
+          <p className="vacio">Cargando…</p>
+        ) : vista === 'DIA' ? (
+          <div className="cal-dia-lista">
+            {Array.from({ length: 24 }, (_, h) => {
+              const etiqueta = `${String(h).padStart(2, '0')}:00`;
+              const lista = (citasPorDia.get(ancla) ?? []).filter(
+                (c) => c.fecha_hora.slice(11, 13) === String(h).padStart(2, '0'),
+              );
+              return (
+                <div className="cal-hora" key={h}>
+                  <span className="cal-hora-etiqueta mono">{etiqueta}</span>
+                  <div className="cal-hora-citas">
+                    {lista.length === 0 ? (
+                      <span className="cal-hora-vacia">—</span>
+                    ) : (
+                      lista.map((c) => (
+                        <TarjetaCita key={c.id_cita} cita={c} onAbrir={abrirSeleccion} />
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : vista === 'SEMANA' ? (
+          <div className="cal-semana">
+            {diasSemana.map((d) => (
+              <div
+                key={fechaLocal(d)}
+                className={`cal-semana-cabecera${mismoDia(d, hoy) ? ' hoy' : ''}`}
+              >
+                <span className="cal-dia-nombre">{DIAS_CORTOS[(d.getDay() + 6) % 7]}</span>
+                <span className="cal-dia-fecha">{d.getDate()}</span>
+              </div>
+            ))}
+            {diasSemana.map((d) => {
+              const lista = citasPorDia.get(fechaLocal(d)) ?? [];
+              return (
+                <div key={`col-${fechaLocal(d)}`} className="cal-semana-columna">
+                  {lista.length === 0 ? (
+                    <span className="cal-hora-vacia">—</span>
+                  ) : (
+                    lista.map((c) => (
+                      <TarjetaCita key={c.id_cita} cita={c} onAbrir={abrirSeleccion} />
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="cal-mes">
+            {DIAS_CORTOS.map((d) => (
+              <div key={d} className="cal-mes-cabecera">
+                {d}
+              </div>
+            ))}
+            {diasMes.map((d) => {
+              const clave = fechaLocal(d);
+              const lista = citasPorDia.get(clave) ?? [];
+              const otroMes = d.getMonth() !== base.getMonth();
+              return (
+                <div
+                  key={clave}
+                  className={`cal-mes-dia${otroMes ? ' otro-mes' : ''}${
+                    mismoDia(d, hoy) ? ' hoy' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="cal-mes-num"
+                    title={`Ver el día ${clave}`}
+                    aria-label={`Ver el día ${clave}`}
+                    onClick={() => {
+                      setAncla(clave);
+                      setVista('DIA');
+                    }}
+                  >
+                    {d.getDate()}
+                  </button>
+                  <div className="cal-mes-citas">
+                    {lista.slice(0, 3).map((c) => (
+                      <TarjetaCita key={c.id_cita} cita={c} compacta onAbrir={abrirSeleccion} />
+                    ))}
+                    {lista.length > 3 && (
+                      <span className="texto-pequeno">+{lista.length - 3} más</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Detalle / edición de la cita seleccionada */}
+      {seleccion && (
+        <div className="panel-bloque">
+          <div className="pagina-cabecera">
+            <h2>Cita #{seleccion.id_cita}</h2>
+            <button
+              type="button"
+              className="btn btn-secundario"
+              onClick={() => setSeleccion(null)}
+              aria-label="Cerrar detalle"
+            >
+              <IconoCerrar width={16} height={16} />
+            </button>
+          </div>
+
+          <div className="tabla-envoltura">
+            <table className="tabla-ficha">
+              <tbody>
+                <tr>
+                  <th>Fecha y hora</th>
+                  <td className="mono">{seleccion.fecha_hora.replace('T', ' ').slice(0, 16)}</td>
+                </tr>
+                <tr>
+                  <th>Tipo</th>
+                  <td>{seleccion.tipo}</td>
+                </tr>
+                <tr>
+                  <th>Estado</th>
+                  <td>{seleccion.estado}</td>
+                </tr>
+                <tr>
+                  <th>Cuadrilla</th>
+                  <td>{seleccion.id_cuadrilla ?? '—'}</td>
+                </tr>
+                <tr>
+                  <th>Caso</th>
+                  <td>{seleccion.id_caso ?? '—'}</td>
+                </tr>
+                <tr>
+                  <th>Caso especial</th>
+                  <td>{seleccion.id_caso_especial ?? '—'}</td>
+                </tr>
+                <tr>
+                  <th>Observación</th>
+                  <td>{seleccion.observacion ?? '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {!soloLectura && (
+            <>
+              <h3 className="subtitulo-seccion">Cambiar estado</h3>
+              <div className="celda-acciones">
+                {ACCIONES.map((a) => (
+                  <button
+                    key={a.estado}
+                    type="button"
+                    className="btn btn-mini btn-secundario"
+                    disabled={seleccion.estado === a.estado || guardandoId === seleccion.id_cita}
+                    onClick={() => void cambiarEstado(seleccion, a.estado)}
+                  >
+                    {a.etiqueta}
+                  </button>
+                ))}
+              </div>
+
+              <h3 className="subtitulo-seccion">Reprogramar</h3>
+              <div className="cal-reprogramar">
+                <input
+                  type="datetime-local"
+                  value={reprogFecha}
+                  onChange={(e) => setReprogFecha(e.target.value)}
+                  aria-label="Nueva fecha y hora"
+                />
+                {puedeForzar && (
+                  <label className="campo-check cal-check-inline">
+                    <input
+                      type="checkbox"
+                      checked={forzarSolape}
+                      onChange={(e) => setForzarSolape(e.target.checked)}
+                    />
+                    Forzar solape
+                  </label>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-mini"
+                  disabled={guardandoId === seleccion.id_cita}
+                  onClick={() => void reprogramar(seleccion)}
+                >
+                  Guardar nueva fecha
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-mini btn-peligro"
+                  disabled={guardandoId === seleccion.id_cita}
+                  onClick={() => void eliminarCita(seleccion)}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -428,177 +809,6 @@ export default function Agenda() {
           </p>
         </div>
       )}
-
-      {/* Filtros */}
-      <div className="panel-bloque">
-        <h2>Filtros de la agenda</h2>
-        <form className="formulario" onSubmit={filtrar}>
-          <div className="campo">
-            <label htmlFor="filtro-desde">Desde</label>
-            <input
-              id="filtro-desde"
-              type="date"
-              value={borrador.desde}
-              onChange={(e) => setBorrador({ ...borrador, desde: e.target.value })}
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-hasta">Hasta</label>
-            <input
-              id="filtro-hasta"
-              type="date"
-              value={borrador.hasta}
-              onChange={(e) => setBorrador({ ...borrador, hasta: e.target.value })}
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-cuadrilla">Cuadrilla</label>
-            <input
-              id="filtro-cuadrilla"
-              type="number"
-              min="1"
-              value={borrador.id_cuadrilla}
-              onChange={(e) => setBorrador({ ...borrador, id_cuadrilla: e.target.value })}
-              placeholder="Todas"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-estado">Estado</label>
-            <select
-              id="filtro-estado"
-              value={borrador.estado}
-              onChange={(e) => setBorrador({ ...borrador, estado: e.target.value })}
-            >
-              <option value="">Todos</option>
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="acciones-form">
-            <button className="btn" type="submit" disabled={cargando}>
-              {cargando ? 'Filtrando…' : 'Filtrar'}
-            </button>
-            <button type="button" className="btn btn-secundario" onClick={limpiar}>
-              Semana actual
-            </button>
-          </div>
-        </form>
-        <p className="texto-pequeno">
-          Total: {citas.length} cita(s) en {grupos.length} día(s).
-        </p>
-      </div>
-
-      {/* Vista de agenda agrupada por día */}
-      <div className="panel-bloque">
-        <h2>Agenda</h2>
-        {cargando ? (
-          <p className="vacio">Cargando…</p>
-        ) : grupos.length === 0 ? (
-          <p className="vacio">No hay citas en el rango seleccionado.</p>
-        ) : (
-          grupos.map((grupo) => (
-            <div key={grupo.dia} className="agenda-dia">
-              <h3 className="agenda-dia-titulo">{etiquetaDia(grupo.dia)}</h3>
-              <div className="tabla-envoltura">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Hora</th>
-                      <th>Tipo</th>
-                      <th>Estado</th>
-                      <th>Cuadrilla</th>
-                      <th>Caso</th>
-                      <th>Caso especial</th>
-                      <th>Observación</th>
-                      {!soloLectura && <th>Acciones</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {grupo.items.map((c) => (
-                      <tr key={c.id_cita}>
-                        <td className="mono">{hora(c.fecha_hora)}</td>
-                        <td>{c.tipo}</td>
-                        <td>{c.estado}</td>
-                        <td>{c.id_cuadrilla ?? '—'}</td>
-                        <td>{c.id_caso ?? '—'}</td>
-                        <td>{c.id_caso_especial ?? '—'}</td>
-                        <td>{c.observacion ?? '—'}</td>
-                        {!soloLectura && (
-                          <td>
-                            <div className="celda-acciones">
-                              {ACCIONES.map((a) => (
-                                <button
-                                  key={a.estado}
-                                  type="button"
-                                  className="btn btn-mini btn-secundario"
-                                  disabled={c.estado === a.estado || guardandoId === c.id_cita}
-                                  onClick={() => void cambiarEstado(c, a.estado)}
-                                >
-                                  {a.etiqueta}
-                                </button>
-                              ))}
-                              {reprogId === c.id_cita ? (
-                                <>
-                                  <input
-                                    type="datetime-local"
-                                    className="input-inline"
-                                    value={reprogFecha}
-                                    onChange={(e) => setReprogFecha(e.target.value)}
-                                  />
-                                  <button
-                                    type="button"
-                                    className="btn btn-mini"
-                                    disabled={guardandoId === c.id_cita}
-                                    onClick={() => void reprogramar(c)}
-                                  >
-                                    Guardar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-mini btn-secundario"
-                                    onClick={() => {
-                                      setReprogId(null);
-                                      setReprogFecha('');
-                                    }}
-                                  >
-                                    Cerrar
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="btn btn-mini btn-secundario"
-                                  onClick={() => {
-                                    setReprogId(c.id_cita);
-                                    setReprogFecha(c.fecha_hora.slice(0, 16));
-                                  }}
-                                >
-                                  Reprogramar
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="btn btn-mini btn-peligro"
-                                disabled={guardandoId === c.id_cita}
-                                onClick={() => void eliminarCita(c)}
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </>
   );
 }

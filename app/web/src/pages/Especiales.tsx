@@ -1,25 +1,22 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
 import type {
-  CanalSolicitante,
-  CasoEspecialCreate,
   CasoEspecialOut,
   CasoEspecialUpdate,
   CasosEspecialesFiltros,
   ClasificacionEspecial,
   EstadoEspecial,
   PrioridadEspecial,
-  TipoActividadEspecial,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import EstadoChips from '../components/EstadoChips';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
 const CLASIFICACIONES: ClasificacionEspecial[] = ['REFERIDO', 'EMPRESA', 'GOBIERNO'];
-const TIPOS_ACTIVIDAD: TipoActividadEspecial[] = ['REPARACION', 'CONSTRUCCION'];
 const PRIORIDADES: PrioridadEspecial[] = ['ALTA', 'MEDIA', 'BAJA'];
 const ESTADOS: EstadoEspecial[] = ['ABIERTO', 'EN_PROCESO', 'ATENDIDO', 'CERRADO'];
-const CANALES: CanalSolicitante[] = ['MANUAL', 'TELEGRAM', 'MCP_IA', 'CORREO'];
 
 interface Filtros {
   clasificacion: string;
@@ -35,49 +32,11 @@ const FILTROS_VACIOS: Filtros = {
   solo_pendientes: false,
 };
 
-interface AltaForm {
-  clasificacion: ClasificacionEspecial;
-  tipo_actividad: TipoActividadEspecial;
-  prioridad: PrioridadEspecial;
-  descripcion: string;
-  requiere_informe: boolean;
-  id_caso: string;
-  nombre_cliente: string;
-  telefono: string;
-  direccion: string;
-  sol_unidad: string;
-  sol_nombre: string;
-  sol_contacto: string;
-  sol_canal: CanalSolicitante;
-}
-
-const ALTA_VACIA: AltaForm = {
-  clasificacion: 'REFERIDO',
-  tipo_actividad: 'REPARACION',
-  prioridad: 'MEDIA',
-  descripcion: '',
-  requiere_informe: true,
-  id_caso: '',
-  nombre_cliente: '',
-  telefono: '',
-  direccion: '',
-  sol_unidad: '',
-  sol_nombre: '',
-  sol_contacto: '',
-  sol_canal: 'MANUAL',
-};
-
 interface EdicionForm {
   prioridad: PrioridadEspecial;
   estado: EstadoEspecial;
   descripcion: string;
   requiere_informe: boolean;
-}
-
-interface CreadoInfo {
-  id_caso_especial: number;
-  id_caso: number | null;
-  id_averia: string | null;
 }
 
 function detalleDe(e: unknown, fallback: string): string {
@@ -103,6 +62,7 @@ function aEdicion(c: CasoEspecialOut): EdicionForm {
 
 export default function Especiales() {
   const { soloLectura } = useAuth();
+  const navigate = useNavigate();
 
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
@@ -112,11 +72,6 @@ export default function Especiales() {
   const [aplicados, setAplicados] = useState<Filtros>(FILTROS_VACIOS);
   const [items, setItems] = useState<CasoEspecialOut[]>([]);
   const [cargando, setCargando] = useState(true);
-
-  // Alta.
-  const [alta, setAlta] = useState<AltaForm>(ALTA_VACIA);
-  const [creando, setCreando] = useState(false);
-  const [creado, setCreado] = useState<CreadoInfo | null>(null);
 
   // Ficha / edición.
   const [seleccion, setSeleccion] = useState<CasoEspecialOut | null>(null);
@@ -164,70 +119,6 @@ export default function Especiales() {
     setError('');
   }
 
-  async function crear(evento: FormEvent) {
-    evento.preventDefault();
-    setError('');
-    setOk('');
-    setCreado(null);
-
-    const unidad = alta.sol_unidad.trim();
-    const nombre = alta.sol_nombre.trim();
-    const contacto = alta.sol_contacto.trim();
-    const algunSolicitante = Boolean(unidad || nombre || contacto);
-    if (algunSolicitante && !(unidad && nombre && contacto)) {
-      setError(
-        'Para registrar al solicitante complete unidad, nombre y contacto (o deje los tres vacíos).',
-      );
-      return;
-    }
-
-    const idCaso = alta.id_caso.trim();
-    if (idCaso !== '' && (!Number.isInteger(Number(idCaso)) || Number(idCaso) <= 0)) {
-      setError('El ID de caso debe ser un número entero positivo.');
-      return;
-    }
-
-    const payload: CasoEspecialCreate = {
-      clasificacion: alta.clasificacion,
-      tipo_actividad: alta.tipo_actividad,
-      prioridad: alta.prioridad,
-      descripcion: nv(alta.descripcion),
-      requiere_informe: alta.requiere_informe,
-      nombre_cliente: nv(alta.nombre_cliente),
-      telefono: nv(alta.telefono),
-      direccion: nv(alta.direccion),
-    };
-    if (idCaso !== '') payload.id_caso = Number(idCaso);
-    if (algunSolicitante) {
-      payload.crear_solicitante = { unidad, nombre, contacto, canal: alta.sol_canal };
-    }
-
-    setCreando(true);
-    try {
-      const creadoObj = await api.crearCasoEspecial(payload);
-      let idAveria: string | null = null;
-      if (creadoObj.id_caso !== null) {
-        try {
-          idAveria = (await api.obtenerCaso(creadoObj.id_caso)).id_averia;
-        } catch {
-          idAveria = null;
-        }
-      }
-      setCreado({
-        id_caso_especial: creadoObj.id_caso_especial,
-        id_caso: creadoObj.id_caso,
-        id_averia: idAveria,
-      });
-      setAlta(ALTA_VACIA);
-      setOk('Caso especial creado correctamente.');
-      await cargarLista();
-    } catch (e) {
-      setError(detalleDe(e, 'Error al crear el caso especial.'));
-    } finally {
-      setCreando(false);
-    }
-  }
-
   async function abrirFicha(idCasoEspecial: number) {
     setError('');
     setOk('');
@@ -241,6 +132,15 @@ export default function Especiales() {
     } finally {
       setCargandoDetalle(false);
     }
+  }
+
+  /** Cada registro abre el caso asociado o, si no lo hay, el detalle especial. */
+  function abrirRegistro(c: CasoEspecialOut) {
+    if (c.id_caso !== null) {
+      navigate('/casos', { state: { abrirCaso: c.id_caso } });
+      return;
+    }
+    void abrirFicha(c.id_caso_especial);
   }
 
   async function guardarEdicion(evento: FormEvent) {
@@ -282,7 +182,10 @@ export default function Especiales() {
       <div className="pagina-cabecera">
         <div>
           <h1>Especiales</h1>
-          <p>Empresas, referidos y gobierno: alta, seguimiento y edición de casos especiales.</p>
+          <p>
+            Empresas, referidos y gobierno. Use «Agregar caso» en la barra superior para registrar
+            uno nuevo.
+          </p>
         </div>
       </div>
 
@@ -292,197 +195,9 @@ export default function Especiales() {
       {soloLectura && (
         <div className="aviso aviso-info">
           <span>
-            Modo solo lectura: su rol TECNICO no permite crear ni modificar casos especiales. Puede
-            consultar el listado y las fichas.
+            Modo solo lectura: su rol TECNICO no permite modificar casos especiales. Puede consultar
+            el listado y las fichas.
           </span>
-        </div>
-      )}
-
-      {creado && (
-        <div className="aviso aviso-ok" role="status">
-          <span>
-            Caso especial #{creado.id_caso_especial} creado.
-            {creado.id_caso !== null && (
-              <>
-                {' '}
-                Caso asociado: <strong className="mono">{creado.id_caso}</strong>
-              </>
-            )}
-            {creado.id_averia && (
-              <>
-                {' '}
-                — identificador:{' '}
-                <strong className={creado.id_averia.startsWith('REF-') ? 'mono id-ref' : 'mono'}>
-                  {creado.id_averia}
-                </strong>
-              </>
-            )}
-          </span>
-        </div>
-      )}
-
-      {/* Alta (RF-06/RF-35) */}
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>Alta de caso especial</h2>
-          <form className="formulario" onSubmit={(e) => void crear(e)}>
-            <div className="campo">
-              <label htmlFor="esp-clasificacion">Clasificación</label>
-              <select
-                id="esp-clasificacion"
-                value={alta.clasificacion}
-                onChange={(e) =>
-                  setAlta({ ...alta, clasificacion: e.target.value as ClasificacionEspecial })
-                }
-              >
-                {CLASIFICACIONES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-tipo">Tipo de actividad</label>
-              <select
-                id="esp-tipo"
-                value={alta.tipo_actividad}
-                onChange={(e) =>
-                  setAlta({ ...alta, tipo_actividad: e.target.value as TipoActividadEspecial })
-                }
-              >
-                {TIPOS_ACTIVIDAD.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-prioridad">Prioridad</label>
-              <select
-                id="esp-prioridad"
-                value={alta.prioridad}
-                onChange={(e) =>
-                  setAlta({ ...alta, prioridad: e.target.value as PrioridadEspecial })
-                }
-              >
-                {PRIORIDADES.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo campo-check">
-              <input
-                id="esp-informe"
-                type="checkbox"
-                checked={alta.requiere_informe}
-                onChange={(e) => setAlta({ ...alta, requiere_informe: e.target.checked })}
-              />
-              <label htmlFor="esp-informe">Requiere informe</label>
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="esp-descripcion">Descripción</label>
-              <textarea
-                id="esp-descripcion"
-                value={alta.descripcion}
-                onChange={(e) => setAlta({ ...alta, descripcion: e.target.value })}
-              />
-            </div>
-
-            <div className="campo campo-ancho">
-              <label htmlFor="esp-id-caso">
-                Adjuntar a caso existente (ID de caso) — opcional
-              </label>
-              <input
-                id="esp-id-caso"
-                type="number"
-                min="1"
-                value={alta.id_caso}
-                onChange={(e) => setAlta({ ...alta, id_caso: e.target.value })}
-                placeholder="Vacío: se crea un caso con REF-…"
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="esp-cliente">Nombre del cliente</label>
-              <input
-                id="esp-cliente"
-                value={alta.nombre_cliente}
-                onChange={(e) => setAlta({ ...alta, nombre_cliente: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-telefono">Teléfono</label>
-              <input
-                id="esp-telefono"
-                value={alta.telefono}
-                onChange={(e) => setAlta({ ...alta, telefono: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="esp-direccion">Dirección</label>
-              <input
-                id="esp-direccion"
-                value={alta.direccion}
-                onChange={(e) => setAlta({ ...alta, direccion: e.target.value })}
-              />
-            </div>
-
-            <div className="campo">
-              <label htmlFor="esp-sol-unidad">Solicitante — unidad</label>
-              <input
-                id="esp-sol-unidad"
-                value={alta.sol_unidad}
-                onChange={(e) => setAlta({ ...alta, sol_unidad: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-sol-nombre">Solicitante — nombre</label>
-              <input
-                id="esp-sol-nombre"
-                value={alta.sol_nombre}
-                onChange={(e) => setAlta({ ...alta, sol_nombre: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-sol-contacto">Solicitante — contacto</label>
-              <input
-                id="esp-sol-contacto"
-                value={alta.sol_contacto}
-                onChange={(e) => setAlta({ ...alta, sol_contacto: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="esp-sol-canal">Solicitante — canal</label>
-              <select
-                id="esp-sol-canal"
-                value={alta.sol_canal}
-                onChange={(e) =>
-                  setAlta({ ...alta, sol_canal: e.target.value as CanalSolicitante })
-                }
-              >
-                {CANALES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="acciones-form">
-              <button className="btn" type="submit" disabled={creando}>
-                {creando ? 'Creando…' : 'Crear caso especial'}
-              </button>
-            </div>
-          </form>
-          <p className="texto-pequeno">
-            Si deja el ID de caso vacío, el sistema crea un caso y le asigna un identificador
-            «REF-&lt;central&gt;-&lt;NNNNNN&gt;». Los tres campos del solicitante se envían juntos o
-            se omiten.
-          </p>
         </div>
       )}
 
@@ -566,38 +281,60 @@ export default function Especiales() {
           <p className="vacio">No hay casos especiales que coincidan con los filtros.</p>
         ) : (
           <div className="tabla-envoltura">
-            <table>
+            <table className="tabla-resumen">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Clasificación</th>
-                  <th>Tipo de actividad</th>
+                  <th>Tipo</th>
+                  <th>Sector</th>
                   <th>Prioridad</th>
+                  <th>Solicitante</th>
                   <th>Estado</th>
-                  <th>Descripción</th>
-                  <th>ID avería</th>
                   <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((c) => (
-                  <tr key={c.id_caso_especial}>
-                    <td className="mono">{c.id_caso_especial}</td>
-                    <td>{c.clasificacion}</td>
+                  <tr
+                    key={c.id_caso_especial}
+                    className="fila-clicable"
+                    tabIndex={0}
+                    onClick={() => abrirRegistro(c)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        abrirRegistro(c);
+                      }
+                    }}
+                  >
                     <td>{c.tipo_actividad}</td>
+                    <td>{c.sector_nombre ?? '—'}</td>
                     <td>
                       <span className={clasePrioridad(c.prioridad)}>{c.prioridad}</span>
                     </td>
-                    <td>{c.estado}</td>
-                    <td>{c.descripcion ?? '—'}</td>
-                    <td>{c.tiene_id_averia ? 'Sí' : 'No'}</td>
+                    <td>
+                      {c.solicitante_nombre ?? '—'}
+                      {c.solicitante_unidad && (
+                        <div className="texto-pequeno">{c.solicitante_unidad}</div>
+                      )}
+                    </td>
+                    <td>
+                      <EstadoChips
+                        pendiente={c.pendiente}
+                        asignado={c.asignado}
+                        citado={c.citado}
+                        gestion={c.gestion}
+                      />
+                    </td>
                     <td>
                       <button
                         type="button"
                         className="btn btn-mini btn-secundario"
-                        onClick={() => void abrirFicha(c.id_caso_especial)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirRegistro(c);
+                        }}
                       >
-                        {soloLectura ? 'Ver' : 'Ver/Editar'}
+                        {c.id_caso !== null ? 'Ver caso' : soloLectura ? 'Ver' : 'Ver/Editar'}
                       </button>
                     </td>
                   </tr>
@@ -608,7 +345,7 @@ export default function Especiales() {
         )}
       </div>
 
-      {/* Ficha + edición */}
+      {/* Ficha + edición del caso especial sin caso asociado */}
       {cargandoDetalle && <p className="texto-pequeno">Cargando ficha…</p>}
       {seleccion && (
         <div className="panel-bloque">
@@ -639,12 +376,23 @@ export default function Especiales() {
                   <td>{seleccion.id_solicitante ?? '—'}</td>
                 </tr>
                 <tr>
+                  <th>Solicitante</th>
+                  <td>
+                    {seleccion.solicitante_nombre ?? '—'}
+                    {seleccion.solicitante_unidad && ` — ${seleccion.solicitante_unidad}`}
+                  </td>
+                </tr>
+                <tr>
                   <th>Clasificación</th>
                   <td>{seleccion.clasificacion}</td>
                 </tr>
                 <tr>
                   <th>Tipo de actividad</th>
                   <td>{seleccion.tipo_actividad}</td>
+                </tr>
+                <tr>
+                  <th>Sector</th>
+                  <td>{seleccion.sector_nombre ?? '—'}</td>
                 </tr>
                 <tr>
                   <th>Prioridad</th>

@@ -494,8 +494,12 @@ export function listarCasos(filtros: CasosFiltros = {}): Promise<PaginaCasos> {
   return request<PaginaCasos>(`/casos${construirQuery(filtros)}`);
 }
 
-/** Búsqueda directa por `id_averia` y/o `telefono` (RF-30). */
+/**
+ * Búsqueda directa (RF-30). `q` busca por id de avería, teléfono, cliente o
+ * dirección; también se aceptan los filtros exactos `id_averia`/`telefono`.
+ */
 export function buscarCasos(params: {
+  q?: string;
   id_averia?: string;
   telefono?: string;
   limite?: number;

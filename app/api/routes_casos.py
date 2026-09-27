@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Caso, CasoEstadoHist, Sector, Usuario
+from ..models import Caso, CasoEstadoHist, Cita, DespachoCasos, Sector, Usuario
 from ..schemas.casos import (
     CasoEstadoHistOut,
     CasoManualCreate,
@@ -51,6 +51,36 @@ def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
 
 def _sectorizar(db: Session, id_central: int, direccion: str | None) -> int | None:
     return asignar_sector(direccion, cargar_patrones(db, id_central))
+
+
+def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
+    """Añade el nombre del sector y los iconos de estado del listado."""
+    if not casos:
+        return []
+    ids = [c.id_caso for c in casos]
+    sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
+    pendientes = set(db.scalars(select(Caso.id_caso).where(
+        Caso.id_caso.in_(ids), Caso.estado_actual.notin_(('CERRADO', 'CANCELADO')))))
+    asignados = set(db.scalars(select(DespachoCasos.id_caso).where(
+        DespachoCasos.id_caso.in_(ids))))
+    asignados |= {c.id_caso for c in casos if c.estado_actual == 'ASIGNADO'}
+    citados = set(db.scalars(select(Cita.id_caso).where(
+        Cita.id_caso.in_(ids), Cita.estado.in_(('PROPUESTA', 'CONFIRMADA')))))
+    gestion = {c.id_caso for c in casos if c.en_gestion_supervisor or c.estado_actual == 'EN_GESTION'}
+    gestion |= set(db.scalars(select(DespachoCasos.id_caso).where(
+        DespachoCasos.id_caso.in_(ids), DespachoCasos.estado == 'GESTIONADO')))
+    salida: list[CasoOut] = []
+    for caso in casos:
+        datos = CasoOut.model_validate(caso).model_dump()
+        datos.update(
+            sector_nombre=(sectores.get(caso.id_sector) if caso.id_sector else None),
+            pendiente=caso.id_caso in pendientes,
+            asignado=caso.id_caso in asignados,
+            citado=caso.id_caso in citados,
+            gestion=caso.id_caso in gestion,
+        )
+        salida.append(CasoOut(**datos))
+    return salida
 
 
 # --------------------------------------------------------------------------- #
@@ -128,7 +158,7 @@ def listar(
     ).all()
     paginas = (total + page_size - 1) // page_size if page_size else 0
     return PaginaCasos(
-        items=[CasoOut.model_validate(c) for c in items],
+        items=_resumen(db, list(items)),
         total=total,
         page=page,
         page_size=page_size,
@@ -143,15 +173,27 @@ def listar(
 def buscar(
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
+    q: str | None = Query(default=None, description="Incidente o número de teléfono"),
     id_averia: str | None = Query(default=None),
     telefono: str | None = Query(default=None),
     limite: int = Query(default=20, ge=1, le=100),
-) -> list[Caso]:
-    if not id_averia and not telefono:
+) -> list[CasoOut]:
+    if not any((q, id_averia, telefono)):
         raise HTTPException(
-            status_code=422, detail="Indique `id_averia` o `telefono` para buscar"
+            status_code=422,
+            detail="Indique `q`, `id_averia` o `telefono` para buscar",
         )
     condiciones = []
+    if q:
+        termino = q.strip()
+        condiciones.append(
+            or_(
+                Caso.id_averia.ilike(f"%{termino}%"),
+                Caso.telefono.ilike(f"%{termino}%"),
+                Caso.nombre_cliente.ilike(f"%{termino}%"),
+                Caso.direccion.ilike(f"%{termino}%"),
+            )
+        )
     if id_averia:
         condiciones.append(Caso.id_averia == id_averia.strip())
     if telefono:
@@ -159,7 +201,7 @@ def buscar(
         condiciones.append(
             or_(Caso.telefono == limpio, Caso.telefono.ilike(f"%{limpio}%"))
         )
-    return list(
+    encontrados = list(
         db.scalars(
             select(Caso)
             .where(or_(*condiciones) if len(condiciones) > 1 else condiciones[0])
@@ -167,6 +209,7 @@ def buscar(
             .limit(limite)
         ).all()
     )
+    return _resumen(db, list(encontrados))
 
 
 # --------------------------------------------------------------------------- #
@@ -178,7 +221,7 @@ def crear_manual(
     datos: CasoManualCreate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> Caso:
+) -> CasoOut:
     config = cargar_config(db)
     central = resolver_central(db, datos.id_central, config)
 
@@ -226,7 +269,7 @@ def crear_manual(
     )
     db.commit()
     db.refresh(caso)
-    return caso
+    return _resumen(db, [caso])[0]
 
 
 # --------------------------------------------------------------------------- #
@@ -234,8 +277,8 @@ def crear_manual(
 # --------------------------------------------------------------------------- #
 @router.get("/{id_caso}", response_model=CasoOut, summary="Ficha completa del caso")
 def obtener(id_caso: int, db: Session = Depends(get_db),
-            _: Usuario = Depends(get_current_user)) -> Caso:
-    return _o_404(db, id_caso)
+            _: Usuario = Depends(get_current_user)) -> CasoOut:
+    return _resumen(db, [_o_404(db, id_caso)])[0]
 
 
 @router.patch("/{id_caso}", response_model=CasoOut, summary="Actualizar un caso")
@@ -244,7 +287,7 @@ def actualizar(
     datos: CasoUpdate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> Caso:
+) -> CasoOut:
     caso = _o_404(db, id_caso)
     cambios = datos.model_dump(exclude_unset=True)
 
@@ -268,7 +311,7 @@ def actualizar(
 
     db.commit()
     db.refresh(caso)
-    return caso
+    return _resumen(db, [caso])[0]
 
 
 @router.get("/{id_caso}/historial", response_model=list[CasoEstadoHistOut],

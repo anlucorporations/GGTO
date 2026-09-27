@@ -9,7 +9,16 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Caso, Cita, Cuadrilla, Seguimiento, Solicitante, Usuario
+from ..models import (
+    Caso,
+    Cita,
+    Cuadrilla,
+    DespachoCasos,
+    Sector,
+    Seguimiento,
+    Solicitante,
+    Usuario,
+)
 from ..models.especiales_entities import CasoEspecial
 from ..schemas.especiales import (
     CasoEspecialCreate,
@@ -99,7 +108,7 @@ def listar_especiales(
     estado: str | None = None,
     prioridad: str | None = None,
     solo_pendientes: bool = Query(default=False),
-) -> list[CasoEspecial]:
+) -> list[CasoEspecialOut]:
     stmt = select(CasoEspecial).order_by(CasoEspecial.id_caso_especial.desc())
     if clasificacion:
         stmt = stmt.where(CasoEspecial.clasificacion == clasificacion)
@@ -109,7 +118,7 @@ def listar_especiales(
         stmt = stmt.where(CasoEspecial.prioridad == prioridad)
     if solo_pendientes:
         stmt = stmt.where(CasoEspecial.estado.in_(("ABIERTO", "EN_PROCESO")))
-    return list(db.scalars(stmt).all())
+    return _resumen_especiales(db, list(db.scalars(stmt).all()))
 
 
 @router.post("/casos-especiales", response_model=CasoEspecialOut,
@@ -187,6 +196,53 @@ def actualizar_especial(
     db.refresh(obj)
     return obj
 
+
+def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspecialOut]:
+    """Añade sector, solicitante y los iconos de estado al listado de especiales."""
+    if not lista:
+        return []
+    ids_caso = [e.id_caso for e in lista if e.id_caso]
+    ids_esp = [e.id_caso_especial for e in lista]
+    sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
+    casos = {
+        c.id_caso: c
+        for c in db.scalars(select(Caso).where(Caso.id_caso.in_(ids_caso))).all()
+    } if ids_caso else {}
+    solicitantes = {
+        s.id_solicitante: s for s in db.scalars(select(Solicitante)).all()
+    }
+    asignados = set(db.scalars(select(DespachoCasos.id_caso).where(
+        DespachoCasos.id_caso.in_(ids_caso)))) if ids_caso else set()
+    gestion = {
+        cid for cid, caso in casos.items()
+        if caso.en_gestion_supervisor or caso.estado_actual == "EN_GESTION"
+    }
+    if ids_caso:
+        gestion |= set(db.scalars(select(DespachoCasos.id_caso).where(
+            DespachoCasos.id_caso.in_(ids_caso), DespachoCasos.estado == "GESTIONADO")))
+    citados = set(db.scalars(select(Cita.id_caso_especial).where(
+        Cita.id_caso_especial.in_(ids_esp), Cita.estado.in_(("PROPUESTA", "CONFIRMADA")))))
+    if ids_caso:
+        citados |= set(db.scalars(select(Cita.id_caso).where(
+            Cita.id_caso.in_(ids_caso), Cita.estado.in_(("PROPUESTA", "CONFIRMADA")))))
+
+    salida: list[CasoEspecialOut] = []
+    for esp in lista:
+        caso = casos.get(esp.id_caso) if esp.id_caso else None
+        sol = solicitantes.get(esp.id_solicitante) if esp.id_solicitante else None
+        datos = CasoEspecialOut.model_validate(esp).model_dump()
+        datos.update(
+            sector_nombre=(sectores.get(caso.id_sector) if caso and caso.id_sector else None),
+            solicitante_nombre=(sol.nombre if sol else None),
+            solicitante_unidad=(sol.unidad if sol else None),
+            pendiente=esp.estado in ("ABIERTO", "EN_PROCESO"),
+            asignado=(esp.id_caso in asignados) if esp.id_caso else False,
+            citado=esp.id_caso_especial in citados
+            or (esp.id_caso is not None and esp.id_caso in citados),
+            gestion=(esp.id_caso in gestion) if esp.id_caso else False,
+        )
+        salida.append(CasoEspecialOut(**datos))
+    return salida
 
 # --------------------------------------------------------------------------- #
 # Agenda de citas (RF-12 / RNF-04)

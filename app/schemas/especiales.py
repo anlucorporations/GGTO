@@ -78,6 +78,15 @@ class CasoEspecialOut(BaseModel):
     creado_en: datetime | None = None
     actualizado_en: datetime | None = None
 
+    # Resumen para el listado (se calcula en el endpoint)
+    sector_nombre: str | None = None
+    solicitante_nombre: str | None = None
+    solicitante_unidad: str | None = None
+    pendiente: bool = True
+    asignado: bool = False
+    citado: bool = False
+    gestion: bool = False
+
 
 # --------------------------------------------------------------------------- #
 # Citas

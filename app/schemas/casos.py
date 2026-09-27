@@ -39,6 +39,7 @@ class CasoOut(BaseModel):
     categoria: str
     estado_actual: str
     id_sector: int | None = None
+    sector_nombre: str | None = None
     id_causa: int | None = None
     id_lote_ingesta: int | None = None
     en_gestion_supervisor: bool
@@ -93,6 +94,12 @@ class CasoOut(BaseModel):
     creado_en: datetime | None = None
     actualizado_en: datetime | None = None
 
+    # Iconos de estado del listado (se calculan en el endpoint)
+    pendiente: bool = True
+    asignado: bool = False
+    citado: bool = False
+    gestion: bool = False
+
 
 class PaginaCasos(BaseModel):
     items: list[CasoOut]
@@ -139,6 +146,7 @@ class CasoUpdate(BaseModel):
     estado_actual: EstadoCaso | None = None
     motivo_estado: str | None = Field(default=None, max_length=200)
     id_sector: int | None = None
+    sector_nombre: str | None = None
     id_causa: int | None = None
     en_gestion_supervisor: bool | None = None
     es_falla_masiva: bool | None = None

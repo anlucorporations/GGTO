@@ -330,10 +330,17 @@ export interface CasoOut {
   categoria: string;
   estado_actual: string;
   id_sector: number | null;
+  sector_nombre: string | null;
   id_causa: number | null;
   id_lote_ingesta: number | null;
   en_gestion_supervisor: boolean;
   es_falla_masiva: boolean;
+
+  /* Iconos de estado del listado (RF-33): los calcula la API. */
+  pendiente: boolean;
+  asignado: boolean;
+  citado: boolean;
+  gestion: boolean;
 
   region: string | null;
   estado_geografico: string | null;
@@ -673,6 +680,15 @@ export interface CasoEspecialOut {
   estado: string;
   creado_en: string | null;
   actualizado_en: string | null;
+
+  /* Resumen del listado (RF-35): los calcula la API. */
+  sector_nombre: string | null;
+  solicitante_nombre: string | null;
+  solicitante_unidad: string | null;
+  pendiente: boolean;
+  asignado: boolean;
+  citado: boolean;
+  gestion: boolean;
 }
 
 /** Filtros del listado de casos especiales (RF-06/RF-35). */
