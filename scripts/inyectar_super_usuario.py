@@ -35,7 +35,7 @@ import argparse
 import getpass
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -84,7 +84,7 @@ LOG = RAIZ / "RepoTecnico" / "BaseOperaciones" / "inyeccion_super_usuario.log"
 
 def registrar(mensaje: str) -> None:
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    linea = f"[{datetime.now(timezone.utc).isoformat(timespec='seconds')}] {mensaje}\n"
+    linea = f"[{datetime.now(UTC).isoformat(timespec='seconds')}] {mensaje}\n"
     with LOG.open("a", encoding="utf-8") as fh:
         fh.write(linea)
     print(mensaje)

@@ -342,11 +342,10 @@ Ciclo 1 (Núcleo+Auth) ─► Ciclo 2 (Configuración) ─► Ciclo 3 (Ingesta)
 | Historial | 2 lotes en `OK` |
 | SPA `/ingesta` | `200` |
 
-> ⚠️ **Hallazgo de la prueba real:** con el modo `UNION` (D-22), **51 de 51** casos quedaron marcados para la
-> cuadrilla 0, porque casi ninguno contiene frases de campo (`LOSS ROJO`, `FALLA FIBRA`, `Fibra Dañada`).
-> Es exactamente el riesgo señalado en la auditoría (H-04/H-19). Está **parametrizado** en
-> `despacho.criterio_cuadrilla0` y las listas de frases: debe ajustarse con CANTV antes de usar el
-> despacho real (candidato: modo `SUPERVISOR` o una lista de frases de campo más completa).
+> ✅ **Resuelto (D-48 → D-59):** el modo `UNION` marcaba casi todos los casos para la cuadrilla 0
+> (riesgo H-04/H-19). Se cambió a **`SUPERVISOR`**: solo van al supervisor los casos con frases de
+> no-atención en casa. Con los 42 casos reales, **36 volvieron a `Pendiente`** y el despacho de calle
+> ya los propone. Ajuste aplicado con `scripts/recalcular_cuadrilla0.py`.
 
 ### Ciclo 2 — Configuración ✅
 
