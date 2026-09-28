@@ -34,7 +34,7 @@ test.describe('Alertas', () => {
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
 
     // Planificación (RF-17)
-    await page.locator('tbody tr').first().getByRole('button', { name: 'Planificar' }).click();
+    await page.locator('#alertas tbody tr').first().getByRole('button', { name: 'Planificar' }).click();
     const modalPlan = page.getByRole('dialog', { name: /Planificar falla/ });
     await expect(modalPlan).toBeVisible();
     await rellenar(modalPlan.getByLabel('Planificación *'), 'Cuadrilla E2E a las 8:00 con fusionadora');
@@ -44,7 +44,7 @@ test.describe('Alertas', () => {
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
 
     // Material (RF-18)
-    await page.locator('tbody tr').first().getByRole('button', { name: 'Material' }).click();
+    await page.locator('#alertas tbody tr').first().getByRole('button', { name: 'Material' }).click();
     const modalMat = page.getByRole('dialog', { name: /Material para la falla/ });
     await expect(modalMat).toBeVisible();
     await rellenar(modalMat.getByLabel('Material requerido *'), '50 m de fibra y 4 conectores SC/APC');

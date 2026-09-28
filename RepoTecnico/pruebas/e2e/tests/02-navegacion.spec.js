@@ -3,14 +3,11 @@ const { test, expect } = require('@playwright/test');
 const { USUARIOS, iniciarSesion } = require('../helpers');
 
 const SECCIONES = [
-  { ruta: '/', titulo: 'Panel' },
+  { ruta: '/', titulo: 'Operación' },
   { ruta: '/casos', titulo: 'Casos' },
   { ruta: '/especiales', titulo: 'Especiales' },
   { ruta: '/agenda', titulo: 'Agenda' },
   { ruta: '/despacho', titulo: 'Despacho' },
-  { ruta: '/ingesta', titulo: 'Ingesta' },
-  { ruta: '/monitoreo', titulo: 'Monitoreo' },
-  { ruta: '/alertas', titulo: 'Alertas' },
 ];
 
 const CONFIGURACION = [
@@ -24,12 +21,20 @@ const CONFIGURACION = [
 ];
 
 test.describe('Navegación', () => {
-  test('las 8 secciones de la barra superior cargan', async ({ page }) => {
+  test('las 5 secciones de la barra superior cargan', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.admin);
     for (const seccion of SECCIONES) {
       await page.getByRole('link', { name: seccion.titulo.toUpperCase(), exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${seccion.ruta === '/' ? '/$' : seccion.ruta}$`));
-      await expect(page.getByRole('heading', { name: seccion.titulo, level: 1 })).toBeVisible();
+      if (seccion.ruta === '/') {
+        // OPERACIÓN fusiona PANEL, INGESTA, MONITOREO y ALERTAS (UI 2).
+        for (const ancla of ['#panel', '#ingesta', '#monitoreo', '#alertas']) {
+          await expect(page.locator(ancla)).toBeAttached();
+        }
+        await expect(page.getByRole('heading', { name: 'Panel', level: 1 })).toBeVisible();
+      } else {
+        await expect(page.getByRole('heading', { name: seccion.titulo, level: 1 })).toBeVisible();
+      }
     }
   });
 
@@ -52,7 +57,7 @@ test.describe('Navegación', () => {
   test('TECNICO no ve CONFIGURACIÓN', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.tecnico);
     await expect(page.getByRole('button', { name: 'Configuración' })).toHaveCount(0);
-    await expect(page.getByText('Modo solo lectura')).toBeVisible();
+    await expect(page.getByText('Modo solo lectura').first()).toBeVisible();
   });
 
   test('SUPERVISOR sí ve CONFIGURACIÓN', async ({ page }) => {

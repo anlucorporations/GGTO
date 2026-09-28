@@ -76,6 +76,7 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 | E2E-11 | `11-rbac.spec.js` | TECNICO solo lectura y sin escritura en ALERTAS | RNF-21 |
 | E2E-12 | `12-ayuda.spec.js` | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF | RF-33, D-63 |
 | E2E-13 | `13-ui-requisitos.spec.js` | Barra PC (solo nombres) y móvil (solo iconos), modales al 90 % con título/cerrar y tablas al 90 % con pie de conteo | RNF-09, D-64 |
+| E2E-14 | `14-operacion-filtros-ficha.spec.js` | Filtros en una fila sin Origen ni rango de fechas, OPERACIÓN fusionada y ficha rápida con pestañas | RNF-09, D-65 |
 
 ---
 

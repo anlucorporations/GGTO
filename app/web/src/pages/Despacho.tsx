@@ -606,7 +606,7 @@ export default function Despacho() {
       {/* Fecha + acciones principales */}
       <div className="panel-bloque">
         <h2>Jornada</h2>
-        <form className="formulario" onSubmit={(e) => void simular(e)}>
+        <form className="formulario filtros-tabla" onSubmit={(e) => void simular(e)}>
           <div className="campo">
             <label htmlFor="despacho-fecha">Fecha</label>
             <input

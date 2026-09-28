@@ -476,12 +476,27 @@ h3 {
   margin-bottom: 14px;
 }
 
+/* Filtros de tablas: SIEMPRE en una sola fila, a lo ancho de la tabla
+   (requisito de UI 1). Si no caben, la fila se desplaza en horizontal. */
 .fila-filtros {
   display: flex;
-  flex-wrap: wrap;
+  flex-flow: row nowrap;
   gap: 12px;
   align-items: flex-end;
-  margin-bottom: 14px;
+  width: 90vw;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.fila-filtros > .campo {
+  flex: 1 1 0;
+  min-width: 130px;
+}
+
+.fila-filtros > .campo-check {
+  flex: 0 0 auto;
 }
 
 /* ------------------------------ Formularios ----------------------- */
@@ -1882,4 +1897,175 @@ input[type='file'] {
   min-width: 26px;
   font-weight: 600;
   color: var(--gris-texto);
+}
+
+/* -------------------- Filtros de tabla en una fila (UI 1) ---------- */
+
+.filtros-tabla {
+  width: 90vw;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+}
+
+.formulario.filtros-tabla {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.formulario.filtros-tabla > .campo {
+  flex: 1 1 0;
+  min-width: 130px;
+}
+
+.formulario.filtros-tabla > .campo-check {
+  flex: 0 0 auto;
+}
+
+.formulario.filtros-tabla > .acciones-form {
+  grid-column: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+/* ------------- Página OPERACIÓN: secciones apiladas (UI 2) --------- */
+
+.operacion-anclas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.operacion-anclas a {
+  padding: 6px 12px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--texto);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.operacion-anclas a:hover {
+  background: var(--azul-claro);
+  border-color: var(--azul);
+}
+
+.operacion-seccion {
+  border-top: 3px solid var(--azul);
+  padding-top: 14px;
+  margin-bottom: 10px;
+  scroll-margin-top: 90px;
+}
+
+.operacion-seccion + .operacion-seccion {
+  margin-top: 34px;
+}
+
+/* --------------- Buscador dentro de la cabecera del modal ---------- */
+
+.modal-cabecera-busqueda {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modal-cabecera-busqueda input {
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+/* ------------------ Ficha rápida con pestañas (UI 3) --------------- */
+
+.ficha-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--gris-borde);
+  margin-bottom: 14px;
+}
+
+.ficha-tab {
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  padding: 9px 16px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gris-texto);
+  cursor: pointer;
+}
+
+.ficha-tab:hover {
+  background: var(--gris-fondo);
+  color: var(--texto);
+}
+
+.ficha-tab.activo {
+  background: #fff;
+  border-color: var(--gris-borde);
+  color: var(--azul-oscuro);
+}
+
+.ficha-resultados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ficha-resultados button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--gris-borde);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ficha-resultados button:hover {
+  background: var(--azul-claro);
+  border-color: var(--azul);
+}
+
+.ficha-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ficha-tarjeta {
+  border: 1px solid var(--gris-borde);
+  border-radius: 10px;
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.ficha-tarjeta .etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--gris-texto);
+}
+
+.ficha-tarjeta .valor {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--texto);
+  word-break: break-word;
 }

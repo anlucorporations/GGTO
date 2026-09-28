@@ -513,7 +513,7 @@ export default function Monitoreo() {
       {/* Filtros */}
       <div className="panel-bloque">
         <h2>Parámetros de consulta</h2>
-        <form className="formulario" onSubmit={actualizar}>
+        <form className="formulario filtros-tabla" onSubmit={actualizar}>
           <div className="campo">
             <label htmlFor="monitoreo-fecha">Fecha (diario y semana)</label>
             <input

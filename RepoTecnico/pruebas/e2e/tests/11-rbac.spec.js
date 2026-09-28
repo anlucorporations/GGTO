@@ -5,7 +5,7 @@ const { USUARIOS, iniciarSesion } = require('../helpers');
 test.describe('RBAC', () => {
   test('el TECNICO ve el aviso de solo lectura y no puede crear casos', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.tecnico);
-    await expect(page.getByText('Modo solo lectura')).toBeVisible();
+    await expect(page.getByText('Modo solo lectura').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Agregar caso' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Configuración' })).toHaveCount(0);
   });

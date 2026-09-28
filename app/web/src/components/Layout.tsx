@@ -1,21 +1,20 @@
 import { useCallback, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import type { CasoOut } from '../api/types';
 import BuscadorGlobal from './BuscadorGlobal';
+import FichaRapida from './FichaRapida';
 import ModalCaso from './ModalCaso';
 import { useCerrarDesplegable } from './useCerrarDesplegable';
 import {
   IconoAgenda,
   IconoAgregar,
-  IconoAlertas,
   IconoAyuda,
   IconoCasos,
   IconoChevronAbajo,
   IconoConfig,
   IconoDespacho,
   IconoEspeciales,
-  IconoIngesta,
-  IconoMonitoreo,
   IconoPanel,
   IconoSalir,
 } from './Iconos';
@@ -29,16 +28,17 @@ interface Seccion {
   Icono: Icono;
 }
 
-/** Secciones principales de la barra superior (RF-33 y Ciclos 4-7). */
+/**
+ * Secciones principales de la barra superior (RF-33).
+ * OPERACIÓN fusiona PANEL, INGESTA, MONITOREO y ALERTAS en una sola página
+ * con las cuatro secciones apiladas (requisito de UI 2 del ciclo D-65).
+ */
 const SECCIONES: Seccion[] = [
-  { ruta: '/', etiqueta: 'PANEL', fin: true, Icono: IconoPanel },
+  { ruta: '/', etiqueta: 'OPERACIÓN', fin: true, Icono: IconoPanel },
   { ruta: '/casos', etiqueta: 'CASOS', fin: false, Icono: IconoCasos },
   { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales },
   { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda },
   { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho },
-  { ruta: '/ingesta', etiqueta: 'INGESTA', fin: false, Icono: IconoIngesta },
-  { ruta: '/monitoreo', etiqueta: 'MONITOREO', fin: false, Icono: IconoMonitoreo },
-  { ruta: '/alertas', etiqueta: 'ALERTAS', fin: false, Icono: IconoAlertas },
   { ruta: '/ayuda', etiqueta: 'AYUDA', fin: false, Icono: IconoAyuda },
 ];
 
@@ -169,6 +169,7 @@ function MenuUsuario() {
 export default function Layout() {
   const { usuario, soloLectura } = useAuth();
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [fichaGlobal, setFichaGlobal] = useState<CasoOut | null>(null);
   const puedeConfigurar = ROLES_CONFIG.includes(usuario?.rol ?? '');
 
   return (
@@ -179,7 +180,7 @@ export default function Layout() {
           <span className="marca-sub">— CANTV</span>
         </Link>
 
-        <BuscadorGlobal />
+        <BuscadorGlobal onAbrirCaso={setFichaGlobal} />
 
         <button
           type="button"
@@ -225,6 +226,12 @@ export default function Layout() {
       </main>
 
       {modalAbierto && <ModalCaso onCerrar={() => setModalAbierto(false)} />}
+      {fichaGlobal && (
+        <FichaRapida
+          idCasoInicial={fichaGlobal.id_caso}
+          onCerrar={() => setFichaGlobal(null)}
+        />
+      )}
     </div>
   );
 }

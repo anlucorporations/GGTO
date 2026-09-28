@@ -475,7 +475,7 @@ export default function Agenda() {
           </div>
         </div>
 
-        <div className="cal-filtros">
+        <div className="cal-filtros filtros-tabla">
           <div className="campo">
             <label htmlFor="cal-cuadrilla">Cuadrilla</label>
             <input

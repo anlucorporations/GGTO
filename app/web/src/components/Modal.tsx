@@ -16,9 +16,11 @@ interface Props {
   titulo: string;
   onCerrar: () => void;
   children: ReactNode;
+  /** Contenido opcional junto al título (p. ej. el buscador de la ficha rápida). */
+  cabeceraExtra?: ReactNode;
 }
 
-export default function Modal({ titulo, onCerrar, children }: Props) {
+export default function Modal({ titulo, onCerrar, children, cabeceraExtra }: Props) {
   useEffect(() => {
     function alTeclear(evento: KeyboardEvent) {
       if (evento.key === 'Escape') onCerrar();
@@ -43,6 +45,7 @@ export default function Modal({ titulo, onCerrar, children }: Props) {
       >
         <div className="modal-cabecera">
           <h2>{titulo}</h2>
+          {cabeceraExtra}
           <button
             type="button"
             className="modal-cerrar"

@@ -21,12 +21,17 @@ test.describe('Casos', () => {
     await expect(page.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();
   });
 
-  test('la búsqueda por ID de avería ofrece el caso y abre su ficha', async ({ page }) => {
+  test('la búsqueda por ID de avería ofrece el caso y abre su ficha rápida', async ({ page }) => {
     const resultados = await buscarGlobal(page, 'E2E-0002');
     await expect(resultados).toBeVisible();
     await expect(resultados.getByRole('option')).toHaveCount(1);
     await resultados.getByRole('option', { name: /E2E-0002/ }).click();
-    await expect(page.getByRole('heading', { name: /Ficha del caso .* E2E-0002/ })).toBeVisible();
+    const ficha = page.getByRole('dialog', { name: /Ficha del caso .* E2E-0002/ });
+    await expect(ficha).toBeVisible();
+    // La ficha rápida muestra las pestañas Actual · Estado · Contacto · Técnico (UI 3).
+    for (const pestana of ['Actual', 'Estado', 'Contacto', 'Técnico']) {
+      await expect(ficha.getByRole('tab', { name: pestana })).toBeVisible();
+    }
   });
 
   test('la búsqueda por teléfono encuentra el caso', async ({ page }) => {

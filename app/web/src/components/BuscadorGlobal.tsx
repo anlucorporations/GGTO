@@ -8,9 +8,14 @@ import { useCerrarDesplegable } from './useCerrarDesplegable';
 /**
  * Buscador global de la barra superior (RF-30): un único cuadro que consulta
  * `/casos/buscar?q=` y muestra hasta 8 coincidencias en un desplegable.
- * Al elegir una se abre la ficha completa del caso en CASOS.
+ * Al elegir una se abre la ficha (rápida, con pestañas) del caso.
  */
-export default function BuscadorGlobal() {
+export default function BuscadorGlobal({
+  onAbrirCaso,
+}: {
+  /** Si se define, abre la ficha rápida; si no, navega a CASOS. */
+  onAbrirCaso?: (caso: CasoOut) => void;
+}) {
   const navigate = useNavigate();
   const cajaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +60,10 @@ export default function BuscadorGlobal() {
 
   function abrirCaso(caso: CasoOut) {
     cerrarTodo();
+    if (onAbrirCaso) {
+      onAbrirCaso(caso);
+      return;
+    }
     navigate('/casos', { state: { abrirCaso: caso.id_caso } });
   }
 

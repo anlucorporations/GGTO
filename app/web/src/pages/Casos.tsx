@@ -32,7 +32,6 @@ const ESTADOS: EstadoCaso[] = [
 
 const CATEGORIAS: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
 const TIPOS: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION'];
-const ORIGENES = ['INGESTA_CSV', 'MANUAL', 'TELEGRAM', 'MCP_IA'];
 const TAMANOS = [10, 25, 50, 100];
 
 interface Filtros {
@@ -40,10 +39,7 @@ interface Filtros {
   estado_actual: string;
   categoria: string;
   tipo_caso: string;
-  origen: string;
   en_gestion_supervisor: string;
-  desde: string;
-  hasta: string;
 }
 
 const FILTROS_VACIOS: Filtros = {
@@ -51,10 +47,7 @@ const FILTROS_VACIOS: Filtros = {
   estado_actual: '',
   categoria: '',
   tipo_caso: '',
-  origen: '',
   en_gestion_supervisor: '',
-  desde: '',
-  hasta: '',
 };
 
 interface EdicionForm {
@@ -308,9 +301,6 @@ export default function Casos() {
         estado_actual: aplicados.estado_actual,
         categoria: aplicados.categoria,
         tipo_caso: aplicados.tipo_caso,
-        origen: aplicados.origen,
-        desde: aplicados.desde,
-        hasta: aplicados.hasta,
         page,
         page_size: tamanio,
       };
@@ -470,7 +460,7 @@ export default function Casos() {
       {/* Filtros + listado (RF-33) */}
       <div className="panel-bloque">
         <h2>Listado de casos</h2>
-        <form className="formulario" onSubmit={filtrar}>
+        <form className="formulario filtros-tabla" onSubmit={filtrar}>
           <div className="campo">
             <label htmlFor="filtro-q">Texto libre</label>
             <input
@@ -526,21 +516,6 @@ export default function Casos() {
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="filtro-origen">Origen</label>
-            <select
-              id="filtro-origen"
-              value={borrador.origen}
-              onChange={(e) => setBorrador({ ...borrador, origen: e.target.value })}
-            >
-              <option value="">Todos</option>
-              {ORIGENES.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
             <label htmlFor="filtro-gestion">Cuadrilla 0 (supervisor)</label>
             <select
               id="filtro-gestion"
@@ -551,24 +526,6 @@ export default function Casos() {
               <option value="true">Sí</option>
               <option value="false">No</option>
             </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-desde">Reporte desde</label>
-            <input
-              id="filtro-desde"
-              type="date"
-              value={borrador.desde}
-              onChange={(e) => setBorrador({ ...borrador, desde: e.target.value })}
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-hasta">Reporte hasta</label>
-            <input
-              id="filtro-hasta"
-              type="date"
-              value={borrador.hasta}
-              onChange={(e) => setBorrador({ ...borrador, hasta: e.target.value })}
-            />
           </div>
           <div className="acciones-form">
             <button className="btn" type="submit" disabled={cargandoLista}>

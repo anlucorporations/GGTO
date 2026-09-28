@@ -91,7 +91,7 @@ envuelve la aplicación con `BrowserRouter` y con `AuthProvider`:
 porque `RutaProtegida` usa el contexto de autenticación y el hook de navegación.
 
 El uso de `BrowserRouter` (y no `HashRouter`) es la razón por la que el backend necesita el
-*fallback* a `index.html`: las rutas son rutas de URL reales (`/casos`, `/monitoreo`) que el servidor
+*fallback* a `index.html`: las rutas son rutas de URL reales (`/casos`, `/despacho`) que el servidor
 debe resolver entregando el documento de la SPA (`app/main.py:91-100`).
 
 Los componentes de enrutado empleados en `App.tsx` son `Routes`, `Route` y `Navigate`
@@ -101,10 +101,11 @@ Los componentes de enrutado empleados en `App.tsx` son `Routes`, `Route` y `Navi
 
 ## Estructura del proyecto web
 
-La SPA consta de **17 páginas** y su barra superior reúne **9 secciones**: PANEL, CASOS, ESPECIALES,
-AGENDA, DESPACHO, INGESTA, MONITOREO, ALERTAS y AYUDA. Las siete pantallas de configuración
-(Central, Sectores, Técnicos, Flota, Cuadrillas, Catálogos y Parámetros) se agrupan en el submenú
-CONFIGURACIÓN.
+La SPA consta de **18 páginas** y su barra superior reúne **6 secciones**: OPERACIÓN, CASOS,
+ESPECIALES, AGENDA, DESPACHO y AYUDA. OPERACIÓN (`app/web/src/pages/Operacion.tsx`) apila las antiguas
+secciones PANEL, INGESTA, MONITOREO y ALERTAS en una sola página con anclas. Las siete pantallas de
+configuración (Central, Sectores, Técnicos, Flota, Cuadrillas, Catálogos y Parámetros) se agrupan en
+el submenú CONFIGURACIÓN.
 
 ### main.tsx y App.tsx
 
@@ -114,9 +115,10 @@ autenticación y la hoja de estilos global `./styles.css` (`app/web/src/main.tsx
 aplicación con `createRoot(document.getElementById('root') as HTMLElement).render(...)`
 (`app/web/src/main.tsx:8`).
 
-`app/web/src/App.tsx` tiene 51 líneas y concentra la declaración de rutas. No contiene lógica de
-negocio: importa las diecisiete páginas y los dos componentes de infraestructura (`Layout` y
-`RutaProtegida`), y devuelve el árbol de `<Routes>` (`app/web/src/App.tsx:1-51`).
+`app/web/src/App.tsx` tiene 49 líneas y concentra la declaración de rutas. No contiene lógica de
+negocio: importa catorce páginas —las otras cuatro (`Panel`, `Ingesta`, `Monitoreo` y `Alertas`) las
+importa `Operacion.tsx`— y los dos componentes de infraestructura (`Layout` y `RutaProtegida`), y
+devuelve el árbol de `<Routes>` (`app/web/src/App.tsx:1-49`).
 
 La estructura de rutas es anidada y usa un patrón de *layout route* sin `path`:
 
@@ -125,7 +127,10 @@ La estructura de rutas es anidada y usa un patrón de *layout route* sin `path`:
   <Route path="/login" element={<Login />} />
   <Route element={<RutaProtegida />}>
     <Route element={<Layout />}>
-      <Route index element={<Panel />} />
+      <Route index element={<Operacion />} />
+      <Route path="ingesta" element={<Navigate to="/" replace />} />
+      <Route path="monitoreo" element={<Navigate to="/" replace />} />
+      <Route path="alertas" element={<Navigate to="/" replace />} />
       ...
     </Route>
   </Route>
@@ -133,27 +138,30 @@ La estructura de rutas es anidada y usa un patrón de *layout route* sin `path`:
 </Routes>
 ```
 
-(`app/web/src/App.tsx:24-49`). El `Route` externo sin `path` actúa como guardián: si `RutaProtegida`
+(`app/web/src/App.tsx:21-47`). Las tres rutas antiguas `/ingesta`, `/monitoreo` y `/alertas` ya no
+tienen página propia: redirigen a `/` para no romper enlaces guardados
+(`app/web/src/App.tsx:28-30`). El `Route` externo sin `path` actúa como guardián: si `RutaProtegida`
 no está autenticada, redirige; si lo está, renderiza el `Outlet` interno, que a su vez monta
 `Layout` y la página hija (`app/web/src/components/RutaProtegida.tsx:17-18`).
 
 ### pages/
 
-El directorio `app/web/src/pages/` contiene **diecisiete páginas**, una por sección o pantalla.
+El directorio `app/web/src/pages/` contiene **dieciocho páginas**, una por sección o pantalla.
 Extensión verificada de cada archivo (medida en líneas):
 
 | Página | Archivo | Líneas |
 |---|---|---|
-| Panel | `app/web/src/pages/Panel.tsx` | 106 |
+| Operacion | `app/web/src/pages/Operacion.tsx` | 49 |
+| Panel | `app/web/src/pages/Panel.tsx` | 116 |
 | Login | `app/web/src/pages/Login.tsx` | 202 |
 | Ingesta | `app/web/src/pages/Ingesta.tsx` | 447 |
-| Casos | `app/web/src/pages/Casos.tsx` | 974 |
+| Casos | `app/web/src/pages/Casos.tsx` | 931 |
 | Despacho | `app/web/src/pages/Despacho.tsx` | 1234 |
 | Especiales | `app/web/src/pages/Especiales.tsx` | 509 |
 | Agenda | `app/web/src/pages/Agenda.tsx` | 805 |
 | Monitoreo | `app/web/src/pages/Monitoreo.tsx` | 777 |
 | Alertas | `app/web/src/pages/Alertas.tsx` | 661 |
-| Centrales | `app/web/src/pages/Centrales.tsx` | 336 |
+| Centrales | `app/web/src/pages/Centrales.tsx` | 366 |
 | Sectores | `app/web/src/pages/Sectores.tsx` | 548 |
 | Tecnicos | `app/web/src/pages/Tecnicos.tsx` | 397 |
 | Flota | `app/web/src/pages/Flota.tsx` | 402 |
@@ -163,11 +171,12 @@ Extensión verificada de cada archivo (medida en líneas):
 | Ayuda | `app/web/src/pages/Ayuda.tsx` | 550 |
 
 Las páginas siguen un patrón común de ciclo de vida. Un ejemplo verificable es `Panel.tsx`: declara
-estado con `useState` para el resumen, el error, la carga, el término de búsqueda y el error de
-búsqueda (`app/web/src/pages/Panel.tsx:20-24`), carga el resumen con `useEffect` y una bandera
-`activo` para evitar actualizar estado tras el desmontaje (`app/web/src/pages/Panel.tsx:26-42`), y
-gestiona un formulario de búsqueda rápida que navega a `/casos` con el término en el estado de
-navegación (`app/web/src/pages/Panel.tsx:47-56`).
+estado con `useState` para el resumen, el error, la carga, el término de búsqueda, el error de
+búsqueda y el término de la ficha rápida (`app/web/src/pages/Panel.tsx:19-24`), carga el resumen con
+`useEffect` y una bandera `activo` para evitar actualizar estado tras el desmontaje
+(`app/web/src/pages/Panel.tsx:26-42`), y gestiona un formulario de búsqueda rápida que abre la ficha
+rápida con el término indicado, sin navegar a otra página
+(`app/web/src/pages/Panel.tsx:46-55,95-100`).
 
 El panel de inicio muestra seis tarjetas alimentadas por el resumen del backend: `tablas`,
 `centrales`, `roles`, `cuadrillas`, `causas` y `parametros`
@@ -180,11 +189,12 @@ El directorio `app/web/src/components/` aloja los componentes reutilizables:
 
 | Componente | Archivo | Líneas | Función |
 |---|---|---|---|
-| `Layout` | `app/web/src/components/Layout.tsx` | 230 | Armazón con barra superior, menús y `Outlet` |
+| `Layout` | `app/web/src/components/Layout.tsx` | 237 | Armazón con barra superior, menús y `Outlet` |
 | `RutaProtegida` | `app/web/src/components/RutaProtegida.tsx` | 19 | Guardián de sesión |
-| `BuscadorGlobal` | `app/web/src/components/BuscadorGlobal.tsx` | 147 | Buscador de un solo campo |
+| `BuscadorGlobal` | `app/web/src/components/BuscadorGlobal.tsx` | 156 | Buscador de un solo campo con desplegable de resultados |
+| `FichaRapida` | `app/web/src/components/FichaRapida.tsx` | 379 | Ficha de caso en modal, con buscador en la cabecera y pestañas |
 | `ModalCaso` | `app/web/src/components/ModalCaso.tsx` | 468 | Modal «Agregar caso» |
-| `Modal` | `app/web/src/components/Modal.tsx` | 60 | Modal genérico de formularios y fichas (90 % de la ventana) |
+| `Modal` | `app/web/src/components/Modal.tsx` | 63 | Modal genérico de formularios y fichas (90 % de la ventana) |
 | `PieTabla` | `app/web/src/components/PieTabla.tsx` | 37 | Pie `<tfoot>` con el total de registros |
 | `graficos` | `app/web/src/components/graficos.tsx` | 349 | Gráficos SVG propios |
 | `Iconos` | `app/web/src/components/Iconos.tsx` | 251 | Conjunto de iconos SVG |
@@ -194,8 +204,8 @@ El directorio `app/web/src/components/` aloja los componentes reutilizables:
 
 El hook `useCerrarDesplegable` se usa en `MenuConfiguracion` y `MenuUsuario` para cerrar los
 desplegables al hacer clic fuera (`app/web/src/components/Layout.tsx:62,104`). Los iconos se importan
-de forma nominal desde `./Iconos` (`app/web/src/components/Layout.tsx:7-21`) y se tipan con
-`ComponentType<SVGProps<SVGSVGElement>>` (`app/web/src/components/Layout.tsx:23`).
+de forma nominal desde `./Iconos` (`app/web/src/components/Layout.tsx:9-20`) y se tipan con
+`ComponentType<SVGProps<SVGSVGElement>>` (`app/web/src/components/Layout.tsx:22`).
 
 ### api/
 
@@ -228,38 +238,38 @@ fuera del proveedor (`app/web/src/auth/AuthContext.tsx:83-87`).
 La bandera `soloLectura` se deriva del rol: `soloLectura: usuario?.rol === 'TECNICO'`
 (`app/web/src/auth/AuthContext.tsx:73`). El comentario aclara que *«el rol TECNICO solo puede leer:
 la API responde 403 en escrituras»* (`app/web/src/auth/AuthContext.tsx:17`). El `Layout` consume esa
-bandera para deshabilitar el botón «Agregar caso» (`app/web/src/components/Layout.tsx:188`) y para
-mostrar un aviso permanente (`app/web/src/components/Layout.tsx:217-223`).
+bandera para deshabilitar el botón «Agregar caso» (`app/web/src/components/Layout.tsx:189`) y para
+mostrar un aviso permanente (`app/web/src/components/Layout.tsx:218-224`).
 
 ## Enrutado y proteccion
 
-### Rutas publicas y protegidas (app/web/src/App.tsx:24-49)
+### Rutas publicas y protegidas (app/web/src/App.tsx:22-46)
 
 La aplicación tiene **una sola ruta pública**, `/login`, declarada fuera del guardián
-(`app/web/src/App.tsx:25`). Todas las demás rutas están dentro del `Route` sin `path` cuyo elemento
-es `RutaProtegida` (`app/web/src/App.tsx:27`). La ruta comodín `*` redirige a `/` con `replace`, de
-modo que una URL desconocida no deja historial sucio (`app/web/src/App.tsx:48`).
+(`app/web/src/App.tsx:22`). Todas las demás rutas están dentro del `Route` sin `path` cuyo elemento
+es `RutaProtegida` (`app/web/src/App.tsx:24`). La ruta comodín `*` redirige a `/` con `replace`, de
+modo que una URL desconocida no deja historial sucio (`app/web/src/App.tsx:46`).
 
 | Tipo | Ruta | Elemento | Línea |
 |---|---|---|---|
-| Pública | `/login` | `Login` | `app/web/src/App.tsx:25` |
-| Protegida | `/` (index) | `Panel` | `app/web/src/App.tsx:29` |
-| Protegida | `/ingesta` | `Ingesta` | `app/web/src/App.tsx:30` |
+| Pública | `/login` | `Login` | `app/web/src/App.tsx:22` |
+| Protegida | `/` (index) | `Operacion` | `app/web/src/App.tsx:26` |
+| Redirección | `/ingesta` | `Navigate to="/"` | `app/web/src/App.tsx:28` |
+| Redirección | `/monitoreo` | `Navigate to="/"` | `app/web/src/App.tsx:29` |
+| Redirección | `/alertas` | `Navigate to="/"` | `app/web/src/App.tsx:30` |
 | Protegida | `/casos` | `Casos` | `app/web/src/App.tsx:31` |
 | Protegida | `/despacho` | `Despacho` | `app/web/src/App.tsx:32` |
 | Protegida | `/especiales` | `Especiales` | `app/web/src/App.tsx:33` |
 | Protegida | `/agenda` | `Agenda` | `app/web/src/App.tsx:34` |
-| Protegida | `/monitoreo` | `Monitoreo` | `app/web/src/App.tsx:35` |
-| Protegida | `/alertas` | `Alertas` | `app/web/src/App.tsx:36` |
-| Protegida | `/central` | `Centrales` | `app/web/src/App.tsx:37` |
-| Protegida | `/sectores` | `Sectores` | `app/web/src/App.tsx:38` |
-| Protegida | `/tecnicos` | `Tecnicos` | `app/web/src/App.tsx:39` |
-| Protegida | `/flota` | `Flota` | `app/web/src/App.tsx:40` |
-| Protegida | `/cuadrillas` | `Cuadrillas` | `app/web/src/App.tsx:41` |
-| Protegida | `/catalogos` | `Catalogos` | `app/web/src/App.tsx:42` |
-| Protegida | `/parametros` | `Parametros` | `app/web/src/App.tsx:43` |
-| Protegida | `/ayuda` | `Ayuda` | `app/web/src/App.tsx:44` |
-| Redirección | `*` | `Navigate to="/"` | `app/web/src/App.tsx:48` |
+| Protegida | `/central` | `Centrales` | `app/web/src/App.tsx:35` |
+| Protegida | `/sectores` | `Sectores` | `app/web/src/App.tsx:36` |
+| Protegida | `/tecnicos` | `Tecnicos` | `app/web/src/App.tsx:37` |
+| Protegida | `/flota` | `Flota` | `app/web/src/App.tsx:38` |
+| Protegida | `/cuadrillas` | `Cuadrillas` | `app/web/src/App.tsx:39` |
+| Protegida | `/catalogos` | `Catalogos` | `app/web/src/App.tsx:40` |
+| Protegida | `/parametros` | `Parametros` | `app/web/src/App.tsx:41` |
+| Protegida | `/ayuda` | `Ayuda` | `app/web/src/App.tsx:42` |
+| Redirección | `*` | `Navigate to="/"` | `app/web/src/App.tsx:46` |
 
 No existe una ruta separada para SEGUIMIENTO, EMPRESAS, REFERIDOS ni GESTIÓN: esas vistas
 funcionales se cubren desde `Especiales` y desde `Casos` (listados y fichas), según el rediseño de
@@ -289,37 +299,38 @@ cliente no sustituye el control del servidor.
 
 ### Layout y barra superior (app/web/src/components/Layout.tsx)
 
-`Layout` es el armazón de la aplicación (230 líneas). Su estructura es:
+`Layout` es el armazón de la aplicación (237 líneas). Su estructura es:
 
 - Una `topbar` con la marca, el buscador global, el botón «Agregar caso», la navegación y el menú de
-  usuario (`app/web/src/components/Layout.tsx:176-214`).
+  usuario (`app/web/src/components/Layout.tsx:177-215`).
 - Un `main.app-contenido` con el aviso de solo lectura y el `Outlet`
-  (`app/web/src/components/Layout.tsx:216-225`).
+  (`app/web/src/components/Layout.tsx:217-226`).
 - El modal de alta de caso, montado condicionalmente
-  (`app/web/src/components/Layout.tsx:227`).
+  (`app/web/src/components/Layout.tsx:228`), y la ficha rápida global que abre el buscador
+  (`app/web/src/components/Layout.tsx:229-234`).
 
 Las secciones principales se declaran en un arreglo tipado `SECCIONES` con ruta, etiqueta, bandera
-`fin` e icono (`app/web/src/components/Layout.tsx:25-43`). El arreglo contiene **nueve entradas**:
-PANEL, CASOS, ESPECIALES, AGENDA, DESPACHO, INGESTA, MONITOREO, ALERTAS y AYUDA
-(`app/web/src/components/Layout.tsx:34-42`). La bandera `fin` es verdadera solo para PANEL, lo que
-hace que `NavLink` no lo marque activo en rutas hijas (`app/web/src/components/Layout.tsx:34`, usada
-en `app/web/src/components/Layout.tsx:201`).
+`fin` e icono (`app/web/src/components/Layout.tsx:24-43`). El arreglo contiene **seis entradas**:
+OPERACIÓN, CASOS, ESPECIALES, AGENDA, DESPACHO y AYUDA
+(`app/web/src/components/Layout.tsx:36-43`). La bandera `fin` es verdadera **solo para OPERACIÓN**
+(`app/web/src/components/Layout.tsx:37`), lo que hace que `NavLink` no lo marque activo en rutas
+hijas; se aplica en `end={s.fin}` (`app/web/src/components/Layout.tsx:202`).
 
 **Comportamiento por dispositivo (requisito de UI 1).** En escritorio la barra muestra **solo los
 nombres**: la regla `.nav-item .nav-icono { display: none }` oculta el icono
 (`app/web/src/styles.css:264-268`). En móvil (ancho ≤ 768 px) la barra muestra **solo los iconos**:
-dentro de la media query `@media (max-width: 768px)` (`app/web/src/styles.css:1466`) la regla
-`.nav-etiqueta { display: none }` oculta el texto (`app/web/src/styles.css:1532-1535`) y
+dentro de la media query `@media (max-width: 768px)` (`app/web/src/styles.css:1481`) la regla
+`.nav-etiqueta { display: none }` oculta el texto (`app/web/src/styles.css:1547-1550`) y
 `.nav-item .nav-icono { display: inline-flex }` vuelve a mostrar el icono
-(`app/web/src/styles.css:1537-1539`). Cada `NavLink` renderiza siempre el icono
+(`app/web/src/styles.css:1552-1554`). Cada `NavLink` renderiza siempre el icono
 (`<s.Icono className="nav-icono" />`) y el texto (`<span className="nav-etiqueta">`), y es el CSS el
-que decide cuál de los dos se ve (`app/web/src/components/Layout.tsx:206-207`). El submenú
+que decide cuál de los dos se ve (`app/web/src/components/Layout.tsx:207-208`). El submenú
 CONFIGURACIÓN sigue el mismo patrón: su icono lleva la clase `nav-icono` y su flecha la clase
 `nav-chevron`, que se oculta en móvil (`app/web/src/components/Layout.tsx:75-77`).
 
 El submenú CONFIGURACIÓN se declara aparte con siete entradas (`app/web/src/components/Layout.tsx:45-53`)
 y se renderiza solo si el rol está en `ROLES_CONFIG = ['SUPER', 'ADMIN', 'SUPERVISOR']`
-(`app/web/src/components/Layout.tsx:55,172,210`). El desplegable usa `aria-haspopup="menu"`,
+(`app/web/src/components/Layout.tsx:55,173,211`). El desplegable usa `aria-haspopup="menu"`,
 `aria-expanded` y `role="menu"` (`app/web/src/components/Layout.tsx:69-80`).
 
 El menú de usuario muestra el avatar con la inicial, el nombre o `p00` y el rol, además de la
@@ -329,49 +340,81 @@ presenta una lista de definiciones con P00, correo, rol y central, y el botón d
 
 | Elemento de la barra | Componente | Referencia |
 |---|---|---|
-| Marca GGTO — CANTV | `Link` a `/` | `app/web/src/components/Layout.tsx:177-180` |
-| Buscador global | `BuscadorGlobal` | `app/web/src/components/Layout.tsx:182` |
-| Botón Agregar caso | botón con modal | `app/web/src/components/Layout.tsx:184-194` |
-| Navegación de secciones | `NavLink` por `SECCIONES` | `app/web/src/components/Layout.tsx:196-211` |
+| Marca GGTO — CANTV | `Link` a `/` | `app/web/src/components/Layout.tsx:178-181` |
+| Buscador global | `BuscadorGlobal` | `app/web/src/components/Layout.tsx:183` |
+| Botón Agregar caso | botón con modal | `app/web/src/components/Layout.tsx:185-195` |
+| Navegación de secciones | `NavLink` por `SECCIONES` | `app/web/src/components/Layout.tsx:197-212` |
 | Submenú CONFIGURACIÓN | `MenuConfiguracion` | `app/web/src/components/Layout.tsx:58-96` |
 | Menú de usuario | `MenuUsuario` | `app/web/src/components/Layout.tsx:99-167` |
+| Ficha rápida global | `FichaRapida` | `app/web/src/components/Layout.tsx:229-234` |
+
+### OPERACIÓN: secciones fusionadas (UI 2)
+
+El ciclo **D-65** eliminó de la barra superior las secciones PANEL, INGESTA, MONITOREO y ALERTAS por
+separado y las fusionó en una sola: **OPERACIÓN** (`RepoTecnico/estado_proyecto.md:132`). La página
+`app/web/src/pages/Operacion.tsx` (49 líneas) apila las cuatro pantallas y añade una barra de anclas
+para saltar entre ellas:
+
+- La barra de anclas es un `nav.operacion-anclas` con `aria-label="Secciones de Operación"` que
+  recorre el arreglo `ANCLAS` (`app/web/src/pages/Operacion.tsx:14-19`) generando un enlace
+  `href="#<id>"` por cada sección (`app/web/src/pages/Operacion.tsx:24-30`).
+- El cuerpo son cuatro `section.operacion-seccion` con los identificadores **`#panel`**, **`#ingesta`**,
+  **`#monitoreo`** y **`#alertas`**, cada uno con su `aria-label` y su componente dentro
+  (`app/web/src/pages/Operacion.tsx:32-46`). El orden es Panel, Ingesta, Monitoreo y Alertas.
+- `Operacion.tsx` importa las cuatro páginas (`Panel`, `Ingesta`, `Monitoreo` y `Alertas`) y las
+  renderiza una debajo de otra (`app/web/src/pages/Operacion.tsx:9-12,32-46`).
+
+Las **rutas antiguas siguen existiendo pero redirigen**: `/ingesta`, `/monitoreo` y `/alertas` se
+declaran como `<Route path="..." element={<Navigate to="/" replace />} />`, de modo que un enlace
+guardado no produce un error 404 sino que lleva a OPERACIÓN
+(`app/web/src/App.tsx:27-30`). La ruta índice `/` monta `Operacion` en lugar del antiguo `Panel`
+(`app/web/src/App.tsx:26`).
+
+El CSS que da forma a la página está al final de `styles.css`: `.operacion-anclas` dispone los enlaces
+en fila con `flex-wrap` (`app/web/src/styles.css:1936-1957`), y `.operacion-seccion` separa cada
+bloque con un borde superior azul y un `scroll-margin-top: 90px` para que el ancla no quede tapada por
+la barra fija (`app/web/src/styles.css:1959-1968`).
 
 ### Modales y tablas (requisito de UI D-64)
 
 El ciclo de mantenimiento **D-64** unificó la presentación de formularios y fichas, y el ancho de los
 listados (`RepoTecnico/estado_proyecto.md:131`). Los dos componentes nuevos son `Modal` y `PieTabla`.
 
-**`Modal` (`app/web/src/components/Modal.tsx`, 60 líneas).** Es el contenedor flotante genérico que
-usan **todos los formularios de inserción/edición y todas las fichas de detalle**. Recibe tres
-propiedades: `titulo`, `onCerrar` y `children` (`app/web/src/components/Modal.tsx:14-21`). La caja
-ocupa el **90 % de la ventana** —`width: 90vw`, `height: 90vh` y sus respectivos `max-*`
-(`app/web/src/styles.css:1058-1069`)— dentro de un fondo fijo a pantalla completa con velo oscuro
-(`app/web/src/styles.css:1046-1056`). El título va arriba, en `.modal-cabecera`, y el icono de cerrar
-a la derecha: un `button.modal-cerrar` con `aria-label="Cerrar"` y `title="Cerrar"` que dibuja
-`IconoCerrar` (`app/web/src/components/Modal.tsx:44-55`; el icono se exporta en
+**`Modal` (`app/web/src/components/Modal.tsx`, 63 líneas).** Es el contenedor flotante genérico que
+usan **todos los formularios de inserción/edición y todas las fichas de detalle**. Recibe cuatro
+propiedades: `titulo`, `onCerrar`, `children` y la extensión opcional `cabeceraExtra` —contenido que
+se pinta **junto al título**, antes del botón de cerrar
+(`app/web/src/components/Modal.tsx:14-23,46-48`). La caja ocupa el **90 % de la ventana**
+—`width: 90vw`, `height: 90vh` y sus respectivos `max-*` (`app/web/src/styles.css:1073-1084`)— dentro
+de un fondo fijo a pantalla completa con velo oscuro (`app/web/src/styles.css:1061-1071`). El título
+va arriba, en `.modal-cabecera`, y el icono de cerrar a la derecha: un `button.modal-cerrar` con
+`aria-label="Cerrar"` y `title="Cerrar"` que dibuja `IconoCerrar`
+(`app/web/src/components/Modal.tsx:49-57`; el icono se exporta en
 `app/web/src/components/Iconos.tsx:157`). El cuerpo va en `.modal-cuerpo`, que hace **scroll propio**
-cuando el contenido no cabe (`app/web/src/components/Modal.tsx:56` y
-`app/web/src/styles.css:1071-1076`). Es un diálogo accesible: `role="dialog"` y `aria-modal="true"`
-con el título como `aria-label` (`app/web/src/components/Modal.tsx:39-41`).
+cuando el contenido no cabe (`app/web/src/components/Modal.tsx:59` y
+`app/web/src/styles.css:1086-1091`). Es un diálogo accesible: `role="dialog"` y `aria-modal="true"`
+con el título como `aria-label` (`app/web/src/components/Modal.tsx:40-43`). La extensión
+`cabeceraExtra` la usa la ficha rápida para poner su buscador al lado del título (véase «Ficha rápida
+con pestañas (UI 3)»).
 
-El cierre tiene **tres caminos** (`app/web/src/components/Modal.tsx:22-42`):
+El cierre tiene **tres caminos**:
 
-1. El botón **✕** de la cabecera (`app/web/src/components/Modal.tsx:46-54`).
+1. El botón **✕** de la cabecera (`app/web/src/components/Modal.tsx:49-57`).
 2. La tecla **Escape**, mediante un escucha de `keydown` que se registra al montar y se retira al
-   desmontar (`app/web/src/components/Modal.tsx:22-33`).
+   desmontar (`app/web/src/components/Modal.tsx:24-28,31-34`).
 3. **Clic en el fondo**: `modal-fondo` cierra con `onMouseDown`, mientras que la caja detiene la
    propagación para que un clic dentro no cierre el modal
-   (`app/web/src/components/Modal.tsx:36-42`).
+   (`app/web/src/components/Modal.tsx:38-44`).
 
 Mientras el modal está abierto, el `body` queda con `overflow: hidden` para que el fondo no se
-desplace, y se restaura el valor previo al cerrar (`app/web/src/components/Modal.tsx:27-32`).
+desplace, y se restaura el valor previo al cerrar (`app/web/src/components/Modal.tsx:29-34`).
 
 El reparto es deliberado: **los formularios de inserción/edición y las fichas de detalle van a
 modal** (por ejemplo, el alta de central en `app/web/src/pages/Centrales.tsx:186` y las de causa y
 método en `app/web/src/pages/Catalogos.tsx:191,254`), mientras que **los filtros y las consultas
 siguen *inline*** en la propia página. El modal de alta de caso de la barra superior usa el
 componente previo `ModalCaso`, que ahora envuelve su contenido en `.modal-cuerpo`
-(`app/web/src/components/ModalCaso.tsx:230`).
+(`app/web/src/components/ModalCaso.tsx:231`).
 
 **`PieTabla` (`app/web/src/components/PieTabla.tsx`, 37 líneas).** Es el pie de tabla que muestra el
 **conteo total de registros**. Recibe `colSpan`, `total`, `singular`, `plural` y `cargando`
@@ -380,13 +423,96 @@ lleva la clase `tabla-pie` y el `colSpan` recibido, y escribe `Total: N registro
 singular y plural— o `Cargando…` mientras la lista se obtiene
 (`app/web/src/components/PieTabla.tsx:28-36`). Se coloca como última fila del listado; el estilo de
 `.tabla-pie` es texto alineado a la derecha, en negrita y con fondo claro
-(`app/web/src/styles.css:664-672`). Se usa, por ejemplo, en
+(`app/web/src/styles.css:679-687`). Se usa, por ejemplo, en
 `app/web/src/pages/Centrales.tsx:355`, `app/web/src/pages/Monitoreo.tsx:250,295` y
 `app/web/src/pages/Catalogos.tsx:373,452`.
 
 **Ancho de las tablas.** El contenedor `.tabla-envoltura` mide **90vw** con `max-width: 100%`, de modo
 que ocupa el 90 % del ancho de la ventana sin desbordarla, y conserva `overflow-x: auto` para el
-desplazamiento horizontal (`app/web/src/styles.css:652-661`).
+desplazamiento horizontal (`app/web/src/styles.css:667-676`).
+
+### Filtros de tablas en una sola fila (UI 1)
+
+El ciclo **D-65** unificó los filtros de los listados: **todos van en una sola fila**, a lo ancho de la
+tabla (`RepoTecnico/estado_proyecto.md:132`). La clase `.filtros-tabla` fija `width: 90vw` con
+`max-width: 100%` y `overflow-x: auto`, de modo que ocupa el ancho de la tabla y, si los campos no
+caben, la fila se desplaza en horizontal en lugar de partirse en varias líneas
+(`app/web/src/styles.css:1902-1910`). Cuando el contenedor es un `<form>` con la clase `.formulario`,
+la regla `.formulario.filtros-tabla` lo pasa a `display: flex` con `flex-flow: row nowrap`, alinea los
+campos abajo y reparte el ancho con `flex: 1 1 0` y `min-width: 130px`
+(`app/web/src/styles.css:1912-1932`). La clase heredada `.fila-filtros` se reescribió con el mismo
+comportamiento de fila única (`app/web/src/styles.css:479-500`).
+
+La clase se aplica a los filtros de:
+
+- **CASOS**: `<form className="formulario filtros-tabla">` (`app/web/src/pages/Casos.tsx:463`).
+- **ESPECIALES**: `<form className="formulario filtros-tabla">` (`app/web/src/pages/Especiales.tsx:209`).
+- **MONITOREO**: `<form className="formulario filtros-tabla">` (`app/web/src/pages/Monitoreo.tsx:516`).
+- **DESPACHO** (Jornada): `<form className="formulario filtros-tabla">`
+  (`app/web/src/pages/Despacho.tsx:609`).
+- **AGENDA**: `<div className="cal-filtros filtros-tabla">` (`app/web/src/pages/Agenda.tsx:478`).
+- **CONFIGURACIÓN**: las pantallas Central, Técnicos, Flota, Sectores, Cuadrillas y Catálogos usan
+  `.fila-filtros` (`app/web/src/pages/Centrales.tsx:286`, `app/web/src/pages/Tecnicos.tsx:306`,
+  `app/web/src/pages/Flota.tsx:320`, `app/web/src/pages/Sectores.tsx:461`,
+  `app/web/src/pages/Cuadrillas.tsx:497` y `app/web/src/pages/Catalogos.tsx:402`).
+
+**CASOS: filtros eliminados.** En CASOS la fila conserva **Texto libre, Estado, Clase, Tipo y
+Cuadrilla 0 (supervisor)**, más los botones Filtrar y Limpiar
+(`app/web/src/pages/Casos.tsx:463-538`). Se **eliminaron** el filtro **Origen** y el **rango de
+fechas** («Reporte desde» / «Reporte hasta»): ya no existen los campos `#filtro-origen`,
+`#filtro-desde` ni `#filtro-hasta` (`app/web/src/pages/Casos.tsx:463-529`). El dato de origen sigue
+visible en la **ficha del caso**, no como filtro (`app/web/src/pages/Casos.tsx:612`).
+
+### Ficha rápida con pestañas (UI 3)
+
+El ciclo **D-65** añadió la **ficha rápida** `app/web/src/components/FichaRapida.tsx` (379 líneas): un
+modal flotante al 90 % —construido sobre `Modal`— que muestra la información de un caso en pestañas y
+permite buscar otro caso sin cerrarlo (`RepoTecnico/estado_proyecto.md:132`).
+
+**Buscador junto al título.** La ficha pasa a `Modal` la propiedad `cabeceraExtra` con un formulario
+`form.modal-cabecera-busqueda` (`role="search"`) que contiene un `<input type="search">` y el botón
+Buscar (`app/web/src/components/FichaRapida.tsx:175-190`). Como `Modal` pinta `cabeceraExtra` dentro
+de `.modal-cabecera`, entre el `<h2>` del título y el botón de cerrar
+(`app/web/src/components/Modal.tsx:46-48`), el cuadro de texto queda **al lado del título**; el estilo
+`.modal-cabecera-busqueda` lo hace crecer con `flex: 1 1 auto` y le da un ancho mínimo al campo
+(`app/web/src/styles.css:1972-1983`). El encabezado cambia según haya caso o no: «Ficha del caso
+#<id> — <avería>» o «Búsqueda rápida por avería o teléfono»
+(`app/web/src/components/FichaRapida.tsx:167-169`). El formulario permite **refinar la búsqueda** sin
+cerrar la ficha; si el término arroja una sola coincidencia, se abre directamente y, si arroja varias,
+se listan en `ul.ficha-resultados` para elegir
+(`app/web/src/components/FichaRapida.tsx:141-165,196-215`).
+
+**Pestañas.** El cuerpo declara la unión `Pestana = 'ACTUAL' | 'ESTADO' | 'CONTACTO' | 'TECNICO'` y el
+arreglo `PESTANAS` con las etiquetas **Actual, Estado, Contacto y Técnico**
+(`app/web/src/components/FichaRapida.tsx:22-29`). Se renderizan como `button[role="tab"]` dentro de
+`div.ficha-tabs[role="tablist"]`, marcando el activo con `aria-selected`
+(`app/web/src/components/FichaRapida.tsx:219-232`; estilos en `app/web/src/styles.css:1987-2017`). El
+contenido de cada pestaña es:
+
+| Pestaña | Contenido | Referencia |
+|---|---|---|
+| **Actual** | Tarjetas de estado, asignación, fecha de ingreso y fecha de reporte; tabla de asignación (reparador principal, cuadrilla externa, sector, cuadrilla 0) y bitácora (último comentario y actualizado en) | `app/web/src/components/FichaRapida.tsx:234-263` |
+| **Estado** | Estado actual, falla masiva, cuadrilla 0 y origen; fechas de reporte, compromiso y cita; e **historial de estados** (bitácora) en su propia tabla | `app/web/src/components/FichaRapida.tsx:265-318` |
+| **Contacto** | Cliente (nombre, teléfono, dirección, persona que reporta, contacto) y ubicación (sector, municipio, parroquia, área) | `app/web/src/components/FichaRapida.tsx:320-340` |
+| **Técnico** | Asignación de campo (reparador, cuadrilla externa, ayudantes, flota CAN) y datos de trabajo (área, unidad de negocio, OLT, plan, slot, puerto, FAT, serial) | `app/web/src/components/FichaRapida.tsx:342-368` |
+
+El historial de estados se carga aparte con `api.obtenerHistorialCaso` al seleccionar un caso
+(`app/web/src/components/FichaRapida.tsx:73-92`).
+
+**Cómo se abre.** Tiene dos puertas de entrada y acepta dos propiedades iniciales: `terminoInicial`
+(avería o teléfono) o `idCasoInicial` (`app/web/src/components/FichaRapida.tsx:14-20`).
+
+1. **Búsqueda rápida del PANEL.** El formulario de PANEL ya **no navega a CASOS**: al enviar, guarda
+   el término y monta `FichaRapida` con `terminoInicial` (`app/web/src/pages/Panel.tsx:46-55,95-100`).
+   Al montar con un término, la ficha busca con `api.buscarCasos({ q, limite: 8 })`; con una sola
+   coincidencia abre el detalle y con varias muestra la lista
+   (`app/web/src/components/FichaRapida.tsx:116-139`).
+2. **Buscador global de la barra superior.** `Layout` pasa a `BuscadorGlobal` la función
+   `onAbrirCaso`, que guarda el caso elegido en el estado `fichaGlobal` y monta `FichaRapida` con
+   `idCasoInicial` (`app/web/src/components/Layout.tsx:172,183,229-234`). El buscador global, al
+   elegir un resultado, llama a `onAbrirCaso` si existe; si no, navega a CASOS
+   (`app/web/src/components/BuscadorGlobal.tsx:61-68`). Al montar con un `idCasoInicial`, la ficha
+   pide el detalle con `api.obtenerCaso` (`app/web/src/components/FichaRapida.tsx:94-113`).
 
 ## Cliente HTTP y tipos
 
@@ -564,15 +690,20 @@ El estado verificado del frontend y sus pendientes son los siguientes:
   169/169 de pytest, para un total de 215 (`RepoTecnico/estado_proyecto.md:129`). Tras el ciclo de
   UI **D-64** la suite E2E quedó en **56/56** —con el nuevo `13-ui-requisitos.spec.js`, que mide el
   90 % real del modal y de la tabla y la barra por dispositivo— para un total de **225 pruebas**
-  (`RepoTecnico/estado_proyecto.md:131`). El detalle de escenarios y su alcance exacto por página es
-  **pendiente de confirmar** contra el informe de Fase 4.
+  (`RepoTecnico/estado_proyecto.md:131`). Con el ciclo **D-65** la suite pasó a **60/60** al añadirse
+  `RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js` con **4 casos** —filtros de
+  CASOS en una sola fila y sin Origen ni rango de fechas; barra con OPERACIÓN y sin las secciones
+  fusionadas; OPERACIÓN con las cuatro secciones y las rutas antiguas redirigiendo; y ficha rápida
+  con el buscador junto al título y las pestañas—, para un total del proyecto de **229 pruebas**
+  (169 `pytest` + 60 E2E) (`RepoTecnico/estado_proyecto.md:132`). El detalle de escenarios y su
+  alcance exacto por página es **pendiente de confirmar** contra el informe de Fase 4.
 - **Accesibilidad.** RNF-23 exige que la web sea conforme a **WCAG 2.1 AA** y que la verificación se
   haga con auditoría automatizada (axe/Lighthouse) más revisión manual
   (`RepoTecnico/requerimientos.md:202`). El código incluye algunas bases: `aria-hidden` en el
   *spinner* de carga (`app/web/src/components/RutaProtegida.tsx:11`), `aria-label` y `title` en los
-  enlaces de sección (`app/web/src/components/Layout.tsx:202-203`), `role="menu"` y
+  enlaces de sección (`app/web/src/components/Layout.tsx:203-204`), `role="menu"` y
   `aria-haspopup` en los desplegables (`app/web/src/components/Layout.tsx:69-80`) y `aria-label` en
-  el enlace de marca (`app/web/src/components/Layout.tsx:177`). La auditoría formal con axe o
+  el enlace de marca (`app/web/src/components/Layout.tsx:178`). La auditoría formal con axe o
   Lighthouse y el registro de conformidad AA están **pendientes de confirmar**.
 - **Contraste y foco.** La paleta base de los gráficos se exporta como `PALETA`
   (`app/web/src/components/graficos.tsx:15`) y las clases visuales viven en

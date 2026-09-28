@@ -16,12 +16,12 @@
 | Nivel | Herramienta | Ejecutadas | Pasadas | Fallidas |
 |---|---|---|---|---|
 | Unitarias + integración + contratos | `pytest` | **169** | **169** | **0** |
-| E2E de navegador | Playwright/Chromium | **56** | **56** | **0** |
+| E2E de navegador | Playwright/Chromium | **60** | **60** | **0** |
 | Calidad estática | `ruff` / `mypy` / `tsc` strict | 3 | 3 | 0 |
 
 - `pytest`: `169 passed (37.5m)` — resumen en `logs/pytest-resultados.txt`
   (log completo en `logs/pytest.log`).
-- E2E: `56 passed (3.3m)` — informe en `logs/e2e-resultados.json` y
+- E2E: `60 passed (18.6m)` — informe en `logs/e2e-resultados.json` y
   `logs/e2e-reporte/`.
 - Cobertura E2E: autenticación, navegación y RBAC, casos, especiales, agenda,
   despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox),
@@ -65,7 +65,8 @@
 | `11-rbac.spec.js` | 4 | 4 | TECNICO solo lectura y ADMIN operativo |
 | `12-ayuda.spec.js` | 5 | 5 | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF (Fase 5) |
 | `13-ui-requisitos.spec.js` | 5 | 5 | Barra PC/móvil, modal 90 % con título y cerrar, ficha modal y tabla 90 % con pie (D-64) |
-| **Total** | **56** | **56** | `56 passed (3.3m)` |
+| `14-operacion-filtros-ficha.spec.js` | 4 | 4 | Filtros en una fila sin Origen ni rango de fechas, OPERACIÓN fusionada y ficha rápida con pestañas (D-65) |
+| **Total** | **60** | **60** | `60 passed (18.6m)` |
 
 ### 3.2 `pytest` (esquema `ggto_test`)
 
@@ -94,7 +95,7 @@
 ## 4. Criterios de salida
 
 - [x] `pytest` completo en verde (169/169).
-- [x] Playwright E2E completo en verde (56/56).
+- [x] Playwright E2E completo en verde (60/60).
 - [x] `ruff`, `mypy` y `tsc` strict sin hallazgos.
 - [x] Hallazgos corregidos y documentados.
 
@@ -102,14 +103,14 @@
 
 ## 5. Conclusión
 
-La **Fase 4 cierra con 225 pruebas en verde** (169 de `pytest` + 56 E2E) y los
+La **Fase 4 cierra con 229 pruebas en verde** (169 de `pytest` + 60 E2E) y los
 tres analizadores estáticos sin hallazgos. Se encontraron y corrigieron **seis
 hallazgos** (F4-01…F4-06): tres de producto/entorno de pruebas y tres defectos de
 las propias pruebas. **No quedan defectos funcionales abiertos** y los criterios
 de salida de `plan_pruebas.md` §6 se cumplen en su totalidad.
 
 > **Regresión de la Fase 5:** al integrar la sección AYUDA en la SPA se añadió
-> `12-ayuda.spec.js` (5 casos) y se repitió la suite E2E completa: **56/56**, sin
+> `12-ayuda.spec.js` (5 casos) y se repitió la suite E2E completa: **60/60**, sin
 > regresiones sobre los casos previos.
 >
 > **Ciclo de UI (D-64):** la conversión de formularios/fichas a modales del 90 %
@@ -117,6 +118,13 @@ de salida de `plan_pruebas.md` §6 se cumplen en su totalidad.
 > (5 casos que miden el 90 % de la ventana y la barra por dispositivo), además
 > de actualizar los especímenes de configuración, agenda, despacho e ingesta al
 > nuevo flujo de apertura.
+>
+> **Ciclo de UI (D-65):** los filtros de tablas en una sola fila (y la retirada
+> del filtro Origen y del rango de fechas en CASOS), la fusión de PANEL, INGESTA,
+> MONITOREO y ALERTAS en OPERACIÓN y la ficha rápida con pestañas se validaron con
+> `14-operacion-filtros-ficha.spec.js` (4 casos). Se actualizaron además
+> `02-navegacion` (5 secciones), `03-casos` (la búsqueda global abre la ficha
+> rápida), `09-alertas` y `11-rbac`.
 
 > **Pendientes que no bloquean la Fase 4:** la app móvil Flutter (Ciclo 8, fuera
 > de alcance), las credenciales de Telegram/correo (los envíos quedan en la

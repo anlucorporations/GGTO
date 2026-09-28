@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
 import type { Resumen } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import FichaRapida from '../components/FichaRapida';
 import { useAuth } from '../auth/AuthContext';
 
 const TARJETAS: { clave: keyof Resumen; etiqueta: string }[] = [
@@ -16,12 +16,12 @@ const TARJETAS: { clave: keyof Resumen; etiqueta: string }[] = [
 
 export default function Panel() {
   const { usuario } = useAuth();
-  const navigate = useNavigate();
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(true);
   const [termino, setTermino] = useState('');
   const [errorBusqueda, setErrorBusqueda] = useState('');
+  const [fichaTermino, setFichaTermino] = useState<string | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -51,7 +51,7 @@ export default function Panel() {
       return;
     }
     setErrorBusqueda('');
-    navigate('/casos', { state: { q } });
+    setFichaTermino(q);
   }
 
   return (
@@ -86,8 +86,18 @@ export default function Panel() {
             </button>
           </div>
         </form>
-        <p className="texto-pequeno">La búsqueda se abre en la página CASOS con el término aplicado.</p>
+        <p className="texto-pequeno">
+          La ficha rápida muestra la información del caso en pestañas (Actual, Estado, Contacto y
+          Técnico) y su cuadro de texto también permite refinar la búsqueda.
+        </p>
       </div>
+
+      {fichaTermino !== null && (
+        <FichaRapida
+          terminoInicial={fichaTermino}
+          onCerrar={() => setFichaTermino(null)}
+        />
+      )}
 
       {cargando ? (
         <p className="texto-pequeno">Cargando resumen…</p>

@@ -206,7 +206,7 @@ export default function Especiales() {
       {/* Filtros + listado */}
       <div className="panel-bloque">
         <h2>Listado de casos especiales</h2>
-        <form className="formulario" onSubmit={filtrar}>
+        <form className="formulario filtros-tabla" onSubmit={filtrar}>
           <div className="campo">
             <label htmlFor="filtro-clasificacion">Clasificación</label>
             <select

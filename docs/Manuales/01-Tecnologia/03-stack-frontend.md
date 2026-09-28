@@ -10,24 +10,40 @@
    sistema y aparece la pantalla de acceso.
 2. **El sistema pide usuario y clave una sola vez.** Después de entrar, la sesión dura **8 horas**
    (una jornada). Si cierras el navegador o recargas, la sesión sigue viva mientras no expire.
-3. **Todos los botones de la barra superior te llevan a una sección.** Son **nueve** y están siempre
-   visibles: PANEL, CASOS, ESPECIALES, AGENDA, DESPACHO, INGESTA, MONITOREO, ALERTAS y **AYUDA**.
-   CONFIGURACIÓN aparece solo para SUPER, ADMIN y SUPERVISOR.
-4. **La barra se adapta a tu pantalla.** En una computadora (pantalla grande) ves **solo los nombres**
+3. **Todos los botones de la barra superior te llevan a una sección.** Son **seis** y están siempre
+   visibles: **OPERACIÓN**, CASOS, ESPECIALES, AGENDA, DESPACHO y **AYUDA**. CONFIGURACIÓN aparece
+   solo para SUPER, ADMIN y SUPERVISOR.
+4. **OPERACIÓN reúne cuatro pantallas en una sola.** Es la primera sección y muestra, una debajo de
+   otra: el **Panel** (resumen y búsqueda rápida), la **Ingesta** (carga de archivos), el **Monitoreo**
+   (tablero y gráficos) y las **Alertas**. Arriba hay cuatro enlaces —Panel, Ingesta, Monitoreo y
+   Alertas— para saltar directo a cada parte. Los enlaces antiguos `/ingesta`, `/monitoreo` y
+   `/alertas` siguen funcionando: ahora te traen a OPERACIÓN.
+5. **La barra se adapta a tu pantalla.** En una computadora (pantalla grande) ves **solo los nombres**
    de las secciones. En un teléfono o pantalla angosta (hasta 768 puntos de ancho) ves **solo los
    iconos**, para que todo quepa.
-5. **Los formularios y las fichas se abren en una ventana flotante grande.** Cuando agregas o editas
+6. **Los formularios y las fichas se abren en una ventana flotante grande.** Cuando agregas o editas
    algo, o cuando abres el detalle de un registro, aparece una ventana que ocupa el **90 % de la
    pantalla**, con el título arriba y una **X** para cerrar. También puedes cerrarla con la tecla
    **Escape** o haciendo clic fuera de la ventana. Si el contenido es largo, la ventana tiene su
    propia barra de desplazamiento.
-6. **Las tablas son más anchas y muestran el total.** Cada listado ocupa el **90 % del ancho** de la
+7. **La ficha rápida muestra la información en pestañas.** Cuando buscas un caso por su avería o su
+   teléfono —desde el Panel o desde el buscador de la barra de arriba— se abre la **ficha rápida**:
+   una ventana grande con el cuadro de búsqueda **al lado del título** y cuatro pestañas: **Actual**
+   (asignación, último comentario y fecha de ingreso), **Estado** (estado, fechas y bitácora),
+   **Contacto** (cliente, teléfono y dirección) y **Técnico** (reparador, ayudantes, cuadrilla, flota
+   y datos técnicos).
+8. **Los filtros de las tablas van en una sola fila.** Todos los filtros de un listado se alinean en
+   una sola línea, a lo ancho de la tabla. Si en tu pantalla no caben, la fila se desplaza hacia los
+   lados en lugar de partirse en varias líneas. En **CASOS** ya no existen el filtro **Origen** ni el
+   rango de fechas («Reporte desde» y «Reporte hasta»): quedan Texto libre, Estado, Clase, Tipo y
+   Cuadrilla 0.
+9. **Las tablas son más anchas y muestran el total.** Cada listado ocupa el **90 % del ancho** de la
    pantalla y, al final, trae una franja con el **total de registros** que se están mostrando (por
    ejemplo, «Total: 12 casos»). Si todavía está cargando, dice «Cargando…».
-7. **Si tu rol es TECNICO, el sistema se pone en modo solo lectura.** Verás un aviso permanente y el
-   botón **«Agregar caso»** quedará deshabilitado. Puedes consultar, pero no modificar.
-8. **Puedes compartir enlaces internos.** Si copias la dirección de una pantalla (por ejemplo
-   `/monitoreo`) y la abres en otra pestaña, funciona igual.
+10. **Si tu rol es TECNICO, el sistema se pone en modo solo lectura.** Verás un aviso permanente y el
+    botón **«Agregar caso»** quedará deshabilitado. Puedes consultar, pero no modificar.
+11. **Puedes compartir enlaces internos.** Si copias la dirección de una pantalla (por ejemplo
+    `/casos`) y la abres en otra pestaña, funciona igual.
 
 <!-- GENERAR_IMAGEN: mapa-pantallas-spa.svg -->
 ```mermaid
@@ -36,16 +52,14 @@ flowchart TD
     L --> G{"¿Sesión válida?"}
     G -- "No" --> L
     G -- "Sí" --> LAY["Armazón (Layout)<br/>barra superior + contenido"]
-    LAY --> P["PANEL /"]
+    LAY --> O["OPERACIÓN /<br/>Panel · Ingesta · Monitoreo · Alertas"]
     LAY --> C["CASOS /casos"]
-    LAY --> I["INGESTA /ingesta"]
-    LAY --> D["DESPACHO /despacho"]
     LAY --> E["ESPECIALES /especiales"]
     LAY --> A["AGENDA /agenda"]
-    LAY --> M["MONITOREO /monitoreo"]
-    LAY --> AL["ALERTAS /alertas"]
+    LAY --> D["DESPACHO /despacho"]
     LAY --> AY["AYUDA /ayuda"]
     LAY -. "solo SUPER, ADMIN,<br/>SUPERVISOR" .-> CFG["CONFIGURACIÓN<br/>7 pantallas"]
+    O -. "las rutas antiguas<br/>redirigen a /" .-> OLD["/ingesta · /monitoreo<br/>/alertas"]
 ```
 
 ## Stack de la SPA
@@ -102,7 +116,7 @@ final. Es una barrera de calidad, no un defecto.
 ### react-router-dom
 
 El enrutado es lo que decide **qué pantalla mostrar según la dirección**. GGTO usa `BrowserRouter`,
-lo que significa que las direcciones son direcciones reales (`/casos`, `/monitoreo`). Por eso el motor
+lo que significa que las direcciones son direcciones reales (`/casos`, `/despacho`). Por eso el motor
 tiene que devolver la página principal cuando no encuentra el archivo: así React se encarga de mostrar
 lo correcto.
 
@@ -112,15 +126,16 @@ funcionaría.
 
 ## Estructura del proyecto web
 
-La web vive en la carpeta `app/web`. Estas son sus partes. La web tiene **17 pantallas** y su barra
-superior reúne **9 secciones**: PANEL, CASOS, ESPECIALES, AGENDA, DESPACHO, INGESTA, MONITOREO,
-ALERTAS y AYUDA. Las siete pantallas de configuración se agrupan en el menú **CONFIGURACIÓN**.
+La web vive en la carpeta `app/web`. Estas son sus partes. La web tiene **18 pantallas** y su barra
+superior reúne **6 secciones**: OPERACIÓN, CASOS, ESPECIALES, AGENDA, DESPACHO y AYUDA. OPERACIÓN
+agrupa las cuatro pantallas de consulta (Panel, Ingesta, Monitoreo y Alertas). Las siete pantallas de
+configuración se agrupan en el menú **CONFIGURACIÓN**.
 
 ### main.tsx y App.tsx
 
 - **`main.tsx`** es el arranque: 16 líneas que encienden React, conectan el enrutador, conectan el
   sistema de sesión y cargan los estilos.
-- **`App.tsx`** es el **mapa de rutas**: 51 líneas que dicen qué pantalla corresponde a cada
+- **`App.tsx`** es el **mapa de rutas**: 49 líneas que dicen qué pantalla corresponde a cada
   dirección. No tiene reglas de negocio.
 
 La estructura de rutas es anidada: hay un "guardián" que revisa la sesión y, si todo está bien,
@@ -129,31 +144,32 @@ muestra el armazón con la barra superior y la pantalla que pediste.
 ```
 /login                    → pantalla de acceso (pública)
 (todo lo demás)           → primero revisa la sesión
-   /                      → PANEL
-   /ingesta  /casos  /despacho  /especiales  /agenda
-   /monitoreo  /alertas  /ayuda
+   /                      → OPERACIÓN (Panel · Ingesta · Monitoreo · Alertas)
+   /casos  /especiales  /agenda  /despacho  /ayuda
+   /ingesta  /monitoreo  /alertas   → redirigen a /
    /central  /sectores  /tecnicos  /flota  /cuadrillas
    /catalogos  /parametros
-(dirección desconocida)   → vuelve al PANEL
+(dirección desconocida)   → vuelve a OPERACIÓN
 ```
 
 ### pages/
 
-La carpeta `pages/` tiene **17 pantallas**, una por sección. Estas son, con su tamaño real en líneas
+La carpeta `pages/` tiene **18 pantallas**, una por sección. Estas son, con su tamaño real en líneas
 (útil para saber cuáles son las más complejas):
 
 | Pantalla | Archivo | Líneas |
 |---|---|---|
-| Panel | `Panel.tsx` | 106 |
+| Operación | `Operacion.tsx` | 49 |
+| Panel | `Panel.tsx` | 116 |
 | Login | `Login.tsx` | 202 |
 | Ingesta | `Ingesta.tsx` | 447 |
-| Casos | `Casos.tsx` | 974 |
+| Casos | `Casos.tsx` | 931 |
 | Despacho | `Despacho.tsx` | 1234 |
 | Especiales | `Especiales.tsx` | 509 |
 | Agenda | `Agenda.tsx` | 805 |
 | Monitoreo | `Monitoreo.tsx` | 777 |
 | Alertas | `Alertas.tsx` | 661 |
-| Centrales | `Centrales.tsx` | 336 |
+| Centrales | `Centrales.tsx` | 366 |
 | Sectores | `Sectores.tsx` | 548 |
 | Tecnicos | `Tecnicos.tsx` | 397 |
 | Flota | `Flota.tsx` | 402 |
@@ -165,7 +181,8 @@ La carpeta `pages/` tiene **17 pantallas**, una por sección. Estas son, con su 
 Todas siguen el mismo patrón: al abrirse piden sus datos al motor, muestran un aviso mientras cargan,
 y si algo falla muestran un mensaje de error. El **PANEL** es el mejor ejemplo: muestra seis tarjetas
 con los conteos de **tablas, centrales, roles, cuadrillas, causas y parámetros**, y tiene un buscador
-rápido que salta a CASOS con el texto ya escrito.
+rápido que abre la **ficha rápida** del caso sin cambiar de pantalla. **OPERACIÓN** es la pantalla que
+las une: coloca el Panel, la Ingesta, el Monitoreo y las Alertas una debajo de otra.
 
 ### components/
 
@@ -176,6 +193,7 @@ La carpeta `components/` guarda las piezas que se repiten en varias pantallas:
 | `Layout` | El armazón: barra superior, menús y espacio de contenido |
 | `RutaProtegida` | El guardián de la sesión |
 | `BuscadorGlobal` | Buscador de un solo campo, en la barra superior |
+| `FichaRapida` | La ficha de un caso con buscador junto al título y pestañas |
 | `ModalCaso` | La ventana del botón «Agregar caso» |
 | `Modal` | La ventana flotante grande donde se abren los formularios y las fichas |
 | `PieTabla` | La franja al pie de cada tabla con el total de registros |
@@ -212,21 +230,21 @@ validación falla, se limpia la sesión y se vuelve al acceso.
 
 ## Enrutado y proteccion
 
-### Rutas publicas y protegidas (app/web/src/App.tsx:24-49)
+### Rutas publicas y protegidas (app/web/src/App.tsx:22-46)
 
 Hay **una sola dirección pública**: `/login`. Todas las demás exigen sesión válida.
 
 | Tipo | Dirección | Pantalla |
 |---|---|---|
 | Pública | `/login` | Acceso |
-| Protegida | `/` | PANEL |
-| Protegida | `/ingesta` | INGESTA |
+| Protegida | `/` | OPERACIÓN |
+| Redirección | `/ingesta` | Vuelve a OPERACIÓN |
+| Redirección | `/monitoreo` | Vuelve a OPERACIÓN |
+| Redirección | `/alertas` | Vuelve a OPERACIÓN |
 | Protegida | `/casos` | CASOS |
 | Protegida | `/despacho` | DESPACHO |
 | Protegida | `/especiales` | ESPECIALES |
 | Protegida | `/agenda` | AGENDA |
-| Protegida | `/monitoreo` | MONITOREO |
-| Protegida | `/alertas` | ALERTAS |
 | Protegida | `/ayuda` | AYUDA |
 | Protegida | `/central` | CONFIGURACIÓN · Central |
 | Protegida | `/sectores` | CONFIGURACIÓN · Sectores |
@@ -235,7 +253,7 @@ Hay **una sola dirección pública**: `/login`. Todas las demás exigen sesión 
 | Protegida | `/cuadrillas` | CONFIGURACIÓN · Cuadrillas |
 | Protegida | `/catalogos` | CONFIGURACIÓN · Catálogos |
 | Protegida | `/parametros` | CONFIGURACIÓN · Parámetros |
-| Redirección | cualquier otra | Vuelve al PANEL |
+| Redirección | cualquier otra | Vuelve a OPERACIÓN |
 
 **Aviso importante:** no existen pantallas separadas de SEGUIMIENTO, EMPRESAS, REFERIDOS ni GESTIÓN.
 Esas vistas se atienden desde **ESPECIALES** y desde **CASOS**. No busques un menú que no existe.
@@ -276,19 +294,20 @@ medida de seguridad por sí sola.
 
 ### Layout y barra superior (app/web/src/components/Layout.tsx)
 
-El armazón de la aplicación (230 líneas) tiene tres partes:
+El armazón de la aplicación (237 líneas) tiene tres partes:
 
 1. **Barra superior (`topbar`)** con la marca GGTO — CANTV, el buscador global, el botón
    «Agregar caso», la navegación y el menú de usuario.
 2. **Contenido (`main`)** con el aviso de solo lectura (cuando corresponde) y la pantalla actual.
-3. **Ventana de alta de caso**, que aparece solo cuando se abre.
+3. **Ventanas flotantes**, que aparecen solo cuando se abren: la de alta de caso y la **ficha rápida**
+   del buscador global.
 
-Las secciones principales son **nueve** y están en este orden: **PANEL, CASOS, ESPECIALES, AGENDA,
-DESPACHO, INGESTA, MONITOREO, ALERTAS y AYUDA**.
+Las secciones principales son **seis** y están en este orden: **OPERACIÓN, CASOS, ESPECIALES,
+AGENDA, DESPACHO y AYUDA**.
 
 **La barra cambia según el dispositivo.** En una computadora se ven **solo los nombres** de las
 secciones. En una pantalla angosta (hasta 768 puntos de ancho, como un teléfono) se ven **solo los
-iconos**: el texto se oculta y vuelve a aparecer el dibujo de cada sección. Así los nueve accesos
+iconos**: el texto se oculta y vuelve a aparecer el dibujo de cada sección. Así los seis accesos
 caben sin apretarse.
 
 El submenú **CONFIGURACIÓN** tiene siete entradas y se muestra solo si tu rol es SUPER, ADMIN o
@@ -300,12 +319,28 @@ y el botón para cerrar sesión.
 
 | Elemento de la barra | Para qué sirve |
 |---|---|
-| Marca GGTO — CANTV | Vuelve al PANEL |
-| Buscador global | Busca casos desde cualquier pantalla |
+| Marca GGTO — CANTV | Vuelve a OPERACIÓN |
+| Buscador global | Busca casos desde cualquier pantalla y abre la ficha rápida |
 | Botón «Agregar caso» | Abre la ventana de alta (deshabilitado en solo lectura) |
-| Navegación de secciones | Salta entre las nueve secciones principales |
+| Navegación de secciones | Salta entre las seis secciones principales |
 | Submenú CONFIGURACIÓN | Acceso a las siete pantallas de configuración |
 | Menú de usuario | Datos de tu cuenta y cierre de sesión |
+
+### OPERACIÓN: secciones fusionadas (UI 2)
+
+Antes había cuatro accesos separados en la barra: PANEL, INGESTA, MONITOREO y ALERTAS. Ahora hay uno
+solo, **OPERACIÓN**, que reúne las cuatro pantallas para no tener que saltar de una en una.
+
+- Al entrar a OPERACIÓN (la dirección `/`) ves las cuatro partes **una debajo de otra**, en este
+  orden: **Panel**, **Ingesta**, **Monitoreo** y **Alertas**.
+- Arriba de todo hay una **barra de enlaces** —Panel, Ingesta, Monitoreo y Alertas— que te lleva
+  directo a cada parte, sin desplazarte a mano.
+- Las direcciones antiguas `/ingesta`, `/monitoreo` y `/alertas` **siguen existiendo**, pero ya no
+  tienen pantalla propia: si alguien abre un enlace guardado, el sistema lo trae a OPERACIÓN. Así
+  ningún enlace viejo se rompe.
+- La ruta `/` (la portada) ahora muestra OPERACIÓN en lugar del antiguo Panel.
+- La barra superior quedó con **seis secciones**: OPERACIÓN, CASOS, ESPECIALES, AGENDA, DESPACHO y
+  AYUDA.
 
 ### Modales y tablas (requisito de UI D-64)
 
@@ -333,6 +368,39 @@ pantalla (hasta un máximo del 100 %, para que nunca se salga de la ventana). Ad
 tabla hay una franja con el **total de registros** que se están mostrando, por ejemplo «Total: 12
 casos» o «Total: 3 sectores». Si el listado todavía está cargando, esa franja dice «Cargando…». El
 conteo respeta los filtros que tengas puestos: si filtras, el total baja.
+
+### Filtros de tablas en una sola fila (UI 1)
+
+Otra mejora reciente (registrada como **D-65**) ordenó los filtros de los listados. Ahora **todos los
+filtros de una tabla van en una sola fila**, alineados y a lo ancho de la tabla. Si en tu pantalla no
+caben, la fila se puede desplazar hacia los lados en lugar de partirse en varias líneas. Aplica a los
+listados de CASOS, ESPECIALES, MONITOREO, la jornada de DESPACHO, la AGENDA y las pantallas de
+CONFIGURACIÓN (Central, Técnicos, Flota, Sectores, Cuadrillas y Catálogos).
+
+En **CASOS** se **quitaron** dos filtros: **Origen** y el **rango de fechas** («Reporte desde» y
+«Reporte hasta»). Quedan estos cinco: **Texto libre, Estado, Clase, Tipo y Cuadrilla 0
+(supervisor)**, con los botones **Filtrar** y **Limpiar**. El origen del caso no desapareció del
+sistema: sigue viéndose en la ficha del caso, dentro de la pestaña **Estado**.
+
+### Ficha rápida con pestañas (UI 3)
+
+La misma mejora **D-65** trajo la **ficha rápida**: una ventana flotante grande que muestra la
+información de un caso en **cuatro pestañas** y deja buscar otro caso sin cerrarla.
+
+- El **cuadro de texto está al lado del título**, en la misma franja superior. Escribes la avería o
+  el teléfono y pulsas **Buscar**; si el resultado es uno solo, la ficha se abre de inmediato, y si
+  hay varios, aparecen en una lista para que elijas.
+- Las pestañas y lo que muestran:
+  - **Actual:** estado, asignación, fecha de ingreso, fecha de reporte, cuadrilla y último comentario.
+  - **Estado:** estado actual, falla masiva, origen, fechas (reporte, compromiso y cita) y la
+    **bitácora** completa de cambios de estado.
+  - **Contacto:** nombre del cliente, teléfono, dirección, persona que reporta y ubicación (sector,
+    municipio, parroquia y área).
+  - **Técnico:** reparador principal, ayudantes, cuadrilla, flota y datos técnicos (OLT, plan, slot,
+    puerto, FAT y serial).
+- La ficha se abre de **dos maneras**: desde la **búsqueda rápida del Panel** (ya no te lleva a
+  CASOS) y desde el **buscador global de la barra superior**, que también la abre sin cambiar de
+  pantalla.
 
 ## Cliente HTTP y tipos
 
@@ -438,9 +506,13 @@ Estado verificado y cosas por cerrar:
 - **Pruebas de navegador:** existen pruebas E2E con Playwright que corren contra un esquema aislado
   (`ggto_e2e`). La Fase 4 cerró con **46 pruebas E2E en verde** junto con 169 pruebas de Python (215
   en total). Después llegó el ciclo de UI **D-64** y la cifra subió a **56 pruebas E2E** (5 nuevas
-  que comprueban la barra por dispositivo y el 90 % real de la ventana y de la tabla), para un total
-  de **225 pruebas en verde**. El detalle exacto de qué pantalla cubre cada prueba está **pendiente
-  de confirmar** contra el informe de la Fase 4.
+  que comprueban la barra por dispositivo y el 90 % real de la ventana y de la tabla). Con el ciclo
+  **D-65** la cifra llegó a **60 pruebas E2E**: se sumaron 4 que comprueban los filtros de CASOS en
+  una sola fila y sin Origen ni rango de fechas, la barra con OPERACIÓN, las cuatro partes de
+  OPERACIÓN con sus enlaces antiguos redirigiendo, y la ficha rápida con el buscador junto al título
+  y sus pestañas. El total del proyecto es de **229 pruebas en verde** (169 de Python + 60 de
+  navegador). El detalle exacto de qué pantalla cubre cada prueba está **pendiente de confirmar**
+  contra el informe de la Fase 4.
 - **Accesibilidad (RNF-23):** el requisito pide cumplir **WCAG 2.1 AA**, verificado con herramientas
   automáticas (axe o Lighthouse) y revisión manual. Hoy hay buenas bases en el código (avisos para
   lectores de pantalla, etiquetas en enlaces y menús), pero **la auditoría formal y el registro de
