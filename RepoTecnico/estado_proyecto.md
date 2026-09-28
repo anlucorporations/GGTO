@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 5 — Manuales: COMPLETADA** · pendiente la confirmación del usuario para cerrar el proyecto |
+| Fase actual | **PROYECTO CERRADO** — 5 fases completadas (2026-09-28) |
 | Última actualización | 2026-09-28 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
@@ -308,3 +308,33 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-28 | **Gráficos, PDF y Ayuda:** 35 imágenes SVG+PNG (`docs/imagenes/`, 0 marcadores sin imagen y 0 huérfanas), 22 PDF (371 páginas, 22/22 verificados con índice y anclas) + 23 HTML estilizados, y la sección **AYUDA** (`/ayuda`) integrada en la SPA con índice navegable y descarga de PDF. |
 | 2026-09-28 | **Fase 5 completada (D-63):** `sincronizar_manual.sh` publica HTML/PDF/imágenes en `app/web/public/manual` sin referencias rotas; `tsc` y `npm run build` en verde; assets servidos por FastAPI verificados (`/ayuda`, HTML, PDF e imágenes `200`). Pendiente: confirmación del usuario y republicación de la imagen. |
 | 2026-09-28 | **Regresión de la Fase 5:** al añadir AYUDA a la barra superior se agregó `12-ayuda.spec.js` y se repitió la suite E2E completa sobre la SPA reconstruida: **51/51 en verde** (46 previas + 5 de AYUDA), sin regresiones. |
+
+---
+
+## 9. Acta de cierre del proyecto
+
+| Campo | Valor |
+|---|---|
+| Estado | **CERRADO** — 5 fases completadas |
+| Fecha de cierre | 2026-09-28 |
+| Confirmación | Usuario (dirección del proyecto) |
+| Rama entregada | `GGTOv2-DSH-GCP` (GitHub `anlucorporations/GGTO`, GitLab `anlucorporations/ggto`) |
+
+### Entregables por fase
+
+| Fase | Entregable principal | Verificación |
+|---|---|---|
+| 1 — Concepto | `requerimientos.md` (38 RF / 25 RNF / 14 RT), `diccionario_datos.md`, `modelo_er.md`, `db/schema.sql` (35 tablas), `entornos_globales.md` | Auditoría de Fase 1: 43 hallazgos, todos con decisión (D-01…D-41) |
+| 2 — Auditoría | `INFORME_OPTIMIZACION_V1.md`, casos de uso, `documento_tecnico.md` | 5 criterios C1–C5 cerrados |
+| 3 — Desarrollo | Aplicación FastAPI + SPA React (Ciclos 1–7 y 9) desplegada en Cloud Run `ggto-web` | 152 pruebas al cierre de los ciclos |
+| 4 — Pruebas | `pruebas/plan_pruebas.md`, `pruebas/informe_fase4.md` | **220 pruebas en verde** (169 `pytest` + 51 E2E), `ruff`/`mypy`/`tsc` sin hallazgos |
+| 5 — Manuales | 22 manuales técnicos, 22 literales, 35 imágenes, 22 PDF + 23 HTML, sección **AYUDA** (`/ayuda`) | 3 573 citas `ruta:línea` válidas; 22/22 PDF verificados; assets `200` |
+
+### Pendientes que **no** bloquean el cierre (responsabilidad del cliente u operación)
+
+1. Restringir el **acceso público de `ggto-web`** (contiene PII real) y habilitar respaldo.
+2. **Republicar la imagen** para que la sección AYUDA llegue a producción (el `dist/` se reconstruyó y verificó en local).
+3. Firmar el contrato de interfaz `interfaz_csv_origen.md` y designar los responsables de protección de datos y del sistema origen (lado CANTV).
+4. Desbloquear la facturación GCP y migrar a la instancia propia con **backups + PITR + SSL** (cierra el riesgo aceptado D-26).
+5. Credenciales reales de **Telegram y correo** (sin ellas los envíos quedan `PENDIENTE` en la bandeja).
+6. Ciclo 8 (app móvil Flutter + SQLite) — pospuesto y fuera del alcance entregado.
