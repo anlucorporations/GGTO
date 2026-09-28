@@ -4,11 +4,11 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **PROYECTO CERRADO** — 5 fases completadas (2026-09-28) |
+| Fase actual | **PROYECTO CERRADO** — 5 fases completadas · **mantenimiento: D-64 (UI) aplicado** |
 | Última actualización | 2026-09-28 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
-| Decisiones | **D-01…D-63** |
+| Decisiones | **D-01…D-64** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
 | Pendientes externos | ⚠️ **Restringir el acceso público** (ya hay PII real) · firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP (migrar `ggto-web` a `ggtov2`) · restringir el acceso público de `ggto-web` |
 
@@ -128,6 +128,7 @@
 | D-61 | **Concentración real detectada:** los 42 casos reales se reparten en 4 OLT (`pde-olt-00…03`, 14/12/10/6) y superan el umbral de 5; la próxima ingesta declarará automáticamente esas 4 fallas masivas y encolará sus alertas. Telegram y correo siguen sin credenciales (`canales_configurados=false`), por lo que las notificaciones quedan `PENDIENTE` en la bandeja. | Operación |
 | D-62 | **Fase 4 (Pruebas) completada:** plan en `RepoTecnico/pruebas/plan_pruebas.md` con 4 niveles (unitarias, integración, contratos y E2E de navegador); **169/169 `pytest` + 46/46 Playwright = 215 pruebas en verde**; `ruff`, `mypy` y `tsc` strict sin hallazgos; esquemas aislados `ggto_test`/`ggto_e2e` (parámetro `DB_SCHEMA`, nunca producción); 6 hallazgos corregidos y documentados en `informe_fase4.md`. Sin defectos funcionales abiertos. | Fase 4 |
 | D-63 | **Fase 5 (Manuales) completada:** **22 manuales técnicos** (`RepoTecnico/Manuales/`, 12 004 líneas con citas `ruta:línea` validadas), **22 manuales literales** (`docs/Manuales/`, mismo árbol, "Empezar en 5 minutos"), **35 imágenes** SVG+PNG (`docs/imagenes/`), **22 PDF** (371 páginas) + 23 HTML estilizados y la **sección AYUDA** de la SPA (`/ayuda`, ruta protegida, índice temas→secciones→sub-secciones con descarga de PDF). Sincronización reproducible con `docs/Manuales/_build/sincronizar_manual.sh`; `tsc` y `npm run build` en verde; assets servidos por FastAPI verificados (`/ayuda`, HTML, PDF e imágenes `200`); regresión E2E **51/51** (46 previas + 5 de AYUDA). | Fase 5 |
+| D-64 | **Ciclo de UI (mantenimiento, petición del usuario):** (1) en **PC** la barra de navegación muestra **solo los nombres** de las secciones; (2) en **móvil**, **solo los iconos**; (3) **todos** los formularios de inserción/edición y las fichas de detalle pasan a **modal flotante al 90 % de la ventana**, con el título arriba y el icono de cerrar (nuevo componente `app/web/src/components/Modal.tsx`, cierre con ✕/Escape/fondo); (4) las **tablas** ocupan el **90 % del ancho** y llevan **pie con el conteo total** de registros (nuevo `PieTabla.tsx`, 23 tablas). Los formularios de consulta/filtro permanecen inline. Validado con `tsc`, `npm run build` y E2E **56/56** (nuevo `13-ui-requisitos.spec.js` que mide el 90 % real). | Petición del usuario |
 
 ---
 
@@ -338,3 +339,5 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 4. Desbloquear la facturación GCP y migrar a la instancia propia con **backups + PITR + SSL** (cierra el riesgo aceptado D-26).
 5. Credenciales reales de **Telegram y correo** (sin ellas los envíos quedan `PENDIENTE` en la bandeja).
 6. Ciclo 8 (app móvil Flutter + SQLite) — pospuesto y fuera del alcance entregado.
+| 2026-09-28 | **Ciclo de UI solicitado por el usuario (D-64):** barra superior adaptable por dispositivo (nombres en PC, iconos en móvil), conversión de **todos** los formularios de inserción/edición y fichas de detalle a **modal flotante del 90 %** con título y cerrar (componente `Modal`), y tablas al **90 % del ancho** con **pie de conteo total** (componente `PieTabla`). Se refactorizaron 14 páginas; `tsc` y `npm run build` en verde. |
+| 2026-09-28 | **Verificación del ciclo de UI:** nuevos casos `13-ui-requisitos.spec.js` (5) que miden el 90 % del modal/tabla y la barra por dispositivo; actualizados los E2E de configuración, agenda, despacho e ingesta al flujo de apertura de modal. Suite E2E completa: **56/56 en verde** (3.3 m); total del proyecto **225 pruebas** (169 `pytest` + 56 E2E). |

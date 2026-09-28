@@ -2,13 +2,10 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import * as api from '../api/client';
 import type { CitaCreate, CitaOut, CitasFiltros, CitaUpdate, EstadoCita, TipoCita } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
-import {
-  IconoChevronDerecha,
-  IconoChevronIzquierda,
-  IconoCerrar,
-} from '../components/Iconos';
+import { IconoChevronDerecha, IconoChevronIzquierda } from '../components/Iconos';
 
 const TIPOS: TipoCita[] = ['CONTACTO', 'ATENCION'];
 
@@ -194,6 +191,7 @@ export default function Agenda() {
   const [alta, setAlta] = useState<CitaForm>(altaVacia);
   const [creando, setCreando] = useState(false);
   const [forzarSolape, setForzarSolape] = useState(false);
+  const [modalAlta, setModalAlta] = useState(false);
 
   const [seleccion, setSeleccion] = useState<CitaOut | null>(null);
   const [guardandoId, setGuardandoId] = useState<number | null>(null);
@@ -333,6 +331,7 @@ export default function Agenda() {
       await api.crearCita(payload);
       setAlta({ ...altaVacia(), fecha_hora: alta.fecha_hora });
       setForzarSolape(false);
+      setModalAlta(false);
       setOk('Cita agendada correctamente.');
       await cargarCitas();
     } catch (e) {
@@ -414,6 +413,11 @@ export default function Agenda() {
           <h1>Agenda</h1>
           <p>Calendario de citas por día, semana o mes, con control de solapamiento por cuadrilla.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={() => setModalAlta(true)}>
+            Nueva cita
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
@@ -599,21 +603,9 @@ export default function Agenda() {
         )}
       </div>
 
-      {/* Detalle / edición de la cita seleccionada */}
+      {/* Detalle de la cita seleccionada, en ventana flotante (requisito de UI 3). */}
       {seleccion && (
-        <div className="panel-bloque">
-          <div className="pagina-cabecera">
-            <h2>Cita #{seleccion.id_cita}</h2>
-            <button
-              type="button"
-              className="btn btn-secundario"
-              onClick={() => setSeleccion(null)}
-              aria-label="Cerrar detalle"
-            >
-              <IconoCerrar width={16} height={16} />
-            </button>
-          </div>
-
+        <Modal titulo={`Cita #${seleccion.id_cita}`} onCerrar={() => setSeleccion(null)}>
           <div className="tabla-envoltura">
             <table className="tabla-ficha">
               <tbody>
@@ -703,14 +695,13 @@ export default function Agenda() {
               </div>
             </>
           )}
-        </div>
+        </Modal>
       )}
 
-      {/* Nueva cita (RF-12) */}
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>Nueva cita</h2>
-          <form className="formulario" onSubmit={(e) => void crearCita(e)}>
+      {/* Nueva cita (RF-12), en ventana flotante (requisito de UI 3). */}
+      {!soloLectura && modalAlta && (
+        <Modal titulo="Nueva cita" onCerrar={() => setModalAlta(false)}>
+          <form className="formulario modal-formulario" onSubmit={(e) => void crearCita(e)}>
             <div className="campo">
               <label htmlFor="cita-fecha">Fecha y hora</label>
               <input
@@ -807,7 +798,7 @@ export default function Agenda() {
             ese horario, la API responde <strong>409</strong> con el detalle del conflicto; solo el
             Super Usuario puede forzar el solape.
           </p>
-        </div>
+        </Modal>
       )}
     </>
   );

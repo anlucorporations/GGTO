@@ -15,6 +15,8 @@ import type {
   TipoAsignacionDespacho,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -116,6 +118,7 @@ function TablaCasosAsignados({ casos }: { casos: CasoAsignadoOut[] }) {
             </tr>
           ))}
         </tbody>
+        <PieTabla colSpan={9} total={casos.length} singular="caso" plural="casos" />
       </table>
     </div>
   );
@@ -174,6 +177,12 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
                 <FilaDesglose key={`${txt(fila.cuadrilla)}-${indice}`} fila={fila} />
               ))}
             </tbody>
+            <PieTabla
+              colSpan={9}
+              total={reporte.por_cuadrilla.length}
+              singular="cuadrilla"
+              plural="cuadrillas"
+            />
           </table>
         </div>
       )}
@@ -205,6 +214,7 @@ export default function Despacho() {
   const [nuevoTipo, setNuevoTipo] = useState<TipoAsignacionDespacho | ''>('');
   const [nuevaObservacion, setNuevaObservacion] = useState('');
   const [agregando, setAgregando] = useState(false);
+  const [modalAgregarCaso, setModalAgregarCaso] = useState(false);
 
   // Envío y notificaciones (RF-10).
   const [canal, setCanal] = useState<CanalDespacho>('TELEGRAM');
@@ -223,6 +233,7 @@ export default function Despacho() {
   const [cargandoFallas, setCargandoFallas] = useState(true);
   const [fallaForm, setFallaForm] = useState<FallaForm>(FALLA_VACIA);
   const [creandoFalla, setCreandoFalla] = useState(false);
+  const [modalFalla, setModalFalla] = useState(false);
 
   const cargarDespachos = useCallback(async () => {
     setCargandoDespachos(true);
@@ -272,6 +283,7 @@ export default function Despacho() {
   useEffect(() => {
     setPropuesta(null);
     setSeleccionado(null);
+    setModalAgregarCaso(false);
     setEnvio(null);
     setNotificaciones([]);
     setReporteSel(null);
@@ -295,6 +307,7 @@ export default function Despacho() {
       setError('');
       setOk('');
       setEnvio(null);
+      setModalAgregarCaso(false);
       try {
         const detalle = await api.obtenerDespacho(idDespacho);
         setSeleccionado(detalle);
@@ -313,6 +326,19 @@ export default function Despacho() {
     },
     [cargarNotificaciones],
   );
+
+  /** Cierra la ficha flotante del despacho (y cualquier modal dependiente). */
+  function cerrarDetalle() {
+    setSeleccionado(null);
+    setModalAgregarCaso(false);
+  }
+
+  /** Abre el formulario flotante para agregar un caso al despacho abierto. */
+  function abrirModalAgregarCaso() {
+    setError('');
+    setOk('');
+    setModalAgregarCaso(true);
+  }
 
   /** Refresca la lista del día y, si se indica, el detalle abierto. */
   const refrescar = useCallback(
@@ -416,6 +442,7 @@ export default function Despacho() {
       setNuevoCaso('');
       setNuevoTipo('');
       setNuevaObservacion('');
+      setModalAgregarCaso(false);
       setOk('Caso agregado al despacho.');
       await refrescar(actualizado.id_despacho);
     } catch (e) {
@@ -521,6 +548,7 @@ export default function Despacho() {
         origen: fallaForm.origen as OrigenFallaMasiva,
       });
       setFallaForm(FALLA_VACIA);
+      setModalFalla(false);
       setOk('Falla masiva registrada.');
       await cargarFallas();
     } catch (e) {
@@ -755,26 +783,25 @@ export default function Despacho() {
                 ))
               )}
             </tbody>
+            <PieTabla
+              colSpan={7}
+              total={despachos.length}
+              singular="despacho"
+              plural="despachos"
+              cargando={cargandoDespachos}
+            />
           </table>
         </div>
       </div>
 
-      {/* Detalle del despacho */}
+      {/* Detalle del despacho, en ventana flotante */}
       {seleccionado && (
-        <div className="panel-bloque">
-          <div className="pagina-cabecera">
-            <h2>
-              Detalle del despacho #{seleccionado.id_despacho} —{' '}
-              {seleccionado.cuadrilla_codigo ?? seleccionado.id_cuadrilla}
-            </h2>
-            <button
-              type="button"
-              className="btn btn-secundario"
-              onClick={() => setSeleccionado(null)}
-            >
-              Cerrar detalle
-            </button>
-          </div>
+        <Modal
+          titulo={`Detalle del despacho #${seleccionado.id_despacho} — ${
+            seleccionado.cuadrilla_codigo ?? seleccionado.id_cuadrilla
+          }`}
+          onCerrar={cerrarDetalle}
+        >
 
           <div className="tabla-envoltura">
             <table className="tabla-ficha">
@@ -846,7 +873,14 @@ export default function Despacho() {
             </div>
           )}
 
-          <h3 className="subtitulo-seccion">Casos del despacho</h3>
+          <div className="pagina-cabecera">
+            <h3 className="subtitulo-seccion">Casos del despacho</h3>
+            {!soloLectura && (
+              <button type="button" className="btn" onClick={abrirModalAgregarCaso}>
+                Agregar caso
+              </button>
+            )}
+          </div>
           {seleccionado.casos.length === 0 ? (
             <p className="vacio">El despacho no tiene casos.</p>
           ) : (
@@ -908,56 +942,14 @@ export default function Despacho() {
                     </tr>
                   ))}
                 </tbody>
+                <PieTabla
+                  colSpan={soloLectura ? 6 : 7}
+                  total={seleccionado.casos.length}
+                  singular="caso"
+                  plural="casos"
+                />
               </table>
             </div>
-          )}
-
-          {!soloLectura && (
-            <>
-              <h3 className="subtitulo-seccion">Agregar caso</h3>
-              <form className="formulario" onSubmit={(e) => void agregarCaso(e)}>
-                <div className="campo">
-                  <label htmlFor="despacho-id-caso">ID de caso *</label>
-                  <input
-                    id="despacho-id-caso"
-                    type="number"
-                    min={1}
-                    value={nuevoCaso}
-                    onChange={(e) => setNuevoCaso(e.target.value)}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="despacho-tipo">Tipo de asignación</label>
-                  <select
-                    id="despacho-tipo"
-                    value={nuevoTipo}
-                    onChange={(e) =>
-                      setNuevoTipo(e.target.value as TipoAsignacionDespacho | '')
-                    }
-                  >
-                    <option value="">(Automático)</option>
-                    {TIPOS_ASIGNACION.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo campo-ancho">
-                  <label htmlFor="despacho-observacion">Observación</label>
-                  <input
-                    id="despacho-observacion"
-                    value={nuevaObservacion}
-                    onChange={(e) => setNuevaObservacion(e.target.value)}
-                  />
-                </div>
-                <div className="acciones-form">
-                  <button type="submit" className="btn" disabled={agregando}>
-                    {agregando ? 'Agregando…' : 'Agregar caso'}
-                  </button>
-                </div>
-              </form>
-            </>
           )}
 
           {/* Envío (RF-10) */}
@@ -1035,10 +1027,62 @@ export default function Despacho() {
                     </tr>
                   ))}
                 </tbody>
+                <PieTabla
+                  colSpan={7}
+                  total={notificaciones.length}
+                  singular="notificación"
+                  plural="notificaciones"
+                />
               </table>
             </div>
           )}
-        </div>
+        </Modal>
+      )}
+
+      {/* Agregar caso al despacho, en ventana flotante */}
+      {seleccionado && !soloLectura && modalAgregarCaso && (
+        <Modal titulo="Agregar caso" onCerrar={() => setModalAgregarCaso(false)}>
+          <form className="formulario modal-formulario" onSubmit={(e) => void agregarCaso(e)}>
+            <div className="campo">
+              <label htmlFor="despacho-id-caso">ID de caso *</label>
+              <input
+                id="despacho-id-caso"
+                type="number"
+                min={1}
+                value={nuevoCaso}
+                onChange={(e) => setNuevoCaso(e.target.value)}
+              />
+            </div>
+            <div className="campo">
+              <label htmlFor="despacho-tipo">Tipo de asignación</label>
+              <select
+                id="despacho-tipo"
+                value={nuevoTipo}
+                onChange={(e) => setNuevoTipo(e.target.value as TipoAsignacionDespacho | '')}
+              >
+                <option value="">(Automático)</option>
+                {TIPOS_ASIGNACION.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="campo campo-ancho">
+              <label htmlFor="despacho-observacion">Observación</label>
+              <input
+                id="despacho-observacion"
+                value={nuevaObservacion}
+                onChange={(e) => setNuevaObservacion(e.target.value)}
+              />
+            </div>
+            <div className="acciones-form">
+              <button type="submit" className="btn" disabled={agregando}>
+                {agregando ? 'Agregando…' : 'Agregar caso'}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Reporte de producción (RF-27) */}
@@ -1068,48 +1112,66 @@ export default function Despacho() {
 
       {/* Fallas masivas (RF-09) */}
       <div className="panel-bloque">
-        <h2>Fallas masivas</h2>
-        {!soloLectura && (
-          <form className="formulario" onSubmit={(e) => void reportarFalla(e)}>
-            <div className="campo campo-ancho">
-              <label htmlFor="falla-descripcion">Descripción *</label>
-              <input
-                id="falla-descripcion"
-                value={fallaForm.descripcion}
-                onChange={(e) => setFallaForm({ ...fallaForm, descripcion: e.target.value })}
-                placeholder="Ej.: Corte de fibra sector Alfa"
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="falla-sector">ID de sector (opcional)</label>
-              <input
-                id="falla-sector"
-                type="number"
-                min={1}
-                value={fallaForm.id_sector}
-                onChange={(e) => setFallaForm({ ...fallaForm, id_sector: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="falla-origen">Origen</label>
-              <select
-                id="falla-origen"
-                value={fallaForm.origen}
-                onChange={(e) => setFallaForm({ ...fallaForm, origen: e.target.value })}
-              >
-                {ORIGENES_FALLA.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="acciones-form">
-              <button type="submit" className="btn" disabled={creandoFalla}>
-                {creandoFalla ? 'Registrando…' : 'Registrar falla'}
-              </button>
-            </div>
-          </form>
+        <div className="pagina-cabecera">
+          <h2>Fallas masivas</h2>
+          {!soloLectura && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setError('');
+                setOk('');
+                setModalFalla(true);
+              }}
+            >
+              Registrar falla
+            </button>
+          )}
+        </div>
+
+        {!soloLectura && modalFalla && (
+          <Modal titulo="Registrar falla" onCerrar={() => setModalFalla(false)}>
+            <form className="formulario modal-formulario" onSubmit={(e) => void reportarFalla(e)}>
+              <div className="campo campo-ancho">
+                <label htmlFor="falla-descripcion">Descripción *</label>
+                <input
+                  id="falla-descripcion"
+                  value={fallaForm.descripcion}
+                  onChange={(e) => setFallaForm({ ...fallaForm, descripcion: e.target.value })}
+                  placeholder="Ej.: Corte de fibra sector Alfa"
+                />
+              </div>
+              <div className="campo">
+                <label htmlFor="falla-sector">ID de sector (opcional)</label>
+                <input
+                  id="falla-sector"
+                  type="number"
+                  min={1}
+                  value={fallaForm.id_sector}
+                  onChange={(e) => setFallaForm({ ...fallaForm, id_sector: e.target.value })}
+                />
+              </div>
+              <div className="campo">
+                <label htmlFor="falla-origen">Origen</label>
+                <select
+                  id="falla-origen"
+                  value={fallaForm.origen}
+                  onChange={(e) => setFallaForm({ ...fallaForm, origen: e.target.value })}
+                >
+                  {ORIGENES_FALLA.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="acciones-form">
+                <button type="submit" className="btn" disabled={creandoFalla}>
+                  {creandoFalla ? 'Registrando…' : 'Registrar falla'}
+                </button>
+              </div>
+            </form>
+          </Modal>
         )}
 
         <h3 className="subtitulo-seccion">Registradas</h3>
@@ -1157,6 +1219,13 @@ export default function Despacho() {
                 ))
               )}
             </tbody>
+            <PieTabla
+              colSpan={9}
+              total={fallas.length}
+              singular="falla"
+              plural="fallas"
+              cargando={cargandoFallas}
+            />
           </table>
         </div>
       </div>

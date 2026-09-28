@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type { Causa, CausaCreate, DominioMetodo, Metodo, MetodoCreate } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -51,6 +53,26 @@ export default function Catalogos() {
   const [causaForm, setCausaForm] = useState<CausaForm>(CAUSA_VACIA);
   const [metodoForm, setMetodoForm] = useState<MetodoForm>(METODO_VACIO);
   const [guardando, setGuardando] = useState(false);
+  const [modalCausa, setModalCausa] = useState(false);
+  const [modalMetodo, setModalMetodo] = useState(false);
+
+  function abrirModalCausa() {
+    setCausaForm(CAUSA_VACIA);
+    setModalCausa(true);
+  }
+
+  function cerrarModalCausa() {
+    setModalCausa(false);
+  }
+
+  function abrirModalMetodo() {
+    setMetodoForm(METODO_VACIO);
+    setModalMetodo(true);
+  }
+
+  function cerrarModalMetodo() {
+    setModalMetodo(false);
+  }
 
   const cargarCausas = useCallback(async () => {
     setCargandoCausas(true);
@@ -103,6 +125,7 @@ export default function Catalogos() {
       await api.crearCausa(payload);
       setCausaForm(CAUSA_VACIA);
       setOk('Causa registrada.');
+      cerrarModalCausa();
       await cargarCausas();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al crear la causa.');
@@ -143,6 +166,7 @@ export default function Catalogos() {
       await api.crearMetodo(payload);
       setMetodoForm({ ...METODO_VACIO, dominio: metodoForm.dominio });
       setOk('Método registrado.');
+      cerrarModalMetodo();
       await cargarMetodos();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al crear el método.');
@@ -163,10 +187,9 @@ export default function Catalogos() {
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      <div className="panel-bloque">
-        <h2>Causas</h2>
-        {!soloLectura && (
-          <form className="formulario" onSubmit={enviarCausa} style={{ marginBottom: 16 }}>
+      {!soloLectura && modalCausa && (
+        <Modal titulo="Nueva causa" onCerrar={cerrarModalCausa}>
+          <form className="formulario modal-formulario" onSubmit={enviarCausa}>
             <div className="campo">
               <label htmlFor="causa-codigo">Código *</label>
               <input
@@ -224,7 +247,79 @@ export default function Catalogos() {
               </button>
             </div>
           </form>
-        )}
+        </Modal>
+      )}
+
+      {!soloLectura && modalMetodo && (
+        <Modal titulo="Nuevo método" onCerrar={cerrarModalMetodo}>
+          <form className="formulario modal-formulario" onSubmit={enviarMetodo}>
+            <div className="campo">
+              <label htmlFor="metodo-dominio">Dominio *</label>
+              <select
+                id="metodo-dominio"
+                value={metodoForm.dominio}
+                onChange={(e) =>
+                  setMetodoForm({ ...metodoForm, dominio: e.target.value as DominioMetodo })
+                }
+              >
+                {DOMINIOS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="campo">
+              <label htmlFor="metodo-codigo">Código *</label>
+              <input
+                id="metodo-codigo"
+                value={metodoForm.codigo}
+                onChange={(e) => setMetodoForm({ ...metodoForm, codigo: e.target.value })}
+              />
+            </div>
+            <div className="campo">
+              <label htmlFor="metodo-nombre">Nombre *</label>
+              <input
+                id="metodo-nombre"
+                value={metodoForm.nombre}
+                onChange={(e) => setMetodoForm({ ...metodoForm, nombre: e.target.value })}
+              />
+            </div>
+            <div className="campo campo-check">
+              <input
+                id="metodo-activo"
+                type="checkbox"
+                checked={metodoForm.activo}
+                onChange={(e) => setMetodoForm({ ...metodoForm, activo: e.target.checked })}
+              />
+              <label htmlFor="metodo-activo">Activo</label>
+            </div>
+            <div className="acciones-form">
+              <button className="btn" type="submit" disabled={guardando}>
+                Crear método
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      <div className="panel-bloque">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <h2 style={{ marginBottom: 0 }}>Causas</h2>
+          {!soloLectura && (
+            <button className="btn" type="button" onClick={abrirModalCausa}>
+              Nueva causa
+            </button>
+          )}
+        </div>
 
         <div className="tabla-envoltura">
           <table>
@@ -275,62 +370,34 @@ export default function Catalogos() {
                 ))
               )}
             </tbody>
+            <PieTabla
+              colSpan={soloLectura ? 6 : 7}
+              total={causas.length}
+              singular="causa"
+              plural="causas"
+              cargando={cargandoCausas}
+            />
           </table>
         </div>
       </div>
 
       <div className="panel-bloque">
-        <h2>Métodos</h2>
-        {!soloLectura && (
-          <form className="formulario" onSubmit={enviarMetodo} style={{ marginBottom: 16 }}>
-            <div className="campo">
-              <label htmlFor="metodo-dominio">Dominio *</label>
-              <select
-                id="metodo-dominio"
-                value={metodoForm.dominio}
-                onChange={(e) =>
-                  setMetodoForm({ ...metodoForm, dominio: e.target.value as DominioMetodo })
-                }
-              >
-                {DOMINIOS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="metodo-codigo">Código *</label>
-              <input
-                id="metodo-codigo"
-                value={metodoForm.codigo}
-                onChange={(e) => setMetodoForm({ ...metodoForm, codigo: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="metodo-nombre">Nombre *</label>
-              <input
-                id="metodo-nombre"
-                value={metodoForm.nombre}
-                onChange={(e) => setMetodoForm({ ...metodoForm, nombre: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-check">
-              <input
-                id="metodo-activo"
-                type="checkbox"
-                checked={metodoForm.activo}
-                onChange={(e) => setMetodoForm({ ...metodoForm, activo: e.target.checked })}
-              />
-              <label htmlFor="metodo-activo">Activo</label>
-            </div>
-            <div className="acciones-form">
-              <button className="btn" type="submit" disabled={guardando}>
-                Crear método
-              </button>
-            </div>
-          </form>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <h2 style={{ marginBottom: 0 }}>Métodos</h2>
+          {!soloLectura && (
+            <button className="btn" type="button" onClick={abrirModalMetodo}>
+              Nuevo método
+            </button>
+          )}
+        </div>
 
         <div className="fila-filtros">
           <div className="campo">
@@ -382,6 +449,13 @@ export default function Catalogos() {
                 ))
               )}
             </tbody>
+            <PieTabla
+              colSpan={5}
+              total={metodos.length}
+              singular="método"
+              plural="métodos"
+              cargando={cargandoMetodos}
+            />
           </table>
         </div>
       </div>

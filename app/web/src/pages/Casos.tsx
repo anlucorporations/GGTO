@@ -12,6 +12,8 @@ import type {
   TipoCaso,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import EstadoChips from '../components/EstadoChips';
 import { useAuth } from '../auth/AuthContext';
 import { fecha, nv } from '../utils';
@@ -247,6 +249,7 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
             </tr>
           ))}
         </tbody>
+        <PieTabla colSpan={6} total={items.length} singular="caso" plural="casos" />
       </table>
     </div>
   );
@@ -629,18 +632,12 @@ export default function Casos() {
         )}
       </div>
 
-      {/* Ficha del caso (RF-31) + estado + historial (RNF-12) */}
+      {/* Ficha del caso (RF-31) + estado + historial (RNF-12), en ventana flotante. */}
       {ficha && (
-        <div className="panel-bloque">
-          <div className="pagina-cabecera">
-            <h2>
-              Ficha del caso #{ficha.id_caso} — <span className="mono">{ficha.id_averia}</span>
-            </h2>
-            <button type="button" className="btn btn-secundario" onClick={() => setFicha(null)}>
-              Cerrar ficha
-            </button>
-          </div>
-
+        <Modal
+          titulo={`Ficha del caso #${ficha.id_caso} — ${ficha.id_averia}`}
+          onCerrar={() => setFicha(null)}
+        >
           <div className="tabla-envoltura">
             <table className="tabla-ficha">
               <tbody>
@@ -718,7 +715,10 @@ export default function Casos() {
           {!soloLectura && (
             <>
               <h3 className="subtitulo-seccion">Editar caso</h3>
-              <form className="formulario" onSubmit={(e) => void guardarEdicion(e)}>
+              <form
+                className="formulario modal-formulario"
+                onSubmit={(e) => void guardarEdicion(e)}
+              >
                 <div className="campo">
                   <label htmlFor="edit-cliente">Nombre del cliente</label>
                   <input
@@ -893,7 +893,10 @@ export default function Casos() {
               </form>
 
               <h3 className="subtitulo-seccion">Cambiar estado</h3>
-              <form className="formulario" onSubmit={(e) => void cambiarEstado(e)}>
+              <form
+                className="formulario modal-formulario"
+                onSubmit={(e) => void cambiarEstado(e)}
+              >
                 <div className="campo">
                   <label htmlFor="estado-nuevo">Nuevo estado</label>
                   <select
@@ -954,10 +957,17 @@ export default function Casos() {
                     </tr>
                   ))}
                 </tbody>
+                <PieTabla
+                  colSpan={5}
+                  total={historial.length}
+                  singular="movimiento"
+                  plural="movimientos"
+                  cargando={cargandoHistorial}
+                />
               </table>
             </div>
           )}
-        </div>
+        </Modal>
       )}
     </>
   );

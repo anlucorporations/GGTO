@@ -227,7 +227,8 @@ export default function ModalCaso({ onCerrar }: Props) {
           </button>
         </div>
 
-        {resultado ? (
+        <div className="modal-cuerpo">
+          {resultado ? (
           <div className="modal-resultado">
             <Mensaje tipo="ok" texto="Registro creado correctamente." />
             {resultado.tipo === 'normal' ? (
@@ -460,6 +461,7 @@ export default function ModalCaso({ onCerrar }: Props) {
             </div>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

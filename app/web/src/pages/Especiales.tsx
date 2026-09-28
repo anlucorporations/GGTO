@@ -11,6 +11,8 @@ import type {
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import EstadoChips from '../components/EstadoChips';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -340,26 +342,25 @@ export default function Especiales() {
                   </tr>
                 ))}
               </tbody>
+              <PieTabla
+                colSpan={6}
+                total={items.length}
+                singular="caso"
+                plural="casos"
+                cargando={cargando}
+              />
             </table>
           </div>
         )}
       </div>
 
-      {/* Ficha + edición del caso especial sin caso asociado */}
+      {/* Ficha + edición del caso especial sin caso asociado, en ventana flotante. */}
       {cargandoDetalle && <p className="texto-pequeno">Cargando ficha…</p>}
       {seleccion && (
-        <div className="panel-bloque">
-          <div className="pagina-cabecera">
-            <h2>Ficha del caso especial #{seleccion.id_caso_especial}</h2>
-            <button
-              type="button"
-              className="btn btn-secundario"
-              onClick={() => setSeleccion(null)}
-            >
-              Cerrar ficha
-            </button>
-          </div>
-
+        <Modal
+          titulo={`Ficha del caso especial #${seleccion.id_caso_especial}`}
+          onCerrar={() => setSeleccion(null)}
+        >
           <div className="tabla-envoltura">
             <table className="tabla-ficha">
               <tbody>
@@ -433,7 +434,7 @@ export default function Especiales() {
           {!soloLectura && (
             <>
               <h3 className="subtitulo-seccion">Editar caso especial</h3>
-              <form className="formulario" onSubmit={(e) => void guardarEdicion(e)}>
+              <form className="formulario modal-formulario" onSubmit={(e) => void guardarEdicion(e)}>
                 <div className="campo">
                   <label htmlFor="edit-prioridad">Prioridad</label>
                   <select
@@ -501,7 +502,7 @@ export default function Especiales() {
               </form>
             </>
           )}
-        </div>
+        </Modal>
       )}
     </>
   );

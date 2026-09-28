@@ -72,9 +72,9 @@ function MenuConfiguracion() {
         title="Configuración"
         onClick={() => setAbierto((v) => !v)}
       >
-        <IconoConfig />
+        <IconoConfig className="nav-icono" />
         <span className="nav-etiqueta">CONFIGURACIÓN</span>
-        <IconoChevronAbajo width={14} height={14} />
+        <IconoChevronAbajo className="nav-chevron" width={14} height={14} />
       </button>
       {abierto && (
         <div className="desplegable nav-menu" role="menu" aria-label="Configuración">
@@ -203,7 +203,7 @@ export default function Layout() {
               aria-label={s.etiqueta}
               className={({ isActive }) => `nav-item${isActive ? ' activo' : ''}`}
             >
-              <s.Icono />
+              <s.Icono className="nav-icono" />
               <span className="nav-etiqueta">{s.etiqueta}</span>
             </NavLink>
           ))}

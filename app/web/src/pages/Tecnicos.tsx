@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type { Central, StatusTecnico, Tecnico, TecnicoCreate, TecnicoUpdate } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -43,6 +45,7 @@ export default function Tecnicos() {
   const [form, setForm] = useState<TecnicoForm>(FORM_VACIO);
   const [editando, setEditando] = useState<Tecnico | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -80,6 +83,18 @@ export default function Tecnicos() {
     setEditando(null);
   }
 
+  function cerrarModal() {
+    setModalAbierto(false);
+    limpiarFormulario();
+  }
+
+  function nuevo() {
+    limpiarFormulario();
+    setOk('');
+    setError('');
+    setModalAbierto(true);
+  }
+
   function editar(t: Tecnico) {
     setEditando(t);
     setForm({
@@ -95,6 +110,7 @@ export default function Tecnicos() {
     });
     setOk('');
     setError('');
+    setModalAbierto(true);
   }
 
   async function enviar(evento: FormEvent) {
@@ -124,6 +140,7 @@ export default function Tecnicos() {
         };
         await api.actualizarTecnico(editando.id_tecnico, payload);
         setOk('Técnico actualizado.');
+        cerrarModal();
       } else {
         const payload: TecnicoCreate = {
           id_central: Number(form.id_central),
@@ -138,7 +155,7 @@ export default function Tecnicos() {
         };
         await api.crearTecnico(payload);
         setOk('Técnico creado.');
-        limpiarFormulario();
+        cerrarModal();
       }
       await cargar();
     } catch (e) {
@@ -155,7 +172,7 @@ export default function Tecnicos() {
     try {
       await api.desactivarTecnico(t.id_tecnico);
       setOk('Técnico desactivado.');
-      if (editando?.id_tecnico === t.id_tecnico) limpiarFormulario();
+      if (editando?.id_tecnico === t.id_tecnico) cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al desactivar el técnico.');
@@ -169,15 +186,22 @@ export default function Tecnicos() {
           <h1>Técnicos</h1>
           <p>Personal técnico asignado a cada central.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={nuevo}>
+            Nuevo técnico
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>{editando ? `Editar técnico #${editando.id_tecnico}` : 'Nuevo técnico'}</h2>
-          <form className="formulario" onSubmit={enviar}>
+      {!soloLectura && modalAbierto && (
+        <Modal
+          titulo={editando ? `Editar técnico #${editando.id_tecnico}` : 'Nuevo técnico'}
+          onCerrar={cerrarModal}
+        >
+          <form className="formulario modal-formulario" onSubmit={enviar}>
             <div className="campo">
               <label htmlFor="tecnico-central">Central *</label>
               <select
@@ -270,13 +294,13 @@ export default function Tecnicos() {
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear técnico'}
               </button>
               {editando && (
-                <button type="button" className="btn btn-secundario" onClick={limpiarFormulario}>
+                <button type="button" className="btn btn-secundario" onClick={cerrarModal}>
                   Cancelar
                 </button>
               )}
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       <div className="fila-filtros">
@@ -359,6 +383,13 @@ export default function Tecnicos() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 8 : 9}
+            total={items.length}
+            singular="técnico"
+            plural="técnicos"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>

@@ -30,6 +30,7 @@ import {
   type DatoBarra,
 } from '../components/graficos';
 import Mensaje from '../components/Mensaje';
+import PieTabla from '../components/PieTabla';
 import { fecha } from '../utils';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -246,6 +247,12 @@ function TablaCuadrillas({ data }: { data: MonitoreoCuadrillaOut }) {
             </tr>
           ))}
         </tbody>
+        <PieTabla
+          colSpan={5}
+          total={data.cuadrillas.length}
+          singular="registro"
+          plural="registros"
+        />
       </table>
     </div>
   );
@@ -285,6 +292,12 @@ function TablaCapacidad({ data }: { data: MonitoreoCapacidad }) {
             </tr>
           ))}
         </tbody>
+        <PieTabla
+          colSpan={5}
+          total={data.cuadrillas.length}
+          singular="registro"
+          plural="registros"
+        />
       </table>
     </div>
   );

@@ -14,8 +14,10 @@ test.describe('Ingesta', () => {
     await page.goto('/ingesta');
     await expect(page.getByRole('heading', { name: 'Ingesta', level: 1 })).toBeVisible();
 
+    await page.getByRole('button', { name: 'Cargar archivo diario' }).click();
+    await expect(page.getByRole('dialog', { name: 'Cargar archivo diario' })).toBeVisible();
     await page.locator('input[type="file"]').setInputFiles(MUESTRA);
-    await page.getByRole('button', { name: 'Simular (preview)' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Simular (preview)' }).click();
     await expect(page.locator('.aviso-error')).toHaveCount(0, { timeout: 60_000 });
     await expect(page.getByRole('heading', { name: 'Historial de lotes' })).toBeVisible();
   });

@@ -261,6 +261,12 @@ h3 {
   color: #fff;
 }
 
+/* Requisito de UI 1: en escritorio la barra muestra SOLO los nombres de las
+   secciones (el icono se reserva para la versión móvil). */
+.nav-item .nav-icono {
+  display: none;
+}
+
 .nav-item.activo {
   background: #fff;
   color: var(--azul-oscuro);
@@ -644,10 +650,25 @@ textarea {
 /* ------------------------------ Tablas ---------------------------- */
 
 .tabla-envoltura {
+  /* Requisito de UI 4: la tabla ocupa el 90 % del ancho de la ventana. */
+  width: 90vw;
+  max-width: 100%;
+  margin: 0 auto 20px;
   overflow-x: auto;
   border: 1px solid var(--gris-borde);
   border-radius: var(--radio);
   background: #fff;
+}
+
+/* Pie de tabla con el conteo total de registros (requisito de UI 4). */
+.tabla-pie {
+  padding: 10px 12px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gris-texto);
+  background: #f7f9fc;
+  border-top: 1px solid var(--gris-borde);
 }
 
 table {
@@ -1019,29 +1040,43 @@ input[type='file'] {
 }
 
 /* ------------------------------ Modal ----------------------------- */
+/* Todo formulario/ficha flotante ocupa el 90 % de la ventana, con el título
+   alineado arriba y el icono de cerrar a la derecha (requisito de UI 3). */
 
 .modal-fondo {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 24px 16px 48px;
+  padding: 5vh 5vw;
   background: rgba(12, 20, 33, 0.55);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .modal-caja {
-  width: 100%;
-  max-width: 760px;
+  width: 90vw;
+  max-width: 90vw;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(3, 20, 45, 0.35);
   padding: 20px;
 }
 
+.modal-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
 .modal-cabecera {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1494,7 +1529,16 @@ input[type='file'] {
     justify-content: space-between;
   }
 
+  /* Requisito de UI 2: en móvil la barra muestra SOLO los iconos. */
   .nav-etiqueta {
+    display: none;
+  }
+
+  .nav-item .nav-icono {
+    display: inline-flex;
+  }
+
+  .nav-chevron {
     display: none;
   }
 

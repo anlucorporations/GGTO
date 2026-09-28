@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type { Central, Flota as FlotaEntidad, FlotaCreate, FlotaUpdate, StatusFlota } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -46,6 +48,7 @@ export default function Flota() {
   const [form, setForm] = useState<FlotaForm>(FORM_VACIO);
   const [editando, setEditando] = useState<FlotaEntidad | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -82,6 +85,18 @@ export default function Flota() {
     setEditando(null);
   }
 
+  function cerrarModal() {
+    setModalAbierto(false);
+    limpiarFormulario();
+  }
+
+  function nuevo() {
+    limpiarFormulario();
+    setOk('');
+    setError('');
+    setModalAbierto(true);
+  }
+
   function editar(f: FlotaEntidad) {
     setEditando(f);
     setForm({
@@ -99,6 +114,7 @@ export default function Flota() {
     });
     setOk('');
     setError('');
+    setModalAbierto(true);
   }
 
   async function enviar(evento: FormEvent) {
@@ -147,8 +163,8 @@ export default function Flota() {
         };
         await api.crearFlota(payload);
         setOk('Vehículo creado.');
-        limpiarFormulario();
       }
+      cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al guardar el vehículo.');
@@ -164,7 +180,7 @@ export default function Flota() {
     try {
       await api.retirarFlota(f.id_flota);
       setOk('Vehículo fuera de servicio.');
-      if (editando?.id_flota === f.id_flota) limpiarFormulario();
+      if (editando?.id_flota === f.id_flota) cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al retirar el vehículo.');
@@ -178,15 +194,22 @@ export default function Flota() {
           <h1>Flota</h1>
           <p>Vehículos disponibles por central y su estado operativo.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={nuevo}>
+            Nuevo vehículo
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>{editando ? `Editar vehículo #${editando.id_flota}` : 'Nuevo vehículo'}</h2>
-          <form className="formulario" onSubmit={enviar}>
+      {!soloLectura && modalAbierto && (
+        <Modal
+          titulo={editando ? `Editar vehículo #${editando.id_flota}` : 'Nuevo vehículo'}
+          onCerrar={cerrarModal}
+        >
+          <form className="formulario modal-formulario" onSubmit={enviar}>
             <div className="campo">
               <label htmlFor="flota-central">Central *</label>
               <select
@@ -285,13 +308,13 @@ export default function Flota() {
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear vehículo'}
               </button>
               {editando && (
-                <button type="button" className="btn btn-secundario" onClick={limpiarFormulario}>
+                <button type="button" className="btn btn-secundario" onClick={cerrarModal}>
                   Cancelar
                 </button>
               )}
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       <div className="fila-filtros">
@@ -365,6 +388,13 @@ export default function Flota() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 9 : 10}
+            total={items.length}
+            singular="vehículo"
+            plural="vehículos"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>

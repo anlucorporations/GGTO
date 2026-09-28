@@ -162,96 +162,100 @@
   {
     "manual": "01-Tecnologia/03-stack-frontend.html",
     "pdf": "pdf/01-Tecnologia/03-stack-frontend.pdf",
-    "paginas": 14,
-    "hojasContenido": 12,
-    "entradasToc": 22,
+    "paginas": 15,
+    "hojasContenido": 13,
+    "entradasToc": 23,
     "anclas": {
       "empezar-en-5-minutos": {
         "pagina": 3,
         "texto": "1Empezar en 5 minutos"
       },
       "stack-de-la-spa": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2Stack de la SPA"
       },
       "react-18-y-typescript": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1React 18 y TypeScript"
       },
       "vite": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.2Vite"
       },
       "react-router-dom": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.3react-router-dom"
       },
       "estructura-del-proyecto-web": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3Estructura del proyecto web"
       },
       "main-tsx-y-app-tsx": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.1main.tsx y App.tsx"
       },
       "pages": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.2pages/"
       },
       "components": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.3components/"
       },
       "api": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.4api/"
       },
       "auth": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "3.5auth/"
       },
       "enrutado-y-proteccion": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4Enrutado y proteccion"
       },
-      "rutas-publicas-y-protegidas-app-web-src-app-tsx-22-48": {
-        "pagina": 8,
-        "texto": "4.1Rutas publicas y protegidas (app/web/src/App.tsx:22-48)"
+      "rutas-publicas-y-protegidas-app-web-src-app-tsx-24-49": {
+        "pagina": 9,
+        "texto": "4.1Rutas publicas y protegidas (app/web/src/App.tsx:24-49)"
       },
       "rutaprotegida": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "4.2RutaProtegida"
       },
       "layout-y-barra-superior-app-web-src-components-layout-tsx": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "4.3Layout y barra superior (app/web/src/components/Layout.tsx)"
       },
-      "cliente-http-y-tipos": {
+      "modales-y-tablas-requisito-de-ui-d-64": {
         "pagina": 11,
+        "texto": "4.4Modales y tablas (requisito de UI D-64)"
+      },
+      "cliente-http-y-tipos": {
+        "pagina": 12,
         "texto": "5Cliente HTTP y tipos"
       },
       "app-web-src-api-client-ts": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5.1app/web/src/api/client.ts"
       },
       "app-web-src-api-types-ts": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5.2app/web/src/api/types.ts"
       },
       "graficos-svg-propios": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "6Graficos SVG propios"
       },
       "app-web-src-components-graficos-tsx-barras-curva-torta": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "6.1app/web/src/components/graficos.tsx (barras, curva, torta)"
       },
       "constructor-y-salida-npm-run-build-app-web-dist-servida-por-": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "7Constructor y salida (npm run build -> app/web/dist, servida por FastAPI)"
       },
       "estado-actual-y-pendientes-accesibilidad-rnf-23-pruebas-de-u": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "8Estado actual y pendientes (accesibilidad RNF-23, pruebas de UI: pendiente de confirmar)"
       }
     },

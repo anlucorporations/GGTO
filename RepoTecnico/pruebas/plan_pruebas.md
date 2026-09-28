@@ -75,6 +75,7 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 | E2E-10 | `10-configuracion.spec.js` | Alta de sector, técnico y causa; parámetros | RF-03…RF-05 |
 | E2E-11 | `11-rbac.spec.js` | TECNICO solo lectura y sin escritura en ALERTAS | RNF-21 |
 | E2E-12 | `12-ayuda.spec.js` | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF | RF-33, D-63 |
+| E2E-13 | `13-ui-requisitos.spec.js` | Barra PC (solo nombres) y móvil (solo iconos), modales al 90 % con título/cerrar y tablas al 90 % con pie de conteo | RNF-09, D-64 |
 
 ---
 

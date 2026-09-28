@@ -383,7 +383,7 @@ rol del usuario es `SUPER` (`app/web/src/pages/Agenda.tsx:180,677-686,781-790`).
 **409** y **403** se traducen a mensajes «Solapamiento: …» y «Sin permiso: …»
 (`app/web/src/pages/Agenda.tsx:105-113`). La ayuda bajo el formulario recuerda que se
 exige al menos un ID de caso o de caso especial y que solo el Super Usuario puede forzar el
-solape (`app/web/src/pages/Agenda.tsx:805-809`).
+solape (`app/web/src/pages/Agenda.tsx:796-800`).
 
 ---
 

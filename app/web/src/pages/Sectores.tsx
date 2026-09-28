@@ -9,6 +9,8 @@ import type {
   TipoCoincidencia,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -60,6 +62,7 @@ export default function Sectores() {
   const [editando, setEditando] = useState<Sector | null>(null);
   const [dirNueva, setDirNueva] = useState<DireccionForm>(DIR_VACIA);
   const [guardando, setGuardando] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -98,6 +101,18 @@ export default function Sectores() {
     setEditando(null);
   }
 
+  function cerrarModal() {
+    setModalAbierto(false);
+    limpiarFormulario();
+  }
+
+  function nuevo() {
+    limpiarFormulario();
+    setOk('');
+    setError('');
+    setModalAbierto(true);
+  }
+
   function editar(s: Sector) {
     setEditando(s);
     setForm({
@@ -111,6 +126,7 @@ export default function Sectores() {
     setDirecciones([]);
     setOk('');
     setError('');
+    setModalAbierto(true);
   }
 
   async function enviar(evento: FormEvent) {
@@ -141,8 +157,6 @@ export default function Sectores() {
           activo: form.activo,
         };
         await api.actualizarSector(editando.id_sector, payload);
-        const actualizado = await api.obtenerSector(editando.id_sector);
-        setEditando(actualizado);
         setOk('Sector actualizado.');
       } else {
         const payload: SectorCreate = {
@@ -163,8 +177,8 @@ export default function Sectores() {
         };
         await api.crearSector(payload);
         setOk('Sector creado.');
-        limpiarFormulario();
       }
+      cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al guardar el sector.');
@@ -180,7 +194,7 @@ export default function Sectores() {
     try {
       await api.desactivarSector(s.id_sector);
       setOk('Sector desactivado.');
-      if (editando?.id_sector === s.id_sector) limpiarFormulario();
+      if (editando?.id_sector === s.id_sector) cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al desactivar el sector.');
@@ -243,15 +257,22 @@ export default function Sectores() {
           <h1>Sectores</h1>
           <p>Sectores de atención con sus patrones de dirección por central.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={nuevo}>
+            Nuevo sector
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>{editando ? `Editar sector #${editando.id_sector}` : 'Nuevo sector'}</h2>
-          <form className="formulario" onSubmit={enviar}>
+      {!soloLectura && modalAbierto && (
+        <Modal
+          titulo={editando ? `Editar sector #${editando.id_sector}` : 'Nuevo sector'}
+          onCerrar={cerrarModal}
+        >
+          <form className="formulario modal-formulario" onSubmit={enviar}>
             <div className="campo">
               <label htmlFor="sector-central">Central *</label>
               <select
@@ -317,7 +338,7 @@ export default function Sectores() {
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear sector'}
               </button>
               {editando && (
-                <button type="button" className="btn btn-secundario" onClick={limpiarFormulario}>
+                <button type="button" className="btn btn-secundario" onClick={cerrarModal}>
                   Cancelar
                 </button>
               )}
@@ -434,7 +455,7 @@ export default function Sectores() {
               </form>
             </div>
           )}
-        </div>
+        </Modal>
       )}
 
       <div className="fila-filtros">
@@ -513,6 +534,13 @@ export default function Sectores() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 7 : 8}
+            total={items.length}
+            singular="sector"
+            plural="sectores"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>

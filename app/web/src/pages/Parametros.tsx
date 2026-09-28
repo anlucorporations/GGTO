@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type { Parametro } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -97,8 +99,7 @@ export default function Parametros() {
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
       {editando && !soloLectura && (
-        <div className="panel-bloque">
-          <h2>Editar parámetro «{editando}»</h2>
+        <Modal titulo={`Editar parámetro «${editando}»`} onCerrar={cancelar}>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo campo-ancho">
               <label htmlFor="parametro-valor">Valor (JSON)</label>
@@ -125,7 +126,7 @@ export default function Parametros() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       <div className="tabla-envoltura">
@@ -170,6 +171,13 @@ export default function Parametros() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 4 : 5}
+            total={items.length}
+            singular="parámetro"
+            plural="parámetros"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>

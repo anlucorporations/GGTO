@@ -25,9 +25,11 @@ test.describe('Agenda', () => {
   test('crea una cita de contacto para un caso', async ({ page }) => {
     const manana = new Date(Date.now() + 24 * 3600 * 1000);
     const valor = `${manana.toISOString().slice(0, 10)}T09:30`;
+    await page.getByRole('button', { name: 'Nueva cita' }).click();
+    await expect(page.getByRole('dialog', { name: 'Nueva cita' })).toBeVisible();
     await rellenar(page.getByLabel('ID caso', { exact: true }), '1');
     await rellenar(page.getByLabel('Fecha y hora'), valor);
-    await page.getByRole('button', { name: 'Agendar cita' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Agendar cita' }).click();
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 30_000 });
   });
 });

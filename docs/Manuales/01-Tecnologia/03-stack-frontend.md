@@ -10,12 +10,23 @@
    sistema y aparece la pantalla de acceso.
 2. **El sistema pide usuario y clave una sola vez.** Después de entrar, la sesión dura **8 horas**
    (una jornada). Si cierras el navegador o recargas, la sesión sigue viva mientras no expire.
-3. **Todos los botones de la barra superior te llevan a una sección.** PANEL, CASOS, ESPECIALES,
-   AGENDA, DESPACHO, INGESTA, MONITOREO y ALERTAS están siempre visibles. CONFIGURACIÓN aparece solo
-   para SUPER, ADMIN y SUPERVISOR.
-4. **Si tu rol es TECNICO, el sistema se pone en modo solo lectura.** Verás un aviso permanente y el
+3. **Todos los botones de la barra superior te llevan a una sección.** Son **nueve** y están siempre
+   visibles: PANEL, CASOS, ESPECIALES, AGENDA, DESPACHO, INGESTA, MONITOREO, ALERTAS y **AYUDA**.
+   CONFIGURACIÓN aparece solo para SUPER, ADMIN y SUPERVISOR.
+4. **La barra se adapta a tu pantalla.** En una computadora (pantalla grande) ves **solo los nombres**
+   de las secciones. En un teléfono o pantalla angosta (hasta 768 puntos de ancho) ves **solo los
+   iconos**, para que todo quepa.
+5. **Los formularios y las fichas se abren en una ventana flotante grande.** Cuando agregas o editas
+   algo, o cuando abres el detalle de un registro, aparece una ventana que ocupa el **90 % de la
+   pantalla**, con el título arriba y una **X** para cerrar. También puedes cerrarla con la tecla
+   **Escape** o haciendo clic fuera de la ventana. Si el contenido es largo, la ventana tiene su
+   propia barra de desplazamiento.
+6. **Las tablas son más anchas y muestran el total.** Cada listado ocupa el **90 % del ancho** de la
+   pantalla y, al final, trae una franja con el **total de registros** que se están mostrando (por
+   ejemplo, «Total: 12 casos»). Si todavía está cargando, dice «Cargando…».
+7. **Si tu rol es TECNICO, el sistema se pone en modo solo lectura.** Verás un aviso permanente y el
    botón **«Agregar caso»** quedará deshabilitado. Puedes consultar, pero no modificar.
-5. **Puedes compartir enlaces internos.** Si copias la dirección de una pantalla (por ejemplo
+8. **Puedes compartir enlaces internos.** Si copias la dirección de una pantalla (por ejemplo
    `/monitoreo`) y la abres en otra pestaña, funciona igual.
 
 <!-- GENERAR_IMAGEN: mapa-pantallas-spa.svg -->
@@ -33,6 +44,7 @@ flowchart TD
     LAY --> A["AGENDA /agenda"]
     LAY --> M["MONITOREO /monitoreo"]
     LAY --> AL["ALERTAS /alertas"]
+    LAY --> AY["AYUDA /ayuda"]
     LAY -. "solo SUPER, ADMIN,<br/>SUPERVISOR" .-> CFG["CONFIGURACIÓN<br/>7 pantallas"]
 ```
 
@@ -100,13 +112,15 @@ funcionaría.
 
 ## Estructura del proyecto web
 
-La web vive en la carpeta `app/web`. Estas son sus partes.
+La web vive en la carpeta `app/web`. Estas son sus partes. La web tiene **17 pantallas** y su barra
+superior reúne **9 secciones**: PANEL, CASOS, ESPECIALES, AGENDA, DESPACHO, INGESTA, MONITOREO,
+ALERTAS y AYUDA. Las siete pantallas de configuración se agrupan en el menú **CONFIGURACIÓN**.
 
 ### main.tsx y App.tsx
 
 - **`main.tsx`** es el arranque: 16 líneas que encienden React, conectan el enrutador, conectan el
   sistema de sesión y cargan los estilos.
-- **`App.tsx`** es el **mapa de rutas**: 49 líneas que dicen qué pantalla corresponde a cada
+- **`App.tsx`** es el **mapa de rutas**: 51 líneas que dicen qué pantalla corresponde a cada
   dirección. No tiene reglas de negocio.
 
 La estructura de rutas es anidada: hay un "guardián" que revisa la sesión y, si todo está bien,
@@ -117,7 +131,7 @@ muestra el armazón con la barra superior y la pantalla que pediste.
 (todo lo demás)           → primero revisa la sesión
    /                      → PANEL
    /ingesta  /casos  /despacho  /especiales  /agenda
-   /monitoreo  /alertas
+   /monitoreo  /alertas  /ayuda
    /central  /sectores  /tecnicos  /flota  /cuadrillas
    /catalogos  /parametros
 (dirección desconocida)   → vuelve al PANEL
@@ -125,27 +139,28 @@ muestra el armazón con la barra superior y la pantalla que pediste.
 
 ### pages/
 
-La carpeta `pages/` tiene **una pantalla por sección**. Estas son, con su tamaño aproximado en líneas
+La carpeta `pages/` tiene **17 pantallas**, una por sección. Estas son, con su tamaño real en líneas
 (útil para saber cuáles son las más complejas):
 
 | Pantalla | Archivo | Líneas |
 |---|---|---|
 | Panel | `Panel.tsx` | 106 |
 | Login | `Login.tsx` | 202 |
-| Ingesta | `Ingesta.tsx` | 406 |
-| Casos | `Casos.tsx` | 964 |
-| Despacho | `Despacho.tsx` | 1165 |
-| Especiales | `Especiales.tsx` | 508 |
-| Agenda | `Agenda.tsx` | 814 |
-| Monitoreo | `Monitoreo.tsx` | 764 |
-| Alertas | `Alertas.tsx` | 677 |
+| Ingesta | `Ingesta.tsx` | 447 |
+| Casos | `Casos.tsx` | 974 |
+| Despacho | `Despacho.tsx` | 1234 |
+| Especiales | `Especiales.tsx` | 509 |
+| Agenda | `Agenda.tsx` | 805 |
+| Monitoreo | `Monitoreo.tsx` | 777 |
+| Alertas | `Alertas.tsx` | 661 |
 | Centrales | `Centrales.tsx` | 336 |
-| Sectores | `Sectores.tsx` | 520 |
-| Tecnicos | `Tecnicos.tsx` | 366 |
-| Flota | `Flota.tsx` | 372 |
-| Cuadrillas | `Cuadrillas.tsx` | 555 |
-| Catalogos | `Catalogos.tsx` | 390 |
-| Parametros | `Parametros.tsx` | 177 |
+| Sectores | `Sectores.tsx` | 548 |
+| Tecnicos | `Tecnicos.tsx` | 397 |
+| Flota | `Flota.tsx` | 402 |
+| Cuadrillas | `Cuadrillas.tsx` | 583 |
+| Catalogos | `Catalogos.tsx` | 464 |
+| Parametros | `Parametros.tsx` | 185 |
+| Ayuda | `Ayuda.tsx` | 550 |
 
 Todas siguen el mismo patrón: al abrirse piden sus datos al motor, muestran un aviso mientras cargan,
 y si algo falla muestran un mensaje de error. El **PANEL** es el mejor ejemplo: muestra seis tarjetas
@@ -162,6 +177,8 @@ La carpeta `components/` guarda las piezas que se repiten en varias pantallas:
 | `RutaProtegida` | El guardián de la sesión |
 | `BuscadorGlobal` | Buscador de un solo campo, en la barra superior |
 | `ModalCaso` | La ventana del botón «Agregar caso» |
+| `Modal` | La ventana flotante grande donde se abren los formularios y las fichas |
+| `PieTabla` | La franja al pie de cada tabla con el total de registros |
 | `graficos` | Los cuatro tipos de gráfico dibujados en SVG |
 | `Iconos` | El conjunto de iconos del sistema |
 | `EstadoChips` | Las etiquetas de colores que indican el estado de un caso |
@@ -195,7 +212,7 @@ validación falla, se limpia la sesión y se vuelve al acceso.
 
 ## Enrutado y proteccion
 
-### Rutas publicas y protegidas (app/web/src/App.tsx:22-48)
+### Rutas publicas y protegidas (app/web/src/App.tsx:24-49)
 
 Hay **una sola dirección pública**: `/login`. Todas las demás exigen sesión válida.
 
@@ -210,6 +227,7 @@ Hay **una sola dirección pública**: `/login`. Todas las demás exigen sesión 
 | Protegida | `/agenda` | AGENDA |
 | Protegida | `/monitoreo` | MONITOREO |
 | Protegida | `/alertas` | ALERTAS |
+| Protegida | `/ayuda` | AYUDA |
 | Protegida | `/central` | CONFIGURACIÓN · Central |
 | Protegida | `/sectores` | CONFIGURACIÓN · Sectores |
 | Protegida | `/tecnicos` | CONFIGURACIÓN · Técnicos |
@@ -258,15 +276,20 @@ medida de seguridad por sí sola.
 
 ### Layout y barra superior (app/web/src/components/Layout.tsx)
 
-El armazón de la aplicación (228 líneas) tiene tres partes:
+El armazón de la aplicación (230 líneas) tiene tres partes:
 
 1. **Barra superior (`topbar`)** con la marca GGTO — CANTV, el buscador global, el botón
    «Agregar caso», la navegación y el menú de usuario.
 2. **Contenido (`main`)** con el aviso de solo lectura (cuando corresponde) y la pantalla actual.
 3. **Ventana de alta de caso**, que aparece solo cuando se abre.
 
-Las secciones principales son ocho y están en este orden: **PANEL, CASOS, ESPECIALES, AGENDA,
-DESPACHO, INGESTA, MONITOREO y ALERTAS**.
+Las secciones principales son **nueve** y están en este orden: **PANEL, CASOS, ESPECIALES, AGENDA,
+DESPACHO, INGESTA, MONITOREO, ALERTAS y AYUDA**.
+
+**La barra cambia según el dispositivo.** En una computadora se ven **solo los nombres** de las
+secciones. En una pantalla angosta (hasta 768 puntos de ancho, como un teléfono) se ven **solo los
+iconos**: el texto se oculta y vuelve a aparecer el dibujo de cada sección. Así los nueve accesos
+caben sin apretarse.
 
 El submenú **CONFIGURACIÓN** tiene siete entradas y se muestra solo si tu rol es SUPER, ADMIN o
 SUPERVISOR.
@@ -280,9 +303,36 @@ y el botón para cerrar sesión.
 | Marca GGTO — CANTV | Vuelve al PANEL |
 | Buscador global | Busca casos desde cualquier pantalla |
 | Botón «Agregar caso» | Abre la ventana de alta (deshabilitado en solo lectura) |
-| Navegación de secciones | Salta entre las ocho secciones principales |
+| Navegación de secciones | Salta entre las nueve secciones principales |
 | Submenú CONFIGURACIÓN | Acceso a las siete pantallas de configuración |
 | Menú de usuario | Datos de tu cuenta y cierre de sesión |
+
+### Modales y tablas (requisito de UI D-64)
+
+Una mejora reciente (registrada como **D-64**) cambió la forma de mostrar los formularios, las fichas
+y las tablas. Se hizo para que trabajar sea más cómodo, sobre todo en pantallas pequeñas.
+
+**Ventana flotante grande.** Cuando agregas o editas algo, o cuando abres el detalle de un registro,
+no vas a una pantalla aparte: se abre una **ventana flotante** encima de lo que estabas viendo. Esa
+ventana ocupa el **90 % de la pantalla** (el 90 % del ancho y el 90 % del alto). Arriba, a la
+izquierda, está el **título** de lo que estás haciendo; arriba, a la derecha, hay una **X** para
+cerrar. Si el contenido es largo, la ventana tiene su **propia barra de desplazamiento**, de modo que
+el fondo no se mueve.
+
+Puedes cerrar la ventana de **tres maneras**:
+
+1. Pulsando la **X** de la esquina.
+2. Pulsando la tecla **Escape**.
+3. Haciendo **clic fuera** de la ventana, en la zona oscurecida.
+
+Los formularios que solo sirven para **buscar o filtrar** no se abren así: siguen dentro de la misma
+pantalla, porque no interrumpen lo que estás haciendo.
+
+**Tablas más anchas y con total.** Cada tabla de listado ocupa ahora el **90 % del ancho** de la
+pantalla (hasta un máximo del 100 %, para que nunca se salga de la ventana). Además, al final de cada
+tabla hay una franja con el **total de registros** que se están mostrando, por ejemplo «Total: 12
+casos» o «Total: 3 sectores». Si el listado todavía está cargando, esa franja dice «Cargando…». El
+conteo respeta los filtros que tengas puestos: si filtras, el total baja.
 
 ## Cliente HTTP y tipos
 
@@ -385,10 +435,12 @@ Para trabajar en desarrollo: `npm run dev` en `app/web` (puerto 5173) con el mot
 
 Estado verificado y cosas por cerrar:
 
-- **Pruebas de navegador:** existen **46 pruebas E2E** con Playwright que corren contra un esquema
-  aislado (`ggto_e2e`). Junto con las 169 pruebas de Python, suman **215 pruebas en verde**. El
-  detalle exacto de qué pantalla cubre cada prueba está **pendiente de confirmar** contra el informe
-  de la Fase 4.
+- **Pruebas de navegador:** existen pruebas E2E con Playwright que corren contra un esquema aislado
+  (`ggto_e2e`). La Fase 4 cerró con **46 pruebas E2E en verde** junto con 169 pruebas de Python (215
+  en total). Después llegó el ciclo de UI **D-64** y la cifra subió a **56 pruebas E2E** (5 nuevas
+  que comprueban la barra por dispositivo y el 90 % real de la ventana y de la tabla), para un total
+  de **225 pruebas en verde**. El detalle exacto de qué pantalla cubre cada prueba está **pendiente
+  de confirmar** contra el informe de la Fase 4.
 - **Accesibilidad (RNF-23):** el requisito pide cumplir **WCAG 2.1 AA**, verificado con herramientas
   automáticas (axe o Lighthouse) y revisión manual. Hoy hay buenas bases en el código (avisos para
   lectores de pantalla, etiquetas en enlaces y menús), pero **la auditoría formal y el registro de

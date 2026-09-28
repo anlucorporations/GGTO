@@ -10,6 +10,8 @@ import type {
   Tecnico,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -58,6 +60,7 @@ export default function Cuadrillas() {
     rol_cuadrilla: 'REPARADOR_PRINCIPAL',
   });
   const [guardando, setGuardando] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -113,6 +116,18 @@ export default function Cuadrillas() {
     setEditando(null);
   }
 
+  function cerrarModal() {
+    setModalAbierto(false);
+    limpiarFormulario();
+  }
+
+  function nuevo() {
+    limpiarFormulario();
+    setOk('');
+    setError('');
+    setModalAbierto(true);
+  }
+
   function editar(c: Cuadrilla) {
     setEditando(c);
     setForm({
@@ -127,6 +142,7 @@ export default function Cuadrillas() {
     setHerramientasTexto('');
     setOk('');
     setError('');
+    setModalAbierto(true);
   }
 
   const flotasDeCentral = flotas.filter(
@@ -159,8 +175,6 @@ export default function Cuadrillas() {
           activa: form.activa,
         };
         await api.actualizarCuadrilla(editando.id_cuadrilla, payload);
-        const actualizada = await api.obtenerCuadrilla(editando.id_cuadrilla);
-        setEditando(actualizada);
         setOk('Cuadrilla actualizada.');
       } else {
         const herramientas = herramientasTexto
@@ -184,8 +198,8 @@ export default function Cuadrillas() {
         };
         await api.crearCuadrilla(payload);
         setOk('Cuadrilla creada.');
-        limpiarFormulario();
       }
+      cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al guardar la cuadrilla.');
@@ -241,15 +255,22 @@ export default function Cuadrillas() {
           <h1>Cuadrillas</h1>
           <p>Composición de cuadrillas, vehículo asignado e integrantes.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={nuevo}>
+            Nueva cuadrilla
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>{editando ? `Editar cuadrilla #${editando.id_cuadrilla}` : 'Nueva cuadrilla'}</h2>
-          <form className="formulario" onSubmit={enviar}>
+      {!soloLectura && modalAbierto && (
+        <Modal
+          titulo={editando ? `Editar cuadrilla #${editando.id_cuadrilla}` : 'Nueva cuadrilla'}
+          onCerrar={cerrarModal}
+        >
+          <form className="formulario modal-formulario" onSubmit={enviar}>
             <div className="campo">
               <label htmlFor="cuadrilla-central">Central *</label>
               <select
@@ -403,7 +424,7 @@ export default function Cuadrillas() {
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear cuadrilla'}
               </button>
               {editando && (
-                <button type="button" className="btn btn-secundario" onClick={limpiarFormulario}>
+                <button type="button" className="btn btn-secundario" onClick={cerrarModal}>
                   Cancelar
                 </button>
               )}
@@ -470,7 +491,7 @@ export default function Cuadrillas() {
               </form>
             </div>
           )}
-        </div>
+        </Modal>
       )}
 
       <div className="fila-filtros">
@@ -539,7 +560,7 @@ export default function Cuadrillas() {
                     <td>
                       <div className="celda-acciones">
                         <button className="btn btn-mini btn-secundario" onClick={() => editar(c)}>
-                          Editar / integrantes
+                          Editar
                         </button>
                       </div>
                     </td>
@@ -548,6 +569,13 @@ export default function Cuadrillas() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 8 : 9}
+            total={items.length}
+            singular="cuadrilla"
+            plural="cuadrillas"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>

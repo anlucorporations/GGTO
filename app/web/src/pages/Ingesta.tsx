@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import * as api from '../api/client';
 import type { IngestaLoteOut, ResumenIngesta } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -28,6 +30,7 @@ export default function Ingesta() {
   const [cargandoLotes, setCargandoLotes] = useState(true);
   const [detalle, setDetalle] = useState<IngestaLoteOut | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [modalCarga, setModalCarga] = useState(false);
 
   const cargarLotes = useCallback(async () => {
     setCargandoLotes(true);
@@ -44,6 +47,17 @@ export default function Ingesta() {
   useEffect(() => {
     void cargarLotes();
   }, [cargarLotes]);
+
+  /** Abre el formulario de carga en ventana flotante (requisito de UI 3). */
+  function abrirCarga() {
+    setError('');
+    setOk('');
+    setModalCarga(true);
+  }
+
+  function cerrarCarga() {
+    setModalCarga(false);
+  }
 
   /** Prepara el archivo y el id_central, o devuelve null si falta algo. */
   function prepararEntrada(): { archivo: File; idCentral: number | null } | null {
@@ -63,16 +77,21 @@ export default function Ingesta() {
 
   async function simular() {
     const entrada = prepararEntrada();
-    if (!entrada) return;
+    if (!entrada) {
+      setModalCarga(false);
+      return;
+    }
     setProcesando(true);
     try {
       const resultado = await api.previewIngesta(entrada.archivo, entrada.idCentral);
       setResumen(resultado);
       setOk('Simulación completada. No se guardó ningún dato.');
       setDetalle(null);
+      setModalCarga(false);
     } catch (e) {
       setResumen(null);
       setError(e instanceof api.ApiError ? e.message : 'Error al simular la ingesta.');
+      setModalCarga(false);
     } finally {
       setProcesando(false);
     }
@@ -80,7 +99,10 @@ export default function Ingesta() {
 
   async function cargar() {
     const entrada = prepararEntrada();
-    if (!entrada) return;
+    if (!entrada) {
+      setModalCarga(false);
+      return;
+    }
     if (
       !window.confirm(
         `¿Cargar «${entrada.archivo.name}» y guardar los casos nuevos? Esta acción no se puede deshacer.`,
@@ -98,10 +120,12 @@ export default function Ingesta() {
           : 'Carga completada.',
       );
       setDetalle(null);
+      setModalCarga(false);
       await cargarLotes();
     } catch (e) {
       setResumen(null);
       setError(e instanceof api.ApiError ? e.message : 'Error al cargar el archivo.');
+      setModalCarga(false);
     } finally {
       setProcesando(false);
     }
@@ -140,22 +164,29 @@ export default function Ingesta() {
           <h1>Ingesta</h1>
           <p>Carga del archivo diario de averías (CSV): simulacro previo y registro de lotes.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={abrirCarga}>
+            Cargar archivo diario
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {soloLectura ? (
+      {soloLectura && (
         <div className="aviso aviso-info">
           <span>
             Modo solo lectura: su rol TECNICO no permite simular ni cargar archivos. Puede consultar el
             historial de lotes.
           </span>
         </div>
-      ) : (
-        <div className="panel-bloque">
-          <h2>Cargar archivo diario</h2>
-          <div className="formulario">
+      )}
+
+      {/* Formulario de inserción, en ventana flotante (requisito de UI 3). */}
+      {!soloLectura && modalCarga && (
+        <Modal titulo="Cargar archivo diario" onCerrar={cerrarCarga}>
+          <div className="formulario modal-formulario">
             <div className="campo">
               <label htmlFor="ingesta-archivo">Archivo CSV *</label>
               <input
@@ -198,13 +229,15 @@ export default function Ingesta() {
           <p className="texto-pequeno">
             «Simular» no guarda nada; «Cargar archivo» inserta los casos nuevos y registra el lote.
           </p>
-        </div>
+        </Modal>
       )}
 
+      {/* Resumen del resultado, en ventana flotante (requisito de UI 3). */}
       {resumen && (
-        <div className="panel-bloque">
-          <h2>Resumen de la ingesta — {resumen.archivo}</h2>
-
+        <Modal
+          titulo={`Resumen de la ingesta — ${resumen.archivo}`}
+          onCerrar={() => setResumen(null)}
+        >
           {resumen.id_lote !== null && (
             <Mensaje tipo="ok" texto={`Lote registrado: #${resumen.id_lote}`} />
           )}
@@ -225,40 +258,46 @@ export default function Ingesta() {
               ))}
             </div>
           )}
-        </div>
+
+          {resumen.ejemplos.length > 0 && (
+            <>
+              <h3 className="subtitulo-seccion">Ejemplos de casos nuevos</h3>
+              <div className="tabla-envoltura">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID avería</th>
+                      <th>Dirección</th>
+                      <th>Sector</th>
+                      <th>¿Cuadrilla 0?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumen.ejemplos.map((ejemplo) => (
+                      <tr key={ejemplo.id_averia}>
+                        <td className="mono">{ejemplo.id_averia}</td>
+                        <td>{ejemplo.direccion ?? '—'}</td>
+                        <td>{ejemplo.sector ?? '—'}</td>
+                        <td>{ejemplo.cuadrilla0 ? 'Sí' : 'No'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <PieTabla
+                    colSpan={4}
+                    total={resumen.ejemplos.length}
+                    singular="lote"
+                    plural="lotes"
+                  />
+                </table>
+              </div>
+            </>
+          )}
+        </Modal>
       )}
 
-      {resumen && resumen.ejemplos.length > 0 && (
-        <div className="panel-bloque">
-          <h2>Ejemplos de casos nuevos</h2>
-          <div className="tabla-envoltura">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID avería</th>
-                  <th>Dirección</th>
-                  <th>Sector</th>
-                  <th>¿Cuadrilla 0?</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resumen.ejemplos.map((ejemplo) => (
-                  <tr key={ejemplo.id_averia}>
-                    <td className="mono">{ejemplo.id_averia}</td>
-                    <td>{ejemplo.direccion ?? '—'}</td>
-                    <td>{ejemplo.sector ?? '—'}</td>
-                    <td>{ejemplo.cuadrilla0 ? 'Sí' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
+      {/* Ficha del lote, en ventana flotante (requisito de UI 3). */}
       {detalle && (
-        <div className="panel-bloque">
-          <h2>Detalle del lote #{detalle.id_lote}</h2>
+        <Modal titulo={`Detalle del lote #${detalle.id_lote}`} onCerrar={() => setDetalle(null)}>
           <div className="tabla-envoltura">
             <table>
               <tbody>
@@ -315,12 +354,7 @@ export default function Ingesta() {
               </tbody>
             </table>
           </div>
-          <div className="acciones-form">
-            <button type="button" className="btn btn-secundario" onClick={() => setDetalle(null)}>
-              Cerrar detalle
-            </button>
-          </div>
-        </div>
+        </Modal>
       )}
 
       <div className="panel-bloque">
@@ -398,6 +432,13 @@ export default function Ingesta() {
                 ))
               )}
             </tbody>
+            <PieTabla
+              colSpan={13}
+              total={lotes.length}
+              singular="lote"
+              plural="lotes"
+              cargando={cargandoLotes}
+            />
           </table>
         </div>
       </div>

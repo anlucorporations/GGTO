@@ -22,8 +22,10 @@ test.describe('Despacho', () => {
   });
 
   test('registra una falla masiva manual desde DESPACHO', async ({ page }) => {
-    await rellenar(page.getByLabel('Descripción *'), 'Falla E2E reportada desde despacho');
     await page.getByRole('button', { name: 'Registrar falla' }).click();
+    await expect(page.getByRole('dialog', { name: 'Registrar falla' })).toBeVisible();
+    await rellenar(page.getByLabel('Descripción *'), 'Falla E2E reportada desde despacho');
+    await page.getByRole('dialog').getByRole('button', { name: 'Registrar falla' }).click();
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 30_000 });
   });
 });

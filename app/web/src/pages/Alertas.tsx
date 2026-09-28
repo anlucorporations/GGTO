@@ -10,7 +10,7 @@
  * notificaciones permanecen PENDIENTES en la bandeja (no se pierden).
  */
 
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type {
   EstadoFallaMasiva,
@@ -20,7 +20,9 @@ import type {
 } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import Mensaje from '../components/Mensaje';
-import { IconoAlertas, IconoCerrar, IconoFalla, IconoTelegram } from '../components/Iconos';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
+import { IconoAlertas, IconoFalla, IconoTelegram } from '../components/Iconos';
 
 const ESTADOS_FALLA: EstadoFallaMasiva[] = ['DETECTADA', 'PLANIFICADA', 'ATENDIDA', 'CERRADA'];
 
@@ -46,38 +48,6 @@ function claseEstado(estado: string): string {
   if (estado === 'CERRADA' || estado === 'ENVIADO' || estado === 'ATENDIDA') return 'chip-estado-ok';
   if (estado === 'FALLIDO') return 'chip-estado-alerta';
   return '';
-}
-
-/* ------------------------------------------------------------------ */
-/* Modales                                                             */
-/* ------------------------------------------------------------------ */
-
-interface ModalProps {
-  titulo: string;
-  onCerrar: () => void;
-  children: ReactNode;
-}
-
-function Modal({ titulo, onCerrar, children }: ModalProps) {
-  return (
-    <div
-      className="modal-fondo"
-      role="dialog"
-      aria-modal="true"
-      aria-label={titulo}
-      onClick={onCerrar}
-    >
-      <div className="modal-caja" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-cabecera">
-          <h2>{titulo}</h2>
-          <button type="button" className="modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
-            <IconoCerrar />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -181,7 +151,7 @@ export default function Alertas() {
           </button>
           <button
             type="button"
-            className="btn btn-secundario"
+            className="btn"
             onClick={() => setModalManual(true)}
             disabled={soloLectura}
           >
@@ -340,6 +310,13 @@ export default function Alertas() {
                   </tr>
                 ))}
               </tbody>
+              <PieTabla
+                colSpan={9}
+                total={fallas.length}
+                singular="falla"
+                plural="fallas"
+                cargando={cargando}
+              />
             </table>
           </div>
         )}
@@ -412,6 +389,13 @@ export default function Alertas() {
                   </tr>
                 ))}
               </tbody>
+              <PieTabla
+                colSpan={8}
+                total={notificaciones.length}
+                singular="notificación"
+                plural="notificaciones"
+                cargando={cargando}
+              />
             </table>
           </div>
         )}

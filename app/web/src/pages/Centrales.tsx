@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type { Central, CentralCreate } from '../api/types';
 import Mensaje from '../components/Mensaje';
+import Modal from '../components/Modal';
+import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
@@ -59,6 +61,7 @@ export default function Centrales() {
   const [form, setForm] = useState<CentralForm>(FORM_VACIO);
   const [editando, setEditando] = useState<Central | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -81,11 +84,24 @@ export default function Centrales() {
     setEditando(null);
   }
 
+  function cerrarModal() {
+    setModalAbierto(false);
+    limpiarFormulario();
+  }
+
+  function nueva() {
+    limpiarFormulario();
+    setOk('');
+    setError('');
+    setModalAbierto(true);
+  }
+
   function editar(c: Central) {
     setEditando(c);
     setForm(aFormulario(c));
     setOk('');
     setError('');
+    setModalAbierto(true);
   }
 
   async function enviar(evento: FormEvent) {
@@ -126,7 +142,7 @@ export default function Centrales() {
         await api.crearCentral(payload);
         setOk('Central creada.');
       }
-      limpiarFormulario();
+      cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al guardar la central.');
@@ -142,7 +158,7 @@ export default function Centrales() {
     try {
       await api.desactivarCentral(c.id_central);
       setOk('Central desactivada.');
-      if (editando?.id_central === c.id_central) limpiarFormulario();
+      if (editando?.id_central === c.id_central) cerrarModal();
       await cargar();
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al desactivar la central.');
@@ -156,15 +172,22 @@ export default function Centrales() {
           <h1>Central</h1>
           <p>Registro de centrales telefónicas y su ubicación geográfica.</p>
         </div>
+        {!soloLectura && (
+          <button className="btn" type="button" onClick={nueva}>
+            Nueva central
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {!soloLectura && (
-        <div className="panel-bloque">
-          <h2>{editando ? `Editar central #${editando.id_central}` : 'Nueva central'}</h2>
-          <form className="formulario" onSubmit={enviar}>
+      {!soloLectura && modalAbierto && (
+        <Modal
+          titulo={editando ? `Editar central #${editando.id_central}` : 'Nueva central'}
+          onCerrar={cerrarModal}
+        >
+          <form className="formulario modal-formulario" onSubmit={enviar}>
             <div className="campo">
               <label htmlFor="central-region">Región *</label>
               <input id="central-region" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
@@ -251,13 +274,13 @@ export default function Centrales() {
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear central'}
               </button>
               {editando && (
-                <button type="button" className="btn btn-secundario" onClick={limpiarFormulario}>
+                <button type="button" className="btn btn-secundario" onClick={cerrarModal}>
                   Cancelar
                 </button>
               )}
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       <div className="fila-filtros">
@@ -329,6 +352,13 @@ export default function Centrales() {
               ))
             )}
           </tbody>
+          <PieTabla
+            colSpan={soloLectura ? 9 : 10}
+            total={items.length}
+            singular="central"
+            plural="centrales"
+            cargando={cargando}
+          />
         </table>
       </div>
     </>
