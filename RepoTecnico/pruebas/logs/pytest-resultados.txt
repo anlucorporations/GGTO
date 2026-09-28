@@ -1,0 +1,26 @@
+GGTO — Fase 4 · Resultado de pytest
+===================================
+
+Comando : python3 -m pytest app/tests -q
+Fecha   : 2026-09-28
+Entorno : PostgreSQL 15.18 (ggtov2) · esquema aislado ggto_test
+Salida  : 169 passed, 1 warning in 2251.20s (0:37:31)
+Código  : 0
+
+Desglose por archivo (169 casos)
+--------------------------------
+ 23  app/tests/test_alertas_api.py
+ 17  app/tests/test_despacho_api.py
+ 17  app/tests/test_casos_api.py
+ 16  app/tests/test_sectorizacion_cuadrilla0.py
+ 16  app/tests/test_monitoreo_api.py
+ 15  app/tests/test_especiales_api.py
+ 14  app/tests/test_contratos.py
+ 13  app/tests/test_config.py
+ 12  app/tests/test_ingesta_parser.py
+ 11  app/tests/test_auth.py
+  6  app/tests/test_security.py
+  6  app/tests/test_ingesta_api.py
+  3  app/tests/test_config_db.py
+
+Detalle completo (ignorado por git): RepoTecnico/pruebas/logs/pytest.log

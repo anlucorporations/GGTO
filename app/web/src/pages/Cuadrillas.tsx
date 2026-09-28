@@ -251,8 +251,9 @@ export default function Cuadrillas() {
           <h2>{editando ? `Editar cuadrilla #${editando.id_cuadrilla}` : 'Nueva cuadrilla'}</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo">
-              <label>Central *</label>
+              <label htmlFor="cuadrilla-central">Central *</label>
               <select
+                id="cuadrilla-central"
                 value={form.id_central}
                 disabled={Boolean(editando)}
                 onChange={(e) =>
@@ -268,22 +269,25 @@ export default function Cuadrillas() {
               </select>
             </div>
             <div className="campo">
-              <label>Código *</label>
+              <label htmlFor="cuadrilla-codigo">Código *</label>
               <input
+                id="cuadrilla-codigo"
                 value={form.codigo}
                 onChange={(e) => setForm({ ...form, codigo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Nombre *</label>
+              <label htmlFor="cuadrilla-nombre">Nombre *</label>
               <input
+                id="cuadrilla-nombre"
                 value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Vehículo (flota)</label>
+              <label htmlFor="cuadrilla-vehiculo">Vehículo (flota)</label>
               <select
+                id="cuadrilla-vehiculo"
                 value={form.id_flota}
                 onChange={(e) => setForm({ ...form, id_flota: e.target.value })}
               >
@@ -317,8 +321,9 @@ export default function Cuadrillas() {
             {!editando && (
               <>
                 <div className="campo campo-ancho">
-                  <label>Herramientas (IDs separados por coma)</label>
+                  <label htmlFor="cuadrilla-herramientas">Herramientas (IDs separados por coma)</label>
                   <input
+                    id="cuadrilla-herramientas"
                     value={herramientasTexto}
                     placeholder="Ej. 1, 4, 7"
                     onChange={(e) => setHerramientasTexto(e.target.value)}
@@ -470,8 +475,8 @@ export default function Cuadrillas() {
 
       <div className="fila-filtros">
         <div className="campo">
-          <label>Central</label>
-          <select value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
+          <label htmlFor="cuadrilla-filtro-central">Central</label>
+          <select id="cuadrilla-filtro-central" value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
             <option value="">Todas</option>
             {centrales.map((c) => (
               <option key={c.id_central} value={c.id_central}>

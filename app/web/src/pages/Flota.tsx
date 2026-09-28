@@ -188,8 +188,9 @@ export default function Flota() {
           <h2>{editando ? `Editar vehículo #${editando.id_flota}` : 'Nuevo vehículo'}</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo">
-              <label>Central *</label>
+              <label htmlFor="flota-central">Central *</label>
               <select
+                id="flota-central"
                 value={form.id_central}
                 onChange={(e) => setForm({ ...form, id_central: e.target.value })}
               >
@@ -202,44 +203,49 @@ export default function Flota() {
               </select>
             </div>
             <div className="campo">
-              <label>CAN *</label>
-              <input value={form.can} onChange={(e) => setForm({ ...form, can: e.target.value })} />
+              <label htmlFor="flota-can">CAN *</label>
+              <input id="flota-can" value={form.can} onChange={(e) => setForm({ ...form, can: e.target.value })} />
             </div>
             <div className="campo">
-              <label>Tipo</label>
-              <input value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} />
+              <label htmlFor="flota-tipo">Tipo</label>
+              <input id="flota-tipo" value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} />
             </div>
             <div className="campo">
-              <label>Marca</label>
+              <label htmlFor="flota-marca">Marca</label>
               <input
+                id="flota-marca"
                 value={form.marca}
                 onChange={(e) => setForm({ ...form, marca: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Modelo</label>
+              <label htmlFor="flota-modelo">Modelo</label>
               <input
+                id="flota-modelo"
                 value={form.modelo}
                 onChange={(e) => setForm({ ...form, modelo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Placa</label>
+              <label htmlFor="flota-placa">Placa</label>
               <input
+                id="flota-placa"
                 value={form.placa}
                 onChange={(e) => setForm({ ...form, placa: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Combustible</label>
+              <label htmlFor="flota-combustible">Combustible</label>
               <input
+                id="flota-combustible"
                 value={form.combustible}
                 onChange={(e) => setForm({ ...form, combustible: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Status</label>
+              <label htmlFor="flota-status">Status</label>
               <select
+                id="flota-status"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as StatusFlota })}
               >
@@ -251,22 +257,25 @@ export default function Flota() {
               </select>
             </div>
             <div className="campo">
-              <label>Estado cauchos</label>
+              <label htmlFor="flota-estado-cauchos">Estado cauchos</label>
               <input
+                id="flota-estado-cauchos"
                 value={form.estado_cauchos}
                 onChange={(e) => setForm({ ...form, estado_cauchos: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Estado fluidos</label>
+              <label htmlFor="flota-estado-fluidos">Estado fluidos</label>
               <input
+                id="flota-estado-fluidos"
                 value={form.estado_fluidos}
                 onChange={(e) => setForm({ ...form, estado_fluidos: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Estado general</label>
+              <label htmlFor="flota-estado-general">Estado general</label>
               <input
+                id="flota-estado-general"
                 value={form.estado_general}
                 onChange={(e) => setForm({ ...form, estado_general: e.target.value })}
               />
@@ -287,8 +296,8 @@ export default function Flota() {
 
       <div className="fila-filtros">
         <div className="campo">
-          <label>Central</label>
-          <select value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
+          <label htmlFor="flota-filtro-central">Central</label>
+          <select id="flota-filtro-central" value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
             <option value="">Todas</option>
             {centrales.map((c) => (
               <option key={c.id_central} value={c.id_central}>

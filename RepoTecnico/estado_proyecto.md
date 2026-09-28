@@ -4,11 +4,11 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 3 — Desarrollo: EN CURSO** · Ciclos 1–7 y 9 completados y desplegados (Ciclo 8 pospuesto) |
-| Última actualización | 2026-09-27 |
+| Fase actual | **Fase 4 — Pruebas: COMPLETADA** (215/215) · siguiente: **Fase 5 — Manuales** |
+| Última actualización | 2026-09-28 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
-| Decisiones | **D-01…D-59** |
+| Decisiones | **D-01…D-62** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
 | Pendientes externos | ⚠️ **Restringir el acceso público** (ya hay PII real) · firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP (migrar `ggto-web` a `ggtov2`) · restringir el acceso público de `ggto-web` |
 
@@ -53,6 +53,7 @@
 | `plan_desarrollo.md` | Plan de desarrollo vertical (10 ciclos) y bitácora de avance. | **v1.0** |
 | `metricas.md` | Definición formal de las métricas de MONITOREO y REPORTES. | **v1.0** |
 | `../app/` | Backend FastAPI + web React (Ciclos 1–7 y 9) con pruebas y CI. | **v0.9.0** |
+| `pruebas/` | Plan de pruebas, semilla E2E, suite Playwright e informe de la Fase 4. | **v1.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -120,16 +121,22 @@
 | D-54 | **Datos reales en producción:** el Super Usuario cargó `detalle_averias_gpon 15_09_2026.csv` (47 filas → **42 casos**, 5 descartadas) el 2026-09-27. La ingesta funcionó; los casos **no** se tocaron en las limpiezas (verificado con las secuencias de `public`, que coinciden solo con los registros de prueba). ⚠️ Contienen **PII de suscriptores** y el servicio es **público**: urge restringir el acceso y habilitar respaldo. | Operación |
 | D-55 | **Política de limpieza corregida:** desde este ciclo, las limpiezas de verificación en producción se hacen **solo con filtros/marcadores** (`TST%`, ids conocidos); quedan prohibidos los `DELETE` sin filtro sobre tablas que ya contienen datos reales. | Lección aprendida |
 | D-52 | **Ciclo 5 (DESPACHO) completado:** propuesta automática por sector con balanceo *greedy* y las reglas del brief (citados del día, ≥2 referidos, ≥1 empresa, construcción a una sola cuadrilla), exclusión de la cuadrilla 0, generación/edición/publicación, **impresión tamaño carta**, reporte de producción, envío por Telegram/correo con patrón *outbox* (queda `PENDIENTE` sin credenciales, que llegan en el Ciclo 9) y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado como `ggto-web-00007-vsr` (imagen `v7`) y verificado en vivo. | Fase 3 |
+| D-60 | **Ciclo 9 (ALERTAS, Telegram y MCP) completado:** detección automática de fallas por concentración (idempotente), reporte manual, planificación (RF-17), material (RF-18), *outbox* con backoff (RNF-20), bot de Telegram (`/ayuda`, `/estado`, `/caso`, `/falla`), servidor MCP JSON-RPC y `ObservabilidadMiddleware` + `/metricas` (RNF-19); página web ALERTAS; **152/152 pruebas**; desplegado (`ggto-web-00014-zqx`, imagen `v14`) y verificado en vivo. | Fase 3 |
+| D-61 | **Concentración real detectada:** los 42 casos reales se reparten en 4 OLT (`pde-olt-00…03`, 14/12/10/6) y superan el umbral de 5; la próxima ingesta declarará automáticamente esas 4 fallas masivas y encolará sus alertas. Telegram y correo siguen sin credenciales (`canales_configurados=false`), por lo que las notificaciones quedan `PENDIENTE` en la bandeja. | Operación |
+| D-62 | **Fase 4 (Pruebas) completada:** plan en `RepoTecnico/pruebas/plan_pruebas.md` con 4 niveles (unitarias, integración, contratos y E2E de navegador); **169/169 `pytest` + 46/46 Playwright = 215 pruebas en verde**; `ruff`, `mypy` y `tsc` strict sin hallazgos; esquemas aislados `ggto_test`/`ggto_e2e` (parámetro `DB_SCHEMA`, nunca producción); 6 hallazgos corregidos y documentados en `informe_fase4.md`. Sin defectos funcionales abiertos. | Fase 4 |
 
 ---
 
 ## 4. Próximos pasos
 
-1. Resolver los **4 hallazgos CRÍTICOS** (H-01…H-04) del informe de auditoría.
-2. Ejecutar los **Quick wins** aprobados (QW-1, QW-2, QW-3, QW-5) y los de infraestructura (QW-6, QW-7).
-3. Sincronizar `requerimientos.md` con las respuestas de la entrevista y las decisiones D-22..D-24 (H-08).
-4. Completar los RNF faltantes y la matriz RBAC (criterios §8 del informe).
-5. **Fase 2** — casos de uso (analista funcional, Gherkin/EARS), gráficos y documento técnico con `@audita`.
+1. **Fase 5 — Manuales** (`@manuales`): manuales técnicos en `RepoTecnico/Manuales/` y
+   manuales literales en `docs/`, más la sección de Ayuda de la plataforma.
+2. Restringir el **acceso público de `ggto-web`** y habilitar respaldo antes de operar
+   con PII real; firmar el contrato de interfaz con CANTV.
+3. Designar los responsables de protección de datos y del sistema origen (lado CANTV).
+4. Desbloquear la facturación GCP y migrar `ggto-web`/`ggtov2` a la instancia propia
+   con backups + PITR + SSL (cierra el riesgo aceptado D-26).
+5. Ciclo 8 (app móvil Flutter + SQLite) — pospuesto.
 
 ---
 
@@ -286,3 +293,8 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-27 | **Ciclo 5 completado (D-52):** propuesta de despacho por sector con las reglas del brief, generación/edición/publicación, imprimible tamaño carta, reporte de producción, envío con patrón *outbox* y fallas masivas; página web DESPACHO; **96/96 pruebas**; desplegado (`ggto-web-00007-vsr`, imagen `v7`) y verificado en vivo (reparto 6/4, construcción en una sola cuadrilla, envío PENDIENTE sin credenciales). |
 | 2026-09-27 | **Ciclo 9 completado (D-60):** ALERTAS, Telegram y MCP — detección automática de fallas por concentración (idempotente), reporte manual, planificación (RF-17), material (RF-18), *outbox* con backoff (RNF-20), bot de Telegram (`/ayuda`, `/estado`, `/caso`, `/falla`), servidor MCP JSON-RPC y `ObservabilidadMiddleware` + `/metricas` (RNF-19); página web ALERTAS; **152/152 pruebas**; desplegado (`ggto-web-00014-zqx`, imagen `v14`) y verificado en vivo (42 casos, 0 fallas, outbox vacío, 73 endpoints, SPA `/alertas` `200`). |
 | 2026-09-27 | **Concentración real detectada (D-61):** los 42 casos se reparten en 4 OLT (`pde-olt-00…03` con 14/12/10/6) y superan el umbral de 5; la próxima ingesta declarará automáticamente esas 4 fallas masivas y encolará sus alertas. Telegram y correo siguen sin credenciales (`canales_configurados=false`), por lo que las notificaciones quedarán PENDIENTES en la bandeja. |
+| 2026-09-28 | **Fase 4 iniciada:** `RepoTecnico/pruebas/plan_pruebas.md` v1.0 con 4 niveles (unitarias, integración, contratos y E2E de navegador) y esquemas aislados `ggto_test`/`ggto_e2e`; corregido F4-01 (parámetro `DB_SCHEMA` → `search_path`, nunca producción). |
+| 2026-09-28 | **E2E de navegador en verde:** suite Playwright/Chromium de 11 archivos (**46/46**, 7.4 m) con la SPA completa sobre `ggto_e2e`; mitiga F4-04 (librerías y fuentes de Chromium) y F4-05 (rate limit en pruebas). |
+| 2026-09-28 | **Accesibilidad (F4-02):** 56 `<label>` de CONFIGURACIÓN asociados a su control (`htmlFor`+`id`) en las 7 páginas; verificado con `tsc` strict. |
+| 2026-09-28 | **F4-03 corregido:** `test_monitoreo_api.py` pasa de la constante `HOY` a la función `hoy()` (evita falsos negativos en corridas que cruzan la medianoche). |
+| 2026-09-28 | **Fase 4 completada (D-62):** **169/169 `pytest` + 46/46 E2E = 215 pruebas en verde** y `ruff`/`mypy`/`tsc` sin hallazgos; 6 hallazgos corregidos y documentados en `informe_fase4.md` (F4-06: variable local `hoy` que tapaba la función homónima). Sin defectos funcionales abiertos. |

@@ -1,0 +1,13 @@
+{
+  "name": "ggto-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pruebas E2E de navegador (Playwright) para GGTO — Fase 4",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

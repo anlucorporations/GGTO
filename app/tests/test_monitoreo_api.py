@@ -8,7 +8,16 @@ import pytest
 
 BASE = "/api/v1/monitoreo"
 REPORTES = "/api/v1/reportes/trabajo"
-HOY = date.today().isoformat()
+
+
+def hoy() -> date:
+    """Fecha de hoy calculada en el momento de la prueba.
+
+    No se captura al importar el módulo: una corrida que cruce la medianoche
+    dejaría de coincidir con la fecha de los registros creados por la propia
+    prueba (los `creado_en` se comparan por día).
+    """
+    return date.today()
 
 
 @pytest.fixture()
@@ -50,7 +59,7 @@ def entorno(client, admin_token):
 # Gestión diaria
 # --------------------------------------------------------------------------- #
 def test_gestion_diaria(client, entorno):
-    r = client.get(f"{BASE}/diario", params={"fecha": HOY}, headers=entorno["headers"])
+    r = client.get(f"{BASE}/diario", params={"fecha": hoy().isoformat()}, headers=entorno["headers"])
     assert r.status_code == 200, r.text
     d = r.json()
     assert d["ingresos_nuevos"] == 5
@@ -71,7 +80,7 @@ def test_gestion_diaria_sin_datos(client, entorno):
 # Globales, reparación y construcción
 # --------------------------------------------------------------------------- #
 def test_globales(client, entorno):
-    g = client.get(f"{BASE}/globales", params={"desde": HOY, "hasta": HOY},
+    g = client.get(f"{BASE}/globales", params={"desde": hoy().isoformat(), "hasta": hoy().isoformat()},
                    headers=entorno["headers"]).json()
     assert g["pendientes"] == 4
     assert g["resueltos"] == 1
@@ -107,7 +116,7 @@ def test_capacidad_operativa(client, entorno):
 # Semanal y por cuadrilla
 # --------------------------------------------------------------------------- #
 def test_gestion_semanal_devuelve_seis_dias(client, entorno):
-    s = client.get(f"{BASE}/semanal", params={"desde": HOY}, headers=entorno["headers"]).json()
+    s = client.get(f"{BASE}/semanal", params={"desde": hoy().isoformat()}, headers=entorno["headers"]).json()
     assert len(s["dias"]) == 6
     assert s["desde"] <= s["hasta"]
     for dia in s["dias"]:
@@ -118,7 +127,7 @@ def test_monitoreo_por_cuadrilla(client, entorno):
     # La semana operativa es lunes-sábado: usamos el lunes de esta semana
     from app.services.monitoreo import rango_semana
 
-    lunes = rango_semana(date.today())[0].isoformat()
+    lunes = rango_semana(hoy())[0].isoformat()
     prop = client.post("/api/v1/despachos/propuesta", params={"fecha": lunes},
                        headers=entorno["headers"])
     assert prop.status_code == 200
@@ -143,9 +152,9 @@ def test_monitoreo_por_cuadrilla(client, entorno):
 
 def test_semanal_refleja_los_cierres(client, entorno):
     """La semana es lunes-sábado; si hoy es domingo, el cierre queda fuera de la ventana."""
-    s = client.get(f"{BASE}/semanal", params={"desde": HOY}, headers=entorno["headers"]).json()
+    s = client.get(f"{BASE}/semanal", params={"desde": hoy().isoformat()}, headers=entorno["headers"]).json()
     total_cerrados = sum(d["cerrados"] for d in s["dias"])
-    esperado = 1 if date.today().weekday() < 6 else 0
+    esperado = 1 if hoy().weekday() < 6 else 0
     assert total_cerrados == esperado
 
 
@@ -154,7 +163,7 @@ def test_semanal_refleja_los_cierres(client, entorno):
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("periodo", ["diario", "semanal", "mensual"])
 def test_reporte_trabajo(client, entorno, periodo):
-    r = client.get(REPORTES, params={"periodo": periodo, "fecha": HOY},
+    r = client.get(REPORTES, params={"periodo": periodo, "fecha": hoy().isoformat()},
                    headers=entorno["headers"])
     assert r.status_code == 200, r.text
     datos = r.json()
@@ -169,7 +178,7 @@ def test_reporte_trabajo(client, entorno, periodo):
 
 
 def test_reporte_imprimible(client, entorno):
-    r = client.get(f"{REPORTES}/imprimible", params={"periodo": "diario", "fecha": HOY},
+    r = client.get(f"{REPORTES}/imprimible", params={"periodo": "diario", "fecha": hoy().isoformat()},
                    headers=entorno["headers"])
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/html")
@@ -198,10 +207,10 @@ def test_tecnico_puede_consultar(client, entorno, admin_token):
 
 
 def test_cita_cuenta_en_el_dia(client, entorno):
-    hoy = datetime.now().replace(microsecond=0)
+    ahora = datetime.now().replace(microsecond=0)
     r = client.post("/api/v1/citas",
-                    json={"fecha_hora": hoy.isoformat(), "id_caso": entorno["id_caso_cerrado"]},
+                    json={"fecha_hora": ahora.isoformat(), "id_caso": entorno["id_caso_cerrado"]},
                     headers=entorno["headers"])
     assert r.status_code == 201, r.text
-    d = client.get(f"{BASE}/diario", params={"fecha": HOY}, headers=entorno["headers"]).json()
+    d = client.get(f"{BASE}/diario", params={"fecha": hoy().isoformat()}, headers=entorno["headers"]).json()
     assert d["citados"] == 1

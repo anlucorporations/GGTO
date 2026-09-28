@@ -179,8 +179,9 @@ export default function Tecnicos() {
           <h2>{editando ? `Editar técnico #${editando.id_tecnico}` : 'Nuevo técnico'}</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo">
-              <label>Central *</label>
+              <label htmlFor="tecnico-central">Central *</label>
               <select
+                id="tecnico-central"
                 value={form.id_central}
                 onChange={(e) => setForm({ ...form, id_central: e.target.value })}
               >
@@ -193,59 +194,67 @@ export default function Tecnicos() {
               </select>
             </div>
             <div className="campo">
-              <label>Nombre *</label>
+              <label htmlFor="tecnico-nombre">Nombre *</label>
               <input
+                id="tecnico-nombre"
                 value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Apellido</label>
+              <label htmlFor="tecnico-apellido">Apellido</label>
               <input
+                id="tecnico-apellido"
                 value={form.apellido}
                 onChange={(e) => setForm({ ...form, apellido: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Cédula</label>
+              <label htmlFor="tecnico-cedula">Cédula</label>
               <input
+                id="tecnico-cedula"
                 value={form.cedula}
                 onChange={(e) => setForm({ ...form, cedula: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>P00 *</label>
+              <label htmlFor="tecnico-p00">P00 *</label>
               <input
+                id="tecnico-p00"
                 value={form.p00}
                 disabled={Boolean(editando)}
                 onChange={(e) => setForm({ ...form, p00: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Teléfono</label>
+              <label htmlFor="tecnico-telefono">Teléfono</label>
               <input
+                id="tecnico-telefono"
                 value={form.telefono}
                 onChange={(e) => setForm({ ...form, telefono: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Correo</label>
+              <label htmlFor="tecnico-correo">Correo</label>
               <input
+                id="tecnico-correo"
                 type="email"
                 value={form.correo}
                 onChange={(e) => setForm({ ...form, correo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Especialidad</label>
+              <label htmlFor="tecnico-especialidad">Especialidad</label>
               <input
+                id="tecnico-especialidad"
                 value={form.especialidad}
                 onChange={(e) => setForm({ ...form, especialidad: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Status</label>
+              <label htmlFor="tecnico-status">Status</label>
               <select
+                id="tecnico-status"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as StatusTecnico })}
               >
@@ -272,8 +281,8 @@ export default function Tecnicos() {
 
       <div className="fila-filtros">
         <div className="campo">
-          <label>Central</label>
-          <select value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
+          <label htmlFor="tecnico-filtro-central">Central</label>
+          <select id="tecnico-filtro-central" value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
             <option value="">Todas</option>
             {centrales.map((c) => (
               <option key={c.id_central} value={c.id_central}>
@@ -283,8 +292,8 @@ export default function Tecnicos() {
           </select>
         </div>
         <div className="campo">
-          <label>Status</label>
-          <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+          <label htmlFor="tecnico-filtro-status">Status</label>
+          <select id="tecnico-filtro-status" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
             <option value="">Todos</option>
             {STATUS.map((s) => (
               <option key={s} value={s}>

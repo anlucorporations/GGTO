@@ -166,65 +166,73 @@ export default function Centrales() {
           <h2>{editando ? `Editar central #${editando.id_central}` : 'Nueva central'}</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo">
-              <label>Región *</label>
-              <input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
+              <label htmlFor="central-region">Región *</label>
+              <input id="central-region" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
             </div>
             <div className="campo">
-              <label>Estado geográfico *</label>
+              <label htmlFor="central-estado-geografico">Estado geográfico *</label>
               <input
+                id="central-estado-geografico"
                 value={form.estado_geografico}
                 onChange={(e) => setForm({ ...form, estado_geografico: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Capital del estado</label>
+              <label htmlFor="central-capital">Capital del estado</label>
               <input
+                id="central-capital"
                 value={form.capital_estado}
                 onChange={(e) => setForm({ ...form, capital_estado: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Municipio *</label>
+              <label htmlFor="central-municipio">Municipio *</label>
               <input
+                id="central-municipio"
                 value={form.municipio}
                 onChange={(e) => setForm({ ...form, municipio: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Parroquia *</label>
+              <label htmlFor="central-parroquia">Parroquia *</label>
               <input
+                id="central-parroquia"
                 value={form.parroquia}
                 onChange={(e) => setForm({ ...form, parroquia: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Estado operativo</label>
+              <label htmlFor="central-estado-operativo">Estado operativo</label>
               <input
+                id="central-estado-operativo"
                 value={form.estado_operativo}
                 onChange={(e) => setForm({ ...form, estado_operativo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Distrito</label>
+              <label htmlFor="central-distrito">Distrito</label>
               <input
+                id="central-distrito"
                 value={form.distrito}
                 onChange={(e) => setForm({ ...form, distrito: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Área *</label>
-              <input value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
+              <label htmlFor="central-area">Área *</label>
+              <input id="central-area" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
             </div>
             <div className="campo">
-              <label>Código de central *</label>
+              <label htmlFor="central-codigo">Código de central *</label>
               <input
+                id="central-codigo"
                 value={form.codigo_central}
                 onChange={(e) => setForm({ ...form, codigo_central: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Nombre de la central *</label>
+              <label htmlFor="central-nombre">Nombre de la central *</label>
               <input
+                id="central-nombre"
                 value={form.nombre_central}
                 onChange={(e) => setForm({ ...form, nombre_central: e.target.value })}
               />

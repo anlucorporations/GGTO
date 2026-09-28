@@ -66,3 +66,9 @@ Thumbs.db
 
 # --- Logs de operaciones de datos ---
 RepoTecnico/BaseOperaciones/*.log
+
+# --- Pruebas E2E (Fase 4): se versionan los informes JSON, no los artefactos ---
+RepoTecnico/pruebas/e2e/test-results/
+RepoTecnico/pruebas/e2e/playwright-report/
+RepoTecnico/pruebas/logs/e2e-reporte/
+RepoTecnico/pruebas/logs/*.log

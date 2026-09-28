@@ -253,8 +253,9 @@ export default function Sectores() {
           <h2>{editando ? `Editar sector #${editando.id_sector}` : 'Nuevo sector'}</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo">
-              <label>Central *</label>
+              <label htmlFor="sector-central">Central *</label>
               <select
+                id="sector-central"
                 value={form.id_central}
                 disabled={Boolean(editando)}
                 onChange={(e) => setForm({ ...form, id_central: e.target.value })}
@@ -268,22 +269,25 @@ export default function Sectores() {
               </select>
             </div>
             <div className="campo">
-              <label>Nombre *</label>
+              <label htmlFor="sector-nombre">Nombre *</label>
               <input
+                id="sector-nombre"
                 value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Código *</label>
+              <label htmlFor="sector-codigo">Código *</label>
               <input
+                id="sector-codigo"
                 value={form.codigo}
                 onChange={(e) => setForm({ ...form, codigo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Prioridad (1–999)</label>
+              <label htmlFor="sector-prioridad">Prioridad (1–999)</label>
               <input
+                id="sector-prioridad"
                 type="number"
                 min={1}
                 max={999}
@@ -292,8 +296,9 @@ export default function Sectores() {
               />
             </div>
             <div className="campo campo-ancho">
-              <label>Descripción</label>
+              <label htmlFor="sector-descripcion">Descripción</label>
               <textarea
+                id="sector-descripcion"
                 value={form.descripcion}
                 onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
               />
@@ -434,8 +439,8 @@ export default function Sectores() {
 
       <div className="fila-filtros">
         <div className="campo">
-          <label>Central</label>
-          <select value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
+          <label htmlFor="sector-filtro-central">Central</label>
+          <select id="sector-filtro-central" value={filtroCentral} onChange={(e) => setFiltroCentral(e.target.value)}>
             <option value="">Todas</option>
             {centrales.map((c) => (
               <option key={c.id_central} value={c.id_central}>

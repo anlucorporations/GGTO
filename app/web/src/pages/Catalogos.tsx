@@ -168,36 +168,41 @@ export default function Catalogos() {
         {!soloLectura && (
           <form className="formulario" onSubmit={enviarCausa} style={{ marginBottom: 16 }}>
             <div className="campo">
-              <label>Código *</label>
+              <label htmlFor="causa-codigo">Código *</label>
               <input
+                id="causa-codigo"
                 value={causaForm.codigo_causa}
                 onChange={(e) => setCausaForm({ ...causaForm, codigo_causa: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Subcódigo</label>
+              <label htmlFor="causa-subcodigo">Subcódigo</label>
               <input
+                id="causa-subcodigo"
                 value={causaForm.subcodigo_causa}
                 onChange={(e) => setCausaForm({ ...causaForm, subcodigo_causa: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Tipo</label>
+              <label htmlFor="causa-tipo">Tipo</label>
               <input
+                id="causa-tipo"
                 value={causaForm.tipo}
                 onChange={(e) => setCausaForm({ ...causaForm, tipo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Descripción</label>
+              <label htmlFor="causa-descripcion">Descripción</label>
               <input
+                id="causa-descripcion"
                 value={causaForm.descripcion}
                 onChange={(e) => setCausaForm({ ...causaForm, descripcion: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Descripción del subcódigo</label>
+              <label htmlFor="causa-descripcion-subcodigo">Descripción del subcódigo</label>
               <input
+                id="causa-descripcion-subcodigo"
                 value={causaForm.descripcion_subcodigo}
                 onChange={(e) =>
                   setCausaForm({ ...causaForm, descripcion_subcodigo: e.target.value })
@@ -279,8 +284,9 @@ export default function Catalogos() {
         {!soloLectura && (
           <form className="formulario" onSubmit={enviarMetodo} style={{ marginBottom: 16 }}>
             <div className="campo">
-              <label>Dominio *</label>
+              <label htmlFor="metodo-dominio">Dominio *</label>
               <select
+                id="metodo-dominio"
                 value={metodoForm.dominio}
                 onChange={(e) =>
                   setMetodoForm({ ...metodoForm, dominio: e.target.value as DominioMetodo })
@@ -294,15 +300,17 @@ export default function Catalogos() {
               </select>
             </div>
             <div className="campo">
-              <label>Código *</label>
+              <label htmlFor="metodo-codigo">Código *</label>
               <input
+                id="metodo-codigo"
                 value={metodoForm.codigo}
                 onChange={(e) => setMetodoForm({ ...metodoForm, codigo: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label>Nombre *</label>
+              <label htmlFor="metodo-nombre">Nombre *</label>
               <input
+                id="metodo-nombre"
                 value={metodoForm.nombre}
                 onChange={(e) => setMetodoForm({ ...metodoForm, nombre: e.target.value })}
               />
@@ -326,8 +334,8 @@ export default function Catalogos() {
 
         <div className="fila-filtros">
           <div className="campo">
-            <label>Dominio</label>
-            <select value={filtroDominio} onChange={(e) => setFiltroDominio(e.target.value)}>
+            <label htmlFor="metodo-filtro-dominio">Dominio</label>
+            <select id="metodo-filtro-dominio" value={filtroDominio} onChange={(e) => setFiltroDominio(e.target.value)}>
               <option value="">Todos</option>
               {DOMINIOS.map((d) => (
                 <option key={d} value={d}>

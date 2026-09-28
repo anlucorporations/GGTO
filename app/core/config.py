@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     db_user: str = "ggtov2_app"
     db_password: str = ""
     db_sslmode: str = "prefer"
+    # Esquema alternativo para pruebas/preview (`search_path`); vacío = por defecto.
+    db_schema: str = ""
 
     # --- Seguridad ---
     secret_key: str = "cambiar-esta-clave-en-produccion"

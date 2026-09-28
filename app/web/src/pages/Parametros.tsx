@@ -101,15 +101,17 @@ export default function Parametros() {
           <h2>Editar parámetro «{editando}»</h2>
           <form className="formulario" onSubmit={enviar}>
             <div className="campo campo-ancho">
-              <label>Valor (JSON)</label>
+              <label htmlFor="parametro-valor">Valor (JSON)</label>
               <textarea
+                id="parametro-valor"
                 value={form.valor}
                 onChange={(e) => setForm({ ...form, valor: e.target.value })}
               />
             </div>
             <div className="campo campo-ancho">
-              <label>Descripción</label>
+              <label htmlFor="parametro-descripcion">Descripción</label>
               <input
+                id="parametro-descripcion"
                 value={form.descripcion}
                 onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
               />

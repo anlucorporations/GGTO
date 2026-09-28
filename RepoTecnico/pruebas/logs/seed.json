@@ -1,0 +1,21 @@
+{
+  "esquema": "ggto_e2e",
+  "central": "2324X",
+  "usuarios": {
+    "E2EADM": {
+      "rol": "ADMIN",
+      "clave": "E2e.Clave.2026"
+    },
+    "E2ESUP": {
+      "rol": "SUPERVISOR",
+      "clave": "E2e.Clave.2026"
+    },
+    "E2ETEC": {
+      "rol": "TECNICO",
+      "clave": "E2e.Clave.2026"
+    }
+  },
+  "sector": "E2E-S1",
+  "cuadrilla": "E2E-C1",
+  "casos": 8
+}

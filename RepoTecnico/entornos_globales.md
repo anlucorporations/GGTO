@@ -142,6 +142,7 @@ DB_NAME=ggtov2
 DB_USER=ggtov2_app
 DB_PASSWORD=<Secret Manager: ggtov2-db-password>
 DB_SSLMODE=require
+DB_SCHEMA=                               # vacío en producción; `ggto_test`/`ggto_e2e` en pruebas
 
 # --- Ingesta ---
 INGESTA_CSV_DELIMITER=;

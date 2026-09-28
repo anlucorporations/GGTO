@@ -16,22 +16,24 @@ class Base(DeclarativeBase):
 def build_url() -> str:
     """Construye la URL de conexión.
 
-    Soporta el socket de Cloud SQL (`DB_HOST=/cloudsql/proyecto:region:instancia`)
-    y conexión TCP normal.
+    Soporta el socket de Cloud SQL (`DB_HOST=/cloudsql/proyecto:region:instancia`),
+    conexión TCP normal y un esquema alternativo (`DB_SCHEMA`) para pruebas o
+    entornos de preview, que se resuelve con `search_path`.
     """
     s = get_settings()
     user = quote_plus(s.db_user)
     pwd = quote_plus(s.db_password)
     if s.db_host.startswith("/"):
         # Socket Unix de Cloud SQL: el host va como parámetro de consulta.
-        return (
-            f"postgresql+psycopg2://{user}:{pwd}@/{s.db_name}"
-            f"?host={quote_plus(s.db_host)}"
-        )
-    return (
-        f"postgresql+psycopg2://{user}:{pwd}@{s.db_host}:{s.db_port}/{s.db_name}"
-        f"?sslmode={s.db_sslmode}"
-    )
+        url = f"postgresql+psycopg2://{user}:{pwd}@/{s.db_name}"
+        params = [f"host={quote_plus(s.db_host)}"]
+    else:
+        url = f"postgresql+psycopg2://{user}:{pwd}@{s.db_host}:{s.db_port}/{s.db_name}"
+        params = [f"sslmode={s.db_sslmode}"]
+    if s.db_schema:
+        # `public` se mantiene para resolver las extensiones (pgcrypto, pg_trgm).
+        params.append("options=" + quote_plus(f"-csearch_path={s.db_schema},public"))
+    return f"{url}?{'&'.join(params)}"
 
 
 engine = create_engine(build_url(), pool_pre_ping=True, pool_size=5, max_overflow=5, future=True)
