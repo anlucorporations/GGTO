@@ -237,3 +237,15 @@ export function IconoTelegram(props: Props) {
     </svg>
   );
 }
+
+/* --- Ayuda (manual del sistema) --- */
+
+export function IconoAyuda(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.7.3-1 .8-1 1.5v.4" />
+      <path d="M12 16.8h.01" />
+    </svg>
+  );
+}

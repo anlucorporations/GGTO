@@ -1,0 +1,4445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diccionario de Datos — Entidades de la base GGTO — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones">
+<meta property="og:image" content="../../../imagenes/dominios-datos.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Diccionario de Datos</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../../pdf/05-Diccionario-de-Datos/01-entidades.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#las-35-tablas-del-esquema" data-target="las-35-tablas-del-esquema"><span class="tn">2.1</span> Las 35 tablas del esquema</a><span class="pag"></span></li><li class="n3"><a href="#convenciones-de-nombres-y-tipos" data-target="convenciones-de-nombres-y-tipos"><span class="tn">2.2</span> Convenciones de nombres y tipos</a><span class="pag"></span></li><li class="n3"><a href="#campos-de-auditoria-creado-en-actualizado-en" data-target="campos-de-auditoria-creado-en-actualizado-en"><span class="tn">2.3</span> Campos de auditoría (creado_en, actualizado_en)</a><span class="pag"></span></li><li class="n3"><a href="#extensiones-pgcrypto-pg-trgm" data-target="extensiones-pgcrypto-pg-trgm"><span class="tn">2.4</span> Extensiones pgcrypto/pg_trgm</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#entidades-por-dominio" data-target="entidades-por-dominio"><span class="tn">3</span> Entidades por dominio</a><span class="pag"></span><ul><li class="n3"><a href="#seguridad-y-acceso" data-target="seguridad-y-acceso"><span class="tn">3.1</span> Seguridad y acceso</a><span class="pag"></span><ul><li class="n4"><a href="#rol-catalogo-de-roles" data-target="rol-catalogo-de-roles"><span class="tn">3.1.1</span> <code>rol</code> — catálogo de roles</a><span class="pag"></span></li><li class="n4"><a href="#usuario-credenciales-de-acceso" data-target="usuario-credenciales-de-acceso"><span class="tn">3.1.2</span> <code>usuario</code> — credenciales de acceso</a><span class="pag"></span></li><li class="n4"><a href="#dispositivo-seguridad-recuperacion-y-documento-cifrado" data-target="dispositivo-seguridad-recuperacion-y-documento-cifrado"><span class="tn">3.1.3</span> <code>dispositivo_seguridad</code> — recuperación y documento cifrado</a><span class="pag"></span></li><li class="n4"><a href="#auditoria-bitacora-de-acciones" data-target="auditoria-bitacora-de-acciones"><span class="tn">3.1.4</span> <code>auditoria</code> — bitácora de acciones</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#configuracion" data-target="configuracion"><span class="tn">3.2</span> Configuración</a><span class="pag"></span><ul><li class="n4"><a href="#central-direccion-operativa" data-target="central-direccion-operativa"><span class="tn">3.2.1</span> <code>central</code> — dirección operativa</a><span class="pag"></span></li><li class="n4"><a href="#sector-agrupacion-geografica-de-trabajo" data-target="sector-agrupacion-geografica-de-trabajo"><span class="tn">3.2.2</span> <code>sector</code> — agrupación geográfica de trabajo</a><span class="pag"></span></li><li class="n4"><a href="#sector-direccion-patrones-de-direccion-del-sector" data-target="sector-direccion-patrones-de-direccion-del-sector"><span class="tn">3.2.3</span> <code>sector_direccion</code> — patrones de dirección del sector</a><span class="pag"></span></li><li class="n4"><a href="#tecnico-trabajador-de-la-central" data-target="tecnico-trabajador-de-la-central"><span class="tn">3.2.4</span> <code>tecnico</code> — trabajador de la central</a><span class="pag"></span></li><li class="n4"><a href="#flota-vehiculos-de-la-central" data-target="flota-vehiculos-de-la-central"><span class="tn">3.2.5</span> <code>flota</code> — vehículos de la central</a><span class="pag"></span></li><li class="n4"><a href="#herramienta-inventario-de-herramientas" data-target="herramienta-inventario-de-herramientas"><span class="tn">3.2.6</span> <code>herramienta</code> — inventario de herramientas</a><span class="pag"></span></li><li class="n4"><a href="#cuadrilla-equipo-de-trabajo" data-target="cuadrilla-equipo-de-trabajo"><span class="tn">3.2.7</span> <code>cuadrilla</code> — equipo de trabajo</a><span class="pag"></span></li><li class="n4"><a href="#cuadrilla-tecnico-pertenencia-n-m-con-vigencia" data-target="cuadrilla-tecnico-pertenencia-n-m-con-vigencia"><span class="tn">3.2.8</span> <code>cuadrilla_tecnico</code> — pertenencia N:M con vigencia</a><span class="pag"></span></li><li class="n4"><a href="#cuadrilla-herramienta-asignacion-de-herramientas" data-target="cuadrilla-herramienta-asignacion-de-herramientas"><span class="tn">3.2.9</span> <code>cuadrilla_herramienta</code> — asignación de herramientas</a><span class="pag"></span></li><li class="n4"><a href="#causa-catalogo-de-causas" data-target="causa-catalogo-de-causas"><span class="tn">3.2.10</span> <code>causa</code> — catálogo de causas</a><span class="pag"></span></li><li class="n4"><a href="#catalogo-metodo-metodos-de-cierre-enrutado-contacto" data-target="catalogo-metodo-metodos-de-cierre-enrutado-contacto"><span class="tn">3.2.11</span> <code>catalogo_metodo</code> — métodos de cierre/enrutado/contacto</a><span class="pag"></span></li><li class="n4"><a href="#configuracion-parametros-del-sistema" data-target="configuracion-parametros-del-sistema"><span class="tn">3.2.12</span> <code>configuracion</code> — parámetros del sistema</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#operacion" data-target="operacion"><span class="tn">3.3</span> Operación</a><span class="pag"></span><ul><li class="n4"><a href="#ingesta-lote-carga-del-csv-diario" data-target="ingesta-lote-carga-del-csv-diario"><span class="tn">3.3.1</span> <code>ingesta_lote</code> — carga del CSV diario</a><span class="pag"></span></li><li class="n4"><a href="#caso-entidad-central-de-averias" data-target="caso-entidad-central-de-averias"><span class="tn">3.3.2</span> <code>caso</code> — entidad central de averías</a><span class="pag"></span></li><li class="n4"><a href="#caso-estado-hist-bitacora-de-estados" data-target="caso-estado-hist-bitacora-de-estados"><span class="tn">3.3.3</span> <code>caso_estado_hist</code> — bitácora de estados</a><span class="pag"></span></li><li class="n4"><a href="#actividad-reporte-corto-de-gestion" data-target="actividad-reporte-corto-de-gestion"><span class="tn">3.3.4</span> <code>actividad</code> — reporte corto de gestión</a><span class="pag"></span></li><li class="n4"><a href="#evidencia-registro-fotografico" data-target="evidencia-registro-fotografico"><span class="tn">3.3.5</span> <code>evidencia</code> — registro fotográfico</a><span class="pag"></span></li><li class="n4"><a href="#incidente-novedades-de-flota-o-herramienta" data-target="incidente-novedades-de-flota-o-herramienta"><span class="tn">3.3.6</span> <code>incidente</code> — novedades de flota o herramienta</a><span class="pag"></span></li><li class="n4"><a href="#sincronizacion-paquetes-zip-del-dispositivo" data-target="sincronizacion-paquetes-zip-del-dispositivo"><span class="tn">3.3.7</span> <code>sincronizacion</code> — paquetes ZIP del dispositivo</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#especiales" data-target="especiales"><span class="tn">3.4</span> Especiales</a><span class="pag"></span><ul><li class="n4"><a href="#solicitante-personal-externo" data-target="solicitante-personal-externo"><span class="tn">3.4.1</span> <code>solicitante</code> — personal externo</a><span class="pag"></span></li><li class="n4"><a href="#caso-especial-referidos-empresas-y-gobiernos" data-target="caso-especial-referidos-empresas-y-gobiernos"><span class="tn">3.4.2</span> <code>caso_especial</code> — referidos, empresas y gobiernos</a><span class="pag"></span></li><li class="n4"><a href="#seguimiento-derivacion-a-otras-instancias" data-target="seguimiento-derivacion-a-otras-instancias"><span class="tn">3.4.3</span> <code>seguimiento</code> — derivación a otras instancias</a><span class="pag"></span></li><li class="n4"><a href="#cita-agenda-de-contacto-atencion" data-target="cita-agenda-de-contacto-atencion"><span class="tn">3.4.4</span> <code>cita</code> — agenda de contacto/atención</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#despacho" data-target="despacho"><span class="tn">3.5</span> Despacho</a><span class="pag"></span><ul><li class="n4"><a href="#despacho-cabecera-diaria-por-cuadrilla" data-target="despacho-cabecera-diaria-por-cuadrilla"><span class="tn">3.5.1</span> <code>despacho</code> — cabecera diaria por cuadrilla</a><span class="pag"></span></li><li class="n4"><a href="#despacho-caso-detalle-de-casos-asignados" data-target="despacho-caso-detalle-de-casos-asignados"><span class="tn">3.5.2</span> <code>despacho_caso</code> — detalle de casos asignados</a><span class="pag"></span></li><li class="n4"><a href="#falla-masiva-evento-de-falla-por-concentracion" data-target="falla-masiva-evento-de-falla-por-concentracion"><span class="tn">3.5.3</span> <code>falla_masiva</code> — evento de falla por concentración</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#insumos-v2" data-target="insumos-v2"><span class="tn">3.6</span> Insumos (v2)</a><span class="pag"></span><ul><li class="n4"><a href="#insumo-catalogo-de-materiales" data-target="insumo-catalogo-de-materiales"><span class="tn">3.6.1</span> <code>insumo</code> — catálogo de materiales</a><span class="pag"></span></li><li class="n4"><a href="#orden-material-solicitud-de-material" data-target="orden-material-solicitud-de-material"><span class="tn">3.6.2</span> <code>orden_material</code> — solicitud de material</a><span class="pag"></span></li><li class="n4"><a href="#orden-material-detalle-renglones-de-la-orden" data-target="orden-material-detalle-renglones-de-la-orden"><span class="tn">3.6.3</span> <code>orden_material_detalle</code> — renglones de la orden</a><span class="pag"></span></li><li class="n4"><a href="#inventario-movimiento-ingresos-egresos-y-ajustes" data-target="inventario-movimiento-ingresos-egresos-y-ajustes"><span class="tn">3.6.4</span> <code>inventario_movimiento</code> — ingresos, egresos y ajustes</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#notificaciones" data-target="notificaciones"><span class="tn">3.7</span> Notificaciones</a><span class="pag"></span><ul><li class="n4"><a href="#notificacion-bandeja-de-salida-outbox" data-target="notificacion-bandeja-de-salida-outbox"><span class="tn">3.7.1</span> <code>notificacion</code> — bandeja de salida (outbox)</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#campos-pii" data-target="campos-pii"><span class="tn">4</span> Campos PII</a><span class="pag"></span><ul><li class="n3"><a href="#inventario-y-clasificacion-rnf-18" data-target="inventario-y-clasificacion-rnf-18"><span class="tn">4.1</span> inventario y clasificación (RNF-18)</a><span class="pag"></span></li><li class="n3"><a href="#retencion-por-entidad-requerimientos-md-212-225" data-target="retencion-por-entidad-requerimientos-md-212-225"><span class="tn">4.2</span> retención por entidad (requerimientos.md:212-225)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#fuentes" data-target="fuentes"><span class="tn">5</span> Fuentes</a><span class="pag"></span><ul><li class="n3"><a href="#repotecnico-diccionario-datos-md" data-target="repotecnico-diccionario-datos-md"><span class="tn">5.1</span> <code>RepoTecnico/diccionario_datos.md</code></a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-db-schema-sql" data-target="repotecnico-db-schema-sql"><span class="tn">5.2</span> <code>RepoTecnico/db/schema.sql</code></a><span class="pag"></span></li><li class="n3"><a href="#cobertura-del-orm-app-models" data-target="cobertura-del-orm-app-models"><span class="tn">5.3</span> Cobertura del ORM (<code>app/models/</code>)</a><span class="pag"></span></li><li class="n3"><a href="#divergencias-detectadas" data-target="divergencias-detectadas"><span class="tn">5.4</span> Divergencias detectadas</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Diccionario de Datos</span>
+          <h1 class="portada-titulo">Diccionario de Datos — Entidades de la base GGTO</h1>
+          <p class="portada-resumen">Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos datos, pero sin tecnicismos. Cuando el código no permite confirmar algo, se indica como pendiente de confirmar.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Diccionario de Datos</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/05-Diccionario-de-Datos/01-entidades.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Este manual explica, con palabras sencillas, qué información guarda la base de
+datos del sistema GGTO y cómo se organiza. Es la versión literal del manual
+técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos
+datos, pero sin tecnicismos. Cuando el código no permite confirmar algo, se
+indica como <strong>pendiente de confirmar</strong>.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Entiende la idea general.</strong> La base de datos es como un archivador gigante.
+Dentro tiene 35 «cajones» llamados <strong>tablas</strong> (por ejemplo, <code>caso</code>, <code>despacho</code>
+o <code>cuadrilla</code>). Cada tabla guarda un tipo de información distinto.</li>
+<li><strong>Ubica el centro del sistema.</strong> Casi todo gira alrededor de la tabla <code>caso</code>:
+allí se registra cada avería o solicitud de trabajo, con su dirección,
+teléfono y estado. Empieza por ahí para entender el resto.</li>
+<li><strong>Sigue el recorrido diario.</strong> El archivo CSV del día entra por
+<code>ingesta_lote</code>, se convierte en casos (<code>caso</code>); el supervisor arma el despacho
+(<code>despacho</code> y <code>despacho_caso</code>) y la cuadrilla gestiona el trabajo
+(<code>actividad</code>, <code>cita</code>, <code>seguimiento</code>).</li>
+<li><strong>Revisa los catálogos.</strong> <code>rol</code>, <code>central</code>, <code>sector</code>, <code>tecnico</code>, <code>flota</code>,
+<code>herramienta</code>, <code>cuadrilla</code>, <code>causa</code>, <code>catalogo_metodo</code> y <code>configuracion</code> son
+listas maestras: se configuran una vez y se consultan siempre.</li>
+<li><strong>Cuida los datos personales.</strong> La base guarda teléfonos, nombres, cédulas,
+direcciones y ubicaciones (datos personales o PII). Hay datos reales cargados
+(42 casos con datos personales) y el servicio es público: <strong>el acceso debe
+restringirse</strong>. Recuerda además que Telegram y correo todavía no tienen
+credenciales, así que los envíos quedan PENDIENTES; WhatsApp no existe en la
+v1; y la app móvil Flutter no está desarrollada (Ciclo 8 pospuesto).</li>
+</ol>
+<h2 id="vision-general"><span class="sec-num">2</span>Visión general</h2>
+<p>Ficha de identificación del sistema y de la base que describe este manual:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proyecto</td>
+<td><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</td>
+</tr>
+<tr>
+<td>Cliente</td>
+<td>CANTV C.A. — Central Francisco Salias (Área 4)</td>
+</tr>
+<tr>
+<td>Motor de base de datos</td>
+<td>PostgreSQL 15 (instancia compartida <code>truekeate-main:southamerica-east1:truekeate-db-dev</code>)</td>
+</tr>
+<tr>
+<td>Base</td>
+<td><code>ggtov2</code> · usuario de aplicación <code>ggtov2_app</code></td>
+</tr>
+<tr>
+<td>Script de creación (DDL)</td>
+<td><code>RepoTecnico/db/schema.sql</code> — 803 líneas y <strong>35 tablas</strong></td>
+</tr>
+<tr>
+<td>Mapeo a objetos de Python (ORM)</td>
+<td><code>app/models/*.py</code> (SQLAlchemy 2.x declarativo)</td>
+</tr>
+<tr>
+<td>Diccionario de origen</td>
+<td><code>RepoTecnico/diccionario_datos.md</code> (Borrador v0.2, «sujeto a validación»)</td>
+</tr>
+<tr>
+<td>Esquema de pruebas</td>
+<td>La variable <code>DB_SCHEMA</code> agrega <code>options=-csearch_path=&lt;esquema&gt;,public</code> (en <code>app/core/db.py</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Antes de entrar en detalle, conviene fijar cuatro palabras que se repiten en todo
+el manual:</p>
+<ul>
+<li><strong>Tabla</strong>: un cajón del archivador. Agrupa un mismo tipo de información, por
+ejemplo todos los casos (<code>caso</code>).</li>
+<li><strong>Campo</strong>: una columna de la tabla. Describe un dato concreto de cada registro,
+por ejemplo <code>direccion</code> o <code>telefono</code>.</li>
+<li><strong>Clave</strong>: una marca que identifica o conecta registros. La <strong>clave principal</strong>
+(PK) es el número único de cada fila; la <strong>clave foránea</strong> (FK) es un número
+que apunta a la clave principal de otra tabla y crea un enlace entre ambas.</li>
+<li><strong>Relación</strong>: la conexión entre dos tablas. Por ejemplo, un caso puede tener
+muchas citas (<code>caso</code> → <code>cita</code>), y cada cita pertenece a un solo caso.</li>
+</ul>
+<p>Las entidades se describen <strong>tal como están implementadas</strong> en el script de
+creación de la base y en los modelos de Python. Cuando el diccionario de origen
+y el script real difieren, la diferencia se señala en la sección <strong>Fuentes →
+Divergencias detectadas</strong>. Lo que no se pudo verificar se marca como
+«pendiente de confirmar».</p>
+<h3 id="las-35-tablas-del-esquema"><span class="sec-num">2.1</span>Las 35 tablas del esquema</h3>
+<p>El script de creación contiene <strong>35 sentencias <code>CREATE TABLE</code></strong> (conteo directo
+sobre <code>RepoTecnico/db/schema.sql</code>). Se agrupan en siete dominios funcionales:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dominio</th>
+<th>Tablas</th>
+<th>Nº</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seguridad y acceso</td>
+<td><code>rol</code>, <code>usuario</code>, <code>dispositivo_seguridad</code>, <code>auditoria</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td>Configuración</td>
+<td><code>central</code>, <code>sector</code>, <code>sector_direccion</code>, <code>tecnico</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>, <code>cuadrilla_tecnico</code>, <code>cuadrilla_herramienta</code>, <code>causa</code>, <code>catalogo_metodo</code>, <code>configuracion</code></td>
+<td>12</td>
+</tr>
+<tr>
+<td>Operación</td>
+<td><code>ingesta_lote</code>, <code>caso</code>, <code>caso_estado_hist</code>, <code>actividad</code>, <code>evidencia</code>, <code>incidente</code>, <code>sincronizacion</code></td>
+<td>7</td>
+</tr>
+<tr>
+<td>Especiales</td>
+<td><code>solicitante</code>, <code>caso_especial</code>, <code>seguimiento</code>, <code>cita</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td>Despacho</td>
+<td><code>despacho</code>, <code>despacho_caso</code>, <code>falla_masiva</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>Insumos (v2)</td>
+<td><code>insumo</code>, <code>orden_material</code>, <code>orden_material_detalle</code>, <code>inventario_movimiento</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td>Notificaciones</td>
+<td><code>notificacion</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td></td>
+<td><strong>35</strong></td>
+</tr>
+</tbody>
+</table></div>
+<figure id="fig-0"><img src="../../../imagenes/dominios-datos.png" alt="dominios datos"><figcaption>Figura 1 · dominios-datos.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
+    BASE[&quot;Base de datos GGTO&lt;br/&gt;35 tablas en 7 dominios&quot;]
+    BASE --&gt; D1[&quot;Seguridad y acceso&lt;br/&gt;4 tablas&quot;]
+    BASE --&gt; D2[&quot;Configuración&lt;br/&gt;12 tablas&quot;]
+    BASE --&gt; D3[&quot;Operación&lt;br/&gt;7 tablas&quot;]
+    BASE --&gt; D4[&quot;Especiales&lt;br/&gt;4 tablas&quot;]
+    BASE --&gt; D5[&quot;Despacho&lt;br/&gt;3 tablas&quot;]
+    BASE --&gt; D6[&quot;Insumos (v2)&lt;br/&gt;4 tablas&quot;]
+    BASE --&gt; D7[&quot;Notificaciones&lt;br/&gt;1 tabla&quot;]
+    D1 --&gt; T1[&quot;rol · usuario · dispositivo_seguridad · auditoria&quot;]
+    D2 --&gt; T2[&quot;central · sector · sector_direccion · tecnico · flota · herramienta · cuadrilla · cuadrilla_tecnico · cuadrilla_herramienta · causa · catalogo_metodo · configuracion&quot;]
+    D3 --&gt; T3[&quot;ingesta_lote · caso · caso_estado_hist · actividad · evidencia · incidente · sincronizacion&quot;]
+    D4 --&gt; T4[&quot;solicitante · caso_especial · seguimiento · cita&quot;]
+    D5 --&gt; T5[&quot;despacho · despacho_caso · falla_masiva&quot;]
+    D6 --&gt; T6[&quot;insumo · orden_material · orden_material_detalle · inventario_movimiento&quot;]
+    D7 --&gt; T7[&quot;notificacion&quot;]</code></pre></details></figure>
+<p>Tablas de catálogo que se cargan con datos iniciales y que pueden ejecutarse
+varias veces sin duplicar información (carga idempotente): <code>rol</code> (4 filas:
+SUPER, ADMIN, SUPERVISOR, TECNICO), <code>catalogo_metodo</code> (9 filas), <code>central</code>
+(1 fila: <code>2324X</code> FRANCISCO SALIAS), <code>cuadrilla</code> (1 fila: <code>C-00</code>) y
+<code>configuracion</code> (22 parámetros). El catálogo <code>causa</code> <strong>no</strong> se carga desde el
+CSV: es administrable y su mantenimiento corresponde al administrador de
+catálogos.</p>
+<h3 id="convenciones-de-nombres-y-tipos"><span class="sec-num">2.2</span>Convenciones de nombres y tipos</h3>
+<p>Para leer las tablas de campos de este manual, usa esta clave:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Marca</th>
+<th>Significado en palabras sencillas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PK</code></td>
+<td>Clave principal: identifica de forma única cada fila.</td>
+</tr>
+<tr>
+<td><code>FK</code></td>
+<td>Clave foránea: enlaza con la clave principal de otra tabla.</td>
+</tr>
+<tr>
+<td><code>UQ</code></td>
+<td>Único: no puede repetirse el valor.</td>
+</tr>
+<tr>
+<td><code>NN</code></td>
+<td>Obligatorio («no nulo»): el campo no puede quedar vacío.</td>
+</tr>
+<tr>
+<td><code>—</code></td>
+<td>Campo opcional o sin marca especial.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Convenciones observadas en el script de la base:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Convención</th>
+<th>Regla</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nombre de tabla</td>
+<td>singular, en minúsculas y con guion bajo, sin prefijos</td>
+<td><code>caso</code>, <code>sector_direccion</code></td>
+</tr>
+<tr>
+<td>Clave principal</td>
+<td><code>id_&lt;entidad&gt;</code></td>
+<td><code>id_caso</code>, <code>id_sector</code></td>
+</tr>
+<tr>
+<td>Clave foránea</td>
+<td><code>id_&lt;entidad_referenciada&gt;</code></td>
+<td><code>id_central</code>, <code>id_cuadrilla</code></td>
+</tr>
+<tr>
+<td>Marcas de tiempo</td>
+<td>sufijo <code>_en</code> o nombre explícito</td>
+<td><code>creado_en</code>, <code>asignada_en</code>, <code>fecha_hora</code></td>
+</tr>
+<tr>
+<td>Banderas (sí/no)</td>
+<td>tipo <code>boolean</code> con nombre afirmativo</td>
+<td><code>activo</code>, <code>activa</code>, <code>bloqueado</code>, <code>es_supervisor</code></td>
+</tr>
+<tr>
+<td>Constantes de dominio</td>
+<td><code>varchar(20)</code> con lista cerrada <code>CHECK</code>, no <code>ENUM</code></td>
+<td><code>estado_actual</code>, <code>tipo_caso</code></td>
+</tr>
+<tr>
+<td>JSON</td>
+<td><code>jsonb</code> con valor inicial <code>'{}'</code> o <code>'[]'</code></td>
+<td><code>rol.permisos</code>, <code>caso.ayudantes</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Correspondencia de tipos entre el script de la base, los modelos de Python y la
+notación de los diagramas Mermaid:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>PostgreSQL (script)</th>
+<th>SQLAlchemy (modelos <code>app/models/</code>)</th>
+<th>Mermaid (diagramas)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>serial</code></td>
+<td><code>Integer, primary_key=True</code></td>
+<td><code>serial</code></td>
+</tr>
+<tr>
+<td><code>bigserial</code></td>
+<td><code>BigInteger, primary_key=True</code></td>
+<td><code>bigserial</code></td>
+</tr>
+<tr>
+<td><code>varchar(n)</code></td>
+<td><code>String(n)</code></td>
+<td><code>varchar</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>Text</code></td>
+<td>(no se dibuja)</td>
+</tr>
+<tr>
+<td><code>timestamptz</code></td>
+<td><code>DateTime(timezone=True)</code></td>
+<td><code>timestamp</code></td>
+</tr>
+<tr>
+<td><code>boolean</code></td>
+<td><code>Boolean</code></td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td><code>jsonb</code></td>
+<td><code>JSONB</code> (dialecto PostgreSQL)</td>
+<td><code>json</code></td>
+</tr>
+<tr>
+<td><code>numeric(12,2)</code></td>
+<td>(no usado en los modelos)</td>
+<td><code>numeric</code></td>
+</tr>
+<tr>
+<td><code>inet</code></td>
+<td>(no usado en los modelos)</td>
+<td>(no se dibuja)</td>
+</tr>
+</tbody>
+</table></div>
+<figure id="fig-1"><img src="../../../imagenes/glosario-visual.png" alt="glosario visual"><figcaption>Figura 2 · glosario-visual.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart LR
+    subgraph TABLA[&quot;TABLA = un cajón del archivador&quot;]
+        FILA[&quot;FILA = un registro completo&lt;br/&gt;por ejemplo, un caso concreto&quot;]
+        CAMPO[&quot;CAMPO = una columna&lt;br/&gt;por ejemplo, telefono o direccion&quot;]
+    end
+    PK[&quot;CLAVE PRINCIPAL (PK)&lt;br/&gt;número único de cada fila&lt;br/&gt;ejemplo: id_caso&quot;]
+    FK[&quot;CLAVE FORÁNEA (FK)&lt;br/&gt;apunta a la clave de otra tabla&lt;br/&gt;ejemplo: caso.id_sector&quot;]
+    REL[&quot;RELACIÓN&lt;br/&gt;un caso puede tener muchas citas&lt;br/&gt;y cada cita pertenece a un caso&quot;]
+    TABLA --&gt; PK
+    TABLA --&gt; FK
+    FK --&gt; REL</code></pre></details></figure>
+<p>Notas de tipado verificadas:</p>
+<ul>
+<li>Los identificadores de tablas grandes (<code>caso</code>, <code>ingesta_lote</code>, <code>despacho</code>, …)
+usan <code>bigserial</code> (números largos). Los catálogos pequeños (<code>central</code>,
+<code>tecnico</code>, <code>sector</code>) usan <code>serial</code>.</li>
+<li><code>actividad.latitud/longitud</code> y <code>evidencia.latitud/longitud</code> usan
+<code>numeric(10,7)</code>: precisión GPS de unos 1 cm.</li>
+<li><code>auditoria.ip</code> es del tipo PostgreSQL <code>inet</code> (dirección de red), no
+<code>varchar</code>.</li>
+<li><code>dispositivo_seguridad.palabras_hash</code> es <code>jsonb</code> con valor inicial <code>'[]'</code>;
+el modelo de Python lo expone como una lista.</li>
+<li>Los modelos de Python mapean <strong>27 de las 35 tablas</strong>. Las ocho tablas
+restantes (<code>actividad</code>, <code>evidencia</code>, <code>incidente</code>, <code>sincronizacion</code>, <code>insumo</code>,
+<code>orden_material_detalle</code>, <code>inventario_movimiento</code>, <code>auditoria</code>) no tienen
+clase propia y solo existen en el script de la base (ver <strong>Fuentes →
+Cobertura del ORM</strong>).</li>
+</ul>
+<h3 id="campos-de-auditoria-creado-en-actualizado-en"><span class="sec-num">2.3</span>Campos de auditoría (creado_en, actualizado_en)</h3>
+<p>Todas las tablas relevantes registran su creación con
+<code>creado_en timestamptz NOT NULL DEFAULT now()</code> (fecha y hora automática).
+Quince tablas añaden además <code>actualizado_en</code>:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Tiene <code>actualizado_en</code></th>
+<th>Disparador automático</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>central</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>tecnico</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>flota</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>herramienta</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>caso_especial</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>despacho</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>falla_masiva</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>insumo</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>orden_material</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>configuracion</code></td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>dispositivo_seguridad</code></td>
+<td>Sí</td>
+<td><strong>No</strong> (no está en la lista de disparadores)</td>
+</tr>
+</tbody>
+</table></div>
+<p>La función <code>set_actualizado_en()</code> pone <code>NEW.actualizado_en := now()</code> en cada
+<code>UPDATE</code>. Luego, un bloque <code>DO</code> crea un disparador
+<code>BEFORE UPDATE ... FOR EACH ROW</code> sobre las 14 tablas editables. La tabla
+<code>dispositivo_seguridad</code> declara la columna <code>actualizado_en</code> pero <strong>no</strong> aparece
+en esa lista, por lo que su marca de actualización <strong>no se refresca
+automáticamente</strong>: se recomienda confirmar si es intencional o añadirla a la
+lista. Las tablas transaccionales (<code>caso_estado_hist</code>, <code>actividad</code>, <code>evidencia</code>,
+<code>cita</code>, <code>seguimiento</code>, <code>notificacion</code>, <code>auditoria</code>) solo reciben inserciones y
+no llevan <code>actualizado_en</code>.</p>
+<h3 id="extensiones-pgcrypto-pg-trgm"><span class="sec-num">2.4</span>Extensiones pgcrypto/pg_trgm</h3>
+<p>El script de la base crea dos extensiones al inicio de la transacción:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Extensión</th>
+<th>Para qué se usa</th>
+<th>Versión</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pgcrypto</code></td>
+<td>Generar identificadores aleatorios (<code>gen_random_uuid()</code>) y huellas digitales (<code>digest()</code>)</td>
+<td>1.3 (verificado en la instancia)</td>
+</tr>
+<tr>
+<td><code>pg_trgm</code></td>
+<td>Búsqueda difusa por dirección para asignar el sector (RF-23 / D-33), con índices GIN <code>gin_trgm_ops</code></td>
+<td>1.6 (verificado en la instancia)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Como las extensiones viven en el esquema <code>public</code>, la cadena de conexión
+conserva ese esquema en el <code>search_path</code> cuando se usa <code>DB_SCHEMA</code>:
+<code>options=-csearch_path=&lt;esquema&gt;,public</code>. Esto permite que los esquemas
+aislados de prueba encuentren <code>gin_trgm_ops</code> y las funciones de <code>pgcrypto</code> sin
+reinstalar las extensiones. Las versiones exactas de las extensiones no están
+fijadas en el repositorio: <strong>pendiente de confirmar</strong> en cada entorno si se
+requiere una coincidencia estricta.</p>
+<h2 id="entidades-por-dominio"><span class="sec-num">3</span>Entidades por dominio</h2>
+<h3 id="seguridad-y-acceso"><span class="sec-num">3.1</span>Seguridad y acceso</h3>
+<h4 id="rol-catalogo-de-roles"><span class="sec-num">3.1.1</span><code>rol</code> — catálogo de roles</h4>
+<p>Para qué sirve: es la lista de roles del sistema, con su bolsa de permisos
+guardada en formato JSON (<code>jsonb</code>).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_rol</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador del rol.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(30)</code></td>
+<td>UQ, NN</td>
+<td><code>SUPER</code>, <code>ADMIN</code>, <code>SUPERVISOR</code>, <code>TECNICO</code>.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Nombre visible.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Alcance funcional resumido.</td>
+</tr>
+<tr>
+<td><code>permisos</code></td>
+<td><code>jsonb</code></td>
+<td>NN, <code>'{}'</code></td>
+<td>Permisos adicionales. El rol <code>SUPER</code> no depende de esta bolsa, porque el sistema le concede permiso total.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Rol habilitado.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Fecha y hora de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="usuario-credenciales-de-acceso"><span class="sec-num">3.1.2</span><code>usuario</code> — credenciales de acceso</h4>
+<p>Para qué sirve: guarda las cuentas de acceso, con login por <code>P00</code>, clave
+cifrada (hash) y alcance por central.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_usuario</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>p00</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ, NN</td>
+<td>Identificador laboral; se usa como login y como identidad dentro del token de sesión (JWT).</td>
+</tr>
+<tr>
+<td><code>correo</code></td>
+<td><code>varchar(120)</code></td>
+<td>UQ</td>
+<td>Correo del usuario.</td>
+</tr>
+<tr>
+<td><code>clave_hash</code></td>
+<td><code>varchar(255)</code></td>
+<td>NN</td>
+<td>Clave cifrada con <strong>Argon2id</strong>.</td>
+</tr>
+<tr>
+<td><code>id_rol</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>rol</code>, NN</td>
+<td>Rol asignado.</td>
+</tr>
+<tr>
+<td><code>id_tecnico</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>tecnico</code></td>
+<td>Vínculo con el trabajador (opcional).</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code></td>
+<td><strong>Alcance por central (D-36)</strong>; refuerza el aislamiento de datos.</td>
+</tr>
+<tr>
+<td><code>intentos_fallidos</code></td>
+<td><code>smallint</code></td>
+<td>NN, <code>0</code></td>
+<td>Bloqueo a los 3 intentos.</td>
+</tr>
+<tr>
+<td><code>bloqueado</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Cuenta bloqueada por intentos fallidos.</td>
+</tr>
+<tr>
+<td><code>bloqueo_cliente</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Bandera prevista para ocultar datos del cliente (RNF-05).</td>
+</tr>
+<tr>
+<td><code>requiere_cambio_clave</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Fuerza el cambio de clave.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Cuenta habilitada.</td>
+</tr>
+<tr>
+<td><code>ultimo_acceso</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Último ingreso exitoso.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="dispositivo-seguridad-recuperacion-y-documento-cifrado"><span class="sec-num">3.1.3</span><code>dispositivo_seguridad</code> — recuperación y documento cifrado</h4>
+<p>Para qué sirve: guarda las 12 palabras de recuperación y el documento cifrado
+de cada usuario.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_dispositivo</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>p00</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ, NN, FK→<code>usuario.p00</code> con borrado en cascada</td>
+<td>Usuario propietario.</td>
+</tr>
+<tr>
+<td><code>palabras_hash</code></td>
+<td><code>jsonb</code></td>
+<td>NN, <code>'[]'</code></td>
+<td>Huellas (hashes) de las 12 palabras.</td>
+</tr>
+<tr>
+<td><code>clave_privada_ref</code></td>
+<td><code>varchar(255)</code></td>
+<td>—</td>
+<td>Referencia al secreto de la clave privada (no la clave).</td>
+</tr>
+<tr>
+<td><code>documento_cifrado</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Documento de recuperación cifrado.</td>
+</tr>
+<tr>
+<td><code>bloqueado</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Dispositivo bloqueado.</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>integer</code></td>
+<td>NN, <code>1</code></td>
+<td>Versión del documento.</td>
+</tr>
+<tr>
+<td><code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Sin disparador automático (ver hallazgo anterior).</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="auditoria-bitacora-de-acciones"><span class="sec-num">3.1.4</span><code>auditoria</code> — bitácora de acciones</h4>
+<p>Para qué sirve: es el libro de acciones del sistema, con el estado anterior y
+posterior de cada cambio, guardado en formato JSON (<code>jsonb</code>). No tiene modelo
+de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_auditoria</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td>P00 que ejecutó la acción.</td>
+</tr>
+<tr>
+<td><code>accion</code></td>
+<td><code>varchar(60)</code></td>
+<td>NN</td>
+<td>Acción registrada.</td>
+</tr>
+<tr>
+<td><code>entidad</code></td>
+<td><code>varchar(60)</code></td>
+<td>—</td>
+<td>Tabla o entidad afectada.</td>
+</tr>
+<tr>
+<td><code>id_entidad</code></td>
+<td><code>varchar(40)</code></td>
+<td>—</td>
+<td>Identificador del registro afectado.</td>
+</tr>
+<tr>
+<td><code>datos_antes</code></td>
+<td><code>jsonb</code></td>
+<td>—</td>
+<td>Estado previo.</td>
+</tr>
+<tr>
+<td><code>datos_despues</code></td>
+<td><code>jsonb</code></td>
+<td>—</td>
+<td>Estado posterior.</td>
+</tr>
+<tr>
+<td><code>ip</code></td>
+<td><code>inet</code></td>
+<td>—</td>
+<td>Dirección de origen.</td>
+</tr>
+<tr>
+<td><code>fecha_hora</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Momento del evento.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Índice de apoyo: <code>ix_auditoria_fecha</code> sobre <code>auditoria (fecha_hora)</code>. No se
+encontró código en <code>app/</code> que escriba en <code>auditoria</code>: <strong>pendiente de
+confirmar</strong> su punto de registro efectivo.</p>
+<h3 id="configuracion"><span class="sec-num">3.2</span>Configuración</h3>
+<h4 id="central-direccion-operativa"><span class="sec-num">3.2.1</span><code>central</code> — dirección operativa</h4>
+<p>Para qué sirve: es la base del filtro de ingesta. La central cargada es <code>2324X</code>
+FRANCISCO SALIAS.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_central</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>region</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>CAPITAL</code>.</td>
+</tr>
+<tr>
+<td><code>estado_geografico</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>BOLIVARIANO MIRANDA</code>.</td>
+</tr>
+<tr>
+<td><code>capital_estado</code></td>
+<td><code>varchar(80)</code></td>
+<td>—</td>
+<td>Ejemplo: <code>LOS TEQUES</code>.</td>
+</tr>
+<tr>
+<td><code>municipio</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>BARUTA</code>.</td>
+</tr>
+<tr>
+<td><code>parroquia</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>BARUTA</code>.</td>
+</tr>
+<tr>
+<td><code>estado_operativo</code></td>
+<td><code>varchar(80)</code></td>
+<td>—</td>
+<td>Ejemplo: <code>MIRANDA-2</code>.</td>
+</tr>
+<tr>
+<td><code>distrito</code></td>
+<td><code>varchar(40)</code></td>
+<td>—</td>
+<td>Ejemplo: <code>10204</code>.</td>
+</tr>
+<tr>
+<td><code>area</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>AREA 4</code>.</td>
+</tr>
+<tr>
+<td><code>codigo_central</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ, NN</td>
+<td>Ejemplo: <code>2324X</code>; base para generar identificadores de avería.</td>
+</tr>
+<tr>
+<td><code>nombre_central</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Ejemplo: <code>FRANCISCO SALIAS</code>.</td>
+</tr>
+<tr>
+<td><code>activa</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Central operativa.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="sector-agrupacion-geografica-de-trabajo"><span class="sec-num">3.2.2</span><code>sector</code> — agrupación geográfica de trabajo</h4>
+<p>Para qué sirve: son los sectores que define el supervisor (Norte 1, Sur 2…) para
+armar rutas y despachos.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_sector</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code> con borrado en cascada, NN</td>
+<td>Central propietaria.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Nombre visible.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td>Código corto.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas del supervisor.</td>
+</tr>
+<tr>
+<td><code>prioridad</code></td>
+<td><code>smallint</code></td>
+<td>NN, <code>100</code></td>
+<td>Orden de atención.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Sector vigente.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción única compuesta: <code>UNIQUE (id_central, codigo)</code> (el código no se
+repite dentro de la misma central).</p>
+<h4 id="sector-direccion-patrones-de-direccion-del-sector"><span class="sec-num">3.2.3</span><code>sector_direccion</code> — patrones de dirección del sector</h4>
+<p>Para qué sirve: guarda alias o patrones de dirección que pertenecen a un sector.
+Es la base para asignar el sector comparando texto.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_sector_direccion</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_sector</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>sector</code> con borrado en cascada, NN</td>
+<td>Sector destino.</td>
+</tr>
+<tr>
+<td><code>patron</code></td>
+<td><code>varchar(160)</code></td>
+<td>NN</td>
+<td>Texto que se busca dentro de la dirección del caso.</td>
+</tr>
+<tr>
+<td><code>tipo_coincidencia</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>CONTIENE</code></td>
+<td><code>CONTIENE</code>, <code>EXACTO</code> o <code>REGEX</code>.</td>
+</tr>
+<tr>
+<td><code>normalizar</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Quita acentos y mayúsculas antes de comparar.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Patrón vigente.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (id_sector, patron)</code> e índice trigram
+<code>ix_sector_patron_trgm</code>.</p>
+<h4 id="tecnico-trabajador-de-la-central"><span class="sec-num">3.2.4</span><code>tecnico</code> — trabajador de la central</h4>
+<p>Para qué sirve: guarda los datos del personal técnico.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_tecnico</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central que lo emplea.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Nombre.</td>
+</tr>
+<tr>
+<td><code>apellido</code></td>
+<td><code>varchar(80)</code></td>
+<td>—</td>
+<td>Apellido.</td>
+</tr>
+<tr>
+<td><code>cedula</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ</td>
+<td>Cédula.</td>
+</tr>
+<tr>
+<td><code>p00</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ, NN</td>
+<td>Identificador laboral.</td>
+</tr>
+<tr>
+<td><code>telefono</code></td>
+<td><code>varchar(30)</code></td>
+<td>—</td>
+<td>Contacto (dato personal).</td>
+</tr>
+<tr>
+<td><code>correo</code></td>
+<td><code>varchar(120)</code></td>
+<td>—</td>
+<td>Correo (dato personal).</td>
+</tr>
+<tr>
+<td><code>especialidad</code></td>
+<td><code>varchar(80)</code></td>
+<td>—</td>
+<td>Especialidad.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>ACTIVO</code></td>
+<td><code>ACTIVO</code>, <code>INACTIVO</code>, <code>VACACIONES</code> o <code>SUSPENDIDO</code>.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="flota-vehiculos-de-la-central"><span class="sec-num">3.2.5</span><code>flota</code> — vehículos de la central</h4>
+<p>Para qué sirve: es el parque automotor que puede asignarse a las cuadrillas.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_flota</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central propietaria.</td>
+</tr>
+<tr>
+<td><code>can</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ, NN</td>
+<td>Código CAN.</td>
+</tr>
+<tr>
+<td><code>tipo</code> / <code>marca</code> / <code>modelo</code></td>
+<td><code>varchar(40)</code></td>
+<td>—</td>
+<td>Características del vehículo.</td>
+</tr>
+<tr>
+<td><code>placa</code></td>
+<td><code>varchar(20)</code></td>
+<td>UQ</td>
+<td>Placa.</td>
+</tr>
+<tr>
+<td><code>combustible</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td>Tipo de combustible.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>DISPONIBLE</code></td>
+<td><code>DISPONIBLE</code>, <code>EN_RUTA</code>, <code>MANTENIMIENTO</code> o <code>FUERA_SERVICIO</code>.</td>
+</tr>
+<tr>
+<td><code>estado_cauchos</code> / <code>estado_fluidos</code> / <code>estado_general</code></td>
+<td><code>varchar(30)</code></td>
+<td>—</td>
+<td>Chequeo operativo.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="herramienta-inventario-de-herramientas"><span class="sec-num">3.2.6</span><code>herramienta</code> — inventario de herramientas</h4>
+<p>Para qué sirve: lista las herramientas que pueden asignarse a las cuadrillas.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_herramienta</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central propietaria.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Nombre.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(40)</code></td>
+<td>UQ, NN</td>
+<td>Código de inventario.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>DISPONIBLE</code></td>
+<td><code>DISPONIBLE</code>, <code>ASIGNADA</code>, <code>AVERIADA</code> o <code>PERDIDA</code>.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="cuadrilla-equipo-de-trabajo"><span class="sec-num">3.2.7</span><code>cuadrilla</code> — equipo de trabajo</h4>
+<p>Para qué sirve: una cuadrilla es el equipo formado por técnicos, flota y
+herramientas. La cuadrilla del supervisor es la «cuadrilla 0».</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central que la organiza.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td>Código corto (ejemplo: <code>C-00</code>).</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(80)</code></td>
+<td>NN</td>
+<td>Nombre.</td>
+</tr>
+<tr>
+<td><code>id_flota</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>flota</code></td>
+<td>Vehículo asignado.</td>
+</tr>
+<tr>
+<td><code>es_supervisor</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Marca la cuadrilla 0.</td>
+</tr>
+<tr>
+<td><code>activa</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Cuadrilla vigente.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricciones: <code>UNIQUE (id_central, codigo)</code> e índice único parcial
+<code>ux_cuadrilla_supervisor</code> sobre <code>cuadrilla (id_central) WHERE es_supervisor</code>,
+que garantiza <strong>una sola cuadrilla 0 por central</strong>.</p>
+<h4 id="cuadrilla-tecnico-pertenencia-n-m-con-vigencia"><span class="sec-num">3.2.8</span><code>cuadrilla_tecnico</code> — pertenencia N:M con vigencia</h4>
+<p>Para qué sirve: registra qué técnicos integran cada cuadrilla, con su rol y el
+rango de fechas en que pertenecieron.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>PK, FK→<code>cuadrilla</code> con borrado en cascada, NN</td>
+<td>Cuadrilla.</td>
+</tr>
+<tr>
+<td><code>id_tecnico</code></td>
+<td><code>integer</code></td>
+<td>PK, FK→<code>tecnico</code> con borrado en cascada, NN</td>
+<td>Técnico.</td>
+</tr>
+<tr>
+<td><code>desde</code></td>
+<td><code>date</code></td>
+<td>PK, NN, <code>CURRENT_DATE</code></td>
+<td>Inicio de la pertenencia.</td>
+</tr>
+<tr>
+<td><code>rol_cuadrilla</code></td>
+<td><code>varchar(30)</code></td>
+<td>NN, <code>REPARADOR_PRINCIPAL</code></td>
+<td><code>REPARADOR_PRINCIPAL</code>, <code>AYUDANTE</code> o <code>SUPERVISOR</code>.</td>
+</tr>
+<tr>
+<td><code>hasta</code></td>
+<td><code>date</code></td>
+<td>—</td>
+<td>Fin de la pertenencia (vacío = vigente).</td>
+</tr>
+</tbody>
+</table></div>
+<p>Clave principal compuesta: <code>(id_cuadrilla, id_tecnico, desde)</code>.</p>
+<h4 id="cuadrilla-herramienta-asignacion-de-herramientas"><span class="sec-num">3.2.9</span><code>cuadrilla_herramienta</code> — asignación de herramientas</h4>
+<p>Para qué sirve: lleva el historial de entrega y devolución de herramientas a
+cada cuadrilla.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>PK, FK→<code>cuadrilla</code> con borrado en cascada, NN</td>
+<td>Cuadrilla.</td>
+</tr>
+<tr>
+<td><code>id_herramienta</code></td>
+<td><code>integer</code></td>
+<td>PK, FK→<code>herramienta</code> con borrado en cascada, NN</td>
+<td>Herramienta.</td>
+</tr>
+<tr>
+<td><code>asignada_en</code></td>
+<td><code>timestamptz</code></td>
+<td>PK, NN, <code>now()</code></td>
+<td>Momento de la asignación.</td>
+</tr>
+<tr>
+<td><code>devuelta_en</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Momento de la devolución.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Clave principal compuesta: <code>(id_cuadrilla, id_herramienta, asignada_en)</code>.</p>
+<h4 id="causa-catalogo-de-causas"><span class="sec-num">3.2.10</span><code>causa</code> — catálogo de causas</h4>
+<p>Para qué sirve: es el catálogo administrable de causas (código y subcódigo), que
+usan los casos y las actividades.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_causa</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>codigo_causa</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td>Código principal.</td>
+</tr>
+<tr>
+<td><code>subcodigo_causa</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>''</code></td>
+<td>Subcódigo (vacío si no aplica).</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>varchar(255)</code></td>
+<td>—</td>
+<td>Descripción del código.</td>
+</tr>
+<tr>
+<td><code>descripcion_subcodigo</code></td>
+<td><code>varchar(255)</code></td>
+<td>—</td>
+<td>Descripción del subcódigo.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td>Clasificación libre.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Causa vigente.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (codigo_causa, subcodigo_causa)</code>. Semilla actual: <strong>0
+causas</strong> (el catálogo se administra, no se carga del CSV).</p>
+<h4 id="catalogo-metodo-metodos-de-cierre-enrutado-contacto"><span class="sec-num">3.2.11</span><code>catalogo_metodo</code> — métodos de cierre/enrutado/contacto</h4>
+<p>Para qué sirve: normaliza los métodos que usan las actividades.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_metodo</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>dominio</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>CIERRE</code>, <code>ENRUTE</code>, <code>DIFERIDO</code> o <code>CONTACTO</code>.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(30)</code></td>
+<td>NN</td>
+<td>Código (ejemplo: <code>IVR</code>, <code>COS</code>, <code>SACAS</code>).</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Nombre visible.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Método vigente.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (dominio, codigo)</code>; semilla de 9 métodos.</p>
+<h4 id="configuracion-parametros-del-sistema"><span class="sec-num">3.2.12</span><code>configuracion</code> — parámetros del sistema</h4>
+<p>Para qué sirve: guarda los parámetros configurables del sistema en formato JSON.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clave</code></td>
+<td><code>varchar(80)</code></td>
+<td>PK, NN</td>
+<td>Nombre del parámetro (ejemplo: <code>fallas.umbral_casos</code>).</td>
+</tr>
+<tr>
+<td><code>valor</code></td>
+<td><code>jsonb</code></td>
+<td>NN</td>
+<td>Valor guardado en JSON.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Explicación del parámetro.</td>
+</tr>
+<tr>
+<td><code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Se refresca por disparador.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Los parámetros relacionados con secretos solo se nombran, nunca se transcriben:
+<code>telegram.webhook_secret</code> y <code>mcp.api_key</code> se cargan vacíos. El resto de claves
+(<code>ingesta.*</code>, <code>despacho.*</code>, <code>fallas.*</code>, <code>outbox.max_intentos</code>, <code>seguridad.*</code>)
+está en el script de la base.</p>
+<h3 id="operacion"><span class="sec-num">3.3</span>Operación</h3>
+<h4 id="ingesta-lote-carga-del-csv-diario"><span class="sec-num">3.3.1</span><code>ingesta_lote</code> — carga del CSV diario</h4>
+<p>Para qué sirve: guarda la cabecera y las métricas de cada carga del archivo
+<code>detalle_averias_gpon_*.csv</code>.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_lote</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador del lote.</td>
+</tr>
+<tr>
+<td><code>archivo</code></td>
+<td><code>varchar(255)</code></td>
+<td>NN</td>
+<td>Nombre del archivo cargado.</td>
+</tr>
+<tr>
+<td><code>fecha_archivo</code></td>
+<td><code>date</code></td>
+<td>—</td>
+<td>Fecha declarada del archivo (en los modelos de Python se mapea como fecha y hora; ver divergencias).</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code></td>
+<td>Central del lote.</td>
+</tr>
+<tr>
+<td><code>filas_leidas</code> / <code>filas_central</code></td>
+<td><code>integer</code></td>
+<td>NN, <code>0</code></td>
+<td>Filas totales y filas de la central.</td>
+</tr>
+<tr>
+<td><code>casos_nuevos</code> / <code>casos_duplicados</code> / <code>casos_descartados</code></td>
+<td><code>integer</code></td>
+<td>NN, <code>0</code></td>
+<td>Resultado de descartar repetidos por <code>id_averia</code>.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>PROCESANDO</code></td>
+<td><code>PROCESANDO</code>, <code>OK</code> o <code>ERROR</code>.</td>
+</tr>
+<tr>
+<td><code>detalle_error</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Mensaje de error del lote.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td>P00 que ejecutó la carga.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="caso-entidad-central-de-averias"><span class="sec-num">3.3.2</span><code>caso</code> — entidad central de averías</h4>
+<p>Para qué sirve: es la tabla central del sistema. Guarda cada avería del archivo
+CSV (80 columnas depuradas) más los campos propios del sistema. La detección de
+duplicados se apoya en <code>id_averia</code>.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Grupo</th>
+<th>Campos (tipo)</th>
+<th>Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identidad</td>
+<td><code>id_caso</code> (<code>bigserial</code> PK), <code>id_central</code> (FK, NN)</td>
+<td>—</td>
+<td>Identificador interno y central propietaria.</td>
+</tr>
+<tr>
+<td>Clasificación</td>
+<td><code>id_averia</code> <code>varchar(30)</code> UQ NN; <code>origen</code> NN <code>INGESTA_CSV</code>; <code>tipo_caso</code> NN <code>AVERIA</code>; <code>categoria</code> NN <code>RESIDENCIAL</code></td>
+<td>Solo <code>id_averia</code>, <code>origen</code>, <code>tipo_caso</code> y <code>categoria</code> son obligatorios</td>
+<td>Listas cerradas: origen <code>INGESTA_CSV</code>/<code>MANUAL</code>/<code>TELEGRAM</code>/<code>MCP_IA</code>; tipo <code>AVERIA</code>/<code>REPARACION</code>/<code>CONSTRUCCION</code>; categoría <code>RESIDENCIAL</code>/<code>EMPRESA</code>/<code>REFERIDO</code>/<code>GOBIERNO</code>.</td>
+</tr>
+<tr>
+<td>Estado</td>
+<td><code>estado_actual</code> <code>varchar(20)</code> NN <code>NUEVO</code></td>
+<td>NN</td>
+<td><code>NUEVO</code>, <code>ASIGNADO</code>, <code>CONTACTADO</code>, <code>CITADO</code>, <code>DIFERIDO</code>, <code>EN_GESTION</code>, <code>ENRUTADO</code>, <code>CERRADO</code> o <code>CANCELADO</code>.</td>
+</tr>
+<tr>
+<td>Enlaces</td>
+<td><code>id_sector</code> FK, <code>id_causa</code> FK, <code>id_lote_ingesta</code> FK</td>
+<td>Sí</td>
+<td>Sector, causa y lote de origen.</td>
+</tr>
+<tr>
+<td>Banderas</td>
+<td><code>en_gestion_supervisor</code> NN <code>false</code>, <code>es_falla_masiva</code> NN <code>false</code>, <code>creado_por</code> FK→<code>usuario.p00</code></td>
+<td><code>creado_por</code> sí</td>
+<td>Gestión por cuadrilla 0 y agrupación en falla masiva.</td>
+</tr>
+<tr>
+<td>Geografía</td>
+<td><code>region</code>, <code>estado_geografico</code>, <code>capital_estado</code>, <code>municipio</code>, <code>parroquia</code>, <code>estado_operativo</code>, <code>distrito</code>, <code>area</code>, <code>codigo_central</code>, <code>nombre_central</code> (<code>varchar</code>)</td>
+<td>Sí</td>
+<td>Copia de datos de la central usada como filtro.</td>
+</tr>
+<tr>
+<td>Contacto</td>
+<td><code>telefono</code> <code>varchar(30)</code>, <code>fecha_reporte</code>, <code>persona_reporta</code> <code>varchar(120)</code>, <code>contacto_cliente</code> <code>varchar(60)</code>, <code>fecha_compromiso</code>, <code>fecha_cita</code>, <code>ultimo_comentario</code> <code>text</code>, <code>results</code> <code>text</code>, <code>asignado_a</code> <code>varchar(60)</code>, <code>cuadrilla_externa</code> <code>varchar(40)</code>, <code>estatus_origen</code> <code>varchar(20)</code>, <code>problema_reporte</code> <code>text</code>, <code>informacion</code> <code>text</code>, <code>nombre_cliente</code> <code>varchar(160)</code>, <code>direccion</code> <code>text</code></td>
+<td>Sí</td>
+<td><code>informacion</code> unifica las columnas 31, 32 y 52 del CSV (D-27); <code>direccion</code> es la base para asignar el sector.</td>
+</tr>
+<tr>
+<td>Técnico/lógico</td>
+<td><code>olt</code> <code>varchar(40)</code>, <code>plan</code> <code>varchar(60)</code>, <code>slot</code> <code>varchar(10)</code>, <code>puerto</code> <code>varchar(10)</code>, <code>fat</code> <code>varchar(80)</code>, <code>serial</code> <code>varchar(60)</code>, <code>extra</code>, <code>area_trabajo</code>, <code>tipo_servicio</code>, <code>tipo_problema</code>, <code>dias_area_resolutoria</code> <code>integer</code>, <code>unidad_negocio</code>, <code>ups</code>, <code>codigos_gestionados_venapp</code>, <code>codigos_sin_gestion_venapp</code></td>
+<td>Sí</td>
+<td>Datos de red y gestión VENAPP.</td>
+</tr>
+<tr>
+<td>Asignación origen</td>
+<td><code>reparador_principal</code> <code>varchar(20)</code>, <code>ayudantes</code> <code>jsonb</code> NN <code>'[]'</code>, <code>flota_can</code>, <code>despacho_nombre</code>, <code>despacho_apellido</code>, <code>telefono_oficina</code>, <code>telefono_movil</code>, <code>fecha_hora_asignacion</code></td>
+<td><code>ayudantes</code> es obligatorio; el resto no</td>
+<td>Hasta 9 ayudantes en el arreglo JSON.</td>
+</tr>
+<tr>
+<td>Auditoría</td>
+<td><code>creado_en</code> NN, <code>actualizado_en</code> NN</td>
+<td>NN</td>
+<td>Fechas; <code>actualizado_en</code> se refresca por disparador.</td>
+</tr>
+</tbody>
+</table></div>
+<p>El comentario del modelo indica <strong>63 columnas</strong> y el conteo sobre el script
+confirma 63 definiciones de columna. El diccionario de origen habla de <strong>49
+campos destino</strong> del CSV: eso corresponde al mapeo de columnas del archivo, no
+al total físico de la tabla (ver <strong>Divergencias detectadas</strong>).</p>
+<h4 id="caso-estado-hist-bitacora-de-estados"><span class="sec-num">3.3.3</span><code>caso_estado_hist</code> — bitácora de estados</h4>
+<p>Para qué sirve: guarda el historial de cambios de estado de cada caso.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_hist</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada, NN</td>
+<td>Caso afectado.</td>
+</tr>
+<tr>
+<td><code>estado_anterior</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td>Estado previo (vacío en el alta).</td>
+</tr>
+<tr>
+<td><code>estado_nuevo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td>Estado nuevo.</td>
+</tr>
+<tr>
+<td><code>motivo</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Justificación del cambio.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Autor del cambio.</td>
+</tr>
+<tr>
+<td><code>fecha_hora</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Momento del cambio.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="actividad-reporte-corto-de-gestion"><span class="sec-num">3.3.4</span><code>actividad</code> — reporte corto de gestión</h4>
+<p>Para qué sirve: registra contacto, cierre, enrute, diferido, incidente o falla
+masiva sobre un caso, con ubicación GPS y marca de sincronización. No tiene
+modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_actividad</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada, NN</td>
+<td>Caso gestionado.</td>
+</tr>
+<tr>
+<td><code>id_usuario</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>usuario</code></td>
+<td>Técnico que reporta.</td>
+</tr>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>cuadrilla</code></td>
+<td>Cuadrilla ejecutora.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>CONTACTO</code>, <code>CIERRE</code>, <code>ENRUTE</code>, <code>DIFERIDO</code>, <code>INCIDENTE</code> o <code>FALLA_MASIVA</code>.</td>
+</tr>
+<tr>
+<td><code>resultado</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td><code>CONTACTADO</code>, <code>CERRADO</code>, <code>ENRUTADO</code> o <code>DIFERIDO</code>.</td>
+</tr>
+<tr>
+<td><code>reporte_corto</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Descripción o justificación.</td>
+</tr>
+<tr>
+<td><code>id_metodo</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>catalogo_metodo</code></td>
+<td>Método de cierre, enrutado o contacto.</td>
+</tr>
+<tr>
+<td><code>id_causa</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>causa</code></td>
+<td>Causa para enrute o diferido.</td>
+</tr>
+<tr>
+<td><code>fecha_hora</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Momento reportado por el dispositivo.</td>
+</tr>
+<tr>
+<td><code>latitud</code> / <code>longitud</code></td>
+<td><code>numeric(10,7)</code></td>
+<td>—</td>
+<td>Coordenadas GPS.</td>
+</tr>
+<tr>
+<td><code>sincronizado</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Origen sin conexión, pendiente de subida.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Índices: <code>ix_actividad_caso</code> e <code>ix_actividad_usuario</code>. Ninguna ruta de la API ni
+servicio referencia esta tabla: <strong>pendiente de confirmar</strong> dónde se guardan las
+actividades en la v1.</p>
+<h4 id="evidencia-registro-fotografico"><span class="sec-num">3.3.5</span><code>evidencia</code> — registro fotográfico</h4>
+<p>Para qué sirve: respalda con fotos una actividad, con ubicación GPS y marca de
+tiempo. No tiene modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_evidencia</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_actividad</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>actividad</code> con borrado en cascada, NN</td>
+<td>Actividad respaldada.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>POTENCIA</code>, <code>NAVEGACION</code> o <code>DEMO</code>.</td>
+</tr>
+<tr>
+<td><code>serial_imagen</code></td>
+<td><code>varchar(160)</code></td>
+<td>UQ, NN</td>
+<td>Clave lógica: caso + avería + tipo + fecha y hora.</td>
+</tr>
+<tr>
+<td><code>ruta_local</code> / <code>ruta_remota</code></td>
+<td><code>varchar(255)</code></td>
+<td>—</td>
+<td>Ruta en el dispositivo y en el almacenamiento remoto.</td>
+</tr>
+<tr>
+<td><code>latitud</code> / <code>longitud</code></td>
+<td><code>numeric(10,7)</code></td>
+<td>—</td>
+<td>Coordenadas de la captura.</td>
+</tr>
+<tr>
+<td><code>fecha_hora</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Marca de la captura.</td>
+</tr>
+<tr>
+<td><code>origen_camara</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td><code>false</code> significa que vino de la galería y se considera inválida.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Índice <code>ix_evidencia_actividad</code>. La única mención en el código es un comentario
+en <code>app/api/routes_health.py</code> que cita la «evidencia del esquema desplegado»:
+<strong>pendiente de confirmar</strong> el flujo de carga de imágenes.</p>
+<h4 id="incidente-novedades-de-flota-o-herramienta"><span class="sec-num">3.3.6</span><code>incidente</code> — novedades de flota o herramienta</h4>
+<p>Para qué sirve: reporta incidentes de un vehículo o de una herramienta,
+asociados a una actividad. No tiene modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_incidente</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>FLOTA</code> o <code>HERRAMIENTA</code>.</td>
+</tr>
+<tr>
+<td><code>id_flota</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>flota</code></td>
+<td>Vehículo afectado.</td>
+</tr>
+<tr>
+<td><code>id_herramienta</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>herramienta</code></td>
+<td>Herramienta afectada.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Detalle del incidente.</td>
+</tr>
+<tr>
+<td><code>id_actividad</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>actividad</code> con borrado que deja el campo vacío</td>
+<td>Actividad que lo reporta.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>REPORTADO</code></td>
+<td><code>REPORTADO</code>, <code>EN_REVISION</code> o <code>RESUELTO</code>.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>ck_incidente_referencia</code>: debe existir <code>id_flota</code> o
+<code>id_herramienta</code>.</p>
+<h4 id="sincronizacion-paquetes-zip-del-dispositivo"><span class="sec-num">3.3.7</span><code>sincronizacion</code> — paquetes ZIP del dispositivo</h4>
+<p>Para qué sirve: guarda el historial de sincronizaciones con sus conteos y el
+archivo ZIP. No tiene modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_sync</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_dispositivo</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>dispositivo_seguridad</code> con borrado que deja el campo vacío</td>
+<td>Dispositivo.</td>
+</tr>
+<tr>
+<td><code>id_tecnico</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>tecnico</code></td>
+<td>Técnico.</td>
+</tr>
+<tr>
+<td><code>inicio</code> / <code>fin</code></td>
+<td><code>timestamptz</code></td>
+<td><code>inicio</code> es obligatorio</td>
+<td>Ventana de sincronización.</td>
+</tr>
+<tr>
+<td><code>casos_descargados</code> / <code>actividades_subidas</code> / <code>evidencias_subidas</code></td>
+<td><code>integer</code></td>
+<td>NN, <code>0</code></td>
+<td>Conteos del intercambio.</td>
+</tr>
+<tr>
+<td><code>archivo_zip</code></td>
+<td><code>varchar(160)</code></td>
+<td>—</td>
+<td>Nombre con central + cuadrilla + fecha.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>EN_PROCESO</code></td>
+<td><code>EN_PROCESO</code>, <code>OK</code> o <code>ERROR</code>.</td>
+</tr>
+<tr>
+<td><code>detalle_json</code></td>
+<td><code>jsonb</code></td>
+<td>—</td>
+<td>Detalle por caso.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="especiales"><span class="sec-num">3.4</span>Especiales</h3>
+<h4 id="solicitante-personal-externo"><span class="sec-num">3.4.1</span><code>solicitante</code> — personal externo</h4>
+<p>Para qué sirve: guarda la unidad, el nombre y el contacto de quien reporta un
+caso especial.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_solicitante</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>unidad</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Unidad o área de la empresa.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Nombre del contacto (dato personal).</td>
+</tr>
+<tr>
+<td><code>contacto</code></td>
+<td><code>varchar(60)</code></td>
+<td>NN</td>
+<td>Teléfono o correo (dato personal).</td>
+</tr>
+<tr>
+<td><code>canal</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td><code>TELEGRAM</code>, <code>MCP_IA</code>, <code>MANUAL</code> o <code>CORREO</code>.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="caso-especial-referidos-empresas-y-gobiernos"><span class="sec-num">3.4.2</span><code>caso_especial</code> — referidos, empresas y gobiernos</h4>
+<p>Para qué sirve: registra un subtipo de caso que no tiene <code>id_averia</code> de origen
+(referidos, empresas y gobiernos).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_caso_especial</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada</td>
+<td>Caso vinculado, si existe.</td>
+</tr>
+<tr>
+<td><code>id_solicitante</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>solicitante</code></td>
+<td>Quién lo reporta.</td>
+</tr>
+<tr>
+<td><code>clasificacion</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>REFERIDO</code>, <code>EMPRESA</code> o <code>GOBIERNO</code>.</td>
+</tr>
+<tr>
+<td><code>tipo_actividad</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>REPARACION</code> o <code>CONSTRUCCION</code>.</td>
+</tr>
+<tr>
+<td><code>prioridad</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>MEDIA</code></td>
+<td><code>ALTA</code>, <code>MEDIA</code> o <code>BAJA</code>.</td>
+</tr>
+<tr>
+<td><code>tiene_id_averia</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Indica si dispone de avería de origen.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Detalle de la solicitud.</td>
+</tr>
+<tr>
+<td><code>requiere_informe</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Exige informe de atención.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>ABIERTO</code></td>
+<td><code>ABIERTO</code>, <code>EN_PROCESO</code>, <code>ATENDIDO</code> o <code>CERRADO</code>.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="seguimiento-derivacion-a-otras-instancias"><span class="sec-num">3.4.3</span><code>seguimiento</code> — derivación a otras instancias</h4>
+<p>Para qué sirve: registra el paso de un caso a otra cola o instancia y su
+retorno.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_seguimiento</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada, NN</td>
+<td>Caso derivado.</td>
+</tr>
+<tr>
+<td><code>instancia_destino</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Cola o área destino.</td>
+</tr>
+<tr>
+<td><code>motivo</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Motivo de la derivación.</td>
+</tr>
+<tr>
+<td><code>fecha_envio</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Fecha de envío.</td>
+</tr>
+<tr>
+<td><code>fecha_retorno</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Fecha de retorno.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>EN_COLA</code></td>
+<td><code>EN_COLA</code>, <code>RESUELTO</code> o <code>DEVUELTO</code>.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Autor.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Índice <code>ix_seguimiento_caso</code>.</p>
+<h4 id="cita-agenda-de-contacto-atencion"><span class="sec-num">3.4.4</span><code>cita</code> — agenda de contacto/atención</h4>
+<p>Para qué sirve: agenda citas por caso o caso especial, <strong>sin solapamiento</strong> por
+cuadrilla (RF-12).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_cita</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada</td>
+<td>Caso citado.</td>
+</tr>
+<tr>
+<td><code>id_caso_especial</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>caso_especial</code> con borrado en cascada</td>
+<td>Caso especial citado.</td>
+</tr>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>cuadrilla</code></td>
+<td>Cuadrilla que atiende.</td>
+</tr>
+<tr>
+<td><code>fecha_hora</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha y hora de la cita.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>CONTACTO</code></td>
+<td><code>CONTACTO</code> o <code>ATENCION</code>.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>PROPUESTA</code></td>
+<td><code>PROPUESTA</code>, <code>CONFIRMADA</code>, <code>CUMPLIDA</code>, <code>REPROGRAMADA</code>, <code>DIFERIDA</code> o <code>CANCELADA</code>.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+<tr>
+<td><code>creado_por</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Autor.</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>ck_cita_referencia</code>: debe existir <code>id_caso</code> o <code>id_caso_especial</code>.
+Índice <code>ix_cita_cuadrilla_fecha</code> sobre <code>cita (id_cuadrilla, fecha_hora)</code>.</p>
+<h3 id="despacho"><span class="sec-num">3.5</span>Despacho</h3>
+<h4 id="despacho-cabecera-diaria-por-cuadrilla"><span class="sec-num">3.5.1</span><code>despacho</code> — cabecera diaria por cuadrilla</h4>
+<p>Para qué sirve: es el despacho de un día para una cuadrilla, con el canal y la
+hora de reporte.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_despacho</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central que lo genera.</td>
+</tr>
+<tr>
+<td><code>fecha</code></td>
+<td><code>date</code></td>
+<td>NN</td>
+<td>Día del despacho.</td>
+</tr>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>cuadrilla</code>, NN</td>
+<td>Cuadrilla destino.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>BORRADOR</code></td>
+<td><code>BORRADOR</code>, <code>PUBLICADO</code> o <code>CERRADO</code>.</td>
+</tr>
+<tr>
+<td><code>generado_auto</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>false</code></td>
+<td>Propuesto automáticamente.</td>
+</tr>
+<tr>
+<td><code>enviado_canal</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td><code>TELEGRAM</code> o <code>CORREO</code>.</td>
+</tr>
+<tr>
+<td><code>enviado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Momento del envío.</td>
+</tr>
+<tr>
+<td><code>reporte_produccion_en</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Cierre 04:00 p.m. (RF-27).</td>
+</tr>
+<tr>
+<td><code>usuario_crea</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Autor.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (fecha, id_cuadrilla)</code>: un despacho por cuadrilla y día. La
+tabla está sujeta a RLS (seguridad por filas).</p>
+<h4 id="despacho-caso-detalle-de-casos-asignados"><span class="sec-num">3.5.2</span><code>despacho_caso</code> — detalle de casos asignados</h4>
+<p>Para qué sirve: guarda los casos incluidos en un despacho, con el orden de
+visita y el tipo de asignación.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_despacho_caso</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_despacho</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>despacho</code> con borrado en cascada, NN</td>
+<td>Despacho.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado en cascada, NN</td>
+<td>Caso asignado.</td>
+</tr>
+<tr>
+<td><code>id_sector</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>sector</code></td>
+<td>Sector que agrupa la visita.</td>
+</tr>
+<tr>
+<td><code>orden_visita</code></td>
+<td><code>smallint</code></td>
+<td>—</td>
+<td>Orden de recorrido.</td>
+</tr>
+<tr>
+<td><code>tipo_asignacion</code></td>
+<td><code>varchar(20)</code></td>
+<td>—</td>
+<td><code>REPARACION</code>, <code>CONSTRUCCION</code>, <code>REFERIDO</code>, <code>EMPRESA</code> o <code>FALLA_MASIVA</code>.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>ASIGNADO</code></td>
+<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code> o <code>DIFERIDO</code>.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (id_despacho, id_caso)</code>: un caso aparece una sola vez por
+despacho. Índices <code>ix_despacho_caso_caso</code> e <code>ix_despacho_caso_despacho</code>.</p>
+<h4 id="falla-masiva-evento-de-falla-por-concentracion"><span class="sec-num">3.5.3</span><code>falla_masiva</code> — evento de falla por concentración</h4>
+<p>Para qué sirve: agrupa casos concentrados y documenta su planificación.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_falla</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code>, NN</td>
+<td>Central que la registra.</td>
+</tr>
+<tr>
+<td><code>clave_concentracion</code></td>
+<td><code>varchar(120)</code></td>
+<td>—</td>
+<td>Clave del grupo (ejemplo: <code>olt:pde-olt-00</code>) para detectar sin duplicar.</td>
+</tr>
+<tr>
+<td><code>descripcion</code></td>
+<td><code>text</code></td>
+<td>NN</td>
+<td>Descripción del evento.</td>
+</tr>
+<tr>
+<td><code>fecha_deteccion</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Momento de la detección.</td>
+</tr>
+<tr>
+<td><code>origen</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>AUTOMATICA</code></td>
+<td><code>AUTOMATICA</code>, <code>REPORTE_TECNICO</code> o <code>MCP</code>.</td>
+</tr>
+<tr>
+<td><code>id_sector</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>sector</code></td>
+<td>Sector afectado.</td>
+</tr>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>cuadrilla</code></td>
+<td>Cuadrilla asignada.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>DETECTADA</code></td>
+<td><code>DETECTADA</code>, <code>PLANIFICADA</code>, <code>ATENDIDA</code> o <code>CERRADA</code>.</td>
+</tr>
+<tr>
+<td><code>planificacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Plan de atención.</td>
+</tr>
+<tr>
+<td><code>reporte_simple</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Reporte resumido.</td>
+</tr>
+<tr>
+<td><code>planificada_en</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Cuándo se documentó la planificación (RF-17).</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Parámetros asociados en <code>configuracion</code>: <code>fallas.activo</code>, <code>fallas.umbral_casos</code>,
+<code>fallas.ventana_horas</code> y <code>fallas.campo_concentracion</code>.</p>
+<h3 id="insumos-v2"><span class="sec-num">3.6</span>Insumos (v2)</h3>
+<h4 id="insumo-catalogo-de-materiales"><span class="sec-num">3.6.1</span><code>insumo</code> — catálogo de materiales</h4>
+<p>Para qué sirve: es el catálogo de insumos por central (v2, RF-05). No tiene
+modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_insumo</code></td>
+<td><code>serial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>central</code></td>
+<td>Central que lo cataloga.</td>
+</tr>
+<tr>
+<td><code>codigo</code></td>
+<td><code>varchar(40)</code></td>
+<td>UQ, NN</td>
+<td>Código del insumo.</td>
+</tr>
+<tr>
+<td><code>nombre</code></td>
+<td><code>varchar(120)</code></td>
+<td>NN</td>
+<td>Nombre.</td>
+</tr>
+<tr>
+<td><code>unidad_medida</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>UNIDAD</code></td>
+<td>Unidad de medida.</td>
+</tr>
+<tr>
+<td><code>stock_minimo</code></td>
+<td><code>numeric(12,2)</code></td>
+<td>NN, <code>0</code></td>
+<td>Umbral de reposición.</td>
+</tr>
+<tr>
+<td><code>activo</code></td>
+<td><code>boolean</code></td>
+<td>NN, <code>true</code></td>
+<td>Insumo vigente.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="orden-material-solicitud-de-material"><span class="sec-num">3.6.2</span><code>orden_material</code> — solicitud de material</h4>
+<p>Para qué sirve: es la cabecera de una orden de material (RF-18). Tiene un modelo
+mínimo en Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_orden</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code></td>
+<td>Caso que la origina.</td>
+</tr>
+<tr>
+<td><code>id_cuadrilla</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>cuadrilla</code></td>
+<td>Cuadrilla solicitante.</td>
+</tr>
+<tr>
+<td><code>solicitante_usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Usuario solicitante.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>SOLICITADA</code></td>
+<td><code>SOLICITADA</code>, <code>APROBADA</code>, <code>ENTREGADA</code> o <code>RECHAZADA</code>.</td>
+</tr>
+<tr>
+<td><code>fecha</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Fecha de la solicitud.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+<tr>
+<td><code>creado_en</code> / <code>actualizado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fechas de creación y actualización.</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="orden-material-detalle-renglones-de-la-orden"><span class="sec-num">3.6.3</span><code>orden_material_detalle</code> — renglones de la orden</h4>
+<p>Para qué sirve: detalla los insumos y las cantidades de cada orden. No tiene
+modelo de Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_orden_detalle</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_orden</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>orden_material</code> con borrado en cascada, NN</td>
+<td>Orden padre.</td>
+</tr>
+<tr>
+<td><code>id_insumo</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>insumo</code>, NN</td>
+<td>Insumo.</td>
+</tr>
+<tr>
+<td><code>cantidad_solicitada</code></td>
+<td><code>numeric(12,2)</code></td>
+<td>NN, <code>CHECK &gt; 0</code></td>
+<td>Cantidad pedida.</td>
+</tr>
+<tr>
+<td><code>cantidad_entregada</code></td>
+<td><code>numeric(12,2)</code></td>
+<td>NN, <code>0</code></td>
+<td>Cantidad entregada.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricción <code>UNIQUE (id_orden, id_insumo)</code>.</p>
+<h4 id="inventario-movimiento-ingresos-egresos-y-ajustes"><span class="sec-num">3.6.4</span><code>inventario_movimiento</code> — ingresos, egresos y ajustes</h4>
+<p>Para qué sirve: es el kardex de movimientos del inventario. No tiene modelo de
+Python.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_mov</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>id_insumo</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>insumo</code>, NN</td>
+<td>Insumo movido.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>INGRESO</code>, <code>EGRESO</code> o <code>AJUSTE</code>.</td>
+</tr>
+<tr>
+<td><code>cantidad</code></td>
+<td><code>numeric(12,2)</code></td>
+<td>NN, <code>CHECK &gt; 0</code></td>
+<td>Cantidad del movimiento.</td>
+</tr>
+<tr>
+<td><code>id_orden</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>orden_material</code></td>
+<td>Orden que lo genera.</td>
+</tr>
+<tr>
+<td><code>id_tecnico</code></td>
+<td><code>integer</code></td>
+<td>FK→<code>tecnico</code></td>
+<td>Técnico que recibe.</td>
+</tr>
+<tr>
+<td><code>fecha</code></td>
+<td><code>timestamptz</code></td>
+<td>NN, <code>now()</code></td>
+<td>Fecha del movimiento.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>varchar(20)</code></td>
+<td>FK→<code>usuario.p00</code></td>
+<td>Usuario que registra.</td>
+</tr>
+<tr>
+<td><code>observacion</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Notas.</td>
+</tr>
+</tbody>
+</table></div>
+<p>El módulo de insumos corresponde a la <strong>v2</strong>: no se encontraron rutas ni
+servicios que operen estas cuatro tablas en la v1.</p>
+<h3 id="notificaciones"><span class="sec-num">3.7</span>Notificaciones</h3>
+<h4 id="notificacion-bandeja-de-salida-outbox"><span class="sec-num">3.7.1</span><code>notificacion</code> — bandeja de salida (outbox)</h4>
+<p>Para qué sirve: es la bandeja de mensajes por Telegram, correo o MCP, con
+reintentos y espera creciente entre intentos (patrón <em>outbox</em>, RNF-20).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Clave / Nulo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_notificacion</code></td>
+<td><code>bigserial</code></td>
+<td>PK, NN</td>
+<td>Identificador.</td>
+</tr>
+<tr>
+<td><code>canal</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN</td>
+<td><code>TELEGRAM</code>, <code>CORREO</code> o <code>MCP_IA</code>.</td>
+</tr>
+<tr>
+<td><code>destinatario</code></td>
+<td><code>varchar(160)</code></td>
+<td>—</td>
+<td>Destino (dato personal cuando es correo).</td>
+</tr>
+<tr>
+<td><code>asunto</code></td>
+<td><code>varchar(200)</code></td>
+<td>—</td>
+<td>Asunto.</td>
+</tr>
+<tr>
+<td><code>cuerpo</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Cuerpo del mensaje.</td>
+</tr>
+<tr>
+<td><code>id_caso</code></td>
+<td><code>bigint</code></td>
+<td>FK→<code>caso</code> con borrado que deja el campo vacío</td>
+<td>Caso notificado.</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td><code>varchar(20)</code></td>
+<td>NN, <code>PENDIENTE</code></td>
+<td><code>PENDIENTE</code>, <code>ENVIADO</code> o <code>FALLIDO</code>.</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>text</code></td>
+<td>—</td>
+<td>Último error de envío.</td>
+</tr>
+<tr>
+<td><code>enviado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Momento del envío efectivo.</td>
+</tr>
+<tr>
+<td><code>intentos</code></td>
+<td><code>smallint</code></td>
+<td>NN, <code>0</code></td>
+<td>Reintentos consumidos.</td>
+</tr>
+<tr>
+<td><code>proximo_intento</code></td>
+<td><code>timestamptz</code></td>
+<td>—</td>
+<td>Próximo intento (espera creciente).</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td><code>timestamptz</code></td>
+<td>NN</td>
+<td>Fecha de creación.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Índice <code>ix_notificacion_caso</code>. El procesamiento de la bandeja se apoya en
+<code>app/services/outbox.py</code> y el límite de reintentos está en el parámetro
+<code>outbox.max_intentos</code>. <strong>En producción, Telegram y correo aún no tienen
+credenciales</strong>: las notificaciones quedan en estado <code>PENDIENTE</code>. WhatsApp no
+existe en la v1.</p>
+<h2 id="campos-pii"><span class="sec-num">4</span>Campos PII</h2>
+<h3 id="inventario-y-clasificacion-rnf-18"><span class="sec-num">4.1</span>inventario y clasificación (RNF-18)</h3>
+<p>RNF-18 exige «inventario y clasificación de datos personales (PII);
+minimización; retención por entidad; enmascaramiento de teléfono, dirección y
+serial para roles no autorizados». El inventario verificado sobre el script de
+la base es:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Campos con datos personales</th>
+<th>Clasificación propuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caso</code></td>
+<td><code>telefono</code>, <code>nombre_cliente</code>, <code>direccion</code>, <code>persona_reporta</code>, <code>contacto_cliente</code>, <code>telefono_oficina</code>, <code>telefono_movil</code>, <code>serial</code>, <code>informacion</code> (texto libre)</td>
+<td>Confidencial</td>
+</tr>
+<tr>
+<td><code>tecnico</code></td>
+<td><code>cedula</code>, <code>telefono</code>, <code>correo</code>, <code>nombre</code>, <code>apellido</code></td>
+<td>Confidencial (personal interno)</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>correo</code>, <code>clave_hash</code> (secreto de autenticación)</td>
+<td>Restringido</td>
+</tr>
+<tr>
+<td><code>solicitante</code></td>
+<td><code>nombre</code>, <code>contacto</code></td>
+<td>Confidencial</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td><code>reporte_corto</code> (texto libre), <code>latitud</code>, <code>longitud</code></td>
+<td>Confidencial (geolocalización)</td>
+</tr>
+<tr>
+<td><code>evidencia</code></td>
+<td><code>ruta_local</code>, <code>ruta_remota</code>, <code>latitud</code>, <code>longitud</code>, <code>fecha_hora</code>, <code>serial_imagen</code></td>
+<td>Confidencial (imagen + ubicación)</td>
+</tr>
+<tr>
+<td><code>notificacion</code></td>
+<td><code>destinatario</code>, <code>cuerpo</code></td>
+<td>Confidencial</td>
+</tr>
+<tr>
+<td><code>auditoria</code></td>
+<td><code>datos_antes</code>, <code>datos_despues</code>, <code>ip</code>, <code>usuario</code></td>
+<td>Restringido</td>
+</tr>
+<tr>
+<td><code>dispositivo_seguridad</code></td>
+<td><code>palabras_hash</code>, <code>clave_privada_ref</code>, <code>documento_cifrado</code></td>
+<td>Secreto (sin datos personales en claro)</td>
+</tr>
+<tr>
+<td><code>falla_masiva</code></td>
+<td><code>descripcion</code>, <code>planificacion</code>, <code>reporte_simple</code> (pueden citar direcciones)</td>
+<td>Interno</td>
+</tr>
+</tbody>
+</table></div>
+<p>Estado de la minimización y el enmascaramiento: el script de la base no cifra
+columnas a nivel de base (el cifrado en reposo depende de CMEK, pendiente según
+D-26). La bandera <code>usuario.bloqueo_cliente</code> está prevista para «ocultar datos del
+cliente», pero <strong>no se encontró código de enmascaramiento</strong> en <code>app/</code>:
+<strong>pendiente de confirmar</strong> su implementación. El diccionario de origen describe
+<code>clave_hash</code> como «bcrypt/argon2», pero el algoritmo real es <strong>Argon2id</strong>.</p>
+<p>Datos reales y exposición: la base ya tiene datos reales (42 casos con datos
+personales) y el servicio es público. Por eso <strong>debe restringirse el acceso</strong>.
+El riesgo aceptado D-26 indica que la instancia compartida no cumple RNF-16/SSL
+obligatorio y que no hay respaldos/PITR hasta migrar de instancia.</p>
+<h3 id="retencion-por-entidad-requerimientos-md-212-225"><span class="sec-num">4.2</span>retención por entidad (requerimientos.md:212-225)</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Entidad</th>
+<th>¿Contiene datos personales?</th>
+<th>Retención propuesta</th>
+<th>Acción al vencer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caso</code></td>
+<td>Sí</td>
+<td>5 años</td>
+<td>Anonimizar y archivar</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td>Sí</td>
+<td>5 años</td>
+<td>Anonimizar</td>
+</tr>
+<tr>
+<td><code>evidencia</code></td>
+<td>Sí</td>
+<td>2 años</td>
+<td>Eliminar imagen y metadatos</td>
+</tr>
+<tr>
+<td><code>auditoria</code></td>
+<td>Sí</td>
+<td>3 años</td>
+<td>Archivar sin datos personales</td>
+</tr>
+<tr>
+<td><code>notificacion</code></td>
+<td>Sí</td>
+<td>1 año</td>
+<td>Eliminar</td>
+</tr>
+<tr>
+<td><code>solicitante</code></td>
+<td>Sí</td>
+<td>5 años</td>
+<td>Anonimizar</td>
+</tr>
+<tr>
+<td><code>dispositivo_seguridad</code></td>
+<td>No (solo huellas)</td>
+<td>Mientras la cuenta esté activa</td>
+<td>Eliminar con la cuenta</td>
+</tr>
+<tr>
+<td><code>inventario_movimiento</code> / <code>orden_material</code> (v2)</td>
+<td>No</td>
+<td>5 años</td>
+<td>Archivar</td>
+</tr>
+</tbody>
+</table></div>
+<p>Los plazos son <strong>propuesta</strong> y deben validarse con CANTV y asesoría legal. Para
+la v1, el riesgo aceptado D-26 indica que la instancia compartida no cumple
+RNF-16/SSL obligatorio y que no hay respaldos/PITR hasta migrar de instancia.</p>
+<h2 id="fuentes"><span class="sec-num">5</span>Fuentes</h2>
+<h3 id="repotecnico-diccionario-datos-md"><span class="sec-num">5.1</span><code>RepoTecnico/diccionario_datos.md</code></h3>
+<p>Documento de Fase 1 (Borrador v0.2, «sujeto a validación») con 33 entidades
+listadas en su inventario y el mapeo posicional del CSV de 80 columnas a 49
+campos destino. Aporta la justificación funcional de cada entidad, los códigos
+de requerimiento asociados y las cinco dudas abiertas.</p>
+<h3 id="repotecnico-db-schema-sql"><span class="sec-num">5.2</span><code>RepoTecnico/db/schema.sql</code></h3>
+<p>Fuente normativa de la estructura física: 35 tablas, 2 extensiones, 2 funciones
+(<code>set_actualizado_en</code> y <code>generar_id_averia_ref</code>), 1 secuencia (<code>seq_caso_ref</code>),
+21 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
+idempotentes. Es el archivo que se aplica con
+<code>psql &quot;$DATABASE_URL&quot; -v ON_ERROR_STOP=1 -f RepoTecnico/db/schema.sql</code>.</p>
+<h3 id="cobertura-del-orm-app-models"><span class="sec-num">5.3</span>Cobertura del ORM (<code>app/models/</code>)</h3>
+<p>Los modelos de Python mapean 27 tablas mediante 6 módulos:</p>
+<ul>
+<li><code>entities.py</code>: <code>rol</code>, <code>central</code>, <code>tecnico</code>, <code>usuario</code>, <code>dispositivo_seguridad</code>.</li>
+<li><code>caso_entities.py</code>: <code>ingesta_lote</code>, <code>caso</code>, <code>caso_estado_hist</code>.</li>
+<li><code>config_entities.py</code>: <code>sector</code>, <code>sector_direccion</code>, <code>flota</code>, <code>herramienta</code>,
+<code>cuadrilla</code>, <code>cuadrilla_tecnico</code>, <code>cuadrilla_herramienta</code>, <code>causa</code>,
+<code>catalogo_metodo</code>, <code>configuracion</code>.</li>
+<li><code>despacho_entities.py</code>: <code>despacho</code>, <code>despacho_caso</code>, <code>notificacion</code>,
+<code>falla_masiva</code>.</li>
+<li><code>especiales_entities.py</code>: <code>solicitante</code>, <code>caso_especial</code>, <code>cita</code>,
+<code>seguimiento</code>.</li>
+<li><code>insumos_entities.py</code>: <code>orden_material</code>.</li>
+</ul>
+<p>Las ocho tablas sin modelo son <code>actividad</code>, <code>evidencia</code>, <code>incidente</code>,
+<code>sincronizacion</code>, <code>insumo</code>, <code>orden_material_detalle</code>, <code>inventario_movimiento</code> y
+<code>auditoria</code>; una búsqueda en el código Python confirma que tampoco se consultan
+con SQL directo. Es decir, en la v1 esas tablas existen en la base pero ningún
+flujo de la aplicación las escribe: <strong>pendiente de confirmar</strong> si corresponden
+a módulos diferidos (app móvil y v2 de insumos) o a trabajo aún no implementado.
+Recuerda que la app móvil Flutter no está desarrollada (Ciclo 8 pospuesto).</p>
+<h3 id="divergencias-detectadas"><span class="sec-num">5.4</span>Divergencias detectadas</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Tema</th>
+<th>Dice el diccionario de origen</th>
+<th>Implementación real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Tipo de <code>despacho.id_despacho</code></td>
+<td><code>serial</code></td>
+<td><code>bigserial</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tipo de <code>cita.id_cita</code></td>
+<td><code>serial</code></td>
+<td><code>bigserial</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Cifrado de la clave</td>
+<td>«bcrypt/argon2»</td>
+<td>Argon2id</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Dominios de <code>catalogo_metodo</code></td>
+<td><code>CIERRE</code>/<code>ENRUTE</code>/<code>DIFERIDO</code></td>
+<td>Incluye <code>CONTACTO</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Códigos de <code>rol</code></td>
+<td><code>SUPERVISOR</code>, <code>TECNICO</code>, <code>ADMIN</code></td>
+<td>Además <code>SUPER</code> (permiso total)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Columna <code>actividad.metodo</code></td>
+<td>Listada como <code>varchar(20)</code></td>
+<td>No existe; el método se referencia con <code>id_metodo</code> (FK)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>cita.estado</code></td>
+<td>Sin <code>CANCELADA</code></td>
+<td>Incluye <code>CANCELADA</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>caso_especial.estado</code></td>
+<td>Sin lista cerrada</td>
+<td><code>CHECK</code> con 4 estados</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Nº de columnas de <code>caso</code></td>
+<td>«49 campos destino» (mapeo del CSV)</td>
+<td>63 columnas físicas</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Tipo de <code>ingesta_lote.fecha_archivo</code></td>
+<td>No precisado</td>
+<td><code>date</code> en el script; fecha y hora en el ORM</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Longitud de <code>caso.extra</code></td>
+<td>No precisada</td>
+<td><code>varchar(120)</code> en el script; <code>String(40)</code> en el ORM</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Disparador de <code>dispositivo_seguridad</code></td>
+<td>No aplica</td>
+<td>Tiene <code>actualizado_en</code> pero sin disparador</td>
+</tr>
+</tbody>
+</table></div>
+<p>Las divergencias 10 y 11 son de <strong>mapeo del ORM</strong>, no del script de la base: al
+no usar migraciones Alembic en el estado actual, una fecha y hora sobre una
+columna <code>date</code> puede producir conversiones implícitas de zona horaria. Se
+recomienda alinear el modelo con el script o versionar la migración
+correspondiente; queda <strong>pendiente de confirmar</strong> cuál de los dos es la
+intención definitiva.</p>
+
+<nav class="pie-nav"><a class="izq" href="../04-Despliegue/04-pruebas-y-ci.html">← Manual anterior: Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias /…</a><a href="../index.html">Índice general</a><a class="der" href="../06-Diagrama-Relacional/01-diagrama-er.html">Manual siguiente →: Diagrama Entidad-Relación — Modelo de datos GGTO</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Diccionario de Datos</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Diccionario de Datos · 01-entidades", "pieIzq": "Diccionario de Datos — Entidades de la base GGTO", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Diccionario de Datos — Entidades de la base GGTO"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

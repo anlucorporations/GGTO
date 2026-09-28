@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1400" height="920" fill="#ffffff"/>
+<rect x="0" y="0" width="1400" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1400" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Entornos de GGTO y su base de datos</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Desarrollo, producción y pruebas: cómo llega cada uno a PostgreSQL</text>
+<text x="1372" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1372" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="890" width="1400" height="30" fill="#f4f6f9"/>
+<text x="700" y="909" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="60" y="110" width="240" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="68" y="118" width="6" height="74" rx="3" fill="#0b4f9c"/>
+<text x="180" y="143" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Desarrollo</text>
+<text x="180" y="160" fill="#4a5568" font-size="11" text-anchor="middle">APP_ENV=development</text>
+<text x="180" y="177" fill="#4a5568" font-size="11" text-anchor="middle">Uvicorn a mano</text>
+<rect x="320" y="110" width="240" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="328" y="118" width="6" height="74" rx="3" fill="#0e7490"/>
+<text x="440" y="151.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">Pruebas pytest</text>
+<text x="440" y="168.5" fill="#4a5568" font-size="11" text-anchor="middle">DB_SCHEMA=ggto_test</text>
+<rect x="580" y="110" width="240" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="588" y="118" width="6" height="74" rx="3" fill="#0e7490"/>
+<text x="700" y="143" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">Pruebas E2E</text>
+<text x="700" y="160" fill="#4a5568" font-size="11" text-anchor="middle">DB_SCHEMA=ggto_e2e</text>
+<text x="700" y="177" fill="#4a5568" font-size="11" text-anchor="middle">Playwright/Chromium</text>
+<rect x="840" y="110" width="240" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="848" y="118" width="6" height="74" rx="3" fill="#4a5568"/>
+<text x="960" y="143" fill="#4a5568" font-size="13.5" font-weight="700" text-anchor="middle">Staging</text>
+<text x="960" y="160" fill="#4a5568" font-size="11" text-anchor="middle">No está desplegado</text>
+<text x="960" y="177" fill="#4a5568" font-size="11" text-anchor="middle">pendiente de confirmar</text>
+<rect x="1100" y="110" width="240" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="1108" y="118" width="6" height="74" rx="3" fill="#1f7a4d"/>
+<text x="1220" y="143" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">Producción</text>
+<text x="1220" y="160" fill="#4a5568" font-size="11" text-anchor="middle">Cloud Run ggto-web</text>
+<text x="1220" y="177" fill="#4a5568" font-size="11" text-anchor="middle">SPA y API en la misma URL</text>
+<rect x="200" y="290" width="380" height="100" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="208" y="298" width="6" height="84" rx="3" fill="#0b4f9c"/>
+<text x="390" y="336.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Cloud SQL Auth Proxy</text>
+<text x="390" y="353.5" fill="#4a5568" font-size="12" text-anchor="middle">127.0.0.1:5433 por TCP</text>
+<rect x="760" y="290" width="380" height="100" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="298" width="6" height="84" rx="3" fill="#0b4f9c"/>
+<text x="950" y="336.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Socket Cloud SQL</text>
+<text x="950" y="353.5" fill="#4a5568" font-size="12" text-anchor="middle">/cloudsql/truekeate-main:...</text>
+<rect x="380" y="420" width="640" height="110" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="388" y="428" width="6" height="94" rx="3" fill="#1f7a4d"/>
+<text x="700" y="471.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">Base ggtov2 · PostgreSQL 15.18</text>
+<text x="700" y="488.5" fill="#4a5568" font-size="12" text-anchor="middle">Misma base para desarrollo, pruebas y producción</text>
+<path d="M180 200 L180 245 L260 245 L260 290" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M440 200 L440 290" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 200 L700 245 L520 245 L520 290" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1080 155 L1100 155" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#flechaGris)"/>
+<path d="M1220 200 L1220 245 L950 245 L950 290" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M390 390 L390 420" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M950 390 L950 420" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<rect x="60" y="560" width="400" height="141.5" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="568" width="6" height="125.5" rx="3" fill="#d7dde6"/>
+<text x="82" y="584.75" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">development</text>
+<text x="82" y="601.75" fill="#4a5568" font-size="11.5" text-anchor="start">Trabajo dentro de la instancia de Google Compute Engine del</text>
+<text x="82" y="618.75" fill="#4a5568" font-size="11.5" text-anchor="start">workspace. La base se alcanza por TCP con el proxy local en</text>
+<text x="82" y="635.75" fill="#4a5568" font-size="11.5" text-anchor="start">127.0.0.1:5433 (DB_NAME=ggtov2, DB_USER=ggtov2_app).</text>
+<text x="82" y="652.75" fill="#4a5568" font-size="11.5" text-anchor="start">La aplicación se levanta a mano con Uvicorn en</text>
+<text x="82" y="669.75" fill="#4a5568" font-size="11.5" text-anchor="start">127.0.0.1:8090. No hay docker ni psql nativos: psql se busca</text>
+<text x="82" y="686.75" fill="#4a5568" font-size="11.5" text-anchor="start">en $HOME/bin/psql.</text>
+<rect x="500" y="560" width="400" height="158" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="508" y="568" width="6" height="142" rx="3" fill="#d7dde6"/>
+<text x="522" y="584.5" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">producción</text>
+<text x="522" y="601.5" fill="#4a5568" font-size="11.5" text-anchor="start">Cloud Run ggto-web sirve la SPA y la API en una sola URL: el</text>
+<text x="522" y="618.5" fill="#4a5568" font-size="11.5" text-anchor="start">punto de entrada es uvicorn app.main:app --host 0.0.0.0</text>
+<text x="522" y="635.5" fill="#4a5568" font-size="11.5" text-anchor="start">--port 8080.</text>
+<text x="522" y="652.5" fill="#4a5568" font-size="11.5" text-anchor="start">La base se alcanza por el socket</text>
+<text x="522" y="669.5" fill="#4a5568" font-size="11.5" text-anchor="start">/cloudsql/truekeate-main:southamerica-east1:truekeate-db-d</text>
+<text x="522" y="686.5" fill="#4a5568" font-size="11.5" text-anchor="start">ev. Las pruebas E2E levantan la app igual, en</text>
+<text x="522" y="703.5" fill="#4a5568" font-size="11.5" text-anchor="start">127.0.0.1:8090.</text>
+<rect x="940" y="560" width="400" height="141.5" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="948" y="568" width="6" height="125.5" rx="3" fill="#d7dde6"/>
+<text x="962" y="584.75" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Riesgos y pendientes</text>
+<text x="962" y="601.75" fill="#4a5568" font-size="11.5" text-anchor="start">No existe staging desplegado: los requerimientos RNF-24</text>
+<text x="962" y="618.75" fill="#4a5568" font-size="11.5" text-anchor="start">(entornos separados) y RNF-25 (paridad de versiones)</text>
+<text x="962" y="635.75" fill="#4a5568" font-size="11.5" text-anchor="start">quedan incumplidos.</text>
+<text x="962" y="652.75" fill="#4a5568" font-size="11.5" text-anchor="start">El riesgo aceptado D-26 indica que la instancia compartida</text>
+<text x="962" y="669.75" fill="#4a5568" font-size="11.5" text-anchor="start">no tiene respaldos, ni PITR, ni SSL obligatorio; el servicio es</text>
+<text x="962" y="686.75" fill="#4a5568" font-size="11.5" text-anchor="start">público y con PII real.</text>
+</svg>

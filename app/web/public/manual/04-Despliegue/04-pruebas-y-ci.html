@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4) — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos de prueba existen, en qué entornos aislados corren, cuánt">
+<meta property="og:image" content="../imagenes/piramide-pruebas.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Despliegue</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../pdf/04-Despliegue/04-pruebas-y-ci.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#estrategia-de-pruebas" data-target="estrategia-de-pruebas"><span class="tn">2</span> Estrategia de pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#los-cuatro-niveles-de-prueba" data-target="los-cuatro-niveles-de-prueba"><span class="tn">2.1</span> Los cuatro niveles de prueba</a><span class="pag"></span><ul><li class="n4"><a href="#unitarias" data-target="unitarias"><span class="tn">2.1.1</span> Unitarias</a><span class="pag"></span></li><li class="n4"><a href="#integracion" data-target="integracion"><span class="tn">2.1.2</span> Integración</a><span class="pag"></span></li><li class="n4"><a href="#contratos" data-target="contratos"><span class="tn">2.1.3</span> Contratos</a><span class="pag"></span></li><li class="n4"><a href="#e2e-de-navegador" data-target="e2e-de-navegador"><span class="tn">2.1.4</span> E2E de navegador</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#entornos-de-prueba" data-target="entornos-de-prueba"><span class="tn">3</span> Entornos de prueba</a><span class="pag"></span><ul><li class="n3"><a href="#ggto-test-pytest" data-target="ggto-test-pytest"><span class="tn">3.1</span> ggto_test (pytest)</a><span class="pag"></span></li><li class="n3"><a href="#ggto-e2e-playwright" data-target="ggto-e2e-playwright"><span class="tn">3.2</span> ggto_e2e (Playwright)</a><span class="pag"></span></li><li class="n3"><a href="#cloud-sql-auth-proxy" data-target="cloud-sql-auth-proxy"><span class="tn">3.3</span> Cloud SQL Auth Proxy</a><span class="pag"></span></li><li class="n3"><a href="#chromium-y-ld-library-path-fontconfig-file" data-target="chromium-y-ld-library-path-fontconfig-file"><span class="tn">3.4</span> Chromium y LD_LIBRARY_PATH/FONTCONFIG_FILE</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas-backend" data-target="pruebas-backend"><span class="tn">4</span> Pruebas backend</a><span class="pag"></span><ul><li class="n3"><a href="#estructura-de-app-tests" data-target="estructura-de-app-tests"><span class="tn">4.1</span> Estructura de app/tests</a><span class="pag"></span></li><li class="n3"><a href="#conftest-py" data-target="conftest-py"><span class="tn">4.2</span> conftest.py</a><span class="pag"></span></li><li class="n3"><a href="#inventario-por-archivo" data-target="inventario-por-archivo"><span class="tn">4.3</span> Inventario por archivo</a><span class="pag"></span></li><li class="n3"><a href="#como-ejecutarlas" data-target="como-ejecutarlas"><span class="tn">4.4</span> Cómo ejecutarlas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas-e2e" data-target="pruebas-e2e"><span class="tn">5</span> Pruebas E2E</a><span class="pag"></span><ul><li class="n3"><a href="#repotecnico-pruebas-e2e" data-target="repotecnico-pruebas-e2e"><span class="tn">5.1</span> RepoTecnico/pruebas/e2e</a><span class="pag"></span></li><li class="n3"><a href="#11-archivos-y-46-pruebas" data-target="11-archivos-y-46-pruebas"><span class="tn">5.2</span> 11 archivos y 46 pruebas</a><span class="pag"></span></li><li class="n3"><a href="#run-e2e-sh" data-target="run-e2e-sh"><span class="tn">5.3</span> run_e2e.sh</a><span class="pag"></span></li><li class="n3"><a href="#seed-e2e-py" data-target="seed-e2e-py"><span class="tn">5.4</span> seed_e2e.py</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#calidad-estatica" data-target="calidad-estatica"><span class="tn">6</span> Calidad estática</a><span class="pag"></span><ul><li class="n3"><a href="#ruff" data-target="ruff"><span class="tn">6.1</span> ruff</a><span class="pag"></span></li><li class="n3"><a href="#mypy" data-target="mypy"><span class="tn">6.2</span> mypy</a><span class="pag"></span></li><li class="n3"><a href="#tsc-strict" data-target="tsc-strict"><span class="tn">6.3</span> tsc strict</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#resultado-fase-4" data-target="resultado-fase-4"><span class="tn">7</span> Resultado Fase 4</a><span class="pag"></span><ul><li class="n3"><a href="#169-169-pytest" data-target="169-169-pytest"><span class="tn">7.1</span> 169/169 pytest</a><span class="pag"></span></li><li class="n3"><a href="#46-46-e2e" data-target="46-46-e2e"><span class="tn">7.2</span> 46/46 E2E</a><span class="pag"></span></li><li class="n3"><a href="#hallazgos-f4-01-a-f4-06" data-target="hallazgos-f4-01-a-f4-06"><span class="tn">7.3</span> Hallazgos F4-01 a F4-06</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#ci" data-target="ci"><span class="tn">8</span> CI</a><span class="pag"></span><ul><li class="n3"><a href="#github-workflows-ci-yml" data-target="github-workflows-ci-yml"><span class="tn">8.1</span> .github/workflows/ci.yml</a><span class="pag"></span></li><li class="n3"><a href="#comparacion-con-lo-previsto" data-target="comparacion-con-lo-previsto"><span class="tn">8.2</span> Comparación con lo previsto</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Despliegue</span>
+          <h1 class="portada-titulo">Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)</h1>
+          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos de prueba existen, en qué entornos aislados corren, cuántas pruebas se ejecutaron, qué revisores automáticos de calidad se usan y cómo funciona la integración continua (CI, la revisión automática en cada cambio de código). Cuando algo no está implementado, se dice con claridad. Este manual nunca escribe valores de credenciales: solo las menciona.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/04-pruebas-y-ci.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Manual para todo público. Explica, en lenguaje sencillo, <strong>cómo se comprueba que la plataforma
+GGTO funciona bien antes de entregarla</strong>: qué tipos de prueba existen, en qué entornos aislados
+corren, cuántas pruebas se ejecutaron, qué revisores automáticos de calidad se usan y cómo funciona
+la integración continua (CI, la revisión automática en cada cambio de código). Cuando algo no está
+implementado, se dice con claridad. Este manual <strong>nunca escribe valores de credenciales</strong>: solo las
+menciona.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Entienda la idea general.</strong> Hay cuatro niveles de prueba que se complementan: unitarias (lógica
+suelta), integración (API contra la base), contratos (que la API publicada sea coherente) y E2E
+(recorridos en un navegador real).</li>
+<li><strong>Recuerde la regla de oro.</strong> <strong>Ninguna prueba toca producción.</strong> Los datos de prueba viven en
+esquemas aislados: <code>ggto_test</code> para <code>pytest</code> y <code>ggto_e2e</code> para Playwright/Chromium.</li>
+<li><strong>Conozca el resultado de la Fase 4.</strong> Cerró con <strong>169 de 169</strong> pruebas <code>pytest</code> en verde y
+<strong>46 de 46</strong> pruebas E2E en verde. Además, los tres revisores de calidad (<code>ruff</code>, <code>mypy</code> y
+<code>tsc</code> en modo estricto) no dejaron hallazgos.</li>
+<li><strong>Sepa qué corre solo.</strong> En cada <code>push</code> o <code>pull_request</code> sobre las ramas <code>GGTOv2-DSH-GCP</code> y
+<code>main</code>, GitHub Actions levanta un PostgreSQL 15 y ejecuta <code>ruff</code>, <code>mypy</code> y <code>pytest</code>.</li>
+<li><strong>Sepa qué falta.</strong> La cobertura mínima de 70 %, las migraciones con Alembic, la construcción de
+la imagen y el despliegue automático, el espejo en GitLab CI y el análisis del frontend (<code>tsc</code>)
+<strong>no</strong> están automatizados todavía.</li>
+</ol>
+<h2 id="estrategia-de-pruebas"><span class="sec-num">2</span>Estrategia de pruebas</h2>
+<p>La Fase 4 se planificó con el objetivo de validar el sistema entregado en la Fase 3 con <strong>100 % de
+pruebas en verde</strong>. La estrategia se apoya en cuatro niveles complementarios y en un principio
+rector: <strong>ninguna prueba toca producción</strong>, sino esquemas aislados.</p>
+<figure id="fig-0"><img src="../imagenes/piramide-pruebas.png" alt="piramide pruebas"><figcaption>Figura 1 · piramide-pruebas.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TD
+    E2E[&quot;E2E de navegador — 46 pruebas&lt;br/&gt;Playwright/Chromium — esquema ggto_e2e&quot;] --&gt; CT[&quot;Contratos — 14 pruebas&lt;br/&gt;OpenAPI de la API&quot;]
+    CT --&gt; IN[&quot;Integración — 118 pruebas&lt;br/&gt;API contra PostgreSQL — esquema ggto_test&quot;]
+    IN --&gt; UN[&quot;Unitarias — 37 pruebas&lt;br/&gt;lógica pura, sin base de datos&quot;]
+    UN -.-&gt; BASE[&quot;Total Fase 4: 169 pruebas pytest + 46 E2E&quot;]</code></pre></details></figure>
+<h3 id="los-cuatro-niveles-de-prueba"><span class="sec-num">2.1</span>Los cuatro niveles de prueba</h3>
+<p>El plan de pruebas enumera los niveles con su alcance:</p>
+<h4 id="unitarias"><span class="sec-num">2.1.1</span>Unitarias</h4>
+<p>Prueban lógica pura, sin base de datos: la construcción de la dirección de conexión, el reintento
+progresivo (<em>backoff</em>) y las palabras de seguridad. No dependen de PostgreSQL y por eso siguen
+corriendo aunque no haya base disponible.</p>
+<h4 id="integracion"><span class="sec-num">2.1.2</span>Integración</h4>
+<p>Ejercitan la API contra PostgreSQL, con el esquema recreado desde <code>RepoTecnico/db/schema.sql</code> en el
+esquema <code>ggto_test</code>. El esquema lo levanta el archivo <code>conftest.py</code> de la batería de pruebas.</p>
+<h4 id="contratos"><span class="sec-num">2.1.3</span>Contratos</h4>
+<p>Verifican que el contrato OpenAPI publicado (73 endpoints) sea coherente, esté versionado, esté
+documentado y proteja las rutas privadas. La prueba construye el esquema con <code>app.openapi()</code> y
+comprueba, entre otras cosas, que todas las rutas <code>/api/</code> estén bajo <code>/api/v1/</code>.</p>
+<h4 id="e2e-de-navegador"><span class="sec-num">2.1.4</span>E2E de navegador</h4>
+<p>Recorren los flujos reales de la SPA (aplicación de una sola página) con Playwright/Chromium contra
+la aplicación completa y el esquema <code>ggto_e2e</code>.</p>
+<p>Quedan <strong>fuera de alcance</strong> las pruebas de carga, las pruebas de penetración (seguridad ofensiva) y
+la aplicación móvil Flutter (Ciclo 8, no desarrollado).</p>
+<h2 id="entornos-de-prueba"><span class="sec-num">3</span>Entornos de prueba</h2>
+<p>La batería distingue el esquema de <code>pytest</code> del esquema de Playwright y comparte una única vía de
+acceso a la base mediante el proxy de Cloud SQL.</p>
+<h3 id="ggto-test-pytest"><span class="sec-num">3.1</span>ggto_test (pytest)</h3>
+<p>Es el esquema que usa la integración y los contratos. Su nombre se toma de la variable
+<code>GGTO_TEST_SCHEMA</code>, con valor por defecto <code>public</code>. Con el valor de trabajo <code>ggto_test</code>, el archivo
+<code>conftest.py</code> añade el <code>search_path</code> para que <code>public</code> siga resolviendo las extensiones <code>pgcrypto</code> y
+<code>pg_trgm</code>. Si el esquema no es <code>public</code>, lo crea con <code>CREATE SCHEMA IF NOT EXISTS</code> antes de aplicar
+<code>schema.sql</code>. La lógica del <code>search_path</code> proviene del parámetro <code>DB_SCHEMA</code> de la aplicación,
+corregido durante la Fase 4 (hallazgo <strong>F4-01</strong>).</p>
+<h3 id="ggto-e2e-playwright"><span class="sec-num">3.2</span>ggto_e2e (Playwright)</h3>
+<p>Es el esquema aislado de las pruebas de navegador. El guion <code>run_e2e.sh</code> lo fija con
+<code>ESQUEMA=&quot;${DB_SCHEMA:-ggto_e2e}&quot;</code> y lo exporta como <code>DB_SCHEMA</code>. El guion <code>seed_e2e.py</code> lo reinicia
+y siembra los datos desde <code>schema.sql</code>. La aplicación bajo prueba se levanta con ese esquema y la
+dirección <code>http://127.0.0.1:8090</code>.</p>
+<h3 id="cloud-sql-auth-proxy"><span class="sec-num">3.3</span>Cloud SQL Auth Proxy</h3>
+<p>Ambos entornos usan la instancia compartida <code>truekeate-db-dev</code> a través del <strong>Cloud SQL Auth Proxy</strong>,
+un programa que abre un canal seguro desde la máquina local hacia la base gestionada. El plan de
+pruebas lo describe escuchando en <code>127.0.0.1:5433</code> y da el comando de arranque. El guion
+<code>run_e2e.sh</code> usa ese puerto por defecto y comprueba la conectividad con <code>psql</code>. El proxy es
+necesario porque la aplicación se ejecuta en local y la instancia es gestionada por Google. El
+manual <code>02-cloud-run-y-cloud-sql.md</code> de esta colección detalla la conexión.</p>
+<h3 id="chromium-y-ld-library-path-fontconfig-file"><span class="sec-num">3.4</span>Chromium y LD_LIBRARY_PATH/FONTCONFIG_FILE</h3>
+<p>Chromium en modo <em>headless</em> (sin ventana visible) exige librerías del sistema y fuentes tipográficas.
+El guion <code>run_e2e.sh</code> exporta <code>LD_LIBRARY_PATH</code> con <code>~/tools/libs</code> y <code>/tmp/playwright-libs</code>, y
+<code>FONTCONFIG_FILE</code> con la configuración de fuentes del usuario. El plan advierte que, sin fuentes,
+«el navegador no emite eventos de texto y los encabezados quedan con tamaño cero (falsos
+negativos)». El hallazgo <strong>F4-04</strong> documenta el mismo problema y su mitigación. El comentario del
+archivo <code>helpers.js</code> repite la advertencia.</p>
+<h2 id="pruebas-backend"><span class="sec-num">4</span>Pruebas backend</h2>
+<p>La batería de backend reúne pruebas unitarias, de integración y de contratos bajo el mismo <code>pytest</code>.</p>
+<h3 id="estructura-de-app-tests"><span class="sec-num">4.1</span>Estructura de app/tests</h3>
+<p>El directorio <code>app/tests/</code> contiene el paquete (<code>__init__.py</code>), el archivo <code>conftest.py</code> y trece
+archivos <code>test_*.py</code>. Los niveles se distinguen por lo que cada archivo necesita:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Nivel</th>
+<th>¿Depende de la base?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_security.py</code></td>
+<td>Unitaria</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>test_config_db.py</code></td>
+<td>Unitaria</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>test_sectorizacion_cuadrilla0.py</code></td>
+<td>Unitaria</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>test_ingesta_parser.py</code></td>
+<td>Unitaria</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>test_contratos.py</code></td>
+<td>Contratos</td>
+<td>No (usa <code>app.openapi()</code>)</td>
+</tr>
+<tr>
+<td><code>test_auth.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_config.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_casos_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_despacho_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_especiales_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_monitoreo_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_alertas_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><code>test_ingesta_api.py</code></td>
+<td>Integración</td>
+<td>Sí</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="conftest-py"><span class="sec-num">4.2</span>conftest.py</h3>
+<p>El archivo <code>app/tests/conftest.py</code> concentra la preparación del entorno de pruebas:</p>
+<ul>
+<li><strong>Dirección y esquema de prueba:</strong> lee <code>GGTO_TEST_DB_URL</code> y <code>GGTO_TEST_SCHEMA</code>. Si no hay dirección,
+las pruebas de integración se omiten con <code>pytest.skip</code> y las unitarias continúan.</li>
+<li><strong>Recreación del esquema:</strong> la <em>fixture</em> de sesión <code>engine</code> aplica <code>RepoTecnico/db/schema.sql</code>
+sobre la base. Una <em>fixture</em> es un bloque de preparación que <code>pytest</code> ejecuta automáticamente
+antes de las pruebas.</li>
+<li><strong>Aislamiento del limitador:</strong> una <em>fixture</em> <code>autouse</code> limpia el contador de intentos de inicio de
+sesión antes y después de cada prueba, para que el limitador de RNF-22 no contamine la batería.</li>
+<li><strong>Cliente HTTP:</strong> la <em>fixture</em> <code>client</code> sustituye <code>get_db</code> por una fábrica de sesiones y envuelve
+la aplicación en <code>TestClient</code>.</li>
+<li><strong>Usuarios de prueba:</strong> <code>TESTADM</code>, <code>TESTTEC</code> y <code>TESTSUP</code>, con una clave sintética definida en el
+propio <code>conftest.py</code>, creados por la <em>fixture</em> <code>admin_token</code>, que además devuelve las cabeceras
+<code>Bearer</code> de cada rol. El valor de la clave no se reproduce aquí por ser una credencial.</li>
+<li><strong>Limpieza:</strong> el guion <code>SQL_LIMPIEZA</code> borra los registros de prueba en orden de claves foráneas. La
+muestra de ingesta pseudonimizada está en
+<code>RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv</code>.</li>
+</ul>
+<h3 id="inventario-por-archivo"><span class="sec-num">4.3</span>Inventario por archivo</h3>
+<p>El informe de la Fase 4 desglosa las <strong>169</strong> pruebas ejecutadas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Pruebas</th>
+<th>Nivel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_alertas_api.py</code></td>
+<td>23</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_despacho_api.py</code></td>
+<td>17</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_casos_api.py</code></td>
+<td>17</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_sectorizacion_cuadrilla0.py</code></td>
+<td>16</td>
+<td>Unitaria</td>
+</tr>
+<tr>
+<td><code>test_monitoreo_api.py</code></td>
+<td>16</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_especiales_api.py</code></td>
+<td>15</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_contratos.py</code></td>
+<td>14</td>
+<td>Contratos</td>
+</tr>
+<tr>
+<td><code>test_config.py</code></td>
+<td>13</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_ingesta_parser.py</code></td>
+<td>12</td>
+<td>Unitaria</td>
+</tr>
+<tr>
+<td><code>test_auth.py</code></td>
+<td>11</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_security.py</code></td>
+<td>6</td>
+<td>Unitaria</td>
+</tr>
+<tr>
+<td><code>test_ingesta_api.py</code></td>
+<td>6</td>
+<td>Integración</td>
+</tr>
+<tr>
+<td><code>test_config_db.py</code></td>
+<td>3</td>
+<td>Unitaria</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>169</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>Algunos archivos declaran menos funciones que pruebas ejecutadas porque usan parametrización de
+<code>pytest</code>: <code>test_sectorizacion_cuadrilla0.py</code> emplea <code>@pytest.mark.parametrize</code> y
+<code>test_monitoreo_api.py</code> parametriza los periodos <code>diario</code>, <code>semanal</code> y <code>mensual</code>. Por eso el número
+de casos ejecutados (169) coincide con el informe aunque el conteo de funciones <code>def test_</code> sea
+menor.</p>
+<h3 id="como-ejecutarlas"><span class="sec-num">4.4</span>Cómo ejecutarlas</h3>
+<p>El plan describe el procedimiento. El modo directo es:</p>
+<pre data-lang="bash"><code class="language-bash"># Proxy (una vez)
+~/tools/cloud-sql-proxy --gcloud-auth --port 5433 \
+  truekeate-main:southamerica-east1:truekeate-db-dev &amp;
+
+# Integración + contratos
+export GGTO_TEST_DB_URL=&quot;postgresql+psycopg2://ggtov2_app:&lt;clave&gt;@127.0.0.1:5433/ggtov2&quot;
+export GGTO_TEST_SCHEMA=ggto_test
+python3 -m pytest app/tests -q
+</code></pre>
+<p>La cadena <code>&lt;clave&gt;</code> se obtiene del secreto <code>ggtov2-db-password</code>; <strong>no se escribe en este manual</strong>.
+Sin <code>GGTO_TEST_DB_URL</code>, las pruebas de integración se omiten y las unitarias siguen corriendo.</p>
+<h2 id="pruebas-e2e"><span class="sec-num">5</span>Pruebas E2E</h2>
+<p>Las pruebas E2E validan la SPA completa en un navegador real contra un <em>backend</em> local.</p>
+<h3 id="repotecnico-pruebas-e2e"><span class="sec-num">5.1</span>RepoTecnico/pruebas/e2e</h3>
+<p>El directorio <code>RepoTecnico/pruebas/e2e/</code> contiene el proyecto de Playwright: <code>package.json</code>,
+<code>playwright.config.js</code>, <code>helpers.js</code>, <code>inventario.js</code> (utilidad de inspección) y la carpeta <code>tests/</code>
+con once archivos <code>.spec.js</code>. La configuración fija <code>testDir: ./tests</code>, un <code>timeout</code> de 90 segundos,
+<code>expect</code> de 20 segundos, <code>workers: 1</code>, <code>fullyParallel: false</code> y <code>retries: 0</code>, con <code>baseURL</code> tomada de
+<code>GGTO_E2E_URL</code>. El proyecto es solo <code>chromium</code>, en modo <code>headless</code>, con <em>viewport</em> de 1440×900,
+idioma <code>es-VE</code> y zona horaria <code>America/Caracas</code>. Genera reporte de lista, JSON en
+<code>../logs/e2e-resultados.json</code> y HTML en <code>../logs/e2e-reporte</code>. La versión declarada de
+<code>@playwright/test</code> es <code>1.63.0</code>.</p>
+<h3 id="11-archivos-y-46-pruebas"><span class="sec-num">5.2</span>11 archivos y 46 pruebas</h3>
+<p>El informe desglosa los once archivos y sus 46 pruebas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Pruebas</th>
+<th>Ámbito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>01-login.spec.js</code></td>
+<td>6</td>
+<td>Login válido e inválido, ruta protegida, cierre de sesión, menú de usuario</td>
+</tr>
+<tr>
+<td><code>02-navegacion.spec.js</code></td>
+<td>7</td>
+<td>Secciones, menú CONFIGURACIÓN, permisos de menú por rol, barra móvil, buscador</td>
+</tr>
+<tr>
+<td><code>03-casos.spec.js</code></td>
+<td>6</td>
+<td>Listado, filtros, búsqueda global, ficha, alta manual <code>REF-…</code></td>
+</tr>
+<tr>
+<td><code>04-especiales.spec.js</code></td>
+<td>2</td>
+<td>Alta de caso especial y filtros</td>
+</tr>
+<tr>
+<td><code>05-agenda.spec.js</code></td>
+<td>5</td>
+<td>Vistas de día, semana y mes, navegación, alta de cita</td>
+</tr>
+<tr>
+<td><code>06-despacho.spec.js</code></td>
+<td>3</td>
+<td>Propuesta, generación, falla masiva manual</td>
+</tr>
+<tr>
+<td><code>07-ingesta.spec.js</code></td>
+<td>2</td>
+<td>Previsualización del CSV e historial de lotes</td>
+</tr>
+<tr>
+<td><code>08-monitoreo.spec.js</code></td>
+<td>3</td>
+<td>Zonas del tablero, gráficos SVG, reporte de trabajo</td>
+</tr>
+<tr>
+<td><code>09-alertas.spec.js</code></td>
+<td>4</td>
+<td>Métricas, RF-09, RF-17, RF-18, bandeja de salida</td>
+</tr>
+<tr>
+<td><code>10-configuracion.spec.js</code></td>
+<td>4</td>
+<td>Alta de sector, técnico, causa y parámetros</td>
+</tr>
+<tr>
+<td><code>11-rbac.spec.js</code></td>
+<td>4</td>
+<td>TECNICO solo lectura y ADMIN operativo</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>46</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>La utilidad <code>helpers.js</code> centraliza el inicio y cierre de sesión, el relleno de campos y la búsqueda
+global; los usuarios de prueba son <code>E2EADM</code> (ADMIN), <code>E2ESUP</code> (SUPERVISOR) y <code>E2ETEC</code> (TECNICO).
+El archivo <code>inventario.js</code> no es una prueba, sino un recorrido de rutas que vuelca encabezados,
+botones y tablas para inspección manual.</p>
+<h3 id="run-e2e-sh"><span class="sec-num">5.3</span>run_e2e.sh</h3>
+<p>El guion <code>run_e2e.sh</code> encadena comprobación de base, siembra, arranque de la aplicación y Playwright:</p>
+<ol>
+<li><strong>Variables y puertos:</strong> <code>GGTO_E2E_PORT</code> (por defecto <code>8090</code>), <code>DB_HOST</code> <code>127.0.0.1</code>, <code>DB_PORT</code>
+<code>5433</code>, <code>DB_NAME</code> <code>ggtov2</code>, <code>DB_USER</code> <code>ggtov2_app</code> y <code>DB_SSLMODE</code> <code>disable</code>.</li>
+<li><strong>Limitador relajado:</strong> eleva <code>RATE_LIMIT_INTENTOS</code> a 10 000 para no recibir respuestas <code>429</code> por
+inicios de sesión repetidos, y fija <code>SECRET_KEY=e2e-secret-key</code>. El hallazgo <strong>F4-05</strong> documenta
+este ajuste.</li>
+<li><strong>Comprobación de PostgreSQL:</strong> usa <code>psql</code> y exige <code>DB_PASSWORD</code>.</li>
+<li><strong>Siembra:</strong> ejecuta <code>seed_e2e.py</code> y guarda la salida en <code>logs/seed.json</code>.</li>
+<li><strong>Arranque:</strong> levanta <code>uvicorn app.main:app</code> en segundo plano y espera a <code>/health</code>.</li>
+<li><strong>Ejecución:</strong> lanza <code>npx playwright test &quot;$@&quot;</code> desde el directorio E2E.</li>
+<li><strong>Limpieza:</strong> termina el <em>backend</em> y propaga el código de salida de Playwright.</li>
+</ol>
+<p>Permite ejecutar un solo archivo pasando la ruta como argumento.</p>
+<h3 id="seed-e2e-py"><span class="sec-num">5.4</span>seed_e2e.py</h3>
+<p>El guion <code>seed_e2e.py</code> prepara el esquema y los datos deterministas. Crea el esquema y vacía sus
+tablas con <code>RESTART IDENTITY CASCADE</code> si ya existen, y luego aplica <code>schema.sql</code>. Siembra:</p>
+<ul>
+<li>Tres usuarios con su ficha de técnico: <code>E2EADM</code> (ADMIN), <code>E2ESUP</code> (SUPERVISOR) y <code>E2ETEC</code>
+(TECNICO), con una clave sintética común definida en el propio guion. El valor no se reproduce aquí
+por ser una credencial.</li>
+<li>El sector <code>E2E-S1</code> con el patrón <code>CALLE E2E</code>.</li>
+<li>La flota <code>E2ECAN01</code> y la cuadrilla <code>E2E-C1</code> con el técnico <code>E2ETEC</code>.</li>
+<li>La causa <code>E2E</code>/<code>01</code>.</li>
+<li><strong>Ocho casos</strong> <code>E2E-0001</code>…<code>E2E-0008</code>, seis de ellos concentrados en <code>e2e-olt-00</code> para disparar la
+detección de fallas con umbral 5.</li>
+</ul>
+<p>El resumen que imprime incluye esquema, central, usuarios, sector, cuadrilla y número de casos; la
+ejecución real dejó ese resumen en <code>RepoTecnico/pruebas/logs/seed.json</code>. El guion <strong>aborta</strong> si
+<code>DB_SCHEMA</code> es <code>public</code> o está vacío, para no tocar producción.</p>
+<h2 id="calidad-estatica"><span class="sec-num">6</span>Calidad estática</h2>
+<p>Además de las pruebas, la Fase 4 exige <code>ruff</code>, <code>mypy</code> y <code>tsc</code> en modo estricto sin hallazgos. Estos
+programas no ejecutan la aplicación: leen el código y avisan de errores de estilo, de tipos o de
+construcción.</p>
+<h3 id="ruff"><span class="sec-num">6.1</span>ruff</h3>
+<p>La configuración vive en <code>pyproject.toml</code>: longitud de línea 110, objetivo <code>py312</code>, exclusión de
+<code>app/web</code> y selección de reglas <code>E</code>, <code>F</code>, <code>I</code>, <code>B</code>, <code>UP</code>, <code>RUF</code>, con <code>B008</code> ignorada porque FastAPI
+usa <code>Depends(...)</code> como valor por defecto. El comando de CI es <code>ruff check app</code>.</p>
+<h3 id="mypy"><span class="sec-num">6.2</span>mypy</h3>
+<p>La configuración declara <code>python_version = &quot;3.12&quot;</code>, <code>ignore_missing_imports = true</code>,
+<code>warn_unused_ignores = true</code> y excluye <code>app/web/</code>. El comando de CI es
+<code>mypy app --ignore-missing-imports</code>.</p>
+<h3 id="tsc-strict"><span class="sec-num">6.3</span>tsc strict</h3>
+<p>El frontend se compila con TypeScript estricto: <code>strict: true</code> y <code>noFallthroughCasesInSwitch: true</code>
+en <code>app/web/tsconfig.json</code>, y el guion de construcción es <code>tsc &amp;&amp; vite build</code>. El informe registra
+<code>tsc</code> estricto sin hallazgos. <strong>Pendiente de confirmar</strong> si <code>tsc</code> se ejecuta en algún flujo
+automatizado: el único flujo del repositorio solo corre el trabajo de backend.</p>
+<h2 id="resultado-fase-4"><span class="sec-num">7</span>Resultado Fase 4</h2>
+<p>La Fase 4 cerró con 215 pruebas en verde (169 de <code>pytest</code> más 46 E2E) y los tres analizadores
+estáticos sin hallazgos.</p>
+<h3 id="169-169-pytest"><span class="sec-num">7.1</span>169/169 pytest</h3>
+<p>La corrida real registró <code>169 passed, 1 warning</code> en 2251,20 segundos (37 minutos y 31 segundos)
+contra PostgreSQL 15.18 y el esquema aislado <code>ggto_test</code>. El único aviso es una
+<code>StarletteDeprecationWarning</code> por el uso de <code>httpx</code> con <code>starlette.testclient</code>. El informe resume
+<code>169 passed (37.5m)</code>.</p>
+<h3 id="46-46-e2e"><span class="sec-num">7.2</span>46/46 E2E</h3>
+<p>La corrida de Playwright registró <code>46 expected, 0 unexpected, 0 flaky</code> en 441 461 milisegundos (unos
+7,4 minutos). El informe lo resume como <code>46 passed (7.4m)</code> y deja el HTML en <code>logs/e2e-reporte/</code> y el
+JSON en <code>logs/e2e-resultados.json</code>. La cobertura funcional incluye autenticación, navegación y
+permisos por rol, casos, especiales, agenda, despacho, ingesta CSV, monitoreo y reportes, alertas y
+configuración.</p>
+<h3 id="hallazgos-f4-01-a-f4-06"><span class="sec-num">7.3</span>Hallazgos F4-01 a F4-06</h3>
+<p>El informe documenta seis hallazgos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Hallazgo</th>
+<th>Severidad</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F4-01</td>
+<td>Las pruebas no podían aislarse de producción: faltaba fijar el esquema; se añadió <code>DB_SCHEMA</code> con <code>search_path</code></td>
+<td>Media</td>
+<td>Corregido</td>
+</tr>
+<tr>
+<td>F4-02</td>
+<td>56 etiquetas <code>&lt;label&gt;</code> de CONFIGURACIÓN sin asociar a su control; se añadió <code>htmlFor</code>+<code>id</code></td>
+<td>Media (accesibilidad)</td>
+<td>Corregido</td>
+</tr>
+<tr>
+<td>F4-03</td>
+<td><code>test_monitoreo_api.py</code> capturaba la fecha al importar; una corrida que cruzaba medianoche fallaba</td>
+<td>Alta (falso negativo en CI nocturno)</td>
+<td>Corregido</td>
+</tr>
+<tr>
+<td>F4-04</td>
+<td>Chromium <em>headless</em> no emitía eventos de texto; faltaban fuentes y librerías</td>
+<td>Baja (solo entorno de pruebas)</td>
+<td>Mitigado</td>
+</tr>
+<tr>
+<td>F4-05</td>
+<td>El limitador de intentos producía <code>429</code> durante la batería E2E</td>
+<td>Baja (solo entorno de pruebas)</td>
+<td>Mitigado</td>
+</tr>
+<tr>
+<td>F4-06</td>
+<td><code>test_cita_cuenta_en_el_dia</code> fallaba por una variable local <code>hoy</code> que tapaba la función introducida por F4-03</td>
+<td>Media (regresión de F4-03)</td>
+<td>Corregido</td>
+</tr>
+</tbody>
+</table></div>
+<p>F4-01, F4-02, F4-03 y F4-06 son correcciones aplicadas al código; F4-04 y F4-05 son
+particularidades del entorno de pruebas, no del producto. La Fase 4 no deja defectos funcionales
+abiertos.</p>
+<h2 id="ci"><span class="sec-num">8</span>CI</h2>
+<p>La integración continua (CI) se materializa en un único flujo de trabajo (<em>workflow</em>) de GitHub
+Actions.</p>
+<h3 id="github-workflows-ci-yml"><span class="sec-num">8.1</span>.github/workflows/ci.yml</h3>
+<p>El archivo se llama <code>CI</code> y se dispara en <code>push</code> y <code>pull_request</code> sobre las ramas <code>GGTOv2-DSH-GCP</code> y
+<code>main</code>. Tiene un solo trabajo, <code>backend</code>, que corre en <code>ubuntu-latest</code> y declara un servicio
+PostgreSQL:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Imagen</td>
+<td><code>postgres:15</code></td>
+</tr>
+<tr>
+<td>Usuario / clave / base</td>
+<td><code>postgres</code> / <code>postgres</code> / <code>ggto_test</code></td>
+</tr>
+<tr>
+<td>Puerto</td>
+<td><code>5432:5432</code></td>
+</tr>
+<tr>
+<td>Comprobación de salud</td>
+<td><code>pg_isready -U postgres</code>, cada 10 s, 5 reintentos</td>
+</tr>
+<tr>
+<td><code>GGTO_TEST_DB_URL</code></td>
+<td>Dirección de la base de servicio de CI (<code>postgres</code> en <code>localhost:5432/ggto_test</code>; la clave es la del servicio efímero)</td>
+</tr>
+<tr>
+<td><code>GGTO_TEST_SCHEMA</code></td>
+<td><code>public</code></td>
+</tr>
+<tr>
+<td><code>SECRET_KEY</code> / <code>APP_ENV</code></td>
+<td>Valor de prueba / <code>test</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Los pasos del trabajo son: <code>actions/checkout@v4</code>; <code>actions/setup-python@v5</code> con Python 3.12 y caché
+de <code>pip</code> sobre <code>app/requirements-dev.txt</code>; instalación de las dependencias de desarrollo;
+<code>ruff check app</code>; <code>mypy app --ignore-missing-imports</code>; y <code>pytest app/tests -q</code>. Las dependencias de
+desarrollo son <code>-r requirements.txt</code> más <code>pytest</code>, <code>httpx</code>, <code>ruff</code> y <code>mypy</code>.</p>
+<h3 id="comparacion-con-lo-previsto"><span class="sec-num">8.2</span>Comparación con lo previsto</h3>
+<p>La decisión <strong>D-38</strong> y los requisitos técnicos preveían un CI/CD más amplio que el implementado. CI
+significa integración continua (revisar cada cambio); CD significa despliegue continuo (publicar
+automáticamente).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Elemento previsto</th>
+<th>Requisito / decisión</th>
+<th>Estado real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cobertura mínima 70 %</td>
+<td>RNF-24, D-38</td>
+<td><strong>No implementado</strong> en el CI: no hay <code>pytest-cov</code> en <code>app/requirements-dev.txt</code> ni configuración de cobertura en <code>pyproject.toml</code></td>
+</tr>
+<tr>
+<td>Migraciones versionadas con Alembic</td>
+<td>RT-13</td>
+<td><strong>No implementado</strong>: no existe <code>alembic.ini</code> ni carpeta <code>db/migrations/</code>; el esquema se aplica desde <code>db/schema.sql</code></td>
+</tr>
+<tr>
+<td>Construcción de imagen y despliegue a Cloud Run</td>
+<td>RT-14</td>
+<td><strong>No implementado</strong> en el CI: el flujo no compila ni publica la imagen; el despliegue se hizo manualmente</td>
+</tr>
+<tr>
+<td>Espejo en GitLab CI</td>
+<td>D-38</td>
+<td><strong>Pendiente de confirmar</strong>: no existe <code>.gitlab-ci.yml</code> en el repositorio</td>
+</tr>
+<tr>
+<td>Análisis estático del frontend (<code>tsc</code>)</td>
+<td>Plan de pruebas</td>
+<td><strong>No automatizado</strong>: <code>tsc</code> se ejecuta en la construcción local de la SPA, pero no hay trabajo de frontend en el CI</td>
+</tr>
+</tbody>
+</table></div>
+<p>El CI implementado cubre, por tanto, el análisis de estilo, los tipos y las pruebas de backend sobre
+PostgreSQL 15. La cobertura, las migraciones versionadas, la construcción de la imagen, el espejo en
+GitLab y el análisis estático del frontend quedan como brechas frente a lo previsto, y se registran
+aquí como pendientes de confirmar en cuanto a su planificación.</p>
+
+<nav class="pie-nav"><a class="izq" href="../04-Despliegue/03-scripts-gcp.html">← Manual anterior: Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central…</a><a href="../index.html">Índice general</a><a class="der" href="../05-Diccionario-de-Datos/01-entidades.html">Manual siguiente →: Diccionario de Datos — Entidades de la base GGTO</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Despliegue</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Despliegue · 04-pruebas-y-ci", "pieIzq": "Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias /…", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

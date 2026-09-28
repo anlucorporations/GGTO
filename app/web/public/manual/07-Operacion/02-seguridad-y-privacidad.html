@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de Seguridad y Privacidad — GGTO — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con claridad lo que está previsto pero todavía no está implement">
+<meta property="og:image" content="../imagenes/defensa-en-capas.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Operación</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../pdf/07-Operacion/02-seguridad-y-privacidad.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#modelo-de-seguridad" data-target="modelo-de-seguridad"><span class="tn">2</span> Modelo de seguridad</a><span class="pag"></span><ul><li class="n3"><a href="#defensa-en-capas" data-target="defensa-en-capas"><span class="tn">2.1</span> Defensa en capas</a><span class="pag"></span></li><li class="n3"><a href="#autenticacion" data-target="autenticacion"><span class="tn">2.2</span> Autenticación</a><span class="pag"></span></li><li class="n3"><a href="#autorizacion" data-target="autorizacion"><span class="tn">2.3</span> Autorización</a><span class="pag"></span></li><li class="n3"><a href="#auditoria" data-target="auditoria"><span class="tn">2.4</span> Auditoría</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rbac" data-target="rbac"><span class="tn">3</span> RBAC</a><span class="pag"></span><ul><li class="n3"><a href="#4-roles-y-bypass-super" data-target="4-roles-y-bypass-super"><span class="tn">3.1</span> 4 roles y bypass SUPER</a><span class="pag"></span></li><li class="n3"><a href="#matriz-rol-modulo-requerimientos-md-227-256" data-target="matriz-rol-modulo-requerimientos-md-227-256"><span class="tn">3.2</span> Matriz rol × módulo (requerimientos.md:227-256)</a><span class="pag"></span></li><li class="n3"><a href="#pruebas-negativas" data-target="pruebas-negativas"><span class="tn">3.3</span> Pruebas negativas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rls-en-postgresql" data-target="rls-en-postgresql"><span class="tn">4</span> RLS en PostgreSQL</a><span class="pag"></span><ul><li class="n3"><a href="#caso-y-despacho" data-target="caso-y-despacho"><span class="tn">4.1</span> Caso y despacho</a><span class="pag"></span></li><li class="n3"><a href="#politicas" data-target="politicas"><span class="tn">4.2</span> Políticas</a><span class="pag"></span></li><li class="n3"><a href="#alcance-por-central-rnf-21" data-target="alcance-por-central-rnf-21"><span class="tn">4.3</span> Alcance por central (RNF-21)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#gestion-de-secretos" data-target="gestion-de-secretos"><span class="tn">5</span> Gestión de secretos</a><span class="pag"></span><ul><li class="n3"><a href="#secret-manager" data-target="secret-manager"><span class="tn">5.1</span> Secret Manager</a><span class="pag"></span></li><li class="n3"><a href="#variables-de-entorno" data-target="variables-de-entorno"><span class="tn">5.2</span> Variables de entorno</a><span class="pag"></span></li><li class="n3"><a href="#rotacion" data-target="rotacion"><span class="tn">5.3</span> Rotación</a><span class="pag"></span></li><li class="n3"><a href="#incidente-de-exposicion-resuelto-entornos-globales-md-100-10" data-target="incidente-de-exposicion-resuelto-entornos-globales-md-100-10"><span class="tn">5.4</span> Incidente de exposición resuelto (entornos_globales.md:100-106)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pii-y-privacidad-rnf-18-d-34" data-target="pii-y-privacidad-rnf-18-d-34"><span class="tn">6</span> PII y privacidad (RNF-18/D-34)</a><span class="pag"></span><ul><li class="n3"><a href="#inventario-de-pii" data-target="inventario-de-pii"><span class="tn">6.1</span> Inventario de PII</a><span class="pag"></span></li><li class="n3"><a href="#base-legal-y-finalidad" data-target="base-legal-y-finalidad"><span class="tn">6.2</span> Base legal y finalidad</a><span class="pag"></span></li><li class="n3"><a href="#minimizacion" data-target="minimizacion"><span class="tn">6.3</span> Minimización</a><span class="pag"></span></li><li class="n3"><a href="#enmascaramiento-por-rol" data-target="enmascaramiento-por-rol"><span class="tn">6.4</span> Enmascaramiento por rol</a><span class="pag"></span></li><li class="n3"><a href="#retencion-por-entidad-requerimientos-md-212-225" data-target="retencion-por-entidad-requerimientos-md-212-225"><span class="tn">6.5</span> Retención por entidad (requerimientos.md:212-225)</a><span class="pag"></span></li><li class="n3"><a href="#derechos-del-titular" data-target="derechos-del-titular"><span class="tn">6.6</span> Derechos del titular</a><span class="pag"></span></li><li class="n3"><a href="#dpa-con-proveedores" data-target="dpa-con-proveedores"><span class="tn">6.7</span> DPA con proveedores</a><span class="pag"></span></li><li class="n3"><a href="#transferencia-internacional" data-target="transferencia-internacional"><span class="tn">6.8</span> Transferencia internacional</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#superficie-de-exposicion-actual" data-target="superficie-de-exposicion-actual"><span class="tn">7</span> Superficie de exposición actual</a><span class="pag"></span><ul><li class="n3"><a href="#servicio-cloud-run-publico-con-pii-real-debe-restringirse" data-target="servicio-cloud-run-publico-con-pii-real-debe-restringirse"><span class="tn">7.1</span> Servicio Cloud Run público con PII real: DEBE restringirse</a><span class="pag"></span></li><li class="n3"><a href="#riesgo-aceptado-d-26" data-target="riesgo-aceptado-d-26"><span class="tn">7.2</span> Riesgo aceptado D-26</a><span class="pag"></span></li><li class="n3"><a href="#rol-de-bd-con-noinherit-y-riesgo-residual" data-target="rol-de-bd-con-noinherit-y-riesgo-residual"><span class="tn">7.3</span> Rol de BD con NOINHERIT y riesgo residual</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endurecimiento-recomendado" data-target="endurecimiento-recomendado"><span class="tn">8</span> Endurecimiento recomendado</a><span class="pag"></span><ul><li class="n3"><a href="#iap-o-invocacion-autenticada" data-target="iap-o-invocacion-autenticada"><span class="tn">8.1</span> IAP o invocación autenticada</a><span class="pag"></span></li><li class="n3"><a href="#ssl-encrypted-only" data-target="ssl-encrypted-only"><span class="tn">8.2</span> SSL ENCRYPTED_ONLY</a><span class="pag"></span></li><li class="n3"><a href="#backups-pitr" data-target="backups-pitr"><span class="tn">8.3</span> Backups/PITR</a><span class="pag"></span></li><li class="n3"><a href="#mfa-rnf-22-previsto" data-target="mfa-rnf-22-previsto"><span class="tn">8.4</span> MFA (RNF-22, previsto)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#cumplimiento-y-pendientes" data-target="cumplimiento-y-pendientes"><span class="tn">9</span> Cumplimiento y pendientes</a><span class="pag"></span><ul><li class="n3"><a href="#lista-de-acciones-recomendadas" data-target="lista-de-acciones-recomendadas"><span class="tn">9.1</span> Lista de acciones recomendadas</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Operación</span>
+          <h1 class="portada-titulo">Manual de Seguridad y Privacidad — GGTO</h1>
+          <p class="portada-resumen">Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con claridad lo que está previsto pero todavía no está implementado. Todo dato que no se pudo verificar se marca como «pendiente de confirmar». Aquí no se incluye ningún secreto ni contraseña: solo se citan los nombres de los secretos.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/02-seguridad-y-privacidad.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos.
+Describe <strong>lo que el sistema hace hoy</strong> y separa con claridad lo que está <strong>previsto pero
+todavía no está implementado</strong>. Todo dato que no se pudo verificar se marca como
+<strong>«pendiente de confirmar»</strong>. Aquí <strong>no se incluye ningún secreto ni contraseña</strong>: solo se citan
+los <strong>nombres</strong> de los secretos.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Cuida tu acceso.</strong> Tu usuario es tu <strong>P00</strong> y tu clave se guarda cifrada con Argon2id. Nadie
+del equipo debe conocer tu clave.</li>
+<li><strong>Guarda tus 12 palabras.</strong> Al configurar tu dispositivo recibes 12 palabras de seguridad. Se
+piden <strong>3</strong> de ellas para desbloquear la cuenta o restablecer la clave.</li>
+<li><strong>Respeta tu rol.</strong> Tu rol (SUPER, ADMIN, SUPERVISOR o TECNICO) define qué puedes ver y qué
+puedes escribir. Si el menú <strong>CONFIGURACIÓN</strong> no aparece, es porque tu rol no lo permite.</li>
+<li><strong>No compartas datos personales.</strong> Teléfonos, direcciones, nombres y seriales son datos
+personales (PII). Muéstralos solo a quien los necesita para su trabajo.</li>
+<li><strong>Reporta de inmediato</strong> cualquier sospecha de acceso indebido, clave expuesta o envío de datos
+a un destinatario equivocado.</li>
+</ol>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proyecto</td>
+<td>GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos</td>
+</tr>
+<tr>
+<td>Cliente</td>
+<td>CANTV C.A. — Central Francisco Salias (Área 4)</td>
+</tr>
+<tr>
+<td>Alcance</td>
+<td>Modelo de seguridad, RBAC, RLS, secretos, PII, superficie de exposición y endurecimiento</td>
+</tr>
+<tr>
+<td>Requerimientos aplicables</td>
+<td>RNF-01 a RNF-05, RNF-18, RNF-21 y RNF-22</td>
+</tr>
+<tr>
+<td>Riesgo aceptado vigente</td>
+<td><strong>D-26</strong> — instancia compartida sin respaldos, sin PITR y sin SSL obligatorio</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="modelo-de-seguridad"><span class="sec-num">2</span>Modelo de seguridad</h2>
+<h3 id="defensa-en-capas"><span class="sec-num">2.1</span>Defensa en capas</h3>
+<p>La seguridad de GGTO se apoya en varias capas independientes: si una falla, las demás siguen
+protegiendo el sistema.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Mecanismo</th>
+<th>Cómo está implementado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Perímetro de red</td>
+<td>Servicio Cloud Run y Cloud SQL en GCP</td>
+<td>Infraestructura en Google Cloud</td>
+</tr>
+<tr>
+<td>Autenticación</td>
+<td><code>P00</code> + clave con hash Argon2id y token JWT</td>
+<td>Módulo de seguridad de la aplicación</td>
+</tr>
+<tr>
+<td>Autorización</td>
+<td>RBAC por rol, con permiso total para <code>SUPER</code></td>
+<td>Dependencia de roles en la API</td>
+</tr>
+<tr>
+<td>Aislamiento de datos</td>
+<td>RLS en PostgreSQL sobre <code>caso</code> y <code>despacho</code></td>
+<td>Políticas en el esquema de la base</td>
+</tr>
+<tr>
+<td>Secretos</td>
+<td>Google Secret Manager con cifrado CMEK</td>
+<td>Script de aprovisionamiento de KMS</td>
+</tr>
+<tr>
+<td>Observabilidad</td>
+<td><code>request-id</code> y métricas de negocio</td>
+<td>Middleware y endpoints de métricas</td>
+</tr>
+<tr>
+<td>Trazabilidad</td>
+<td>Bitácora de estados del caso</td>
+<td>Tabla <code>caso_estado_hist</code></td>
+</tr>
+</tbody>
+</table></div>
+<figure id="fig-0"><img src="../imagenes/defensa-en-capas.png" alt="defensa en capas"><figcaption>Figura 1 · defensa-en-capas.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
+    A[Usuario&lt;br/&gt;P00 + clave] --&gt; B[Perimetro de red&lt;br/&gt;Cloud Run y Cloud SQL en GCP]
+    B --&gt; C[Autenticacion&lt;br/&gt;Argon2id + token JWT]
+    C --&gt; D[Autorizacion&lt;br/&gt;RBAC por rol, SUPER con acceso total]
+    D --&gt; E[Aislamiento de datos&lt;br/&gt;RLS en caso y despacho]
+    E --&gt; F[Secretos&lt;br/&gt;Google Secret Manager con CMEK]
+    F --&gt; G[Observabilidad y trazabilidad&lt;br/&gt;request-id, metricas y bitacora de estados]
+    G --&gt; H[(Base de datos&lt;br/&gt;ggtov2)]</code></pre></details></figure>
+<h3 id="autenticacion"><span class="sec-num">2.2</span>Autenticación</h3>
+<p>El ingreso a la plataforma se realiza con <strong><code>P00</code> (identificador laboral) y clave</strong>. La clave se
+almacena como hash <strong>Argon2id</strong>, con los parámetros por defecto de la librería <code>argon2-cffi</code>.</p>
+<p>El perfil del dispositivo guarda <strong>12 palabras de seguridad</strong>. De esas 12 palabras se exigen
+<strong>3</strong> para desbloquear la cuenta o para restablecer la clave. El diccionario de palabras está
+definido en el código y se genera de forma aleatoria y segura.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Valor real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hash de la clave</td>
+<td>Argon2id, con parámetros por defecto</td>
+</tr>
+<tr>
+<td>Algoritmo del token</td>
+<td>HS256</td>
+</tr>
+<tr>
+<td>Vigencia del token</td>
+<td>480 minutos (8 horas)</td>
+</tr>
+<tr>
+<td>Contenido del token</td>
+<td><code>sub</code> (el P00), <code>rol</code>, <code>exp</code>, <code>iat</code> y <code>jti</code></td>
+</tr>
+<tr>
+<td>Intentos antes del bloqueo</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Límite de intentos</td>
+<td>10 intentos cada 60 segundos, por <code>P00</code> e IP</td>
+</tr>
+<tr>
+<td>Normalización de palabras</td>
+<td>Se pasan a minúsculas y se quitan los acentos</td>
+</tr>
+<tr>
+<td>Mensaje ante un <code>P00</code> inexistente</td>
+<td>Genérico: no revela si el usuario existe</td>
+</tr>
+<tr>
+<td>Bloqueo</td>
+<td>Se marca el usuario como bloqueado al tercer fallo y la API responde <code>423</code></td>
+</tr>
+<tr>
+<td>Desbloqueo</td>
+<td>Con 3 de las 12 palabras</td>
+</tr>
+<tr>
+<td>Restablecer la clave</td>
+<td>Con 3 de las 12 palabras</td>
+</tr>
+</tbody>
+</table></div>
+<p>El token se valida en cada petición. Si falta, es inválido o está expirado, la API responde <code>401</code>.
+Si el usuario está bloqueado, responde <code>423</code>.</p>
+<blockquote>
+<p><strong>Punto de atención:</strong> la clave de firma de la aplicación (<code>secret_key</code>) tiene un <strong>valor por
+defecto de desarrollo</strong>. En producción ese valor debe venir de Secret Manager, con el nombre
+<code>SECRET_KEY</code>. Si no se sobrescribe, cualquiera podría forjar un token. <strong>Verificar este valor en
+cada despliegue es una tarea operativa crítica.</strong></p>
+</blockquote>
+<h3 id="autorizacion"><span class="sec-num">2.3</span>Autorización</h3>
+<p>La autorización se resuelve con una fábrica de guardias de roles. Cada módulo declara los roles que
+pueden <strong>escribir</strong>; la lectura se concede a cualquier usuario autenticado.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Permiso de escritura</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingesta</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>PANEL / CASOS</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>DESPACHO</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>ESPECIALES / AGENDA</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>CONFIGURACIÓN</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>ALERTAS / OUTBOX</td>
+<td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td>MONITOREO / REPORTES</td>
+<td>Solo lectura (cualquier usuario autenticado)</td>
+</tr>
+</tbody>
+</table></div>
+<p>En la aplicación web, el menú <strong>CONFIGURACIÓN</strong> solo se muestra a los roles <code>SUPER</code>, <code>ADMIN</code> y
+<code>SUPERVISOR</code>. El rol <code>TECNICO</code> ve los formularios en <strong>modo solo lectura</strong>.</p>
+<blockquote>
+<p>Ocultar el menú es una ayuda de usabilidad, <strong>no</strong> un control de seguridad. La autorización real
+ocurre en el backend: aunque alguien intente llamar a un endpoint directamente, el servidor
+valida el rol.</p>
+</blockquote>
+<h3 id="auditoria"><span class="sec-num">2.4</span>Auditoría</h3>
+<p>La tabla <code>auditoria</code> está definida en el esquema con los campos: <code>usuario</code>, <code>accion</code>, <code>entidad</code>,
+<code>id_entidad</code>, <code>datos_antes</code>, <code>datos_despues</code>, <code>ip</code> y <code>fecha_hora</code>.</p>
+<blockquote>
+<p><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> <strong>La aplicación no escribe en <code>auditoria</code>.</strong> No existe ninguna referencia a esa tabla en el
+código de la aplicación. La trazabilidad efectiva en la versión 1 se limita a:</p>
+<ul>
+<li>la <strong>bitácora de estados</strong> <code>caso_estado_hist</code>, que registra estado anterior, estado nuevo,
+motivo y usuario, y se consulta por caso;</li>
+<li>el campo <code>caso.creado_por</code>;</li>
+<li>el registro del middleware, que <strong>no incluye el usuario</strong>.</li>
+</ul>
+</blockquote>
+<p>Los requerimientos RNF-12 y RNF-19 exigen registrar usuario, fecha y hora y los cambios sobre cada
+caso, además de incluir el usuario en los registros. <strong>El registro general en <code>auditoria</code> y el
+usuario en los registros están pendientes de confirmar y no están implementados.</strong></p>
+<hr />
+<h2 id="rbac"><span class="sec-num">3</span>RBAC</h2>
+<h3 id="4-roles-y-bypass-super"><span class="sec-num">3.1</span>4 roles y bypass SUPER</h3>
+<p>Los roles de la versión 1 son <strong>SUPER, ADMIN, SUPERVISOR y TECNICO</strong>. Cada usuario pertenece a
+<strong>una central</strong>.</p>
+<p>El rol <strong><code>SUPER</code></strong> (Super Usuario) tiene <strong>acceso total</strong>: la guardia de roles le concede cualquier
+operación sin necesidad de enumerarlo en cada endpoint. Es una decisión explícita (<strong>D-50</strong>) que
+cubre también las secciones y funciones futuras.</p>
+<p>La cuenta se crea con el script <code>scripts/inyectar_super_usuario.py</code>, que es idempotente, pide
+confirmación y <strong>no escribe la clave en el archivo ni en la línea de comandos</strong>: la lee de la
+variable de entorno <code>GGTO_SUPER_CLAVE</code> o la solicita de forma oculta.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Aspecto de <code>SUPER</code></th>
+<th>Comportamiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Permiso de autorización</td>
+<td>Cualquier operación permitida</td>
+</tr>
+<tr>
+<td>Creación de la cuenta</td>
+<td>Script con confirmación y bitácora</td>
+</tr>
+<tr>
+<td>Hash de la clave</td>
+<td>Reutiliza el mismo Argon2id de la aplicación</td>
+</tr>
+<tr>
+<td>Palabras de seguridad</td>
+<td>Opcionales, con la opción <code>--con-palabras</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="matriz-rol-modulo-requerimientos-md-227-256"><span class="sec-num">3.2</span>Matriz rol × módulo (requerimientos.md:227-256)</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Módulo / acción</th>
+<th>SUPER</th>
+<th>ADMIN</th>
+<th>SUPERVISOR</th>
+<th>TECNICO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CONFIGURACIÓN (central, sectores, catálogos, usuarios, flota, cuadrillas)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Lectura + edición operativa</td>
+<td>—</td>
+</tr>
+<tr>
+<td>INGESTA (cargar y procesar CSV)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>—</td>
+</tr>
+<tr>
+<td>PANEL (buscar, editar, alta manual)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Lectura de sus casos</td>
+</tr>
+<tr>
+<td>CASOS / SEGUIMIENTO / EMPRESAS / REFERIDOS</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Lectura + gestión de su cuadrilla</td>
+</tr>
+<tr>
+<td>DESPACHO (armar, publicar, reporte 16:00)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Lectura de su despacho</td>
+</tr>
+<tr>
+<td>GESTIÓN (cuadrilla 0)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>—</td>
+</tr>
+<tr>
+<td>MONITOREO / GRÁFICOS</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>—</td>
+</tr>
+<tr>
+<td>GESTIÓN TÉCNICA (contactar, atender, cerrar, enrutar, diferir, evidencias)</td>
+<td>CRUD</td>
+<td>—</td>
+<td>Lectura</td>
+<td>CRUD (solo sus casos y en modo sin conexión)</td>
+</tr>
+<tr>
+<td>ALERTAS (falla masiva, incidentes, solicitud de material)</td>
+<td>CRUD</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>CRUD</td>
+</tr>
+<tr>
+<td>INSUMOS (versión 2)</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Solicitud</td>
+</tr>
+<tr>
+<td>AUDITORÍA</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>USUARIOS y accesos</td>
+<td>CRUD</td>
+<td>CRUD</td>
+<td>Alta y baja de técnicos</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>El rol <code>SUPER</code> no se enumera en los endpoints porque la guardia de roles le concede todo.</p>
+<blockquote>
+<p><strong>Brechas verificadas entre la matriz y el código:</strong></p>
+<ol>
+<li>La matriz prevé la gestión de <strong>USUARIOS y accesos</strong>, pero el inventario de endpoints <strong>no
+incluye <code>/api/v1/usuarios</code></strong> ni existe una pantalla dedicada: hoy la creación y actualización
+de usuarios se hace con el script <code>scripts/inyectar_super_usuario.py</code>. Está <strong>pendiente de
+confirmar</strong>.</li>
+<li>La matriz limita al TECNICO a «sus casos», pero el listado de casos solo filtra por central
+si el cliente envía ese parámetro. <strong>No hay acotación automática</strong> por la central del usuario.
+Está <strong>pendiente de confirmar</strong> (ver «RLS»).</li>
+<li>Toda la escritura por encima de TECNICO exige ADMIN o SUPERVISOR. <strong>No existe</strong> un rol con
+permiso de escritura exclusivo de MONITOREO.</li>
+</ol>
+</blockquote>
+<h3 id="pruebas-negativas"><span class="sec-num">3.3</span>Pruebas negativas</h3>
+<p>Las pruebas de autorización y de interfaz están documentadas en el informe de Fase 4:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Prueba</th>
+<th>Ámbito</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_config.py</code> (13)</td>
+<td>RBAC de escritura en CONFIGURACIÓN</td>
+<td>13/13</td>
+</tr>
+<tr>
+<td><code>11-rbac.spec.js</code> (4)</td>
+<td>TECNICO solo lectura, ADMIN operativo</td>
+<td>4/4</td>
+</tr>
+<tr>
+<td><code>02-navegacion.spec.js</code> (7)</td>
+<td>RBAC del menú y de las secciones</td>
+<td>7/7</td>
+</tr>
+<tr>
+<td><code>test_auth.py</code> (11)</td>
+<td>Inicio de sesión, bloqueo, desbloqueo y 12 palabras</td>
+<td>11/11</td>
+</tr>
+</tbody>
+</table></div>
+<p>El total de la Fase 4 fue <strong>169/169 pruebas <code>pytest</code> + 46/46 pruebas E2E = 215 pruebas en verde</strong>.
+Además, las herramientas <code>ruff</code>, <code>mypy</code> y <code>tsc</code> en modo estricto no reportaron hallazgos.</p>
+<p>Las pruebas negativas <strong>entre centrales</strong> (que la central A no pueda acceder a datos de la central
+B), que exige RNF-21, <strong>no se documentan</strong> en el informe y están <strong>pendientes de confirmar</strong>.</p>
+<hr />
+<h2 id="rls-en-postgresql"><span class="sec-num">4</span>RLS en PostgreSQL</h2>
+<h3 id="caso-y-despacho"><span class="sec-num">4.1</span>Caso y despacho</h3>
+<p>La <strong>seguridad por filas</strong> (<em>Row Level Security</em>, RLS) se aplica como <strong>defensa en profundidad</strong>
+sobre dos tablas: <code>caso</code> y <code>despacho</code>. Ambas tienen habilitada y forzada la seguridad por filas.</p>
+<p>La función <code>app_central_actual()</code> lee el parámetro de sesión <code>app.id_central</code> y lo convierte a un
+número entero.</p>
+<h3 id="politicas"><span class="sec-num">4.2</span>Políticas</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Política</th>
+<th>Regla</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caso</code></td>
+<td><code>p_caso_central</code></td>
+<td>La central actual es nula, o la central de la fila es igual a la central actual</td>
+</tr>
+<tr>
+<td><code>despacho</code></td>
+<td><code>p_despacho_central</code></td>
+<td>La misma regla</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ambas políticas usan la misma expresión para la lectura y para la escritura, de modo que limitan
+tanto consultar como modificar datos.</p>
+<blockquote>
+<p><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> <strong>La cláusula que permite el valor nulo es un modo de compatibilidad.</strong> El propio esquema
+advierte que la aplicación debe fijar el alcance con <code>SET LOCAL app.id_central = '&lt;id_central&gt;'</code>
+en cada conexión, y que <strong>antes de producción debe eliminarse esa cláusula</strong> para que la política
+sea de «denegar por defecto».</p>
+<p><strong>Estado real:</strong> ninguna parte de la aplicación ejecuta <code>SET LOCAL app.id_central</code>. En
+consecuencia, el parámetro siempre es nulo y las políticas <strong>permiten todas las filas</strong>. La capa
+RLS está desplegada, pero <strong>inactiva de hecho</strong>: es un control <strong>pendiente de confirmar y de
+conectar</strong> desde la capa de datos.</p>
+</blockquote>
+<h3 id="alcance-por-central-rnf-21"><span class="sec-num">4.3</span>Alcance por central (RNF-21)</h3>
+<p>RNF-21 exige que la central del usuario acote su alcance y que RLS refuerce la autorización. Hoy:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>El campo <code>usuario.id_central</code> existe en el modelo</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td>El token incorpora la central del usuario</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td>Las consultas acotan por la central del usuario</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No; solo si el cliente lo pide como parámetro</td>
+</tr>
+<tr>
+<td>RLS activa con <code>app.id_central</code> fijado por la aplicación</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No se fija</td>
+</tr>
+<tr>
+<td>Pruebas negativas entre centrales</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No documentadas</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Consecuencia de seguridad:</strong> mientras no se conecte RLS y no se acoten las consultas, un
+usuario autenticado de cualquier rol (incluido TECNICO) puede leer casos de <strong>cualquier central</strong>,
+pase o no el filtro. Es una brecha de aislamiento entre centrales que está <strong>pendiente de
+confirmar y corregir</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="gestion-de-secretos"><span class="sec-num">5</span>Gestión de secretos</h2>
+<h3 id="secret-manager"><span class="sec-num">5.1</span>Secret Manager</h3>
+<p>Los secretos se almacenan en Google Secret Manager con cifrado gestionado por <strong>Cloud KMS (CMEK)</strong>.
+El script de aprovisionamiento define el llavero <code>ggtov2</code>, las claves <code>ggtov2-secrets</code> y
+<code>ggtov2-storage</code>, y una <strong>rotación de 90 días</strong> (<code>rotationPeriod: 7776000s</code>).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Secreto (solo el nombre)</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ggtov2-db-password</code></td>
+<td>Contraseña del usuario de base de datos</td>
+</tr>
+<tr>
+<td><code>ggtov2-db-root-password</code></td>
+<td>Contraseña root de la instancia planificada</td>
+</tr>
+<tr>
+<td><code>ggtov2-app-secret-key</code></td>
+<td>Clave de firma de la aplicación (<code>SECRET_KEY</code>)</td>
+</tr>
+<tr>
+<td><code>ggtov2-db-connection</code></td>
+<td>Cadena de conexión de la instancia compartida</td>
+</tr>
+<tr>
+<td><code>ggto-secret-key</code></td>
+<td>Clave usada por el servicio <code>ggto-web</code></td>
+</tr>
+<tr>
+<td><code>ggtov2-django-secret-key</code></td>
+<td>Reservado en el aprovisionamiento</td>
+</tr>
+<tr>
+<td><code>ggtov2-store-password</code> y tokens de mensajería</td>
+<td><strong>No creados</strong>: Telegram, SMTP y MCP siguen sin credenciales</td>
+</tr>
+</tbody>
+</table></div>
+<p>El acceso se limita por IAM con el rol <code>roles/secretmanager.secretAccessor</code> a la cuenta de servicio
+del runtime <code>ggtov2-app@ggtov2.iam.gserviceaccount.com</code>.</p>
+<p>El script de la instancia compartida otorga además lectura a <code>ggtov2-app@ggtov2</code> y a
+<code>truekeate-app-sa@truekeate-main</code>. Se verificó que <code>truekeate-app-sa</code> <strong>no</strong> tiene acceso a los
+secretos de GGTO.</p>
+<h3 id="variables-de-entorno"><span class="sec-num">5.2</span>Variables de entorno</h3>
+<p>La aplicación se configura <strong>solo por variables de entorno</strong> (RNF-25). La configuración se declara
+con <code>pydantic-settings</code> y lee un archivo <code>.env</code>. Las variables que referencian secretos <strong>nunca
+llevan el valor en el repositorio</strong>: solo el nombre del secreto.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Origen del valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SECRET_KEY</code></td>
+<td>Secret Manager (<code>ggtov2-app-secret-key</code> o <code>ggto-secret-key</code>)</td>
+</tr>
+<tr>
+<td><code>DB_PASSWORD</code></td>
+<td>Secret Manager (<code>ggtov2-db-password</code>)</td>
+</tr>
+<tr>
+<td><code>TELEGRAM_BOT_TOKEN</code></td>
+<td>Secret Manager (<strong>no configurado</strong>)</td>
+</tr>
+<tr>
+<td><code>SMTP_PASSWORD</code></td>
+<td>Secret Manager (<strong>no configurado</strong>)</td>
+</tr>
+<tr>
+<td><code>MCP_API_KEY</code></td>
+<td>Secret Manager (<strong>no configurado</strong>)</td>
+</tr>
+<tr>
+<td><code>telegram.webhook_secret</code></td>
+<td>Tabla <code>configuracion</code> (vacío: no se exige)</td>
+</tr>
+<tr>
+<td><code>mcp.api_key</code></td>
+<td>Tabla <code>configuracion</code> (vacío: no se exige)</td>
+</tr>
+</tbody>
+</table></div>
+<p>El archivo <code>.gitignore</code> excluye los CSV con datos personales (<code>detalle_averias_gpon*.csv</code>), por el
+hallazgo H-01, y la carpeta <code>RepoTecnico/credenciales/</code> también está ignorada por Git.</p>
+<h3 id="rotacion"><span class="sec-num">5.3</span>Rotación</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Periodicidad o procedimiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claves de Cloud KMS</td>
+<td>Rotación automática cada 90 días</td>
+</tr>
+<tr>
+<td>Contraseña de base de datos</td>
+<td>Nueva versión del secreto y nueva revisión de Cloud Run</td>
+</tr>
+<tr>
+<td><code>SECRET_KEY</code> de la aplicación</td>
+<td><strong>Pendiente de confirmar</strong>: no hay procedimiento documentado</td>
+</tr>
+<tr>
+<td>Token JWT</td>
+<td>Sin revocación: es <em>stateless</em>; el <code>jti</code> se emite, pero no hay lista de revocación</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="incidente-de-exposicion-resuelto-entornos-globales-md-100-10"><span class="sec-num">5.4</span>Incidente de exposición resuelto (entornos_globales.md:100-106)</h3>
+<p>Durante la verificación del entorno, un mensaje de error de Node <strong>imprimió la contraseña</strong> del
+usuario <code>app</code> de TrueKeate, que estaba contenida en el secreto <code>DATABASE_URL</code>. La respuesta fue:</p>
+<ol>
+<li>Rotar la contraseña con <code>ALTER ROLE app PASSWORD '&lt;nueva&gt;'</code>, usando 32 caracteres aleatorios.</li>
+<li>Publicar una <strong>nueva versión del secreto</strong> <code>DATABASE_URL</code> (versión 3) en <code>truekeate-main</code>.</li>
+<li>Desplegar una <strong>nueva revisión</strong> de Cloud Run <code>truekeate-api-00034-hvk</code> para tomar el valor
+<code>latest</code>, con estado <code>Ready</code>, el 100 % del tráfico y sin errores de autenticación en los
+registros.</li>
+<li>Confirmar que <code>truekeate-web</code> no consume <code>DATABASE_URL</code>, por lo que no necesitó una revisión
+nueva.</li>
+</ol>
+<p><strong>Lecciones operativas aplicables a GGTO:</strong> no imprimir valores de secretos en registros ni en
+mensajes de error; rotar ante cualquier sospecha; y consumir siempre la versión <code>latest</code> de forma
+controlada, con una nueva revisión del servicio. Las credenciales de mensajería no deben
+registrarse en el repositorio.</p>
+<hr />
+<h2 id="pii-y-privacidad-rnf-18-d-34"><span class="sec-num">6</span>PII y privacidad (RNF-18/D-34)</h2>
+<h3 id="inventario-de-pii"><span class="sec-num">6.1</span>Inventario de PII</h3>
+<p>El sistema trata datos personales de suscriptores y de trabajadores. RNF-18 exige un inventario y
+una clasificación de datos personales, y la decisión D-34 lo aprueba como decisión de diseño.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Entidad</th>
+<th>Datos personales que contiene</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caso</code></td>
+<td>Nombre, teléfono, dirección y serial</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td>Reporte libre y GPS</td>
+</tr>
+<tr>
+<td><code>evidencia</code></td>
+<td>Imagen, GPS y hora</td>
+</tr>
+<tr>
+<td><code>auditoria</code></td>
+<td>Datos antes y después</td>
+</tr>
+<tr>
+<td><code>notificacion</code></td>
+<td>Destinatario y cuerpo del mensaje</td>
+</tr>
+<tr>
+<td><code>solicitante</code></td>
+<td>Nombre y contacto</td>
+</tr>
+<tr>
+<td>Archivo CSV de origen</td>
+<td>Nombre, teléfono, dirección, serial y datos personales de trabajadores</td>
+</tr>
+</tbody>
+</table></div>
+<p>En producción hay <strong>1 lote de ingesta con 42 casos reales</strong> que contienen datos personales de
+suscriptores.</p>
+<h3 id="base-legal-y-finalidad"><span class="sec-num">6.2</span>Base legal y finalidad</h3>
+<p>RNF-18 exige declarar la base legal y la finalidad del tratamiento. La decisión D-34 registra que
+la base legal, la finalidad, el inventario, la minimización, el enmascaramiento, los derechos del
+titular y el acuerdo de tratamiento de datos <strong>quedan definidos</strong> como decisión.</p>
+<p>Queda la salvedad expresa de que la <strong>validación legal con CANTV está pendiente</strong>. El responsable
+de protección de datos es <strong>CANTV (externo)</strong> y está <strong>pendiente de designar</strong>.</p>
+<h3 id="minimizacion"><span class="sec-num">6.3</span>Minimización</h3>
+<p>La minimización se aplica en la frontera de datos: el lector <strong>descarta 21 columnas</strong> del CSV y
+mapea las restantes a <strong>49 campos destino</strong>, unificando tres columnas de información en una.</p>
+<p>El archivo de origen <strong>no se transforma</strong> más allá de esa depuración. Los campos de texto tienen
+longitudes máximas para evitar volcados inesperados.</p>
+<h3 id="enmascaramiento-por-rol"><span class="sec-num">6.4</span>Enmascaramiento por rol</h3>
+<p>RNF-18 exige <strong>enmascarar teléfono, dirección y serial</strong> para los roles no autorizados.</p>
+<blockquote>
+<p><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> <strong>No implementado.</strong> No existe en el código ninguna referencia a enmascarar, ocultar o tratar
+datos personales. Los endpoints devuelven los datos en claro a cualquier usuario autenticado: el
+listado y la búsqueda de casos incluyen teléfono, nombre del cliente y dirección, y la ficha
+imprimible de la cuadrilla incluye teléfono y nombre del cliente. El <strong>enmascaramiento por rol
+está pendiente de confirmar y no está implementado</strong>.</p>
+</blockquote>
+<h3 id="retencion-por-entidad-requerimientos-md-212-225"><span class="sec-num">6.5</span>Retención por entidad (requerimientos.md:212-225)</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Entidad</th>
+<th>¿Contiene PII?</th>
+<th>Retención propuesta</th>
+<th>Acción al vencer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caso</code></td>
+<td>Sí (nombre, teléfono, dirección, serial)</td>
+<td>5 años</td>
+<td>Anonimizar y archivar</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td>Sí (reporte libre, GPS)</td>
+<td>5 años</td>
+<td>Anonimizar</td>
+</tr>
+<tr>
+<td><code>evidencia</code></td>
+<td>Sí (imagen, GPS y hora)</td>
+<td>2 años</td>
+<td>Eliminar imagen y metadatos</td>
+</tr>
+<tr>
+<td><code>auditoria</code></td>
+<td>Sí (datos antes y después)</td>
+<td>3 años</td>
+<td>Archivar sin datos personales</td>
+</tr>
+<tr>
+<td><code>notificacion</code></td>
+<td>Sí (destinatario y cuerpo)</td>
+<td>1 año</td>
+<td>Eliminar</td>
+</tr>
+<tr>
+<td><code>solicitante</code></td>
+<td>Sí (nombre y contacto)</td>
+<td>5 años</td>
+<td>Anonimizar</td>
+</tr>
+<tr>
+<td><code>dispositivo_seguridad</code></td>
+<td>No (solo hashes)</td>
+<td>Mientras la cuenta esté activa</td>
+<td>Eliminar con la cuenta</td>
+</tr>
+<tr>
+<td><code>inventario_movimiento</code> / <code>orden_material</code> (versión 2)</td>
+<td>No</td>
+<td>5 años</td>
+<td>Archivar</td>
+</tr>
+</tbody>
+</table></div>
+<p>Los plazos son una <strong>propuesta</strong> y deben validarse con CANTV y asesoría legal. <strong>No existe</strong> una
+tarea ni rutina de purga o anonimización implementada en el código: la retención es hoy una
+<strong>política pendiente de confirmar y de automatizar</strong>.</p>
+<h3 id="derechos-del-titular"><span class="sec-num">6.6</span>Derechos del titular</h3>
+<p>RNF-18 exige atender los derechos de <strong>acceso, rectificación y supresión</strong>. No existe en la
+versión 1 un endpoint ni una pantalla específica para ejercerlos. Las vías disponibles son
+operativas (consultar y editar la ficha del caso) y no cubren la supresión ni la anonimización.
+Este punto está <strong>pendiente de confirmar</strong> con CANTV.</p>
+<h3 id="dpa-con-proveedores"><span class="sec-num">6.7</span>DPA con proveedores</h3>
+<p>RNF-18 exige <strong>acuerdos de tratamiento de datos (DPA)</strong> con los proveedores. Los proveedores que
+pueden tratar datos son:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Proveedor</th>
+<th>Uso</th>
+<th>Estado del DPA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SendGrid (o Gmail SMTP)</td>
+<td>Envío de correo</td>
+<td>Pendiente de confirmar</td>
+</tr>
+<tr>
+<td>Telegram</td>
+<td>Envío de alertas y bot</td>
+<td>Pendiente de confirmar</td>
+</tr>
+<tr>
+<td>Google Cloud (Cloud Run, Cloud SQL, Secret Manager)</td>
+<td>Infraestructura</td>
+<td>Pendiente de confirmar</td>
+</tr>
+<tr>
+<td>Servidor MCP / IA</td>
+<td>Ingesta conversacional de casos especiales</td>
+<td>Pendiente de confirmar</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="transferencia-internacional"><span class="sec-num">6.8</span>Transferencia internacional</h3>
+<p>El tratamiento implica transferencia fuera de Venezuela: el servicio Cloud Run corre en
+<code>europe-west1</code> y la base operativa en <code>southamerica-east1</code>. Además, Telegram opera en el exterior
+y el correo puede usar SendGrid.</p>
+<p>RNF-18 exige <strong>evaluar la transferencia internacional</strong>. La evaluación y las garantías
+contractuales están <strong>pendientes de confirmar</strong> con CANTV y asesoría legal.</p>
+<hr />
+<h2 id="superficie-de-exposicion-actual"><span class="sec-num">7</span>Superficie de exposición actual</h2>
+<h3 id="servicio-cloud-run-publico-con-pii-real-debe-restringirse"><span class="sec-num">7.1</span>Servicio Cloud Run público con PII real: DEBE restringirse</h3>
+<p>El servicio <code>ggto-web</code> está desplegado con acceso <strong>público</strong>: el script concede el rol
+<code>roles/run.invoker</code> a <code>allUsers</code>, y el documento de entorno lo confirma como «Público (<code>allUsers</code>)
+— prueba de humo; endurecer antes de producción».</p>
+<p>La dirección del servicio es <code>https://ggto-web-593453426217.europe-west1.run.app</code>.</p>
+<p>Ese servicio opera hoy con <strong>datos personales reales</strong> (42 casos) y la recomendación es explícita:
+<strong>restringir el acceso</strong> (con IAP o invocación autenticada), porque hoy <code>allUsers</code> alcanza la API y
+la aplicación web. El informe de Fase 4 lo lista como pendiente que <strong>no bloquea</strong> las pruebas,
+pero <strong>sí debe resolverse antes de operar en producción</strong>, y los próximos pasos insisten en
+restringir el acceso público antes de seguir cargando datos.</p>
+<p>Precisión técnica sobre esa afirmación:</p>
+<ul>
+<li>La mayoría de los endpoints <code>/api/v1/*</code> <strong>sí exigen token JWT</strong>.</li>
+<li>Son <strong>públicos</strong> (sin token): <code>/api/v1/info</code>, <code>/health</code> y <code>/ready</code>; el inicio de sesión
+(<code>login</code>); la configuración inicial (<code>setup</code>); y <code>unlock</code> y <code>reset-password</code>.</li>
+<li><code>/api/v1/telegram/webhook</code> y <code>/api/v1/mcp</code> se protegen con <strong>cabecera secreta</strong> solo si está
+configurada. Si la clave está vacía, <strong>no se exige</strong>.</li>
+</ul>
+<p>El riesgo real es de <strong>exposición de perímetro</strong>: cualquier persona alcanza el servicio, la
+aplicación web, el inicio de sesión y las sondas. Además, <code>GET /ready</code> publica el nombre de la
+base, el usuario y el número de tablas. <strong>Debe restringirse con IAP o con invocación
+autenticada.</strong></p>
+<h3 id="riesgo-aceptado-d-26"><span class="sec-num">7.2</span>Riesgo aceptado D-26</h3>
+<p>El riesgo <strong>D-26</strong> fue aceptado el 2026-09-25 por la Dirección del proyecto: <strong>no</strong> se modifican
+los respaldos, la recuperación a un punto en el tiempo (PITR) ni el SSL de la instancia compartida
+<code>truekeate-db-dev</code>. Su condición de cierre es «migrar a <code>ggtov2-pg</code> propio (regional, con SSL
+<code>ENCRYPTED_ONLY</code>, respaldos, PITR y protección de borrado) cuando se resuelva la cuota de
+facturación».</p>
+<p>La misma decisión indica que <strong>no se deben cargar datos reales de producción</strong> en la instancia
+compartida hasta que exista respaldo.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Riesgo aceptado</th>
+<th>Impacto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sin respaldos ni PITR</td>
+<td>Pérdida irreversible de datos</td>
+</tr>
+<tr>
+<td>Sin SSL obligatorio en la instancia</td>
+<td>Interceptación del tráfico</td>
+</tr>
+<tr>
+<td>Sin protección de borrado</td>
+<td>Borrado accidental o malicioso sin retorno</td>
+</tr>
+<tr>
+<td>Datos compartidos por base</td>
+<td>Coexistencia con TrueKeate en la misma instancia</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="rol-de-bd-con-noinherit-y-riesgo-residual"><span class="sec-num">7.3</span>Rol de BD con NOINHERIT y riesgo residual</h3>
+<p>El rol de base de datos <code>ggtov2_app</code> fue endurecido el 2026-09-25:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Cambio</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CREATEROLE</code> revocado</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td><code>CREATEDB</code> revocado</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td><code>NOINHERIT</code> aplicado</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td>Membresía <code>cloudsqlsuperuser</code> revocada</td>
+<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> No fue posible por SQL: la pertenencia persiste, pero <strong>no se hereda</strong></td>
+</tr>
+<tr>
+<td><code>CONNECT</code>, <code>TEMPORARY</code> y <code>CREATE</code> de <code>PUBLIC</code> revocados en bases ajenas</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+</tr>
+<tr>
+<td><code>CONNECT</code> re-otorgado a <code>app</code> y <code>postgres</code></td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> (TrueKeate sigue operando)</td>
+</tr>
+<tr>
+<td><code>CONNECT</code> y <code>CREATE</code> en <code>ggtov2</code> y <code>public</code></td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> (el DDL de prueba funciona)</td>
+</tr>
+<tr>
+<td><code>truekeate-app-sa</code> sin acceso a secretos de GGTO</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> (solo <code>ggtov2-app@ggtov2</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Riesgo residual (D-25):</strong> al seguir siendo miembro de <code>cloudsqlsuperuser</code>, <code>ggtov2_app</code> podría
+recuperar privilegios con un <code>SET ROLE cloudsqlsuperuser</code> explícito. La corrección definitiva
+requiere <strong>recrear el rol</strong>, cosa que no es posible con los privilegios actuales. Se decidió
+<strong>aceptar el riesgo residual con <code>NOINHERIT</code></strong> y documentarlo.</p>
+<hr />
+<h2 id="endurecimiento-recomendado"><span class="sec-num">8</span>Endurecimiento recomendado</h2>
+<h3 id="iap-o-invocacion-autenticada"><span class="sec-num">8.1</span>IAP o invocación autenticada</h3>
+<p>Acción prioritaria: retirar <code>allUsers</code> del permiso de invocación de Cloud Run y exponer el servicio
+mediante <strong>Identity-Aware Proxy (IAP)</strong> o <strong>invocación autenticada</strong>. Es la recomendación explícita
+de la documentación del proyecto. Debe hacerse <strong>antes de seguir cargando datos personales
+reales</strong>.</p>
+<h3 id="ssl-encrypted-only"><span class="sec-num">8.2</span>SSL ENCRYPTED_ONLY</h3>
+<p>La instancia propia planificada fija SSL en modo <code>ENCRYPTED_ONLY</code> e IPv4 deshabilitado, con red
+privada. La aplicación ya solicita TLS con <code>DB_SSLMODE=require</code>, pero la instancia compartida <strong>no
+lo obliga</strong>.</p>
+<p>Al migrar a <code>ggtov2-pg</code>, verifica que la conexión use socket privado y TLS estricto.</p>
+<h3 id="backups-pitr"><span class="sec-num">8.3</span>Backups/PITR</h3>
+<p>Habilita en la instancia propia los respaldos (<code>backupConfiguration.enabled</code>), la recuperación a un
+punto en el tiempo (<code>pointInTimeRecoveryEnabled</code>) y la protección de borrado
+(<code>deletionProtectionEnabled</code>). Esto cierra D-26 y satisface RNF-16 (RPO ≤ 24 h y RTO ≤ 4 h).</p>
+<p>Debe acompañarse de una <strong>prueba de restauración documentada</strong> al menos cada trimestre (RNF-16).</p>
+<h3 id="mfa-rnf-22-previsto"><span class="sec-num">8.4</span>MFA (RNF-22, previsto)</h3>
+<p>RNF-22 exige <strong>MFA obligatorio para ADMIN y SUPERVISOR</strong>, además de política de complejidad,
+caducidad e historial de claves; expiración, rotación y revocación de sesión; protección CSRF y
+CORS; y registro de los eventos de inicio de sesión. La matriz RBAC insiste en el MFA para ADMIN y
+SUPERVISOR.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Control de RNF-22</th>
+<th>Estado real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hash Argon2id</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Implementado</td>
+</tr>
+<tr>
+<td>Bloqueo y límite de intentos</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Implementado</td>
+</tr>
+<tr>
+<td>Expiración del token</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> 480 minutos</td>
+</tr>
+<tr>
+<td>MFA</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No implementado (no hay TOTP ni OTP en el código)</td>
+</tr>
+<tr>
+<td>Complejidad, caducidad e historial de claves</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No implementado</td>
+</tr>
+<tr>
+<td>Revocación de sesión o token</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No implementado (JWT sin lista de revocación)</td>
+</tr>
+<tr>
+<td>Protección CSRF</td>
+<td><span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> No implementado (no hay referencias a CSRF)</td>
+</tr>
+<tr>
+<td>CORS restringido</td>
+<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Por defecto <code>cors_origins = &quot;*&quot;</code></td>
+</tr>
+<tr>
+<td>Registro de eventos de inicio de sesión</td>
+<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Solo el registro general, sin usuario</td>
+</tr>
+<tr>
+<td>Autenticación de canales externos</td>
+<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Por cabecera, solo si la clave está configurada</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>El <strong>MFA, la política de claves, la revocación de tokens, la protección CSRF y un CORS
+restringido</strong> están exigidos por RNF-22 pero <strong>no están implementados</strong>: son los principales
+puntos de endurecimiento <strong>pendientes de confirmar</strong>. Mientras tanto, <code>cors_origins</code> debe
+fijarse a los orígenes reales en producción, y las claves <code>telegram.webhook_secret</code> y
+<code>mcp.api_key</code> deben establecerse (hoy están vacías, por lo que no se exigen).</p>
+</blockquote>
+<hr />
+<h2 id="cumplimiento-y-pendientes"><span class="sec-num">9</span>Cumplimiento y pendientes</h2>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tema</th>
+<th>Responsable</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Administración de catálogos, flota y almacén</td>
+<td>SUPERVISOR</td>
+<td>Cubierto en la versión 1</td>
+</tr>
+<tr>
+<td>Auditoría interna de la bitácora</td>
+<td>ADMIN (solo lectura de <code>auditoria</code>)</td>
+<td><strong>Sin datos</strong>: la aplicación no escribe en <code>auditoria</code></td>
+</tr>
+<tr>
+<td>Soporte y mesa de ayuda de la plataforma</td>
+<td>SUPERVISOR (registro por correo)</td>
+<td>Informal en la versión 1</td>
+</tr>
+<tr>
+<td>Responsable de protección de datos</td>
+<td><strong>CANTV (externo)</strong></td>
+<td><strong>Pendiente de designar</strong></td>
+</tr>
+<tr>
+<td>Dueño del sistema origen (CSV)</td>
+<td><strong>CANTV (externo)</strong></td>
+<td><strong>Pendiente de formalizar</strong></td>
+</tr>
+<tr>
+<td>Validación legal de base legal y retención</td>
+<td>CANTV y asesoría legal</td>
+<td><strong>Pendiente</strong></td>
+</tr>
+<tr>
+<td>Firma del contrato de interfaz del CSV</td>
+<td>CANTV</td>
+<td><strong>Pendiente</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Gobierno de datos en la versión 1 (D-39): la administración de catálogos, la flota y el almacén
+recaen en el SUPERVISOR; la auditoría interna, en el ADMIN en modo lectura. <strong>No existe el rol
+AUDITOR en la versión 1.</strong></p>
+<h3 id="lista-de-acciones-recomendadas"><span class="sec-num">9.1</span>Lista de acciones recomendadas</h3>
+<ol>
+<li>Restringir el acceso público de <code>ggto-web</code> con IAP o invocación autenticada.</li>
+<li>Migrar a <code>ggtov2-pg</code> con respaldos, PITR, SSL <code>ENCRYPTED_ONLY</code> y protección de borrado.</li>
+<li>Implementar el <strong>enmascaramiento por rol</strong> de teléfono, dirección y serial.</li>
+<li>Implementar el registro de <strong>auditoría</strong> y añadir el usuario a los registros.</li>
+<li>Conectar <strong>RLS</strong> fijando <code>app.id_central</code> por sesión y acotar las consultas por la central del
+usuario.</li>
+<li>Habilitar <strong>MFA</strong> para ADMIN y SUPERVISOR y la política de claves de RNF-22.</li>
+<li>Fijar <code>cors_origins</code> a los orígenes reales y establecer <code>telegram.webhook_secret</code> y
+<code>mcp.api_key</code>.</li>
+<li>Definir con CANTV la base legal, la retención definitiva y los DPA de los proveedores.</li>
+<li>Establecer el procedimiento de rotación de <code>SECRET_KEY</code> y verificar que no use el valor por
+defecto.</li>
+</ol>
+<blockquote>
+<p><strong>Nota final de fidelidad:</strong> los controles marcados como <span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> están implementados y localizados en
+el código; los marcados como <span class="ico ico-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#b3261e"/><path d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span> o «pendiente de confirmar» se declaran así porque <strong>no existen</strong>
+en el repositorio, pese a figurar en los requerimientos. No se ha documentado ningún control que
+no se haya podido verificar.</p>
+</blockquote>
+
+<nav class="pie-nav"><a class="izq" href="../07-Operacion/01-operacion-y-mantenimiento.html">← Manual anterior: Manual de Operación y Mantenimiento — GGTO</a><a href="../index.html">Índice general</a><span class="der"></span></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Operación</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Operación · 02-seguridad-y-privacidad", "pieIzq": "Manual de Seguridad y Privacidad — GGTO", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Manual de Seguridad y Privacidad — GGTO"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

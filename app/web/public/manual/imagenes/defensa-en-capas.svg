@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1010" viewBox="0 0 1400 1010" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1400" height="1010" fill="#ffffff"/>
+<rect x="0" y="0" width="1400" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1400" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Defensa en capas de GGTO</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Los controles que atraviesa una petición, del usuario a la base de datos</text>
+<text x="1372" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1372" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="980" width="1400" height="30" fill="#f4f6f9"/>
+<text x="700" y="999" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="90" y="104" width="1220" height="76" rx="10" fill="#e8f0fa" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="98" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="700" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Usuario con P00 y clave</text>
+<text x="700" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">Entra por el navegador web</text>
+<rect x="50" y="200" width="1300" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="58" y="208" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="700" y="234.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">1 · Perímetro de red</text>
+<text x="700" y="251.5" fill="#4a5568" font-size="11.5" text-anchor="middle">Cloud Run y Cloud SQL dentro de GCP</text>
+<rect x="65" y="300" width="1270" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="73" y="308" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="700" y="334.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">2 · Autenticación</text>
+<text x="700" y="351.5" fill="#4a5568" font-size="11.5" text-anchor="middle">Clave con Argon2id y token JWT HS256 de 480 minutos</text>
+<rect x="80" y="400" width="1240" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="88" y="408" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="700" y="434.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">3 · Autorización</text>
+<text x="700" y="451.5" fill="#4a5568" font-size="11.5" text-anchor="middle">RBAC por rol; SUPER tiene acceso total</text>
+<rect x="95" y="500" width="1210" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="103" y="508" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="700" y="534.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">4 · Aislamiento de datos</text>
+<text x="700" y="551.5" fill="#4a5568" font-size="11.5" text-anchor="middle">RLS por central en las tablas caso y despacho</text>
+<rect x="110" y="600" width="1180" height="76" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="118" y="608" width="6" height="60" rx="3" fill="#8a6100"/>
+<text x="700" y="634.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">5 · Secretos</text>
+<text x="700" y="651.5" fill="#4a5568" font-size="11.5" text-anchor="middle">Google Secret Manager con CMEK</text>
+<rect x="125" y="700" width="1150" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="133" y="708" width="6" height="60" rx="3" fill="#0e7490"/>
+<text x="700" y="734.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">6 · Observabilidad y trazabilidad</text>
+<text x="700" y="751.5" fill="#4a5568" font-size="11.5" text-anchor="middle">request-id, métricas y bitácora de estados (caso_estado_hist)</text>
+<rect x="140" y="800" width="1120" height="76" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="148" y="808" width="6" height="60" rx="3" fill="#1f7a4d"/>
+<text x="700" y="834.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">7 · Base de datos</text>
+<text x="700" y="851.5" fill="#4a5568" font-size="11.5" text-anchor="middle">ggtov2 en Cloud SQL, con datos personales reales</text>
+<path d="M700 180 L700 200" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 280 L700 300" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 380 L700 400" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 480 L700 500" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 580 L700 600" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 680 L700 700" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M700 780 L700 800" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<rect x="60" y="900" width="1280" height="92" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="908" width="6" height="76" rx="3" fill="#d7dde6"/>
+<text x="82" y="925.5" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Riesgo aceptado D-26</text>
+<text x="82" y="942.5" fill="#4a5568" font-size="11.5" text-anchor="start">El servicio es público y la base contiene datos personales reales (42 casos). No hay respaldos, ni recuperación a un punto en el tiempo (PITR), ni protección de borrado, ni SSL obligatorio hasta migrar a la instancia</text>
+<text x="82" y="959.5" fill="#4a5568" font-size="11.5" text-anchor="start">ggtov2-pg.</text>
+<text x="82" y="976.5" fill="#4a5568" font-size="11.5" text-anchor="start">Tampoco existe enmascaramiento de datos del cliente en el código: la bandera usuario.bloqueo_cliente está prevista, pero su implementación queda pendiente de confirmar.</text>
+</svg>

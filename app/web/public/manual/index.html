@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuales GGTO — CANTV · Central Francisco Salias</title>
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+
+.portada { margin-bottom: 26px; }
+.grupo { margin: 0 0 34px; }
+.grupo h2 { font-size: 21px; margin: 0 0 14px; padding-bottom: 6px;
+  border-bottom: 2px solid var(--azul); color: var(--azul-oscuro); }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.tarjeta { background:#fff; border:1px solid var(--gris-borde); border-radius: var(--radio);
+  box-shadow: var(--sombra); padding: 16px; display:flex; flex-direction:column;
+  margin: 0 0 16px; }
+.rejilla .tarjeta { margin: 0; }
+.tarjeta h3 { margin: 0 0 8px; font-size: 16px; color: var(--azul-oscuro); }
+.tarjeta p { margin: 0 0 12px; font-size: 13px; color: var(--gris-texto); }
+.tarjeta-enlaces { margin-top: auto; display:flex; gap: 14px; }
+.tarjeta-enlaces a { font-weight: 600; font-size: 13px; }
+.tarjeta-mini { width: 100%; height: 128px; object-fit: cover; object-position: top;
+  border:1px solid var(--gris-borde); border-radius: 6px; margin-bottom: 12px; }
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Manuales literales</span>
+  <span class="topbar-sep"></span>
+  <span class="chip">Edición 28/09/2026</span>
+</header>
+<div class="doc-layout" style="display:block">
+  <main class="doc-main">
+    <section class="portada">
+      <div class="portada-franja"></div>
+      <div class="portada-cuerpo">
+        <div class="portada-marca">GGTO <span>· CANTV</span></div>
+        <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+        <span class="portada-etiqueta">Colección de manuales</span>
+        <h1 class="portada-titulo">Manuales de GGTO</h1>
+        <p class="portada-resumen">Versión HTML navegable de los manuales literales del sistema.
+        Cada manual tiene su portada, su índice, sus gráficos y su versión descargable en PDF.
+        Los textos son los mismos que están en <code>docs/Manuales/</code>: esta edición solo
+        cambia la presentación.</p>
+        <dl class="portada-meta">
+          <div><dt>Manuales</dt><dd>22</dd></div>
+          <div><dt>Temas</dt><dd>7</dd></div>
+          <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+          <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+          <div><dt>PDF</dt><dd>Carpeta <code>docs/Manuales/pdf/</code></dd></div>
+          <div><dt>Generado</dt><dd>28/09/2026</dd></div>
+        </dl>
+      </div>
+    </section>
+      <section class="grupo">
+        <h2>Tecnología <span class="chip">3 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/onboarding-tecnico.png" alt="Figura de Plataforma GGTO — Visión general y arquitectura">
+          <h3>Plataforma GGTO — Visión general y arquitectura</h3>
+          <p>Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central </p>
+          <p class="tarjeta-enlaces">
+            <a href="01-Tecnologia/01-plataforma.html">Ver en HTML</a>
+            <a href="pdf/01-Tecnologia/01-plataforma.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/capas-backend.png" alt="Figura de Stack del backend GGTO">
+          <h3>Stack del backend GGTO</h3>
+          <p>Manual para todo público. Explica con palabras sencillas con qué está hecho el motor de GGTO, cómo está organizado por dentro y qué se puede configurar. El &quot;backend&quot; es la parte del sistema que no se ve: recibe las órdenes de la p</p>
+          <p class="tarjeta-enlaces">
+            <a href="01-Tecnologia/02-stack-backend.html">Ver en HTML</a>
+            <a href="pdf/01-Tecnologia/02-stack-backend.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/mapa-pantallas-spa.png" alt="Figura de Stack del frontend GGTO (SPA React)">
+          <h3>Stack del frontend GGTO (SPA React)</h3>
+          <p>Manual para todo público. Explica con palabras sencillas cómo está hecha la parte visual de GGTO: las pantallas que ves en el navegador, cómo se protegen y cómo se construyen. No necesitas saber programar para leerlo.</p>
+          <p class="tarjeta-enlaces">
+            <a href="01-Tecnologia/03-stack-frontend.html">Ver en HTML</a>
+            <a href="pdf/01-Tecnologia/03-stack-frontend.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Dependencias <span class="chip">2 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/dependencias-backend.png" alt="Figura de Dependencias del backend GGTO">
+          <h3>Dependencias del backend GGTO</h3>
+          <p>Manual para todo público. Explica qué piezas de software usa el motor de GGTO y para qué sirve cada una. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza en lugar de escribirlo desde cero. La mayoría de estos nom</p>
+          <p class="tarjeta-enlaces">
+            <a href="02-Dependencias/01-backend.html">Ver en HTML</a>
+            <a href="pdf/02-Dependencias/01-backend.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/dependencias-frontend.png" alt="Figura de Dependencias del frontend GGTO">
+          <h3>Dependencias del frontend GGTO</h3>
+          <p>Manual para todo público. Explica qué piezas de software usa la web de GGTO. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza. La web de GGTO tiene una virtud poco común: depende de muy pocas cosas, y eso la hace</p>
+          <p class="tarjeta-enlaces">
+            <a href="02-Dependencias/02-frontend.html">Ver en HTML</a>
+            <a href="pdf/02-Dependencias/02-frontend.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Implementación <span class="chip">9 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/flujo-login-p00.png" alt="Figura de Manual de implementación: autenticación y RBAC">
+          <h3>Manual de implementación: autenticación y RBAC</h3>
+          <p>Este manual explica, con palabras sencillas, cómo GGTO reconoce a cada persona, cómo protege su clave y sus palabras de seguridad, qué ocurre cuando alguien se equivoca varias veces al escribir la clave y qué puede hacer cada tipo</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/01-autenticacion-y-rbac.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/01-autenticacion-y-rbac.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/mapa-configuracion.png" alt="Figura de Manual de implementación: módulo CONFIGURACIÓN">
+          <h3>Manual de implementación: módulo CONFIGURACIÓN</h3>
+          <p>Este manual explica, con palabras sencillas, cómo funciona el módulo CONFIGURACIÓN de GGTO: la sección donde se registran la central, los sectores, los técnicos, la flota, las cuadrillas, los catálogos y los parámetros del sistema</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/02-configuracion.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/02-configuracion.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/transformacion-columnas.png" alt="Figura de Manual técnico — Ingesta del archivo diario de averías (CSV)">
+          <h3>Manual técnico — Ingesta del archivo diario de averías (CSV)</h3>
+          <p>Este manual explica, con palabras sencillas, cómo GGTO recibe el archivo diario de averías que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se queda solo con los casos de la central configurada, cómo evita</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/03-ingesta-csv.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/03-ingesta-csv.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/flujo-caso-estados.png" alt="Figura de Manual técnico — Panel y gestión de casos">
+          <h3>Manual técnico — Panel y gestión de casos</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo funcionan el PANEL y el módulo CASOS de GGTO, el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salia</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/04-panel-y-casos.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/04-panel-y-casos.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/flujo-despacho.png" alt="Figura de 05 — Despacho diario (módulo DESPACHO)">
+          <h3>05 — Despacho diario (módulo DESPACHO)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo funciona el DESPACHO diario de GGTO, el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área 4</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/05-despacho.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/05-despacho.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/flujo-caso-especial.png" alt="Figura de 06 — Seguimiento, casos especiales y agenda">
+          <h3>06 — Seguimiento, casos especiales y agenda</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo funcionan en GGTO los casos especiales (referidos, empresas y gobiernos), la agenda de citas y el seguimiento de casos derivados a otras instancias. GGTO es el Sistema </p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/06-seguimiento-especiales-agenda.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/06-seguimiento-especiales-agenda.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/infografia-monitoreo.png" alt="Figura de Manual técnico — Monitoreo y reportes (GGTO, Ciclo 7)">
+          <h3>Manual técnico — Monitoreo y reportes (GGTO, Ciclo 7)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo GGTO cuenta el trabajo diario y semanal y cómo muestra esas cifras en la página MONITOREO, en sus gráficos y en el reporte de trabajo que se puede imprimir. Está dirigi</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/07-monitoreo-y-reportes.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/07-monitoreo-y-reportes.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/flujo-alertas.png" alt="Figura de Manual técnico — Alertas, Telegram y MCP (GGTO, Ciclo 9)">
+          <h3>Manual técnico — Alertas, Telegram y MCP (GGTO, Ciclo 9)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo GGTO detecta fallas masivas, cómo se avisa al personal y cómo se atienden las consultas por Telegram y por MCP (un canal automático para programas). Está dirigido a téc</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/08-alertas-telegram-mcp.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/08-alertas-telegram-mcp.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/mapa-api-endpoints.png" alt="Figura de API de GGTO — Inventario de Endpoints">
+          <h3>API de GGTO — Inventario de Endpoints</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, qué puertas de entrada (endpoints) ofrece el sistema GGTO, quién puede usar cada una y qué códigos de respuesta entrega. Un endpoint es una dirección concreta que un program</p>
+          <p class="tarjeta-enlaces">
+            <a href="03-Implementacion/09-api-endpoints.html">Ver en HTML</a>
+            <a href="pdf/03-Implementacion/09-api-endpoints.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Despliegue <span class="chip">4 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/entornos-ggto.png" alt="Figura de Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4)">
+          <h3>Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, dónde se ejecuta la plataforma GGTO, qué variables de configuración usa y cómo se cuidan los secretos (claves y contraseñas). Está dirigido a operadores, supervisores y admi</p>
+          <p class="tarjeta-enlaces">
+            <a href="04-Despliegue/01-entornos-y-variables.html">Ver en HTML</a>
+            <a href="pdf/04-Despliegue/01-entornos-y-variables.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/arquitectura-cloud.png" alt="Figura de Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco Salias / Área 4)">
+          <h3>Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco Salias / Área 4)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, dónde vive la plataforma GGTO en Google Cloud: el servicio Cloud Run que atiende la aplicación, la base de datos Cloud SQL que guarda la información ggtov2, la imagen del co</p>
+          <p class="tarjeta-enlaces">
+            <a href="04-Despliegue/02-cloud-run-y-cloud-sql.html">Ver en HTML</a>
+            <a href="pdf/04-Despliegue/02-cloud-run-y-cloud-sql.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/orden-scripts-aprovisionamiento.png" alt="Figura de Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)">
+          <h3>Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la plataforma GGTO: quién hace qué, en qué orden y con qué precauciones. Un «script» es un archivo</p>
+          <p class="tarjeta-enlaces">
+            <a href="04-Despliegue/03-scripts-gcp.html">Ver en HTML</a>
+            <a href="pdf/04-Despliegue/03-scripts-gcp.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/piramide-pruebas.png" alt="Figura de Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)">
+          <h3>Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)</h3>
+          <p>Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos de prueba existen, en qué entornos aislados corren, cuántas pruebas se ejecutaron, qué </p>
+          <p class="tarjeta-enlaces">
+            <a href="04-Despliegue/04-pruebas-y-ci.html">Ver en HTML</a>
+            <a href="pdf/04-Despliegue/04-pruebas-y-ci.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Diccionario de Datos <span class="chip">1 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/dominios-datos.png" alt="Figura de Diccionario de Datos — Entidades de la base GGTO">
+          <h3>Diccionario de Datos — Entidades de la base GGTO</h3>
+          <p>Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mism</p>
+          <p class="tarjeta-enlaces">
+            <a href="05-Diccionario-de-Datos/01-entidades.html">Ver en HTML</a>
+            <a href="pdf/05-Diccionario-de-Datos/01-entidades.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Diagrama Relacional <span class="chip">1 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/modelo-relacional-general.png" alt="Figura de Diagrama Entidad-Relación — Modelo de datos GGTO">
+          <h3>Diagrama Entidad-Relación — Modelo de datos GGTO</h3>
+          <p>Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, pero los presenta con un lengu</p>
+          <p class="tarjeta-enlaces">
+            <a href="06-Diagrama-Relacional/01-diagrama-er.html">Ver en HTML</a>
+            <a href="pdf/06-Diagrama-Relacional/01-diagrama-er.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+      <section class="grupo">
+        <h2>Operación <span class="chip">2 manual(es)</span></h2>
+        <div class="rejilla">
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/rutina-diaria.png" alt="Figura de Manual de Operación y Mantenimiento — GGTO">
+          <h3>Manual de Operación y Mantenimiento — GGTO</h3>
+          <p>Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene, qué hacer ante un incidente y</p>
+          <p class="tarjeta-enlaces">
+            <a href="07-Operacion/01-operacion-y-mantenimiento.html">Ver en HTML</a>
+            <a href="pdf/07-Operacion/01-operacion-y-mantenimiento.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        <article class="tarjeta">
+          <img class="tarjeta-mini" src="imagenes/defensa-en-capas.png" alt="Figura de Manual de Seguridad y Privacidad — GGTO">
+          <h3>Manual de Seguridad y Privacidad — GGTO</h3>
+          <p>Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con claridad lo que está previsto pero todavía no está implementado. Todo dato que no se pudo </p>
+          <p class="tarjeta-enlaces">
+            <a href="07-Operacion/02-seguridad-y-privacidad.html">Ver en HTML</a>
+            <a href="pdf/07-Operacion/02-seguridad-y-privacidad.pdf">Descargar PDF</a>
+          </p>
+        </article>
+        </div>
+      </section>
+  </main>
+</div>
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav"><span>CANTV C.A. — Central Francisco Salias (Área 4)</span><span>Generado el 28/09/2026</span></div>
+</footer>
+</body>
+</html>

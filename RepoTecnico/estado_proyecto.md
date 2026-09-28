@@ -4,11 +4,11 @@
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
-| Fase actual | **Fase 4 — Pruebas: COMPLETADA** (215/215) · siguiente: **Fase 5 — Manuales** |
+| Fase actual | **Fase 5 — Manuales: COMPLETADA** · pendiente la confirmación del usuario para cerrar el proyecto |
 | Última actualización | 2026-09-28 |
 | Rama git | `GGTOv2-DSH-GCP` · publicada en GitHub y GitLab |
 | Informe de auditoría | `INFORME_OPTIMIZACION_V1.md` (43 hallazgos iniciales; todos con decisión registrada) |
-| Decisiones | **D-01…D-62** |
+| Decisiones | **D-01…D-63** |
 | Infraestructura | GCP `ggtov2` + PostgreSQL (instancia compartida `truekeate-db-dev`) |
 | Pendientes externos | ⚠️ **Restringir el acceso público** (ya hay PII real) · firma del contrato de interfaz por CANTV · designar responsables de datos y del sistema origen · desbloquear facturación GCP (migrar `ggto-web` a `ggtov2`) · restringir el acceso público de `ggto-web` |
 
@@ -54,6 +54,9 @@
 | `metricas.md` | Definición formal de las métricas de MONITOREO y REPORTES. | **v1.0** |
 | `../app/` | Backend FastAPI + web React (Ciclos 1–7 y 9) con pruebas y CI. | **v0.9.0** |
 | `pruebas/` | Plan de pruebas, semilla E2E, suite Playwright e informe de la Fase 4. | **v1.0** |
+| `Manuales/` | 22 manuales técnicos por tema → sección → sub-sección, con citas `ruta:línea` al código real. | **v1.0** |
+| `../docs/Manuales/` | 22 manuales literales (mismo árbol), HTML estilizado y PDF descargable. | **v1.0** |
+| `../docs/imagenes/` | Diagramas e infografías de los manuales (SVG + PNG). | **v1.0** |
 | `estado_proyecto.md` | Este archivo. | **v0.1** |
 
 ---
@@ -124,19 +127,21 @@
 | D-60 | **Ciclo 9 (ALERTAS, Telegram y MCP) completado:** detección automática de fallas por concentración (idempotente), reporte manual, planificación (RF-17), material (RF-18), *outbox* con backoff (RNF-20), bot de Telegram (`/ayuda`, `/estado`, `/caso`, `/falla`), servidor MCP JSON-RPC y `ObservabilidadMiddleware` + `/metricas` (RNF-19); página web ALERTAS; **152/152 pruebas**; desplegado (`ggto-web-00014-zqx`, imagen `v14`) y verificado en vivo. | Fase 3 |
 | D-61 | **Concentración real detectada:** los 42 casos reales se reparten en 4 OLT (`pde-olt-00…03`, 14/12/10/6) y superan el umbral de 5; la próxima ingesta declarará automáticamente esas 4 fallas masivas y encolará sus alertas. Telegram y correo siguen sin credenciales (`canales_configurados=false`), por lo que las notificaciones quedan `PENDIENTE` en la bandeja. | Operación |
 | D-62 | **Fase 4 (Pruebas) completada:** plan en `RepoTecnico/pruebas/plan_pruebas.md` con 4 niveles (unitarias, integración, contratos y E2E de navegador); **169/169 `pytest` + 46/46 Playwright = 215 pruebas en verde**; `ruff`, `mypy` y `tsc` strict sin hallazgos; esquemas aislados `ggto_test`/`ggto_e2e` (parámetro `DB_SCHEMA`, nunca producción); 6 hallazgos corregidos y documentados en `informe_fase4.md`. Sin defectos funcionales abiertos. | Fase 4 |
+| D-63 | **Fase 5 (Manuales) completada:** **22 manuales técnicos** (`RepoTecnico/Manuales/`, 12 004 líneas con citas `ruta:línea` validadas), **22 manuales literales** (`docs/Manuales/`, mismo árbol, "Empezar en 5 minutos"), **35 imágenes** SVG+PNG (`docs/imagenes/`), **22 PDF** (371 páginas) + 23 HTML estilizados y la **sección AYUDA** de la SPA (`/ayuda`, ruta protegida, índice temas→secciones→sub-secciones con descarga de PDF). Sincronización reproducible con `docs/Manuales/_build/sincronizar_manual.sh`; `tsc` y `npm run build` en verde; assets servidos por FastAPI verificados (`/ayuda`, HTML, PDF e imágenes `200`). | Fase 5 |
 
 ---
 
 ## 4. Próximos pasos
 
-1. **Fase 5 — Manuales** (`@manuales`): manuales técnicos en `RepoTecnico/Manuales/` y
-   manuales literales en `docs/`, más la sección de Ayuda de la plataforma.
-2. Restringir el **acceso público de `ggto-web`** y habilitar respaldo antes de operar
+1. **Confirmación del usuario para dar por terminado el proyecto** (Fase 5 completada).
+2. **Republicar la imagen** de `ggto-web` para que la sección AYUDA (`/ayuda`) y los
+   manuales lleguen a producción (el `dist/` se reconstruyó en local; no se desplegó).
+3. Restringir el **acceso público de `ggto-web`** y habilitar respaldo antes de operar
    con PII real; firmar el contrato de interfaz con CANTV.
-3. Designar los responsables de protección de datos y del sistema origen (lado CANTV).
-4. Desbloquear la facturación GCP y migrar `ggto-web`/`ggtov2` a la instancia propia
+4. Designar los responsables de protección de datos y del sistema origen (lado CANTV).
+5. Desbloquear la facturación GCP y migrar `ggto-web`/`ggtov2` a la instancia propia
    con backups + PITR + SSL (cierra el riesgo aceptado D-26).
-5. Ciclo 8 (app móvil Flutter + SQLite) — pospuesto.
+6. Ciclo 8 (app móvil Flutter + SQLite) — pospuesto.
 
 ---
 
@@ -298,3 +303,7 @@ Corregidos en el informe §10: RT reales = **12** (no 20), módulos = **10** fil
 | 2026-09-28 | **Accesibilidad (F4-02):** 56 `<label>` de CONFIGURACIÓN asociados a su control (`htmlFor`+`id`) en las 7 páginas; verificado con `tsc` strict. |
 | 2026-09-28 | **F4-03 corregido:** `test_monitoreo_api.py` pasa de la constante `HOY` a la función `hoy()` (evita falsos negativos en corridas que cruzan la medianoche). |
 | 2026-09-28 | **Fase 4 completada (D-62):** **169/169 `pytest` + 46/46 E2E = 215 pruebas en verde** y `ruff`/`mypy`/`tsc` sin hallazgos; 6 hallazgos corregidos y documentados en `informe_fase4.md` (F4-06: variable local `hoy` que tapaba la función homónima). Sin defectos funcionales abiertos. |
+| 2026-09-28 | **Fase 5 iniciada (Manuales):** el equipo `@manuales` desplegó sus 5 roles (técnico, literario, creativo, PDF e integrador) sobre el código real; base de 22 temas con jerarquía tema → sección → sub-sección. |
+| 2026-09-28 | **Manuales técnicos y literales generados:** 22 + 22 manuales (12 004 líneas los técnicos), con "Empezar en 5 minutos" en cada literal; **3 573 citas `ruta:línea` verificadas** (367 nombres sueltos y 46 rutas relativas normalizadas; 2 rangos corregidos → 0 problemas). |
+| 2026-09-28 | **Gráficos, PDF y Ayuda:** 35 imágenes SVG+PNG (`docs/imagenes/`, 0 marcadores sin imagen y 0 huérfanas), 22 PDF (371 páginas, 22/22 verificados con índice y anclas) + 23 HTML estilizados, y la sección **AYUDA** (`/ayuda`) integrada en la SPA con índice navegable y descarga de PDF. |
+| 2026-09-28 | **Fase 5 completada (D-63):** `sincronizar_manual.sh` publica HTML/PDF/imágenes en `app/web/public/manual` sin referencias rotas; `tsc` y `npm run build` en verde; assets servidos por FastAPI verificados (`/ayuda`, HTML, PDF e imágenes `200`). Pendiente: confirmación del usuario y republicación de la imagen. |

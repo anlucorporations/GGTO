@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1040" viewBox="0 0 1560 1040" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1560" height="1040" fill="#ffffff"/>
+<rect x="0" y="0" width="1560" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1560" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Flujo de creación de un caso especial</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Clasificaciones REFERIDO, EMPRESA y GOBIERNO, caso asociado y agenda</text>
+<text x="1532" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1532" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="1010" width="1560" height="30" fill="#f4f6f9"/>
+<text x="780" y="1029" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="160" y="104" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="168" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="330" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Llega un caso especial:</text>
+<text x="330" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">REFERIDO, EMPRESA o GOBIERNO</text>
+<rect x="160" y="206" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="168" y="214" width="6" height="60" rx="3" fill="#5b21b6"/>
+<text x="330" y="249" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Se indica un caso existente?</text>
+<rect x="160" y="308" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="168" y="316" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="330" y="342.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Crear el caso asociado</text>
+<text x="330" y="359.5" fill="#4a5568" font-size="12" text-anchor="middle">Nace en estado NUEVO</text>
+<rect x="160" y="410" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="168" y="418" width="6" height="60" rx="3" fill="#5b21b6"/>
+<text x="330" y="453" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Trae id_averia?</text>
+<rect x="860" y="206" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="868" y="214" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="1030" y="240.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Usar el caso indicado</text>
+<text x="1030" y="257.5" fill="#4a5568" font-size="12" text-anchor="middle">404 si el caso no existe</text>
+<rect x="760" y="410" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="418" width="6" height="60" rx="3" fill="#0e7490"/>
+<text x="930" y="444.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">Generar REF-2324X-000001</text>
+<text x="930" y="461.5" fill="#4a5568" font-size="12" text-anchor="middle">Correlativo propio del sistema</text>
+<rect x="1160" y="410" width="340" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="1168" y="418" width="6" height="60" rx="3" fill="#0e7490"/>
+<text x="1330" y="444.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">Usar el id_averia enviado</text>
+<text x="1330" y="461.5" fill="#4a5568" font-size="12" text-anchor="middle">Identificador de CANTV</text>
+<rect x="760" y="560" width="740" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="568" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="1130" y="594.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Sectorizar la dirección</text>
+<text x="1130" y="611.5" fill="#4a5568" font-size="12" text-anchor="middle">Asigna id_sector con las reglas de la ingesta</text>
+<rect x="760" y="680" width="740" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="688" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="1130" y="714.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Copiar la clasificación en la categoría del caso</text>
+<text x="1130" y="731.5" fill="#4a5568" font-size="12" text-anchor="middle">Así el despacho deduce el tipo de asignación</text>
+<rect x="760" y="800" width="740" height="76" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="808" width="6" height="60" rx="3" fill="#1f7a4d"/>
+<text x="1130" y="834.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">Guardar el caso especial</text>
+<text x="1130" y="851.5" fill="#4a5568" font-size="12" text-anchor="middle">Estado ABIERTO · ligado al caso asociado</text>
+<rect x="760" y="920" width="370" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="768" y="928" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="945" y="954.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Agendar cita si hace falta</text>
+<text x="945" y="971.5" fill="#4a5568" font-size="12" text-anchor="middle">Queda en PROPUESTA</text>
+<rect x="1130" y="920" width="370" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="1138" y="928" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="1315" y="954.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Derivar con seguimiento</text>
+<text x="1315" y="971.5" fill="#4a5568" font-size="12" text-anchor="middle">Registra instancia y motivo</text>
+<path d="M330 180 L330 206" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M500 244 L860 244" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="680" y="236" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="middle">Sí</text>
+<path d="M330 282 L330 308" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="344" y="300" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="start">No</text>
+<path d="M330 384 L330 410" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M500 448 L760 448" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="630" y="440" fill="#0e7490" font-size="11" font-weight="700" text-anchor="middle">No</text>
+<path d="M500 448 L560 448 L560 380 L1330 380 L1330 410" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="880" y="372" fill="#0e7490" font-size="11" font-weight="700" text-anchor="middle">Sí</text>
+<path d="M930 486 L930 560" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1330 486 L1330 560" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1130 636 L1130 680" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1130 756 L1130 800" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M945 876 L945 920" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1315 876 L1315 920" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M1030 282 L1030 320 L1530 320 L1530 838 L1500 838" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="1180" y="312" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="middle">el caso indicado sigue el mismo cierre</text>
+<rect x="60" y="560" width="340" height="125" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="568" width="6" height="109" rx="3" fill="#d7dde6"/>
+<text x="82" y="585" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">clasificación obligatoria</text>
+<text x="82" y="602" fill="#4a5568" font-size="11.5" text-anchor="start">El campo clasificacion es obligatorio y solo admite</text>
+<text x="82" y="619" fill="#4a5568" font-size="11.5" text-anchor="start">REFERIDO, EMPRESA y GOBIERNO: se valida en la</text>
+<text x="82" y="636" fill="#4a5568" font-size="11.5" text-anchor="start">base de datos y en la API.</text>
+<text x="82" y="653" fill="#4a5568" font-size="11.5" text-anchor="start">Al crear el caso asociado la clasificación se copia</text>
+<text x="82" y="670" fill="#4a5568" font-size="11.5" text-anchor="start">en la categoría del caso.</text>
+<rect x="60" y="780" width="340" height="125" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="788" width="6" height="109" rx="3" fill="#d7dde6"/>
+<text x="82" y="805" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">prioridad ALTA/MEDIA/BAJA</text>
+<text x="82" y="822" fill="#4a5568" font-size="11.5" text-anchor="start">El campo prioridad no puede quedar vacío y vale</text>
+<text x="82" y="839" fill="#4a5568" font-size="11.5" text-anchor="start">MEDIA por defecto; solo admite ALTA, MEDIA y</text>
+<text x="82" y="856" fill="#4a5568" font-size="11.5" text-anchor="start">BAJA.</text>
+<text x="82" y="873" fill="#4a5568" font-size="11.5" text-anchor="start">El listado permite filtrar por prioridad y la pantalla</text>
+<text x="82" y="890" fill="#4a5568" font-size="11.5" text-anchor="start">la colorea según el nivel.</text>
+</svg>

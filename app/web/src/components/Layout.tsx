@@ -8,6 +8,7 @@ import {
   IconoAgenda,
   IconoAgregar,
   IconoAlertas,
+  IconoAyuda,
   IconoCasos,
   IconoChevronAbajo,
   IconoConfig,
@@ -38,6 +39,7 @@ const SECCIONES: Seccion[] = [
   { ruta: '/ingesta', etiqueta: 'INGESTA', fin: false, Icono: IconoIngesta },
   { ruta: '/monitoreo', etiqueta: 'MONITOREO', fin: false, Icono: IconoMonitoreo },
   { ruta: '/alertas', etiqueta: 'ALERTAS', fin: false, Icono: IconoAlertas },
+  { ruta: '/ayuda', etiqueta: 'AYUDA', fin: false, Icono: IconoAyuda },
 ];
 
 const CONFIGURACION: { ruta: string; etiqueta: string }[] = [

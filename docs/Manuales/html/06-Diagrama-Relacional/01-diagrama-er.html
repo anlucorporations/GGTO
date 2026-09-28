@@ -1,0 +1,2990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagrama Entidad-Relación — Modelo de datos GGTO — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, ">
+<meta property="og:image" content="../../../imagenes/modelo-relacional-general.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Diagrama Relacional</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../../pdf/06-Diagrama-Relacional/01-diagrama-er.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-del-modelo" data-target="vision-general-del-modelo"><span class="tn">2</span> Visión general del modelo</a><span class="pag"></span><ul><li class="n3"><a href="#35-tablas-y-7-dominios" data-target="35-tablas-y-7-dominios"><span class="tn">2.1</span> 35 tablas y 7 dominios</a><span class="pag"></span></li><li class="n3"><a href="#convencion-de-diagramas-mermaid-erdiagram" data-target="convencion-de-diagramas-mermaid-erdiagram"><span class="tn">2.2</span> Convención de diagramas (Mermaid erDiagram)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#diagramas-mermaid-por-dominio" data-target="diagramas-mermaid-por-dominio"><span class="tn">3</span> Diagramas Mermaid por dominio</a><span class="pag"></span><ul><li class="n3"><a href="#vista-general-de-relaciones" data-target="vista-general-de-relaciones"><span class="tn">3.1</span> Vista general de relaciones</a><span class="pag"></span></li><li class="n3"><a href="#nucleo-organizacional-y-seguridad" data-target="nucleo-organizacional-y-seguridad"><span class="tn">3.2</span> Núcleo organizacional y seguridad</a><span class="pag"></span></li><li class="n3"><a href="#casos-averias-y-solicitudes" data-target="casos-averias-y-solicitudes"><span class="tn">3.3</span> Casos (averías y solicitudes)</a><span class="pag"></span></li><li class="n3"><a href="#despacho-y-fallas-masivas" data-target="despacho-y-fallas-masivas"><span class="tn">3.4</span> Despacho y fallas masivas</a><span class="pag"></span></li><li class="n3"><a href="#gestion-tecnica-offline" data-target="gestion-tecnica-offline"><span class="tn">3.5</span> Gestión técnica (offline)</a><span class="pag"></span></li><li class="n3"><a href="#insumos-v2" data-target="insumos-v2"><span class="tn">3.6</span> Insumos (v2)</a><span class="pag"></span></li><li class="n3"><a href="#soporte-y-auditoria" data-target="soporte-y-auditoria"><span class="tn">3.7</span> Soporte y auditoría</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#relaciones-principales" data-target="relaciones-principales"><span class="tn">4</span> Relaciones principales</a><span class="pag"></span><ul><li class="n3"><a href="#relaciones-1-n" data-target="relaciones-1-n"><span class="tn">4.1</span> Relaciones 1:N</a><span class="pag"></span></li><li class="n3"><a href="#relaciones-n-m" data-target="relaciones-n-m"><span class="tn">4.2</span> Relaciones N:M</a><span class="pag"></span></li><li class="n3"><a href="#dependencias-de-catalogo" data-target="dependencias-de-catalogo"><span class="tn">4.3</span> Dependencias de catálogo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#claves-y-restricciones" data-target="claves-y-restricciones"><span class="tn">5</span> Claves y restricciones</a><span class="pag"></span><ul><li class="n3"><a href="#claves-primarias" data-target="claves-primarias"><span class="tn">5.1</span> Claves primarias</a><span class="pag"></span></li><li class="n3"><a href="#claves-foraneas" data-target="claves-foraneas"><span class="tn">5.2</span> Claves foráneas</a><span class="pag"></span></li><li class="n3"><a href="#unique-id-averia" data-target="unique-id-averia"><span class="tn">5.3</span> UNIQUE (id_averia)</a><span class="pag"></span></li><li class="n3"><a href="#check-de-estados" data-target="check-de-estados"><span class="tn">5.4</span> CHECK de estados</a><span class="pag"></span></li><li class="n3"><a href="#funciones-generar-id-averia-ref-triggers-actualizado-en" data-target="funciones-generar-id-averia-ref-triggers-actualizado-en"><span class="tn">5.5</span> Funciones (generar_id_averia_ref, triggers actualizado_en)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rls" data-target="rls"><span class="tn">6</span> RLS</a><span class="pag"></span><ul><li class="n3"><a href="#caso-y-despacho" data-target="caso-y-despacho"><span class="tn">6.1</span> caso y despacho</a><span class="pag"></span></li><li class="n3"><a href="#politicas" data-target="politicas"><span class="tn">6.2</span> políticas</a><span class="pag"></span></li><li class="n3"><a href="#implicacion-multi-central-rnf-21" data-target="implicacion-multi-central-rnf-21"><span class="tn">6.3</span> implicación multi-central (RNF-21)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#indices" data-target="indices"><span class="tn">7</span> Índices</a><span class="pag"></span><ul><li class="n3"><a href="#trigram-caso-direccion-sector-direccion-patron" data-target="trigram-caso-direccion-sector-direccion-patron"><span class="tn">7.1</span> trigram (caso.direccion, sector_direccion.patron)</a><span class="pag"></span></li><li class="n3"><a href="#indices-de-apoyo" data-target="indices-de-apoyo"><span class="tn">7.2</span> índices de apoyo</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Diagrama Relacional</span>
+          <h1 class="portada-titulo">Diagrama Entidad-Relación — Modelo de datos GGTO</h1>
+          <p class="portada-resumen">Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, pero los presenta con un lenguaje claro y con los vínculos simplificados para que se lean fácil. Si algo no se pudo verificar, se indica como pendiente de confirmar.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Diagrama Relacional</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/06-Diagrama-Relacional/01-diagrama-er.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de
+la base GGTO. Es la versión literal del manual técnico: conserva las mismas
+secciones y todos los diagramas por dominio, pero los presenta con un lenguaje
+claro y con los vínculos simplificados para que se lean fácil. Si algo no se
+pudo verificar, se indica como <strong>pendiente de confirmar</strong>.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Piensa en un grafo, no en una lista.</strong> Cada tabla es un punto y cada
+relación es una flecha. Leer el modelo es seguir esas flechas: de una central
+salen sus sectores, técnicos y casos.</li>
+<li><strong>Aprende a leer las flechas.</strong> <code>||--o{</code> significa «uno a muchos»: un caso
+puede tener muchas citas. <code>||--o|</code> significa «uno a cero o uno»: un técnico
+puede tener una cuenta de usuario, o ninguna.</li>
+<li><strong>Empieza por el centro.</strong> La tabla <code>caso</code> es el corazón. Se conecta con
+<code>central</code>, <code>sector</code>, <code>causa</code>, <code>ingesta_lote</code>, <code>despacho_caso</code>, <code>cita</code>,
+<code>actividad</code>, <code>seguimiento</code> y <code>notificacion</code>.</li>
+<li><strong>Revisa los tres puentes.</strong> Tres relaciones de muchos a muchos se resuelven
+con tablas puente: <code>cuadrilla_tecnico</code>, <code>cuadrilla_herramienta</code> y
+<code>despacho_caso</code>.</li>
+<li><strong>Recuerda las reglas del sistema.</strong> La base tiene 35 tablas y ya contiene
+datos reales (42 casos con datos personales) en un servicio público: el
+acceso debe restringirse. Telegram y correo no tienen credenciales, así que
+los envíos quedan PENDIENTES; WhatsApp no existe en la v1; la app móvil
+Flutter no está desarrollada (Ciclo 8 pospuesto); y el riesgo aceptado D-26
+indica que no hay respaldos/PITR hasta migrar de instancia.</li>
+</ol>
+<h2 id="vision-general-del-modelo"><span class="sec-num">2</span>Visión general del modelo</h2>
+<h3 id="35-tablas-y-7-dominios"><span class="sec-num">2.1</span>35 tablas y 7 dominios</h3>
+<p>El esquema físico contiene 35 sentencias <code>CREATE TABLE</code> y el modelo de origen
+las representa en siete bloques temáticos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dominio</th>
+<th>Entidades del diagrama</th>
+<th>Nº</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Vista general de relaciones</td>
+<td>Relaciones entre todas las entidades</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Núcleo organizacional y seguridad</td>
+<td>ROL, CENTRAL, SECTOR, SECTOR_DIRECCION, TECNICO, USUARIO, FLOTA, HERRAMIENTA, CUADRILLA, CUADRILLA_TECNICO, CUADRILLA_HERRAMIENTA, DISPOSITIVO_SEGURIDAD, SINCRONIZACION</td>
+<td>13</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Casos: averías y solicitudes</td>
+<td>INGESTA_LOTE, CAUSA, CASO, CASO_ESPECIAL, SOLICITANTE, CASO_ESTADO_HIST, SEGUIMIENTO, CITA</td>
+<td>8</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Despacho y fallas masivas</td>
+<td>DESPACHO, DESPACHO_CASO, FALLA_MASIVA (más CASO, CUADRILLA, SECTOR y CENTRAL como referencia)</td>
+<td>3 propias</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Gestión técnica</td>
+<td>ACTIVIDAD, EVIDENCIA, INCIDENTE, CATALOGO_METODO (más CAUSA, CASO, USUARIO, CUADRILLA, FLOTA y HERRAMIENTA)</td>
+<td>4 propias</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Insumos v2</td>
+<td>INSUMO, ORDEN_MATERIAL, ORDEN_MATERIAL_DETALLE, INVENTARIO_MOVIMIENTO</td>
+<td>4</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Soporte y auditoría</td>
+<td>CONFIGURACION, AUDITORIA, NOTIFICACION</td>
+<td>3</td>
+</tr>
+</tbody>
+</table></div>
+<p>Las entidades definidas con atributos propios en los dominios 2 a 7 suman
+13 + 8 + 3 + 4 + 4 + 3 = 35. Además, cada bloque repite entidades de otros
+dominios como referencia para dibujar la relación (por ejemplo, <code>CASO</code> aparece
+en los dominios 4, 5 y 7). En total, <strong>35 tablas</strong> distintas.</p>
+<h3 id="convencion-de-diagramas-mermaid-erdiagram"><span class="sec-num">2.2</span>Convención de diagramas (Mermaid erDiagram)</h3>
+<p>El modelo fija las convenciones de tipos, porque <strong>Mermaid no admite
+paréntesis</strong> en la definición de atributos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Mermaid</th>
+<th>PostgreSQL real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>serial</code> / <code>bigserial</code></td>
+<td><code>serial</code> / <code>bigserial</code></td>
+</tr>
+<tr>
+<td><code>varchar</code></td>
+<td><code>varchar(n)</code> según el diccionario</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>timestamptz</code></td>
+</tr>
+<tr>
+<td><code>numeric</code></td>
+<td><code>numeric(12,2)</code> / <code>numeric(10,7)</code> para GPS</td>
+</tr>
+<tr>
+<td><code>json</code></td>
+<td><code>jsonb</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>boolean</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Claves: <code>PK</code> es clave principal, <code>FK</code> clave foránea y <code>UK</code> valor único. Las
+cardinalidades usadas son <code>||--o{</code> (uno a muchos, lado opcional) y <code>||--o|</code>
+(uno a cero o uno). Los comentarios entre comillas de los diagramas (por ejemplo
+<code>&quot;unico global&quot;</code> o <code>&quot;sin solapamiento&quot;</code>) provienen del modelo y se conservan
+textualmente; algunos describen reglas que en el script de la base se
+implementan con <code>CHECK</code>, <code>UNIQUE</code> o directamente en el servicio.</p>
+<h2 id="diagramas-mermaid-por-dominio"><span class="sec-num">3</span>Diagramas Mermaid por dominio</h2>
+<h3 id="vista-general-de-relaciones"><span class="sec-num">3.1</span>Vista general de relaciones</h3>
+<p>Muestra el grafo completo de dependencias entre las 35 tablas. La imagen
+siguiente es la versión simplificada y legible: solo nombres de tablas y
+relaciones.</p>
+<figure id="fig-0"><img src="../../../imagenes/modelo-relacional-general.png" alt="modelo relacional general"><figcaption>Figura 1 · modelo-relacional-general.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    CENTRAL      ||--o{ SECTOR : contiene
+    CENTRAL      ||--o{ TECNICO : emplea
+    CENTRAL      ||--o{ FLOTA : posee
+    CENTRAL      ||--o{ HERRAMIENTA : posee
+    CENTRAL      ||--o{ CUADRILLA : organiza
+    CENTRAL      ||--o{ CASO : administra
+    CENTRAL      ||--o{ INGESTA_LOTE : recibe
+    CENTRAL      ||--o{ DESPACHO : genera
+    CENTRAL      ||--o{ FALLA_MASIVA : registra
+    CENTRAL      ||--o{ INSUMO : cataloga
+    SECTOR       ||--o{ SECTOR_DIRECCION : agrupa
+    SECTOR       ||--o{ CASO : ubica
+    TECNICO      ||--o| USUARIO : &quot;da identidad a&quot;
+    ROL          ||--o{ USUARIO : asigna
+    FLOTA        ||--o| CUADRILLA : &quot;es vehiculo de&quot;
+    CUADRILLA    ||--o{ CUADRILLA_TECNICO : integra
+    CUADRILLA    ||--o{ CUADRILLA_HERRAMIENTA : equipa
+    CUADRILLA    ||--o{ DESPACHO : ejecuta
+    CUADRILLA    ||--o{ CITA : atiende
+    USUARIO      ||--o| DISPOSITIVO_SEGURIDAD : registra
+    DISPOSITIVO_SEGURIDAD ||--o{ SINCRONIZACION : sincroniza
+    TECNICO      ||--o{ SINCRONIZACION : realiza
+    INGESTA_LOTE ||--o{ CASO : origina
+    CAUSA        ||--o{ CASO : clasifica
+    CASO         ||--o{ CASO_ESTADO_HIST : historial
+    CASO         ||--o{ CASO_ESPECIAL : especializa
+    SOLICITANTE  ||--o{ CASO_ESPECIAL : solicita
+    CASO         ||--o{ ACTIVIDAD : registra
+    ACTIVIDAD    ||--o{ EVIDENCIA : adjunta
+    CASO         ||--o{ DESPACHO_CASO : despacha
+    DESPACHO     ||--o{ DESPACHO_CASO : detalla
+    CASO         ||--o{ SEGUIMIENTO : deriva
+    CASO         ||--o{ CITA : agenda
+    USUARIO      ||--o{ ACTIVIDAD : ejecuta
+    CATALOGO_METODO ||--o{ ACTIVIDAD : define
+    ACTIVIDAD    ||--o{ INCIDENTE : reporta
+    FLOTA        ||--o{ INCIDENTE : sufre
+    HERRAMIENTA  ||--o{ INCIDENTE : sufre
+    FALLA_MASIVA ||--o{ CASO : agrupa
+    ORDEN_MATERIAL ||--o{ ORDEN_MATERIAL_DETALLE : contiene
+    ORDEN_MATERIAL ||--o{ INVENTARIO_MOVIMIENTO : genera
+    INSUMO       ||--o{ ORDEN_MATERIAL_DETALLE : incluye
+    INSUMO       ||--o{ INVENTARIO_MOVIMIENTO : mueve
+    CASO         ||--o{ NOTIFICACION : notifica</code></pre></details></figure>
+<p>Observaciones verificadas sobre este grafo:</p>
+<ul>
+<li>La relación «CASO <code>||--o{</code> EVIDENCIA» del diagrama <strong>no</strong> es directa en el
+script de la base: <code>evidencia</code> referencia a <code>actividad</code> y llega al caso a
+través de ella. El bloque del dominio 5 sí modela la ruta correcta
+(<code>ACTIVIDAD ||--o{ EVIDENCIA</code>).</li>
+<li>«CENTRAL <code>||--o{</code> INSUMO» se cumple solo si <code>id_central</code> está informado; en el
+script de la base la columna admite valores vacíos.</li>
+<li>«FALLA_MASIVA <code>||--o{</code> CASO» no tiene clave foránea: la pertenencia se marca
+con <code>caso.es_falla_masiva</code> y la agrupación por concentración se calcula en
+<code>app/services/fallas.py</code>.</li>
+</ul>
+<h3 id="nucleo-organizacional-y-seguridad"><span class="sec-num">3.2</span>Núcleo organizacional y seguridad</h3>
+<p>Cubre los catálogos y los recursos de la central, incluidos los de la app de
+campo (dispositivo y sincronización).</p>
+<div class="grafico-pendiente" id="fig-1"><p class="gp-titulo">Diagrama 2 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    ROL {
+        serial   id_rol PK
+        varchar  codigo UK &quot;SUPERVISOR|TECNICO|ADMIN&quot;
+        varchar  nombre
+        json     permisos
+        bool     activo
+    }
+    CENTRAL {
+        serial   id_central PK
+        varchar  region
+        varchar  estado_geografico
+        varchar  capital_estado
+        varchar  municipio
+        varchar  parroquia
+        varchar  estado_operativo
+        varchar  distrito
+        varchar  area
+        varchar  codigo_central UK &quot;ej. 2324X&quot;
+        varchar  nombre_central
+        bool     activa
+    }
+    SECTOR {
+        serial   id_sector PK
+        int      id_central FK
+        varchar  nombre &quot;Norte 1, Sur 2&quot;
+        varchar  codigo UK
+        varchar  descripcion
+        int      prioridad
+        bool     activo
+    }
+    SECTOR_DIRECCION {
+        serial   id_sector_direccion PK
+        int      id_sector FK
+        varchar  patron &quot;VALLE ARRIBA, CONCRESA&quot;
+        varchar  tipo_coincidencia &quot;CONTIENE|EXACTO|REGEX&quot;
+        bool     normalizar
+        bool     activo
+    }
+    TECNICO {
+        serial   id_tecnico PK
+        int      id_central FK
+        varchar  nombre
+        varchar  apellido
+        varchar  cedula UK
+        varchar  p00 UK
+        varchar  telefono
+        varchar  correo
+        varchar  especialidad
+        varchar  status
+    }
+    USUARIO {
+        serial   id_usuario PK
+        varchar  p00 UK
+        varchar  correo UK
+        varchar  clave_hash
+        int      id_rol FK
+        int      id_tecnico FK
+        int      id_central FK
+        int      intentos_fallidos
+        bool     bloqueado
+        bool     bloqueo_cliente
+        bool     requiere_cambio_clave
+        bool     activo
+        timestamp ultimo_acceso
+    }
+    FLOTA {
+        serial   id_flota PK
+        int      id_central FK
+        varchar  can UK
+        varchar  tipo
+        varchar  marca
+        varchar  modelo
+        varchar  placa UK
+        varchar  combustible
+        varchar  status
+        varchar  estado_cauchos
+        varchar  estado_fluidos
+        varchar  estado_general
+    }
+    HERRAMIENTA {
+        serial   id_herramienta PK
+        int      id_central FK
+        varchar  nombre
+        varchar  codigo UK
+        varchar  estado
+        varchar  observacion
+    }
+    CUADRILLA {
+        serial   id_cuadrilla PK
+        int      id_central FK
+        varchar  codigo UK
+        varchar  nombre
+        int      id_flota FK
+        bool     es_supervisor &quot;cuadrilla 0&quot;
+        bool     activa
+    }
+    CUADRILLA_TECNICO {
+        int      id_cuadrilla PK
+        int      id_tecnico PK
+        date     desde PK
+        varchar  rol_cuadrilla
+        date     hasta
+    }
+    CUADRILLA_HERRAMIENTA {
+        int      id_cuadrilla PK
+        int      id_herramienta PK
+        timestamp asignada_en PK
+        timestamp devuelta_en
+    }
+    DISPOSITIVO_SEGURIDAD {
+        bigserial id_dispositivo PK
+        varchar  p00 FK
+        json     palabras_hash &quot;12 palabras&quot;
+        varchar  clave_privada_ref
+        text     documento_cifrado
+        bool     bloqueado
+        int      version
+    }
+    SINCRONIZACION {
+        bigserial id_sync PK
+        bigint   id_dispositivo FK
+        int      id_tecnico FK
+        timestamp inicio
+        timestamp fin
+        int      casos_descargados
+        int      actividades_subidas
+        int      evidencias_subidas
+        varchar  archivo_zip &quot;central+cuadrilla+fecha&quot;
+        varchar  estado
+        json     detalle_json
+    }
+
+    CENTRAL  ||--o{ SECTOR : contiene
+    SECTOR   ||--o{ SECTOR_DIRECCION : agrupa
+    CENTRAL  ||--o{ TECNICO : emplea
+    CENTRAL  ||--o{ FLOTA : posee
+    CENTRAL  ||--o{ HERRAMIENTA : posee
+    CENTRAL  ||--o{ CUADRILLA : organiza
+    ROL      ||--o{ USUARIO : asigna
+    TECNICO  ||--o| USUARIO : identifica
+    FLOTA    ||--o| CUADRILLA : &quot;es vehiculo de&quot;
+    CUADRILLA ||--o{ CUADRILLA_TECNICO : integra
+    TECNICO  ||--o{ CUADRILLA_TECNICO : pertenece
+    CUADRILLA ||--o{ CUADRILLA_HERRAMIENTA : equipa
+    HERRAMIENTA ||--o{ CUADRILLA_HERRAMIENTA : asignada
+    USUARIO  ||--o| DISPOSITIVO_SEGURIDAD : registra
+    DISPOSITIVO_SEGURIDAD ||--o{ SINCRONIZACION : sincroniza
+    TECNICO  ||--o{ SINCRONIZACION : realiza</code></pre></div>
+<p>El comentario <code>&quot;SUPERVISOR|TECNICO|ADMIN&quot;</code> del atributo <code>ROL.codigo</code> quedó
+desactualizado respecto del script de la base: la semilla real inserta <strong>cuatro</strong>
+roles (<code>SUPER</code>, <code>ADMIN</code>, <code>SUPERVISOR</code>, <code>TECNICO</code>). Además, <code>sector.codigo</code> y
+<code>cuadrilla.codigo</code> son únicos <strong>por central</strong> (<code>UNIQUE (id_central, codigo)</code>), no
+globales, y <code>ux_cuadrilla_supervisor</code> garantiza una sola cuadrilla 0 por central.
+Los campos <code>telefono</code>, <code>correo</code>, <code>cedula</code>, <code>nombre</code> y <code>apellido</code> son datos
+personales: trátalos con cuidado.</p>
+<h3 id="casos-averias-y-solicitudes"><span class="sec-num">3.3</span>Casos (averías y solicitudes)</h3>
+<p>Es el núcleo transaccional del sistema.</p>
+<div class="grafico-pendiente" id="fig-2"><p class="gp-titulo">Diagrama 3 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    INGESTA_LOTE {
+        bigserial id_lote PK
+        varchar  archivo
+        date     fecha_archivo
+        int      id_central FK
+        int      filas_leidas
+        int      filas_central
+        int      casos_nuevos
+        int      casos_duplicados
+        int      casos_descartados
+        varchar  estado
+        varchar  usuario
+    }
+    CAUSA {
+        serial   id_causa PK
+        varchar  codigo_causa
+        varchar  subcodigo_causa
+        varchar  descripcion
+        varchar  descripcion_subcodigo
+        varchar  tipo
+        bool     activo
+    }
+    CASO {
+        bigserial id_caso PK
+        int      id_central FK
+        varchar  id_averia UK &quot;unico global&quot;
+        varchar  origen
+        varchar  tipo_caso &quot;AVERIA|REPARACION|CONSTRUCCION&quot;
+        varchar  categoria &quot;RESIDENCIAL|EMPRESA|REFERIDO|GOBIERNO&quot;
+        varchar  estado_actual
+        varchar  telefono
+        varchar  nombre_cliente
+        varchar  direccion
+        int      id_sector FK
+        int      id_causa FK
+        bigint   id_lote_ingesta FK
+        bool     en_gestion_supervisor
+        bool     es_falla_masiva
+        varchar  olt
+        varchar  slot
+        varchar  puerto
+        varchar  fat
+        varchar  serial
+        varchar  plan
+        varchar  tipo_servicio
+        varchar  problema_reporte
+        varchar  ultimo_comentario
+        varchar  informacion &quot;unifica cols 31,32,52 (D-27)&quot;
+        timestamp fecha_reporte
+        timestamp fecha_cita
+        timestamp fecha_compromiso
+    }
+    CASO_ESPECIAL {
+        serial   id_caso_especial PK
+        bigint   id_caso FK
+        int      id_solicitante FK
+        varchar  clasificacion &quot;REFERIDO|EMPRESA|GOBIERNO&quot;
+        varchar  tipo_actividad &quot;REPARACION|CONSTRUCCION&quot;
+        varchar  prioridad
+        bool     tiene_id_averia
+        text     descripcion
+        bool     requiere_informe
+        varchar  estado
+    }
+    SOLICITANTE {
+        serial   id_solicitante PK
+        varchar  unidad
+        varchar  nombre
+        varchar  contacto
+        varchar  canal &quot;TELEGRAM|MCP_IA|MANUAL&quot;
+    }
+    CASO_ESTADO_HIST {
+        bigserial id_hist PK
+        bigint   id_caso FK
+        varchar  estado_anterior
+        varchar  estado_nuevo
+        text     motivo
+        varchar  usuario
+        timestamp fecha_hora
+    }
+    SEGUIMIENTO {
+        bigserial id_seguimiento PK
+        bigint   id_caso FK
+        varchar  instancia_destino
+        text     motivo
+        timestamp fecha_envio
+        timestamp fecha_retorno
+        varchar  estado
+        varchar  usuario
+    }
+    CITA {
+        bigserial id_cita PK
+        bigint   id_caso FK
+        int      id_caso_especial FK
+        int      id_cuadrilla FK
+        timestamp fecha_hora &quot;sin solapamiento&quot;
+        varchar  tipo &quot;CONTACTO|ATENCION&quot;
+        varchar  estado
+        text     observacion
+    }
+
+    CENTRAL      ||--o{ INGESTA_LOTE : recibe
+    INGESTA_LOTE ||--o{ CASO : origina
+    CENTRAL      ||--o{ CASO : administra
+    SECTOR       ||--o{ CASO : ubica
+    CAUSA        ||--o{ CASO : clasifica
+    CASO         ||--o| CASO_ESPECIAL : especializa
+    SOLICITANTE  ||--o{ CASO_ESPECIAL : solicita
+    CASO         ||--o{ CASO_ESTADO_HIST : historial
+    CASO         ||--o{ SEGUIMIENTO : deriva
+    CASO         ||--o{ CITA : agenda
+    CASO_ESPECIAL ||--o{ CITA : agenda
+    CUADRILLA    ||--o{ CITA : atiende</code></pre></div>
+<p>Notas verificadas: el diagrama declara <code>CITA.id_cita</code> como <code>bigserial</code>, que es
+el tipo real; el diccionario de origen lo describía como <code>serial</code> (divergencia
+señalada en el manual del diccionario). La regla «sin solapamiento» del atributo
+<code>fecha_hora</code> se apoya en el índice <code>ix_cita_cuadrilla_fecha</code>; en el script de la
+base <strong>no</strong> existe una restricción <code>EXCLUDE</code> (el propio modelo la considera
+«opcional»). La tabla <code>caso</code> guarda teléfono, nombre del cliente y dirección
+(datos personales).</p>
+<h3 id="despacho-y-fallas-masivas"><span class="sec-num">3.4</span>Despacho y fallas masivas</h3>
+<div class="grafico-pendiente" id="fig-3"><p class="gp-titulo">Diagrama 4 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    DESPACHO {
+        bigserial id_despacho PK
+        int      id_central FK
+        date     fecha
+        int      id_cuadrilla FK
+        varchar  estado &quot;BORRADOR|PUBLICADO|CERRADO&quot;
+        bool     generado_auto
+        varchar  enviado_canal &quot;TELEGRAM|CORREO&quot;
+        timestamp enviado_en
+        timestamp reporte_produccion_en &quot;04:00 pm&quot;
+        varchar  usuario_crea
+    }
+    DESPACHO_CASO {
+        bigserial id_despacho_caso PK
+        bigint   id_despacho FK
+        bigint   id_caso FK
+        int      id_sector FK
+        int      orden_visita
+        varchar  tipo_asignacion
+        varchar  estado
+        text     observacion
+    }
+    FALLA_MASIVA {
+        bigserial id_falla PK
+        int      id_central FK
+        varchar  clave_concentracion
+        text     descripcion
+        timestamp fecha_deteccion
+        varchar  origen &quot;AUTOMATICA|REPORTE_TECNICO|MCP&quot;
+        int      id_sector FK
+        int      id_cuadrilla FK
+        varchar  estado
+        text     planificacion
+        text     reporte_simple
+        timestamp planificada_en
+    }
+    CASO {
+        bigserial id_caso PK
+        varchar  id_averia UK
+        bool     es_falla_masiva
+        int      id_sector FK
+    }
+    CUADRILLA {
+        serial   id_cuadrilla PK
+        varchar  codigo UK
+        bool     es_supervisor
+    }
+    SECTOR {
+        serial   id_sector PK
+        varchar  nombre
+    }
+    CENTRAL {
+        serial   id_central PK
+        varchar  nombre_central
+    }
+
+    CENTRAL    ||--o{ DESPACHO : genera
+    CUADRILLA  ||--o{ DESPACHO : ejecuta
+    DESPACHO   ||--o{ DESPACHO_CASO : detalla
+    CASO       ||--o{ DESPACHO_CASO : asignado
+    SECTOR     ||--o{ DESPACHO_CASO : agrupa
+    CENTRAL    ||--o{ FALLA_MASIVA : registra
+    SECTOR     ||--o{ FALLA_MASIVA : ubica
+    CUADRILLA  ||--o{ FALLA_MASIVA : atiende
+    FALLA_MASIVA ||--o{ CASO : agrupa</code></pre></div>
+<p>El diagrama ya marca <code>id_despacho</code> como <code>bigserial</code>, que es el tipo real, a
+diferencia del diccionario de origen. La relación <code>FALLA_MASIVA ||--o{ CASO</code> no
+tiene clave foránea en el script: se materializa con la bandera
+<code>caso.es_falla_masiva</code> y con la detección por concentración de
+<code>app/services/fallas.py</code>, cuyos parámetros viven en <code>configuracion</code>
+(<code>fallas.activo</code>, <code>fallas.umbral_casos</code>, <code>fallas.ventana_horas</code> y
+<code>fallas.campo_concentracion</code>). El canal <code>enviado_canal</code> admite Telegram y correo,
+pero en producción <strong>aún no hay credenciales</strong>: los envíos quedan PENDIENTES.</p>
+<h3 id="gestion-tecnica-offline"><span class="sec-num">3.5</span>Gestión técnica (offline)</h3>
+<p>El título original del documento es «Gestión técnica (app móvil)». Debe
+precisarse que <strong>la aplicación móvil Flutter no está desarrollada</strong> (Ciclo 8
+pospuesto): este bloque describe el modelo previsto para la operación en campo y
+las tablas existen en el script de la base, pero en la v1 ningún flujo de la API
+las escribe. WhatsApp tampoco existe en la v1.</p>
+<div class="grafico-pendiente" id="fig-4"><p class="gp-titulo">Diagrama 5 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    ACTIVIDAD {
+        bigserial id_actividad PK
+        bigint   id_caso FK
+        int      id_usuario FK
+        int      id_cuadrilla FK
+        varchar  tipo &quot;CONTACTO|CIERRE|ENRUTE|DIFERIDO|INCIDENTE|FALLA_MASIVA&quot;
+        varchar  resultado
+        text     reporte_corto
+        int      id_metodo FK
+        int      id_causa FK
+        timestamp fecha_hora
+        numeric  latitud
+        numeric  longitud
+        bool     sincronizado
+    }
+    EVIDENCIA {
+        bigserial id_evidencia PK
+        bigint   id_actividad FK
+        varchar  tipo &quot;POTENCIA|NAVEGACION|DEMO&quot;
+        varchar  serial_imagen UK &quot;caso+averia+tipo+fecha&quot;
+        varchar  ruta_local
+        varchar  ruta_remota
+        numeric  latitud
+        numeric  longitud
+        timestamp fecha_hora
+        bool     origen_camara &quot;false = galeria (invalido)&quot;
+    }
+    INCIDENTE {
+        bigserial id_incidente PK
+        varchar  tipo &quot;FLOTA|HERRAMIENTA&quot;
+        int      id_flota FK
+        int      id_herramienta FK
+        text     descripcion
+        bigint   id_actividad FK
+        varchar  estado
+    }
+    CATALOGO_METODO {
+        serial   id_metodo PK
+        varchar  dominio &quot;CIERRE|ENRUTE|DIFERIDO|CONTACTO&quot;
+        varchar  codigo
+        varchar  nombre
+        bool     activo
+    }
+    CAUSA {
+        serial   id_causa PK
+        varchar  codigo_causa
+        varchar  subcodigo_causa
+    }
+    CASO {
+        bigserial id_caso PK
+        varchar  id_averia UK
+    }
+    USUARIO {
+        serial   id_usuario PK
+        varchar  p00 UK
+    }
+    CUADRILLA {
+        serial   id_cuadrilla PK
+        varchar  codigo UK
+    }
+    FLOTA {
+        serial   id_flota PK
+        varchar  can UK
+    }
+    HERRAMIENTA {
+        serial   id_herramienta PK
+        varchar  codigo UK
+    }
+
+    CASO       ||--o{ ACTIVIDAD : registra
+    USUARIO    ||--o{ ACTIVIDAD : ejecuta
+    CUADRILLA  ||--o{ ACTIVIDAD : pertenece
+    CATALOGO_METODO ||--o{ ACTIVIDAD : define
+    CAUSA      ||--o{ ACTIVIDAD : justifica
+    ACTIVIDAD  ||--o{ EVIDENCIA : adjunta
+    ACTIVIDAD  ||--o{ INCIDENTE : reporta
+    FLOTA      ||--o{ INCIDENTE : sufre
+    HERRAMIENTA ||--o{ INCIDENTE : sufre</code></pre></div>
+<p>El bloque del dominio 5 sí incluye <code>CATALOGO_METODO.dominio = CONTACTO</code>, que
+coincide con la regla real y corrige la omisión del diccionario. La regla
+«<code>origen_camara</code> debe ser <code>true</code>» se expresa como valor inicial <code>true</code> más la
+validación en el servicio: el script de la base no impone una regla que lo
+fuerce.</p>
+<h3 id="insumos-v2"><span class="sec-num">3.6</span>Insumos (v2)</h3>
+<p>Corresponde al alcance de la v2 (RF-05); las tablas existen pero no tienen flujo
+de aplicación en la v1.</p>
+<div class="grafico-pendiente" id="fig-5"><p class="gp-titulo">Diagrama 6 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    INSUMO {
+        serial   id_insumo PK
+        int      id_central FK
+        varchar  codigo UK
+        varchar  nombre
+        varchar  unidad_medida
+        numeric  stock_minimo
+        bool     activo
+    }
+    ORDEN_MATERIAL {
+        bigserial id_orden PK
+        bigint   id_caso FK
+        int      id_cuadrilla FK
+        varchar  solicitante_usuario
+        varchar  estado
+        timestamp fecha
+        text     observacion
+    }
+    ORDEN_MATERIAL_DETALLE {
+        bigserial id_orden_detalle PK
+        bigint   id_orden FK
+        int      id_insumo FK
+        numeric  cantidad_solicitada
+        numeric  cantidad_entregada
+    }
+    INVENTARIO_MOVIMIENTO {
+        bigserial id_mov PK
+        int      id_insumo FK
+        varchar  tipo &quot;INGRESO|EGRESO|AJUSTE&quot;
+        numeric  cantidad
+        bigint   id_orden FK
+        int      id_tecnico FK
+        timestamp fecha
+        varchar  usuario
+    }
+    CENTRAL {
+        serial   id_central PK
+    }
+    CASO {
+        bigserial id_caso PK
+    }
+    CUADRILLA {
+        serial   id_cuadrilla PK
+    }
+    TECNICO {
+        serial   id_tecnico PK
+    }
+
+    CENTRAL        ||--o{ INSUMO : cataloga
+    ORDEN_MATERIAL ||--o{ ORDEN_MATERIAL_DETALLE : contiene
+    INSUMO         ||--o{ ORDEN_MATERIAL_DETALLE : incluye
+    ORDEN_MATERIAL ||--o{ INVENTARIO_MOVIMIENTO : genera
+    INSUMO         ||--o{ INVENTARIO_MOVIMIENTO : mueve
+    CASO           ||--o{ ORDEN_MATERIAL : origina
+    CUADRILLA      ||--o{ ORDEN_MATERIAL : solicita
+    TECNICO        ||--o{ INVENTARIO_MOVIMIENTO : recibe</code></pre></div>
+<p>Detalle verificado: <code>inventario_movimiento</code> tiene además la columna
+<code>observacion</code> que el diagrama no lista, y <code>orden_material_detalle</code> restringe
+cada insumo a una sola aparición por orden (<code>UNIQUE (id_orden, id_insumo)</code>).</p>
+<h3 id="soporte-y-auditoria"><span class="sec-num">3.7</span>Soporte y auditoría</h3>
+<div class="grafico-pendiente" id="fig-6"><p class="gp-titulo">Diagrama 7 (código Mermaid)</p><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
+    CONFIGURACION {
+        varchar  clave PK
+        json     valor
+        varchar  descripcion
+        timestamp actualizado_en
+    }
+    AUDITORIA {
+        bigserial id_auditoria PK
+        varchar  usuario
+        varchar  accion
+        varchar  entidad
+        varchar  id_entidad
+        json     datos_antes
+        json     datos_despues
+        varchar  ip
+        timestamp fecha_hora
+    }
+    NOTIFICACION {
+        bigserial id_notificacion PK
+        varchar  canal &quot;TELEGRAM|CORREO|MCP_IA&quot;
+        varchar  destinatario
+        varchar  asunto
+        text     cuerpo
+        bigint   id_caso FK
+        varchar  estado
+        timestamp enviado_en
+        int      intentos
+        timestamp proximo_intento
+    }
+    CASO {
+        bigserial id_caso PK
+        varchar  id_averia UK
+    }
+
+    CASO ||--o{ NOTIFICACION : notifica</code></pre></div>
+<p>Detalle verificado: <code>auditoria.ip</code> es de tipo <code>inet</code>, no <code>varchar</code>; tanto
+<code>auditoria</code> como <code>configuracion</code> carecen de clave foránea; y <code>notificacion</code>
+incorpora la columna <code>error</code> que el diagrama no lista. En producción, los canales
+Telegram y correo aún no tienen credenciales: las notificaciones quedan en estado
+<code>PENDIENTE</code> (patrón <em>outbox</em>, <code>app/services/outbox.py</code>).</p>
+<h2 id="relaciones-principales"><span class="sec-num">4</span>Relaciones principales</h2>
+<h3 id="relaciones-1-n"><span class="sec-num">4.1</span>Relaciones 1:N</h3>
+<p>Relaciones uno-a-muchos verificadas contra las claves foráneas del script de la
+base:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Padre</th>
+<th>Hijo</th>
+<th>Clave foránea</th>
+<th>Cardinalidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>central</code></td>
+<td><code>sector</code></td>
+<td><code>sector.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>tecnico</code></td>
+<td><code>tecnico.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>flota</code></td>
+<td><code>flota.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>herramienta</code></td>
+<td><code>herramienta.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>cuadrilla</code></td>
+<td><code>cuadrilla.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>caso</code></td>
+<td><code>caso.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>ingesta_lote</code></td>
+<td><code>ingesta_lote.id_central</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>despacho</code></td>
+<td><code>despacho.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>falla_masiva</code></td>
+<td><code>falla_masiva.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td><code>insumo</code></td>
+<td><code>insumo.id_central</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td><code>sector_direccion</code></td>
+<td><code>sector_direccion.id_sector</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td><code>caso</code></td>
+<td><code>caso.id_sector</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td><code>despacho_caso</code></td>
+<td><code>despacho_caso.id_sector</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>ingesta_lote</code></td>
+<td><code>caso</code></td>
+<td><code>caso.id_lote_ingesta</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>causa</code></td>
+<td><code>caso</code></td>
+<td><code>caso.id_causa</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>causa</code></td>
+<td><code>actividad</code></td>
+<td><code>actividad.id_causa</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>catalogo_metodo</code></td>
+<td><code>actividad</code></td>
+<td><code>actividad.id_metodo</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>flota</code></td>
+<td><code>cuadrilla</code></td>
+<td><code>cuadrilla.id_flota</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>despacho</code></td>
+<td><code>despacho.id_cuadrilla</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>cita</code></td>
+<td><code>cita.id_cuadrilla</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>actividad</code></td>
+<td><code>actividad.id_cuadrilla</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>falla_masiva</code></td>
+<td><code>falla_masiva.id_cuadrilla</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>orden_material</code></td>
+<td><code>orden_material.id_cuadrilla</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>caso_estado_hist</code></td>
+<td><code>caso_estado_hist.id_caso</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>seguimiento</code></td>
+<td><code>seguimiento.id_caso</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>cita</code></td>
+<td><code>cita.id_caso</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>despacho_caso</code></td>
+<td><code>despacho_caso.id_caso</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>actividad</code></td>
+<td><code>actividad.id_caso</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>notificacion</code></td>
+<td><code>notificacion.id_caso</code></td>
+<td>1:N con borrado que deja el campo vacío</td>
+</tr>
+<tr>
+<td><code>caso</code></td>
+<td><code>orden_material</code></td>
+<td><code>orden_material.id_caso</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>caso_especial</code></td>
+<td><code>cita</code></td>
+<td><code>cita.id_caso_especial</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>solicitante</code></td>
+<td><code>caso_especial</code></td>
+<td><code>caso_especial.id_solicitante</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>despacho</code></td>
+<td><code>despacho_caso</code></td>
+<td><code>despacho_caso.id_despacho</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td><code>evidencia</code></td>
+<td><code>evidencia.id_actividad</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>actividad</code></td>
+<td><code>incidente</code></td>
+<td><code>incidente.id_actividad</code></td>
+<td>1:N con borrado que deja el campo vacío</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>actividad</code></td>
+<td><code>actividad.id_usuario</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>orden_material</code></td>
+<td><code>orden_material.solicitante_usuario</code> (apunta a <code>p00</code>)</td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>flota</code></td>
+<td><code>incidente</code></td>
+<td><code>incidente.id_flota</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>herramienta</code></td>
+<td><code>incidente</code></td>
+<td><code>incidente.id_herramienta</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>dispositivo_seguridad</code></td>
+<td><code>sincronizacion</code></td>
+<td><code>sincronizacion.id_dispositivo</code></td>
+<td>1:N con borrado que deja el campo vacío</td>
+</tr>
+<tr>
+<td><code>tecnico</code></td>
+<td><code>sincronizacion</code></td>
+<td><code>sincronizacion.id_tecnico</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>tecnico</code></td>
+<td><code>inventario_movimiento</code></td>
+<td><code>inventario_movimiento.id_tecnico</code></td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>insumo</code></td>
+<td><code>orden_material_detalle</code></td>
+<td><code>orden_material_detalle.id_insumo</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>insumo</code></td>
+<td><code>inventario_movimiento</code></td>
+<td><code>inventario_movimiento.id_insumo</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
+<td><code>orden_material</code></td>
+<td><code>orden_material_detalle</code></td>
+<td><code>orden_material_detalle.id_orden</code></td>
+<td>1:N con borrado en cascada</td>
+</tr>
+<tr>
+<td><code>orden_material</code></td>
+<td><code>inventario_movimiento</code></td>
+<td><code>inventario_movimiento.id_orden</code></td>
+<td>1:N opcional</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="relaciones-n-m"><span class="sec-num">4.2</span>Relaciones N:M</h3>
+<p>Las tres relaciones muchos-a-muchos se resuelven con <strong>tablas puente</strong> que
+tienen clave principal compuesta:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tabla puente</th>
+<th>Extremos</th>
+<th>Clave principal compuesta</th>
+<th>Atributos propios</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cuadrilla_tecnico</code></td>
+<td><code>cuadrilla</code> ↔ <code>tecnico</code></td>
+<td><code>(id_cuadrilla, id_tecnico, desde)</code></td>
+<td><code>rol_cuadrilla</code>, <code>hasta</code></td>
+</tr>
+<tr>
+<td><code>cuadrilla_herramienta</code></td>
+<td><code>cuadrilla</code> ↔ <code>herramienta</code></td>
+<td><code>(id_cuadrilla, id_herramienta, asignada_en)</code></td>
+<td><code>devuelta_en</code></td>
+</tr>
+<tr>
+<td><code>despacho_caso</code></td>
+<td><code>despacho</code> ↔ <code>caso</code></td>
+<td><code>id_despacho_caso</code> (subrogada) + <code>UNIQUE (id_despacho, id_caso)</code></td>
+<td><code>id_sector</code>, <code>orden_visita</code>, <code>tipo_asignacion</code>, <code>estado</code>, <code>observacion</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>La pertenencia a cuadrilla es <strong>histórica y con vigencia</strong> (<code>desde</code>/<code>hasta</code>), de
+modo que un técnico puede cambiar de cuadrilla sin perder el registro anterior.
+La asignación de herramientas usa la marca temporal como parte de la clave para
+permitir múltiples asignaciones sucesivas de la misma herramienta a la misma
+cuadrilla.</p>
+<h3 id="dependencias-de-catalogo"><span class="sec-num">4.3</span>Dependencias de catálogo</h3>
+<p>Catálogos y su consumo:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Catálogo</th>
+<th>Consumido por</th>
+<th>Clave foránea</th>
+<th>Notas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rol</code></td>
+<td><code>usuario.id_rol</code></td>
+<td>Sí, obligatoria</td>
+<td>4 roles cargados, incluido <code>SUPER</code> con permiso total.</td>
+</tr>
+<tr>
+<td><code>central</code></td>
+<td>10 tablas (<code>sector</code>, <code>tecnico</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>, <code>caso</code>, <code>ingesta_lote</code>, <code>despacho</code>, <code>falla_masiva</code>, <code>insumo</code>)</td>
+<td>Sí</td>
+<td>Base del filtro de ingesta y del alcance multi-central.</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td><code>caso</code>, <code>sector_direccion</code>, <code>despacho_caso</code>, <code>falla_masiva</code></td>
+<td>Sí</td>
+<td>Asignación de sector por coincidencia de dirección.</td>
+</tr>
+<tr>
+<td><code>causa</code></td>
+<td><code>caso.id_causa</code>, <code>actividad.id_causa</code></td>
+<td>Sí</td>
+<td>Catálogo administrable; hoy tiene 0 filas.</td>
+</tr>
+<tr>
+<td><code>catalogo_metodo</code></td>
+<td><code>actividad.id_metodo</code></td>
+<td>Sí</td>
+<td>9 métodos cargados.</td>
+</tr>
+<tr>
+<td><code>configuracion</code></td>
+<td>Ninguna clave foránea; la leen los servicios</td>
+<td>No</td>
+<td>Parámetros en JSON; se actualiza por <code>PUT /api/v1/configuracion/{clave}</code>.</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>creado_por</code>, <code>usuario</code>, <code>creado_por</code> de <code>cita</code>, <code>solicitante_usuario</code>, <code>usuario_crea</code></td>
+<td>Parcial</td>
+<td><code>caso.creado_por</code> referencia <code>usuario(p00)</code>; otras columnas con el mismo nombre son <code>varchar(20)</code> sin clave foránea.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="claves-y-restricciones"><span class="sec-num">5</span>Claves y restricciones</h2>
+<h3 id="claves-primarias"><span class="sec-num">5.1</span>Claves primarias</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Tablas</th>
+<th>Observación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PK simple <code>serial</code></td>
+<td><code>rol</code>, <code>causa</code>, <code>catalogo_metodo</code>, <code>central</code>, <code>sector</code>, <code>sector_direccion</code>, <code>tecnico</code>, <code>usuario</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>, <code>solicitante</code>, <code>caso_especial</code>, <code>insumo</code></td>
+<td>Catálogos y entidades maestras.</td>
+</tr>
+<tr>
+<td>PK simple <code>bigserial</code></td>
+<td><code>ingesta_lote</code>, <code>caso</code>, <code>caso_estado_hist</code>, <code>seguimiento</code>, <code>cita</code>, <code>despacho</code>, <code>despacho_caso</code>, <code>falla_masiva</code>, <code>actividad</code>, <code>evidencia</code>, <code>incidente</code>, <code>dispositivo_seguridad</code>, <code>sincronizacion</code>, <code>orden_material</code>, <code>orden_material_detalle</code>, <code>inventario_movimiento</code>, <code>notificacion</code>, <code>auditoria</code></td>
+<td>Tablas transaccionales de alto volumen.</td>
+</tr>
+<tr>
+<td>PK compuesta</td>
+<td><code>cuadrilla_tecnico</code> <code>(id_cuadrilla, id_tecnico, desde)</code>, <code>cuadrilla_herramienta</code> <code>(id_cuadrilla, id_herramienta, asignada_en)</code></td>
+<td>Dos tablas puente.</td>
+</tr>
+<tr>
+<td>PK natural <code>varchar</code></td>
+<td><code>configuracion.clave</code></td>
+<td>La clave es el nombre del parámetro.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="claves-foraneas"><span class="sec-num">5.2</span>Claves foráneas</h3>
+<p>Políticas de borrado observadas en el script de la base:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Política</th>
+<th>Ejemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Borrado en cascada (al borrar el padre se borran los hijos)</td>
+<td><code>sector_direccion.id_sector</code>, <code>caso_estado_hist.id_caso</code>, <code>seguimiento.id_caso</code>, <code>cita.id_caso</code>, <code>despacho_caso.id_despacho</code> e <code>id_caso</code>, <code>actividad.id_caso</code>, <code>evidencia.id_actividad</code>, <code>caso_especial.id_caso</code>, <code>orden_material_detalle.id_orden</code>, <code>dispositivo_seguridad.p00</code></td>
+</tr>
+<tr>
+<td>Borrado que deja el campo vacío (el hijo sobrevive)</td>
+<td><code>incidente.id_actividad</code>, <code>sincronizacion.id_dispositivo</code>, <code>notificacion.id_caso</code></td>
+</tr>
+<tr>
+<td>Sin política de borrado (restrictiva por defecto)</td>
+<td>La mayoría de las claves foráneas hacia catálogos (<code>central</code>, <code>rol</code>, <code>sector</code>, <code>causa</code>, <code>catalogo_metodo</code>, <code>tecnico</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Consecuencia operativa: no se puede eliminar una <code>central</code> que aún tenga
+sectores, técnicos, casos o despachos (la clave foránea lo impide); en cambio,
+borrar un <code>caso</code> arrastra en cascada su historial de estados, seguimientos, citas
+y asignaciones de despacho.</p>
+<h3 id="unique-id-averia"><span class="sec-num">5.3</span>UNIQUE (id_averia)</h3>
+<p>La unicidad <strong>global</strong> de <code>caso.id_averia</code> es la clave para no duplicar casos
+(RF-22):</p>
+<ul>
+<li>Definición: <code>id_averia varchar(30) NOT NULL UNIQUE</code>.</li>
+<li>Formato sintético para casos sin incidencia de origen:
+<code>REF-&lt;CÓDIGO_CENTRAL&gt;-&lt;NNNNNN&gt;</code> (decisión D-23).</li>
+<li>Generación: función <code>generar_id_averia_ref(p_id_central integer)</code>, que lee
+<code>central.codigo_central</code>, lanza un error si la central no existe, pasa el
+código a mayúsculas y rellena con ceros a la izquierda hasta 6 dígitos.</li>
+<li>Secuencia de apoyo: <code>seq_caso_ref</code>.</li>
+<li>Ejemplo documentado: <code>REF-2324X-000001</code>.</li>
+</ul>
+<p>Otras restricciones únicas destacadas: <code>rol.codigo</code>, <code>central.codigo_central</code>,
+<code>tecnico.p00</code>, <code>tecnico.cedula</code>, <code>usuario.p00</code>, <code>usuario.correo</code>, <code>flota.can</code>,
+<code>flota.placa</code>, <code>herramienta.codigo</code>, <code>insumo.codigo</code>, <code>evidencia.serial_imagen</code>;
+compuestas <code>sector(id_central, codigo)</code>, <code>cuadrilla(id_central, codigo)</code>,
+<code>sector_direccion(id_sector, patron)</code>, <code>causa(codigo_causa, subcodigo_causa)</code>,
+<code>catalogo_metodo(dominio, codigo)</code>, <code>despacho(fecha, id_cuadrilla)</code>,
+<code>despacho_caso(id_despacho, id_caso)</code>, <code>orden_material_detalle(id_orden, id_insumo)</code>. El índice único parcial <code>ux_cuadrilla_supervisor</code> implementa «una
+sola cuadrilla 0 por central».</p>
+<h3 id="check-de-estados"><span class="sec-num">5.4</span>CHECK de estados</h3>
+<p>Los enumerados se modelan con listas cerradas <code>CHECK</code> (no con el tipo <code>ENUM</code>).
+La columna «Valores» reproduce el orden del script:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tabla.columna</th>
+<th>Valores permitidos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>catalogo_metodo.dominio</code></td>
+<td><code>CIERRE</code>, <code>ENRUTE</code>, <code>DIFERIDO</code>, <code>CONTACTO</code></td>
+</tr>
+<tr>
+<td><code>sector_direccion.tipo_coincidencia</code></td>
+<td><code>CONTIENE</code>, <code>EXACTO</code>, <code>REGEX</code></td>
+</tr>
+<tr>
+<td><code>tecnico.status</code></td>
+<td><code>ACTIVO</code>, <code>INACTIVO</code>, <code>VACACIONES</code>, <code>SUSPENDIDO</code></td>
+</tr>
+<tr>
+<td><code>flota.status</code></td>
+<td><code>DISPONIBLE</code>, <code>EN_RUTA</code>, <code>MANTENIMIENTO</code>, <code>FUERA_SERVICIO</code></td>
+</tr>
+<tr>
+<td><code>herramienta.estado</code></td>
+<td><code>DISPONIBLE</code>, <code>ASIGNADA</code>, <code>AVERIADA</code>, <code>PERDIDA</code></td>
+</tr>
+<tr>
+<td><code>cuadrilla_tecnico.rol_cuadrilla</code></td>
+<td><code>REPARADOR_PRINCIPAL</code>, <code>AYUDANTE</code>, <code>SUPERVISOR</code></td>
+</tr>
+<tr>
+<td><code>ingesta_lote.estado</code></td>
+<td><code>PROCESANDO</code>, <code>OK</code>, <code>ERROR</code></td>
+</tr>
+<tr>
+<td><code>caso.origen</code></td>
+<td><code>INGESTA_CSV</code>, <code>MANUAL</code>, <code>TELEGRAM</code>, <code>MCP_IA</code></td>
+</tr>
+<tr>
+<td><code>caso.tipo_caso</code></td>
+<td><code>AVERIA</code>, <code>REPARACION</code>, <code>CONSTRUCCION</code></td>
+</tr>
+<tr>
+<td><code>caso.categoria</code></td>
+<td><code>RESIDENCIAL</code>, <code>EMPRESA</code>, <code>REFERIDO</code>, <code>GOBIERNO</code></td>
+</tr>
+<tr>
+<td><code>caso.estado_actual</code></td>
+<td><code>NUEVO</code>, <code>ASIGNADO</code>, <code>CONTACTADO</code>, <code>CITADO</code>, <code>DIFERIDO</code>, <code>EN_GESTION</code>, <code>ENRUTADO</code>, <code>CERRADO</code>, <code>CANCELADO</code></td>
+</tr>
+<tr>
+<td><code>solicitante.canal</code></td>
+<td><code>TELEGRAM</code>, <code>MCP_IA</code>, <code>MANUAL</code>, <code>CORREO</code></td>
+</tr>
+<tr>
+<td><code>caso_especial.clasificacion</code></td>
+<td><code>REFERIDO</code>, <code>EMPRESA</code>, <code>GOBIERNO</code></td>
+</tr>
+<tr>
+<td><code>caso_especial.tipo_actividad</code></td>
+<td><code>REPARACION</code>, <code>CONSTRUCCION</code></td>
+</tr>
+<tr>
+<td><code>caso_especial.prioridad</code></td>
+<td><code>ALTA</code>, <code>MEDIA</code>, <code>BAJA</code></td>
+</tr>
+<tr>
+<td><code>caso_especial.estado</code></td>
+<td><code>ABIERTO</code>, <code>EN_PROCESO</code>, <code>ATENDIDO</code>, <code>CERRADO</code></td>
+</tr>
+<tr>
+<td><code>seguimiento.estado</code></td>
+<td><code>EN_COLA</code>, <code>RESUELTO</code>, <code>DEVUELTO</code></td>
+</tr>
+<tr>
+<td><code>cita.tipo</code></td>
+<td><code>CONTACTO</code>, <code>ATENCION</code></td>
+</tr>
+<tr>
+<td><code>cita.estado</code></td>
+<td><code>PROPUESTA</code>, <code>CONFIRMADA</code>, <code>CUMPLIDA</code>, <code>REPROGRAMADA</code>, <code>DIFERIDA</code>, <code>CANCELADA</code></td>
+</tr>
+<tr>
+<td><code>despacho.estado</code></td>
+<td><code>BORRADOR</code>, <code>PUBLICADO</code>, <code>CERRADO</code></td>
+</tr>
+<tr>
+<td><code>despacho.enviado_canal</code></td>
+<td><code>TELEGRAM</code>, <code>CORREO</code></td>
+</tr>
+<tr>
+<td><code>despacho_caso.tipo_asignacion</code></td>
+<td><code>REPARACION</code>, <code>CONSTRUCCION</code>, <code>REFERIDO</code>, <code>EMPRESA</code>, <code>FALLA_MASIVA</code></td>
+</tr>
+<tr>
+<td><code>despacho_caso.estado</code></td>
+<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code>, <code>DIFERIDO</code></td>
+</tr>
+<tr>
+<td><code>falla_masiva.origen</code></td>
+<td><code>AUTOMATICA</code>, <code>REPORTE_TECNICO</code>, <code>MCP</code></td>
+</tr>
+<tr>
+<td><code>falla_masiva.estado</code></td>
+<td><code>DETECTADA</code>, <code>PLANIFICADA</code>, <code>ATENDIDA</code>, <code>CERRADA</code></td>
+</tr>
+<tr>
+<td><code>actividad.tipo</code></td>
+<td><code>CONTACTO</code>, <code>CIERRE</code>, <code>ENRUTE</code>, <code>DIFERIDO</code>, <code>INCIDENTE</code>, <code>FALLA_MASIVA</code></td>
+</tr>
+<tr>
+<td><code>actividad.resultado</code></td>
+<td><code>CONTACTADO</code>, <code>CERRADO</code>, <code>ENRUTADO</code>, <code>DIFERIDO</code></td>
+</tr>
+<tr>
+<td><code>evidencia.tipo</code></td>
+<td><code>POTENCIA</code>, <code>NAVEGACION</code>, <code>DEMO</code></td>
+</tr>
+<tr>
+<td><code>incidente.tipo</code></td>
+<td><code>FLOTA</code>, <code>HERRAMIENTA</code></td>
+</tr>
+<tr>
+<td><code>incidente.estado</code></td>
+<td><code>REPORTADO</code>, <code>EN_REVISION</code>, <code>RESUELTO</code></td>
+</tr>
+<tr>
+<td><code>sincronizacion.estado</code></td>
+<td><code>EN_PROCESO</code>, <code>OK</code>, <code>ERROR</code></td>
+</tr>
+<tr>
+<td><code>orden_material.estado</code></td>
+<td><code>SOLICITADA</code>, <code>APROBADA</code>, <code>ENTREGADA</code>, <code>RECHAZADA</code></td>
+</tr>
+<tr>
+<td><code>inventario_movimiento.tipo</code></td>
+<td><code>INGRESO</code>, <code>EGRESO</code>, <code>AJUSTE</code></td>
+</tr>
+<tr>
+<td><code>notificacion.canal</code></td>
+<td><code>TELEGRAM</code>, <code>CORREO</code>, <code>MCP_IA</code></td>
+</tr>
+<tr>
+<td><code>notificacion.estado</code></td>
+<td><code>PENDIENTE</code>, <code>ENVIADO</code>, <code>FALLIDO</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Restricciones de comprobación que no son listas de estados:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Regla</th>
+<th>En palabras</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cita</code>: <code>id_caso IS NOT NULL OR id_caso_especial IS NOT NULL</code></td>
+<td>Una cita debe apuntar a un caso o a un caso especial.</td>
+</tr>
+<tr>
+<td><code>incidente</code>: <code>id_flota IS NOT NULL OR id_herramienta IS NOT NULL</code></td>
+<td>Un incidente debe referirse a un vehículo o a una herramienta.</td>
+</tr>
+<tr>
+<td><code>orden_material_detalle.cantidad_solicitada &gt; 0</code></td>
+<td>La cantidad pedida debe ser positiva.</td>
+</tr>
+<tr>
+<td><code>inventario_movimiento.cantidad &gt; 0</code></td>
+<td>La cantidad del movimiento debe ser positiva.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="funciones-generar-id-averia-ref-triggers-actualizado-en"><span class="sec-num">5.5</span>Funciones (generar_id_averia_ref, triggers actualizado_en)</h3>
+<p>Funciones definidas en el esquema:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Función</th>
+<th>Tipo</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>set_actualizado_en()</code></td>
+<td><code>plpgsql</code>, disparador</td>
+<td>Asigna la fecha y hora actual a <code>actualizado_en</code> en cada <code>UPDATE</code>.</td>
+</tr>
+<tr>
+<td><code>generar_id_averia_ref(p_id_central integer)</code></td>
+<td><code>plpgsql</code></td>
+<td>Devuelve <code>REF-&lt;CÓDIGO&gt;-&lt;NNNNNN&gt;</code> para casos sin incidencia.</td>
+</tr>
+<tr>
+<td><code>app_central_actual()</code></td>
+<td><code>sql STABLE</code></td>
+<td>Lee el parámetro de sesión <code>app.id_central</code> y lo convierte a entero.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Disparadores <code>actualizado_en</code>: un bloque <code>DO</code> recorre la lista de 14 tablas
+(<code>central</code>, <code>sector</code>, <code>tecnico</code>, <code>usuario</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>,
+<code>caso</code>, <code>caso_especial</code>, <code>despacho</code>, <code>falla_masiva</code>, <code>insumo</code>, <code>orden_material</code>,
+<code>configuracion</code>) y crea <code>trg_&lt;tabla&gt;_actualizado BEFORE UPDATE ... FOR EACH ROW</code>.
+Hallazgo verificado: <code>dispositivo_seguridad</code> declara la columna
+<code>actualizado_en</code> pero <strong>no</strong> figura en la lista, por lo que su marca no se
+refresca automáticamente. La secuencia <code>seq_caso_ref</code> alimenta la numeración de
+los identificadores <code>REF-</code>.</p>
+<h2 id="rls"><span class="sec-num">6</span>RLS</h2>
+<h3 id="caso-y-despacho"><span class="sec-num">6.1</span>caso y despacho</h3>
+<p>El script habilita Row Level Security (RLS, seguridad por filas) con forzado de
+política en dos tablas:</p>
+<pre data-lang="sql"><code class="language-sql">ALTER TABLE caso     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE caso     FORCE  ROW LEVEL SECURITY;
+ALTER TABLE despacho ENABLE ROW LEVEL SECURITY;
+ALTER TABLE despacho FORCE  ROW LEVEL SECURITY;
+</code></pre>
+<p><code>FORCE ROW LEVEL SECURITY</code> hace que las políticas se apliquen también al
+propietario de la tabla, de modo que no basta con ser dueño del objeto para
+saltarlas.</p>
+<h3 id="politicas"><span class="sec-num">6.2</span>políticas</h3>
+<p>Se definen dos políticas, una por tabla, con la misma expresión:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Política</th>
+<th>Tabla</th>
+<th>Expresión</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>p_caso_central</code></td>
+<td><code>caso</code></td>
+<td><code>app_central_actual() IS NULL OR id_central = app_central_actual()</code></td>
+</tr>
+<tr>
+<td><code>p_despacho_central</code></td>
+<td><code>despacho</code></td>
+<td>Expresión idéntica</td>
+</tr>
+</tbody>
+</table></div>
+<p>La función auxiliar <code>app_central_actual()</code> devuelve <code>null</code> cuando el parámetro
+de sesión <code>app.id_central</code> no está definido. En ese caso la política <strong>permite
+todo</strong> (modo compatibilidad declarado explícitamente en el script). El propio
+comentario advierte que, antes de producción, debe eliminarse la cláusula
+<code>app_central_actual() IS NULL</code> para pasar a un comportamiento de «denegar por
+defecto».</p>
+<p>Estado real de la aplicación: una búsqueda en el código Python <strong>no encuentra
+ninguna sentencia <code>SET LOCAL app.id_central</code></strong> ni una escritura equivalente. Es
+decir, en la v1 el backend no fija el alcance de central en la conexión y, por
+tanto, las políticas RLS no restringen filas: el aislamiento multi-central
+depende hoy de <code>usuario.id_central</code> en la capa de servicio, no de la base. Debe
+considerarse <strong>pendiente de confirmar</strong> el punto donde se fijará ese parámetro
+(sesión por petición) o la eliminación de la cláusula permisiva.</p>
+<h3 id="implicacion-multi-central-rnf-21"><span class="sec-num">6.3</span>implicación multi-central (RNF-21)</h3>
+<p>RNF-21 exige «matriz rol × módulo × acción», alcance por <code>usuario.id_central</code>,
+RLS como defensa en profundidad y <strong>pruebas negativas</strong> (la central A no accede
+a datos de la central B). La situación verificada es:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Elemento de RNF-21</th>
+<th>Estado verificado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alcance por <code>usuario.id_central</code></td>
+<td>La columna existe y está mapeada en los modelos de Python.</td>
+</tr>
+<tr>
+<td>RLS en PostgreSQL</td>
+<td>Definida en <code>caso</code> y <code>despacho</code>, pero <strong>no activada por la aplicación</strong> (sin <code>SET LOCAL app.id_central</code>).</td>
+</tr>
+<tr>
+<td>Defensa en profundidad</td>
+<td>Parcial: la extensión al resto de tablas con <code>id_central</code> (<code>sector</code>, <code>tecnico</code>, <code>flota</code>, <code>cuadrilla</code>, <code>insumo</code>) está prevista para la Fase 3.</td>
+</tr>
+<tr>
+<td>Pruebas negativas entre centrales</td>
+<td><strong>pendiente de confirmar</strong>; no se localizaron pruebas de acceso denegado cruzado.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Implicación práctica: mientras exista una sola central cargada (<code>2324X</code>
+FRANCISCO SALIAS), el comportamiento funcional es correcto; al incorporar una
+segunda central, la ausencia de <code>app.id_central</code> en la conexión convierte las
+políticas en no restrictivas y el aislamiento recae por completo en la capa de
+servicio. Recuerda que la base ya contiene datos reales (42 casos con datos
+personales) y el servicio es público: <strong>el acceso debe restringirse</strong>.</p>
+<h2 id="indices"><span class="sec-num">7</span>Índices</h2>
+<h3 id="trigram-caso-direccion-sector-direccion-patron"><span class="sec-num">7.1</span>trigram (caso.direccion, sector_direccion.patron)</h3>
+<p>La asignación de sector por coincidencia de texto (RF-23/D-33) se apoya en la
+extensión <code>pg_trgm</code> y dos índices GIN con la clase de operadores <code>gin_trgm_ops</code>:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Índice</th>
+<th>Tabla.columna</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ix_caso_direccion_trgm</code></td>
+<td><code>caso.direccion</code></td>
+<td><code>USING gin (direccion gin_trgm_ops)</code></td>
+</tr>
+<tr>
+<td><code>ix_sector_patron_trgm</code></td>
+<td><code>sector_direccion.patron</code></td>
+<td><code>USING gin (patron gin_trgm_ops)</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Estos índices habilitan búsquedas difusas o similares (<code>%</code>, <code>similarity</code>) sobre
+direcciones normalizadas y permiten que la asignación de sector escale con el
+volumen de casos. El campo <code>sector_direccion.normalizar</code> indica que la
+comparación se hace sin acentos ni mayúsculas, y <code>tipo_coincidencia</code> admite
+<code>CONTIENE</code>, <code>EXACTO</code> o <code>REGEX</code>.</p>
+<h3 id="indices-de-apoyo"><span class="sec-num">7.2</span>índices de apoyo</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Índice</th>
+<th>Tabla (columnas)</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ux_cuadrilla_supervisor</code></td>
+<td><code>cuadrilla (id_central) WHERE es_supervisor</code></td>
+<td>Único parcial: una cuadrilla 0 por central</td>
+</tr>
+<tr>
+<td><code>ix_caso_central</code></td>
+<td><code>caso (id_central)</code></td>
+<td>Filtro por central (RLS y consultas)</td>
+</tr>
+<tr>
+<td><code>ix_caso_sector</code></td>
+<td><code>caso (id_sector)</code></td>
+<td>Casos por sector</td>
+</tr>
+<tr>
+<td><code>ix_caso_telefono</code></td>
+<td><code>caso (telefono)</code></td>
+<td>Búsqueda en el panel</td>
+</tr>
+<tr>
+<td><code>ix_caso_estado</code></td>
+<td><code>caso (estado_actual)</code></td>
+<td>Filtro por estado</td>
+</tr>
+<tr>
+<td><code>ix_caso_fecha_reporte</code></td>
+<td><code>caso (fecha_reporte)</code></td>
+<td>Monitoreo por fecha</td>
+</tr>
+<tr>
+<td><code>ix_caso_gestion_supervisor</code></td>
+<td><code>caso (en_gestion_supervisor)</code></td>
+<td>Cola de gestión (cuadrilla 0)</td>
+</tr>
+<tr>
+<td><code>ix_caso_falla_masiva</code></td>
+<td><code>caso (es_falla_masiva)</code></td>
+<td>Casos agrupados en fallas</td>
+</tr>
+<tr>
+<td><code>ix_caso_lote</code></td>
+<td><code>caso (id_lote_ingesta)</code></td>
+<td>Trazabilidad de la ingesta</td>
+</tr>
+<tr>
+<td><code>ix_despacho_caso_caso</code></td>
+<td><code>despacho_caso (id_caso)</code></td>
+<td>Casos de un despacho</td>
+</tr>
+<tr>
+<td><code>ix_despacho_caso_despacho</code></td>
+<td><code>despacho_caso (id_despacho)</code></td>
+<td>Detalle por despacho</td>
+</tr>
+<tr>
+<td><code>ix_actividad_caso</code></td>
+<td><code>actividad (id_caso)</code></td>
+<td>Actividades de un caso</td>
+</tr>
+<tr>
+<td><code>ix_actividad_usuario</code></td>
+<td><code>actividad (id_usuario)</code></td>
+<td>Actividades por técnico</td>
+</tr>
+<tr>
+<td><code>ix_evidencia_actividad</code></td>
+<td><code>evidencia (id_actividad)</code></td>
+<td>Evidencias de una actividad</td>
+</tr>
+<tr>
+<td><code>ix_cita_cuadrilla_fecha</code></td>
+<td><code>cita (id_cuadrilla, fecha_hora)</code></td>
+<td>Soporte de la regla «sin solapamiento» (RF-12)</td>
+</tr>
+<tr>
+<td><code>ix_seguimiento_caso</code></td>
+<td><code>seguimiento (id_caso)</code></td>
+<td>Seguimientos de un caso</td>
+</tr>
+<tr>
+<td><code>ix_sector_direccion_sector</code></td>
+<td><code>sector_direccion (id_sector)</code></td>
+<td>Patrones de un sector</td>
+</tr>
+<tr>
+<td><code>ix_notificacion_caso</code></td>
+<td><code>notificacion (id_caso)</code></td>
+<td>Notificaciones de un caso (outbox)</td>
+</tr>
+<tr>
+<td><code>ix_auditoria_fecha</code></td>
+<td><code>auditoria (fecha_hora)</code></td>
+<td>Consulta de bitácora por fecha</td>
+</tr>
+</tbody>
+</table></div>
+<p>Total de objetos de índice: <strong>21</strong> (20 <code>CREATE INDEX</code> más
+<code>ux_cuadrilla_supervisor</code>), de los cuales 2 son trigram y 1 es único parcial.
+Observación: varias claves foráneas de catálogos pequeños (<code>causa</code>, <code>rol</code>,
+<code>catalogo_metodo</code>) no tienen índice dedicado; su volumen es bajo y el
+planificador puede resolverlas con exploraciones secuenciales. Los índices que
+cubren las consultas de mayor volumen (<code>caso</code>, <code>despacho_caso</code>, <code>actividad</code>,
+<code>notificacion</code>) sí están presentes. Es <strong>pendiente de confirmar</strong>, con
+<code>EXPLAIN ANALYZE</code> sobre datos reales, si falta algún índice compuesto para los
+reportes de monitoreo (<code>app/services/monitoreo.py</code>).</p>
+
+<nav class="pie-nav"><a class="izq" href="../05-Diccionario-de-Datos/01-entidades.html">← Manual anterior: Diccionario de Datos — Entidades de la base GGTO</a><a href="../index.html">Índice general</a><a class="der" href="../07-Operacion/01-operacion-y-mantenimiento.html">Manual siguiente →: Manual de Operación y Mantenimiento — GGTO</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Diagrama Relacional</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Diagrama Relacional · 01-diagrama-er", "pieIzq": "Diagrama Entidad-Relación — Modelo de datos GGTO", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Diagrama Entidad-Relación — Modelo de datos GGTO"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

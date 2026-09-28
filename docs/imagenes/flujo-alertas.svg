@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1100" viewBox="0 0 1440 1100" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1440" height="1100" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1440" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Flujo de alertas y fallas masivas</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Detección por concentración, asignación de cuadrilla y bandeja de salida (outbox)</text>
+<text x="1412" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1412" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="1070" width="1440" height="30" fill="#f4f6f9"/>
+<text x="720" y="1089" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="60" y="104" width="300" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="68" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="210" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Carga del CSV diario</text>
+<text x="210" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">Sección INGESTA</text>
+<rect x="390" y="104" width="320" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="550" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Reporte manual</text>
+<text x="550" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">Desde ALERTAS, Telegram o MCP</text>
+<rect x="740" y="104" width="320" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="748" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="900" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Planificación RF-17</text>
+<text x="900" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">y material RF-18</text>
+<rect x="60" y="210" width="380" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="68" y="218" width="6" height="74" rx="3" fill="#0e7490"/>
+<text x="250" y="243" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">Detección por concentración</text>
+<text x="250" y="260" fill="#4a5568" font-size="12" text-anchor="middle">Agrupa por OLT, FAT o sector</text>
+<text x="250" y="277" fill="#4a5568" font-size="12" text-anchor="middle">después de cada ingesta</text>
+<rect x="900" y="210" width="440" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="908" y="218" width="6" height="74" rx="3" fill="#4a5568"/>
+<text x="1120" y="251.5" fill="#4a5568" font-size="13.5" font-weight="700" text-anchor="middle">No se crea nada</text>
+<text x="1120" y="268.5" fill="#4a5568" font-size="12" text-anchor="middle">La concentración no supera el umbral</text>
+<rect x="390" y="350" width="420" height="90" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="358" width="6" height="74" rx="3" fill="#8a6100"/>
+<text x="600" y="391.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">Se registra la falla masiva</text>
+<text x="600" y="408.5" fill="#4a5568" font-size="12" text-anchor="middle">Estado DETECTADA · origen AUTOMATICA</text>
+<rect x="390" y="480" width="420" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="488" width="6" height="74" rx="3" fill="#0b4f9c"/>
+<text x="600" y="521.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Se asigna la cuadrilla</text>
+<text x="600" y="538.5" fill="#4a5568" font-size="12" text-anchor="middle">La más cercana al sector</text>
+<rect x="390" y="610" width="420" height="90" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="618" width="6" height="74" rx="3" fill="#0b4f9c"/>
+<text x="600" y="651.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Se encola la alerta</text>
+<text x="600" y="668.5" fill="#4a5568" font-size="12" text-anchor="middle">Canal TELEGRAM</text>
+<rect x="390" y="740" width="420" height="90" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="748" width="6" height="74" rx="3" fill="#8a6100"/>
+<text x="600" y="781.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">Bandeja de salida</text>
+<text x="600" y="798.5" fill="#4a5568" font-size="12" text-anchor="middle">Estado PENDIENTE</text>
+<rect x="390" y="870" width="420" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="878" width="6" height="60" rx="3" fill="#5b21b6"/>
+<text x="600" y="913" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Hay credenciales?</text>
+<rect x="900" y="870" width="440" height="76" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="908" y="878" width="6" height="60" rx="3" fill="#8a6100"/>
+<text x="1120" y="904.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">Sigue PENDIENTE</text>
+<text x="1120" y="921.5" fill="#4a5568" font-size="12" text-anchor="middle">Se reintenta más tarde</text>
+<rect x="390" y="986" width="420" height="76" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="398" y="994" width="6" height="60" rx="3" fill="#1f7a4d"/>
+<text x="600" y="1020.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">Se envía</text>
+<text x="600" y="1037.5" fill="#4a5568" font-size="12" text-anchor="middle">Estado ENVIADO</text>
+<path d="M210 180 L210 210" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M250 300 L250 325 L600 325 L600 350" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="430" y="317" fill="#8a6100" font-size="11" font-weight="700" text-anchor="middle">supera el umbral</text>
+<path d="M440 255 L900 255" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="670" y="247" fill="#4a5568" font-size="11" font-weight="700" text-anchor="middle">no supera el umbral</text>
+<path d="M560 180 L680 180 L680 350" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M920 180 L920 320 L810 320 L810 350" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M600 440 L600 480" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M600 570 L600 610" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M600 700 L600 740" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M600 830 L600 870" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M810 908 L900 908" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="855" y="900" fill="#8a6100" font-size="11" font-weight="700" text-anchor="middle">No</text>
+<path d="M600 946 L600 986" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="614" y="970" fill="#1f7a4d" font-size="11" font-weight="700" text-anchor="start">Sí</text>
+<rect x="1100" y="104" width="280" height="125" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="1108" y="112" width="6" height="109" rx="3" fill="#d7dde6"/>
+<text x="1122" y="129" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Canales de la v1</text>
+<text x="1122" y="146" fill="#4a5568" font-size="11.5" text-anchor="start">Telegram y correo están sin</text>
+<text x="1122" y="163" fill="#4a5568" font-size="11.5" text-anchor="start">credenciales: el envío queda PENDIENTE</text>
+<text x="1122" y="180" fill="#4a5568" font-size="11.5" text-anchor="start">en la bandeja (patrón outbox) y no se</text>
+<text x="1122" y="197" fill="#4a5568" font-size="11.5" text-anchor="start">pierde.</text>
+<text x="1122" y="214" fill="#4a5568" font-size="11.5" text-anchor="start">No existe WhatsApp ni aplicación móvil.</text>
+<rect x="60" y="350" width="300" height="92" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="358" width="6" height="76" rx="3" fill="#d7dde6"/>
+<text x="82" y="375.5" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Umbral de concentración</text>
+<text x="82" y="392.5" fill="#4a5568" font-size="11.5" text-anchor="start">El umbral es de 5 casos en 24 h por OLT,</text>
+<text x="82" y="409.5" fill="#4a5568" font-size="11.5" text-anchor="start">FAT o sector.</text>
+<text x="82" y="426.5" fill="#4a5568" font-size="11.5" text-anchor="start">No se duplica mientras la falla siga activa.</text>
+<rect x="60" y="580" width="300" height="92" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="588" width="6" height="76" rx="3" fill="#d7dde6"/>
+<text x="82" y="605.5" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Quién la genera</text>
+<text x="82" y="622.5" fill="#4a5568" font-size="11.5" text-anchor="start">La detección corre después de la ingesta; el</text>
+<text x="82" y="639.5" fill="#4a5568" font-size="11.5" text-anchor="start">reporte manual se hace desde ALERTAS o</text>
+<text x="82" y="656.5" fill="#4a5568" font-size="11.5" text-anchor="start">por Telegram o MCP (RF-06, RF-09, RF-16).</text>
+<rect x="900" y="480" width="440" height="75.5" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="908" y="488" width="6" height="59.5" rx="3" fill="#d7dde6"/>
+<text x="922" y="505.75" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Servidor MCP</text>
+<text x="922" y="522.75" fill="#4a5568" font-size="11.5" text-anchor="start">El canal MCP está disponible con la clave mcp.api_key y comparte el</text>
+<text x="922" y="539.75" fill="#4a5568" font-size="11.5" text-anchor="start">mismo registro de fallas.</text>
+<rect x="900" y="640" width="440" height="75.5" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="908" y="648" width="6" height="59.5" rx="3" fill="#d7dde6"/>
+<text x="922" y="665.75" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Estados de la falla</text>
+<text x="922" y="682.75" fill="#4a5568" font-size="11.5" text-anchor="start">DETECTADA, PLANIFICADA, ATENDIDA y CERRADA.</text>
+<text x="922" y="699.75" fill="#4a5568" font-size="11.5" text-anchor="start">El reporte manual exige una descripción de 5 a 500 caracteres.</text>
+</svg>

@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4) — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la plataforma GGTO: quién hace qué, en qué orden y con qué precaucio">
+<meta property="og:image" content="../../../imagenes/orden-scripts-aprovisionamiento.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Despliegue</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../../pdf/04-Despliegue/03-scripts-gcp.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#la-carpeta-repotecnico-scripts" data-target="la-carpeta-repotecnico-scripts"><span class="tn">2.1</span> La carpeta RepoTecnico/scripts</a><span class="pag"></span></li><li class="n3"><a href="#convenciones-idempotencia-token-gcloud-variables" data-target="convenciones-idempotencia-token-gcloud-variables"><span class="tn">2.2</span> Convenciones (idempotencia, token gcloud, variables)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#biblioteca-comun-scripts-lib-gcp-sh" data-target="biblioteca-comun-scripts-lib-gcp-sh"><span class="tn">3</span> Biblioteca común (scripts/lib_gcp.sh)</a><span class="pag"></span><ul><li class="n3"><a href="#obtencion-del-token-gcp-token" data-target="obtencion-del-token-gcp-token"><span class="tn">3.1</span> Obtención del token (gcp_token)</a><span class="pag"></span></li><li class="n3"><a href="#helper-api-y-variables-globales" data-target="helper-api-y-variables-globales"><span class="tn">3.2</span> Helper api y variables globales</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#orquestador-scripts-provision-all-sh-y-variable-crear-recurs" data-target="orquestador-scripts-provision-all-sh-y-variable-crear-recurs"><span class="tn">4</span> Orquestador (scripts/provision_all.sh) y variable CREAR_RECURSOS</a><span class="pag"></span></li><li class="n2"><a href="#script-por-script" data-target="script-por-script"><span class="tn">5</span> Script por script</a><span class="pag"></span><ul><li class="n3"><a href="#00-crear-proyecto-sh" data-target="00-crear-proyecto-sh"><span class="tn">5.1</span> 00_crear_proyecto.sh</a><span class="pag"></span></li><li class="n3"><a href="#01-habilitar-apis-sh" data-target="01-habilitar-apis-sh"><span class="tn">5.2</span> 01_habilitar_apis.sh</a><span class="pag"></span></li><li class="n3"><a href="#02-red-privada-sh" data-target="02-red-privada-sh"><span class="tn">5.3</span> 02_red_privada.sh</a><span class="pag"></span></li><li class="n3"><a href="#03-iam-cuentas-servicio-sh" data-target="03-iam-cuentas-servicio-sh"><span class="tn">5.4</span> 03_iam_cuentas_servicio.sh</a><span class="pag"></span></li><li class="n3"><a href="#04-secretos-kms-sh" data-target="04-secretos-kms-sh"><span class="tn">5.5</span> 04_secretos_kms.sh</a><span class="pag"></span></li><li class="n3"><a href="#05-storage-registry-sh" data-target="05-storage-registry-sh"><span class="tn">5.6</span> 05_storage_registry.sh</a><span class="pag"></span></li><li class="n3"><a href="#06-cloudsql-postgres-sh" data-target="06-cloudsql-postgres-sh"><span class="tn">5.7</span> 06_cloudsql_postgres.sh</a><span class="pag"></span></li><li class="n3"><a href="#07-cloudrun-web-sh" data-target="07-cloudrun-web-sh"><span class="tn">5.8</span> 07_cloudrun_web.sh</a><span class="pag"></span></li><li class="n3"><a href="#08-auditoria-presupuesto-sh" data-target="08-auditoria-presupuesto-sh"><span class="tn">5.9</span> 08_auditoria_presupuesto.sh</a><span class="pag"></span></li><li class="n3"><a href="#10-usar-instancia-truekeate-sh" data-target="10-usar-instancia-truekeate-sh"><span class="tn">5.10</span> 10_usar_instancia_truekeate.sh</a><span class="pag"></span></li><li class="n3"><a href="#99-eliminar-todo-sh" data-target="99-eliminar-todo-sh"><span class="tn">5.11</span> 99_eliminar_todo.sh</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#scripts-auxiliares-del-proyecto" data-target="scripts-auxiliares-del-proyecto"><span class="tn">6</span> Scripts auxiliares del proyecto</a><span class="pag"></span><ul><li class="n3"><a href="#scripts-inyectar-super-usuario-py" data-target="scripts-inyectar-super-usuario-py"><span class="tn">6.1</span> scripts/inyectar_super_usuario.py</a><span class="pag"></span></li><li class="n3"><a href="#scripts-recalcular-cuadrilla0-py" data-target="scripts-recalcular-cuadrilla0-py"><span class="tn">6.2</span> scripts/recalcular_cuadrilla0.py</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-run-e2e-sh" data-target="repotecnico-pruebas-run-e2e-sh"><span class="tn">6.3</span> RepoTecnico/pruebas/run_e2e.sh</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-seed-e2e-py" data-target="repotecnico-pruebas-seed-e2e-py"><span class="tn">6.4</span> RepoTecnico/pruebas/seed_e2e.py</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#teardown-y-confirmacion-confirm-destroy-eliminar" data-target="teardown-y-confirmacion-confirm-destroy-eliminar"><span class="tn">7</span> Teardown y confirmación (CONFIRM_DESTROY=ELIMINAR)</a><span class="pag"></span></li><li class="n2"><a href="#diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad" data-target="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="tn">8</span> Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)</a><span class="pag"></span></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Despliegue</span>
+          <h1 class="portada-titulo">Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)</h1>
+          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la plataforma GGTO: quién hace qué, en qué orden y con qué precauciones. Un «script» es un archivo con órdenes que la computadora ejecuta una tras otra. Cuando un dato no pudo comprobarse, se indica como «pendiente de confirmar». Este manual nunca escribe valores de secretos: solo los nombra.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/03-scripts-gcp.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Manual para todo público. Explica, en lenguaje sencillo, los <strong>guiones (scripts) que preparan la
+infraestructura de Google Cloud</strong> para la plataforma GGTO: quién hace qué, en qué orden y con qué
+precauciones. Un «script» es un archivo con órdenes que la computadora ejecuta una tras otra.
+Cuando un dato no pudo comprobarse, se indica como «pendiente de confirmar». Este manual <strong>nunca
+escribe valores de secretos</strong>: solo los nombra.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Sepa qué son estos guiones y qué no son.</strong> Están en la carpeta <code>RepoTecnico/scripts/</code>. Preparan
+la infraestructura en Google Cloud; <strong>no</strong> son la aplicación ni incluyen las variables de la
+aplicación (esas están en el manual de <em>Entornos y Variables</em>).</li>
+<li><strong>Orden mínima de ejecución.</strong> Primero <code>00</code> (proyecto y facturación), luego <code>01</code> (habilitar APIs),
+<code>02</code> (red privada) y <code>03</code> (cuentas de servicio). Después, si hay facturación, <code>04</code> (claves y
+secretos), <code>05</code> (depósito y registro de imágenes) y <code>06</code> (base de datos Cloud SQL).</li>
+<li><strong>Entienda el orquestador.</strong> <code>provision_all.sh</code> corre solo los pasos que no generan costo. Para
+incluir los que sí cuestan dinero, se ejecuta con <code>CREAR_RECURSOS=si ./provision_all.sh</code>.</li>
+<li><strong>Recuerde lo que realmente está desplegado.</strong> Por el bloqueo de facturación de <code>ggtov2</code>, la
+operación real usa la instancia compartida de <code>truekeate-main</code> con el guion <code>10</code>, no la instancia
+propia <code>ggtov2-pg</code> del guion <code>06</code>.</li>
+<li><strong>Nunca borre a la ligera.</strong> El guion <code>99_eliminar_todo.sh</code> solo funciona si se escribe
+exactamente <code>CONFIRM_DESTROY=ELIMINAR</code>; además, el depósito y las claves de cifrado deben borrarse
+a mano.</li>
+</ol>
+<h2 id="vision-general"><span class="sec-num">2</span>Visión general</h2>
+<p>Los guiones son la forma reproducible de preparar la infraestructura descrita en el documento de
+infraestructura del proyecto. El estado del proyecto los registra como trece archivos <code>.sh</code>, y la
+auditoría confirma ese mismo conteo, aclarando que <code>lib_gcp.sh</code> es una <strong>biblioteca</strong> (se reutiliza)
+y no un paso de aprovisionamiento. Todos están escritos en <code>bash</code>, declaran <code>set -euo pipefail</code>
+(detenerse ante cualquier error) y se apoyan en la API REST de Google Cloud mediante <code>curl</code>, con
+<code>python3</code> como ayudante para leer y construir JSON.</p>
+<figure id="fig-0"><img src="../../../imagenes/orden-scripts-aprovisionamiento.png" alt="orden scripts aprovisionamiento"><figcaption>Figura 1 · orden-scripts-aprovisionamiento.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TD
+    A[&quot;00 proyecto y facturación&quot;] --&gt; B[&quot;01 habilitar APIs&quot;]
+    B --&gt; C[&quot;02 red privada (VPC, subred, PSA)&quot;]
+    C --&gt; D[&quot;03 cuentas de servicio e IAM&quot;]
+    D --&gt; E[&quot;08 auditoría y presupuesto&quot;]
+    E --&gt;|&quot;CREAR_RECURSOS=si&quot;| F[&quot;04 Cloud KMS y Secret Manager&quot;]
+    F --&gt; G[&quot;05 bucket seguro y Artifact Registry&quot;]
+    G --&gt; H[&quot;06 Cloud SQL propio ggtov2-pg&quot;]
+    H --&gt; I[&quot;07 Cloud Run ggtov2-web&lt;br/&gt;(comentado en el orquestador)&quot;]
+    D --&gt; J[&quot;10 base y usuario ggtov2&lt;br/&gt;en truekeate-db-dev&quot;]
+    I -.-&gt; K[&quot;99 teardown controlado&quot;]
+    J -.-&gt; K</code></pre></details></figure>
+<h3 id="la-carpeta-repotecnico-scripts"><span class="sec-num">2.1</span>La carpeta RepoTecnico/scripts</h3>
+<p>La carpeta <code>RepoTecnico/scripts/</code> contiene trece archivos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Rol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lib_gcp.sh</code></td>
+<td>Biblioteca común: token y ayudante <code>api</code></td>
+</tr>
+<tr>
+<td><code>provision_all.sh</code></td>
+<td>Orquestador del aprovisionamiento completo</td>
+</tr>
+<tr>
+<td><code>00_crear_proyecto.sh</code></td>
+<td>Proyecto y facturación</td>
+</tr>
+<tr>
+<td><code>01_habilitar_apis.sh</code></td>
+<td>Habilitación de APIs</td>
+</tr>
+<tr>
+<td><code>02_red_privada.sh</code></td>
+<td>VPC, subred y <em>Private Service Access</em></td>
+</tr>
+<tr>
+<td><code>03_iam_cuentas_servicio.sh</code></td>
+<td>Cuentas de servicio e IAM de mínimo privilegio</td>
+</tr>
+<tr>
+<td><code>04_secretos_kms.sh</code></td>
+<td>Cloud KMS (claves de cifrado) y Secret Manager</td>
+</tr>
+<tr>
+<td><code>05_storage_registry.sh</code></td>
+<td>Depósito (bucket) seguro y Artifact Registry</td>
+</tr>
+<tr>
+<td><code>06_cloudsql_postgres.sh</code></td>
+<td>Instancia Cloud SQL PostgreSQL</td>
+</tr>
+<tr>
+<td><code>07_cloudrun_web.sh</code></td>
+<td>Servicio Cloud Run</td>
+</tr>
+<tr>
+<td><code>08_auditoria_presupuesto.sh</code></td>
+<td>Auditoría de acceso a datos y presupuesto</td>
+</tr>
+<tr>
+<td><code>10_usar_instancia_truekeate.sh</code></td>
+<td>Base y usuario <code>ggtov2</code> en la instancia compartida <code>truekeate-db-dev</code></td>
+</tr>
+<tr>
+<td><code>99_eliminar_todo.sh</code></td>
+<td><em>Teardown</em> controlado (borrado ordenado)</td>
+</tr>
+</tbody>
+</table></div>
+<p>La tabla funcional coincide con la que mantiene el documento de entornos. El documento de referencia
+de infraestructura también lista los guiones entregados.</p>
+<h3 id="convenciones-idempotencia-token-gcloud-variables"><span class="sec-num">2.2</span>Convenciones (idempotencia, token gcloud, variables)</h3>
+<p><strong>Idempotencia.</strong> Un guion idempotente puede ejecutarse varias veces sin duplicar ni dañar nada.
+Cada guion consulta el recurso antes de crearlo y omite la creación si ya existe: <code>00_crear_proyecto.sh</code>
+comprueba el proyecto con una consulta y busca <code>&quot;projectId&quot;</code>; <code>02_red_privada.sh</code> define una función
+<code>existe_net</code> y repite el patrón para la subred y el rango PSA; <code>03_iam_cuentas_servicio.sh</code> comprueba
+la cuenta de servicio antes de crearla; <code>04_secretos_kms.sh</code> no sobreescribe secretos existentes;
+<code>05_storage_registry.sh</code> verifica el depósito y el repositorio; <code>06_cloudsql_postgres.sh</code> comprueba la
+instancia; y <code>10_usar_instancia_truekeate.sh</code> comprueba base y usuario antes de crearlos. La conexión
+de <em>peering</em> de <code>02_red_privada.sh</code> es la única operación que se ejecuta siempre con <code>force=true</code>,
+porque un reintento devuelve un error benigno.</p>
+<p><strong>Token de <code>gcloud</code>.</strong> Ningún guion llama a <code>gcloud</code> para crear recursos: usan <code>curl</code> contra las API
+REST. La única dependencia opcional de <code>gcloud</code> está en la función <code>gcp_token</code>. Esto permite ejecutar
+los guiones incluso cuando la herramienta de línea de comandos <code>gcloud</code> no está operativa, gracias
+al respaldo de credenciales de usuario y al servidor de metadatos.</p>
+<p><strong>Variables.</strong> Las variables globales tienen valores por defecto y pueden sobreescribirse por
+entorno. Se definen al final de <code>lib_gcp.sh</code>: <code>PROJECT_ID</code> (por defecto <code>ggtov2</code>), <code>REGION</code> (por
+defecto <code>europe-west1</code>), <code>BILLING_ACCOUNT</code> y <code>ORG_ID</code>. Las variables particulares de cada guion
+(<code>TIER</code>, <code>HA</code>, <code>BUDGET_USD</code>, <code>IMAGE</code>, <code>CREAR_RECURSOS</code>, <code>CONFIRM_DESTROY</code>) se documentan en su
+sección correspondiente. El manual <code>01-entornos-y-variables.md</code> de esta misma colección describe las
+variables de la aplicación; aquí solo se tratan las del aprovisionamiento.</p>
+<h2 id="biblioteca-comun-scripts-lib-gcp-sh"><span class="sec-num">3</span>Biblioteca común (scripts/lib_gcp.sh)</h2>
+<p><code>lib_gcp.sh</code> se carga con <code>source</code> desde todos los guiones y aporta tres cosas: la obtención del
+token, el ayudante de llamadas REST y las variables globales.</p>
+<h3 id="obtencion-del-token-gcp-token"><span class="sec-num">3.1</span>Obtención del token (gcp_token)</h3>
+<p>La función <code>gcp_token</code> consigue un <em>access token</em> (una credencial temporal) probando cuatro fuentes
+en orden estricto:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Orden</th>
+<th>Fuente</th>
+<th>Condición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>$GOOGLE_ACCESS_TOKEN</code></td>
+<td>Si la variable está definida</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>gcloud auth print-access-token</code></td>
+<td>Si <code>gcloud</code> existe y responde</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Credenciales de usuario (<code>refresh_token</code>)</td>
+<td>Si existe <code>~/.config/gcloud/credentials.db</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Servidor de metadatos de GCE</td>
+<td>Si responde <code>metadata.google.internal</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Si ninguna fuente funciona, imprime <code>ERROR: no se pudo obtener token</code> y termina con un código
+distinto de cero. La tercera vía usa <code>sqlite3</code> para leer <code>credentials.db</code>, intercambia el
+<code>refresh_token</code> en <code>https://oauth2.googleapis.com/token</code> y toma la cuenta indicada por
+<code>GCP_USER_ACCOUNT</code>. El valor por defecto de esa variable de cuenta aparece en el propio archivo;
+<strong>no se reproduce aquí por tratarse de un identificador personal</strong>.</p>
+<h3 id="helper-api-y-variables-globales"><span class="sec-num">3.2</span>Helper api y variables globales</h3>
+<p>El ayudante <code>api</code> recibe el método, la dirección (URL) y, opcionalmente, un cuerpo JSON. Cuando hay
+cuerpo, envía <code>curl -s -X &quot;$method&quot;</code> con las cabeceras <code>Authorization: Bearer</code> y
+<code>Content-Type: application/json</code>; cuando no lo hay, omite el cuerpo. Todos los guiones construyen las
+direcciones con <code>$PROJECT_ID</code>, <code>$REGION</code>, <code>$BILLING_ACCOUNT</code> u <code>$ORG_ID</code>, y procesan la respuesta con
+<code>python3 -c</code> para extraer campos o detectar <code>&quot;error&quot;</code>. Las variables globales se fijan con el patrón
+<code>${VARIABLE:-valor}</code>, de modo que el operador puede apuntar a otro proyecto o región sin editar el
+archivo.</p>
+<h2 id="orquestador-scripts-provision-all-sh-y-variable-crear-recurs"><span class="sec-num">4</span>Orquestador (scripts/provision_all.sh) y variable CREAR_RECURSOS</h2>
+<p><code>provision_all.sh</code> ejecuta el aprovisionamiento en orden y separa los pasos <strong>no facturables</strong> de los
+<strong>facturables</strong>. Primero se sitúa en su propio directorio con <code>cd &quot;$(dirname &quot;$0&quot;)&quot;</code>, de forma que las
+llamadas relativas <code>./00_...</code> funcionan desde cualquier directorio de invocación.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Ejecución</th>
+<th>Pasos que corre</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>./provision_all.sh</code></td>
+<td><code>00</code>, <code>01</code>, <code>02</code>, <code>03</code>, <code>08</code></td>
+<td>No genera costo</td>
+</tr>
+<tr>
+<td><code>CREAR_RECURSOS=si ./provision_all.sh</code></td>
+<td>Los anteriores + <code>04</code>, <code>05</code>, <code>06</code></td>
+<td>Genera costo recurrente</td>
+</tr>
+</tbody>
+</table></div>
+<p>El bloque condicional comprueba <code>[[ &quot;${CREAR_RECURSOS:-no}&quot; == &quot;si&quot; ]]</code> y, si no se activa, imprime
+que los recursos facturables quedan omitidos y recomienda ejecutarlo cuando la facturación esté
+activa. El paso <code>07_cloudrun_web.sh</code> está <strong>comentado</strong> en el orquestador, con la nota de que debe
+descomentarse cuando exista una imagen en Artifact Registry. Esto explica por qué el despliegue de
+Cloud Run se hace por separado en la práctica.</p>
+<h2 id="script-por-script"><span class="sec-num">5</span>Script por script</h2>
+<p>Cada subsección describe el guion, los recursos que crea, las variables que consume y las notas
+operativas verificadas.</p>
+<h3 id="00-crear-proyecto-sh"><span class="sec-num">5.1</span>00_crear_proyecto.sh</h3>
+<p>Crea el proyecto <code>GGTOv2</code> dentro de la organización y vincula la cuenta de facturación. Variables que
+usa: <code>$PROJECT_ID</code>, <code>$ORG_ID</code> y <code>$BILLING_ACCOUNT</code>.</p>
+<ul>
+<li><strong>Consulta previa:</strong> hace <code>GET .../v1/projects/$PROJECT_ID</code>; si la respuesta contiene
+<code>&quot;projectId&quot;</code>, informa que el proyecto ya existe con su número y su estado.</li>
+<li><strong>Creación:</strong> hace <code>POST .../v1/projects</code> con <code>name: &quot;GGTOv2&quot;</code> y <code>parent</code> de tipo <code>organization</code>.</li>
+<li><strong>Espera:</strong> sondea la operación hasta 30 veces, con pausas de 6 segundos, hasta ver <code>&quot;done&quot;: true</code>.</li>
+<li><strong>Facturación:</strong> hace <code>PUT .../billingInfo</code> con <code>billingAccounts/$BILLING_ACCOUNT</code> y luego un <code>GET</code>
+para imprimir <code>billingEnabled</code>.</li>
+<li><strong>Nota:</strong> advierte que el mensaje <code>Cloud billing quota exceeded</code> significa que la cuenta alcanzó el
+máximo de cinco proyectos. Ese cupo agotado es exactamente el bloqueo que obligó a usar
+<code>truekeate-main</code>.</li>
+</ul>
+<h3 id="01-habilitar-apis-sh"><span class="sec-num">5.2</span>01_habilitar_apis.sh</h3>
+<p>Habilita las APIs de Google Cloud que requiere la plataforma. Primero obtiene el número de proyecto
+(<code>projectNumber</code>) y luego recorre dos listas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Grupo</th>
+<th>APIs</th>
+<th>Facturación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SIN_BILLING</code></td>
+<td><code>cloudresourcemanager</code>, <code>serviceusage</code>, <code>iam</code>, <code>iamcredentials</code>, <code>cloudbilling</code>, <code>sqladmin</code>, <code>sql-component</code>, <code>servicenetworking</code>, <code>storage</code>, <code>logging</code>, <code>monitoring</code>, <code>networkconnectivity</code>, <code>cloudkms</code>, <code>cloudtrace</code>, <code>cloudprofiler</code>, <code>clouderrorreporting</code>, <code>servicecontrol</code></td>
+<td>No requiere</td>
+</tr>
+<tr>
+<td><code>CON_BILLING</code></td>
+<td><code>compute</code>, <code>vpcaccess</code>, <code>secretmanager</code>, <code>dlp</code>, <code>run</code>, <code>artifactregistry</code>, <code>cloudbuild</code>, <code>containerregistry</code>, <code>certificatemanager</code>, <code>billingbudgets</code></td>
+<td>Requiere</td>
+</tr>
+</tbody>
+</table></div>
+<p>Para cada servicio hace <code>POST .../services/$s:enable</code> e imprime <code>OK</code> o <code>PENDIENTE</code> según la
+respuesta. Cierra recordando que las APIs marcadas <code>PENDIENTE</code> requieren vincular facturación.</p>
+<h3 id="02-red-privada-sh"><span class="sec-num">5.3</span>02_red_privada.sh</h3>
+<p>Crea la red privada dedicada: la VPC (red virtual), la subred y el rango de <em>Private Service Access</em>
+para Cloud SQL. Variables locales: <code>VPC=ggtov2-vpc</code>, <code>SUBNET=ggtov2-subnet</code>,
+<code>PSA_RANGE=ggtov2-psa-range</code> y <code>PSA_PREFIX=20</code>.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>Configuración</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VPC <code>ggtov2-vpc</code></td>
+<td><code>autoCreateSubnetworks:false</code>, enrutamiento <code>GLOBAL</code></td>
+</tr>
+<tr>
+<td>Subred <code>ggtov2-subnet</code></td>
+<td><code>10.10.0.0/24</code>, con <code>privateIpGoogleAccess:true</code></td>
+</tr>
+<tr>
+<td>Rango PSA</td>
+<td><code>INTERNAL</code>, <code>VPC_PEERING</code>, prefijo <code>/20</code></td>
+</tr>
+<tr>
+<td>Conexión de <em>peering</em></td>
+<td><code>servicenetworking</code> con <code>force=true</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Cierra indicando que Cloud SQL usará IP privada dentro de la VPC. Es la base de red que consumiría
+<code>06_cloudsql_postgres.sh</code>.</p>
+<h3 id="03-iam-cuentas-servicio-sh"><span class="sec-num">5.4</span>03_iam_cuentas_servicio.sh</h3>
+<p>Crea dos cuentas de servicio y aplica enlaces IAM de mínimo privilegio (es decir, solo los permisos
+necesarios). Las cuentas son <code>ggtov2-app</code> (ejecución de Cloud Run) y <code>ggtov2-deploy</code> (CI/CD).</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Cuenta</th>
+<th>Roles asignados</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ggtov2-app</code></td>
+<td><code>cloudsql.client</code>, <code>secretmanager.secretAccessor</code>, <code>logging.logWriter</code>, <code>monitoring.metricWriter</code>, <code>cloudtrace.agent</code>, <code>cloudprofiler.agent</code>, <code>serviceusage.serviceUsageConsumer</code>, <code>cloudkms.cryptoKeyDecrypter</code></td>
+</tr>
+<tr>
+<td><code>ggtov2-deploy</code></td>
+<td><code>run.admin</code>, <code>artifactregistry.writer</code>, <code>iam.serviceAccountUser</code>, <code>cloudbuild.builds.editor</code>, <code>storage.objectAdmin</code>, <code>cloudsql.client</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>La aplicación de los enlaces es idempotente: obtiene la política con <code>getIamPolicy</code>, añade el miembro
+solo si no está presente con una función <code>add</code> y la vuelve a fijar con <code>setIamPolicy</code>.</p>
+<h3 id="04-secretos-kms-sh"><span class="sec-num">5.5</span>04_secretos_kms.sh</h3>
+<p>Crea el llavero y las claves de Cloud KMS (CMEK, claves de cifrado gestionadas por el cliente) y los
+secretos de la plataforma. Variables: <code>KR=ggtov2</code>, <code>KEY_SEC=ggtov2-secrets</code>, <code>KEY_STO=ggtov2-storage</code>.</p>
+<ul>
+<li><strong>Rotación:</strong> las claves se crean con propósito <code>ENCRYPT_DECRYPT</code> y una <code>rotationPeriod</code> de
+<code>7776000s</code>, es decir, 90 días.</li>
+<li><strong>Generación de valores:</strong> la función <code>gcp_gen</code> produce una cadena aleatoria de 32 caracteres con
+<code>openssl rand</code>; los valores <strong>no se imprimen</strong>.</li>
+<li><strong>Secretos creados:</strong> <code>ggtov2-db-password</code>, <code>ggtov2-db-root-password</code>, <code>ggtov2-app-secret-key</code> y
+<code>ggtov2-django-secret-key</code>. El cuarto conserva un nombre heredado de Django; su uso real en el
+código actual está <strong>pendiente de confirmar</strong>.</li>
+<li><strong>CMEK:</strong> cada secreto usa replicación <code>userManaged</code> en la región con <code>customerManagedEncryption</code>.</li>
+<li><strong>Permisos:</strong> concede <code>roles/secretmanager.secretAccessor</code> a <code>ggtov2-app</code> sobre
+<code>ggtov2-db-password</code>, <code>ggtov2-app-secret-key</code> y <code>ggtov2-django-secret-key</code>.</li>
+</ul>
+<h3 id="05-storage-registry-sh"><span class="sec-num">5.6</span>05_storage_registry.sh</h3>
+<p>Crea el depósito seguro de evidencias y el repositorio de imágenes. El nombre del depósito es
+<code>ggtov2-assets-&lt;projectNumber&gt;</code> y la clave CMEK es <code>ggtov2-storage</code>.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Ajuste del depósito</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ubicación y clase</td>
+<td><code>EUROPE-WEST1</code>, <code>STANDARD</code></td>
+</tr>
+<tr>
+<td>Clave por defecto</td>
+<td><code>ggtov2-storage</code> (CMEK)</td>
+</tr>
+<tr>
+<td>Acceso</td>
+<td><code>uniformBucketLevelAccess</code> y <code>publicAccessPrevention: enforced</code></td>
+</tr>
+<tr>
+<td>Versionado</td>
+<td><code>enabled: true</code></td>
+</tr>
+<tr>
+<td>Ciclo de vida</td>
+<td>Borra las versiones no vigentes a los 365 días</td>
+</tr>
+<tr>
+<td>Retención</td>
+<td>30 días (<code>2592000</code> segundos), sin bloquear</td>
+</tr>
+</tbody>
+</table></div>
+<p>El repositorio <code>ggtov2-web</code> de Artifact Registry se crea con formato <code>DOCKER</code> y etiqueta
+<code>proyecto=ggtov2</code>.</p>
+<h3 id="06-cloudsql-postgres-sh"><span class="sec-num">5.7</span>06_cloudsql_postgres.sh</h3>
+<p>Crea la instancia Cloud SQL propia <code>ggtov2-pg</code> con IP privada, SSL y respaldos. Variables:
+<code>INSTANCE=ggtov2-pg</code>, <code>DB_NAME=ggtov2</code>, <code>DB_USER=ggtov2_app</code>, <code>TIER</code> (por defecto <code>db-f1-micro</code>) y
+<code>HA</code> (por defecto <code>ZONAL</code>). El perfil por defecto es de desarrollo y el propio encabezado advierte
+cambiarlo para producción.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Ajuste</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Motor</td>
+<td><code>POSTGRES_16</code></td>
+</tr>
+<tr>
+<td>Disco</td>
+<td><code>PD_SSD</code>, 10 GB, autoescalado hasta 50 GB</td>
+</tr>
+<tr>
+<td>Respaldos</td>
+<td>Activados, PITR 7 días, inicio 03:00</td>
+</tr>
+<tr>
+<td>Red</td>
+<td><code>ipv4Enabled:false</code>, red <code>ggtov2-vpc</code>, <code>sslMode: ENCRYPTED_ONLY</code></td>
+</tr>
+<tr>
+<td>Protección</td>
+<td><code>deletionProtectionEnabled:true</code></td>
+</tr>
+<tr>
+<td>Contraseñas</td>
+<td>Mínimo 12 caracteres, complejidad por defecto, sin reutilizar en 5</td>
+</tr>
+<tr>
+<td>Banderas</td>
+<td><code>cloudsql.iam_authentication=on</code>, <code>log_min_duration_statement=500</code>, <code>log_connections=on</code></td>
+</tr>
+<tr>
+<td>Mantenimiento</td>
+<td>Domingo a las 03:00, pista <code>stable</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>La contraseña de la base y la de <code>root</code> se leen de Secret Manager. Tras crear la instancia (con
+sondeo de hasta 60 iteraciones de 15 segundos), crea la base <code>ggtov2</code> con <code>charset UTF8</code> y el usuario
+<code>ggtov2_app</code> con host <code>%</code>. Cierra mostrando la forma de la cadena de conexión, sin revelar la
+contraseña.</p>
+<blockquote>
+<p><strong>Nota de fidelidad:</strong> lo realmente desplegado <strong>no</strong> es esta instancia, sino la base <code>ggtov2</code>
+dentro de la instancia compartida <code>truekeate-db-dev</code> (PostgreSQL 15.18). Este guion es el camino
+previsto al desbloquear la facturación.</p>
+</blockquote>
+<h3 id="07-cloudrun-web-sh"><span class="sec-num">5.8</span>07_cloudrun_web.sh</h3>
+<p>Despliega la plataforma en Cloud Run con salida VPC directa. Variables: <code>SERVICE=ggtov2-web</code> e
+<code>IMAGE</code> (por defecto <code>$REGION-docker.pkg.dev/$PROJECT_ID/ggtov2-web/app:latest</code>).</p>
+<p>El cuerpo del servicio define: puerto <code>8080</code>; variables <code>DB_USER</code>, <code>DB_NAME</code>, <code>DB_HOST</code> con el socket
+<code>/cloudsql/&lt;proyecto&gt;:&lt;región&gt;:ggtov2-pg</code> y <code>SECRET_KEY</code> desde el secreto <code>ggtov2-app-secret-key</code>;
+límites de 1 CPU y 512 MiB; acceso VPC por <code>ggtov2-vpc</code>/<code>ggtov2-subnet</code>; escalado de 0 a 10
+instancias y un <code>timeout</code> de 300 segundos. Después de crear el servicio, aplica un enlace IAM que
+concede <code>roles/run.invoker</code> a <code>allUsers</code>.</p>
+<blockquote>
+<p><strong>Riesgo documentado:</strong> ese enlace hace el servicio <strong>público</strong>. El estado del proyecto pide
+restringir el acceso porque el servicio ya contiene PII real. En el despliegue real la URL pública
+también quedó expuesta.</p>
+</blockquote>
+<h3 id="08-auditoria-presupuesto-sh"><span class="sec-num">5.9</span>08_auditoria_presupuesto.sh</h3>
+<p>Activa la auditoría de acceso a datos y crea el presupuesto con alertas.</p>
+<ul>
+<li><strong>Auditoría:</strong> construye <code>auditConfigs</code> para <code>secretmanager</code>, <code>cloudkms</code>, <code>cloudsql</code> y <code>storage</code>
+con los tipos <code>ADMIN_READ</code>, <code>DATA_READ</code> y/o <code>DATA_WRITE</code>, y los fija con <code>setIamPolicy</code>. Si la
+respuesta no trae <code>auditConfigs</code>, avisa que no se persistió.</li>
+<li><strong>Presupuesto:</strong> hace <code>POST .../billingAccounts/$BILLING_ACCOUNT/budgets</code> con el nombre
+<code>GGTOv2 mensual</code>, un importe de <code>${BUDGET_USD:-50}</code> USD y umbrales al 50 %, 90 % y 100 %. La
+variable del importe es <code>BUDGET_USD</code>.</li>
+</ul>
+<h3 id="10-usar-instancia-truekeate-sh"><span class="sec-num">5.10</span>10_usar_instancia_truekeate.sh</h3>
+<p>Es el guion que permitió operar <strong>sin</strong> facturación propia. Da de alta una base y un usuario
+dedicados a GGTO dentro de la instancia Cloud SQL existente en <code>truekeate-main</code>, y habilita el
+acceso de la ejecución.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proyecto origen</td>
+<td><code>truekeate-main</code></td>
+</tr>
+<tr>
+<td>Instancia</td>
+<td><code>truekeate-db-dev</code></td>
+</tr>
+<tr>
+<td>Base / usuario</td>
+<td><code>ggtov2</code> / <code>ggtov2_app</code></td>
+</tr>
+<tr>
+<td><code>connectionName</code></td>
+<td><code>truekeate-main:southamerica-east1:truekeate-db-dev</code></td>
+</tr>
+<tr>
+<td>Cuenta de servicio de la app</td>
+<td><code>ggtov2-app@ggtov2.iam.gserviceaccount.com</code></td>
+</tr>
+<tr>
+<td>Cuenta de servicio de TrueKeate</td>
+<td><code>truekeate-app-sa@truekeate-main.iam.gserviceaccount.com</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Pasos: genera una contraseña aleatoria de 32 caracteres sin imprimirla; crea o versiona los secretos
+<code>ggtov2-db-password</code> y <code>ggtov2-db-connection</code> en <code>truekeate-main</code>; concede
+<code>secretmanager.secretAccessor</code> sobre ambos a las dos cuentas de servicio; crea la base y el usuario
+solo si no existen, sin cambiar la contraseña del usuario ya creado; y añade <code>roles/cloudsql.client</code>
+para la cuenta de servicio de GGTO en la política de <code>truekeate-main</code>. El resumen final indica que la
+contraseña vive solo en Secret Manager y muestra la ruta del socket para Cloud Run.</p>
+<h3 id="99-eliminar-todo-sh"><span class="sec-num">5.11</span>99_eliminar_todo.sh</h3>
+<p><em>Teardown</em> controlado (borrado ordenado) de los recursos de GGTO. Antes de tocar nada exige
+<code>CONFIRM_DESTROY=ELIMINAR</code>; si no coincide, aborta con un mensaje. El orden de borrado es: desactivar
+<code>deletionProtectionEnabled</code> de la instancia y borrarla, borrar el servicio Cloud Run <code>ggtov2-web</code>,
+el repositorio <code>ggtov2-web</code>, la VPC y los cuatro secretos. El cierre advierte que <strong>el depósito y las
+claves KMS deben borrarse manualmente</strong> por su política de retención.</p>
+<h2 id="scripts-auxiliares-del-proyecto"><span class="sec-num">6</span>Scripts auxiliares del proyecto</h2>
+<p>Además de los guiones de infraestructura, el repositorio incluye utilidades de operación y de
+pruebas. No forman parte de <code>provision_all.sh</code> y se ejecutan de forma explícita.</p>
+<h3 id="scripts-inyectar-super-usuario-py"><span class="sec-num">6.1</span>scripts/inyectar_super_usuario.py</h3>
+<p>Inyecta el <strong>Super Usuario</strong> de la plataforma con rol <code>SUPER</code>. Es idempotente: si el <code>P00</code> ya existe,
+actualiza sus datos y su clave. Sus garantías de seguridad son relevantes para la operación:</p>
+<ul>
+<li>La clave <strong>no</strong> se escribe en el archivo ni en la línea de comandos: se lee de la variable de
+entorno indicada por <code>--clave-env</code> (por defecto <code>GGTO_SUPER_CLAVE</code>) o se pide de forma oculta.</li>
+<li>Exige confirmación interactiva salvo que se use <code>--si</code>, y exige un mínimo de 8 caracteres.</li>
+<li>Registra cada ejecución en <code>RepoTecnico/BaseOperaciones/inyeccion_super_usuario.log</code>.</li>
+<li>Reutiliza el mismo <em>hash</em> y el mismo diccionario de palabras que la aplicación.</li>
+<li>Opcionalmente genera y guarda las <strong>12 palabras de seguridad</strong> en <code>dispositivo_seguridad</code> y las
+muestra una sola vez.</li>
+</ul>
+<p>Parámetros principales: <code>--p00</code>, <code>--correo</code>, <code>--nombre</code>, <code>--apellido</code>, <code>--rol</code>, <code>--id-central</code>,
+<code>--con-palabras</code>, <code>--dry-run</code> y <code>--si</code>. Las credenciales de base se toman de <code>DB_HOST</code>, <code>DB_PORT</code>,
+<code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code> y <code>DB_SSLMODE</code>, o bien del parámetro <code>--dsn</code>.</p>
+<h3 id="scripts-recalcular-cuadrilla0-py"><span class="sec-num">6.2</span>scripts/recalcular_cuadrilla0.py</h3>
+<p>Recalcula la marca de <strong>cuadrilla 0</strong> (el campo <code>caso.en_gestion_supervisor</code>) de los casos existentes,
+usando la configuración vigente. Sirve para aplicar un cambio de criterio sin volver a ingerir el
+archivo CSV.</p>
+<ul>
+<li>Por defecto es <strong>simulación</strong>: informa qué cambiaría sin escribir nada. Para escribir hay que pasar
+<code>--aplicar</code> y confirmar (o usar <code>--si</code>).</li>
+<li>Lee las claves <code>despacho.criterio_cuadrilla0</code>, <code>despacho.frases_campo</code>,
+<code>despacho.frases_supervisor</code> y <code>despacho.columnas_evaluar</code> de la tabla <code>configuracion</code>, y evalúa
+con la función <code>app.services.cuadrilla0.evaluar</code>.</li>
+<li>Limita a 20 los cambios impresos y resume el resto.</li>
+<li>Registra la ejecución en <code>RepoTecnico/BaseOperaciones/recalculo_cuadrilla0.log</code>.</li>
+</ul>
+<p>Su uso real está documentado en la decisión <strong>D-59</strong>: se recalcularon los 42 casos reales pasando
+<code>despacho.criterio_cuadrilla0</code> a <code>SUPERVISOR</code>.</p>
+<h3 id="repotecnico-pruebas-run-e2e-sh"><span class="sec-num">6.3</span>RepoTecnico/pruebas/run_e2e.sh</h3>
+<p>Orquesta las pruebas E2E de navegador contra un esquema aislado. El manual <code>04-pruebas-y-ci.md</code> de
+esta colección lo detalla en profundidad; aquí se resume su relación con el aprovisionamiento:
+reutiliza la base compartida a través del <strong>Cloud SQL Auth Proxy</strong> en <code>127.0.0.1:5433</code>, levanta
+<code>uvicorn app.main:app</code> en <code>http://127.0.0.1:8090</code> y usa <code>DB_SCHEMA=ggto_e2e</code>. Exporta
+<code>LD_LIBRARY_PATH</code> y <code>FONTCONFIG_FILE</code> para Chromium, y termina el <em>backend</em> con un <code>trap</code>/<code>kill</code> al
+salir.</p>
+<h3 id="repotecnico-pruebas-seed-e2e-py"><span class="sec-num">6.4</span>RepoTecnico/pruebas/seed_e2e.py</h3>
+<p>Siembra los datos deterministas de las pruebas E2E. Crea o reinicia el esquema aislado (por defecto
+<code>ggto_e2e</code>) a partir de <code>RepoTecnico/db/schema.sql</code>, y siembra los usuarios <code>E2EADM</code>, <code>E2ESUP</code> y
+<code>E2ETEC</code>, el sector <code>E2E-S1</code>, la cuadrilla <code>E2E-C1</code> y <strong>8 casos</strong> <code>E2E-…</code>. Aborta si el esquema es
+<code>public</code>, para no tocar producción. En su ejecución real genera <code>RepoTecnico/pruebas/logs/seed.json</code>.</p>
+<h2 id="teardown-y-confirmacion-confirm-destroy-eliminar"><span class="sec-num">7</span>Teardown y confirmación (CONFIRM_DESTROY=ELIMINAR)</h2>
+<p>El borrado de recursos es destructivo e irreversible, y el diseño lo protege con una confirmación
+explícita. <code>99_eliminar_todo.sh</code> compara <code>CONFIRM_DESTROY</code> con la cadena literal <code>ELIMINAR</code> y aborta
+si no coincide. Para ejecutarlo:</p>
+<pre data-lang="bash"><code class="language-bash">cd RepoTecnico/scripts
+CONFIRM_DESTROY=ELIMINAR ./99_eliminar_todo.sh
+</code></pre>
+<p>Puntos que conviene tener presentes antes de usarlo:</p>
+<ul>
+<li>El guion apunta a <code>$PROJECT_ID</code>, que por defecto es <code>ggtov2</code>. <strong>No</strong> borra la base <code>ggtov2</code> ni el
+usuario <code>ggtov2_app</code> de la instancia <code>truekeate-db-dev</code>, ni los secretos creados en
+<code>truekeate-main</code> por <code>10_usar_instancia_truekeate.sh</code>. Ese borrado está <strong>pendiente de confirmar</strong>
+como procedimiento documentado y debe hacerse de forma manual y coordinada con TrueKeate.</li>
+<li>Los borrados de la instancia, el servicio, el repositorio, la VPC y los secretos usan
+<code>&gt;/dev/null 2&gt;&amp;1 || true</code>, de modo que un recurso inexistente no aborta el <em>teardown</em>.</li>
+<li>El depósito y las claves KMS <strong>no</strong> se borran automáticamente por su política de retención.</li>
+<li>El servicio Cloud Run realmente desplegado se llama <code>ggto-web</code> en <code>truekeate-main</code>, mientras que el
+guion intenta borrar <code>ggtov2-web</code> en <code>$PROJECT_ID</code>; por tanto, el <code>ggto-web</code> real <strong>no</strong> queda
+cubierto por este guion.</li>
+</ul>
+<h2 id="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="sec-num">8</span>Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)</h2>
+<p>La infraestructura prevista y la realmente operativa divergen por un bloqueo administrativo, no por
+un cambio de diseño. La cuenta de facturación tiene agotado el cupo de cinco proyectos, de modo que
+<code>ggtov2</code> quedó sin facturación y sin APIs de despliegue. Para no detener el proyecto, se reutilizó la
+instancia Cloud SQL de <code>truekeate-main</code>.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Previsto (<code>ggtov2</code>)</th>
+<th>Real (<code>truekeate-main</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Proyecto</td>
+<td><code>ggtov2</code></td>
+<td><code>truekeate-main</code></td>
+</tr>
+<tr>
+<td>Servicio Cloud Run</td>
+<td><code>ggtov2-web</code></td>
+<td><code>ggto-web</code></td>
+</tr>
+<tr>
+<td>Imagen</td>
+<td><code>.../ggtov2/ggtov2-web/app:latest</code></td>
+<td><code>southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v14</code></td>
+</tr>
+<tr>
+<td>Instancia de datos</td>
+<td><code>ggtov2-pg</code> (PostgreSQL 16, privada)</td>
+<td><code>truekeate-db-dev</code> (PostgreSQL 15.18, compartida)</td>
+</tr>
+<tr>
+<td>Base / usuario</td>
+<td><code>ggtov2</code> / <code>ggtov2_app</code></td>
+<td><code>ggtov2</code> / <code>ggtov2_app</code> (mismos nombres)</td>
+</tr>
+<tr>
+<td>Buena parte de 04, 05 y 06</td>
+<td>Ejecutables con <code>CREAR_RECURSOS=si</code></td>
+<td><strong>No ejecutados</strong> por falta de facturación</td>
+</tr>
+<tr>
+<td>Cuenta de servicio de ejecución</td>
+<td><code>ggtov2-app@ggtov2…</code></td>
+<td><code>ggto-web-sa@truekeate-main…</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Consecuencias operativas verificadas:</p>
+<ul>
+<li>La base propia no se creó: por eso existe <code>10_usar_instancia_truekeate.sh</code>, que da base, usuario,
+secretos y permiso cruzado dentro de <code>truekeate-main</code>.</li>
+<li>La instancia compartida <strong>no</strong> tiene los respaldos, el PITR ni el SSL obligatorio que sí definiría
+<code>06_cloudsql_postgres.sh</code>; ese riesgo quedó aceptado como <strong>D-26</strong> hasta migrar.</li>
+<li>El paso <code>07_cloudrun_web.sh</code> no se ejecutó en <code>ggtov2</code>; el despliegue real usa el proyecto
+<code>truekeate-main</code> con una cuenta de servicio distinta.</li>
+<li>La ruta de convergencia está definida: al desbloquear la facturación, migrar el servicio a
+<code>ggtov2</code> con <code>07_cloudrun_web.sh</code> y su propio Cloud SQL <code>ggtov2-pg</code>.</li>
+<li>El importe y la fecha exactos para esa migración están <strong>pendientes de confirmar</strong>; el estado del
+proyecto solo registra «desbloquear la facturación GCP y migrar».</li>
+</ul>
+
+<nav class="pie-nav"><a class="izq" href="../04-Despliegue/02-cloud-run-y-cloud-sql.html">← Manual anterior: Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco…</a><a href="../index.html">Índice general</a><a class="der" href="../04-Despliegue/04-pruebas-y-ci.html">Manual siguiente →: Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias /…</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Despliegue</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Despliegue · 03-scripts-gcp", "pieIzq": "Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central…", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

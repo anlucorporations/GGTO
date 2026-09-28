@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack del frontend GGTO (SPA React) — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Manual para todo público. Explica con palabras sencillas cómo está hecha la parte visual de GGTO: las pantallas que ves en el navegador, cómo se protegen y cómo se construyen. No necesitas saber progr">
+<meta property="og:image" content="../imagenes/mapa-pantallas-spa.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Tecnología</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../pdf/01-Tecnologia/03-stack-frontend.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#stack-de-la-spa" data-target="stack-de-la-spa"><span class="tn">2</span> Stack de la SPA</a><span class="pag"></span><ul><li class="n3"><a href="#react-18-y-typescript" data-target="react-18-y-typescript"><span class="tn">2.1</span> React 18 y TypeScript</a><span class="pag"></span></li><li class="n3"><a href="#vite" data-target="vite"><span class="tn">2.2</span> Vite</a><span class="pag"></span></li><li class="n3"><a href="#react-router-dom" data-target="react-router-dom"><span class="tn">2.3</span> react-router-dom</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#estructura-del-proyecto-web" data-target="estructura-del-proyecto-web"><span class="tn">3</span> Estructura del proyecto web</a><span class="pag"></span><ul><li class="n3"><a href="#main-tsx-y-app-tsx" data-target="main-tsx-y-app-tsx"><span class="tn">3.1</span> main.tsx y App.tsx</a><span class="pag"></span></li><li class="n3"><a href="#pages" data-target="pages"><span class="tn">3.2</span> pages/</a><span class="pag"></span></li><li class="n3"><a href="#components" data-target="components"><span class="tn">3.3</span> components/</a><span class="pag"></span></li><li class="n3"><a href="#api" data-target="api"><span class="tn">3.4</span> api/</a><span class="pag"></span></li><li class="n3"><a href="#auth" data-target="auth"><span class="tn">3.5</span> auth/</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#enrutado-y-proteccion" data-target="enrutado-y-proteccion"><span class="tn">4</span> Enrutado y proteccion</a><span class="pag"></span><ul><li class="n3"><a href="#rutas-publicas-y-protegidas-app-web-src-app-tsx-22-48" data-target="rutas-publicas-y-protegidas-app-web-src-app-tsx-22-48"><span class="tn">4.1</span> Rutas publicas y protegidas (app/web/src/App.tsx:22-48)</a><span class="pag"></span></li><li class="n3"><a href="#rutaprotegida" data-target="rutaprotegida"><span class="tn">4.2</span> RutaProtegida</a><span class="pag"></span></li><li class="n3"><a href="#layout-y-barra-superior-app-web-src-components-layout-tsx" data-target="layout-y-barra-superior-app-web-src-components-layout-tsx"><span class="tn">4.3</span> Layout y barra superior (app/web/src/components/Layout.tsx)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#cliente-http-y-tipos" data-target="cliente-http-y-tipos"><span class="tn">5</span> Cliente HTTP y tipos</a><span class="pag"></span><ul><li class="n3"><a href="#app-web-src-api-client-ts" data-target="app-web-src-api-client-ts"><span class="tn">5.1</span> app/web/src/api/client.ts</a><span class="pag"></span></li><li class="n3"><a href="#app-web-src-api-types-ts" data-target="app-web-src-api-types-ts"><span class="tn">5.2</span> app/web/src/api/types.ts</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#graficos-svg-propios" data-target="graficos-svg-propios"><span class="tn">6</span> Graficos SVG propios</a><span class="pag"></span><ul><li class="n3"><a href="#app-web-src-components-graficos-tsx-barras-curva-torta" data-target="app-web-src-components-graficos-tsx-barras-curva-torta"><span class="tn">6.1</span> app/web/src/components/graficos.tsx (barras, curva, torta)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#constructor-y-salida-npm-run-build-app-web-dist-servida-por-" data-target="constructor-y-salida-npm-run-build-app-web-dist-servida-por-"><span class="tn">7</span> Constructor y salida (npm run build -&gt; app/web/dist, servida por FastAPI)</a><span class="pag"></span></li><li class="n2"><a href="#estado-actual-y-pendientes-accesibilidad-rnf-23-pruebas-de-u" data-target="estado-actual-y-pendientes-accesibilidad-rnf-23-pruebas-de-u"><span class="tn">8</span> Estado actual y pendientes (accesibilidad RNF-23, pruebas de UI: pendiente de confirmar)</a><span class="pag"></span></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Tecnología</span>
+          <h1 class="portada-titulo">Stack del frontend GGTO (SPA React)</h1>
+          <p class="portada-resumen">Manual para todo público. Explica con palabras sencillas cómo está hecha la parte visual de GGTO: las pantallas que ves en el navegador, cómo se protegen y cómo se construyen. No necesitas saber programar para leerlo.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Tecnología</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/01-Tecnologia/03-stack-frontend.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Manual para todo público. Explica con palabras sencillas <strong>cómo está hecha la parte visual</strong> de
+GGTO: las pantallas que ves en el navegador, cómo se protegen y cómo se construyen. No necesitas
+saber programar para leerlo.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>La web se abre en el navegador.</strong> No hay que instalar nada. Se entra por la dirección del
+sistema y aparece la pantalla de acceso.</li>
+<li><strong>El sistema pide usuario y clave una sola vez.</strong> Después de entrar, la sesión dura <strong>8 horas</strong>
+(una jornada). Si cierras el navegador o recargas, la sesión sigue viva mientras no expire.</li>
+<li><strong>Todos los botones de la barra superior te llevan a una sección.</strong> PANEL, CASOS, ESPECIALES,
+AGENDA, DESPACHO, INGESTA, MONITOREO y ALERTAS están siempre visibles. CONFIGURACIÓN aparece solo
+para SUPER, ADMIN y SUPERVISOR.</li>
+<li><strong>Si tu rol es TECNICO, el sistema se pone en modo solo lectura.</strong> Verás un aviso permanente y el
+botón <strong>«Agregar caso»</strong> quedará deshabilitado. Puedes consultar, pero no modificar.</li>
+<li><strong>Puedes compartir enlaces internos.</strong> Si copias la dirección de una pantalla (por ejemplo
+<code>/monitoreo</code>) y la abres en otra pestaña, funciona igual.</li>
+</ol>
+<figure id="fig-0"><img src="../imagenes/mapa-pantallas-spa.png" alt="mapa pantallas spa"><figcaption>Figura 1 · mapa-pantallas-spa.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TD
+    L[&quot;Pantalla de acceso /login&lt;br/&gt;(única pública)&quot;]
+    L --&gt; G{&quot;¿Sesión válida?&quot;}
+    G -- &quot;No&quot; --&gt; L
+    G -- &quot;Sí&quot; --&gt; LAY[&quot;Armazón (Layout)&lt;br/&gt;barra superior + contenido&quot;]
+    LAY --&gt; P[&quot;PANEL /&quot;]
+    LAY --&gt; C[&quot;CASOS /casos&quot;]
+    LAY --&gt; I[&quot;INGESTA /ingesta&quot;]
+    LAY --&gt; D[&quot;DESPACHO /despacho&quot;]
+    LAY --&gt; E[&quot;ESPECIALES /especiales&quot;]
+    LAY --&gt; A[&quot;AGENDA /agenda&quot;]
+    LAY --&gt; M[&quot;MONITOREO /monitoreo&quot;]
+    LAY --&gt; AL[&quot;ALERTAS /alertas&quot;]
+    LAY -. &quot;solo SUPER, ADMIN,&lt;br/&gt;SUPERVISOR&quot; .-&gt; CFG[&quot;CONFIGURACIÓN&lt;br/&gt;7 pantallas&quot;]</code></pre></details></figure>
+<h2 id="stack-de-la-spa"><span class="sec-num">2</span>Stack de la SPA</h2>
+<p>Una <strong>SPA</strong> (<em>Single Page Application</em>) es una web que se carga una vez y luego cambia de pantalla sin
+recargar. La de GGTO está hecha con <strong>React 18</strong> y <strong>TypeScript</strong>.</p>
+<h3 id="react-18-y-typescript"><span class="sec-num">2.1</span>React 18 y TypeScript</h3>
+<p>React es la herramienta con la que se construyen las pantallas. TypeScript es la versión &quot;con
+controles&quot; del lenguaje: obliga a declarar qué tipo de dato es cada cosa, y así se evitan muchos
+errores antes de publicar.</p>
+<p>Las dependencias de ejecución son solo tres:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Versión declarada</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>react</code></td>
+<td><code>^18.3.1</code></td>
+<td>Construir las pantallas</td>
+</tr>
+<tr>
+<td><code>react-dom</code></td>
+<td><code>^18.3.1</code></td>
+<td>Mostrarlas en el navegador</td>
+</tr>
+<tr>
+<td><code>react-router-dom</code></td>
+<td><code>^6.26.2</code></td>
+<td>Cambiar de pantalla sin recargar</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>No hay ninguna otra dependencia de ejecución.</strong> En particular, <strong>no se usa una biblioteca externa
+de gráficos</strong> (nada de Recharts ni Chart.js): los gráficos de MONITOREO se dibujan a mano con SVG,
+que es un formato de dibujo que el navegador entiende de forma nativa.</p>
+<p>Las herramientas de desarrollo (no van al usuario final) son: <code>@types/react</code>, <code>@types/react-dom</code>,
+<code>@vitejs/plugin-react</code>, <code>typescript</code> y <code>vite</code>.</p>
+<p>TypeScript está configurado en modo <strong>estricto</strong>. El informe de la Fase 4 registra que la revisión de
+tipos no encontró hallazgos. El título de la pestaña del navegador es <strong>GGTO — CANTV</strong> y el idioma de
+la página es español.</p>
+<h3 id="vite"><span class="sec-num">2.2</span>Vite</h3>
+<p><strong>Vite 5</strong> es la herramienta que arma y compila la web. Tiene dos modos:</p>
+<ol>
+<li><strong>Modo desarrollo:</strong> levanta la web en el puerto <strong>5173</strong> y reenvía automáticamente todo lo que
+empieza por <code>/api</code> al motor, que escucha en el puerto <strong>8000</strong>. Gracias a este reenvío, la web
+nunca necesita saber dónde está el motor.</li>
+<li><strong>Modo construcción:</strong> genera la versión final y la deja en la carpeta <code>dist</code>, que es exactamente
+la carpeta que el motor publica.</li>
+</ol>
+<p>Los comandos disponibles son:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run dev</code></td>
+<td>Enciende la web en modo desarrollo (con reenvío a <code>/api</code>)</td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>Revisa los tipos y construye la versión final</td>
+</tr>
+<tr>
+<td><code>npm run preview</code></td>
+<td>Muestra una vista previa de la versión construida</td>
+</tr>
+</tbody>
+</table></div>
+<p>Un detalle importante: <code>build</code> <strong>primero revisa los tipos</strong>. Si hay un error, no se genera la versión
+final. Es una barrera de calidad, no un defecto.</p>
+<h3 id="react-router-dom"><span class="sec-num">2.3</span>react-router-dom</h3>
+<p>El enrutado es lo que decide <strong>qué pantalla mostrar según la dirección</strong>. GGTO usa <code>BrowserRouter</code>,
+lo que significa que las direcciones son direcciones reales (<code>/casos</code>, <code>/monitoreo</code>). Por eso el motor
+tiene que devolver la página principal cuando no encuentra el archivo: así React se encarga de mostrar
+lo correcto.</p>
+<p>El orden de armado del cliente es importante: primero el enrutador, después el proveedor de
+autenticación y por último la aplicación. Si el orden se invirtiera, la protección de rutas no
+funcionaría.</p>
+<h2 id="estructura-del-proyecto-web"><span class="sec-num">3</span>Estructura del proyecto web</h2>
+<p>La web vive en la carpeta <code>app/web</code>. Estas son sus partes.</p>
+<h3 id="main-tsx-y-app-tsx"><span class="sec-num">3.1</span>main.tsx y App.tsx</h3>
+<ul>
+<li><strong><code>main.tsx</code></strong> es el arranque: 16 líneas que encienden React, conectan el enrutador, conectan el
+sistema de sesión y cargan los estilos.</li>
+<li><strong><code>App.tsx</code></strong> es el <strong>mapa de rutas</strong>: 49 líneas que dicen qué pantalla corresponde a cada
+dirección. No tiene reglas de negocio.</li>
+</ul>
+<p>La estructura de rutas es anidada: hay un &quot;guardián&quot; que revisa la sesión y, si todo está bien,
+muestra el armazón con la barra superior y la pantalla que pediste.</p>
+<pre data-lang="texto"><code>/login                    → pantalla de acceso (pública)
+(todo lo demás)           → primero revisa la sesión
+   /                      → PANEL
+   /ingesta  /casos  /despacho  /especiales  /agenda
+   /monitoreo  /alertas
+   /central  /sectores  /tecnicos  /flota  /cuadrillas
+   /catalogos  /parametros
+(dirección desconocida)   → vuelve al PANEL
+</code></pre>
+<h3 id="pages"><span class="sec-num">3.2</span>pages/</h3>
+<p>La carpeta <code>pages/</code> tiene <strong>una pantalla por sección</strong>. Estas son, con su tamaño aproximado en líneas
+(útil para saber cuáles son las más complejas):</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Pantalla</th>
+<th>Archivo</th>
+<th>Líneas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Panel</td>
+<td><code>Panel.tsx</code></td>
+<td>106</td>
+</tr>
+<tr>
+<td>Login</td>
+<td><code>Login.tsx</code></td>
+<td>202</td>
+</tr>
+<tr>
+<td>Ingesta</td>
+<td><code>Ingesta.tsx</code></td>
+<td>406</td>
+</tr>
+<tr>
+<td>Casos</td>
+<td><code>Casos.tsx</code></td>
+<td>964</td>
+</tr>
+<tr>
+<td>Despacho</td>
+<td><code>Despacho.tsx</code></td>
+<td>1165</td>
+</tr>
+<tr>
+<td>Especiales</td>
+<td><code>Especiales.tsx</code></td>
+<td>508</td>
+</tr>
+<tr>
+<td>Agenda</td>
+<td><code>Agenda.tsx</code></td>
+<td>814</td>
+</tr>
+<tr>
+<td>Monitoreo</td>
+<td><code>Monitoreo.tsx</code></td>
+<td>764</td>
+</tr>
+<tr>
+<td>Alertas</td>
+<td><code>Alertas.tsx</code></td>
+<td>677</td>
+</tr>
+<tr>
+<td>Centrales</td>
+<td><code>Centrales.tsx</code></td>
+<td>336</td>
+</tr>
+<tr>
+<td>Sectores</td>
+<td><code>Sectores.tsx</code></td>
+<td>520</td>
+</tr>
+<tr>
+<td>Tecnicos</td>
+<td><code>Tecnicos.tsx</code></td>
+<td>366</td>
+</tr>
+<tr>
+<td>Flota</td>
+<td><code>Flota.tsx</code></td>
+<td>372</td>
+</tr>
+<tr>
+<td>Cuadrillas</td>
+<td><code>Cuadrillas.tsx</code></td>
+<td>555</td>
+</tr>
+<tr>
+<td>Catalogos</td>
+<td><code>Catalogos.tsx</code></td>
+<td>390</td>
+</tr>
+<tr>
+<td>Parametros</td>
+<td><code>Parametros.tsx</code></td>
+<td>177</td>
+</tr>
+</tbody>
+</table></div>
+<p>Todas siguen el mismo patrón: al abrirse piden sus datos al motor, muestran un aviso mientras cargan,
+y si algo falla muestran un mensaje de error. El <strong>PANEL</strong> es el mejor ejemplo: muestra seis tarjetas
+con los conteos de <strong>tablas, centrales, roles, cuadrillas, causas y parámetros</strong>, y tiene un buscador
+rápido que salta a CASOS con el texto ya escrito.</p>
+<h3 id="components"><span class="sec-num">3.3</span>components/</h3>
+<p>La carpeta <code>components/</code> guarda las piezas que se repiten en varias pantallas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Layout</code></td>
+<td>El armazón: barra superior, menús y espacio de contenido</td>
+</tr>
+<tr>
+<td><code>RutaProtegida</code></td>
+<td>El guardián de la sesión</td>
+</tr>
+<tr>
+<td><code>BuscadorGlobal</code></td>
+<td>Buscador de un solo campo, en la barra superior</td>
+</tr>
+<tr>
+<td><code>ModalCaso</code></td>
+<td>La ventana del botón «Agregar caso»</td>
+</tr>
+<tr>
+<td><code>graficos</code></td>
+<td>Los cuatro tipos de gráfico dibujados en SVG</td>
+</tr>
+<tr>
+<td><code>Iconos</code></td>
+<td>El conjunto de iconos del sistema</td>
+</tr>
+<tr>
+<td><code>EstadoChips</code></td>
+<td>Las etiquetas de colores que indican el estado de un caso</td>
+</tr>
+<tr>
+<td><code>Mensaje</code></td>
+<td>Aviso de error o de información</td>
+</tr>
+<tr>
+<td><code>useCerrarDesplegable</code></td>
+<td>Cierra los menús al hacer clic fuera de ellos</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="api"><span class="sec-num">3.4</span>api/</h3>
+<p>La carpeta <code>api/</code> tiene dos archivos grandes:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Líneas</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>client.ts</code></td>
+<td>886</td>
+<td>Todas las llamadas al motor y el manejo de errores</td>
+</tr>
+<tr>
+<td><code>types.ts</code></td>
+<td>988</td>
+<td>Los &quot;moldes&quot; de datos, escritos a mano</td>
+</tr>
+</tbody>
+</table></div>
+<p>Los tipos de <code>types.ts</code> son un <strong>espejo</strong> de lo que declara el motor. No se generan solos: cuando
+alguien agrega un campo en el motor, debe agregarlo también aquí. Es un punto de atención conocido.</p>
+<h3 id="auth"><span class="sec-num">3.5</span>auth/</h3>
+<p>La carpeta <code>auth/</code> contiene el sistema de sesión. Su archivo <code>AuthContext.tsx</code> (87 líneas) guarda:</p>
+<ul>
+<li>Quién es el usuario.</li>
+<li>Si está cargando.</li>
+<li>Si está autenticado.</li>
+<li>Si está en <strong>modo solo lectura</strong> (<code>TECNICO</code>).</li>
+<li>Las funciones para entrar y salir.</li>
+</ul>
+<p>Al abrir el sistema, si hay una sesión guardada, se valida contra el motor con <code>GET /auth/me</code>. Si la
+validación falla, se limpia la sesión y se vuelve al acceso.</p>
+<h2 id="enrutado-y-proteccion"><span class="sec-num">4</span>Enrutado y proteccion</h2>
+<h3 id="rutas-publicas-y-protegidas-app-web-src-app-tsx-22-48"><span class="sec-num">4.1</span>Rutas publicas y protegidas (app/web/src/App.tsx:22-48)</h3>
+<p>Hay <strong>una sola dirección pública</strong>: <code>/login</code>. Todas las demás exigen sesión válida.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Dirección</th>
+<th>Pantalla</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pública</td>
+<td><code>/login</code></td>
+<td>Acceso</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/</code></td>
+<td>PANEL</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/ingesta</code></td>
+<td>INGESTA</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/casos</code></td>
+<td>CASOS</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/despacho</code></td>
+<td>DESPACHO</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/especiales</code></td>
+<td>ESPECIALES</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/agenda</code></td>
+<td>AGENDA</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/monitoreo</code></td>
+<td>MONITOREO</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/alertas</code></td>
+<td>ALERTAS</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/central</code></td>
+<td>CONFIGURACIÓN · Central</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/sectores</code></td>
+<td>CONFIGURACIÓN · Sectores</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/tecnicos</code></td>
+<td>CONFIGURACIÓN · Técnicos</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/flota</code></td>
+<td>CONFIGURACIÓN · Flota</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/cuadrillas</code></td>
+<td>CONFIGURACIÓN · Cuadrillas</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/catalogos</code></td>
+<td>CONFIGURACIÓN · Catálogos</td>
+</tr>
+<tr>
+<td>Protegida</td>
+<td><code>/parametros</code></td>
+<td>CONFIGURACIÓN · Parámetros</td>
+</tr>
+<tr>
+<td>Redirección</td>
+<td>cualquier otra</td>
+<td>Vuelve al PANEL</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Aviso importante:</strong> no existen pantallas separadas de SEGUIMIENTO, EMPRESAS, REFERIDOS ni GESTIÓN.
+Esas vistas se atienden desde <strong>ESPECIALES</strong> y desde <strong>CASOS</strong>. No busques un menú que no existe.</p>
+<figure id="fig-1"><img src="../imagenes/ruta-protegida.png" alt="ruta protegida"><figcaption>Figura 2 · ruta-protegida.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">sequenceDiagram
+    participant U as Usuario
+    participant R as Guardián de ruta
+    participant M as Motor (valida token)
+    participant P as Pantalla solicitada
+    U-&gt;&gt;R: Abre una dirección interna
+    R-&gt;&gt;R: ¿Sesión guardada?
+    alt Sin sesión
+        R--&gt;&gt;U: Redirige a /login
+    else Con sesión
+        R-&gt;&gt;M: GET /auth/me
+        M--&gt;&gt;R: Usuario válido
+        R-&gt;&gt;R: Muestra &quot;Validando sesión…&quot;
+        R--&gt;&gt;P: Muestra la pantalla pedida
+    end
+    Note over R,M: La seguridad real la aplica el motor.&lt;br/&gt;Ocultar una ruta aquí no basta.</code></pre></details></figure>
+<h3 id="rutaprotegida"><span class="sec-num">4.2</span>RutaProtegida</h3>
+<p>Es el <strong>guardián</strong>. Tiene tres salidas posibles:</p>
+<ol>
+<li><strong>Mientras valida</strong>, muestra un aviso: «Validando sesión…». Esta espera evita que la pantalla
+&quot;parpadee&quot; saltando al acceso y volviendo.</li>
+<li><strong>Si no hay sesión</strong>, te lleva a <code>/login</code>.</li>
+<li><strong>Si la sesión es válida</strong>, muestra la pantalla que pediste.</li>
+</ol>
+<p>Es muy importante entender esto: <strong>la protección de pantallas es solo la primera barrera</strong>. La
+seguridad de verdad la aplica el motor. Aunque alguien intentara forzar una dirección desde el
+navegador, el motor le negaría la operación si su rol no alcanza. Por eso, ocultar un botón no es una
+medida de seguridad por sí sola.</p>
+<h3 id="layout-y-barra-superior-app-web-src-components-layout-tsx"><span class="sec-num">4.3</span>Layout y barra superior (app/web/src/components/Layout.tsx)</h3>
+<p>El armazón de la aplicación (228 líneas) tiene tres partes:</p>
+<ol>
+<li><strong>Barra superior (<code>topbar</code>)</strong> con la marca GGTO — CANTV, el buscador global, el botón
+«Agregar caso», la navegación y el menú de usuario.</li>
+<li><strong>Contenido (<code>main</code>)</strong> con el aviso de solo lectura (cuando corresponde) y la pantalla actual.</li>
+<li><strong>Ventana de alta de caso</strong>, que aparece solo cuando se abre.</li>
+</ol>
+<p>Las secciones principales son ocho y están en este orden: <strong>PANEL, CASOS, ESPECIALES, AGENDA,
+DESPACHO, INGESTA, MONITOREO y ALERTAS</strong>.</p>
+<p>El submenú <strong>CONFIGURACIÓN</strong> tiene siete entradas y se muestra solo si tu rol es SUPER, ADMIN o
+SUPERVISOR.</p>
+<p>El menú de usuario muestra tu inicial en un círculo, tu nombre (o tu P00) y tu rol. Si eres TECNICO,
+aparece además la insignia <strong>«solo lectura»</strong>. Al abrirlo verás tu P00, tu correo, tu rol, tu central
+y el botón para cerrar sesión.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Elemento de la barra</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Marca GGTO — CANTV</td>
+<td>Vuelve al PANEL</td>
+</tr>
+<tr>
+<td>Buscador global</td>
+<td>Busca casos desde cualquier pantalla</td>
+</tr>
+<tr>
+<td>Botón «Agregar caso»</td>
+<td>Abre la ventana de alta (deshabilitado en solo lectura)</td>
+</tr>
+<tr>
+<td>Navegación de secciones</td>
+<td>Salta entre las ocho secciones principales</td>
+</tr>
+<tr>
+<td>Submenú CONFIGURACIÓN</td>
+<td>Acceso a las siete pantallas de configuración</td>
+</tr>
+<tr>
+<td>Menú de usuario</td>
+<td>Datos de tu cuenta y cierre de sesión</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="cliente-http-y-tipos"><span class="sec-num">5</span>Cliente HTTP y tipos</h2>
+<h3 id="app-web-src-api-client-ts"><span class="sec-num">5.1</span>app/web/src/api/client.ts</h3>
+<p>Este archivo (886 líneas) es la <strong>única puerta de salida</strong> de la web hacia el motor. Todas las
+pantallas pasan por aquí. Sus tres decisiones de diseño son:</p>
+<ol>
+<li><strong>Mismo origen:</strong> la base de las llamadas es <code>/api/v1</code>, una ruta relativa.</li>
+<li><strong>Pase de sesión (token):</strong> se guarda en el navegador y se envía en cada llamada.</li>
+<li><strong>Errores claros:</strong> cualquier falla se convierte en un mensaje entendible, con su código.</li>
+</ol>
+<p>Las funciones se agrupan por sección:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Grupo</th>
+<th>Ejemplos de funciones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acceso</td>
+<td>entrar, consultar mi usuario, desbloquear</td>
+</tr>
+<tr>
+<td>Central</td>
+<td>listar, crear, consultar, actualizar, desactivar</td>
+</tr>
+<tr>
+<td>Sectores</td>
+<td>listar, crear, agregar dirección, eliminar dirección</td>
+</tr>
+<tr>
+<td>Técnicos y flota</td>
+<td>listar y crear técnicos, listar y crear vehículos, retirar vehículo</td>
+</tr>
+<tr>
+<td>Cuadrillas</td>
+<td>listar, crear, agregar integrante, retirar integrante</td>
+</tr>
+<tr>
+<td>Catálogos y parámetros</td>
+<td>listar causas y métodos, listar y actualizar parámetros</td>
+</tr>
+<tr>
+<td>INGESTA</td>
+<td>simular carga, cargar archivo, listar lotes, ver detalle de lote</td>
+</tr>
+<tr>
+<td>CASOS</td>
+<td>listar, buscar, consultar, crear, actualizar, ver historial</td>
+</tr>
+<tr>
+<td>DESPACHO</td>
+<td>simular propuesta, generar, listar, imprimir, enviar</td>
+</tr>
+<tr>
+<td>ESPECIALES y AGENDA</td>
+<td>listar solicitantes, casos especiales, citas y seguimiento</td>
+</tr>
+</tbody>
+</table></div>
+<p>Un detalle técnico con efecto práctico: la <strong>INGESTA</strong> sube el archivo CSV con un formato especial
+de carga de archivos. Por eso ese envío es distinto de los demás y se maneja aparte.</p>
+<h3 id="app-web-src-api-types-ts"><span class="sec-num">5.2</span>app/web/src/api/types.ts</h3>
+<p>Este archivo (988 líneas) reúne las interfaces, es decir, los <strong>moldes de datos</strong> que la web espera
+recibir. Los grupos verificados son:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Grupo</th>
+<th>Moldes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acceso</td>
+<td>Usuario, respuesta del token, posición de palabra, respuesta de desbloqueo</td>
+</tr>
+<tr>
+<td>Central</td>
+<td>Central y sus variantes de creación y edición</td>
+</tr>
+<tr>
+<td>Sectores</td>
+<td>tipos de coincidencia, dirección de sector, sector</td>
+</tr>
+</tbody>
+</table></div>
+<p>Dos convenciones útiles:</p>
+<ol>
+<li>Los moldes de creación se derivan de los de lectura. Por ejemplo, &quot;Central para crear&quot; es igual a
+&quot;Central&quot; sin el identificador.</li>
+<li>Los campos que pueden venir vacíos se escriben con <code>| null</code> y los opcionales con <code>?</code>, respetando
+la realidad de la base de datos.</li>
+</ol>
+<p>Los valores cerrados (los que solo pueden ser uno de una lista) se escriben como listas de opciones.
+Por ejemplo, el tipo de coincidencia de una dirección solo puede ser <strong>CONTIENE</strong>, <strong>EXACTO</strong> o
+<strong>REGEX</strong>, que son justamente los que usa la sectorización.</p>
+<h2 id="graficos-svg-propios"><span class="sec-num">6</span>Graficos SVG propios</h2>
+<h3 id="app-web-src-components-graficos-tsx-barras-curva-torta"><span class="sec-num">6.1</span>app/web/src/components/graficos.tsx (barras, curva, torta)</h3>
+<p>Los gráficos de la pantalla <strong>MONITOREO</strong> se dibujan <strong>a mano con SVG</strong>, sin librerías externas. Son
+cuatro:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Gráfico</th>
+<th>Qué muestra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Barras</td>
+<td>Comparar valores entre categorías</td>
+</tr>
+<tr>
+<td>Barras agrupadas</td>
+<td>Comparar varias series por categoría</td>
+</tr>
+<tr>
+<td>Líneas (curva)</td>
+<td>Ver la evolución en el tiempo</td>
+</tr>
+<tr>
+<td>Torta</td>
+<td>Ver proporciones de un total</td>
+</tr>
+</tbody>
+</table></div>
+<p>Todos son <strong>de solo lectura</strong>: reciben datos ya calculados por el motor y los dibujan. El ancho de
+dibujo es de 640 unidades, pero el gráfico se estira al ancho disponible de la pantalla.</p>
+<p>La paleta de colores de las series es fija (azul, verde, mostaza, rojo, violeta y turquesa), lo que
+mantiene la coherencia visual entre pantallas.</p>
+<blockquote>
+<p>La revisión formal de accesibilidad de estos gráficos (lectores de pantalla, contraste) está
+<strong>pendiente de confirmar</strong>. Hoy hay bases de accesibilidad en otras partes de la web, pero el
+informe AA de los gráficos todavía no está emitido.</p>
+</blockquote>
+<h2 id="constructor-y-salida-npm-run-build-app-web-dist-servida-por-"><span class="sec-num">7</span>Constructor y salida (npm run build -&gt; app/web/dist, servida por FastAPI)</h2>
+<p>El proceso de construcción tiene cinco etapas:</p>
+<ol>
+<li><strong>Revisión de tipos.</strong> Primero se ejecuta la revisión estricta. Si hay un error, se detiene todo.</li>
+<li><strong>Empaquetado.</strong> Vite compila y optimiza la aplicación.</li>
+<li><strong>Salida.</strong> El resultado queda en <code>app/web/dist</code>, con un <code>index.html</code> y una carpeta de recursos.
+Los nombres de los archivos incluyen un código derivado del contenido, por ejemplo
+<code>index-B48LMoIz.css</code> e <code>index-BGs0NhQL.js</code>.</li>
+<li><strong>Publicación.</strong> El motor monta esa carpeta como la página principal de la web.</li>
+<li><strong>Contenedor.</strong> La imagen de la nube se construye en dos etapas: una con Node (construye la web) y
+otra con Python (la sirve). El contenido exacto del archivo de construcción del contenedor está
+<strong>pendiente de confirmar</strong> y no forma parte de este manual.</li>
+</ol>
+<p>Para trabajar en desarrollo: <code>npm run dev</code> en <code>app/web</code> (puerto 5173) con el motor en el puerto 8000.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run dev</code></td>
+<td>Enciende la web de desarrollo con reenvío a <code>/api</code></td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>Revisa tipos y genera <code>app/web/dist</code></td>
+</tr>
+<tr>
+<td><code>npm run preview</code></td>
+<td>Muestra la versión construida antes de publicarla</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="estado-actual-y-pendientes-accesibilidad-rnf-23-pruebas-de-u"><span class="sec-num">8</span>Estado actual y pendientes (accesibilidad RNF-23, pruebas de UI: pendiente de confirmar)</h2>
+<p>Estado verificado y cosas por cerrar:</p>
+<ul>
+<li><strong>Pruebas de navegador:</strong> existen <strong>46 pruebas E2E</strong> con Playwright que corren contra un esquema
+aislado (<code>ggto_e2e</code>). Junto con las 169 pruebas de Python, suman <strong>215 pruebas en verde</strong>. El
+detalle exacto de qué pantalla cubre cada prueba está <strong>pendiente de confirmar</strong> contra el informe
+de la Fase 4.</li>
+<li><strong>Accesibilidad (RNF-23):</strong> el requisito pide cumplir <strong>WCAG 2.1 AA</strong>, verificado con herramientas
+automáticas (axe o Lighthouse) y revisión manual. Hoy hay buenas bases en el código (avisos para
+lectores de pantalla, etiquetas en enlaces y menús), pero <strong>la auditoría formal y el registro de
+conformidad están pendientes de confirmar</strong>.</li>
+<li><strong>Contraste y foco:</strong> el contraste real de cada combinación de colores frente al mínimo de 4.5:1
+está <strong>pendiente de confirmar</strong> con una medición.</li>
+<li><strong>Sincronización de tipos:</strong> los moldes de la web se mantienen a mano. No hay generación automática
+ni una verificación en la integración continua; el riesgo de desincronización está <strong>pendiente de
+confirmar</strong> en cuanto a su mitigación.</li>
+<li><strong>Integración continua:</strong> el flujo verificado ejecuta las revisiones de Python y las pruebas de
+Python. La ejecución de la revisión de tipos de la web, de la construcción y de las pruebas de
+navegador dentro de ese flujo está <strong>pendiente de confirmar</strong>.</li>
+<li><strong>Aplicación móvil:</strong> la app Flutter para Android <strong>no está desarrollada</strong> (Ciclo 8 diferido). Este
+manual no la documenta como existente. Cuando en este sistema se habla de &quot;móvil&quot;, se refiere a que
+la web se adapta a pantallas pequeñas, no a una aplicación nativa.</li>
+<li><strong>WhatsApp:</strong> no existe integración. Quedó diferida a la versión 3.</li>
+</ul>
+
+<nav class="pie-nav"><a class="izq" href="../01-Tecnologia/02-stack-backend.html">← Manual anterior: Stack del backend GGTO</a><a href="../index.html">Índice general</a><a class="der" href="../02-Dependencias/01-backend.html">Manual siguiente →: Dependencias del backend GGTO</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Tecnología</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Tecnología · 03-stack-frontend", "pieIzq": "Stack del frontend GGTO (SPA React)", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Stack del frontend GGTO (SPA React)"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

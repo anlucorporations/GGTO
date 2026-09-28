@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dependencias del backend GGTO — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Manual para todo público. Explica qué piezas de software usa el motor de GGTO y para qué sirve cada una. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza en lugar de escribirlo desde">
+<meta property="og:image" content="../imagenes/dependencias-backend.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Dependencias</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../pdf/02-Dependencias/01-backend.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#fuentes-de-dependencias" data-target="fuentes-de-dependencias"><span class="tn">2</span> Fuentes de dependencias</a><span class="pag"></span><ul><li class="n3"><a href="#app-requirements-txt" data-target="app-requirements-txt"><span class="tn">2.1</span> app/requirements.txt</a><span class="pag"></span></li><li class="n3"><a href="#app-requirements-dev-txt" data-target="app-requirements-dev-txt"><span class="tn">2.2</span> app/requirements-dev.txt</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#dependencias-de-ejecucion" data-target="dependencias-de-ejecucion"><span class="tn">3</span> Dependencias de ejecución</a><span class="pag"></span><ul><li class="n3"><a href="#fastapi" data-target="fastapi"><span class="tn">3.1</span> FastAPI</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen" data-target="version-y-origen"><span class="tn">3.1.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto" data-target="uso-en-el-proyecto"><span class="tn">3.1.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia" data-target="licencia"><span class="tn">3.1.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#uvicorn" data-target="uvicorn"><span class="tn">3.2</span> Uvicorn</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-2" data-target="version-y-origen-2"><span class="tn">3.2.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-2" data-target="uso-en-el-proyecto-2"><span class="tn">3.2.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-2" data-target="licencia-2"><span class="tn">3.2.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#sqlalchemy" data-target="sqlalchemy"><span class="tn">3.3</span> SQLAlchemy</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-3" data-target="version-y-origen-3"><span class="tn">3.3.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-3" data-target="uso-en-el-proyecto-3"><span class="tn">3.3.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-3" data-target="licencia-3"><span class="tn">3.3.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#psycopg2-binary" data-target="psycopg2-binary"><span class="tn">3.4</span> psycopg2-binary</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-4" data-target="version-y-origen-4"><span class="tn">3.4.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-4" data-target="uso-en-el-proyecto-4"><span class="tn">3.4.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-4" data-target="licencia-4"><span class="tn">3.4.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#pydantic-settings" data-target="pydantic-settings"><span class="tn">3.5</span> pydantic-settings</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-5" data-target="version-y-origen-5"><span class="tn">3.5.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-5" data-target="uso-en-el-proyecto-5"><span class="tn">3.5.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-5" data-target="licencia-5"><span class="tn">3.5.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#argon2-cffi" data-target="argon2-cffi"><span class="tn">3.6</span> argon2-cffi</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-6" data-target="version-y-origen-6"><span class="tn">3.6.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-6" data-target="uso-en-el-proyecto-6"><span class="tn">3.6.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-6" data-target="licencia-6"><span class="tn">3.6.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#pyjwt" data-target="pyjwt"><span class="tn">3.7</span> PyJWT</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-7" data-target="version-y-origen-7"><span class="tn">3.7.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-7" data-target="uso-en-el-proyecto-7"><span class="tn">3.7.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-7" data-target="licencia-7"><span class="tn">3.7.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#python-multipart" data-target="python-multipart"><span class="tn">3.8</span> python-multipart</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-8" data-target="version-y-origen-8"><span class="tn">3.8.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-8" data-target="uso-en-el-proyecto-8"><span class="tn">3.8.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-8" data-target="licencia-8"><span class="tn">3.8.3</span> Licencia</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#dependencias-de-desarrollo" data-target="dependencias-de-desarrollo"><span class="tn">4</span> Dependencias de desarrollo</a><span class="pag"></span><ul><li class="n3"><a href="#pytest" data-target="pytest"><span class="tn">4.1</span> pytest</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-9" data-target="version-y-origen-9"><span class="tn">4.1.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-9" data-target="uso-en-el-proyecto-9"><span class="tn">4.1.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-9" data-target="licencia-9"><span class="tn">4.1.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#httpx" data-target="httpx"><span class="tn">4.2</span> httpx</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-10" data-target="version-y-origen-10"><span class="tn">4.2.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-10" data-target="uso-en-el-proyecto-10"><span class="tn">4.2.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-10" data-target="licencia-10"><span class="tn">4.2.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#ruff" data-target="ruff"><span class="tn">4.3</span> ruff</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-11" data-target="version-y-origen-11"><span class="tn">4.3.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-11" data-target="uso-en-el-proyecto-11"><span class="tn">4.3.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-11" data-target="licencia-11"><span class="tn">4.3.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#mypy" data-target="mypy"><span class="tn">4.4</span> mypy</a><span class="pag"></span><ul><li class="n4"><a href="#version-y-origen-12" data-target="version-y-origen-12"><span class="tn">4.4.1</span> Versión y origen</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-12" data-target="uso-en-el-proyecto-12"><span class="tn">4.4.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-12" data-target="licencia-12"><span class="tn">4.4.3</span> Licencia</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#riesgo-de-versiones-no-fijadas" data-target="riesgo-de-versiones-no-fijadas"><span class="tn">5</span> Riesgo de versiones no fijadas</a><span class="pag"></span><ul><li class="n3"><a href="#reproducibilidad-y-rnf-24-rnf-25" data-target="reproducibilidad-y-rnf-24-rnf-25"><span class="tn">5.1</span> Reproducibilidad y RNF-24/RNF-25</a><span class="pag"></span></li><li class="n3"><a href="#baseline-verificado-del-entorno" data-target="baseline-verificado-del-entorno"><span class="tn">5.2</span> Baseline verificado del entorno</a><span class="pag"></span></li><li class="n3"><a href="#dependencias-transitivas-usadas-de-forma-directa" data-target="dependencias-transitivas-usadas-de-forma-directa"><span class="tn">5.3</span> Dependencias transitivas usadas de forma directa</a><span class="pag"></span></li><li class="n3"><a href="#alembic-y-la-cobertura" data-target="alembic-y-la-cobertura"><span class="tn">5.4</span> Alembic y la cobertura</a><span class="pag"></span></li><li class="n3"><a href="#mitigaciones-recomendadas" data-target="mitigaciones-recomendadas"><span class="tn">5.5</span> Mitigaciones recomendadas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#herramientas-de-calidad-y-su-invocacion" data-target="herramientas-de-calidad-y-su-invocacion"><span class="tn">6</span> Herramientas de calidad y su invocación</a><span class="pag"></span><ul><li class="n3"><a href="#pyproject-toml" data-target="pyproject-toml"><span class="tn">6.1</span> pyproject.toml</a><span class="pag"></span><ul><li class="n4"><a href="#ruff-2" data-target="ruff-2"><span class="tn">6.1.1</span> Ruff</a><span class="pag"></span></li><li class="n4"><a href="#mypy-2" data-target="mypy-2"><span class="tn">6.1.2</span> mypy</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#pytest-ini" data-target="pytest-ini"><span class="tn">6.2</span> pytest.ini</a><span class="pag"></span></li><li class="n3"><a href="#invocacion-local-y-en-integracion-continua" data-target="invocacion-local-y-en-integracion-continua"><span class="tn">6.3</span> Invocación local y en integración continua</a><span class="pag"></span></li><li class="n3"><a href="#sistema-de-construccion" data-target="sistema-de-construccion"><span class="tn">6.4</span> Sistema de construcción</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Dependencias</span>
+          <h1 class="portada-titulo">Dependencias del backend GGTO</h1>
+          <p class="portada-resumen">Manual para todo público. Explica qué piezas de software usa el motor de GGTO y para qué sirve cada una. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza en lugar de escribirlo desde cero. La mayoría de estos nombres solo interesan al equipo técnico, pero conviene conocerlos y saber qué falta cerrar antes de una entrega formal.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Dependencias</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/02-Dependencias/01-backend.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Manual para todo público. Explica <strong>qué piezas de software usa el motor de GGTO</strong> y para qué sirve
+cada una. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza en lugar de
+escribirlo desde cero. La mayoría de estos nombres solo interesan al equipo técnico, pero conviene
+conocerlos y saber <strong>qué falta cerrar</strong> antes de una entrega formal.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>El motor necesita ocho programas base.</strong> Están listados en un archivo de texto. Ese archivo
+<strong>no dice qué versión</strong> usar: solo los nombres.</li>
+<li><strong>Las versiones que verás en este manual son las que se probaron</strong>, no las que están escritas en
+el sistema. Es una diferencia importante: el sistema puede instalarse con versiones algo
+distintas.</li>
+<li><strong>Falta fijar versiones.</strong> Es el pendiente más relevante del tema y está explicado más abajo.</li>
+<li><strong>Faltan dos programas por declarar.</strong> El sistema usa <code>pydantic</code> y <code>starlette</code> directamente, pero
+no aparecen en la lista. Llegan &quot;de rebote&quot;, como parte de otros paquetes.</li>
+<li><strong>Las licencias están pendientes de confirmar.</strong> No hay archivo de licencias en el proyecto. Para
+uso interno de CANTV no es urgente, pero <strong>sí lo es si algún día se redistribuye</strong> el software.</li>
+</ol>
+<figure id="fig-0"><img src="../imagenes/dependencias-backend.png" alt="dependencias backend"><figcaption>Figura 1 · dependencias-backend.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
+    subgraph Ejecucion[&quot;Programas que hacen funcionar el sistema&quot;]
+        FAST[&quot;FastAPI&lt;br/&gt;atiende las peticiones&quot;]
+        UVI[&quot;Uvicorn&lt;br/&gt;mantiene encendido el motor&quot;]
+        SQL[&quot;SQLAlchemy&lt;br/&gt;habla con la base de datos&quot;]
+        PSY[&quot;psycopg2-binary&lt;br/&gt;conecta con PostgreSQL&quot;]
+        PYD[&quot;pydantic-settings&lt;br/&gt;lee la configuración&quot;]
+        ARG[&quot;argon2-cffi&lt;br/&gt;protege claves y palabras&quot;]
+        JWT[&quot;PyJWT&lt;br/&gt;crea el pase de sesión&quot;]
+        MUL[&quot;python-multipart&lt;br/&gt;recibe el archivo CSV&quot;]
+    end
+    subgraph Desarrollo[&quot;Programas solo para el equipo técnico&quot;]
+        PYTEST[&quot;pytest&lt;br/&gt;pruebas automáticas&quot;]
+        HTTPX[&quot;httpx&lt;br/&gt;cliente de pruebas&quot;]
+        RUFF[&quot;ruff&lt;br/&gt;estilo del código&quot;]
+        MYPY[&quot;mypy&lt;br/&gt;revisión de tipos&quot;]
+    end
+    subgraph Riesgo[&quot;Pendientes&quot;]
+        R1[&quot;Sin versiones fijadas&quot;]
+        R2[&quot;pydantic y starlette&lt;br/&gt;no declarados&quot;]
+        R3[&quot;Licencias sin acreditar&quot;]
+    end</code></pre></details></figure>
+<h2 id="fuentes-de-dependencias"><span class="sec-num">2</span>Fuentes de dependencias</h2>
+<p>El motor declara sus dependencias en <strong>dos archivos de texto</strong> dentro de la carpeta <code>app/</code>:</p>
+<ol>
+<li><code>app/requirements.txt</code> → lo que hace falta para que el sistema funcione.</li>
+<li><code>app/requirements-dev.txt</code> → lo anterior más las herramientas de trabajo del equipo técnico.</li>
+</ol>
+<p>No existe un archivo de &quot;versiones exactas&quot; (los llamados <em>lock</em>). El frontend sí tiene uno
+(<code>package-lock.json</code>), pero el motor de Python no.</p>
+<h3 id="app-requirements-txt"><span class="sec-num">2.1</span>app/requirements.txt</h3>
+<p>Este archivo tiene <strong>ocho líneas sueltas, sin ninguna versión</strong>. Es lo que se instala al construir el
+contenedor del sistema.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Programa</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fastapi</code></td>
+<td>Atender las peticiones web y validar datos</td>
+</tr>
+<tr>
+<td><code>uvicorn[standard]</code></td>
+<td>Mantener el motor encendido</td>
+</tr>
+<tr>
+<td><code>sqlalchemy</code></td>
+<td>Traducir entre el código y la base de datos</td>
+</tr>
+<tr>
+<td><code>psycopg2-binary</code></td>
+<td>Conectar con PostgreSQL</td>
+</tr>
+<tr>
+<td><code>pydantic-settings</code></td>
+<td>Leer la configuración del entorno</td>
+</tr>
+<tr>
+<td><code>argon2-cffi</code></td>
+<td>Proteger con cifrado fuerte las claves y las palabras</td>
+</tr>
+<tr>
+<td><code>PyJWT</code></td>
+<td>Crear y validar el pase de sesión</td>
+</tr>
+<tr>
+<td><code>python-multipart</code></td>
+<td>Recibir formularios y archivos, como el CSV de INGESTA</td>
+</tr>
+</tbody>
+</table></div>
+<p>El hecho de que <strong>no digan la versión</strong> es comprobable: no hay signos <code>==</code>, <code>~=</code> ni <code>&gt;=</code> en ninguna
+línea. Por eso el archivo, por sí solo, no alcanza para reconstruir exactamente el entorno que se
+probó.</p>
+<h3 id="app-requirements-dev-txt"><span class="sec-num">2.2</span>app/requirements-dev.txt</h3>
+<p>Este archivo <strong>hereda</strong> el anterior y agrega cuatro herramientas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Programa</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-r requirements.txt</code></td>
+<td>Trae los ocho programas de arriba</td>
+</tr>
+<tr>
+<td><code>pytest</code></td>
+<td>Ejecutar las pruebas automáticas</td>
+</tr>
+<tr>
+<td><code>httpx</code></td>
+<td>Cliente que usan las pruebas para simular un navegador</td>
+</tr>
+<tr>
+<td><code>ruff</code></td>
+<td>Revisar el estilo del código</td>
+</tr>
+<tr>
+<td><code>mypy</code></td>
+<td>Revisar los tipos de datos</td>
+</tr>
+</tbody>
+</table></div>
+<p>Gracias a esa herencia, la integración continua instala <strong>solo</strong> este archivo y obtiene todo lo
+necesario.</p>
+<h2 id="dependencias-de-ejecucion"><span class="sec-num">3</span>Dependencias de ejecución</h2>
+<p>Las versiones que se indican a continuación son las <strong>observadas en el entorno de verificación</strong>
+(Python 3.12.3). No están escritas en el repositorio.</p>
+<h3 id="fastapi"><span class="sec-num">3.1</span>FastAPI</h3>
+<h4 id="version-y-origen"><span class="sec-num">3.1.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 0.141.1.</strong> Se apoya en otras dos piezas: <strong>Starlette 1.7.0</strong> (la capa de
+comunicación) y <strong>Pydantic 2.13.5</strong> (la validación de datos).</p>
+<h4 id="uso-en-el-proyecto"><span class="sec-num">3.1.2</span>Uso en el proyecto</h4>
+<p>FastAPI es el <strong>esqueleto del servicio</strong>. Sobre él se construye toda la API. El sistema aprovecha
+tres capacidades concretas:</p>
+<ol>
+<li><strong>Entrega automática de datos:</strong> los manejadores reciben la sesión de base de datos y el usuario
+autenticado sin pedirlos a mano.</li>
+<li><strong>Contrato de salida:</strong> cada operación declara la forma exacta de su respuesta.</li>
+<li><strong>Documentación automática:</strong> el propio servicio publica su documentación.</li>
+</ol>
+<p>Los diez módulos de rutas usan FastAPI de forma directa, así que la dependencia atraviesa toda la
+API. Si FastAPI cambia de forma incompatible, todo el sistema se ve afectado.</p>
+<h4 id="licencia"><span class="sec-num">3.1.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong> El proyecto no incluye archivo de licencias. Para uso interno no hay
+problema, pero <strong>antes de redistribuir</strong> el software hay que hacer una revisión legal formal.</p>
+<h3 id="uvicorn"><span class="sec-num">3.2</span>Uvicorn</h3>
+<h4 id="version-y-origen-2"><span class="sec-num">3.2.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 0.54.0.</strong> Se declara con el extra <code>standard</code>, que agrega mejoras de rendimiento.</p>
+<h4 id="uso-en-el-proyecto-2"><span class="sec-num">3.2.2</span>Uso en el proyecto</h4>
+<p>Uvicorn es el <strong>motor de arranque</strong>: el proceso que mantiene el sistema encendido y escuchando. El
+código no lo usa directamente; su papel es de proceso. Aparece en dos lugares:</p>
+<ol>
+<li><strong>En producción:</strong> es el comando principal del contenedor.</li>
+<li><strong>En las pruebas de navegador:</strong> el guion de pruebas lo enciende y espera a que <code>/health</code>
+responda antes de continuar.</li>
+</ol>
+<p>En desarrollo, la web reenvía las llamadas al puerto 8000, donde escucha este servidor. El comando
+local exacto está <strong>pendiente de confirmar</strong> en el manual de despliegue.</p>
+<h4 id="licencia-2"><span class="sec-num">3.2.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="sqlalchemy"><span class="sec-num">3.3</span>SQLAlchemy</h3>
+<h4 id="version-y-origen-3"><span class="sec-num">3.3.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 2.1.1.</strong> Se declara sin restricción de versión.</p>
+<h4 id="uso-en-el-proyecto-3"><span class="sec-num">3.3.2</span>Uso en el proyecto</h4>
+<p>SQLAlchemy es el <strong>traductor</strong> entre el código y las tablas. Permite escribir consultas en lenguaje
+de programación en vez de escribir SQL a mano. El sistema lo usa en tres frentes:</p>
+<ol>
+<li><strong>Modelos:</strong> cada tabla está descrita con precisión (tipos, tamaños, si admite vacíos).</li>
+<li><strong>Consultas:</strong> los manejadores piden datos con <code>select</code>, <code>func</code> y <code>text</code>.</li>
+<li><strong>Motor y sesión:</strong> se crea una conexión que se revisa antes de usarse y se entrega una sesión
+por cada petición.</li>
+</ol>
+<p>La dirección de conexión indica explícitamente el conector de PostgreSQL que se describe en el
+apartado siguiente.</p>
+<h4 id="licencia-3"><span class="sec-num">3.3.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong> Se sabe que SQLAlchemy suele distribuirse con licencia MIT, pero el
+proyecto no incluye el texto. Por eso aquí no se acredita.</p>
+<h3 id="psycopg2-binary"><span class="sec-num">3.4</span>psycopg2-binary</h3>
+<h4 id="version-y-origen-4"><span class="sec-num">3.4.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 2.9.13.</strong> La variante <code>-binary</code> trae las bibliotecas ya compiladas, lo que
+simplifica la instalación en el contenedor del sistema.</p>
+<h4 id="uso-en-el-proyecto-4"><span class="sec-num">3.4.2</span>Uso en el proyecto</h4>
+<p>No se usa directamente: se usa <strong>a través de SQLAlchemy</strong>. Las referencias reales están en la
+construcción de la dirección de conexión y en las pruebas de configuración.</p>
+<p>El sistema contempla dos formas de conexión:</p>
+<ul>
+<li><strong>Por socket interno de la nube</strong> (la dirección empieza por <code>/</code>).</li>
+<li><strong>Por red normal (TCP)</strong>, con host y puerto.</li>
+</ul>
+<p>Además, el parámetro <code>sslmode</code> define el cifrado, y el esquema alternativo permite trabajar en
+&quot;cajones&quot; separados (por ejemplo, en pruebas).</p>
+<h4 id="licencia-4"><span class="sec-num">3.4.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong> La distribución instalada menciona LGPL con excepciones, pero esa señal
+no está en el repositorio.</p>
+<h3 id="pydantic-settings"><span class="sec-num">3.5</span>pydantic-settings</h3>
+<h4 id="version-y-origen-5"><span class="sec-num">3.5.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 2.15.0.</strong></p>
+<h4 id="uso-en-el-proyecto-5"><span class="sec-num">3.5.2</span>Uso en el proyecto</h4>
+<p>Es la base de la <strong>configuración</strong>. Define cómo se leen las variables del entorno y del archivo
+<code>.env</code> opcional, y sirve para tipar todos los parámetros: aplicación, base de datos, seguridad y
+CORS.</p>
+<p>Los valores sensibles —la clave de firma, la clave de la base de datos y las claves de los canales
+de notificación— se leen del entorno. Este manual <strong>no reproduce secretos</strong>: solo nombra las claves.</p>
+<h4 id="licencia-5"><span class="sec-num">3.5.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="argon2-cffi"><span class="sec-num">3.6</span>argon2-cffi</h3>
+<h4 id="version-y-origen-6"><span class="sec-num">3.6.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 25.1.0.</strong> Responde al requisito <strong>RNF-22</strong>, que exige el cifrado <strong>Argon2id</strong>
+para proteger las claves.</p>
+<h4 id="uso-en-el-proyecto-6"><span class="sec-num">3.6.2</span>Uso en el proyecto</h4>
+<p>Se usa en el módulo de seguridad para:</p>
+<ol>
+<li><strong>Cifrar las claves</strong> de los usuarios antes de guardarlas.</li>
+<li><strong>Verificarlas</strong> al entrar, sin revelar información si fallan.</li>
+<li><strong>Cifrar el diccionario de 12 palabras</strong> de seguridad.</li>
+</ol>
+<p>La misma herramienta sirve para las claves y para las palabras. Una prueba automática confirma que
+el resultado empieza por <code>$argon2id$</code>, lo que garantiza que se usa el algoritmo correcto.</p>
+<h4 id="licencia-6"><span class="sec-num">3.6.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="pyjwt"><span class="sec-num">3.7</span>PyJWT</h3>
+<h4 id="version-y-origen-7"><span class="sec-num">3.7.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 2.7.0.</strong> El nombre con el que se usa en el código es <code>jwt</code>.</p>
+<h4 id="uso-en-el-proyecto-7"><span class="sec-num">3.7.2</span>Uso en el proyecto</h4>
+<p>Cumple dos funciones:</p>
+<ol>
+<li><strong>Emitir el pase de sesión (token)</strong> al entrar, con tus datos básicos y una fecha de vencimiento.</li>
+<li><strong>Validarlo</strong> en cada operación. Si el token es inválido o venció, el sistema responde <strong>401</strong>
+con el mensaje «Credenciales inválidas o token expirado».</li>
+</ol>
+<p>El algoritmo de firma es <strong>HS256</strong> y la vigencia es de <strong>480 minutos</strong> (8 horas). La clave de firma
+vive en un secreto y <strong>no se escribe en este manual</strong>.</p>
+<h4 id="licencia-7"><span class="sec-num">3.7.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="python-multipart"><span class="sec-num">3.8</span>python-multipart</h3>
+<h4 id="version-y-origen-8"><span class="sec-num">3.8.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 0.0.32.</strong> Es la pieza que permite recibir archivos y formularios.</p>
+<h4 id="uso-en-el-proyecto-8"><span class="sec-num">3.8.2</span>Uso en el proyecto</h4>
+<p>Su uso está concentrado en <strong>INGESTA</strong>. Los dos puntos de entrada del CSV la necesitan:</p>
+<ol>
+<li><strong>Simulación:</strong> recibe el archivo y, opcionalmente, el identificador de la central.</li>
+<li><strong>Carga real:</strong> recibe la misma pareja de datos.</li>
+</ol>
+<p>El contenido del archivo se lee completo y se conserva su nombre original. Si el archivo no trae
+nombre, se guarda como <code>sin-nombre</code>. El contrato del archivo de origen se detalla en el documento de
+interfaz del CSV.</p>
+<h4 id="licencia-8"><span class="sec-num">3.8.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h2 id="dependencias-de-desarrollo"><span class="sec-num">4</span>Dependencias de desarrollo</h2>
+<h3 id="pytest"><span class="sec-num">4.1</span>pytest</h3>
+<h4 id="version-y-origen-9"><span class="sec-num">4.1.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 9.1.1.</strong> Su configuración vive en <code>pytest.ini</code>.</p>
+<h4 id="uso-en-el-proyecto-9"><span class="sec-num">4.1.2</span>Uso en el proyecto</h4>
+<p>Toda la batería de pruebas está en <code>app/tests/</code>: un archivo de preparación (<code>conftest.py</code>) y catorce
+módulos de pruebas, entre ellos los de acceso, casos, despacho, especiales, ingesta, monitoreo,
+alertas, configuración, contratos, seguridad y sectorización.</p>
+<p>El archivo de preparación define lo que se comparte entre pruebas: la limpieza de intentos, la sesión
+de base de datos y el cliente de pruebas.</p>
+<p>El resultado de la Fase 4 fue <strong>169 de 169 pruebas en verde</strong>.</p>
+<h4 id="licencia-9"><span class="sec-num">4.1.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="httpx"><span class="sec-num">4.2</span>httpx</h3>
+<h4 id="version-y-origen-10"><span class="sec-num">4.2.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 0.28.1.</strong></p>
+<h4 id="uso-en-el-proyecto-10"><span class="sec-num">4.2.2</span>Uso en el proyecto</h4>
+<p><code>httpx</code> <strong>no se usa directamente</strong> en el código del sistema. Está aquí porque la herramienta de
+pruebas de FastAPI lo necesita por dentro para simular un navegador. Es una dependencia indirecta,
+pero declarada a propósito.</p>
+<h4 id="licencia-10"><span class="sec-num">4.2.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="ruff"><span class="sec-num">4.3</span>ruff</h3>
+<h4 id="version-y-origen-11"><span class="sec-num">4.3.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 0.16.9.</strong> Se configura en <code>pyproject.toml</code>.</p>
+<h4 id="uso-en-el-proyecto-11"><span class="sec-num">4.3.2</span>Uso en el proyecto</h4>
+<p>Es el <strong>revisor de estilo</strong>: ordena las importaciones y detecta malas prácticas. El informe de la
+Fase 4 lo reporta <strong>sin hallazgos</strong>. Se ejecuta con <code>ruff check app</code>.</p>
+<h4 id="licencia-11"><span class="sec-num">4.3.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h3 id="mypy"><span class="sec-num">4.4</span>mypy</h3>
+<h4 id="version-y-origen-12"><span class="sec-num">4.4.1</span>Versión y origen</h4>
+<p><strong>Versión observada: 2.3.1.</strong> Se configura en <code>pyproject.toml</code>.</p>
+<h4 id="uso-en-el-proyecto-12"><span class="sec-num">4.4.2</span>Uso en el proyecto</h4>
+<p>Es el <strong>revisor de tipos</strong>: comprueba que los datos sean del tipo declarado. También aparece <strong>sin
+hallazgos</strong> en el informe de la Fase 4. Se ejecuta con <code>mypy app</code>.</p>
+<h4 id="licencia-12"><span class="sec-num">4.4.3</span>Licencia</h4>
+<p><strong>Pendiente de confirmar.</strong></p>
+<h2 id="riesgo-de-versiones-no-fijadas"><span class="sec-num">5</span>Riesgo de versiones no fijadas</h2>
+<h3 id="reproducibilidad-y-rnf-24-rnf-25"><span class="sec-num">5.1</span>Reproducibilidad y RNF-24/RNF-25</h3>
+<p>Como el archivo de dependencias no fija versiones y no hay archivo de bloqueo, <strong>dos instalaciones
+hechas en fechas distintas pueden traer versiones diferentes</strong> de FastAPI, SQLAlchemy, Pydantic o
+Starlette. Esto choca con dos requisitos ya acordados:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Requisito</th>
+<th>Qué pide</th>
+<th>Qué pasa hoy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RNF-24</strong></td>
+<td>Migraciones versionadas, integración continua con pruebas y revisores, cobertura mínima del 70 %, API versionada y entornos separados</td>
+<td>Una actualización de una dependencia puede romper el sistema sin que nadie cambie una línea de código. La cobertura mínima del 70 % <strong>no está configurada</strong> (pendiente de confirmar)</td>
+</tr>
+<tr>
+<td><strong>RNF-25</strong></td>
+<td>Paridad entre desarrollo y producción, configuración solo por variables de entorno, imagen de contenedor reproducible</td>
+<td>La frase &quot;imagen reproducible&quot; <strong>no se cumple</strong> mientras cada construcción instale versiones libres</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="baseline-verificado-del-entorno"><span class="sec-num">5.2</span>Baseline verificado del entorno</h3>
+<p>Lo único comprobable hoy es el entorno donde se verificó el sistema (Python 3.12.3). Esta tabla es
+<strong>una fotografía</strong>, no una garantía del repositorio: no está escrita en los archivos de
+dependencias.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Programa</th>
+<th>Versión observada</th>
+<th>¿Está declarado?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fastapi</td>
+<td>0.141.1</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>starlette</td>
+<td>1.7.0</td>
+<td>No (llega de rebote)</td>
+</tr>
+<tr>
+<td>uvicorn</td>
+<td>0.54.0</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>sqlalchemy</td>
+<td>2.1.1</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>psycopg2-binary</td>
+<td>2.9.13</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>pydantic-settings</td>
+<td>2.15.0</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>pydantic</td>
+<td>2.13.5</td>
+<td>No (llega de rebote)</td>
+</tr>
+<tr>
+<td>argon2-cffi</td>
+<td>25.1.0</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>PyJWT</td>
+<td>2.7.0</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>python-multipart</td>
+<td>0.0.32</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>pytest</td>
+<td>9.1.1</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>httpx</td>
+<td>0.28.1</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>ruff</td>
+<td>0.16.9</td>
+<td>Sí, sin versión</td>
+</tr>
+<tr>
+<td>mypy</td>
+<td>2.3.1</td>
+<td>Sí, sin versión</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="dependencias-transitivas-usadas-de-forma-directa"><span class="sec-num">5.3</span>Dependencias transitivas usadas de forma directa</h3>
+<p>Dos piezas que el código usa <strong>directamente</strong> no están declaradas:</p>
+<ol>
+<li><strong>pydantic.</strong> Se usa en los siete módulos de esquemas. Llega como parte de FastAPI. Si FastAPI
+cambiara de versión mayor de Pydantic, el sistema podría romperse sin aviso.</li>
+<li><strong>starlette.</strong> Se usa en el armado del sistema (para el manejo de errores y el portero de
+observabilidad), pero no figura en la lista. Depende de la versión de FastAPI instalada.</li>
+</ol>
+<h3 id="alembic-y-la-cobertura"><span class="sec-num">5.4</span>Alembic y la cobertura</h3>
+<p>El requisito RNF-24 pide dos cosas que <strong>hoy no están resueltas</strong>:</p>
+<ol>
+<li><strong>Migraciones versionadas con Alembic.</strong> Alembic es una herramienta para aplicar cambios de
+estructura a la base de datos de forma ordenada. <strong>No aparece</strong> en ningún archivo de
+dependencias. Su uso real está <strong>pendiente de confirmar</strong>.</li>
+<li><strong>Cobertura mínima del 70 %.</strong> No hay herramienta de cobertura ni configuración del umbral. Está
+<strong>pendiente de confirmar</strong>.</li>
+</ol>
+<h3 id="mitigaciones-recomendadas"><span class="sec-num">5.5</span>Mitigaciones recomendadas</h3>
+<ol>
+<li><strong>Fijar las versiones</strong> del <em>baseline</em> de la tabla, o generar un archivo de bloqueo con
+<code>pip freeze</code>.</li>
+<li><strong>Declarar <code>pydantic</code> y <code>starlette</code></strong> en el archivo de dependencias, porque el código las usa
+directamente.</li>
+<li><strong>Fijar la versión de Python</strong> (hoy 3.12) en la imagen y en la integración continua. Esto ya se
+cumple y es coherente con RNF-25.</li>
+<li><strong>Registrar los textos de las licencias</strong> de todas las dependencias para cerrar la revisión legal.</li>
+</ol>
+<h2 id="herramientas-de-calidad-y-su-invocacion"><span class="sec-num">6</span>Herramientas de calidad y su invocación</h2>
+<h3 id="pyproject-toml"><span class="sec-num">6.1</span>pyproject.toml</h3>
+<p>Este archivo contiene <strong>solo configuración</strong> de las herramientas de calidad; no declara ninguna
+dependencia.</p>
+<h4 id="ruff-2"><span class="sec-num">6.1.1</span>Ruff</h4>
+<ul>
+<li>Longitud máxima de línea: <strong>110</strong> caracteres.</li>
+<li>Versión objetivo: <strong>Python 3.12</strong>.</li>
+<li>Se excluyen del análisis la web y los entornos virtuales.</li>
+<li>Reglas activadas: estilo, errores comunes, orden de importaciones, buenas prácticas, modernización
+del lenguaje y reglas propias de Ruff.</li>
+<li>Se ignora la regla <code>B008</code> porque FastAPI la usa de forma legítima.</li>
+<li>Las pruebas quedan exentas del límite de 110 columnas.</li>
+</ul>
+<h4 id="mypy-2"><span class="sec-num">6.1.2</span>mypy</h4>
+<ul>
+<li>Versión de Python: <strong>3.12</strong>.</li>
+<li>Se ignoran las importaciones que no traen información de tipos.</li>
+<li>Se avisa si hay directivas de omisión que ya no hacen falta.</li>
+<li>Se excluye la web del análisis.</li>
+</ul>
+<h3 id="pytest-ini"><span class="sec-num">6.2</span>pytest.ini</h3>
+<p>La configuración de pruebas es mínima:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Clave</th>
+<th>Valor</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>testpaths</code></td>
+<td><code>app/tests</code></td>
+<td>Solo se recogen pruebas de esa carpeta</td>
+</tr>
+<tr>
+<td><code>python_files</code></td>
+<td><code>test_*.py</code></td>
+<td>Qué archivos son pruebas</td>
+</tr>
+<tr>
+<td><code>python_classes</code></td>
+<td><code>Test*</code></td>
+<td>Qué clases son pruebas</td>
+</tr>
+<tr>
+<td><code>python_functions</code></td>
+<td><code>test_*</code></td>
+<td>Qué funciones son pruebas</td>
+</tr>
+<tr>
+<td><code>addopts</code></td>
+<td><code>-ra</code></td>
+<td>Muestra un resumen final, incluidas las pruebas omitidas</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="invocacion-local-y-en-integracion-continua"><span class="sec-num">6.3</span>Invocación local y en integración continua</h3>
+<p>Los comandos verificados son:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Comando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ruff</td>
+<td><code>ruff check app</code></td>
+</tr>
+<tr>
+<td>mypy</td>
+<td><code>mypy app --ignore-missing-imports</code></td>
+</tr>
+<tr>
+<td>pytest</td>
+<td><code>pytest app/tests -q</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>En la integración continua se levanta una base PostgreSQL 15 de prueba y se ejecutan los pasos en
+este orden: <strong>estilo → tipos → pruebas</strong>. Solo si los tres pasan, el cambio se da por bueno.</p>
+<h3 id="sistema-de-construccion"><span class="sec-num">6.4</span>Sistema de construcción</h3>
+<p>El motor <strong>no se empaqueta</strong> como una biblioteca: no hay una sección de construcción en
+<code>pyproject.toml</code>. El sistema se ejecuta directamente desde la raíz con <code>uvicorn app.main:app</code>. El
+empaquetado de la parte visual con Node se explica en el manual de dependencias del frontend.</p>
+
+<nav class="pie-nav"><a class="izq" href="../01-Tecnologia/03-stack-frontend.html">← Manual anterior: Stack del frontend GGTO (SPA React)</a><a href="../index.html">Índice general</a><a class="der" href="../02-Dependencias/02-frontend.html">Manual siguiente →: Dependencias del frontend GGTO</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Dependencias</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Dependencias · 01-backend", "pieIzq": "Dependencias del backend GGTO", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Dependencias del backend GGTO"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="890" viewBox="0 0 1400 890" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1400" height="890" fill="#ffffff"/>
+<rect x="0" y="0" width="1400" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1400" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Transformación de las 80 columnas del CSV</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Cómo se convierte el archivo de averías en los 49 campos de la tabla caso</text>
+<text x="1372" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1372" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="860" width="1400" height="30" fill="#f4f6f9"/>
+<text x="700" y="879" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="60" y="110" width="460" height="460" rx="10" fill="#f4f6f9" stroke="#d7dde6" stroke-width="1.5"/>
+<text x="80" y="140" fill="#0b4f9c" font-size="14" font-weight="700" text-anchor="start">Origen: 80 columnas del archivo</text>
+<rect x="90" y="160" width="400" height="84" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="98" y="168" width="6" height="68" rx="3" fill="#0b4f9c"/>
+<text x="290" y="198.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">47 columnas → 1 campo cada una</text>
+<text x="290" y="215.5" fill="#4a5568" font-size="12" text-anchor="middle">Se copian tal cual, con su tipo</text>
+<rect x="90" y="262" width="400" height="84" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="98" y="270" width="6" height="68" rx="3" fill="#0e7490"/>
+<text x="290" y="300.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">3 columnas → informacion</text>
+<text x="290" y="317.5" fill="#4a5568" font-size="12" text-anchor="middle">Se unen con el separador « | »</text>
+<rect x="90" y="364" width="400" height="84" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="98" y="372" width="6" height="68" rx="3" fill="#0e7490"/>
+<text x="290" y="402.5" fill="#0e7490" font-size="13.5" font-weight="700" text-anchor="middle">9 columnas → ayudantes</text>
+<text x="290" y="419.5" fill="#4a5568" font-size="12" text-anchor="middle">Columnas 66 a 74, unidas igual</text>
+<rect x="90" y="466" width="400" height="84" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="98" y="474" width="6" height="68" rx="3" fill="#8a6100"/>
+<text x="290" y="504.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">21 columnas → se descartan</text>
+<text x="290" y="521.5" fill="#4a5568" font-size="12" text-anchor="middle">No tienen campo destino</text>
+<rect x="620" y="230" width="320" height="200" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="628" y="238" width="6" height="184" rx="3" fill="#1f7a4d"/>
+<text x="780" y="309.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">49 campos destino</text>
+<text x="780" y="326.5" fill="#4a5568" font-size="12" text-anchor="middle">en la tabla caso</text>
+<text x="780" y="343.5" fill="#4a5568" font-size="12" text-anchor="middle">47 campos de una columna,</text>
+<text x="780" y="360.5" fill="#4a5568" font-size="12" text-anchor="middle">más informacion y ayudantes</text>
+<rect x="1000" y="430" width="340" height="120" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="1008" y="438" width="6" height="104" rx="3" fill="#8a6100"/>
+<text x="1170" y="486.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">No se guardan</text>
+<text x="1170" y="503.5" fill="#4a5568" font-size="12" text-anchor="middle">Las 21 columnas sin campo destino se ignoran</text>
+<path d="M490 202 L560 202 L560 260 L620 260" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M490 304 L620 304" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M490 406 L620 406" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M490 508 L560 508 L560 490 L1000 490" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="60" y="606" fill="#0b4f9c" font-size="14" font-weight="700" text-anchor="start">Tipos de conversión</text>
+<rect x="60" y="620" width="1280" height="240" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="60" y="620" width="1280" height="36" rx="6" fill="#e8f0fa"/>
+<text x="80" y="644" fill="#08396f" font-size="13" font-weight="700" text-anchor="start">Tipo</text>
+<text x="300" y="644" fill="#08396f" font-size="13" font-weight="700" text-anchor="start">Comportamiento</text>
+<rect x="60" y="656" width="1280" height="40" fill="#f4f6f9"/>
+<text x="80" y="681" fill="#1f2933" font-size="12.5" text-anchor="start">str (texto)</text>
+<text x="300" y="681" fill="#4a5568" font-size="12.5" text-anchor="start">Recorta los espacios; si queda vacío, guarda «sin valor»</text>
+<text x="80" y="721" fill="#1f2933" font-size="12.5" text-anchor="start">fecha</text>
+<text x="300" y="721" fill="#4a5568" font-size="12.5" text-anchor="start">Interpreta dd/mm/aaaa hh:mm:ss a.m./p.m. y sus variantes</text>
+<rect x="60" y="736" width="1280" height="40" fill="#f4f6f9"/>
+<text x="80" y="761" fill="#1f2933" font-size="12.5" text-anchor="start">int (número entero)</text>
+<text x="300" y="761" fill="#4a5568" font-size="12.5" text-anchor="start">Convierte a número; si falla, guarda «sin valor»</text>
+<text x="80" y="801" fill="#1f2933" font-size="12.5" text-anchor="start">unir</text>
+<text x="300" y="801" fill="#4a5568" font-size="12.5" text-anchor="start">Junta varias columnas con el separador « | »</text>
+<rect x="60" y="816" width="1280" height="40" fill="#f4f6f9"/>
+<text x="80" y="841" fill="#1f2933" font-size="12.5" text-anchor="start">lista</text>
+<text x="300" y="841" fill="#4a5568" font-size="12.5" text-anchor="start">Arma una lista JSON con los valores no vacíos</text>
+<rect x="280" y="620" width="1" height="240" fill="#d7dde6"/>
+</svg>

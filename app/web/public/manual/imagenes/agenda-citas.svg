@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1080" viewBox="0 0 1440 1080" font-family="'Segoe UI','Helvetica Neue',Arial,sans-serif">
+<defs>
+<linearGradient id="gAzul" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0b4f9c"/><stop offset="1" stop-color="#08396f"/></linearGradient>
+<filter id="sombra" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#101828" flood-opacity="0.14"/></filter>
+<marker id="flechaAzul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b4f9c"/></marker><marker id="flechaVerde" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f7a4d"/></marker><marker id="flechaRojo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker><marker id="flechaAmbar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a6100"/></marker><marker id="flechaGris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5568"/></marker><marker id="flechaVioleta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5b21b6"/></marker><marker id="flechaTurquesa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+</defs>
+<rect width="1440" height="1080" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="78" fill="url(#gAzul)"/>
+<rect x="0" y="78" width="1440" height="3" fill="#1f7a4d"/>
+<text x="28" y="33" fill="#ffffff" font-size="21" font-weight="700" text-anchor="start">Agenda de citas y control de solapes</text>
+<text x="28" y="57" fill="#cfe0f4" font-size="13" text-anchor="start">Cómo se crea, se confirma y se cancela una cita sin cruzar dos cuadrillas</text>
+<text x="1412" y="34" fill="#ffffff" font-size="15" font-weight="700" text-anchor="end">GGTO · CANTV</text>
+<text x="1412" y="56" fill="#cfe0f4" font-size="11" text-anchor="end">Central Francisco Salias · Área 4</text>
+<rect x="0" y="1050" width="1440" height="30" fill="#f4f6f9"/>
+<text x="720" y="1069" fill="#4a5568" font-size="11" text-anchor="middle">GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos · CANTV C.A.</text>
+<rect x="260" y="104" width="360" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="112" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="440" y="138.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Crear cita</text>
+<text x="440" y="155.5" fill="#4a5568" font-size="12" text-anchor="middle">De un caso o de un caso especial</text>
+<rect x="260" y="206" width="360" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="214" width="6" height="60" rx="3" fill="#5b21b6"/>
+<text x="440" y="249" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Se indicó cuadrilla?</text>
+<rect x="260" y="308" width="360" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="316" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="440" y="342.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Calcular fin = inicio + duración</text>
+<text x="440" y="359.5" fill="#4a5568" font-size="12" text-anchor="middle">60 minutos por defecto</text>
+<rect x="260" y="410" width="360" height="96" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="418" width="6" height="80" rx="3" fill="#5b21b6"/>
+<text x="440" y="454.5" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Otra cita de la misma cuadrilla se cruza</text>
+<text x="440" y="471.5" fill="#4a5568" font-size="12" text-anchor="middle">y está PROPUESTA o CONFIRMADA?</text>
+<rect x="260" y="546" width="360" height="76" rx="10" fill="#e6f5ec" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="554" width="6" height="60" rx="3" fill="#1f7a4d"/>
+<text x="440" y="580.5" fill="#1f7a4d" font-size="13.5" font-weight="700" text-anchor="middle">Guardar la cita en estado PROPUESTA</text>
+<text x="440" y="597.5" fill="#4a5568" font-size="12" text-anchor="middle">Sin solape detectado</text>
+<rect x="260" y="648" width="360" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="656" width="6" height="60" rx="3" fill="#5b21b6"/>
+<text x="440" y="691" fill="#5b21b6" font-size="13.5" font-weight="700" text-anchor="middle">¿Hay permiso para forzar?</text>
+<rect x="260" y="764" width="360" height="76" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="772" width="6" height="60" rx="3" fill="#0b4f9c"/>
+<text x="440" y="798.5" fill="#0b4f9c" font-size="13.5" font-weight="700" text-anchor="middle">Confirmar, cumplir, diferir</text>
+<text x="440" y="815.5" fill="#4a5568" font-size="12" text-anchor="middle">o reprogramar la cita</text>
+<rect x="260" y="866" width="360" height="76" rx="10" fill="#fdecea" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="268" y="874" width="6" height="60" rx="3" fill="#b3261e"/>
+<text x="440" y="900.5" fill="#b3261e" font-size="13.5" font-weight="700" text-anchor="middle">Cancelar la cita</text>
+<text x="440" y="917.5" fill="#4a5568" font-size="12" text-anchor="middle">Pasa a CANCELADA y libera el horario</text>
+<rect x="900" y="190" width="460" height="76" rx="10" fill="#fff4d6" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="908" y="198" width="6" height="60" rx="3" fill="#8a6100"/>
+<text x="1130" y="224.5" fill="#8a6100" font-size="13.5" font-weight="700" text-anchor="middle">Guardar sin chequeo de solape</text>
+<text x="1130" y="241.5" fill="#4a5568" font-size="12" text-anchor="middle">No hay cuadrilla asignada todavía</text>
+<rect x="900" y="632" width="460" height="76" rx="10" fill="#fdecea" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="908" y="640" width="6" height="60" rx="3" fill="#b3261e"/>
+<text x="1130" y="666.5" fill="#b3261e" font-size="13.5" font-weight="700" text-anchor="middle">409 con el choque o 403 si intenta forzar</text>
+<text x="1130" y="683.5" fill="#4a5568" font-size="12" text-anchor="middle">Solo SUPER puede forzar el solape</text>
+<rect x="900" y="300" width="460" height="200" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" filter="url(#sombra)"/>
+<rect x="908" y="308" width="6" height="184" rx="3" fill="#4a5568"/>
+<text x="1130" y="362.5" fill="#4a5568" font-size="13.5" font-weight="700" text-anchor="middle">Estados de la cita</text>
+<text x="1130" y="379.5" fill="#4a5568" font-size="12" text-anchor="middle">PROPUESTA · CONFIRMADA</text>
+<text x="1130" y="396.5" fill="#4a5568" font-size="12" text-anchor="middle">CUMPLIDA · REPROGRAMADA</text>
+<text x="1130" y="413.5" fill="#4a5568" font-size="12" text-anchor="middle">DIFERIDA · CANCELADA</text>
+<text x="1130" y="430.5" fill="#4a5568" font-size="12" text-anchor="middle">Solo PROPUESTA y CONFIRMADA</text>
+<text x="1130" y="447.5" fill="#4a5568" font-size="12" text-anchor="middle">bloquean la agenda</text>
+<path d="M440 180 L440 206" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M620 244 L900 244" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="760" y="236" fill="#8a6100" font-size="11" font-weight="700" text-anchor="middle">No</text>
+<path d="M440 282 L440 308" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="454" y="300" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="start">Sí</text>
+<path d="M440 384 L440 410" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M440 506 L440 546" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="454" y="530" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="start">No</text>
+<path d="M620 458 L760 458 L760 686 L620 686" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="772" y="570" fill="#0b4f9c" font-size="11" font-weight="700" text-anchor="start">Sí</text>
+<path d="M260 686 L190 686 L190 584 L260 584" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="178" y="640" fill="#1f7a4d" font-size="11" font-weight="700" text-anchor="end">SUPER</text>
+<path d="M620 686 L900 686" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<text x="830" y="678" fill="#b3261e" font-size="11" font-weight="700" text-anchor="middle">Otro rol</text>
+<path d="M440 622 L440 764" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<path d="M440 840 L440 866" fill="none" stroke="#0b4f9c" stroke-width="2" marker-end="url(#flechaAzul)"/>
+<rect x="60" y="966" width="1320" height="75.5" rx="10" fill="#ffffff" stroke="#d7dde6" stroke-width="1.5" stroke-dasharray="7 5" filter="url(#sombra)"/>
+<rect x="68" y="974" width="6" height="59.5" rx="3" fill="#d7dde6"/>
+<text x="82" y="991.75" fill="#4a5568" font-size="13" font-weight="700" text-anchor="start">Reglas de la agenda</text>
+<text x="82" y="1008.75" fill="#4a5568" font-size="11.5" text-anchor="start">El solape se detecta calculando fin = inicio + duración (60 minutos por defecto) y comparando con las citas de la misma cuadrilla que estén en PROPUESTA o CONFIRMADA.</text>
+<text x="82" y="1025.75" fill="#4a5568" font-size="11.5" text-anchor="start">Solo SUPER puede forzar el solape; el resto recibe 409 con el choque o 403 si intenta forzar. Cancelar la cita libera el horario.</text>
+</svg>

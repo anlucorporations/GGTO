@@ -1,0 +1,2676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API de GGTO — Inventario de Endpoints — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, qué puertas de entrada (endpoints) ofrece el sistema GGTO, quién puede usar cada una y qué códigos de respuesta entrega. Un endpoint es una dir">
+<meta property="og:image" content="../../../imagenes/mapa-api-endpoints.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Implementación</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../../pdf/03-Implementacion/09-api-endpoints.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#prefijo-api-v1" data-target="prefijo-api-v1"><span class="tn">2.1</span> Prefijo /api/v1</a><span class="pag"></span></li><li class="n3"><a href="#convencion-de-autenticacion-bearer" data-target="convencion-de-autenticacion-bearer"><span class="tn">2.2</span> Convención de autenticación Bearer</a><span class="pag"></span></li><li class="n3"><a href="#relacion-73-paths-103-operaciones" data-target="relacion-73-paths-103-operaciones"><span class="tn">2.3</span> Relación 73 paths / 103 operaciones</a><span class="pag"></span></li><li class="n3"><a href="#documentacion-openapi-en-docs" data-target="documentacion-openapi-en-docs"><span class="tn">2.4</span> Documentación OpenAPI en /docs</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#inventario-por-modulo" data-target="inventario-por-modulo"><span class="tn">3</span> Inventario por módulo</a><span class="pag"></span><ul><li class="n3"><a href="#salud-y-metadatos-app-api-routes-health-py" data-target="salud-y-metadatos-app-api-routes-health-py"><span class="tn">3.1</span> Salud y metadatos (app/api/routes_health.py)</a><span class="pag"></span></li><li class="n3"><a href="#autenticacion-app-api-routes-auth-py" data-target="autenticacion-app-api-routes-auth-py"><span class="tn">3.2</span> Autenticación (app/api/routes_auth.py)</a><span class="pag"></span></li><li class="n3"><a href="#configuracion-y-catalogos-app-api-routes-config-py" data-target="configuracion-y-catalogos-app-api-routes-config-py"><span class="tn">3.3</span> Configuración y catálogos (app/api/routes_config.py)</a><span class="pag"></span><ul><li class="n4"><a href="#central" data-target="central"><span class="tn">3.3.1</span> Central</a><span class="pag"></span></li><li class="n4"><a href="#sectores" data-target="sectores"><span class="tn">3.3.2</span> Sectores</a><span class="pag"></span></li><li class="n4"><a href="#tecnicos" data-target="tecnicos"><span class="tn">3.3.3</span> Técnicos</a><span class="pag"></span></li><li class="n4"><a href="#flota" data-target="flota"><span class="tn">3.3.4</span> Flota</a><span class="pag"></span></li><li class="n4"><a href="#cuadrillas" data-target="cuadrillas"><span class="tn">3.3.5</span> Cuadrillas</a><span class="pag"></span></li><li class="n4"><a href="#catalogos-y-parametros" data-target="catalogos-y-parametros"><span class="tn">3.3.6</span> Catálogos y parámetros</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#ingesta-app-api-routes-ingesta-py" data-target="ingesta-app-api-routes-ingesta-py"><span class="tn">3.4</span> Ingesta (app/api/routes_ingesta.py)</a><span class="pag"></span></li><li class="n3"><a href="#casos-y-panel-app-api-routes-casos-py" data-target="casos-y-panel-app-api-routes-casos-py"><span class="tn">3.5</span> Casos y PANEL (app/api/routes_casos.py)</a><span class="pag"></span></li><li class="n3"><a href="#despacho-app-api-routes-despachos-py" data-target="despacho-app-api-routes-despachos-py"><span class="tn">3.6</span> Despacho (app/api/routes_despachos.py)</a><span class="pag"></span></li><li class="n3"><a href="#especiales-agenda-y-seguimiento-app-api-routes-especiales-py" data-target="especiales-agenda-y-seguimiento-app-api-routes-especiales-py"><span class="tn">3.7</span> Especiales, agenda y seguimiento (app/api/routes_especiales.py)</a><span class="pag"></span></li><li class="n3"><a href="#monitoreo-y-reportes-app-api-routes-monitoreo-py" data-target="monitoreo-y-reportes-app-api-routes-monitoreo-py"><span class="tn">3.8</span> Monitoreo y reportes (app/api/routes_monitoreo.py)</a><span class="pag"></span></li><li class="n3"><a href="#alertas-telegram-y-mcp-app-api-routes-alertas-py" data-target="alertas-telegram-y-mcp-app-api-routes-alertas-py"><span class="tn">3.9</span> Alertas, Telegram y MCP (app/api/routes_alertas.py)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#codigos-de-respuesta" data-target="codigos-de-respuesta"><span class="tn">4</span> Códigos de respuesta</a><span class="pag"></span><ul><li class="n3"><a href="#200-201" data-target="200-201"><span class="tn">4.1</span> 200/201</a><span class="pag"></span></li><li class="n3"><a href="#401" data-target="401"><span class="tn">4.2</span> 401</a><span class="pag"></span></li><li class="n3"><a href="#403" data-target="403"><span class="tn">4.3</span> 403</a><span class="pag"></span></li><li class="n3"><a href="#404" data-target="404"><span class="tn">4.4</span> 404</a><span class="pag"></span></li><li class="n3"><a href="#409" data-target="409"><span class="tn">4.5</span> 409</a><span class="pag"></span></li><li class="n3"><a href="#422" data-target="422"><span class="tn">4.6</span> 422</a><span class="pag"></span></li><li class="n3"><a href="#423" data-target="423"><span class="tn">4.7</span> 423</a><span class="pag"></span></li><li class="n3"><a href="#429" data-target="429"><span class="tn">4.8</span> 429</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#convenciones" data-target="convenciones"><span class="tn">5</span> Convenciones</a><span class="pag"></span><ul><li class="n3"><a href="#paginacion" data-target="paginacion"><span class="tn">5.1</span> Paginación</a><span class="pag"></span></li><li class="n3"><a href="#filtros" data-target="filtros"><span class="tn">5.2</span> Filtros</a><span class="pag"></span></li><li class="n3"><a href="#rbac-por-endpoint" data-target="rbac-por-endpoint"><span class="tn">5.3</span> RBAC por endpoint</a><span class="pag"></span></li><li class="n3"><a href="#request-id" data-target="request-id"><span class="tn">5.4</span> Request-id</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints-publicos-health-ready-api-v1-info-y-el-resto-auten" data-target="endpoints-publicos-health-ready-api-v1-info-y-el-resto-auten"><span class="tn">6</span> Endpoints públicos (/health, /ready, /api/v1/info) y el resto autenticado</a><span class="pag"></span><ul><li class="n3"><a href="#superficie-publica-por-diseno" data-target="superficie-publica-por-diseno"><span class="tn">6.1</span> Superficie pública por diseño</a><span class="pag"></span></li><li class="n3"><a href="#rutas-sin-jwt-pero-con-secreto-propio" data-target="rutas-sin-jwt-pero-con-secreto-propio"><span class="tn">6.2</span> Rutas sin JWT pero con secreto propio</a><span class="pag"></span></li><li class="n3"><a href="#resto-de-la-superficie" data-target="resto-de-la-superficie"><span class="tn">6.3</span> Resto de la superficie</a><span class="pag"></span></li><li class="n3"><a href="#codigos-adicionales-de-infraestructura" data-target="codigos-adicionales-de-infraestructura"><span class="tn">6.4</span> Códigos adicionales de infraestructura</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Implementación</span>
+          <h1 class="portada-titulo">API de GGTO — Inventario de Endpoints</h1>
+          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, qué puertas de entrada (endpoints) ofrece el sistema GGTO, quién puede usar cada una y qué códigos de respuesta entrega. Un endpoint es una dirección concreta que un programa o una página puede llamar para pedir o enviar información. Está dirigido a técnicos de campo, supervisores y administradores de la Central Francisco Salias (Área 4) de CANTV.</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/09-api-endpoints.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Manual para todo público. Explica, en lenguaje sencillo, <strong>qué puertas de entrada (endpoints) ofrece el
+sistema GGTO</strong>, quién puede usar cada una y qué códigos de respuesta entrega. Un <strong>endpoint</strong> es una
+dirección concreta que un programa o una página puede llamar para pedir o enviar información. Está
+dirigido a técnicos de campo, supervisores y administradores de la Central Francisco Salias (Área 4) de
+CANTV.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li><strong>Casi todo exige una credencial de sesión.</strong> El sistema entrega un <strong>pase de sesión</strong> (token) al iniciar
+sesión, y ese pase debe acompañar cada llamada. Sin él, la respuesta es <strong>401</strong> (no autorizado).</li>
+<li><strong>La gran mayoría de las direcciones son solo de consulta.</strong> Salvo las de ingesta, casos, despacho,
+especiales, configuración y alertas, el resto solo <strong>lee</strong> información. Para <strong>escribir</strong> casi siempre se
+necesita rol <strong>ADMIN</strong> o <strong>SUPERVISOR</strong>; el rol <strong>SUPER</strong> puede hacer cualquier cosa.</li>
+<li><strong>El sistema publicado tiene 73 direcciones y 103 operaciones.</strong> La diferencia se explica porque 26
+direcciones admiten <strong>más de un método</strong> (por ejemplo, consultar y crear en la misma dirección).</li>
+<li><strong>La documentación interactiva está en <code>/docs</code>.</strong> Ahí se puede ver y probar cada operación. Una copia en
+formato legible está en <code>/redoc</code> y el esquema crudo en <code>/openapi.json</code>.</li>
+<li><strong>Los códigos de respuesta cuentan la historia.</strong> 200 o 201 indican éxito; 401, falta de sesión; 403, sin
+permiso; 404, no existe; 409, conflicto; 422, datos inválidos; 423, cuenta bloqueada; 429, demasiados
+intentos.</li>
+</ol>
+<figure id="fig-0"><img src="../../../imagenes/mapa-api-endpoints.png" alt="mapa api endpoints"><figcaption>Figura 1 · mapa-api-endpoints.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
+    API[&quot;API de GGTO&lt;br/&gt;prefijo /api/v1&quot;]
+    API --&gt; PUB[&quot;Públicas por diseño&lt;br/&gt;salud, información y acceso&quot;]
+    API --&gt; AUT[&quot;Solo con sesión válida&lt;br/&gt;consulta general&quot;]
+    API --&gt; ESC[&quot;Solo ADMIN o SUPERVISOR&lt;br/&gt;escritura&quot;]
+    API --&gt; SEC[&quot;Con secreto propio&lt;br/&gt;Telegram y MCP&quot;]
+    PUB --&gt; H[&quot;/health&lt;br/&gt;/ready&lt;br/&gt;/api/v1/info&quot;]
+    PUB --&gt; A[&quot;/api/v1/auth/login&lt;br/&gt;/setup&lt;br/&gt;/unlock&lt;br/&gt;/reset-password&quot;]
+    AUT --&gt; C1[&quot;PANEL y CASOS&quot;]
+    AUT --&gt; C2[&quot;MONITOREO y reportes&quot;]
+    AUT --&gt; C3[&quot;AGENDA y seguimiento&quot;]
+    AUT --&gt; C4[&quot;Bandeja de notificaciones&quot;]
+    ESC --&gt; E1[&quot;INGESTA&quot;]
+    ESC --&gt; E2[&quot;DESPACHO&quot;]
+    ESC --&gt; E3[&quot;ESPECIALES&quot;]
+    ESC --&gt; E4[&quot;CONFIGURACIÓN&quot;]
+    ESC --&gt; E5[&quot;ALERTAS y fallas masivas&quot;]
+    SEC --&gt; S1[&quot;POST /api/v1/telegram/webhook&quot;]
+    SEC --&gt; S2[&quot;POST /api/v1/mcp&quot;]</code></pre></details></figure>
+<h2 id="vision-general"><span class="sec-num">2</span>Visión general</h2>
+<p>La API (la interfaz que atiende las peticiones de otros programas) es una aplicación <strong>FastAPI</strong> construida
+en <code>app/main.py</code>. La aplicación se declara con título, versión y descripción tomados de la configuración, y
+monta <strong>nueve grupos de rutas</strong> en un orden explícito: salud, autenticación, configuración, ingesta, casos,
+despachos, especiales, monitoreo y alertas. Al final se monta la aplicación web, para no tapar las rutas de
+la API.</p>
+<p>El middleware de observabilidad asigna un <strong>identificador de petición</strong> a cada llamada y registra su
+duración; el acceso desde otros dominios (CORS) se configura desde la lista de orígenes permitidos.</p>
+<h3 id="prefijo-api-v1"><span class="sec-num">2.1</span>Prefijo /api/v1</h3>
+<p>Todas las rutas de negocio se publican bajo el prefijo de versión <strong><code>/api/v1</code></strong>. El prefijo se declara de dos
+maneras según el archivo:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Archivo de rutas</th>
+<th>Prefijo declarado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app/api/routes_health.py</code></td>
+<td>Sin prefijo (rutas absolutas)</td>
+</tr>
+<tr>
+<td><code>app/api/routes_auth.py</code></td>
+<td><code>/api/v1/auth</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_config.py</code></td>
+<td><code>/api/v1</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_ingesta.py</code></td>
+<td><code>/api/v1/ingesta</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_casos.py</code></td>
+<td><code>/api/v1/casos</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_despachos.py</code></td>
+<td><code>/api/v1/despachos</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_especiales.py</code></td>
+<td><code>/api/v1</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_monitoreo.py</code></td>
+<td><code>/api/v1</code></td>
+</tr>
+<tr>
+<td><code>app/api/routes_alertas.py</code></td>
+<td><code>/api/v1</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>El archivo de salud es la <strong>única excepción</strong>: declara rutas absolutas porque expone <code>/health</code> y <code>/ready</code>
+fuera del espacio versionado. Una prueba de contrato exige que <strong>ninguna ruta que empiece por <code>/api/</code> quede
+sin versión</strong>.</p>
+<h3 id="convencion-de-autenticacion-bearer"><span class="sec-num">2.2</span>Convención de autenticación Bearer</h3>
+<p>La autenticación se resuelve con el esquema <strong>HTTP Bearer</strong> de FastAPI, declarado como dependencia
+reutilizable. El cliente debe enviar la cabecera:</p>
+<pre data-lang="texto"><code>Authorization: Bearer &lt;token&gt;
+</code></pre>
+<p>El token es un <strong>JWT</strong> (un pase firmado digitalmente) con algoritmo HS256, que incluye el P00 del usuario,
+su rol, la fecha de expiración, la fecha de emisión y un identificador único. La vigencia por defecto es de
+<strong>480 minutos (8 horas)</strong>. Al decodificarlo se valida la firma y la expiración.</p>
+<p>La dependencia de usuario autenticado realiza esta secuencia:</p>
+<ol>
+<li>Si <strong>no hay credencial</strong>, responde <strong>401</strong>.</li>
+<li>Si el <strong>token es inválido o expiró</strong>, responde <strong>401</strong>.</li>
+<li>Si el <strong>P00 no existe</strong> o el <strong>usuario está inactivo</strong>, responde <strong>401</strong>.</li>
+<li>Si el <strong>usuario está bloqueado</strong>, responde <strong>423</strong>.</li>
+</ol>
+<p>La respuesta 401 incluye la cabecera <code>WWW-Authenticate: Bearer</code>. La aplicación web consume la API con el
+mismo esquema: guarda el token en el almacenamiento local del navegador y lo adjunta en cada llamada.</p>
+<h3 id="relacion-73-paths-103-operaciones"><span class="sec-num">2.3</span>Relación 73 paths / 103 operaciones</h3>
+<p>El esquema publicado reporta <strong>73 rutas</strong> (<em>paths</em>, es decir, direcciones) y <strong>103 operaciones</strong> (la
+combinación de método más dirección). La diferencia se explica porque <strong>26 direcciones comparten varios
+métodos</strong>; cada dirección adicional con varios métodos aporta operaciones extra, en total <strong>30 operaciones
+extra</strong> (73 + 30 = 103).</p>
+<p>Las direcciones compartidas verificadas son 26. Algunos ejemplos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dirección</th>
+<th>Métodos</th>
+<th>Dirección</th>
+<th>Métodos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/v1/casos</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/central</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/casos/{id_caso}</code></td>
+<td>GET, PATCH</td>
+<td><code>/api/v1/central/{id_central}</code></td>
+<td>GET, PATCH, DELETE</td>
+</tr>
+<tr>
+<td><code>/api/v1/despachos</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/sectores</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/despachos/fallas-masivas</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/sectores/{id_sector}</code></td>
+<td>GET, PATCH, DELETE</td>
+</tr>
+<tr>
+<td><code>/api/v1/fallas-masivas</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/tecnicos</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/citas</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/tecnicos/{id_tecnico}</code></td>
+<td>GET, PATCH, DELETE</td>
+</tr>
+<tr>
+<td><code>/api/v1/citas/{id_cita}</code></td>
+<td>PATCH, DELETE</td>
+<td><code>/api/v1/flota</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/casos-especiales</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/cuadrillas</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/casos-especiales/{id_caso_especial}</code></td>
+<td>GET, PATCH</td>
+<td><code>/api/v1/seguimiento</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/solicitantes</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/catalogos/causas</code></td>
+<td>GET, POST</td>
+</tr>
+<tr>
+<td><code>/api/v1/catalogos/metodos</code></td>
+<td>GET, POST</td>
+<td><code>/api/v1/despachos/{id_despacho}</code></td>
+<td>GET, PATCH</td>
+</tr>
+<tr>
+<td><code>/api/v1/cuadrillas/{id_cuadrilla}</code></td>
+<td>GET, PATCH</td>
+<td><code>/api/v1/despachos/{id_despacho}/casos/{id_caso}</code></td>
+<td>DELETE, PATCH</td>
+</tr>
+</tbody>
+</table></div>
+<p>Por eso los documentos del proyecto y las pruebas hablan de <strong>«73 endpoints»</strong> cuando en realidad se
+refieren a <em>73 direcciones</em>. En el código hay <strong>103 decoradores de ruta</strong>, uno por operación publicada.</p>
+<p>La cifra de <strong>98 operaciones</strong> que aparece en notas previas del proyecto <strong>no coincide</strong> con el código
+verificado. La diferencia corresponde a <strong>cinco operaciones que sí existen</strong> y que aquel inventario no
+listaba:</p>
+<ol>
+<li><code>POST /api/v1/auth/setup</code></li>
+<li><code>POST /api/v1/sectores/{id_sector}/direcciones</code></li>
+<li><code>DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}</code></li>
+<li><code>POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes</code></li>
+<li><code>DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}</code></li>
+</ol>
+<p>La cifra vigente y comprobable es <strong>103 operaciones y 73 direcciones</strong>. El origen exacto del conteo de 98
+<strong>queda pendiente de confirmar</strong>.</p>
+<h3 id="documentacion-openapi-en-docs"><span class="sec-num">2.4</span>Documentación OpenAPI en /docs</h3>
+<p>FastAPI publica por defecto la documentación interactiva en <strong><code>/docs</code></strong> (la interfaz Swagger), la alternativa
+ReDoc en <strong><code>/redoc</code></strong> y el esquema crudo en <strong><code>/openapi.json</code></strong>. La ruta de metadatos del servicio devuelve
+explícitamente esa dirección en el campo «documentacion». El título y la versión del esquema provienen de la
+configuración, con versión por defecto <strong>0.9.0</strong>.</p>
+<p>Cada grupo de rutas se agrupa en el esquema mediante <strong>etiquetas</strong> (<em>tags</em>): «salud», «autenticación»,
+«configuración», «ingesta», «casos», «despacho», «seguimiento y especiales», «monitoreo y reportes» y
+«alertas, telegram y mcp».</p>
+<p>Las pruebas de contrato validan cuatro cosas: que <strong>toda operación tenga resumen</strong>, que toda respuesta
+declarada tenga descripción, que los listados declaren su contrato de salida y que exista el esquema de
+seguridad Bearer.</p>
+<h2 id="inventario-por-modulo"><span class="sec-num">3</span>Inventario por módulo</h2>
+<p>A continuación está el inventario completo de las <strong>103 operaciones</strong>, agrupado por archivo de rutas. La
+columna «roles» se interpreta así:</p>
+<ul>
+<li><strong>Público</strong>: no requiere token.</li>
+<li><strong>Autenticado</strong>: cualquier usuario con token válido.</li>
+<li><strong>ADMIN/SUPERVISOR</strong>: requiere alguno de esos dos roles; el rol <strong>SUPER</strong> tiene <strong>acceso total</strong> sin
+necesidad de enumerarse.</li>
+</ul>
+<h3 id="salud-y-metadatos-app-api-routes-health-py"><span class="sec-num">3.1</span>Salud y metadatos (app/api/routes_health.py)</h3>
+<p>Cuatro operaciones; tres son públicas y una exige token.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/info</code></td>
+<td>Metadatos del servicio (nombre, versión, entorno y ruta de la documentación)</td>
+<td>Público</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/health</code></td>
+<td>Comprobación de que el servicio está vivo; <strong>no toca la base de datos</strong></td>
+<td>Público</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/ready</code></td>
+<td>Comprobación de disponibilidad: versión de PostgreSQL, base, usuario y número de tablas del esquema</td>
+<td>Público</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/resumen</code></td>
+<td>Conteo de entidades principales (centrales, roles, cuadrillas, causas y parámetros)</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>/ready</code> devuelve <strong>503</strong> si la base de datos no responde y consulta el catálogo de tablas del esquema
+<code>public</code>. La ruta de resumen es la evidencia del esquema desplegado.</p>
+<h3 id="autenticacion-app-api-routes-auth-py"><span class="sec-num">3.2</span>Autenticación (app/api/routes_auth.py)</h3>
+<p>Cinco operaciones. Cuatro son públicas por diseño (inicio de sesión y recuperación); la de datos propios
+exige token. La decisión de usar <strong>P00 más clave, con bloqueo a los 3 intentos y 12 palabras de seguridad</strong>,
+está registrada en los requerimientos.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/login</code></td>
+<td>Iniciar sesión con P00 y clave; entrega el pase de sesión</td>
+<td>Público</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/me</code></td>
+<td>Datos del usuario autenticado (P00, correo, rol, central y nombre)</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/setup</code></td>
+<td>Primer inicio: fija la clave y genera 12 palabras de seguridad</td>
+<td>Público</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/unlock</code></td>
+<td>Desbloquear la cuenta con 3 de las 12 palabras</td>
+<td>Público</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/reset-password</code></td>
+<td>Restablecer la clave con 3 de las 12 palabras</td>
+<td>Público</td>
+</tr>
+</tbody>
+</table></div>
+<p>Detalles verificados del inicio de sesión:</p>
+<ul>
+<li>El límite de intentos se aplica por <strong>P00 más dirección IP</strong>.</li>
+<li>Si el P00 <strong>no existe</strong>, se devuelve un mensaje genérico para no revelar su existencia.</li>
+<li>Un usuario <strong>inactivo</strong> recibe <strong>403</strong> y uno <strong>bloqueado</strong>, <strong>423</strong>.</li>
+<li>Cada fallo incrementa el contador de intentos fallidos y devuelve la cabecera <code>X-Intentos-Restantes</code>.</li>
+<li>Un inicio de sesión correcto <strong>reinicia el contador</strong> y emite el token.</li>
+<li>La operación de primer inicio exige que la clave y su confirmación coincidan (si no, 422) y que el P00 ya
+exista (si no, 404).</li>
+<li>Desbloqueo y restablecimiento validan <strong>3 palabras por posición</strong>.</li>
+</ul>
+<h3 id="configuracion-y-catalogos-app-api-routes-config-py"><span class="sec-num">3.3</span>Configuración y catálogos (app/api/routes_config.py)</h3>
+<p>Es el módulo más extenso: <strong>35 operaciones</strong>. La lectura queda abierta a cualquier usuario autenticado y la
+escritura se reserva a <strong>ADMIN</strong> y <strong>SUPERVISOR</strong>. Los borrados son <strong>desactivaciones lógicas</strong> (el registro
+no se elimina, solo se marca como inactivo), salvo en direcciones de sector e integrantes de cuadrilla.</p>
+<h4 id="central"><span class="sec-num">3.3.1</span>Central</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/central</code></td>
+<td>Listar centrales; filtro de solo activas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/central</code></td>
+<td>Crear una central</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/central/{id_central}</code></td>
+<td>Obtener una central</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/central/{id_central}</code></td>
+<td>Actualizar una central</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/central/{id_central}</code></td>
+<td>Desactivar (marca la central como inactiva)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="sectores"><span class="sec-num">3.3.2</span>Sectores</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/sectores</code></td>
+<td>Listar sectores; filtros por central y solo activos</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/sectores</code></td>
+<td>Crear un sector con sus direcciones y patrones</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/sectores/{id_sector}</code></td>
+<td>Obtener un sector</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/sectores/{id_sector}</code></td>
+<td>Actualizar un sector</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/sectores/{id_sector}</code></td>
+<td>Desactivar (marca el sector como inactivo)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/sectores/{id_sector}/direcciones</code></td>
+<td>Agregar un patrón de dirección al sector</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/sectores/{id_sector}/direcciones/{id_direccion}</code></td>
+<td>Eliminar un patrón (borrado físico)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="tecnicos"><span class="sec-num">3.3.3</span>Técnicos</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tecnicos</code></td>
+<td>Listar técnicos; filtros por central y estado</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/tecnicos</code></td>
+<td>Crear un técnico</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tecnicos/{id_tecnico}</code></td>
+<td>Obtener un técnico</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/tecnicos/{id_tecnico}</code></td>
+<td>Actualizar un técnico</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/tecnicos/{id_tecnico}</code></td>
+<td>Desactivar (marca al técnico como inactivo)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="flota"><span class="sec-num">3.3.4</span>Flota</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/flota</code></td>
+<td>Listar la flota; filtro por central</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/flota</code></td>
+<td>Registrar un vehículo</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/flota/{id_flota}</code></td>
+<td>Obtener un vehículo</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/flota/{id_flota}</code></td>
+<td>Actualizar un vehículo</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/flota/{id_flota}</code></td>
+<td>Retirar (marca el vehículo fuera de servicio)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="cuadrillas"><span class="sec-num">3.3.5</span>Cuadrillas</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/cuadrillas</code></td>
+<td>Listar cuadrillas; filtros por central y solo activas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/cuadrillas</code></td>
+<td>Crear una cuadrilla con integrantes y herramientas</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/cuadrillas/{id_cuadrilla}</code></td>
+<td>Obtener una cuadrilla</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/cuadrillas/{id_cuadrilla}</code></td>
+<td>Actualizar una cuadrilla</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/cuadrillas/{id_cuadrilla}/integrantes</code></td>
+<td>Agregar un integrante a la cuadrilla</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}</code></td>
+<td>Retirar un integrante (fija la fecha de salida)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="catalogos-y-parametros"><span class="sec-num">3.3.6</span>Catálogos y parámetros</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/catalogos/causas</code></td>
+<td>Listar causas; por defecto solo activas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/catalogos/causas</code></td>
+<td>Crear una causa</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/catalogos/causas/{id_causa}</code></td>
+<td>Desactivar (marca la causa como inactiva)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/catalogos/metodos</code></td>
+<td>Listar métodos; filtro por dominio</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/catalogos/metodos</code></td>
+<td>Crear un método</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/configuracion</code></td>
+<td>Listar los parámetros de configuración</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/configuracion/{clave}</code></td>
+<td>Actualizar el valor (y la descripción) de un parámetro</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+</tbody>
+</table></div>
+<p>Las creaciones y actualizaciones traducen el error de duplicado de la base de datos a <strong>409</strong> con un mensaje
+de conflicto. Las creaciones devuelven <strong>201</strong> y los borrados <strong>204</strong>.</p>
+<h3 id="ingesta-app-api-routes-ingesta-py"><span class="sec-num">3.4</span>Ingesta (app/api/routes_ingesta.py)</h3>
+<p>Cuatro operaciones. Las dos de escritura reciben el archivo por formulario (multipart) y la central como dato
+opcional.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/ingesta/preview</code></td>
+<td>Simular la ingesta del CSV sin guardar nada</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/ingesta</code></td>
+<td>Cargar el archivo diario e insertar los casos nuevos</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/ingesta/lotes</code></td>
+<td>Historial de cargas (límite entre 1 y 200; por defecto 50)</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/ingesta/lotes/{id_lote}</code></td>
+<td>Detalle de una carga</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>La carga real crea un lote de ingesta y luego los casos, dejando el lote en estado <strong>OK</strong> y los avisos en el
+detalle de errores. Después de insertar, <strong>dispara la detección automática de fallas masivas por
+concentración</strong>. El resumen incluye filas leídas, filas de la central, casos nuevos, duplicados,
+descartados, sectorizados, sin sector y casos de cuadrilla 0.</p>
+<h3 id="casos-y-panel-app-api-routes-casos-py"><span class="sec-num">3.5</span>Casos y PANEL (app/api/routes_casos.py)</h3>
+<p>Seis operaciones. La escritura es para ADMIN y SUPERVISOR; la lectura, para cualquier usuario autenticado.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos</code></td>
+<td>Listado paginado con filtros</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos/buscar</code></td>
+<td>Búsqueda rápida del <strong>PANEL</strong> por texto, identificador de avería o teléfono</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/casos</code></td>
+<td>Alta manual (genera un identificador <code>REF-…</code> si no se informa uno)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos/{id_caso}</code></td>
+<td>Ficha completa del caso</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/casos/{id_caso}</code></td>
+<td>Actualizar campos, sector o estado</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos/{id_caso}/historial</code></td>
+<td>Bitácora de estados del caso</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>El listado admite filtros por texto, identificador de avería, teléfono, central, sector, causa, lote de
+ingesta, estado actual, tipo de caso, categoría, origen, si está en gestión del supervisor, si es falla
+masiva y rango de fechas. Ordena por fecha de reporte descendente y luego por identificador descendente. Cada
+caso del listado agrega el nombre del sector y los indicadores <strong>pendiente, asignado, citado y gestión</strong>. El
+alta manual usa una función de base de datos para generar el identificador de avería, <strong>rechaza duplicados
+con 409</strong> y registra el estado inicial <strong>NUEVO</strong> en el historial. Al corregir la dirección, <strong>el sector se
+recalcula</strong>.</p>
+<h3 id="despacho-app-api-routes-despachos-py"><span class="sec-num">3.6</span>Despacho (app/api/routes_despachos.py)</h3>
+<p>Quince operaciones. La escritura es para ADMIN y SUPERVISOR.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/despachos/propuesta</code></td>
+<td>Simular el despacho del día (sin guardar)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/despachos</code></td>
+<td>Generar y guardar el despacho del día (admite reemplazar)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos</code></td>
+<td>Listar despachos por fecha y central</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/despachos/fallas-masivas</code></td>
+<td>Reportar una falla masiva asociada al sector</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/fallas-masivas</code></td>
+<td>Listar las fallas masivas registradas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/{id_despacho}</code></td>
+<td>Detalle del despacho</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/despachos/{id_despacho}</code></td>
+<td>Publicar o cerrar el despacho</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/despachos/{id_despacho}/casos</code></td>
+<td>Agregar un caso al despacho</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/despachos/{id_despacho}/casos/{id_caso}</code></td>
+<td>Quitar un caso del despacho</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/despachos/{id_despacho}/casos/{id_caso}</code></td>
+<td>Actualizar el estado del caso dentro del despacho</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/{id_despacho}/imprimible</code></td>
+<td>Ficha de la cuadrilla lista para imprimir (HTML tamaño carta)</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/reporte/produccion</code></td>
+<td>Reporte de producción del día</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/{id_despacho}/reporte</code></td>
+<td>Reporte de producción del despacho</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/despachos/{id_despacho}/enviar</code></td>
+<td>Enviar la ficha por <strong>Telegram</strong> o <strong>correo</strong></td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/despachos/{id_despacho}/notificaciones</code></td>
+<td>Notificaciones asociadas al despacho</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>Reglas verificadas:</p>
+<ul>
+<li>Generar un despacho sin pedir reemplazo, cuando ya existe uno para la fecha, devuelve <strong>409</strong>.</li>
+<li>Agregar un caso de <strong>cuadrilla 0</strong> o un caso repetido también devuelve <strong>409</strong>.</li>
+<li>Publicar un despacho fija la fecha de envío si no estaba enviado.</li>
+<li>La ficha imprimible es HTML con <strong>tamaño carta</strong>.</li>
+<li>El envío lee el destino desde la configuración (<code>despacho.destino_&lt;canal&gt;</code>) y <strong>registra siempre una
+notificación</strong>. Si el canal <strong>no tiene credenciales, la notificación queda PENDIENTE</strong> en la bandeja de
+salida: <strong>hoy no se envía nada</strong>.</li>
+</ul>
+<h3 id="especiales-agenda-y-seguimiento-app-api-routes-especiales-py"><span class="sec-num">3.7</span>Especiales, agenda y seguimiento (app/api/routes_especiales.py)</h3>
+<p>Catorce operaciones (empresas, referidos y gobiernos; solicitantes; <strong>AGENDA</strong>; y seguimiento). La escritura
+es para ADMIN y SUPERVISOR.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/solicitantes</code></td>
+<td>Listar el personal externo solicitante</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/solicitantes</code></td>
+<td>Crear un solicitante</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos-especiales</code></td>
+<td>Listar casos especiales; filtros por clasificación, estado, prioridad y solo pendientes</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/casos-especiales</code></td>
+<td>Ingresar un caso especial (puede crear el caso y el solicitante)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/casos-especiales/{id_caso_especial}</code></td>
+<td>Obtener un caso especial</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/casos-especiales/{id_caso_especial}</code></td>
+<td>Actualizar un caso especial</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/citas</code></td>
+<td><strong>AGENDA</strong> de citas; filtros por rango, cuadrilla y estado</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/citas</code></td>
+<td>Agendar una cita (valida solapamiento)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/citas/{id_cita}</code></td>
+<td>Reprogramar o actualizar una cita</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/citas/{id_cita}</code></td>
+<td>Cancelar la cita (marca el estado como CANCELADA)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/seguimiento</code></td>
+<td>Casos derivados a otras colas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/seguimiento</code></td>
+<td>Derivar un caso a otra instancia</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/seguimiento/{id_seguimiento}</code></td>
+<td>Actualizar el seguimiento (por ejemplo, devuelto)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/seguimiento/{id_seguimiento}</code></td>
+<td>Obtener un seguimiento</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>Reglas destacadas:</p>
+<ul>
+<li>Un caso especial <strong>no puede</strong> indicar a la vez un solicitante existente y la creación de uno nuevo
+(responde <strong>422</strong>).</li>
+<li>Si no se indica un caso, se <strong>crea un caso asociado</strong> con origen MANUAL.</li>
+<li>La agenda usa una <strong>duración configurable</strong> (por defecto 60 minutos) y estados que bloquean el horario; el
+solapamiento devuelve <strong>409</strong>.</li>
+<li><strong>Forzar un solapamiento está reservado al rol SUPER</strong>: cualquier otro rol recibe <strong>403</strong>.</li>
+<li>Al derivar con estado EN_COLA, el caso pasa a <strong>ENRUTADO</strong>; al registrarlo como devuelto, vuelve a
+<strong>NUEVO</strong>.</li>
+</ul>
+<h3 id="monitoreo-y-reportes-app-api-routes-monitoreo-py"><span class="sec-num">3.8</span>Monitoreo y reportes (app/api/routes_monitoreo.py)</h3>
+<p>Nueve operaciones, todas de <strong>lectura</strong> para cualquier usuario autenticado. Las fórmulas están definidas en
+el documento normativo de métricas y el encabezado del archivo lo referencia.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/diario</code></td>
+<td>Gestión diaria (parámetro de fecha)</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/semanal</code></td>
+<td>Curva semanal de lunes a sábado</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/globales</code></td>
+<td>Pendientes frente a resueltos, por rango de fechas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/reparacion</code></td>
+<td>Pendientes de reparación por tipo</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/construccion</code></td>
+<td>Pendientes de construcción por tipo</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/cuadrilla</code></td>
+<td>Asignados, cerrados y gestionados por cuadrilla</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/monitoreo/capacidad</code></td>
+<td>Capacidad operativa</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reportes/trabajo</code></td>
+<td>Reporte de trabajo (periodo diario, semanal o mensual)</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/reportes/trabajo/imprimible</code></td>
+<td>Reporte de trabajo en HTML imprimible</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>Todas aceptan la central como dato opcional y <strong>resuelven la central activa</strong> cuando se omite. El parámetro
+de periodo está restringido a <strong>diario, semanal o mensual</strong>; cualquier otro valor produce <strong>422</strong>. El reporte
+imprimible compone una plantilla HTML con <strong>tamaño carta</strong>.</p>
+<h3 id="alertas-telegram-y-mcp-app-api-routes-alertas-py"><span class="sec-num">3.9</span>Alertas, Telegram y MCP (app/api/routes_alertas.py)</h3>
+<p>Once operaciones: fallas masivas, bandeja de notificaciones (bandeja de salida o <em>outbox</em>), bot de Telegram,
+servidor MCP y métricas. La escritura es para ADMIN y SUPERVISOR.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Para qué sirve</th>
+<th>Roles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/fallas-masivas</code></td>
+<td>Listar fallas masivas; filtros por estado, central y solo activas</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/fallas-masivas</code></td>
+<td>Reportar una falla masiva manual y alertar</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/fallas-masivas/detectar</code></td>
+<td>Detectar fallas por concentración (sin duplicar)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/fallas-masivas/{id_falla}</code></td>
+<td>Actualizar estado o cuadrilla de la falla</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/fallas-masivas/{id_falla}/planificacion</code></td>
+<td>Documentar la planificación de atención (RF-17)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/fallas-masivas/{id_falla}/material</code></td>
+<td>Solicitar material para la falla (RF-18)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/notificaciones</code></td>
+<td>Bandeja de notificaciones; filtros por estado, canal y límite</td>
+<td>Autenticado</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/notificaciones/procesar</code></td>
+<td>Procesar la bandeja de salida (reintentos con espera creciente)</td>
+<td>ADMIN/SUPERVISOR</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/telegram/webhook</code></td>
+<td>Webhook del bot de Telegram</td>
+<td>Público (con secreto propio)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/mcp</code></td>
+<td>Servidor MCP en JSON-RPC 2.0</td>
+<td>Público (con clave propia)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/metricas</code></td>
+<td>Métricas de negocio y estado de los canales</td>
+<td>Autenticado</td>
+</tr>
+</tbody>
+</table></div>
+<p>Detalles verificados:</p>
+<ul>
+<li>El webhook de Telegram exige la cabecera <code>X-Telegram-Bot-Api-Secret-Token</code> <strong>cuando</strong> la clave
+<code>telegram.webhook_secret</code> está configurada; si no coincide, devuelve <strong>403</strong>.</li>
+<li>El bot soporta los comandos <code>/start</code>, <code>/ayuda</code>, <code>/help</code>, <code>/estado</code>, <code>/caso</code> y <code>/falla</code>, y <strong>responde
+encolando en la bandeja de salida</strong>; por eso, <strong>sin credenciales, la respuesta queda PENDIENTE</strong>.</li>
+<li>El servidor MCP valida la cabecera <code>X-MCP-Key</code> contra <code>mcp.api_key</code> y, si no coincide, responde <strong>HTTP 200
+con error JSON-RPC -32001</strong>.</li>
+<li>MCP implementa <code>initialize</code> (versión de protocolo <code>2024-11-05</code>), <code>tools/list</code> y <code>tools/call</code>, con cuatro
+herramientas: <code>estado_central</code>, <code>consultar_caso</code>, <code>reportar_falla</code> y <code>procesar_notificaciones</code>.</li>
+<li>Los errores de herramienta se devuelven como <strong>-32602</strong> y un método desconocido como <strong>-32601</strong>.</li>
+<li>La versión anunciada del servidor MCP es <strong>0.1.0</strong>.</li>
+<li>El modo de prueba de contrato confirma que <strong>ambos webhooks son públicos</strong> y no exigen token de sesión.</li>
+</ul>
+<blockquote>
+<p><strong>Recordatorio importante:</strong> <strong>Telegram y el correo no tienen credenciales en producción</strong>. Los envíos
+quedan <strong>PENDIENTES</strong> en la bandeja (patrón de bandeja de salida) y <strong>no se completan</strong>. El canal
+<strong>WhatsApp no existe</strong> en la versión 1. En este manual solo se <strong>nombran</strong> los secretos y las claves; <strong>no
+se transcriben valores</strong>.</p>
+</blockquote>
+<h2 id="codigos-de-respuesta"><span class="sec-num">4</span>Códigos de respuesta</h2>
+<h3 id="200-201"><span class="sec-num">4.1</span>200/201</h3>
+<ul>
+<li><strong>200</strong> es el código por defecto de las operaciones de lectura y de las actualizaciones que devuelven
+cuerpo.</li>
+<li><strong>201</strong> se declara explícitamente en las creaciones, por ejemplo en el alta manual de casos, en la
+generación de despachos y en la carga de ingesta.</li>
+<li><strong>204</strong> se usa en los borrados y desactivaciones, por ejemplo al desactivar una central o al cancelar una
+cita.</li>
+</ul>
+<h3 id="401"><span class="sec-num">4.2</span>401</h3>
+<p>Credenciales inválidas o token expirado. La respuesta se produce cuando falta la credencial, cuando el token
+no se puede decodificar, cuando falta el P00 o cuando el usuario no existe o está inactivo. En el inicio de
+sesión, un P00 inexistente o una clave incorrecta también devuelven <strong>401</strong>, y las operaciones de desbloqueo
+y restablecimiento devuelven <strong>401</strong> si las palabras no coinciden. Una prueba de contrato lo verifica.</p>
+<h3 id="403"><span class="sec-num">4.3</span>403</h3>
+<p>Operación no permitida para el rol. La validación de roles devuelve <strong>403</strong> cuando el usuario no tiene rol
+asociado o su rol no está en la lista permitida. Otros casos: usuario inactivo en el inicio de sesión,
+intento de <strong>forzar un solapamiento de citas sin ser SUPER</strong> y <strong>secreto inválido del webhook de Telegram</strong>.
+Existen una prueba negativa de escritura con rol TECNICO y una matriz de permisos por rol.</p>
+<h3 id="404"><span class="sec-num">4.4</span>404</h3>
+<p>Recurso inexistente. Se centraliza en auxiliares de cada módulo: casos, configuración, despachos y fallas
+masivas. También se devuelve 404 en las operaciones de desbloqueo, restablecimiento y primer inicio cuando
+el P00 no existe, y en las validaciones de referencias de casos especiales. Una prueba de contrato lo
+verifica.</p>
+<h3 id="409"><span class="sec-num">4.5</span>409</h3>
+<p>Conflicto de unicidad o de estado. Casos verificados:</p>
+<ul>
+<li>Error de duplicado traducido en configuración.</li>
+<li>Identificador de avería duplicado en el alta manual.</li>
+<li>Despacho ya existente para la fecha.</li>
+<li>Caso ya asignado o perteneciente a la cuadrilla 0.</li>
+<li>Caso especial con identificador de avería repetido.</li>
+<li>Solapamiento de citas.</li>
+</ul>
+<h3 id="422"><span class="sec-num">4.6</span>422</h3>
+<p>Error de validación. FastAPI devuelve <strong>422</strong> automáticamente cuando el cuerpo enviado no cumple el contrato
+de datos; una prueba de contrato comprueba que el detalle sea una lista. Además hay 422 explícitos en varios
+casos:</p>
+<ul>
+<li>Búsqueda sin ningún criterio.</li>
+<li>Clave y confirmación distintas.</li>
+<li>Indicar a la vez un solicitante existente y la creación de uno nuevo.</li>
+<li>Agendar una cita sin caso ni caso especial.</li>
+<li>Periodo inválido en los reportes.</li>
+</ul>
+<h3 id="423"><span class="sec-num">4.7</span>423</h3>
+<p>Cuenta bloqueada. El sistema devuelve <strong>423</strong> si el usuario está bloqueado. En el inicio de sesión, un
+usuario bloqueado recibe 423 y <strong>un fallo que alcanza el máximo de 3 intentos bloquea la cuenta</strong> y responde
+423 con el saldo de intentos en la cabecera <code>X-Intentos-Restantes</code>.</p>
+<h3 id="429"><span class="sec-num">4.8</span>429</h3>
+<p>Demasiados intentos. El limitador en memoria cuenta por la clave <strong>P00 más dirección IP</strong> dentro de una
+ventana y lanza <strong>429</strong> con el detalle «Demasiados intentos. Espere un momento.». Los valores por defecto son
+<strong>10 intentos en 60 segundos</strong>, aplicados en el inicio de sesión con la IP del cliente.</p>
+<h2 id="convenciones"><span class="sec-num">5</span>Convenciones</h2>
+<h3 id="paginacion"><span class="sec-num">5.1</span>Paginación</h3>
+<p>Solo el listado de casos implementa <strong>paginación completa</strong>, con los parámetros de página (mayor o igual a</p>
+<ol>
+<li>y tamaño de página (entre 1 y 200; por defecto 25). La respuesta incluye los elementos, el total, la
+página, el tamaño de página y el número total de páginas. Una prueba de contrato exige esas cinco claves.</li>
+</ol>
+<p>Los demás listados <strong>no usan paginación</strong>: emplean un tope de cantidad (por ejemplo, el historial de ingesta
+con máximo 200 y valor por defecto 50, o las notificaciones con máximo 500 y valor por defecto 100) o
+devuelven la colección completa ordenada. La búsqueda del <strong>PANEL</strong> acota con un límite entre 1 y 100, por
+defecto 20.</p>
+<h3 id="filtros"><span class="sec-num">5.2</span>Filtros</h3>
+<p>Los filtros se declaran como parámetros de consulta tipados. Los más relevantes:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Filtros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v1/casos</code></td>
+<td>Texto, identificador de avería, teléfono, central, sector, causa, lote de ingesta, estado actual, tipo de caso, categoría, origen, en gestión del supervisor, es falla masiva, desde y hasta</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/casos/buscar</code></td>
+<td>Texto, identificador de avería, teléfono y límite</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/central</code></td>
+<td>Solo activas</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/sectores</code></td>
+<td>Central y solo activos</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/tecnicos</code></td>
+<td>Central y estado</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/cuadrillas</code></td>
+<td>Central y solo activas</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/catalogos/metodos</code></td>
+<td>Dominio</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/despachos</code></td>
+<td>Fecha y central</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/citas</code></td>
+<td>Desde, hasta, cuadrilla y estado</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/seguimiento</code></td>
+<td>Caso, estado e instancia destino</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/fallas-masivas</code></td>
+<td>Estado, central y solo activas</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/notificaciones</code></td>
+<td>Estado, canal y límite</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/monitoreo/*</code> y reportes</td>
+<td>Fecha, desde, hasta, días, central y periodo</td>
+</tr>
+</tbody>
+</table></div>
+<p>Los rangos de fecha se aplican sobre la <strong>fecha de reporte</strong> del caso.</p>
+<h3 id="rbac-por-endpoint"><span class="sec-num">5.3</span>RBAC por endpoint</h3>
+<p>El control de acceso se implementa en <code>app/api/deps.py</code>. La función de roles devuelve una dependencia que
+exige uno de los roles indicados; el rol <strong>SUPER concede cualquier operación</strong> sin necesidad de enumerarse.
+Esto es consistente con los requerimientos del proyecto.</p>
+<p>En la práctica, cada archivo de rutas define <strong>una única dependencia de escritura</strong>: ADMIN o SUPERVISOR. La
+aplican configuración, ingesta, casos, despachos, especiales y alertas.</p>
+<p>Consecuencia verificada: <strong>en la versión 1 ninguna operación de escritura acepta el rol TECNICO</strong>. La matriz
+de requerimientos prevé que el técnico tenga su propio CRUD para la «gestión técnica» desde la <strong>app móvil</strong>,
+que corresponde al Ciclo 8 y <strong>no está desarrollada</strong>; por lo tanto, <strong>esa capacidad no existe en la API
+actual</strong>. La única excepción al esquema es el <strong>forzado de solapamiento de citas</strong>, reservado exclusivamente
+al rol <strong>SUPER</strong>.</p>
+<h3 id="request-id"><span class="sec-num">5.4</span>Request-id</h3>
+<p>El middleware de observabilidad toma el valor de la cabecera <code>X-Request-ID</code> entrante o genera uno de 12
+caracteres hexadecimales, mide la duración de la petición y <strong>devuelve siempre</strong> el <code>X-Request-ID</code> en la
+respuesta. Cada petición se registra con método, ruta, código y milisegundos; si se produce una excepción, se
+registra el fallo con el mismo identificador y se vuelve a lanzar. Esto soporta el requisito de
+observabilidad, cuya verificación se apoya además en la ruta de métricas.</p>
+<h2 id="endpoints-publicos-health-ready-api-v1-info-y-el-resto-auten"><span class="sec-num">6</span>Endpoints públicos (/health, /ready, /api/v1/info) y el resto autenticado</h2>
+<h3 id="superficie-publica-por-diseno"><span class="sec-num">6.1</span>Superficie pública por diseño</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Motivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /health</code></td>
+<td>Comprobación de vida para el orquestador; no toca la base de datos</td>
+</tr>
+<tr>
+<td><code>GET /ready</code></td>
+<td>Comprobación de disponibilidad; consulta PostgreSQL y responde 503 si falla</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/info</code></td>
+<td>Metadatos del servicio (nombre, versión, entorno y ruta de la documentación)</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/login</code></td>
+<td>Emisión inicial del pase de sesión</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/setup</code></td>
+<td>Primer inicio del usuario; el P00 lo crea antes el supervisor</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/unlock</code></td>
+<td>Recuperación de una cuenta bloqueada con 3 de 12 palabras</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/reset-password</code></td>
+<td>Restablecimiento de la clave con 3 de 12 palabras</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="rutas-sin-jwt-pero-con-secreto-propio"><span class="sec-num">6.2</span>Rutas sin JWT pero con secreto propio</h3>
+<p>Dos operaciones son públicas desde la perspectiva del esquema publicado, porque no dependen de la credencial
+de sesión, pero <strong>se protegen con un secreto de canal</strong>:</p>
+<ul>
+<li><code>POST /api/v1/telegram/webhook</code>: valida la cabecera <code>X-Telegram-Bot-Api-Secret-Token</code> contra
+<code>telegram.webhook_secret</code>; si la clave está vacía, no se exige.</li>
+<li><code>POST /api/v1/mcp</code>: valida la cabecera <code>X-MCP-Key</code> contra <code>mcp.api_key</code>; si la clave está vacía, no se
+exige.</li>
+</ul>
+<p>Los nombres de esos secretos y parámetros están documentados en la tabla de configuración. <strong>No se
+reproducen valores ni credenciales en este manual.</strong></p>
+<h3 id="resto-de-la-superficie"><span class="sec-num">6.3</span>Resto de la superficie</h3>
+<p>Descontadas las <strong>siete rutas públicas</strong> por diseño y las <strong>dos rutas con secreto propio</strong>, las <strong>94
+operaciones restantes</strong> exigen el pase de sesión Bearer: o bien con la dependencia de usuario autenticado
+(lectura) o con la validación de rol ADMIN o SUPERVISOR (escritura). Una prueba de contrato enumera la lista
+exacta de rutas públicas y comprueba que el resto declare seguridad en el esquema publicado.</p>
+<h3 id="codigos-adicionales-de-infraestructura"><span class="sec-num">6.4</span>Códigos adicionales de infraestructura</h3>
+<ul>
+<li><strong>503</strong>: en <code>/ready</code> cuando la base de datos no responde, y en <code>/api/v1/resumen</code> en la misma situación.</li>
+<li><strong>500</strong>: cualquier excepción no controlada; el middleware la registra con su identificador de petición y
+la vuelve a lanzar.</li>
+<li><strong>Errores JSON-RPC dentro de HTTP 200</strong> en <code>/api/v1/mcp</code> (códigos -32001, -32602 y -32601), por el formato
+propio del protocolo.</li>
+</ul>
+<blockquote>
+<p><strong>Nota final sobre el entorno real:</strong> el servicio <strong>Cloud Run <code>ggto-web</code> es PÚBLICO</strong> y contiene <strong>datos
+personales reales (PII)</strong>. Debe <strong>restringirse el acceso</strong>. Además, existe un <strong>riesgo aceptado (D-26)</strong>:
+<strong>no hay copias de seguridad ni recuperación a un punto en el tiempo</strong> hasta migrar de instancia. Ambos
+puntos son de operación y deben resolverse antes de exponer el sistema.</p>
+</blockquote>
+
+<nav class="pie-nav"><a class="izq" href="../03-Implementacion/08-alertas-telegram-mcp.html">← Manual anterior: Manual técnico — Alertas, Telegram y MCP (GGTO, Ciclo 9)</a><a href="../index.html">Índice general</a><a class="der" href="../04-Despliegue/01-entornos-y-variables.html">Manual siguiente →: Manual de Entornos y Variables — GGTO (CANTV, Central Francisco S…</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Implementación</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Implementación · 09-api-endpoints", "pieIzq": "API de GGTO — Inventario de Endpoints", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "API de GGTO — Inventario de Endpoints"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

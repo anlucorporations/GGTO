@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual técnico — Ingesta del archivo diario de averías (CSV) — Manual GGTO (CANTV)</title>
+<meta name="author" content="GGTO · CANTV">
+<meta name="description" content="Este manual explica, con palabras sencillas, cómo GGTO recibe el archivo diario de averías que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se queda solo con los casos de la c">
+<meta property="og:image" content="../imagenes/transformacion-columnas.png">
+<style>
+/* ==================================================================
+   GGTO · CANTV — Manuales literales (versión HTML y PDF)
+   Paleta, tipografía y componentes tomados de la web del proyecto:
+   app/web/src/styles.css
+   ================================================================== */
+
+:root {
+  --azul: #0b4f9c;
+  --azul-oscuro: #08396f;
+  --azul-claro: #e8f0fa;
+  --gris-fondo: #f4f6f9;
+  --gris-borde: #d7dde6;
+  --gris-texto: #4a5568;
+  --texto: #1f2933;
+  --verde: #1f7a4d;
+  --verde-claro: #e6f5ec;
+  --rojo: #b3261e;
+  --rojo-claro: #fdecea;
+  --ambar: #8a6100;
+  --ambar-claro: #fff4d6;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fuente: 'Segoe UI', 'Helvetica Neue', Arial, 'DejaVu Sans', sans-serif;
+  --mono: 'Consolas', 'Menlo', 'DejaVu Sans Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+  background: var(--gris-fondo);
+}
+
+a { color: var(--azul); }
+
+/* ==================================================================
+   1. Barra superior (solo pantalla)
+   ================================================================== */
+
+.doc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 20px;
+  background: var(--azul);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.doc-topbar .marca {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 19px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.doc-topbar .marca b { font-weight: 700; }
+.doc-topbar .marca span { opacity: 0.85; font-weight: 400; }
+
+.doc-topbar .topbar-sep { flex: 1 1 auto; }
+
+.doc-topbar .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.doc-topbar a.boton {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.doc-topbar a.boton:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ==================================================================
+   2. Estructura en pantalla
+   ================================================================== */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.doc-nav {
+  position: sticky;
+  top: 74px;
+  flex: 0 0 320px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+}
+
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 34px 44px 46px;
+}
+
+.doc-pie {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  color: var(--gris-texto);
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 14px;
+}
+
+.doc-pie .pie-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ==================================================================
+   3. Índice (TOC)
+   ================================================================== */
+
+.toc-titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gris-texto);
+}
+
+.toc-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toc-lista ul {
+  list-style: none;
+  margin: 2px 0 2px 14px;
+  padding: 0;
+}
+
+.toc-lista li { margin: 0 0 3px; }
+
+.toc-lista a {
+  color: var(--texto);
+  text-decoration: none;
+  display: inline;
+}
+
+.toc-lista a:hover { color: var(--azul); text-decoration: underline; }
+
+.toc-lista .n2 > a { font-weight: 600; }
+.toc-lista ul a { color: var(--gris-texto); }
+
+.toc-lista .pag { display: none; }
+
+/* ==================================================================
+   4. Portada (pantalla)
+   ================================================================== */
+
+.portada {
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 0 0 34px;
+  background: #fff;
+}
+
+.portada-franja {
+  height: 10px;
+  background: linear-gradient(90deg, var(--azul) 0%, var(--azul-oscuro) 55%, #0e7490 100%);
+}
+
+.portada-cuerpo { padding: 30px 34px 26px; }
+
+.portada-marca {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--azul);
+}
+
+.portada-marca span { font-weight: 400; color: var(--gris-texto); }
+
+.portada-sistema {
+  margin: 4px 0 22px;
+  color: var(--gris-texto);
+  font-size: 13.5px;
+  max-width: 46em;
+}
+
+.portada-etiqueta {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.portada-titulo {
+  margin: 0 0 14px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--azul-oscuro);
+}
+
+.portada-resumen {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  color: var(--texto);
+  max-width: 58em;
+}
+
+.portada-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--gris-borde);
+}
+
+.portada-meta div { min-width: 0; }
+
+.portada-meta dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.portada-meta dd { margin: 2px 0 0; font-size: 13.5px; }
+
+.portada-pie {
+  padding: 12px 34px 16px;
+  background: var(--gris-fondo);
+  border-top: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  justify-content: space-between;
+}
+
+/* ==================================================================
+   5. Contenido (compartido pantalla / papel)
+   ================================================================== */
+
+.contenido > *:first-child { margin-top: 0; }
+
+.contenido h1 {
+  font-size: 1.7em;
+  margin: 0 0 0.5em;
+  color: var(--azul-oscuro);
+}
+
+.contenido h2,
+.contenido h3,
+.contenido h4 { scroll-margin-top: 88px; }
+
+.contenido h2 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.55em;
+  padding-bottom: 0.28em;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.contenido h3 {
+  font-size: 1.13em;
+  margin: 1.5em 0 0.45em;
+  color: var(--azul);
+}
+
+.contenido h4 {
+  font-size: 1em;
+  margin: 1.25em 0 0.35em;
+  color: var(--texto);
+}
+
+.contenido p { margin: 0 0 0.85em; }
+
+.contenido ul,
+.contenido ol { margin: 0 0 0.9em; padding-left: 1.5em; }
+
+.contenido li { margin: 0 0 0.3em; }
+
+.contenido li > ul,
+.contenido li > ol { margin-top: 0.3em; margin-bottom: 0.3em; }
+
+.contenido strong { font-weight: 700; }
+
+.contenido hr {
+  border: none;
+  border-top: 1px solid var(--gris-borde);
+  margin: 1.6em 0;
+}
+
+.sec-num {
+  display: inline-block;
+  min-width: 1.75em;
+  margin-right: 0.4em;
+  color: var(--azul);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.contenido h4 .sec-num { color: var(--gris-texto); font-weight: 600; }
+
+/* --- Código --- */
+
+.contenido code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  background: var(--azul-claro);
+  border: 1px solid #d3e0f2;
+  border-radius: 4px;
+  padding: 0.08em 0.34em;
+  word-break: break-word;
+}
+
+.contenido pre {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  line-height: 1.42;
+  background: #f7f9fc;
+  border: 1px solid var(--gris-borde);
+  border-left: 3px solid var(--azul);
+  border-radius: 6px;
+  padding: 10px 13px;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.contenido pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1em;
+  white-space: pre;
+}
+
+/* --- Tablas --- */
+
+.contenido table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88em;
+  margin: 0 0 1em;
+  background: #fff;
+}
+
+.contenido thead th {
+  text-align: left;
+  background: #f7f9fc;
+  color: var(--gris-texto);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+
+.contenido tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: top;
+}
+
+.contenido tbody tr:last-child td { border-bottom: none; }
+
+.tabla-scroll { overflow-x: auto; margin: 0 0 1em; }
+.tabla-scroll table { margin: 0; }
+
+/* --- Avisos y citas --- */
+
+.contenido blockquote {
+  margin: 0 0 1.1em;
+  padding: 12px 16px;
+  background: var(--azul-claro);
+  border: 1px solid #cfe0f5;
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
+  color: var(--texto);
+}
+
+.contenido blockquote > *:last-child { margin-bottom: 0; }
+.contenido blockquote p { margin-bottom: 0.5em; }
+
+.nota {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1em;
+}
+
+.nota-ambar { background: var(--ambar-claro); border-color: #ecd48c; color: var(--ambar); }
+.nota-verde { background: var(--verde-claro); border-color: #b3ddc5; color: var(--verde); }
+.nota-rojo { background: var(--rojo-claro); border-color: #e8b4af; color: var(--rojo); }
+
+.chip {
+  display: inline-block;
+  background: var(--azul-claro);
+  border: 1px solid var(--gris-borde);
+  color: var(--azul-oscuro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ico { display: inline-flex; vertical-align: -0.14em; }
+.ico svg { display: block; }
+
+/* --- Figuras --- */
+
+.contenido figure {
+  margin: 1.2em 0 1.4em;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  text-align: center;
+  break-inside: avoid;
+}
+
+.contenido figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.contenido figcaption {
+  margin-top: 10px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  text-align: center;
+}
+
+.contenido figure details {
+  margin-top: 10px;
+  text-align: left;
+  border-top: 1px dashed var(--gris-borde);
+  padding-top: 8px;
+}
+
+.contenido figure details summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.contenido figure details pre { margin: 8px 0 0; }
+
+.grafico-pendiente {
+  margin: 1.2em 0 1.4em;
+  border: 1px dashed var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 12px 14px;
+  background: #fbfcfe;
+}
+
+.grafico-pendiente .gp-titulo {
+  margin: 0 0 8px;
+  font-size: 0.86em;
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+.grafico-pendiente pre { margin: 0; }
+
+/* --- Enlaces de navegación entre manuales --- */
+
+.pie-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 2.4em;
+  padding-top: 14px;
+  border-top: 1px solid var(--gris-borde);
+  font-size: 0.9em;
+}
+
+.pie-nav a { text-decoration: none; font-weight: 600; }
+.pie-nav .der { text-align: right; }
+
+/* ==================================================================
+   6. Modo papel (paginación para PDF)
+   ================================================================== */
+
+@page { size: A4; margin: 0; }
+
+.pdf-mode {
+  background: #fff;
+}
+
+.pdf-mode body {
+  margin: 0;
+  background: #fff;
+  font-size: 10pt;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.pdf-mode .doc-topbar,
+.pdf-mode .doc-layout,
+.pdf-mode .doc-pie,
+.pdf-mode .doc-nav { display: none !important; }
+
+.print-root { display: block; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  padding: 13mm 15mm 11mm;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--texto);
+}
+
+.page-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 7.6pt;
+  letter-spacing: 0.3px;
+  color: var(--gris-texto);
+  border-bottom: 1px solid var(--gris-borde);
+  padding-bottom: 3mm;
+  margin-bottom: 4mm;
+}
+
+.page-header .ph-izq { font-weight: 700; color: var(--azul); }
+.page-header .ph-der { text-transform: uppercase; }
+
+.page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 7.4pt;
+  color: var(--gris-texto);
+  border-top: 1px solid var(--gris-borde);
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+
+.page-footer .pf-centro { text-align: center; }
+.page-footer .pf-der { white-space: nowrap; }
+.page-footer .pf-der b { color: var(--azul-oscuro); }
+
+/* Portada en papel */
+
+.page-portada { padding: 0; }
+
+.page-portada .portada-franja {
+  height: 22mm;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--azul-oscuro) 52%, #0e7490 100%);
+}
+
+.page-portada .portada-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16mm 20mm 6mm;
+}
+
+.page-portada .portada-marca { font-size: 30pt; }
+.page-portada .portada-sistema { font-size: 10pt; margin: 2mm 0 14mm; max-width: 34em; }
+.page-portada .portada-etiqueta { font-size: 8pt; margin-bottom: 6mm; }
+.page-portada .portada-titulo { font-size: 26pt; margin: 0 0 6mm; }
+.page-portada .portada-resumen { font-size: 10.5pt; margin: 0 0 10mm; max-width: 40em; }
+.page-portada .portada-meta { gap: 5mm 8mm; padding-top: 6mm; }
+.page-portada .portada-meta dt { font-size: 7.5pt; }
+.page-portada .portada-meta dd { font-size: 9.5pt; }
+
+.page-portada .portada-pie {
+  flex: 0 0 auto;
+  padding: 5mm 20mm 7mm;
+  font-size: 8pt;
+}
+
+.page-portada.sin-marca .portada-marca { visibility: hidden; }
+
+/* Índice en papel */
+
+.toc-titulo-papel {
+  font-size: 14pt;
+  margin: 0 0 5mm;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--azul);
+  color: var(--azul-oscuro);
+}
+
+.page-toc .toc-plano {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 9.4pt;
+  line-height: 1.35;
+}
+
+.page-toc .toc-plano li {
+  margin: 0 0 1.5mm;
+  overflow: hidden;
+  border-bottom: 1px dotted #e3e8ef;
+  padding-bottom: 0.8mm;
+}
+
+.page-toc .toc-plano .pag {
+  float: right;
+  color: var(--azul-oscuro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: #fff;
+  padding-left: 2mm;
+}
+
+.page-toc .toc-plano a { text-decoration: none; color: var(--texto); }
+.page-toc .toc-plano .toc-n3,
+.page-toc .toc-plano li.toc-n3 { padding-left: 7mm; color: var(--gris-texto); font-weight: 400; }
+.page-toc .toc-plano li.toc-n2 { font-weight: 600; }
+
+/* Contenido en papel */
+
+.page .contenido h2 { font-size: 15pt; margin: 0 0 3.4mm; }
+.page .contenido h3 { font-size: 11.6pt; margin: 5mm 0 2mm; }
+.page .contenido h4 { font-size: 10.2pt; margin: 4mm 0 1.6mm; }
+.page .contenido p { margin: 0 0 2.4mm; }
+.page .contenido ul,
+.page .contenido ol { margin: 0 0 2.6mm; padding-left: 1.4em; }
+.page .contenido li { margin: 0 0 1mm; }
+.page .contenido table { font-size: 8.2pt; margin-bottom: 3mm; }
+.page .contenido thead th { padding: 3px 6px; font-size: 7.4pt; }
+.page .contenido tbody td { padding: 3px 6px; }
+.page .contenido pre { font-size: 7.8pt; padding: 7px 9px; margin-bottom: 3mm; }
+.page .contenido blockquote { padding: 3mm 4mm; margin-bottom: 3.4mm; }
+.page .contenido figure { margin: 3mm 0 4mm; padding: 3mm; }
+.page .contenido figcaption { font-size: 8pt; margin-top: 2mm; }
+.page .contenido figure img { max-height: 108mm; }
+.page .contenido .tabla-scroll { overflow: visible; margin-bottom: 3mm; }
+.page .contenido .tabla-scroll table { margin-bottom: 0; }
+.page .contenido figure details { display: none; }
+.page .contenido pre { overflow: visible; }
+.page .contenido img { break-inside: avoid; }
+
+.page .contenido table.continuacion thead th::after { content: ""; }
+
+.tabla-parte {
+  margin: 0 0 1mm;
+  font-size: 7.6pt;
+  color: var(--gris-texto);
+  font-style: italic;
+}
+
+/* ==================================================================
+   7. Impresión directa del HTML (sin paginador): reserva
+   ================================================================== */
+
+@media print {
+  html:not(.pdf-mode) .doc-topbar,
+  html:not(.pdf-mode) .doc-nav,
+  html:not(.pdf-mode) .doc-pie { display: none !important; }
+
+  html:not(.pdf-mode) .doc-layout { display: block; padding: 0; max-width: none; }
+  html:not(.pdf-mode) .doc-main {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  html:not(.pdf-mode) .portada { border: none; }
+}
+
+/* ==================================================================
+   8. Pantallas estrechas
+   ================================================================== */
+
+@media (max-width: 1020px) {
+  .doc-layout { display: block; padding: 16px 12px 30px; }
+  .doc-nav { position: static; width: auto; max-height: none; margin-bottom: 18px; }
+  .doc-main { padding: 22px 18px 30px; }
+  .portada-cuerpo { padding: 22px 20px; }
+  .portada-titulo { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+<header class="doc-topbar">
+  <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
+  <span class="chip">Implementación</span>
+  <span class="topbar-sep"></span>
+  <a class="boton" href="../pdf/03-Implementacion/03-ingesta-csv.pdf">Descargar PDF</a>
+  <a class="boton" href="../index.html">Índice general</a>
+</header>
+
+<div class="doc-layout">
+  <nav class="doc-nav" aria-label="Índice del manual">
+    <p class="toc-titulo">Índice del manual</p>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41" data-target="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41"><span class="tn">2</span> Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41)</a><span class="pag"></span><ul><li class="n3"><a href="#roles-y-permisos-del-modulo" data-target="roles-y-permisos-del-modulo"><span class="tn">2.1</span> Roles y permisos del módulo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#contrato-del-archivo-origen" data-target="contrato-del-archivo-origen"><span class="tn">3</span> Contrato del archivo origen</a><span class="pag"></span><ul><li class="n3"><a href="#nombre-y-periodicidad" data-target="nombre-y-periodicidad"><span class="tn">3.1</span> Nombre y periodicidad</a><span class="pag"></span></li><li class="n3"><a href="#delimitador" data-target="delimitador"><span class="tn">3.2</span> Delimitador <code>;</code></a><span class="pag"></span></li><li class="n3"><a href="#codificacion-iso-8859-1-utf-8" data-target="codificacion-iso-8859-1-utf-8"><span class="tn">3.3</span> Codificación ISO-8859-1 → UTF-8</a><span class="pag"></span></li><li class="n3"><a href="#80-columnas-por-posicion-49-campos-destino" data-target="80-columnas-por-posicion-49-campos-destino"><span class="tn">3.4</span> 80 columnas por posición → 49 campos destino</a><span class="pag"></span><ul><li class="n4"><a href="#tipos-de-conversion" data-target="tipos-de-conversion"><span class="tn">3.4.1</span> Tipos de conversión</a><span class="pag"></span></li><li class="n4"><a href="#aritmetica-del-mapeo" data-target="aritmetica-del-mapeo"><span class="tn">3.4.2</span> Aritmética del mapeo</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#21-columnas-descartadas" data-target="21-columnas-descartadas"><span class="tn">3.5</span> 21 columnas descartadas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#parser" data-target="parser"><span class="tn">4</span> Parser</a><span class="pag"></span><ul><li class="n3"><a href="#decodificacion-estricta-nunca-errors-ignore" data-target="decodificacion-estricta-nunca-errors-ignore"><span class="tn">4.1</span> Decodificación estricta (nunca <code>errors='ignore'</code>)</a><span class="pag"></span></li><li class="n3"><a href="#fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m" data-target="fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m"><span class="tn">4.2</span> Fechas <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code></a><span class="pag"></span></li><li class="n3"><a href="#normalizacion-de-acentos-y-recorte-defensivo" data-target="normalizacion-de-acentos-y-recorte-defensivo"><span class="tn">4.3</span> Normalización de acentos y recorte defensivo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#flujo-de-carga" data-target="flujo-de-carga"><span class="tn">5</span> Flujo de carga</a><span class="pag"></span><ul><li class="n3"><a href="#preview" data-target="preview"><span class="tn">5.1</span> Preview</a><span class="pag"></span></li><li class="n3"><a href="#carga-y-creacion-de-ingesta-lote" data-target="carga-y-creacion-de-ingesta-lote"><span class="tn">5.2</span> Carga y creación de <code>ingesta_lote</code></a><span class="pag"></span></li><li class="n3"><a href="#filtro-por-central" data-target="filtro-por-central"><span class="tn">5.3</span> Filtro por central</a><span class="pag"></span></li><li class="n3"><a href="#deduplicacion-por-id-averia" data-target="deduplicacion-por-id-averia"><span class="tn">5.4</span> Deduplicación por <code>id_averia</code></a><span class="pag"></span></li><li class="n3"><a href="#sectorizacion" data-target="sectorizacion"><span class="tn">5.5</span> Sectorización</a><span class="pag"></span></li><li class="n3"><a href="#criterio-de-cuadrilla-0" data-target="criterio-de-cuadrilla-0"><span class="tn">5.6</span> Criterio de cuadrilla 0</a><span class="pag"></span></li><li class="n3"><a href="#deteccion-de-fallas-tras-la-ingesta" data-target="deteccion-de-fallas-tras-la-ingesta"><span class="tn">5.7</span> Detección de fallas tras la ingesta</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints" data-target="endpoints"><span class="tn">6</span> Endpoints</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-ingesta-preview" data-target="post-api-v1-ingesta-preview"><span class="tn">6.1</span> <code>POST /api/v1/ingesta/preview</code></a><span class="pag"></span><ul><li class="n4"><a href="#contrato-de-la-respuesta" data-target="contrato-de-la-respuesta"><span class="tn">6.1.1</span> Contrato de la respuesta</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#post-api-v1-ingesta" data-target="post-api-v1-ingesta"><span class="tn">6.2</span> <code>POST /api/v1/ingesta</code></a><span class="pag"></span><ul><li class="n4"><a href="#errores-esperados" data-target="errores-esperados"><span class="tn">6.2.1</span> Errores esperados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-ingesta-lotes" data-target="get-api-v1-ingesta-lotes"><span class="tn">6.3</span> <code>GET /api/v1/ingesta/lotes</code></a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-ingesta-lotes-id-lote" data-target="get-api-v1-ingesta-lotes-id-lote"><span class="tn">6.4</span> <code>GET /api/v1/ingesta/lotes/{id_lote}</code></a><span class="pag"></span><ul><li class="n4"><a href="#esquema-de-salida" data-target="esquema-de-salida"><span class="tn">6.4.1</span> Esquema de salida</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#esquemas-y-modelo-ingesta-lote" data-target="esquemas-y-modelo-ingesta-lote"><span class="tn">7</span> Esquemas y modelo <code>ingesta_lote</code></a><span class="pag"></span><ul><li class="n3"><a href="#esquemas-pydantic-app-schemas-ingesta-py" data-target="esquemas-pydantic-app-schemas-ingesta-py"><span class="tn">7.1</span> Esquemas Pydantic (<code>app/schemas/ingesta.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-sqlalchemy-y-ddl" data-target="modelo-sqlalchemy-y-ddl"><span class="tn">7.2</span> Modelo SQLAlchemy y DDL</a><span class="pag"></span></li><li class="n3"><a href="#correspondencia-entre-esquema-y-tabla" data-target="correspondencia-entre-esquema-y-tabla"><span class="tn">7.3</span> Correspondencia entre esquema y tabla</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-ingesta" data-target="pagina-web-ingesta"><span class="tn">8</span> Página web INGESTA</a><span class="pag"></span><ul><li class="n3"><a href="#estructura-y-permisos" data-target="estructura-y-permisos"><span class="tn">8.1</span> Estructura y permisos</a><span class="pag"></span></li><li class="n3"><a href="#simulacion-y-carga" data-target="simulacion-y-carga"><span class="tn">8.2</span> Simulación y carga</a><span class="pag"></span></li><li class="n3"><a href="#resumen-avisos-y-ejemplos" data-target="resumen-avisos-y-ejemplos"><span class="tn">8.3</span> Resumen, avisos y ejemplos</a><span class="pag"></span></li><li class="n3"><a href="#historial-y-detalle-de-lotes" data-target="historial-y-detalle-de-lotes"><span class="tn">8.4</span> Historial y detalle de lotes</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#datos-reales-cargados-en-produccion-42-casos-d-54" data-target="datos-reales-cargados-en-produccion-42-casos-d-54"><span class="tn">9</span> Datos reales cargados en producción (42 casos, D-54)</a><span class="pag"></span><ul><li class="n3"><a href="#hecho-verificado" data-target="hecho-verificado"><span class="tn">9.1</span> Hecho verificado</a><span class="pag"></span></li><li class="n3"><a href="#implicaciones-de-seguridad-y-privacidad" data-target="implicaciones-de-seguridad-y-privacidad"><span class="tn">9.2</span> Implicaciones de seguridad y privacidad</a><span class="pag"></span></li><li class="n3"><a href="#recalculo-posterior" data-target="recalculo-posterior"><span class="tn">9.3</span> Recalculo posterior</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">10</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#test-ingesta-parser-py-12-pruebas" data-target="test-ingesta-parser-py-12-pruebas"><span class="tn">10.1</span> <code>test_ingesta_parser.py</code> (12 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#test-ingesta-api-py-6-pruebas" data-target="test-ingesta-api-py-6-pruebas"><span class="tn">10.2</span> <code>test_ingesta_api.py</code> (6 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#trazabilidad" data-target="trazabilidad"><span class="tn">10.3</span> Trazabilidad</a><span class="pag"></span></li></ul></li></ol>
+  </nav>
+  <main class="doc-main">
+    <article class="contenido" id="contenido">
+      <section class="portada" id="portada">
+        <div class="portada-franja"></div>
+        <div class="portada-cuerpo">
+          <div class="portada-marca">GGTO <span>· CANTV</span></div>
+          <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
+          <span class="portada-etiqueta">Manual literal · Implementación</span>
+          <h1 class="portada-titulo">Manual técnico — Ingesta del archivo diario de averías (CSV)</h1>
+          <p class="portada-resumen">Este manual explica, con palabras sencillas, cómo GGTO recibe el archivo diario de averías que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se queda solo con los casos de la central configurada, cómo evita repetidos y cómo crea los casos nuevos. Está dirigido a técnicos de campo, supervisores y administradores de la Central Francisco Salias (Área 4). La aplicación móvil todavía no está desarrollada (el Ciclo 8 quedó pospuesto): la carga se hace desde la interfaz web. Cuando algo no pudo comprobarse, se indica con la frase […]</p>
+          <dl class="portada-meta">
+            <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
+            <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/03-ingesta-csv.md</dd></div>
+            <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+          </dl>
+        </div>
+        <div class="portada-pie">
+          <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+          <span>Edición HTML y PDF generada el 28/09/2026</span>
+        </div>
+      </section>
+<blockquote>
+<p>Este manual explica, con palabras sencillas, cómo GGTO recibe el <strong>archivo diario de
+averías</strong> que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se
+queda solo con los casos de la central configurada, cómo evita repetidos y cómo crea los
+casos nuevos. Está dirigido a técnicos de campo, supervisores y administradores de la
+Central Francisco Salias (Área 4). La aplicación móvil todavía no está desarrollada (el
+Ciclo 8 quedó pospuesto): la carga se hace desde la interfaz web. Cuando algo no pudo
+comprobarse, se indica con la frase <strong>«pendiente de confirmar»</strong>.</p>
+</blockquote>
+<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<ol>
+<li>Abra la página <strong>INGESTA</strong> en GGTO. Necesita rol <strong>Administrador</strong> o <strong>Supervisor</strong>: el
+rol Técnico solo puede consultar el historial.</li>
+<li>Pulse «Seleccionar archivo» y elija el CSV del día. Si quiere, escriba el identificador de
+la central; si lo deja vacío, se usa la central configurada.</li>
+<li>Pulse <strong>«Simular (preview)»</strong>. Esa opción <strong>no guarda nada</strong>: solo muestra cuántas filas
+leyó, cuántas son de la central, cuántos casos son nuevos y cuántos repetidos.</li>
+<li>Revise el resumen y los avisos. Si todo está bien, pulse <strong>«Cargar archivo»</strong> y confirme.
+El sistema crea los casos nuevos y deja un registro del lote en el historial.</li>
+<li>Repita la carga con el mismo archivo no duplica nada: los casos ya existentes se cuentan
+como duplicados.</li>
+</ol>
+<h2 id="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41"><span class="sec-num">2</span>Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41)</h2>
+<p>El módulo INGESTA recibe el archivo diario de averías GPON del sistema origen de CANTV, lo
+depura, filtra los casos de la central configurada, evita duplicados y crea los casos nuevos.
+Es la puerta de entrada principal del universo de casos de la plataforma.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Valor verificado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requisito de carga del archivo</td>
+<td>RF-01</td>
+</tr>
+<tr>
+<td>Requisito de perfiles y accesos (contexto)</td>
+<td>RF-02</td>
+</tr>
+<tr>
+<td>Procesar solo los casos de la central</td>
+<td>RF-21</td>
+</tr>
+<tr>
+<td>Insertar solo casos nuevos</td>
+<td>RF-22</td>
+</tr>
+<tr>
+<td>Sectorizar por dirección</td>
+<td>RF-23</td>
+</tr>
+<tr>
+<td>Criterio de cuadrilla 0</td>
+<td>RF-25</td>
+</tr>
+<tr>
+<td>Requisito técnico del analizador</td>
+<td>RT-05</td>
+</tr>
+<tr>
+<td>Mapeo por posición de columna</td>
+<td>Decisión D-04</td>
+</tr>
+<tr>
+<td>Depuración del CSV (21 columnas)</td>
+<td>Decisión D-27</td>
+</tr>
+<tr>
+<td>Contrato de interfaz con el origen</td>
+<td>Decisión D-41</td>
+</tr>
+</tbody>
+</table></div>
+<p>El módulo usa el prefijo <code>/api/v1/ingesta</code> y la etiqueta «ingesta». Su descripción interna
+enumera los requisitos que cubre: «RF-01, RF-21, RF-22, RF-23, RF-25, RF-29».</p>
+<p>La lógica de análisis y de escritura está separada de la capa web:</p>
+<ul>
+<li>El <strong>analizador</strong> (parser) y el filtro por central viven en un servicio aparte.</li>
+<li>El router del módulo se encarga de leer el archivo subido, armar el resumen, crear el lote
+e insertar los casos.</li>
+<li>Otro servicio resuelve el <strong>sector</strong> a partir de la dirección.</li>
+<li>Otro servicio marca los casos que van al <strong>supervisor</strong> (cuadrilla 0).</li>
+<li>Otro servicio detecta <strong>fallas masivas</strong> después de la carga.</li>
+</ul>
+<h3 id="roles-y-permisos-del-modulo"><span class="sec-num">2.1</span>Roles y permisos del módulo</h3>
+<p>La escritura (simular y cargar) está restringida a <code>ADMIN</code> y <code>SUPERVISOR</code>. La consulta del
+historial de lotes usa la sesión válida, por lo que cualquier usuario autenticado puede
+leerla. El rol <code>TECNICO</code> queda en modo solo lectura para este módulo.</p>
+<h2 id="contrato-del-archivo-origen"><span class="sec-num">3</span>Contrato del archivo origen</h2>
+<p>El contrato formal está en <code>RepoTecnico/interfaz_csv_origen.md</code> y su estado es <strong>borrador
+pendiente de firma por CANTV</strong> (decisión D-41): «Estado: <strong>Borrador para validación y firma
+de CANTV</strong>».</p>
+<h3 id="nombre-y-periodicidad"><span class="sec-num">3.1</span>Nombre y periodicidad</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nombre</td>
+<td><code>detalle_averias_gpon_&lt;fecha&gt;.csv</code> (la fecha cambia cada día)</td>
+</tr>
+<tr>
+<td>Periodicidad</td>
+<td>Diaria, en días hábiles</td>
+</tr>
+<tr>
+<td>Hora de entrega</td>
+<td>Antes de las 08:00, hora de Venezuela</td>
+</tr>
+<tr>
+<td>Fin de línea</td>
+<td><code>CRLF</code></td>
+</tr>
+<tr>
+<td>Encabezado</td>
+<td>Primera fila, obligatoria</td>
+</tr>
+<tr>
+<td>Volumen de referencia</td>
+<td>Hasta 20 000 filas por día (meta provisional D-33)</td>
+</tr>
+</tbody>
+</table></div>
+<p>El nombre del archivo es la referencia de trazabilidad de cada carga: se guarda en el lote con
+recorte a 255 caracteres. Si el navegador no envía nombre, se usa el texto <code>sin-nombre</code>.</p>
+<p>El canal de entrega definitivo (carpeta o depósito dedicado, o SFTP corporativo) está
+<strong>«por definir con CANTV»</strong>, es decir, <strong>pendiente de confirmar</strong>. Guardar el archivo en Git
+está <strong>prohibido</strong> por contener datos personales, y la lista de archivos excluidos de Git
+ignora los que se llaman <code>detalle_averias_gpon*.csv</code>.</p>
+<h3 id="delimitador"><span class="sec-num">3.2</span>Delimitador <code>;</code></h3>
+<p>El delimitador es el punto y coma. En el programa se declara como constante (<code>DELIMITADOR</code>)
+y se aplica al lector de CSV de la biblioteca estándar, tanto al leer el encabezado como al
+leer las filas. El contrato lo fija igual.</p>
+<h3 id="codificacion-iso-8859-1-utf-8"><span class="sec-num">3.3</span>Codificación ISO-8859-1 → UTF-8</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Regla</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Codificación del origen</td>
+<td>ISO-8859-1 (también llamado latin-1 o cp1252), <strong>no</strong> UTF-8</td>
+</tr>
+<tr>
+<td>Constante del analizador</td>
+<td><code>CODIFICACION = &quot;iso-8859-1&quot;</code></td>
+</tr>
+<tr>
+<td>Texto con acentos</td>
+<td>Puede traer <code>ñ</code> y tildes; hay que decodificar ISO-8859-1 antes de comparar</td>
+</tr>
+</tbody>
+</table></div>
+<p>La plataforma <strong>no transforma</strong> el archivo de origen: lo decodifica de ISO-8859-1 a texto
+Unicode en memoria y lo guarda en columnas de texto de PostgreSQL. La codificación exacta del
+servidor de base de datos (<code>server_encoding</code>) queda <strong>pendiente de confirmar</strong>. En todo caso,
+el texto llega ya decodificado a la base y las comparaciones internas se hacen sobre texto
+normalizado, no sobre bytes.</p>
+<h3 id="80-columnas-por-posicion-49-campos-destino"><span class="sec-num">3.4</span>80 columnas por posición → 49 campos destino</h3>
+<p>La plataforma depende de la <strong>posición</strong> de las columnas, no de su nombre, porque el
+encabezado trae rótulos duplicados: <code>informacion</code> aparece dos veces y <code>descripcion</code> tres
+veces. El analizador espera 80 columnas y avisa si el encabezado no tiene ese número.</p>
+<p>El mapeo completo tiene 49 entradas de la forma «campo de destino, posiciones de origen y
+tipo de conversión». Los nombres de los campos de destino forman la lista blanca de columnas
+que se van a insertar.</p>
+<figure id="fig-0"><img src="../imagenes/transformacion-columnas.png" alt="transformacion columnas"><figcaption>Figura 1 · transformacion-columnas.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart LR
+    subgraph Origen[&quot;80 columnas del archivo&quot;]
+        C1[&quot;47 columnas&lt;br/&gt;un campo cada una&quot;]
+        C2[&quot;3 columnas del archivo&lt;br/&gt;se unen en informacion&quot;]
+        C3[&quot;9 columnas del archivo&lt;br/&gt;se unen en ayudantes&quot;]
+        C4[&quot;21 columnas&lt;br/&gt;se descartan&quot;]
+    end
+    C1 --&gt; D[&quot;49 campos destino&lt;br/&gt;en la tabla caso&quot;]
+    C2 --&gt; D
+    C3 --&gt; D
+    C4 --&gt; X[&quot;No se guardan&quot;]</code></pre></details></figure>
+<h4 id="tipos-de-conversion"><span class="sec-num">3.4.1</span>Tipos de conversión</h4>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Comportamiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>str</code> (texto)</td>
+<td>Recorta los espacios; si queda vacío, guarda «sin valor»</td>
+</tr>
+<tr>
+<td><code>fecha</code></td>
+<td>Interpreta <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code> y sus variantes</td>
+</tr>
+<tr>
+<td><code>int</code> (número entero)</td>
+<td>Convierte a número; si falla, guarda «sin valor»</td>
+</tr>
+<tr>
+<td><code>unir</code></td>
+<td>Junta varias columnas con el separador `&quot;</td>
+</tr>
+<tr>
+<td><code>lista</code></td>
+<td>Arma una lista JSON con los valores no vacíos</td>
+</tr>
+</tbody>
+</table></div>
+<p>Solo dos campos son multi-columna:</p>
+<ul>
+<li><strong><code>informacion</code></strong>: unifica las columnas 31, 32 y 52 del archivo.</li>
+<li><strong><code>ayudantes</code></strong>: toma las nueve columnas 66 a 74 del archivo y se guarda en una columna
+JSONB (un formato de datos que la base guarda como objeto).</li>
+</ul>
+<h4 id="aritmetica-del-mapeo"><span class="sec-num">3.4.2</span>Aritmética del mapeo</h4>
+<p>La suma de columnas es coherente con el contrato: 47 campos provienen de una sola columna,
+<code>informacion</code> consume 3 columnas y <code>ayudantes</code> consume 9. Es decir, 47 + 3 + 9 = <strong>59 columnas
+usadas</strong>, y 80 − 59 = <strong>21 columnas descartadas</strong>. La cobertura se verifica además con la
+prueba <code>test_especificacion_cubre_49_campos</code>.</p>
+<h3 id="21-columnas-descartadas"><span class="sec-num">3.5</span>21 columnas descartadas</h3>
+<p>Las columnas que la plataforma ignora están enumeradas en el contrato y ratificadas por la
+decisión D-27:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Columna descartada (posición)</th>
+<th>#</th>
+<th>Columna descartada (posición)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>tipo_reporte</code> (12)</td>
+<td>12</td>
+<td>días transcurridos desde la apertura (48)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>dac</code> (13)</td>
+<td>13</td>
+<td><code>area_resolutoria</code> (49)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>ultimo_usuario</code> (20)</td>
+<td>14</td>
+<td><code>usuario_acciona</code> (53)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>fecha_despacho</code> (25)</td>
+<td>15</td>
+<td><code>fecha_acciona</code> (54)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>ciudad</code> (26)</td>
+<td>16</td>
+<td><code>codigo_causa</code> (56)</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>servicio_off_on</code> (29)</td>
+<td>17</td>
+<td><code>descripcion</code> (57)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>cliente_notificado</code> (30)</td>
+<td>18</td>
+<td><code>Subcodigo_causa</code> (58)</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>fecha_instalacion</code> (35)</td>
+<td>19</td>
+<td><code>descripcion</code> (59)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>ip</code> (37)</td>
+<td>20</td>
+<td><code>con_serv_aba</code> (60)</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>tarjeta</code> (38)</td>
+<td>21</td>
+<td><code>descripcion</code> unificada (52)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>ont_id</code> (42)</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Nota: la columna 52 (<code>descripcion</code>) no se «descarta» en sentido estricto, sino que se
+<strong>unifica</strong> dentro de <code>informacion</code> junto con las columnas 31 y 32. La decisión D-27 también
+dejó de llenar el catálogo <code>causa</code> desde el CSV: ahora ese catálogo se administra desde
+<strong>CONFIGURACIÓN</strong>.</p>
+</blockquote>
+<h2 id="parser"><span class="sec-num">4</span>Parser</h2>
+<p>El analizador (parser) es <strong>puro</strong>: no toca la base de datos. Devuelve las filas ya mapeadas y
+los avisos. Gracias a eso se puede probar por separado y se usa igual en la simulación y en la
+carga real.</p>
+<h3 id="decodificacion-estricta-nunca-errors-ignore"><span class="sec-num">4.1</span>Decodificación estricta (nunca <code>errors='ignore'</code>)</h3>
+<p>La decodificación intenta leer el contenido como ISO-8859-1 y, si encuentra un error, lanza un
+mensaje explícito en lugar de silenciar el problema. El contrato exige ese comportamiento:
+«Codificación inesperada → Falla ruidosa, sin ingesta parcial».</p>
+<p>En la práctica ISO-8859-1 cubre los 256 valores de byte, por lo que ese error casi nunca
+ocurre. Lo importante para el mantenimiento es que <strong>no</strong> se usa la opción de ignorar errores:
+un archivo mal codificado no pierde caracteres en silencio. Antes de procesar, se elimina un
+posible BOM inicial (una marca invisible que algunos programas agregan al principio del
+archivo).</p>
+<h3 id="fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m"><span class="sec-num">4.2</span>Fechas <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code></h3>
+<p>El formato de fecha del origen es <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code>, con zona horaria
+<code>America/Caracas</code> según el contrato. El analizador primero normaliza las variantes de
+meridiano y luego prueba una lista de formatos:</p>
+<ol>
+<li>La normalización de fecha cambia <code>a. m.</code>, <code>p. m.</code>, <code>a.m.</code>, <code>p.m.</code> y sus variantes sin
+punto por <code>AM</code> o <code>PM</code>, colapsa espacios y pasa todo a mayúsculas.</li>
+<li>La interpretación recorre siete formatos: con y sin segundos, con y sin meridiano, solo
+fecha y el formato ISO <code>aaaa-mm-dd</code>.</li>
+<li>Si ninguno coincide, devuelve «sin valor» sin lanzar error.</li>
+</ol>
+<p>Las pruebas verifican <code>17/07/2026 11:38:20 a.m.</code>, <code>10/09/2026 12:00:13 p.m.</code>,
+<code>22/08/2026 10:00:00 a. m.</code>, <code>01/01/2026</code> y <code>2026-01-01 08:00:00</code>, además de los casos vacíos
+o inválidos.</p>
+<blockquote>
+<p>Detalle de implementación: la fecha se interpreta <strong>sin zona horaria</strong>. Las columnas del
+modelo sí aceptan zona horaria, de modo que la interpretación final depende de la zona de la
+sesión de PostgreSQL. La conversión exacta a <code>America/Caracas</code> queda <strong>pendiente de
+confirmar</strong>.</p>
+</blockquote>
+<h3 id="normalizacion-de-acentos-y-recorte-defensivo"><span class="sec-num">4.3</span>Normalización de acentos y recorte defensivo</h3>
+<p>La función de normalización pasa el texto a mayúsculas, aplica normalización Unicode, elimina
+los acentos y colapsa los espacios repetidos. Se usa para comparar el código de central y los
+patrones de sector sin depender de tildes ni mayúsculas. La prueba
+<code>test_normalizar_quita_acentos_y_mayusculas</code> fija el comportamiento esperado.</p>
+<p>El recorte defensivo evita que un valor inesperadamente largo aborte la ingesta completa:</p>
+<ul>
+<li>Hay una tabla de <strong>límites</strong> con la longitud máxima de los campos de texto.</li>
+<li>Al convertir un texto, si supera el límite se recorta y se suma un aviso al contador de
+recortes.</li>
+<li>Los campos de tipo texto largo de PostgreSQL (por ejemplo, la dirección o el último
+comentario) no tienen límite y no se recortan. La prueba <code>test_campos_de_texto_no_se_recortan</code>
+lo verifica.</li>
+</ul>
+<p>El analizador también descarta de forma defensiva:</p>
+<ul>
+<li>Filas completamente vacías.</li>
+<li>Filas cuyo número de celdas no es 80, contadas como malformadas.</li>
+<li>Filas sin <code>id_averia</code>, que no se pueden comparar para evitar duplicados.</li>
+</ul>
+<p>Los avisos resultantes se acumulan en una lista que acompaña al resumen.</p>
+<h2 id="flujo-de-carga"><span class="sec-num">5</span>Flujo de carga</h2>
+<p>El análisis se centraliza en una sola función interna, que devuelve el resumen, las filas
+candidatas, la central, los patrones y la configuración. Las dos operaciones de escritura
+comparten esa función, de modo que la simulación y la carga real aplican exactamente las
+mismas reglas.</p>
+<figure id="fig-1"><img src="../imagenes/flujo-ingesta-csv.png" alt="flujo ingesta csv"><figcaption>Figura 2 · flujo-ingesta-csv.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TD
+    A[&quot;Archivo CSV diario del origen&quot;] --&gt; B[&quot;Simular (preview):&lt;br/&gt;no escribe en la base&quot;]
+    A --&gt; C[&quot;Cargar: sí escribe&quot;]
+    B --&gt; D[&quot;Decodificar de ISO-8859-1&quot;]
+    C --&gt; D
+    D --&gt; E[&quot;Leer 80 columnas por posición&quot;]
+    E --&gt; F[&quot;Filtrar solo la central configurada&quot;]
+    F --&gt; G[&quot;Descartar repetidos dentro del archivo&quot;]
+    G --&gt; H[&quot;Descartar los que ya existen en la base&quot;]
+    H --&gt; I[&quot;Sectorizar cada caso por su dirección&quot;]
+    I --&gt; J[&quot;Marcar el criterio de cuadrilla 0&quot;]
+    J --&gt; K[&quot;Crear los casos nuevos y registrar el lote&quot;]
+    K --&gt; L[&quot;Detectar fallas masivas&quot;]</code></pre></details></figure>
+<h3 id="preview"><span class="sec-num">5.1</span>Preview</h3>
+<p>La operación <code>POST /api/v1/ingesta/preview</code> lee el archivo, ejecuta el análisis y devuelve el
+resumen <strong>sin escribir en la base de datos</strong>. También fija el nombre del archivo en el
+resumen. La prueba <code>test_preview_no_guarda</code> comprueba que no se crea ningún caso y que no hay
+identificador de lote.</p>
+<h3 id="carga-y-creacion-de-ingesta-lote"><span class="sec-num">5.2</span>Carga y creación de <code>ingesta_lote</code></h3>
+<p>La operación <code>POST /api/v1/ingesta</code> responde <code>201 Created</code>. La secuencia es:</p>
+<ol>
+<li>Se analiza el archivo.</li>
+<li>Se crea el <strong>lote</strong> con estado «PROCESANDO» y el P00 del usuario que carga.</li>
+<li>Se pide a la base el identificador del lote antes de insertar los casos.</li>
+<li>Por cada fila candidata se construye un caso con los 49 campos, la central, el lote, el
+sector, la marca de cuadrilla 0, el origen <code>INGESTA_CSV</code> y el P00 de quien carga.</li>
+<li>El lote pasa a estado «OK» y sus avisos se guardan en el detalle de error, unidos por
+<code>&quot;; &quot;</code>.</li>
+<li>Se confirma la transacción.</li>
+</ol>
+<h3 id="filtro-por-central"><span class="sec-num">5.3</span>Filtro por central</h3>
+<p>El filtro conserva solo las filas cuyo código de central coincide con la central objetivo,
+después de normalizar ambos textos. La central se resuelve así: si el formulario no envía
+identificador de central, se usa la clave de configuración <code>ingesta.central_codigo</code> y, si no
+existe, el texto <code>&quot;2324X&quot;</code>. Si la central no existe, se responde <code>404</code> con «Central no
+encontrada o no configurada».</p>
+<p>La muestra de referencia trae 56 filas de tres centrales. El filtro deja 51 de la central
+<code>2324X</code> y descarta 5.</p>
+<h3 id="deduplicacion-por-id-averia"><span class="sec-num">5.4</span>Deduplicación por <code>id_averia</code></h3>
+<p>La <strong>deduplicación</strong> (evitar repetidos) ocurre en dos niveles:</p>
+<ol>
+<li><strong>Dentro del propio archivo:</strong> una lista de vistos descarta las repeticiones de
+<code>id_averia</code> y las cuenta como repetidas del archivo.</li>
+<li><strong>Contra la base de datos:</strong> se consultan los <code>id_averia</code> ya presentes en la tabla de
+casos, en grupos de 1000 para no construir una consulta gigantesca.</li>
+</ol>
+<p>Las filas que no existen en la base son las candidatas. La unicidad de <code>id_averia</code> está
+reforzada en la base con una restricción <code>UNIQUE</code>. La prueba
+<code>test_ingesta_inserta_y_deduplica</code> carga el mismo archivo dos veces: la segunda carga inserta
+0 casos nuevos y reporta 51 duplicados.</p>
+<h3 id="sectorizacion"><span class="sec-num">5.5</span>Sectorización</h3>
+<p>Cada candidata se ubica en un sector comparando su dirección contra los patrones activos de
+los sectores de la central. El algoritmo:</p>
+<ul>
+<li>Ordena los patrones del más largo al más corto, para que gane el más específico.</li>
+<li>Acepta coincidencias de tipo <code>CONTIENE</code> (por defecto), <code>EXACTO</code> y <code>REGEX</code> (una expresión
+regular, es decir, un patrón de búsqueda más flexible).</li>
+<li>Puede aplicar normalización de acentos al patrón y al texto.</li>
+</ul>
+<p>Los patrones provienen solo de sectores activos y patrones activos, ordenados por prioridad y
+nombre. El resultado se guarda en el caso y se cuenta en el resumen como «sectorizados» o
+«sin sector».</p>
+<h3 id="criterio-de-cuadrilla-0"><span class="sec-num">5.6</span>Criterio de cuadrilla 0</h3>
+<p>La función de cuadrilla 0 decide si un caso va al supervisor sin salir a la calle. Combina
+tres fuentes configurables:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Clave de configuración</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>despacho.columnas_evaluar</code></td>
+<td>Columnas de texto que se van a evaluar</td>
+</tr>
+<tr>
+<td><code>despacho.frases_campo</code></td>
+<td>Frases que indican que sí amerita salir a campo</td>
+</tr>
+<tr>
+<td><code>despacho.frases_supervisor</code></td>
+<td>Frases de no atención en casa</td>
+</tr>
+<tr>
+<td><code>despacho.criterio_cuadrilla0</code></td>
+<td>Modo <code>CAMPO</code>, <code>SUPERVISOR</code> o <code>UNION</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>El valor por defecto del programa es <code>UNION</code>, pero la decisión D-59 dejó el parámetro cargado
+como <strong><code>SUPERVISOR</code></strong>: «solo van al supervisor los casos con frases de no atención en casa; el
+resto vuelve a estar disponible para el despacho de calle». El modo efectivo en producción es,
+por tanto, el valor guardado en la tabla de configuración, no el valor por defecto del
+programa.</p>
+<p>La marca se guarda en el caso y además alimenta el icono «Gestión» del listado de casos.</p>
+<h3 id="deteccion-de-fallas-tras-la-ingesta"><span class="sec-num">5.7</span>Detección de fallas tras la ingesta</h3>
+<p>Después de confirmar los casos, la carga ejecuta la detección de fallas. Si se crean fallas
+masivas, se confirma otra vez y se informa el conteo. La detección agrupa casos no cerrados
+por el campo configurado y aplica un umbral y una ventana:</p>
+<ul>
+<li><code>fallas.activo</code> habilita o deshabilita la detección.</li>
+<li><code>fallas.umbral_casos</code> (por defecto 5) y <code>fallas.ventana_horas</code> (por defecto 24).</li>
+<li><code>fallas.campo_concentracion</code> admite <code>olt</code>, <code>fat</code> o <code>id_sector</code>.</li>
+</ul>
+<p>Es <strong>idempotente</strong> por la clave de concentración: ejecutarla de nuevo no duplica la misma
+falla.</p>
+<blockquote>
+<p><strong>Sobre los avisos:</strong> las fallas masivas alimentan el módulo <strong>ALERTAS</strong>. Los canales
+previstos son <strong>Telegram, correo electrónico y MCP</strong> (un canal de integración con otras
+herramientas); WhatsApp no existe en la versión 1. En producción, Telegram y el correo
+<strong>todavía no tienen credenciales cargadas</strong>, así que los envíos quedan <strong>PENDIENTES</strong> en la
+bandeja de salida (<em>outbox</em>). Hoy no se puede afirmar que esas alertas ya notifiquen.</p>
+</blockquote>
+<h2 id="endpoints"><span class="sec-num">6</span>Endpoints</h2>
+<p>Las cuatro operaciones del módulo se declaran bajo el prefijo <code>/api/v1/ingesta</code>.</p>
+<h3 id="post-api-v1-ingesta-preview"><span class="sec-num">6.1</span><code>POST /api/v1/ingesta/preview</code></h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Autenticación</td>
+<td>Token de sesión; rol ADMIN o SUPERVISOR</td>
+</tr>
+<tr>
+<td>Cuerpo</td>
+<td>Formulario con el archivo (obligatorio) y la central (opcional)</td>
+</tr>
+<tr>
+<td>Respuesta</td>
+<td>Resumen de ingesta</td>
+</tr>
+<tr>
+<td>Efecto en la base</td>
+<td>Ninguno: es una simulación</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="contrato-de-la-respuesta"><span class="sec-num">6.1.1</span>Contrato de la respuesta</h4>
+<p>Los campos del resumen son: contadores de filas leídas, filas de la central, casos nuevos,
+duplicados y descartados, sectorizados, sin sector, cuadrilla 0, avisos y hasta diez ejemplos.</p>
+<h3 id="post-api-v1-ingesta"><span class="sec-num">6.2</span><code>POST /api/v1/ingesta</code></h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Autenticación</td>
+<td>Token de sesión; rol ADMIN o SUPERVISOR</td>
+</tr>
+<tr>
+<td>Cuerpo</td>
+<td>Formulario con el archivo y la central</td>
+</tr>
+<tr>
+<td>Respuesta</td>
+<td>Resumen de ingesta con el identificador del lote y las fallas masivas</td>
+</tr>
+<tr>
+<td>Código de éxito</td>
+<td><code>201 Created</code></td>
+</tr>
+<tr>
+<td>Efecto en la base</td>
+<td>Crea el lote de ingesta y los casos nuevos</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="errores-esperados"><span class="sec-num">6.2.1</span>Errores esperados</h4>
+<ul>
+<li><code>401</code> si no hay token.</li>
+<li><code>403</code> para el rol TECNICO.</li>
+<li><code>404</code> si la central indicada no existe.</li>
+</ul>
+<h3 id="get-api-v1-ingesta-lotes"><span class="sec-num">6.3</span><code>GET /api/v1/ingesta/lotes</code></h3>
+<p>Devuelve el historial de cargas, con las más recientes primero. El límite por consulta es de
+50 por defecto y 200 como máximo. Usa la sesión válida, por lo que cualquier usuario
+autenticado puede consultarlo.</p>
+<h3 id="get-api-v1-ingesta-lotes-id-lote"><span class="sec-num">6.4</span><code>GET /api/v1/ingesta/lotes/{id_lote}</code></h3>
+<p>Devuelve el detalle de un lote. Si no existe, responde <code>404</code> con «Lote no encontrado».</p>
+<h4 id="esquema-de-salida"><span class="sec-num">6.4.1</span>Esquema de salida</h4>
+<p>La salida del lote expone: identificador del lote, archivo, fecha del archivo, central, los
+cinco contadores, estado, detalle de error, usuario y fecha de creación.</p>
+<h2 id="esquemas-y-modelo-ingesta-lote"><span class="sec-num">7</span>Esquemas y modelo <code>ingesta_lote</code></h2>
+<h3 id="esquemas-pydantic-app-schemas-ingesta-py"><span class="sec-num">7.1</span>Esquemas Pydantic (<code>app/schemas/ingesta.py</code>)</h3>
+<p>Los <strong>esquemas</strong> son los contratos de datos de entrada y salida.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Esquema</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EjemploCaso</code></td>
+<td>Muestra de hasta diez casos candidatos</td>
+</tr>
+<tr>
+<td><code>ResumenIngesta</code></td>
+<td>Respuesta de la simulación y de la carga</td>
+</tr>
+<tr>
+<td><code>IngestaLoteOut</code></td>
+<td>Historial y detalle de lotes</td>
+</tr>
+</tbody>
+</table></div>
+<p>La salida del lote valida directamente desde el objeto de base de datos. El resumen inicializa
+el identificador de lote en «sin valor» y las fallas masivas en 0, de modo que la simulación
+los devuelve vacíos.</p>
+<h3 id="modelo-sqlalchemy-y-ddl"><span class="sec-num">7.2</span>Modelo SQLAlchemy y DDL</h3>
+<p>El modelo del lote se declara sobre la tabla <code>ingesta_lote</code>. El <strong>DDL</strong> (el texto que define
+la tabla en la base de datos) contiene estas columnas:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo</th>
+<th>Nota</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id_lote</code></td>
+<td>Número grande autoincremental</td>
+<td>Clave principal</td>
+</tr>
+<tr>
+<td><code>archivo</code></td>
+<td>Texto de hasta 255 caracteres</td>
+<td>Nombre del archivo cargado</td>
+</tr>
+<tr>
+<td><code>fecha_archivo</code></td>
+<td>Fecha</td>
+<td>Precisión de día</td>
+</tr>
+<tr>
+<td><code>id_central</code></td>
+<td>Número entero</td>
+<td>Referencia a la central</td>
+</tr>
+<tr>
+<td><code>filas_leidas</code></td>
+<td>Número entero</td>
+<td>Total de filas del archivo</td>
+</tr>
+<tr>
+<td><code>filas_central</code></td>
+<td>Número entero</td>
+<td>Filas de la central configurada</td>
+</tr>
+<tr>
+<td><code>casos_nuevos</code></td>
+<td>Número entero</td>
+<td>Casos insertados</td>
+</tr>
+<tr>
+<td><code>casos_duplicados</code></td>
+<td>Número entero</td>
+<td>Ya existentes o repetidos en el archivo</td>
+</tr>
+<tr>
+<td><code>casos_descartados</code></td>
+<td>Número entero</td>
+<td>De otras centrales</td>
+</tr>
+<tr>
+<td><code>estado</code></td>
+<td>Texto de hasta 20 caracteres</td>
+<td>Solo permite «PROCESANDO», «OK» o «ERROR»</td>
+</tr>
+<tr>
+<td><code>detalle_error</code></td>
+<td>Texto</td>
+<td>Avisos del analizador unidos por <code>&quot;; &quot;</code></td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td>Texto de hasta 20 caracteres</td>
+<td>P00 que ejecutó la carga</td>
+</tr>
+<tr>
+<td><code>creado_en</code></td>
+<td>Fecha y hora con zona</td>
+<td>Se llena sola con el momento actual</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="correspondencia-entre-esquema-y-tabla"><span class="sec-num">7.3</span>Correspondencia entre esquema y tabla</h3>
+<p>Hay dos matices que conviene conocer al mantener el módulo:</p>
+<ol>
+<li><strong>Tipo de la fecha del archivo:</strong> la tabla la declara como fecha (solo día), mientras el
+modelo y el contrato la exponen como fecha y hora. El valor que llega al cliente tiene,
+por tanto, resolución de día.</li>
+<li><strong>Origen del valor:</strong> la carga nunca asigna la fecha del archivo al crear el lote, así que
+queda vacía salvo que se complete por otra vía. En la interfaz se muestra como «—».</li>
+</ol>
+<p>El estado «ERROR» existe en la definición de la tabla, pero la ruta de carga no lo usa: el
+lote pasa de «PROCESANDO» a «OK». El uso de «ERROR» queda <strong>pendiente de confirmar</strong>.</p>
+<h2 id="pagina-web-ingesta"><span class="sec-num">8</span>Página web INGESTA</h2>
+<p>La vista está en la página web del módulo y usa el cliente común de la aplicación.</p>
+<h3 id="estructura-y-permisos"><span class="sec-num">8.1</span>Estructura y permisos</h3>
+<p>La página consulta el contexto de autenticación para conocer si la sesión es de solo lectura.
+Si el rol es de solo lectura, oculta el formulario de carga y muestra el aviso «Modo solo
+lectura: su rol TECNICO no permite simular ni cargar archivos».</p>
+<h3 id="simulacion-y-carga"><span class="sec-num">8.2</span>Simulación y carga</h3>
+<ul>
+<li>El campo de archivo acepta <code>.csv</code> y el tipo <code>text/csv</code>.</li>
+<li>El campo «ID de central» acepta vacío (usa la central configurada) o un número entero
+positivo, validado por una función que lo interpreta.</li>
+<li>El botón «Simular (preview)» llama a la operación de simulación.</li>
+<li>El botón «Cargar archivo» pide confirmación explícita y luego llama a la operación de carga.</li>
+</ul>
+<h3 id="resumen-avisos-y-ejemplos"><span class="sec-num">8.3</span>Resumen, avisos y ejemplos</h3>
+<p>Después de la operación se muestran ocho tarjetas: filas leídas, filas de la central, casos
+nuevos, duplicados, descartados, sectorizados, sin sector y cuadrilla 0. Los avisos del
+analizador se muestran como mensajes de error y los ejemplos aparecen en una tabla con el
+identificador de avería, la dirección, el sector y la marca de cuadrilla 0.</p>
+<h3 id="historial-y-detalle-de-lotes"><span class="sec-num">8.4</span>Historial y detalle de lotes</h3>
+<p>La tabla de historial pide los últimos 50 lotes al abrir la página y muestra trece columnas,
+entre ellas el archivo, la central, los contadores, el estado y el usuario. El botón «Ver
+detalle» consulta el detalle del lote y presenta una ficha con el estado, los contadores y el
+detalle de error.</p>
+<h2 id="datos-reales-cargados-en-produccion-42-casos-d-54"><span class="sec-num">9</span>Datos reales cargados en producción (42 casos, D-54)</h2>
+<h3 id="hecho-verificado"><span class="sec-num">9.1</span>Hecho verificado</h3>
+<p>La decisión D-54 registra que «el Super Usuario cargó <code>detalle_averias_gpon 15_09_2026.csv</code>
+(47 filas → <strong>42 casos</strong>, 5 descartadas) el 2026-09-27», que la ingesta funcionó y que esos
+casos no se tocaron en las limpiezas posteriores.</p>
+<h3 id="implicaciones-de-seguridad-y-privacidad"><span class="sec-num">9.2</span>Implicaciones de seguridad y privacidad</h3>
+<p>Los 42 casos contienen <strong>PII</strong> (información personal de los suscriptores) y el servicio de
+Cloud Run estaba accesible de forma pública. La propia decisión advierte que «urge restringir
+el acceso y habilitar respaldo». El informe de Fase 4 lista entre los pendientes que no
+bloquean la fase el «acceso público del servicio con PII real, que debe restringirse antes de
+operar en producción».</p>
+<p><strong>Hecho a respetar:</strong> el servicio <code>ggto-web</code> desplegado en Cloud Run es <strong>público</strong> y contiene
+PII real; debe restringirse. Además, el riesgo <strong>D-26</strong> sigue aceptado: no hay respaldos ni
+recuperación a un punto en el tiempo (PITR) hasta migrar de instancia.</p>
+<p>La ingesta, por su parte, deja los avisos del analizador en el detalle de error, sin incluir
+valores de datos personales.</p>
+<h3 id="recalculo-posterior"><span class="sec-num">9.3</span>Recalculo posterior</h3>
+<p>La decisión D-59 recalculó la marca de cuadrilla 0 de los casos reales: 36 pasaron a
+«Pendiente» y 6 permanecieron en «Gestión», y la propuesta de despacho pasó de 0 a 36 casos.
+Esto confirma que la marca es un dato operativo revisable y no un valor inmutable fijado por
+la ingesta.</p>
+<h2 id="pruebas"><span class="sec-num">10</span>Pruebas</h2>
+<p>El resultado global de la Fase 4 fue de <strong>169 pruebas de <code>pytest</code> aprobadas de 169</strong> y
+<strong>46 pruebas E2E de Playwright aprobadas de 46</strong>, con <code>ruff</code>, <code>mypy</code> y <code>tsc</code> en modo estricto
+sin hallazgos. Las pruebas que tocan base de datos usan esquemas aislados: <code>ggto_test</code> para
+<code>pytest</code> y <code>ggto_e2e</code> para Playwright, mediante la variable <code>DB_SCHEMA</code>.</p>
+<h3 id="test-ingesta-parser-py-12-pruebas"><span class="sec-num">10.1</span><code>test_ingesta_parser.py</code> (12 pruebas)</h3>
+<p>Nivel unitario, sin base de datos. El informe de Fase 4 lo registra con 12 pruebas y ámbito
+«Parser ISO-8859-1 de 80 columnas y fechas <code>a.m./p.m.</code>». Cubre:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Prueba</th>
+<th>Qué verifica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_parse_fecha_formatos</code></td>
+<td>Formatos de fecha válidos</td>
+</tr>
+<tr>
+<td><code>test_parse_fecha_vacia_o_invalida</code></td>
+<td>Vacíos e inválidos dan «sin valor»</td>
+</tr>
+<tr>
+<td><code>test_normalizar_quita_acentos_y_mayusculas</code></td>
+<td>Normalización de texto</td>
+</tr>
+<tr>
+<td><code>test_especificacion_cubre_49_campos</code></td>
+<td>Los 49 campos son únicos</td>
+</tr>
+<tr>
+<td><code>test_encabezado_tiene_80_columnas</code></td>
+<td>Encabezado de la muestra</td>
+</tr>
+<tr>
+<td><code>test_parsear_muestra_completa</code></td>
+<td>56 filas y campos clave</td>
+</tr>
+<tr>
+<td><code>test_parsear_decodifica_iso8859</code></td>
+<td>Acentos en ISO-8859-1</td>
+</tr>
+<tr>
+<td><code>test_filtrar_por_central</code></td>
+<td>51 de 56 filas</td>
+</tr>
+<tr>
+<td><code>test_archivo_vacio</code></td>
+<td>Archivo vacío con aviso</td>
+</tr>
+<tr>
+<td><code>test_archivo_con_encabezado_incorrecto</code></td>
+<td>Encabezado de 3 columnas</td>
+</tr>
+<tr>
+<td><code>test_valores_largos_se_recortan_sin_abortar</code></td>
+<td>Recorte a 120 y 80 caracteres</td>
+</tr>
+<tr>
+<td><code>test_campos_de_texto_no_se_recortan</code></td>
+<td>Campos de texto largo sin límite</td>
+</tr>
+</tbody>
+</table></div>
+<p>La muestra usada está en <code>RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv</code>, y la lista de
+archivos excluidos de Git la mantiene versionada por estar pseudonimizada.</p>
+<h3 id="test-ingesta-api-py-6-pruebas"><span class="sec-num">10.2</span><code>test_ingesta_api.py</code> (6 pruebas)</h3>
+<p>Nivel de integración. El informe de Fase 4 lo registra con 6 pruebas y ámbito «Preview, carga,
+filtro por central y deduplicación». Cubre:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Prueba</th>
+<th>Qué verifica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_ingesta_sin_token</code></td>
+<td><code>401</code> sin credenciales</td>
+</tr>
+<tr>
+<td><code>test_ingesta_tecnico_no_puede</code></td>
+<td><code>403</code> para TECNICO</td>
+</tr>
+<tr>
+<td><code>test_preview_no_guarda</code></td>
+<td>La simulación no escribe</td>
+</tr>
+<tr>
+<td><code>test_ingesta_inserta_y_deduplica</code></td>
+<td>Carga y segunda carga duplicada</td>
+</tr>
+<tr>
+<td><code>test_ingesta_registra_el_lote</code></td>
+<td>Historial y detalle del lote</td>
+</tr>
+<tr>
+<td><code>test_sectorizacion_y_cuadrilla0</code></td>
+<td>Sectorización y marca guardada</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="trazabilidad"><span class="sec-num">10.3</span>Trazabilidad</h3>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Requisito</th>
+<th>Nivel de prueba</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RF-01/RF-02 (ingesta CSV)</td>
+<td>Integración y E2E-07</td>
+</tr>
+<tr>
+<td>RF-21 (filtro por central)</td>
+<td>Pruebas del analizador y de la API</td>
+</tr>
+<tr>
+<td>RF-22 (deduplicación)</td>
+<td><code>test_ingesta_inserta_y_deduplica</code></td>
+</tr>
+<tr>
+<td>RT-05 (analizador)</td>
+<td><code>test_ingesta_parser.py</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>La prueba E2E de ingesta (<code>07-ingesta.spec.js</code>, 2 pruebas) cubre «Previsualización del CSV
+diario e historial de lotes».</p>
+
+<nav class="pie-nav"><a class="izq" href="../03-Implementacion/02-configuracion.html">← Manual anterior: Manual de implementación: módulo CONFIGURACIÓN</a><a href="../index.html">Índice general</a><a class="der" href="../03-Implementacion/04-panel-y-casos.html">Manual siguiente →: Manual técnico — Panel y gestión de casos</a></nav>
+    </article>
+  </main>
+</div>
+
+<footer class="doc-pie">
+  <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
+  <div class="pie-nav">
+    <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
+    <span>Manual literal · Implementación</span>
+    <span>Generado el 28/09/2026</span>
+  </div>
+</footer>
+
+<script>
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Implementación · 03-ingesta-csv", "pieIzq": "Manual técnico — Ingesta del archivo diario de averías (CSV)", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Manual técnico — Ingesta del archivo diario de averías (CSV)"};
+</script>
+<script>
+/* ==================================================================
+   GGTO · CANTV — Paginador para la exportación a PDF
+   ------------------------------------------------------------------
+   Toma el contenido del manual (#contenido), lo reparte en hojas A4
+   (.page) y calcula el número de página de cada sección para rellenar
+   el índice. Se ejecuta solo cuando <html> lleva la clase `pdf-mode`.
+   ================================================================== */
+
+(function () {
+  'use strict';
+
+  var CFG = window.GGTO_MANUAL || {};
+  var UMBRAL_TITULO = 56; // px que se exigen debajo de un título para dejarlo en la hoja
+
+  function esEncabezado(el) {
+    return /^H[234]$/.test(el.tagName);
+  }
+
+  function descripcion(el) {
+    var t = (el.textContent || el.tagName).replace(/\s+/g, ' ').trim();
+    return el.tagName.toLowerCase() + ' “' + t.slice(0, 48) + '”';
+  }
+
+  window.ggtoPaginar = function () {
+    var avisos = [];
+    var contenido = document.getElementById('contenido');
+    if (!contenido) { return { paginas: 0, avisos: ['No se encontró #contenido'] }; }
+
+    var portadaSrc = contenido.querySelector('.portada');
+    var pieNav = contenido.querySelector('.pie-nav');
+    var bloques = Array.prototype.filter.call(contenido.children, function (el) {
+      return el !== portadaSrc && el !== pieNav;
+    });
+
+    var root = document.createElement('div');
+    root.className = 'print-root';
+    document.body.appendChild(root);
+
+    /* ---------------- construcción de hojas ---------------- */
+
+    function hoja(clase) {
+      var s = document.createElement('section');
+      s.className = 'page' + (clase ? ' ' + clase : '');
+      var cab = document.createElement('header');
+      cab.className = 'page-header';
+      cab.innerHTML = '<span class="ph-izq"></span><span class="ph-der"></span>';
+      cab.querySelector('.ph-izq').textContent = CFG.cabeceraIzq || 'GGTO · CANTV';
+      cab.querySelector('.ph-der').textContent = CFG.cabeceraDer || '';
+      var cuerpo = document.createElement('div');
+      cuerpo.className = 'page-body contenido';
+      var pie = document.createElement('footer');
+      pie.className = 'page-footer';
+      pie.innerHTML = '<span class="pf-izq"></span><span class="pf-centro"></span>' +
+        '<span class="pf-der">Página <b class="pn"></b> de <b class="pt"></b></span>';
+      pie.querySelector('.pf-izq').textContent = CFG.pieIzq || '';
+      pie.querySelector('.pf-centro').textContent = CFG.pieCentro || '';
+      s.appendChild(cab);
+      s.appendChild(cuerpo);
+      s.appendChild(pie);
+      root.appendChild(s);
+      return s;
+    }
+
+    /* Hoja oculta que se usa para medir si un trozo cabe en una hoja vacía. */
+    var medidor = null;
+    function cuerpoMedidor() {
+      if (!medidor) {
+        medidor = hoja('page-medidor');
+        medidor.style.position = 'absolute';
+        medidor.style.left = '-9999mm';
+        medidor.style.top = '0';
+        medidor.style.zIndex = '-1';
+      }
+      return medidor.querySelector('.page-body');
+    }
+
+    /* ---------------- portada ---------------- */
+
+    if (portadaSrc) {
+      var pPortada = document.createElement('section');
+      pPortada.className = 'page page-portada';
+      pPortada.innerHTML = portadaSrc.innerHTML;
+      root.appendChild(pPortada);
+    }
+
+    /* ---------------- índice ---------------- */
+
+    function aplanar(ul, nivel, salida) {
+      Array.prototype.forEach.call(ul.children, function (li) {
+        var a = li.querySelector(':scope > a');
+        var sub = li.querySelector(':scope > ul');
+        if (a) {
+          salida.push({ nivel: nivel, html: a.innerHTML, target: a.getAttribute('data-target') || '' });
+        }
+        if (sub) { aplanar(sub, nivel + 1, salida); }
+      });
+    }
+
+    var entradasToc = [];
+    var tocSrc = document.querySelector('.doc-nav .toc-lista');
+    if (tocSrc) { aplanar(tocSrc, 2, entradasToc); }
+
+    var refsToc = [];
+    if (entradasToc.length) {
+      var pToc = hoja('page-toc');
+      var cToc = pToc.querySelector('.page-body');
+      cToc.appendChild(tituloIndice('Índice', entradasToc.length));
+      var lista = document.createElement('ul');
+      lista.className = 'toc-plano';
+      cToc.appendChild(lista);
+      entradasToc.forEach(function (e) {
+        var li = document.createElement('li');
+        li.className = 'toc-n' + e.nivel;
+        var a = document.createElement('a');
+        a.setAttribute('href', '#' + e.target);
+        a.innerHTML = e.html;
+        var pag = document.createElement('span');
+        pag.className = 'pag';
+        pag.textContent = '';
+        li.appendChild(pag);
+        li.appendChild(a);
+        lista.appendChild(li);
+        refsToc.push({ li: li, target: e.target, pag: pag });
+        if (cToc.scrollHeight > cToc.clientHeight + 1) {
+          lista.removeChild(li);
+          pToc = hoja('page-toc');
+          cToc = pToc.querySelector('.page-body');
+          cToc.appendChild(tituloIndice('Índice (continuación)', entradasToc.length));
+          lista = document.createElement('ul');
+          lista.className = 'toc-plano';
+          cToc.appendChild(lista);
+          lista.appendChild(li);
+        }
+      });
+    }
+
+    function tituloIndice(texto) {
+      var h = document.createElement('h2');
+      h.className = 'toc-titulo toc-titulo-papel';
+      h.textContent = texto;
+      return h;
+    }
+
+    /* ---------------- división de bloques grandes ---------------- */
+
+    function clonarTabla(modelo, filas) {
+      var t = document.createElement('table');
+      if (modelo.className) { t.className = modelo.className; }
+      var thead = modelo.querySelector('thead');
+      if (thead) { t.appendChild(thead.cloneNode(true)); }
+      var tb = document.createElement('tbody');
+      filas.forEach(function (f) { tb.appendChild(f.cloneNode(true)); });
+      t.appendChild(tb);
+      var cont = document.createElement('div');
+      cont.className = 'tabla-scroll';
+      cont.appendChild(t);
+      return cont;
+    }
+
+    function dividirTabla(env) {
+      var tabla = env.tagName === 'TABLE' ? env : env.querySelector('table');
+      if (!tabla) { return [env]; }
+      var filas = Array.prototype.slice.call(tabla.querySelectorAll('tbody > tr'));
+      if (filas.length < 2) { return [env]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < filas.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var usadas = [];
+        var cont = clonarTabla(tabla, usadas);
+        cm.appendChild(cont);
+        var tb = cont.querySelector('tbody');
+        while (i < filas.length) {
+          tb.appendChild(filas[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) {
+            usadas.push(filas[i]); i++;
+          } else {
+            tb.removeChild(tb.lastChild);
+            break;
+          }
+        }
+        if (!usadas.length) { usadas.push(filas[i]); i++; } // una sola fila no cabe: se acepta
+        partes.push(clonarTabla(tabla, usadas));
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [env];
+    }
+
+    function dividirLista(lista) {
+      var items = Array.prototype.slice.call(lista.children);
+      if (items.length < 2) { return [lista]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < items.length && guardia++ < 500) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement(lista.tagName);
+        nueva.className = lista.className;
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < items.length) {
+          nueva.appendChild(items[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(items[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [lista];
+    }
+
+    function dividirPre(pre) {
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [pre]; }
+      var clases = ['language-' + (pre.dataset.lang || 'texto')];
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var bloque = document.createElement('pre');
+        var cod = document.createElement('code');
+        cod.className = clases[0];
+        bloque.appendChild(cod);
+        cm.appendChild(bloque);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(bloque);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [pre];
+    }
+
+    function dividirCita(cita) {
+      var hijos = Array.prototype.slice.call(cita.children);
+      if (hijos.length < 2) { return [cita]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < hijos.length && guardia++ < 300) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('blockquote');
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < hijos.length) {
+          nueva.appendChild(hijos[i].cloneNode(true));
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else { nueva.removeChild(nueva.lastChild); break; }
+        }
+        if (!puestas) { nueva.appendChild(hijos[i].cloneNode(true)); i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [cita];
+    }
+
+    function dividirParrafo(p) {
+      var palabras = (p.textContent || '').split(/(\s+)/);
+      if (palabras.length < 12) { return [p]; }
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < palabras.length && guardia++ < 400) {
+        var cm = cuerpoMedidor();
+        var nueva = document.createElement('p');
+        if (p.className) { nueva.className = p.className; }
+        cm.appendChild(nueva);
+        var puestas = 0;
+        while (i < palabras.length) {
+          nueva.textContent += palabras[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            nueva.textContent = nueva.textContent.slice(0, nueva.textContent.length - palabras[i].length);
+            break;
+          }
+        }
+        if (!puestas) { nueva.textContent = palabras[i]; i++; }
+        partes.push(nueva);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [p];
+    }
+
+    /* Bloques de diagrama pendiente (título + código mermaid): se reparten
+       por líneas de código, repitiendo el título en cada hoja. */
+    function dividirGrafico(div) {
+      var pre = div.querySelector('pre');
+      if (!pre) { return [div]; }
+      var lineas = (pre.textContent || '').replace(/\n$/, '').split('\n');
+      if (lineas.length < 3) { return [div]; }
+      var lang = pre.dataset.lang || 'mermaid';
+      var titulo = (div.querySelector('.gp-titulo') || {}).textContent || 'Diagrama';
+      var partes = [];
+      var i = 0;
+      var guardia = 0;
+      while (i < lineas.length && guardia++ < 800) {
+        var cm = cuerpoMedidor();
+        var nuevo = document.createElement('div');
+        nuevo.className = div.className;
+        var t = document.createElement('p');
+        t.className = 'gp-titulo';
+        t.textContent = titulo + (partes.length ? ' (continuación)' : '');
+        var bloque = document.createElement('pre');
+        bloque.dataset.lang = lang;
+        var cod = document.createElement('code');
+        cod.className = 'language-' + lang;
+        bloque.appendChild(cod);
+        nuevo.appendChild(t);
+        nuevo.appendChild(bloque);
+        cm.appendChild(nuevo);
+        var puestas = 0;
+        while (i < lineas.length) {
+          cod.textContent += (puestas ? '\n' : '') + lineas[i];
+          if (cm.scrollHeight <= cm.clientHeight + 1) { i++; puestas++; }
+          else {
+            cod.textContent = cod.textContent.slice(0, cod.textContent.length - lineas[i].length - 1);
+            break;
+          }
+        }
+        if (!puestas) { cod.textContent = lineas[i]; i++; }
+        partes.push(nuevo);
+        cm.textContent = '';
+      }
+      return partes.length > 1 ? partes : [div];
+    }
+
+    function dividirBloque(el) {
+      var partes = [el];
+      try {
+        if (el.tagName === 'TABLE' || el.classList.contains('tabla-scroll')) {
+          partes = dividirTabla(el);
+        } else if (el.classList.contains('grafico-pendiente')) {
+          partes = dividirGrafico(el);
+        } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+          partes = dividirLista(el);
+        } else if (el.tagName === 'PRE') {
+          partes = dividirPre(el);
+        } else if (el.tagName === 'BLOCKQUOTE') {
+          partes = dividirCita(el);
+        } else if (el.tagName === 'P') {
+          partes = dividirParrafo(el);
+        }
+      } catch (e) {
+        avisos.push('error al dividir ' + descripcion(el) + ': ' + e.message);
+        partes = [el];
+      }
+      if (partes.length < 2) { return [el]; }
+      partes.forEach(function (p) { p.dataset.ggtoSplit = '1'; });
+      return partes;
+    }
+
+    /* ---------------- reparto del contenido ---------------- */
+
+    var anclaDeHoja = {};   // ancla -> elemento de hoja
+    var textoDeAncla = {};  // ancla -> texto del título (para verificación)
+    var hojasContenido = [];
+    var pagina, cuerpo, cola;
+
+    function nuevaHoja() {
+      pagina = hoja('page-contenido');
+      cuerpo = pagina.querySelector('.page-body');
+      hojasContenido.push(pagina);
+      return pagina;
+    }
+
+    function hayEspacio() {
+      return cuerpo.scrollHeight <= cuerpo.clientHeight + 1;
+    }
+
+    /* Altura realmente ocupada por el contenido de la hoja actual.
+       (scrollHeight no sirve para saber cuán llena está: en una caja con
+       altura definida siempre vale, como mínimo, la altura de la caja.) */
+    function alturaUsada() {
+      if (!cuerpo.children.length) { return 0; }
+      var ultimo = cuerpo.lastElementChild;
+      var caja = cuerpo.getBoundingClientRect();
+      var fin = ultimo.getBoundingClientRect().bottom - caja.top;
+      var margen = parseFloat(window.getComputedStyle(ultimo).marginBottom) || 0;
+      return fin + margen;
+    }
+
+    function hojaVacia() {
+      return cuerpo.children.length === 0;
+    }
+
+    nuevaHoja();
+    cola = bloques.slice();
+    var guardia = 0;
+
+    while (cola.length) {
+      if (guardia++ > 30000) {
+        avisos.push('Se detuvo el reparto por seguridad (demasiadas iteraciones).');
+        break;
+      }
+      var el = cola.shift();
+
+      // Cada capítulo (h2) empieza en hoja nueva, salvo que la hoja
+      // actual esté casi vacía (así el texto de entrada no deja una
+      // hoja con un solo párrafo).
+      if (el.tagName === 'H2' && !hojaVacia() &&
+          alturaUsada() > cuerpo.clientHeight * 0.28) {
+        nuevaHoja();
+      }
+
+      cuerpo.appendChild(el);
+
+      if (!hayEspacio()) {
+        if (hojaVacia()) {
+          cuerpo.removeChild(el);
+          if (!el.dataset.ggtoSplit) {
+            var partes = dividirBloque(el);
+            if (partes.length > 1) {
+              cola = partes.concat(cola);
+              continue;
+            }
+          }
+          cuerpo.appendChild(el);
+          avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+        } else {
+          cuerpo.removeChild(el);
+          nuevaHoja();
+          cuerpo.appendChild(el);
+          if (!hayEspacio() && !el.dataset.ggtoSplit) {
+            cuerpo.removeChild(el);
+            var partes2 = dividirBloque(el);
+            if (partes2.length > 1) { cola = partes2.concat(cola); continue; }
+            cuerpo.appendChild(el);
+            avisos.push('Bloque más alto que una hoja (se recorta): ' + descripcion(el));
+          }
+        }
+      }
+
+      // Un título no debe quedar solo al final de la hoja.
+      if (esEncabezado(el) && cuerpo.children.length > 1 && !hayEspacioDespues()) {
+        cuerpo.removeChild(el);
+        nuevaHoja();
+        cuerpo.appendChild(el);
+      }
+
+      if (el.id && esEncabezado(el)) {
+        anclaDeHoja[el.id] = pagina;
+        textoDeAncla[el.id] = el.textContent || '';
+      }
+    }
+
+    function hayEspacioDespues() {
+      var sobra = cuerpo.clientHeight - alturaUsada();
+      return sobra > UMBRAL_TITULO;
+    }
+
+    /* ---------------- numeración y enlaces del índice ---------------- */
+
+    if (medidor && medidor.parentNode) { medidor.parentNode.removeChild(medidor); }
+    medidor = null;
+
+    var hojas = Array.prototype.slice.call(root.children);
+    hojas.forEach(function (h, indice) {
+      var pn = h.querySelector('.pn');
+      var pt = h.querySelector('.pt');
+      if (pn) { pn.textContent = String(indice + 1); }
+      if (pt) { pt.textContent = String(hojas.length); }
+    });
+
+    var sinPagina = 0;
+    refsToc.forEach(function (ref) {
+      var destino = anclaDeHoja[ref.target];
+      if (destino) {
+        var pn = destino.querySelector('.pn');
+        ref.pag.textContent = pn ? pn.textContent : '';
+      } else {
+        ref.pag.textContent = '';
+        sinPagina++;
+      }
+    });
+
+    if (!refsToc.length) { avisos.push('El manual no tiene entradas de índice.'); }
+    if (sinPagina) { avisos.push('Entradas de índice sin página: ' + sinPagina); }
+
+    var anclasSalida = {};
+    Object.keys(anclaDeHoja).forEach(function (clave) {
+      var pn = anclaDeHoja[clave].querySelector('.pn');
+      anclasSalida[clave] = {
+        pagina: pn ? Number(pn.textContent) : null,
+        texto: (textoDeAncla[clave] || '').replace(/\s+/g, ' ').trim()
+      };
+    });
+
+    return {
+      paginas: hojas.length,
+      hojasContenido: hojasContenido.length,
+      entradasToc: refsToc.length,
+      anclas: anclasSalida,
+      avisos: avisos
+    };
+  };
+})();
+
+</script>
+</body>
+</html>

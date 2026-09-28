@@ -17,6 +17,7 @@ import Flota from './pages/Flota';
 import Cuadrillas from './pages/Cuadrillas';
 import Catalogos from './pages/Catalogos';
 import Parametros from './pages/Parametros';
+import Ayuda from './pages/Ayuda';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="cuadrillas" element={<Cuadrillas />} />
           <Route path="catalogos" element={<Catalogos />} />
           <Route path="parametros" element={<Parametros />} />
+          <Route path="ayuda" element={<Ayuda />} />
         </Route>
       </Route>
 
