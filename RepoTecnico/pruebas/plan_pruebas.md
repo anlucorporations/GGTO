@@ -74,6 +74,7 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 | E2E-09 | `09-alertas.spec.js` | Métricas, detección RF-09, planificación RF-17, material RF-18 y outbox | RF-09/16/17/18, RNF-19/20 |
 | E2E-10 | `10-configuracion.spec.js` | Alta de sector, técnico y causa; parámetros | RF-03…RF-05 |
 | E2E-11 | `11-rbac.spec.js` | TECNICO solo lectura y sin escritura en ALERTAS | RNF-21 |
+| E2E-12 | `12-ayuda.spec.js` | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF | RF-33, D-63 |
 
 ---
 

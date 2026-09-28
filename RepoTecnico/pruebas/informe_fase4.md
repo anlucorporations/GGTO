@@ -16,16 +16,16 @@
 | Nivel | Herramienta | Ejecutadas | Pasadas | Fallidas |
 |---|---|---|---|---|
 | Unitarias + integración + contratos | `pytest` | **169** | **169** | **0** |
-| E2E de navegador | Playwright/Chromium | **46** | **46** | **0** |
+| E2E de navegador | Playwright/Chromium | **51** | **51** | **0** |
 | Calidad estática | `ruff` / `mypy` / `tsc` strict | 3 | 3 | 0 |
 
 - `pytest`: `169 passed (37.5m)` — resumen en `logs/pytest-resultados.txt`
   (log completo en `logs/pytest.log`).
-
-- E2E: `46 passed (7.4m)` — informe en `logs/e2e-resultados.json` y `logs/e2e-reporte/`.
+- E2E: `51 passed (4.8m)` — informe en `logs/e2e-resultados.json` y
+  `logs/e2e-reporte/`.
 - Cobertura E2E: autenticación, navegación y RBAC, casos, especiales, agenda,
-  despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox) y
-  configuración.
+  despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox),
+  configuración y **AYUDA** (manuales y PDF de la Fase 5).
 
 ---
 
@@ -63,7 +63,8 @@
 | `09-alertas.spec.js` | 4 | 4 | Métricas, RF-09, RF-17, RF-18, outbox |
 | `10-configuracion.spec.js` | 4 | 4 | Alta de sector, técnico, causa y parámetros |
 | `11-rbac.spec.js` | 4 | 4 | TECNICO solo lectura y ADMIN operativo |
-| **Total** | **46** | **46** | `46 passed (7.4m)` |
+| `12-ayuda.spec.js` | 5 | 5 | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF (Fase 5) |
+| **Total** | **51** | **51** | `51 passed (4.8m)` |
 
 ### 3.2 `pytest` (esquema `ggto_test`)
 
@@ -92,7 +93,7 @@
 ## 4. Criterios de salida
 
 - [x] `pytest` completo en verde (169/169).
-- [x] Playwright E2E completo en verde (46/46).
+- [x] Playwright E2E completo en verde (51/51).
 - [x] `ruff`, `mypy` y `tsc` strict sin hallazgos.
 - [x] Hallazgos corregidos y documentados.
 
@@ -100,11 +101,15 @@
 
 ## 5. Conclusión
 
-La **Fase 4 cierra con 215 pruebas en verde** (169 de `pytest` + 46 E2E) y los
+La **Fase 4 cierra con 220 pruebas en verde** (169 de `pytest` + 51 E2E) y los
 tres analizadores estáticos sin hallazgos. Se encontraron y corrigieron **seis
 hallazgos** (F4-01…F4-06): tres de producto/entorno de pruebas y tres defectos de
 las propias pruebas. **No quedan defectos funcionales abiertos** y los criterios
 de salida de `plan_pruebas.md` §6 se cumplen en su totalidad.
+
+> **Regresión de la Fase 5:** al integrar la sección AYUDA en la SPA se añadió
+> `12-ayuda.spec.js` (5 casos) y se repitió la suite E2E completa: **51/51**, sin
+> regresiones sobre los 46 casos previos.
 
 > **Pendientes que no bloquean la Fase 4:** la app móvil Flutter (Ciclo 8, fuera
 > de alcance), las credenciales de Telegram/correo (los envíos quedan en la
