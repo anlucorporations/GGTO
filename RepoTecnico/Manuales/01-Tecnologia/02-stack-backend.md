@@ -28,7 +28,7 @@ FastAPI aporta al proyecto tres capacidades que el código explota de forma dire
 2. **Validación y serialización.** Los `response_model` declaran el contrato de salida. En
    `routes_casos.py` el listado declara `response_model=PaginaCasos`
    (`app/api/routes_casos.py:89`) y en `routes_auth.py` el login declara
-   `response_model=TokenResponse` (`app/api/routes_auth.py:79`).
+   `response_model=TokenResponse` (`app/api/routes_auth.py:81`).
 3. **Documentación automática.** La ruta de documentación se anuncia en el propio servicio; el
    endpoint de metadatos devuelve `"documentacion": "/docs"` (`app/api/routes_health.py:24`).
 
@@ -93,14 +93,14 @@ consultas escalares se resuelven con `db.scalar(...)` o `db.scalars(...)`
 El uso de `text()` aparece cuando la consulta necesita SQL literal, como en los endpoints de salud
 (`app/api/routes_health.py:38-48`) y en el conteo del resumen (`app/api/routes_health.py:64-77`).
 
-Los modelos se agrupan por dominio funcional y se reexportan desde `app/models/__init__.py:1-41`:
+Los modelos se agrupan por dominio funcional y se reexportan desde `app/models/__init__.py:1-55`:
 
 | Archivo | Contenido | Ciclo |
 |---|---|---|
-| `app/models/entities.py` | `Central`, `DispositivoSeguridad`, `Rol`, `Tecnico`, `Usuario` | Ciclo 1 |
+| `app/models/entities.py` | `Auditoria`, `Central`, `DispositivoSeguridad`, `Rol`, `Tecnico`, `Usuario` | Ciclo 1 / D-67 |
 | `app/models/config_entities.py` | `CatalogoMetodo`, `Causa`, `Configuracion`, `Cuadrilla`, `Flota`, `Herramienta`, `Sector`, `SectorDireccion` | Ciclo 2 |
 | `app/models/caso_entities.py` | `Caso`, `CasoEstadoHist`, `IngestaLote` | Ciclos 3-4 |
-| `app/models/despacho_entities.py` | `Despacho`, `DespachoCasos`, `FallaMasiva`, `Notificacion` | Ciclo 5 |
+| `app/models/despacho_entities.py` | `Despacho`, `DespachoCasos`, `CuadrillaSectorDia` (D-66), `FallaMasiva`, `Notificacion` | Ciclo 5 |
 | `app/models/especiales_entities.py` | `CasoEspecial`, `Cita`, `Seguimiento`, `Solicitante` | Ciclo 6 |
 | `app/models/insumos_entities.py` | `OrdenMaterial` | v2 |
 
@@ -130,11 +130,11 @@ La validación usa **Pydantic 2.13.5** y la configuración **pydantic-settings 2
 
 | Archivo | Dominio |
 |---|---|
-| `app/schemas/auth.py` | Login, token, usuario, desbloqueo, setup |
+| `app/schemas/auth.py` | Login, token, usuario, desbloqueo, setup, primer acceso y regeneración de palabras (D-67) |
 | `app/schemas/config.py` | Central, sectores, técnicos, flota, cuadrillas, catálogos, parámetros |
 | `app/schemas/ingesta.py` | Resumen y lote de ingesta |
 | `app/schemas/casos.py` | Caso, página de casos, historial |
-| `app/schemas/despacho.py` | Propuesta, despacho, reportes, notificaciones |
+| `app/schemas/despacho.py` | Propuesta, proceso y asignación del día, despacho, reportes, notificaciones |
 | `app/schemas/especiales.py` | Solicitantes, casos especiales, citas, seguimiento |
 | `app/schemas/alertas.py` | Fallas masivas, notificaciones, métricas, MCP |
 
@@ -198,13 +198,13 @@ distribución es la siguiente, con el recuento de operaciones del inventario:
 | Archivo | Prefijo | Operaciones | Líneas |
 |---|---|---|---|
 | `routes_alertas.py` | `/api/v1` | 11 | 423 |
-| `routes_auth.py` | `/api/v1/auth` | 4 | 206 |
+| `routes_auth.py` | `/api/v1/auth` | 7 | 365 |
 | `routes_casos.py` | `/api/v1/casos` | 6 | 329 |
-| `routes_config.py` | `/api/v1` | 31 | 549 |
-| `routes_despachos.py` | `/api/v1/despachos` | 15 | 499 |
+| `routes_config.py` | `/api/v1` | 35 | 600 |
+| `routes_despachos.py` | `/api/v1/despachos` | 18 | 588 |
 | `routes_especiales.py` | `/api/v1` | 14 | 441 |
 | `routes_health.py` | sin prefijo | 4 | 80 |
-| `routes_ingesta.py` | `/api/v1/ingesta` | 4 | 195 |
+| `routes_ingesta.py` | `/api/v1/ingesta` | 5 | 251 |
 | `routes_monitoreo.py` | `/api/v1` | 9 | 199 |
 | `deps.py` | — (dependencias) | — | 72 |
 
@@ -242,7 +242,7 @@ son:
 | `app/services/ingesta.py` | Parser y carga del CSV diario (especificación de columnas) |
 | `app/services/sectorizacion.py` | Sectorización por dirección |
 | `app/services/cuadrilla0.py` | Criterio combinado de cuadrilla 0 (D-22/D-59) |
-| `app/services/despacho.py` | Propuesta y balanceo del despacho |
+| `app/services/despacho.py` | Propuesta, asignación diaria de sectores y reparto del despacho (D-66) |
 | `app/services/fallas.py` | Detección de fallas masivas por concentración |
 | `app/services/notificaciones.py` | Composición de mensajes y canales |
 | `app/services/outbox.py` | Bandeja con reintentos y backoff |
@@ -263,7 +263,7 @@ servicio.
 ### Modelos (app/models)
 
 Los modelos son el mapeo al esquema físico. Se agrupan por dominio (véase la tabla de la sección
-anterior) y se reexportan en un único punto de importación: `app/models/__init__.py:1-41`. Los
+anterior) y se reexportan en un único punto de importación: `app/models/__init__.py:1-55`. Los
 routers importan desde ese paquete, no desde los módulos internos, lo que mantiene estables las
 rutas de importación. Ejemplos: `from ..models import Caso, CasoEstadoHist, Cita, DespachoCasos,
 Sector, Usuario` (`app/api/routes_casos.py:12`) y `from ..models import Usuario`
@@ -389,7 +389,7 @@ Notas de operación:
   generadas y 3 requeridas para el desbloqueo (`app/core/config.py:31-33`).
 - El límite de tasa de RNF-22 se aplica con 10 intentos por cada 60 segundos
   (`app/core/config.py:34-35`) y se evalúa al inicio del login
-  (`app/api/routes_auth.py:82`).
+  (`app/api/routes_auth.py:84`).
 - La vigencia del token es de 480 minutos, es decir, la jornada de 8 horas
   (`app/core/config.py:30`).
 - El archivo `.env` es opcional; si no existe, se usan los valores por defecto

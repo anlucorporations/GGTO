@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#modelo-p00-clave" data-target="modelo-p00-clave"><span class="tn">2.1</span> Modelo P00 + clave</a><span class="pag"></span><ul><li class="n4"><a href="#el-p00-como-sujeto-del-token" data-target="el-p00-como-sujeto-del-token"><span class="tn">2.1.1</span> El P00 como sujeto del token</a><span class="pag"></span></li><li class="n4"><a href="#primer-inicio-y-recuperacion" data-target="primer-inicio-y-recuperacion"><span class="tn">2.1.2</span> Primer inicio y recuperación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#roles-de-la-v1" data-target="roles-de-la-v1"><span class="tn">2.2</span> Roles de la v1</a><span class="pag"></span><ul><li class="n4"><a href="#rol-super" data-target="rol-super"><span class="tn">2.2.1</span> Rol SUPER</a><span class="pag"></span></li><li class="n4"><a href="#roles-admin-supervisor-y-tecnico" data-target="roles-admin-supervisor-y-tecnico"><span class="tn">2.2.2</span> Roles ADMIN, SUPERVISOR y TECNICO</a><span class="pag"></span></li><li class="n4"><a href="#alcance-por-central" data-target="alcance-por-central"><span class="tn">2.2.3</span> Alcance por central</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#primitivas-de-seguridad" data-target="primitivas-de-seguridad"><span class="tn">3</span> Primitivas de seguridad</a><span class="pag"></span><ul><li class="n3"><a href="#argon2id" data-target="argon2id"><span class="tn">3.1</span> Argon2id</a><span class="pag"></span></li><li class="n3"><a href="#jwt" data-target="jwt"><span class="tn">3.2</span> JWT</a><span class="pag"></span></li><li class="n3"><a href="#normalizacion-de-palabras" data-target="normalizacion-de-palabras"><span class="tn">3.3</span> Normalización de palabras</a><span class="pag"></span></li><li class="n3"><a href="#diccionario-de-palabras-app-core-words-py" data-target="diccionario-de-palabras-app-core-words-py"><span class="tn">3.4</span> Diccionario de palabras (<code>app/core/words.py</code>)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints-de-autenticacion" data-target="endpoints-de-autenticacion"><span class="tn">4</span> Endpoints de autenticación</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-auth-login" data-target="post-api-v1-auth-login"><span class="tn">4.1</span> POST /api/v1/auth/login</a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-auth-me" data-target="get-api-v1-auth-me"><span class="tn">4.2</span> GET /api/v1/auth/me</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-setup" data-target="post-api-v1-auth-setup"><span class="tn">4.3</span> POST /api/v1/auth/setup</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-unlock" data-target="post-api-v1-auth-unlock"><span class="tn">4.4</span> POST /api/v1/auth/unlock</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-reset-password" data-target="post-api-v1-auth-reset-password"><span class="tn">4.5</span> POST /api/v1/auth/reset-password</a><span class="pag"></span></li><li class="n3"><a href="#esquemas-pydantic" data-target="esquemas-pydantic"><span class="tn">4.6</span> Esquemas Pydantic</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#bloqueo-y-rate-limiting" data-target="bloqueo-y-rate-limiting"><span class="tn">5</span> Bloqueo y rate limiting</a><span class="pag"></span><ul><li class="n3"><a href="#max-intentos-palabras-requeridas-y-rate-limit" data-target="max-intentos-palabras-requeridas-y-rate-limit"><span class="tn">5.1</span> max_intentos, palabras_requeridas y rate limit</a><span class="pag"></span></li><li class="n3"><a href="#mecanismo-del-rate-limiting" data-target="mecanismo-del-rate-limiting"><span class="tn">5.2</span> Mecanismo del rate limiting</a><span class="pag"></span></li><li class="n3"><a href="#recuperacion-del-bloqueo" data-target="recuperacion-del-bloqueo"><span class="tn">5.3</span> Recuperación del bloqueo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#sesion-y-token" data-target="sesion-y-token"><span class="tn">6</span> Sesión y token</a><span class="pag"></span><ul><li class="n3"><a href="#vigencia-de-8-horas" data-target="vigencia-de-8-horas"><span class="tn">6.1</span> Vigencia de 8 horas</a><span class="pag"></span></li><li class="n3"><a href="#x-request-id-y-observabilidad" data-target="x-request-id-y-observabilidad"><span class="tn">6.2</span> X-Request-ID y observabilidad</a><span class="pag"></span></li><li class="n3"><a href="#expiracion-y-cierre-de-sesion-en-la-spa" data-target="expiracion-y-cierre-de-sesion-en-la-spa"><span class="tn">6.3</span> Expiración y cierre de sesión en la SPA</a><span class="pag"></span></li><li class="n3"><a href="#almacenamiento-del-token" data-target="almacenamiento-del-token"><span class="tn">6.4</span> Almacenamiento del token</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rbac" data-target="rbac"><span class="tn">7</span> RBAC</a><span class="pag"></span><ul><li class="n3"><a href="#get-current-user" data-target="get-current-user"><span class="tn">7.1</span> get_current_user</a><span class="pag"></span></li><li class="n3"><a href="#require-roles-y-bypass-super" data-target="require-roles-y-bypass-super"><span class="tn">7.2</span> require_roles y bypass SUPER</a><span class="pag"></span></li><li class="n3"><a href="#matriz-rol-modulo" data-target="matriz-rol-modulo"><span class="tn">7.3</span> Matriz rol × módulo</a><span class="pag"></span></li><li class="n3"><a href="#aplicacion-en-los-routers" data-target="aplicacion-en-los-routers"><span class="tn">7.4</span> Aplicación en los routers</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#super-usuario" data-target="super-usuario"><span class="tn">8</span> Super Usuario</a><span class="pag"></span><ul><li class="n3"><a href="#creacion-con-scripts-inyectar-super-usuario-py" data-target="creacion-con-scripts-inyectar-super-usuario-py"><span class="tn">8.1</span> Creación con <code>scripts/inyectar_super_usuario.py</code></a><span class="pag"></span></li><li class="n3"><a href="#manejo-de-la-clave" data-target="manejo-de-la-clave"><span class="tn">8.2</span> Manejo de la clave</a><span class="pag"></span></li><li class="n3"><a href="#palabras-en-dispositivo-seguridad" data-target="palabras-en-dispositivo-seguridad"><span class="tn">8.3</span> Palabras en dispositivo_seguridad</a><span class="pag"></span></li><li class="n3"><a href="#verificacion-y-bitacora" data-target="verificacion-y-bitacora"><span class="tn">8.4</span> Verificación y bitácora</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">9</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#app-tests-test-auth-py" data-target="app-tests-test-auth-py"><span class="tn">9.1</span> <code>app/tests/test_auth.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-tests-test-security-py" data-target="app-tests-test-security-py"><span class="tn">9.2</span> <code>app/tests/test_security.py</code></a><span class="pag"></span></li><li class="n3"><a href="#rbac-de-la-spa" data-target="rbac-de-la-spa"><span class="tn">9.3</span> RBAC de la SPA</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#modelo-p00-clave" data-target="modelo-p00-clave"><span class="tn">2.1</span> Modelo P00 + clave</a><span class="pag"></span><ul><li class="n4"><a href="#el-p00-como-sujeto-del-token" data-target="el-p00-como-sujeto-del-token"><span class="tn">2.1.1</span> El P00 como sujeto del token</a><span class="pag"></span></li><li class="n4"><a href="#primer-inicio-y-recuperacion" data-target="primer-inicio-y-recuperacion"><span class="tn">2.1.2</span> Primer inicio y recuperación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#roles-de-la-v1" data-target="roles-de-la-v1"><span class="tn">2.2</span> Roles de la v1</a><span class="pag"></span><ul><li class="n4"><a href="#rol-super" data-target="rol-super"><span class="tn">2.2.1</span> Rol SUPER</a><span class="pag"></span></li><li class="n4"><a href="#roles-admin-supervisor-y-tecnico" data-target="roles-admin-supervisor-y-tecnico"><span class="tn">2.2.2</span> Roles ADMIN, SUPERVISOR y TECNICO</a><span class="pag"></span></li><li class="n4"><a href="#alcance-por-central" data-target="alcance-por-central"><span class="tn">2.2.3</span> Alcance por central</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#alta-y-recuperacion-de-tecnicos-ciclo-d-67" data-target="alta-y-recuperacion-de-tecnicos-ciclo-d-67"><span class="tn">3</span> Alta y recuperación de técnicos (ciclo D-67)</a><span class="pag"></span><ul><li class="n3"><a href="#primer-acceso-del-tecnico" data-target="primer-acceso-del-tecnico"><span class="tn">3.1</span> Primer acceso del técnico</a><span class="pag"></span></li><li class="n3"><a href="#estado-de-la-cuenta-en-tecnicos" data-target="estado-de-la-cuenta-en-tecnicos"><span class="tn">3.2</span> Estado de la cuenta en TÉCNICOS</a><span class="pag"></span></li><li class="n3"><a href="#recuperacion-solo-del-super-usuario" data-target="recuperacion-solo-del-super-usuario"><span class="tn">3.3</span> Recuperación solo del Super Usuario</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#primitivas-de-seguridad" data-target="primitivas-de-seguridad"><span class="tn">4</span> Primitivas de seguridad</a><span class="pag"></span><ul><li class="n3"><a href="#argon2id" data-target="argon2id"><span class="tn">4.1</span> Argon2id</a><span class="pag"></span></li><li class="n3"><a href="#jwt" data-target="jwt"><span class="tn">4.2</span> JWT</a><span class="pag"></span></li><li class="n3"><a href="#normalizacion-de-palabras" data-target="normalizacion-de-palabras"><span class="tn">4.3</span> Normalización de palabras</a><span class="pag"></span></li><li class="n3"><a href="#diccionario-de-palabras-app-core-words-py" data-target="diccionario-de-palabras-app-core-words-py"><span class="tn">4.4</span> Diccionario de palabras (<code>app/core/words.py</code>)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints-de-autenticacion" data-target="endpoints-de-autenticacion"><span class="tn">5</span> Endpoints de autenticación</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-auth-login" data-target="post-api-v1-auth-login"><span class="tn">5.1</span> POST /api/v1/auth/login</a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-auth-me" data-target="get-api-v1-auth-me"><span class="tn">5.2</span> GET /api/v1/auth/me</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-setup" data-target="post-api-v1-auth-setup"><span class="tn">5.3</span> POST /api/v1/auth/setup</a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-auth-primer-acceso" data-target="get-api-v1-auth-primer-acceso"><span class="tn">5.4</span> GET /api/v1/auth/primer-acceso</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-palabras-p00-regenerar" data-target="post-api-v1-auth-palabras-p00-regenerar"><span class="tn">5.5</span> POST /api/v1/auth/palabras/{p00}/regenerar</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-unlock" data-target="post-api-v1-auth-unlock"><span class="tn">5.6</span> POST /api/v1/auth/unlock</a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-auth-reset-password" data-target="post-api-v1-auth-reset-password"><span class="tn">5.7</span> POST /api/v1/auth/reset-password</a><span class="pag"></span></li><li class="n3"><a href="#esquemas-pydantic" data-target="esquemas-pydantic"><span class="tn">5.8</span> Esquemas Pydantic</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#bloqueo-y-rate-limiting" data-target="bloqueo-y-rate-limiting"><span class="tn">6</span> Bloqueo y rate limiting</a><span class="pag"></span><ul><li class="n3"><a href="#max-intentos-palabras-requeridas-y-rate-limit" data-target="max-intentos-palabras-requeridas-y-rate-limit"><span class="tn">6.1</span> max_intentos, palabras_requeridas y rate limit</a><span class="pag"></span></li><li class="n3"><a href="#mecanismo-del-rate-limiting" data-target="mecanismo-del-rate-limiting"><span class="tn">6.2</span> Mecanismo del rate limiting</a><span class="pag"></span></li><li class="n3"><a href="#recuperacion-del-bloqueo" data-target="recuperacion-del-bloqueo"><span class="tn">6.3</span> Recuperación del bloqueo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#sesion-y-token" data-target="sesion-y-token"><span class="tn">7</span> Sesión y token</a><span class="pag"></span><ul><li class="n3"><a href="#vigencia-de-8-horas" data-target="vigencia-de-8-horas"><span class="tn">7.1</span> Vigencia de 8 horas</a><span class="pag"></span></li><li class="n3"><a href="#x-request-id-y-observabilidad" data-target="x-request-id-y-observabilidad"><span class="tn">7.2</span> X-Request-ID y observabilidad</a><span class="pag"></span></li><li class="n3"><a href="#expiracion-y-cierre-de-sesion-en-la-spa" data-target="expiracion-y-cierre-de-sesion-en-la-spa"><span class="tn">7.3</span> Expiración y cierre de sesión en la SPA</a><span class="pag"></span></li><li class="n3"><a href="#almacenamiento-del-token" data-target="almacenamiento-del-token"><span class="tn">7.4</span> Almacenamiento del token</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rbac" data-target="rbac"><span class="tn">8</span> RBAC</a><span class="pag"></span><ul><li class="n3"><a href="#get-current-user" data-target="get-current-user"><span class="tn">8.1</span> get_current_user</a><span class="pag"></span></li><li class="n3"><a href="#require-roles-y-bypass-super" data-target="require-roles-y-bypass-super"><span class="tn">8.2</span> require_roles y bypass SUPER</a><span class="pag"></span></li><li class="n3"><a href="#matriz-rol-modulo" data-target="matriz-rol-modulo"><span class="tn">8.3</span> Matriz rol × módulo</a><span class="pag"></span></li><li class="n3"><a href="#aplicacion-en-los-routers" data-target="aplicacion-en-los-routers"><span class="tn">8.4</span> Aplicación en los routers</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#super-usuario" data-target="super-usuario"><span class="tn">9</span> Super Usuario</a><span class="pag"></span><ul><li class="n3"><a href="#creacion-con-scripts-inyectar-super-usuario-py" data-target="creacion-con-scripts-inyectar-super-usuario-py"><span class="tn">9.1</span> Creación con <code>scripts/inyectar_super_usuario.py</code></a><span class="pag"></span></li><li class="n3"><a href="#manejo-de-la-clave" data-target="manejo-de-la-clave"><span class="tn">9.2</span> Manejo de la clave</a><span class="pag"></span></li><li class="n3"><a href="#palabras-en-dispositivo-seguridad" data-target="palabras-en-dispositivo-seguridad"><span class="tn">9.3</span> Palabras en dispositivo_seguridad</a><span class="pag"></span></li><li class="n3"><a href="#verificacion-y-bitacora" data-target="verificacion-y-bitacora"><span class="tn">9.4</span> Verificación y bitácora</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">10</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#app-tests-test-auth-py" data-target="app-tests-test-auth-py"><span class="tn">10.1</span> <code>app/tests/test_auth.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-tests-test-security-py" data-target="app-tests-test-security-py"><span class="tn">10.2</span> <code>app/tests/test_security.py</code></a><span class="pag"></span></li><li class="n3"><a href="#rbac-de-la-spa" data-target="rbac-de-la-spa"><span class="tn">10.3</span> RBAC de la SPA</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/01-autenticacion-y-rbac.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -807,6 +807,10 @@ Central Francisco Salias (Área 4) de CANTV. La aplicación móvil todavía no e
 desarrollada (el Ciclo 8 quedó pospuesto), por lo que por ahora el acceso se hace
 únicamente desde la interfaz web. Cuando algo aún no está cerrado, se indica con la
 frase <strong>«pendiente de confirmar»</strong>.</p>
+<p><strong>Ciclo D-67.</strong> Este manual incorpora el alta del técnico desde la pantalla de acceso
+(enlace <strong>«Primer acceso (obtener clave)»</strong>), el estado de la cuenta en el listado de
+<strong>TÉCNICOS</strong> y la regeneración de las 12 palabras de seguridad por parte del
+<strong>Super Usuario</strong>.</p>
 </blockquote>
 <h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
 <ol>
@@ -814,13 +818,19 @@ frase <strong>«pendiente de confirmar»</strong>.</p>
 trabajador de CANTV) y su clave personal.</li>
 <li>Presione «Iniciar sesión». Si los datos son correctos, entrará al sistema con el menú
 que corresponde a su rol.</li>
-<li>Si es su <strong>primer inicio</strong>, el sistema le pedirá crear su clave y le mostrará 12
-palabras de seguridad. El supervisor debe haber registrado su P00 antes, desde
-<strong>CONFIGURACIÓN</strong>.</li>
+<li>Si es su <strong>primer acceso</strong>, pulse el enlace <strong>«Primer acceso (obtener clave)»</strong> que
+aparece debajo del formulario de acceso. Escriba su <strong>P00</strong> y pulse «Comprobar P00».
+El sistema le dirá si su supervisor ya lo dio de alta, si la cuenta ya está activa,
+si está bloqueada o si el P00 no existe.</li>
+<li>Si el sistema le permite registrarse, fije su <strong>correo</strong> y su <strong>clave</strong> (mínimo 8
+caracteres, escrita dos veces). Al terminar, el sistema le mostrará
+<strong>12 palabras de seguridad</strong>.</li>
 <li>Anote las 12 palabras en un lugar seguro: se muestran <strong>una sola vez</strong>. Con 3 de ellas
 podrá desbloquear su cuenta o restablecer la clave.</li>
 <li>Si se equivoca 3 veces con la clave, la cuenta se bloquea. Use la opción de
 recuperación con 3 palabras de seguridad para volver a entrar.</li>
+<li>Si pierde las 12 palabras, avise al <strong>Super Usuario</strong>: solo él ve el botón
+<strong>«Palabras»</strong> en el listado de técnicos y puede generar un juego <strong>nuevo</strong>.</li>
 </ol>
 <div class="tabla-scroll"><table>
 <thead>
@@ -845,6 +855,21 @@ recuperación con 3 palabras de seguridad para volver a entrar.</li>
 <td>Palabras</td>
 <td>Diccionario en español</td>
 <td>Recuperar la cuenta</td>
+</tr>
+<tr>
+<td>Primer acceso</td>
+<td>Enlace «Primer acceso (obtener clave)»</td>
+<td>Que el técnico cree su cuenta sin ayuda del supervisor</td>
+</tr>
+<tr>
+<td>Estado de la cuenta</td>
+<td>Distintivo de color en TÉCNICOS</td>
+<td>Saber de un vistazo si el técnico ya tiene acceso</td>
+</tr>
+<tr>
+<td>Auditoría</td>
+<td>Tabla <code>auditoria</code></td>
+<td>Dejar registro del alta y de cada recuperación</td>
 </tr>
 <tr>
 <td>Puntos de entrada</td>
@@ -893,15 +918,23 @@ la base de datos. Por eso la sesión no confía solo en el token: el token ident
 persona y la base de datos confirma que la cuenta sigue existiendo, está activa y no está
 bloqueada.</p>
 <h4 id="primer-inicio-y-recuperacion"><span class="sec-num">2.1.2</span>Primer inicio y recuperación</h4>
-<p>El flujo previsto combina tres momentos:</p>
+<p>El flujo del ciclo D-67 combina cuatro momentos:</p>
 <ol>
-<li>El <strong>supervisor</strong> registra el P00 en <strong>CONFIGURACIÓN</strong> (requerimiento RF-02).</li>
-<li>El <strong>primer inicio</strong> fija la clave y genera las 12 palabras, mediante la operación
-<code>POST /api/v1/auth/setup</code>.</li>
+<li>El <strong>supervisor</strong> registra el P00 en <strong>CONFIGURACIÓN</strong> (requerimiento RF-02). En ese
+momento el técnico todavía no tiene cuenta: en el listado aparece como <strong>«Sin alta»</strong>.</li>
+<li>El <strong>primer acceso</strong> lo hace el propio técnico desde la pantalla de acceso. Primero
+consulta si su P00 está dado de alta, mediante
+<code>GET /api/v1/auth/primer-acceso</code>. Si el sistema le dice que puede registrarse, fija su
+correo, su clave y recibe las 12 palabras mediante <code>POST /api/v1/auth/setup</code>.</li>
 <li>La <strong>recuperación</strong> se hace con 3 de esas 12 palabras, mediante
 <code>POST /api/v1/auth/unlock</code> (desbloquear) o <code>POST /api/v1/auth/reset-password</code>
 (cambiar la clave).</li>
+<li>Si el técnico <strong>pierde las 12 palabras</strong>, el <strong>Super Usuario</strong> genera un juego nuevo
+con <code>POST /api/v1/auth/palabras/{p00}/regenerar</code>. Esa operación es exclusiva de <code>SUPER</code>.</li>
 </ol>
+<p>La regla de oro de las palabras: el sistema guarda solo su <strong>huella cifrada</strong> (un <em>hash</em>).
+Eso quiere decir que <strong>nunca</strong> puede volver a mostrarlas ni recuperarlas. Las palabras en
+claro se ven <strong>una sola vez</strong>, en el momento en que se generan.</p>
 <h3 id="roles-de-la-v1"><span class="sec-num">2.2</span>Roles de la v1</h3>
 <p>La primera versión tiene cuatro roles: <strong>SUPER</strong>, <strong>ADMIN</strong>, <strong>SUPERVISOR</strong> y <strong>TECNICO</strong>.
 Estos cuatro códigos se cargan automáticamente en la tabla <code>rol</code>; si ya existen, no se
@@ -961,11 +994,147 @@ refuerza con <strong>RLS</strong> (Row Level Security, o «seguridad por fila»:
 datos que limita las filas visibles) en las tablas <code>caso</code> y <code>despacho</code>.</p>
 <p>El rol <code>SUPER</code> no está exento de esa regla a nivel de base de datos. Su pase libre es a
 nivel de las reglas de autorización de la aplicación, no a nivel de la base de datos.</p>
-<h2 id="primitivas-de-seguridad"><span class="sec-num">3</span>Primitivas de seguridad</h2>
+<h2 id="alta-y-recuperacion-de-tecnicos-ciclo-d-67"><span class="sec-num">3</span>Alta y recuperación de técnicos (ciclo D-67)</h2>
+<p>Este ciclo agregó tres piezas pensadas para que el técnico no dependa de nadie para
+entrar la primera vez y para que el Super Usuario pueda rescatarlo si pierde sus
+palabras. Las tres se explican a continuación con el mismo lenguaje sencillo.</p>
+<h3 id="primer-acceso-del-tecnico"><span class="sec-num">3.1</span>Primer acceso del técnico</h3>
+<p>Antes, el supervisor debía crear el P00 y el técnico quedaba sin cuenta hasta que alguien
+la creara. Ahora el propio técnico la crea. En la pantalla de acceso —debajo del
+formulario de P00 y clave— hay un enlace que dice
+<strong>«Primer acceso (obtener clave)»</strong>. Al pulsarlo, el técnico:</p>
+<ol>
+<li>Escribe su <strong>P00</strong> y pulsa «Comprobar P00».</li>
+<li>El sistema responde con uno de estos cinco estados:</li>
+</ol>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Lo que ve el técnico</th>
+<th>Qué significa</th>
+<th>Puede registrarse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>«Su P00 está registrado y aún no tiene cuenta activada»</td>
+<td>El supervisor ya lo dio de alta, pero todavía no tiene cuenta</td>
+<td><strong>Sí</strong></td>
+</tr>
+<tr>
+<td>«La cuenta ya está activada»</td>
+<td>Ya tiene cuenta: debe iniciar sesión o recuperar la clave</td>
+<td>No</td>
+</tr>
+<tr>
+<td>«La cuenta está bloqueada»</td>
+<td>Superó los intentos permitidos: debe usar 3 de sus 12 palabras</td>
+<td>No</td>
+</tr>
+<tr>
+<td>«El técnico está en estado …»</td>
+<td>El técnico figura como inactivo, de vacaciones o suspendido</td>
+<td>No</td>
+</tr>
+<tr>
+<td>«Ese P00 no está registrado»</td>
+<td>El supervisor todavía no lo ha creado</td>
+<td>No</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="3">
+<li>Si el sistema lo deja registrarse, aparece un pequeño formulario con tres campos:
+<strong>correo</strong>, <strong>clave</strong> (mínimo 8 caracteres) y <strong>confirmar clave</strong>.</li>
+<li>Al pulsar «Crear mi acceso y ver las 12 palabras», el sistema crea la cuenta, guarda
+la clave cifrada y muestra las <strong>12 palabras de seguridad</strong>.</li>
+<li>El técnico debe anotarlas y pulsar «Ir al acceso» para volver a la pantalla de inicio
+de sesión. Las palabras <strong>no se vuelven a mostrar</strong>.</li>
+</ol>
+<p>Reglas verificables de esta operación:</p>
+<ul>
+<li>La consulta previa es <code>GET /api/v1/auth/primer-acceso</code>. Es pública (no exige sesión)
+porque el técnico todavía no tiene cuenta, y tiene su propio límite de consultas para
+evitar abusos (30 consultas por minuto desde la misma dirección de red).</li>
+<li>El alta es <code>POST /api/v1/auth/setup</code>. Si el P00 no existe, responde <code>404</code>; si la clave
+y su confirmación no coinciden, responde <code>422</code>; y si la cuenta <strong>ya estaba activada</strong>,
+responde <code>409</code> con el mensaje de que inicie sesión o use sus palabras.</li>
+<li>Si el técnico está <strong>inactivo</strong> (por ejemplo, suspendido), el alta no procede y el
+sistema pide consultar con el supervisor.</li>
+<li>El correo se copia también a la ficha del técnico, para mantener los datos alineados.</li>
+<li>Cada alta queda registrada en la tabla <code>auditoria</code> con la acción
+<code>ALTA_PRIMER_ACCESO</code>.</li>
+</ul>
+<h3 id="estado-de-la-cuenta-en-tecnicos"><span class="sec-num">3.2</span>Estado de la cuenta en TÉCNICOS</h3>
+<p>El listado <strong>CONFIGURACIÓN → Técnicos</strong> tiene una columna nueva llamada <strong>Cuenta</strong>. Es un
+distintivo de color (una etiqueta redondeada) que resume, de un vistazo, si el técnico ya
+puede entrar. Sus cinco valores son:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Distintivo</th>
+<th>Color del distintivo</th>
+<th>Cuándo aparece</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sin alta</strong></td>
+<td>Crema (ámbar)</td>
+<td>El supervisor creó el P00, pero el técnico aún no activó su cuenta</td>
+</tr>
+<tr>
+<td><strong>Activo</strong></td>
+<td>Verde claro</td>
+<td>La cuenta funciona y el técnico puede iniciar sesión</td>
+</tr>
+<tr>
+<td><strong>Bloqueado</strong></td>
+<td>Rojo claro</td>
+<td>Superó los intentos de clave permitidos</td>
+</tr>
+<tr>
+<td><strong>Cambio de clave</strong></td>
+<td>Azul claro</td>
+<td>La cuenta pide cambiar la clave antes de seguir</td>
+</tr>
+<tr>
+<td><strong>Inactivo</strong></td>
+<td>Gris</td>
+<td>La cuenta o el técnico está desactivado</td>
+</tr>
+</tbody>
+</table></div>
+<p>El estado se calcula en el propio servidor y viaja en el campo <code>estado_cuenta</code> de cada
+fila del listado de técnicos. La regla de decisión es sencilla: si no hay cuenta o no hay
+palabras de seguridad, es <strong>Sin alta</strong>; después se revisa, en este orden, si está
+bloqueada, si está inactiva, si exige cambio de clave y si el técnico está activo.</p>
+<h3 id="recuperacion-solo-del-super-usuario"><span class="sec-num">3.3</span>Recuperación solo del Super Usuario</h3>
+<p>Si el técnico pierde sus 12 palabras, no puede desbloquear la cuenta ni cambiar la clave.
+Para ese caso, el listado de técnicos tiene un botón llamado <strong>«Palabras»</strong>. Ese botón
+<strong>solo lo ve el Super Usuario</strong>; ningún otro rol puede usarlo (la operación responde <code>403</code>
+a cualquier rol distinto de <code>SUPER</code>).</p>
+<p>Al pulsarlo, el sistema:</p>
+<ol>
+<li>Genera <strong>12 palabras nuevas</strong> al azar.</li>
+<li>Reemplaza las anteriores. Las palabras viejas <strong>dejan de funcionar</strong> en el acto.</li>
+<li>Sube el número de versión del dispositivo de seguridad del técnico.</li>
+<li>Quita el bloqueo de la cuenta y reinicia el contador de intentos fallidos.</li>
+<li>Muestra las 12 palabras nuevas <strong>una sola vez</strong>, para que el Super Usuario se las
+entregue al técnico por un canal seguro.</li>
+<li>Deja constancia en la tabla <code>auditoria</code> con la acción <code>REGENERAR_PALABRAS</code>, indicando
+quién lo pidió, para qué P00, la versión anterior de las palabras y la nueva.</li>
+</ol>
+<p>Lo más importante de este apartado: <strong>el sistema nunca puede mostrar las palabras
+guardadas</strong>. No es que no quiera: no puede. Guarda solo una <strong>huella irreversible</strong>
+(<em>hash</em> con Argon2id) de cada palabra. Esa huella sirve para comprobar si la palabra
+escrita es la correcta, pero no permite reconstruirla. Por eso la única forma de
+«recuperar» unas palabras perdidas es generar un juego nuevo.</p>
+<h2 id="primitivas-de-seguridad"><span class="sec-num">4</span>Primitivas de seguridad</h2>
 <p>Las «primitivas de seguridad» son las piezas básicas con las que se construye la
 protección: cómo se cifra la clave, cómo se arma el token, cómo se comparan las palabras y
 de dónde salen esas palabras.</p>
-<h3 id="argon2id"><span class="sec-num">3.1</span>Argon2id</h3>
+<h3 id="argon2id"><span class="sec-num">4.1</span>Argon2id</h3>
 <p>La clave de cada usuario <strong>nunca se guarda tal cual</strong>. Se guarda convertida en un texto
 ilegible mediante <strong>Argon2id</strong>, un algoritmo diseñado para que sea costoso adivinarla. Se
 usa con los parámetros estándar de la librería <code>argon2-cffi</code> (requerimiento RNF-22). El
@@ -1009,7 +1178,7 @@ de claves. En el código revisado solo están implementados el cifrado Argon2id 
 validación de longitud mínima. El <em>pepper</em>, la caducidad y el historial de claves quedan
 <strong>pendientes de confirmar</strong>.</p>
 </blockquote>
-<h3 id="jwt"><span class="sec-num">3.2</span>JWT</h3>
+<h3 id="jwt"><span class="sec-num">4.2</span>JWT</h3>
 <p>El token de sesión se construye con la librería <code>jwt</code> (JSON Web Token), usando el
 algoritmo configurado, <code>HS256</code> por defecto, y una clave secreta. La función que lo crea
 devuelve dos cosas: el token y cuántos segundos dura.</p>
@@ -1057,14 +1226,14 @@ devuelve dos cosas: el token y cuántos segundos dura.</p>
 <p>El sistema puede agregar campos extra sin cambiar la función; el inicio de sesión lo usa
 para incluir la central. Al leer el token, si está vencido o es inválido se produce un
 error que la autorización traduce en un <code>401</code> (no autorizado).</p>
-<h3 id="normalizacion-de-palabras"><span class="sec-num">3.3</span>Normalización de palabras</h3>
+<h3 id="normalizacion-de-palabras"><span class="sec-num">4.3</span>Normalización de palabras</h3>
 <p>Antes de comparar una palabra de seguridad, el sistema la <strong>normaliza</strong>: la pasa a
 minúsculas, quita los espacios de los extremos y elimina los acentos y la letra Ñ. Así,
 «Árbol», «arbol» y «ARBOL » se consideran la misma palabra. La prueba automática lo
 verifica con acentos y con la letra Ñ.</p>
 <p>La normalización se usa tanto al <strong>guardar</strong> las palabras como al <strong>verificarlas</strong>. El
 script que crea al Super Usuario reutiliza las mismas funciones para no divergir.</p>
-<h3 id="diccionario-de-palabras-app-core-words-py"><span class="sec-num">3.4</span>Diccionario de palabras (<code>app/core/words.py</code>)</h3>
+<h3 id="diccionario-de-palabras-app-core-words-py"><span class="sec-num">4.4</span>Diccionario de palabras (<code>app/core/words.py</code>)</h3>
 <p>El diccionario es una lista de palabras sencillas en español, «sin tildes ni Ñ para
 teclearlas fácil». La generación usa un generador aleatorio seguro, que garantiza palabras
 únicas y difíciles de adivinar.</p>
@@ -1097,11 +1266,11 @@ teclearlas fácil». La generación usa un generador aleatorio seguro, que garan
 <p>La función que genera las palabras valida que no se pidan más de las disponibles y lanza un
 error si ocurre. La prueba automática comprueba que se generan 12 palabras, todas distintas
 y en minúsculas. El primer inicio genera exactamente esas 12 palabras.</p>
-<h2 id="endpoints-de-autenticacion"><span class="sec-num">4</span>Endpoints de autenticación</h2>
+<h2 id="endpoints-de-autenticacion"><span class="sec-num">5</span>Endpoints de autenticación</h2>
 <p>Un «endpoint» es una dirección web que el sistema atiende. Este grupo de direcciones usa el
-prefijo <code>/api/v1/auth</code> y la etiqueta «autenticación». Son parte de las 73 direcciones
+prefijo <code>/api/v1/auth</code> y la etiqueta «autenticación». Son parte de las <strong>79 direcciones</strong>
 publicadas en la documentación técnica del proyecto.</p>
-<h3 id="post-api-v1-auth-login"><span class="sec-num">4.1</span>POST /api/v1/auth/login</h3>
+<h3 id="post-api-v1-auth-login"><span class="sec-num">5.1</span>POST /api/v1/auth/login</h3>
 <p>Es la operación de inicio de sesión. Recibe el P00 y la clave, y devuelve el token. La
 secuencia real es:</p>
 <ol>
@@ -1128,12 +1297,12 @@ token.</li>
     J -- &quot;Sí&quot; --&gt; K[&quot;Bloquea la cuenta (423)&quot;]
     J -- &quot;No&quot; --&gt; L[&quot;401 con X-Intentos-Restantes&quot;]
     H -- &quot;Sí&quot; --&gt; M[&quot;Reinicia intentos y emite el token (200)&quot;]</code></pre></details></figure>
-<h3 id="get-api-v1-auth-me"><span class="sec-num">4.2</span>GET /api/v1/auth/me</h3>
+<h3 id="get-api-v1-auth-me"><span class="sec-num">5.2</span>GET /api/v1/auth/me</h3>
 <p>Devuelve los datos de la persona que está conectada. No recibe parámetros: depende por
 completo de la cabecera de autorización. La respuesta incluye el código del rol y el nombre
 del técnico asociado, si existe. Es la operación que la interfaz web usa para comprobar que
 la sesión guardada sigue siendo válida.</p>
-<h3 id="post-api-v1-auth-setup"><span class="sec-num">4.3</span>POST /api/v1/auth/setup</h3>
+<h3 id="post-api-v1-auth-setup"><span class="sec-num">5.3</span>POST /api/v1/auth/setup</h3>
 <p>Es el <strong>primer inicio</strong>. Fija la clave del P00 y genera las 12 palabras. El P00 debe existir
 previamente, creado por el supervisor (requerimiento RF-02). El comportamiento es:</p>
 <ul>
@@ -1146,15 +1315,58 @@ previamente, creado por el supervisor (requerimiento RF-02). El comportamiento e
 <li>Devuelve las palabras <strong>en claro</strong> para que el usuario las guarde. Es la única vez que se
 muestran.</li>
 </ul>
-<h3 id="post-api-v1-auth-unlock"><span class="sec-num">4.4</span>POST /api/v1/auth/unlock</h3>
+<h3 id="get-api-v1-auth-primer-acceso"><span class="sec-num">5.4</span>GET /api/v1/auth/primer-acceso</h3>
+<p>Es la consulta previa del enlace <strong>«Primer acceso (obtener clave)»</strong>. Recibe el P00 como
+parámetro y no exige sesión, porque quien la usa todavía no tiene cuenta. Devuelve un
+«estado» y un mensaje pensado para mostrarse tal cual al técnico:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Estado</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INEXISTENTE</code></td>
+<td>El P00 no está registrado; debe hablar con su supervisor</td>
+</tr>
+<tr>
+<td><code>PENDIENTE</code></td>
+<td>El supervisor ya lo dio de alta y todavía no tiene cuenta: <strong>puede registrarse</strong></td>
+</tr>
+<tr>
+<td><code>ACTIVO</code></td>
+<td>La cuenta ya está activada; debe iniciar sesión o recuperar la clave</td>
+</tr>
+<tr>
+<td><code>BLOQUEADO</code></td>
+<td>La cuenta está bloqueada; debe usar 3 de sus 12 palabras</td>
+</tr>
+<tr>
+<td><code>INACTIVO</code></td>
+<td>El técnico está suspendido, de vacaciones o inactivo; debe consultar al supervisor</td>
+</tr>
+</tbody>
+</table></div>
+<p>La respuesta incluye el nombre del técnico (si existe) y una marca
+<code>puede_registrarse</code> que es verdadera solo en el estado <code>PENDIENTE</code>. La operación tiene su
+propio límite: 30 consultas por minuto desde la misma dirección de red.</p>
+<h3 id="post-api-v1-auth-palabras-p00-regenerar"><span class="sec-num">5.5</span>POST /api/v1/auth/palabras/{p00}/regenerar</h3>
+<p>Es la recuperación de último recurso, <strong>exclusiva del Super Usuario</strong>. Genera 12 palabras
+nuevas para el P00 indicado, reemplaza las anteriores (que dejan de funcionar),
+desbloquea la cuenta, reinicia los intentos fallidos y devuelve las palabras nuevas
+<strong>una sola vez</strong>. Si el P00 no tiene cuenta de acceso, responde <code>404</code>. Cada ejecución
+queda registrada en <code>auditoria</code>.</p>
+<h3 id="post-api-v1-auth-unlock"><span class="sec-num">5.6</span>POST /api/v1/auth/unlock</h3>
 <p>Desbloquea una cuenta usando 3 de las 12 palabras. Si el P00 no existe, responde <code>404</code>. Si
 las palabras no son correctas, responde <code>401</code>. Si todo está bien, quita el bloqueo, reinicia
 el contador de intentos fallidos y desbloquea también el dispositivo de seguridad.</p>
-<h3 id="post-api-v1-auth-reset-password"><span class="sec-num">4.5</span>POST /api/v1/auth/reset-password</h3>
+<h3 id="post-api-v1-auth-reset-password"><span class="sec-num">5.7</span>POST /api/v1/auth/reset-password</h3>
 <p>Restablece la clave usando 3 de las 12 palabras. Reutiliza la misma verificación de palabras
 y responde <code>404</code> o <code>401</code> en los mismos casos. Al validar, reemplaza la clave cifrada por la
 nueva, desbloquea la cuenta y limpia la marca que obligaba a cambiar la clave.</p>
-<h3 id="esquemas-pydantic"><span class="sec-num">4.6</span>Esquemas Pydantic</h3>
+<h3 id="esquemas-pydantic"><span class="sec-num">5.8</span>Esquemas Pydantic</h3>
 <p>Los «esquemas Pydantic» son los contratos de datos: definen qué campos se aceptan, cuáles
 son obligatorios y qué límites tienen antes de que la operación llegue a la lógica de
 negocio.</p>
@@ -1198,6 +1410,18 @@ negocio.</p>
 <td><code>SetupResponse</code></td>
 <td>Las palabras y el aviso de guardarlas</td>
 </tr>
+<tr>
+<td><code>PrimerAccesoOut</code></td>
+<td>P00, si está registrado, el estado, si puede registrarse, el nombre y el mensaje</td>
+</tr>
+<tr>
+<td><code>RegenerarPalabrasRequest</code></td>
+<td>El P00 del técnico (de 3 a 20 caracteres)</td>
+</tr>
+<tr>
+<td><code>RegenerarPalabrasResponse</code></td>
+<td>Las 12 palabras nuevas y el aviso de entregarlas por un canal seguro</td>
+</tr>
 </tbody>
 </table></div>
 <blockquote>
@@ -1206,11 +1430,11 @@ negocio.</p>
 de recuperación. Se documenta el hecho: hoy el número está fijado por el contrato, no por
 el parámetro.</p>
 </blockquote>
-<h2 id="bloqueo-y-rate-limiting"><span class="sec-num">5</span>Bloqueo y rate limiting</h2>
+<h2 id="bloqueo-y-rate-limiting"><span class="sec-num">6</span>Bloqueo y rate limiting</h2>
 <p>El <strong>rate limiting</strong> (límite de ritmo) es un freno que impide que alguien haga muchísimas
 peticiones seguidas. El <strong>bloqueo</strong> es distinto: deja la cuenta fuera de servicio hasta que
 se recupere con las palabras de seguridad.</p>
-<h3 id="max-intentos-palabras-requeridas-y-rate-limit"><span class="sec-num">5.1</span>max_intentos, palabras_requeridas y rate limit</h3>
+<h3 id="max-intentos-palabras-requeridas-y-rate-limit"><span class="sec-num">6.1</span>max_intentos, palabras_requeridas y rate limit</h3>
 <p>Estos parámetros se leen de variables de entorno (valores de configuración del servidor) y
 quedan disponibles como ajustes del sistema.</p>
 <div class="tabla-scroll"><table>
@@ -1265,7 +1489,7 @@ El código de autenticación revisado no lee ese valor de la base de datos: usa 
 configuración del servidor. La duplicación queda <strong>pendiente de confirmar</strong>, por si se
 desea un único origen del dato.</p>
 </blockquote>
-<h3 id="mecanismo-del-rate-limiting"><span class="sec-num">5.2</span>Mecanismo del rate limiting</h3>
+<h3 id="mecanismo-del-rate-limiting"><span class="sec-num">6.2</span>Mecanismo del rate limiting</h3>
 <p>El limitador vive <strong>en la memoria del proceso</strong>, no está distribuido entre varios servidores.
 Se apoya en un diccionario de marcas de tiempo. Una función descarta las marcas que quedaron
 fuera de la ventana y responde <code>429</code> (demasiadas peticiones) al superar el máximo. La clave
@@ -1311,14 +1535,17 @@ misma dirección de red se frena sin afectar a los demás usuarios.</p>
 </tr>
 </tbody>
 </table></div>
-<h3 id="recuperacion-del-bloqueo"><span class="sec-num">5.3</span>Recuperación del bloqueo</h3>
+<h3 id="recuperacion-del-bloqueo"><span class="sec-num">6.3</span>Recuperación del bloqueo</h3>
 <p>El desbloqueo <strong>no depende del paso del tiempo ni de un administrador</strong>: se resuelve con las
 palabras de seguridad. El sistema recorre las posiciones enviadas, calcula el índice
 correspondiente, valida el rango y compara el cifrado guardado. Si alguna posición o palabra
 falla, devuelve «no coincide». Las pruebas cubren el desbloqueo correcto, el rechazo con
 palabras incorrectas y el restablecimiento de la clave.</p>
-<h2 id="sesion-y-token"><span class="sec-num">6</span>Sesión y token</h2>
-<h3 id="vigencia-de-8-horas"><span class="sec-num">6.1</span>Vigencia de 8 horas</h3>
+<p>Si el técnico <strong>perdió sus 12 palabras</strong>, el desbloqueo con palabras ya no es posible. En ese
+caso, el <strong>Super Usuario</strong> genera un juego nuevo desde el botón «Palabras» del listado de
+técnicos (ciclo D-67).</p>
+<h2 id="sesion-y-token"><span class="sec-num">7</span>Sesión y token</h2>
+<h3 id="vigencia-de-8-horas"><span class="sec-num">7.1</span>Vigencia de 8 horas</h3>
 <p>El token dura <strong>480 minutos</strong> por defecto, es decir, una jornada de 8 horas. El vencimiento
 se calcula sumando esos minutos al momento de emisión y también se informa en segundos. La
 prueba automática inyecta 5 minutos y comprueba que el vencimiento da 300 segundos.</p>
@@ -1327,14 +1554,14 @@ de rotación (cambio periódico) ni de revocación (anulación) de tokens distin
 de la cuenta: el identificador único del token se genera, pero no se guarda en ninguna tabla
 de sesiones. La rotación y la revocación de sesión que menciona el requerimiento RNF-22
 quedan <strong>pendientes de confirmar</strong>.</p>
-<h3 id="x-request-id-y-observabilidad"><span class="sec-num">6.2</span>X-Request-ID y observabilidad</h3>
+<h3 id="x-request-id-y-observabilidad"><span class="sec-num">7.2</span>X-Request-ID y observabilidad</h3>
 <p>Toda petición pasa por un componente de observabilidad. Ese componente lee la cabecera
 <code>X-Request-ID</code> enviada por el cliente o genera un identificador propio, y lo reescribe en la
 respuesta. También anota en la bitácora el método, la ruta, el código de estado y la duración
 en milisegundos, y registra las excepciones con el mismo identificador. El componente se
 agrega antes que la configuración de CORS (intercambio de datos entre sitios), de modo que la
 cabecera está presente también en las respuestas de error.</p>
-<h3 id="expiracion-y-cierre-de-sesion-en-la-spa"><span class="sec-num">6.3</span>Expiración y cierre de sesión en la SPA</h3>
+<h3 id="expiracion-y-cierre-de-sesion-en-la-spa"><span class="sec-num">7.3</span>Expiración y cierre de sesión en la SPA</h3>
 <p>La <strong>SPA</strong> (Single Page Application, o «aplicación de una sola página») guarda el token y los
 datos del usuario en el almacenamiento local del navegador, bajo las claves <code>ggto_token</code> y
 <code>ggto_usuario</code>. En cada llamada, el cliente adjunta la cabecera de autorización con el token
@@ -1343,7 +1570,7 @@ si existe.</p>
 datos del usuario. Si la llamada falla, borra la sesión y deja al usuario sin identificar. El
 inicio de sesión guarda el token y actualiza el estado; el cierre de sesión borra lo
 guardado.</p>
-<h3 id="almacenamiento-del-token"><span class="sec-num">6.4</span>Almacenamiento del token</h3>
+<h3 id="almacenamiento-del-token"><span class="sec-num">7.4</span>Almacenamiento del token</h3>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1377,7 +1604,7 @@ incluye protección <strong>CSRF/CORS</strong> (frenos contra peticiones falsifi
 sitios). Una revisión específica de XSS y CSRF sobre la interfaz web queda <strong>pendiente de
 confirmar</strong>.</p>
 </blockquote>
-<h2 id="rbac"><span class="sec-num">7</span>RBAC</h2>
+<h2 id="rbac"><span class="sec-num">8</span>RBAC</h2>
 <p>El <strong>RBAC</strong> es el control de acceso basado en roles: cada persona tiene un rol y ese rol
 decide qué puede ver y qué puede cambiar. El punto de partida es siempre una sesión válida;
 después se comprueba el rol.</p>
@@ -1387,7 +1614,7 @@ después se comprueba el rol.</p>
     R --&gt;|ADMIN| A[&quot;Configuración, ingesta,&lt;br/&gt;despacho y usuarios&quot;]
     R --&gt;|SUPERVISOR| S[&quot;Operación diaria:&lt;br/&gt;ingesta, despacho y cuadrillas&quot;]
     R --&gt;|TECNICO| X[&quot;Lectura y gestión&lt;br/&gt;de sus propios casos&quot;]</code></pre></details></figure>
-<h3 id="get-current-user"><span class="sec-num">7.1</span>get_current_user</h3>
+<h3 id="get-current-user"><span class="sec-num">8.1</span>get_current_user</h3>
 <p>Es la regla base de autenticación. Usa un esquema de seguridad que permite responder con un
 mensaje propio en vez del error automático. Su lógica es:</p>
 <ol>
@@ -1399,7 +1626,7 @@ mensaje propio en vez del error automático. Su lógica es:</p>
 </ol>
 <p>La respuesta de <code>401</code> incluye la cabecera <code>WWW-Authenticate: Bearer</code>. Esta regla se usa
 directamente en operaciones de solo lectura, por ejemplo al listar las centrales.</p>
-<h3 id="require-roles-y-bypass-super"><span class="sec-num">7.2</span>require_roles y bypass SUPER</h3>
+<h3 id="require-roles-y-bypass-super"><span class="sec-num">8.2</span>require_roles y bypass SUPER</h3>
 <p><code>require_roles</code> es una <strong>fábrica de reglas</strong>: recibe los códigos de rol aceptados y devuelve
 la función que hace la comprobación. Su decisión es:</p>
 <ul>
@@ -1410,7 +1637,10 @@ la función que hace la comprobación. Su decisión es:</p>
 <p>El <strong>bypass</strong> (pase libre) del Super Usuario no requiere enumerarlo en cada operación, tal
 como exige la decisión D-50. El patrón típico es declarar una vez la regla de escritura para
 <code>ADMIN</code> y <code>SUPERVISOR</code>, y aplicarla en cada operación que modifica datos.</p>
-<h3 id="matriz-rol-modulo"><span class="sec-num">7.3</span>Matriz rol × módulo</h3>
+<p>La <strong>regeneración de palabras</strong> del ciclo D-67 es una excepción deliberada: declara como
+único rol permitido <code>SUPER</code>. Por eso ni <code>ADMIN</code> ni <code>SUPERVISOR</code> pueden usarla, aunque sí
+puedan dar de alta técnicos.</p>
+<h3 id="matriz-rol-modulo"><span class="sec-num">8.3</span>Matriz rol × módulo</h3>
 <p>La matriz oficial de la primera versión cruza cada módulo con los cuatro roles. Se reproduce
 de forma resumida, respetando el documento de requerimientos:</p>
 <div class="tabla-scroll"><table>
@@ -1502,6 +1732,20 @@ de forma resumida, respetando el documento de requerimientos:</p>
 <td>—</td>
 </tr>
 <tr>
+<td>ESTADO DE LA CUENTA (columna Cuenta)</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>Lectura</td>
+<td>—</td>
+</tr>
+<tr>
+<td>RECUPERACIÓN DE PALABRAS (botón «Palabras»)</td>
+<td>Completo</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
 <td>USUARIOS y accesos</td>
 <td>Completo</td>
 <td>Completo</td>
@@ -1526,7 +1770,7 @@ de autenticación, es decir, una comprobación adicional además de la clave). E
 revisado implementa únicamente P00 + clave + 12 palabras; no se encontró un segundo factor.
 El MFA queda <strong>pendiente de confirmar</strong>.</p>
 </blockquote>
-<h3 id="aplicacion-en-los-routers"><span class="sec-num">7.4</span>Aplicación en los routers</h3>
+<h3 id="aplicacion-en-los-routers"><span class="sec-num">8.4</span>Aplicación en los routers</h3>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1553,8 +1797,8 @@ El MFA queda <strong>pendiente de confirmar</strong>.</p>
 </tr>
 </tbody>
 </table></div>
-<h2 id="super-usuario"><span class="sec-num">8</span>Super Usuario</h2>
-<h3 id="creacion-con-scripts-inyectar-super-usuario-py"><span class="sec-num">8.1</span>Creación con <code>scripts/inyectar_super_usuario.py</code></h3>
+<h2 id="super-usuario"><span class="sec-num">9</span>Super Usuario</h2>
+<h3 id="creacion-con-scripts-inyectar-super-usuario-py"><span class="sec-num">9.1</span>Creación con <code>scripts/inyectar_super_usuario.py</code></h3>
 <p>El Super Usuario se crea con un script (un programa de apoyo) explícito, que se puede
 ejecutar varias veces sin duplicar datos y que pide confirmación. El script:</p>
 <ul>
@@ -1569,31 +1813,33 @@ bloqueo y con el contador de intentos en cero.</li>
 <li>Admite un modo de simulación, que deshace los cambios en lugar de confirmarlos, y una
 opción para omitir la confirmación interactiva.</li>
 </ul>
-<h3 id="manejo-de-la-clave"><span class="sec-num">8.2</span>Manejo de la clave</h3>
+<h3 id="manejo-de-la-clave"><span class="sec-num">9.2</span>Manejo de la clave</h3>
 <p>La clave <strong>nunca</strong> se escribe en el archivo ni en la línea de comandos. Se lee de la variable
 de entorno indicada o se solicita de forma oculta en pantalla. Se exige una longitud mínima
 de 8 caracteres, salvo en el modo de simulación. En este manual solo se documenta el
 <strong>nombre</strong> de la variable de entorno, nunca su valor.</p>
-<h3 id="palabras-en-dispositivo-seguridad"><span class="sec-num">8.3</span>Palabras en dispositivo_seguridad</h3>
+<h3 id="palabras-en-dispositivo-seguridad"><span class="sec-num">9.3</span>Palabras en dispositivo_seguridad</h3>
 <p>Las palabras se guardan únicamente como textos cifrados (hashes) en un campo de tipo JSONB
 (un formato de datos que la base de datos guarda como objeto) dentro de la tabla
 <code>dispositivo_seguridad</code>. El modelo incluye además una referencia a una clave privada, un
 documento cifrado, la marca de bloqueo y el número de versión.</p>
-<p>El script inserta o actualiza el registro e incrementa la versión. El primer inicio hace lo
-mismo desde la aplicación y también incrementa la versión. Las palabras en claro se muestran
-<strong>una sola vez</strong>.</p>
-<h3 id="verificacion-y-bitacora"><span class="sec-num">8.4</span>Verificación y bitácora</h3>
+<p>El script inserta o actualiza el registro e incrementa la versión. El primer acceso hace lo
+mismo desde la aplicación y también incrementa la versión. Cuando el Super Usuario regenera
+las palabras (D-67), reemplaza la lista completa de huellas, sube otra vez la versión y
+desbloquea el dispositivo. En todos los casos, las palabras en claro se muestran <strong>una sola
+vez</strong>.</p>
+<h3 id="verificacion-y-bitacora"><span class="sec-num">9.4</span>Verificación y bitácora</h3>
 <p>Después de confirmar los cambios, el script ejecuta una consulta de verificación que une las
 tablas de usuario, rol y técnico, y registra el resultado. La existencia del rol y su efecto
 fueron verificados en producción según la decisión D-50. El detalle de las credenciales
 usadas no se reproduce aquí por tratarse de datos sensibles.</p>
-<h2 id="pruebas"><span class="sec-num">9</span>Pruebas</h2>
+<h2 id="pruebas"><span class="sec-num">10</span>Pruebas</h2>
 <p>El resultado global de la Fase 4 fue de <strong>169 pruebas de <code>pytest</code> aprobadas de 169</strong> y
 <strong>46 pruebas E2E de Playwright aprobadas de 46</strong>, con <code>ruff</code>, <code>mypy</code> y <code>tsc</code> en modo estricto
 sin hallazgos. Las pruebas que tocan base de datos usan la variable <code>DB_SCHEMA</code> para trabajar
 en esquemas aislados: <code>ggto_test</code> para <code>pytest</code> y <code>ggto_e2e</code> para Playwright. Así no se
 tocan los datos reales.</p>
-<h3 id="app-tests-test-auth-py"><span class="sec-num">9.1</span><code>app/tests/test_auth.py</code></h3>
+<h3 id="app-tests-test-auth-py"><span class="sec-num">10.1</span><code>app/tests/test_auth.py</code></h3>
 <p>Es la prueba de integración del Ciclo 1: inicio de sesión, bloqueo, recuperación y sesiones.
 Requiere base de datos; si la variable de conexión de pruebas no está definida, las pruebas
 de integración se omiten.</p>
@@ -1649,14 +1895,31 @@ de integración se omiten.</p>
 <td><code>test_restablecer_clave_con_palabras</code></td>
 <td>La clave nueva queda operativa</td>
 </tr>
+<tr>
+<td><code>test_primer_acceso_p00_inexistente</code></td>
+<td>Un P00 sin registrar responde <code>INEXISTENTE</code> y no puede registrarse</td>
+</tr>
+<tr>
+<td><code>test_autoalta_del_tecnico</code></td>
+<td>El listado muestra «Sin alta», el técnico crea su cuenta, recibe 12 palabras y pasa a «Activo»</td>
+</tr>
+<tr>
+<td><code>test_estado_cuenta_bloqueado_tras_intentos</code></td>
+<td>Tras 3 fallos, la columna Cuenta muestra «Bloqueado»</td>
+</tr>
+<tr>
+<td><code>test_regenerar_palabras_solo_super_usuario</code></td>
+<td>ADMIN y TECNICO reciben <code>403</code>; el SUPER obtiene 12 palabras nuevas y queda registro en <code>auditoria</code></td>
+</tr>
 </tbody>
 </table></div>
-<p>El informe de Fase 4 registra 11 pruebas en este archivo.</p>
-<h3 id="app-tests-test-security-py"><span class="sec-num">9.2</span><code>app/tests/test_security.py</code></h3>
+<p>El informe de Fase 4 registra 11 pruebas en este archivo, más las <strong>cuatro pruebas del ciclo
+D-67</strong> que se acaban de listar (15 en total en el archivo actual).</p>
+<h3 id="app-tests-test-security-py"><span class="sec-num">10.2</span><code>app/tests/test_security.py</code></h3>
 <p>Son pruebas unitarias que <strong>no requieren base de datos</strong>: cifrado y verificación Argon2id,
 salado, normalización de palabras, ida y vuelta del token, token inválido y generación de
 palabras. El informe de Fase 4 registra 6 pruebas.</p>
-<h3 id="rbac-de-la-spa"><span class="sec-num">9.3</span>RBAC de la SPA</h3>
+<h3 id="rbac-de-la-spa"><span class="sec-num">10.3</span>RBAC de la SPA</h3>
 <p>En el navegador, el proveedor de autenticación expone tres datos: si la persona está
 autenticada, si la sesión está cargando y si la sesión es de solo lectura. Este último se
 calcula como «el rol es TECNICO».</p>
@@ -1681,7 +1944,7 @@ cualquier sesión válida.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

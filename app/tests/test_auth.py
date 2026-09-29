@@ -186,3 +186,132 @@ def test_restablecer_clave_con_palabras(client, usuario_creado):
     )
     assert r.status_code == 200, r.text
     assert client.post("/api/v1/auth/login", json={"p00": P00, "clave": "otraclave789"}).status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Primer acceso, estado de la cuenta y regeneración de palabras (D-67)
+# --------------------------------------------------------------------------- #
+P00_NUEVO = "TSTNUEVO"
+
+
+def _crear_tecnico(client, admin_token, p00=P00_NUEVO):
+    r = client.post(
+        "/api/v1/tecnicos",
+        json={"id_central": admin_token["id_central"], "nombre": "NUEVO",
+              "apellido": "TECNICO", "p00": p00},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_primer_acceso_p00_inexistente(client):
+    r = client.get("/api/v1/auth/primer-acceso", params={"p00": "TSTNOEXISTE"})
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["registrado"] is False
+    assert cuerpo["estado"] == "INEXISTENTE"
+    assert cuerpo["puede_registrarse"] is False
+
+
+def test_autoalta_del_tecnico(client, admin_token, db_session):
+    """El supervisor crea el P00; el técnico activa su cuenta y recibe 12 palabras."""
+    creado = _crear_tecnico(client, admin_token)
+    assert creado["estado_cuenta"] == "SIN_ALTA"
+
+    # El sistema detecta que el P00 está dado de alta y ofrece el proceso
+    r = client.get("/api/v1/auth/primer-acceso", params={"p00": P00_NUEVO})
+    assert r.status_code == 200
+    cuerpo = r.json()
+    assert cuerpo["registrado"] is True
+    assert cuerpo["estado"] == "PENDIENTE"
+    assert cuerpo["puede_registrarse"] is True
+
+    # Un P00 no registrado no puede autoregistrarse
+    r = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTFANTASMA", "correo": "x@y.com",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert r.status_code == 404
+
+    # Alta de primer acceso: crea la cuenta, la clave y las 12 palabras
+    r = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": P00_NUEVO, "correo": "nuevo@cantv.com.ve",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert r.status_code == 200, r.text
+    palabras = r.json()["palabras"]
+    assert len(palabras) == 12
+
+    # Ya puede iniciar sesión y su estado pasa a ACTIVO
+    assert client.post("/api/v1/auth/login",
+                       json={"p00": P00_NUEVO, "clave": "clave12345"}).status_code == 200
+    r = client.get("/api/v1/auth/primer-acceso", params={"p00": P00_NUEVO})
+    assert r.json()["estado"] == "ACTIVO"
+
+    # No se puede repetir el alta (debe usar la recuperación)
+    r = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": P00_NUEVO, "correo": "nuevo@cantv.com.ve",
+              "clave": "otra12345", "confirmacion": "otra12345"},
+    )
+    assert r.status_code == 409
+
+    # El listado de técnicos refleja el estado de la cuenta
+    listado = client.get("/api/v1/tecnicos", headers=admin_token["admin"]).json()
+    fila = next(t for t in listado if t["p00"] == P00_NUEVO)
+    assert fila["estado_cuenta"] == "ACTIVO"
+
+
+def test_estado_cuenta_bloqueado_tras_intentos(client, admin_token):
+    _crear_tecnico(client, admin_token, p00="TSTBLOQ")
+    client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTBLOQ", "correo": "b@cantv.com.ve",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    for _ in range(3):
+        client.post("/api/v1/auth/login", json={"p00": "TSTBLOQ", "clave": "mala"})
+
+    listado = client.get("/api/v1/tecnicos", headers=admin_token["admin"]).json()
+    fila = next(t for t in listado if t["p00"] == "TSTBLOQ")
+    assert fila["estado_cuenta"] == "BLOQUEADO"
+
+
+def test_regenerar_palabras_solo_super_usuario(client, admin_token, db_session):
+    _crear_tecnico(client, admin_token, p00="TSTRECUP")
+    client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTRECUP", "correo": "r@cantv.com.ve",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+
+    # ADMIN y TECNICO no pueden regenerar
+    assert client.post("/api/v1/auth/palabras/TSTRECUP/regenerar",
+                       headers=admin_token["admin"]).status_code == 403
+    assert client.post("/api/v1/auth/palabras/TSTRECUP/regenerar",
+                       headers=admin_token["tecnico"]).status_code == 403
+
+    # El Super Usuario sí, y obtiene 12 palabras nuevas
+    r = client.post("/api/v1/auth/palabras/TSTRECUP/regenerar",
+                    headers=admin_token["super"])
+    assert r.status_code == 200, r.text
+    palabras = r.json()["palabras"]
+    assert len(palabras) == 12
+
+    # Las palabras nuevas sirven para desbloquear/recuperar la cuenta
+    tres = [{"pos": 1, "valor": palabras[0]},
+            {"pos": 5, "valor": palabras[4]},
+            {"pos": 9, "valor": palabras[8]}]
+    assert client.post("/api/v1/auth/unlock",
+                       json={"p00": "TSTRECUP", "palabras": tres}).status_code == 200
+
+    # Queda registrado en la auditoría
+    from app.models import Auditoria
+    fila = db_session.scalar(
+        select(Auditoria).where(Auditoria.accion == "REGENERAR_PALABRAS")
+    )
+    assert fila is not None
+    assert fila.id_entidad == "TSTRECUP"

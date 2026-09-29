@@ -9,6 +9,23 @@ import { nv } from '../utils';
 
 const STATUS: StatusTecnico[] = ['ACTIVO', 'INACTIVO', 'VACACIONES', 'SUSPENDIDO'];
 
+/** Etiquetas y clases del ciclo de vida de la cuenta (D-67). */
+const ETIQUETA_CUENTA: Record<string, string> = {
+  ACTIVO: 'Activo',
+  SIN_ALTA: 'Sin alta',
+  BLOQUEADO: 'Bloqueado',
+  REQUIERE_CAMBIO: 'Cambio de clave',
+  INACTIVO: 'Inactivo',
+};
+
+const CLASE_CUENTA: Record<string, string> = {
+  ACTIVO: 'estado-activo',
+  SIN_ALTA: 'estado-sin-alta',
+  BLOQUEADO: 'estado-bloqueado',
+  REQUIERE_CAMBIO: 'estado-requiere-cambio',
+  INACTIVO: 'estado-inactivo',
+};
+
 interface TecnicoForm {
   id_central: string;
   nombre: string;
@@ -34,7 +51,8 @@ const FORM_VACIO: TecnicoForm = {
 };
 
 export default function Tecnicos() {
-  const { soloLectura } = useAuth();
+  const { soloLectura, usuario } = useAuth();
+  const esSuper = usuario?.rol === 'SUPER';
   const [items, setItems] = useState<Tecnico[]>([]);
   const [centrales, setCentrales] = useState<Central[]>([]);
   const [filtroCentral, setFiltroCentral] = useState('');
@@ -46,6 +64,38 @@ export default function Tecnicos() {
   const [editando, setEditando] = useState<Tecnico | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+
+  // Recuperación de seguridad: el Super Usuario regenera las 12 palabras (D-67).
+  const [palabrasP00, setPalabrasP00] = useState<string | null>(null);
+  const [palabrasNuevas, setPalabrasNuevas] = useState<string[] | null>(null);
+  const [errorPalabras, setErrorPalabras] = useState('');
+  const [regenerando, setRegenerando] = useState(false);
+
+  async function regenerarPalabras(t: Tecnico) {
+    if (
+      !window.confirm(
+        `¿Generar 12 palabras de seguridad NUEVAS para ${t.nombre} (${t.p00})?\n\n` +
+          'Las anteriores dejarán de funcionar y las nuevas solo se muestran una vez.',
+      )
+    ) {
+      return;
+    }
+    setErrorPalabras('');
+    setPalabrasNuevas(null);
+    setPalabrasP00(t.p00);
+    setRegenerando(true);
+    try {
+      const respuesta = await api.regenerarPalabras(t.p00);
+      setPalabrasNuevas(respuesta.palabras);
+      setOk(`Palabras regeneradas para ${t.p00}.`);
+    } catch (e) {
+      setErrorPalabras(
+        e instanceof api.ApiError ? e.message : 'No se pudieron regenerar las palabras.',
+      );
+    } finally {
+      setRegenerando(false);
+    }
+  }
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -340,19 +390,20 @@ export default function Tecnicos() {
               <th>Teléfono</th>
               <th>Especialidad</th>
               <th>Status</th>
+              <th>Cuenta</th>
               {!soloLectura && <th>Acciones</th>}
             </tr>
           </thead>
           <tbody>
             {cargando ? (
               <tr>
-                <td colSpan={soloLectura ? 8 : 9} className="vacio">
+                <td colSpan={soloLectura ? 9 : 10} className="vacio">
                   Cargando…
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={soloLectura ? 8 : 9} className="vacio">
+                <td colSpan={soloLectura ? 9 : 10} className="vacio">
                   No hay técnicos registrados.
                 </td>
               </tr>
@@ -367,12 +418,30 @@ export default function Tecnicos() {
                   <td>{t.telefono ?? '—'}</td>
                   <td>{t.especialidad ?? '—'}</td>
                   <td>{t.status}</td>
+                  <td>
+                    <span
+                      className={`estado-cuenta ${CLASE_CUENTA[t.estado_cuenta ?? 'SIN_ALTA'] ?? ''}`}
+                      title="Estado de la cuenta de acceso"
+                    >
+                      {ETIQUETA_CUENTA[t.estado_cuenta ?? 'SIN_ALTA'] ?? t.estado_cuenta}
+                    </span>
+                  </td>
                   {!soloLectura && (
                     <td>
                       <div className="celda-acciones">
                         <button className="btn btn-mini btn-secundario" onClick={() => editar(t)}>
                           Editar
                         </button>
+                        {esSuper && (
+                          <button
+                            className="btn btn-mini btn-secundario"
+                            title="Generar 12 palabras de seguridad nuevas (solo Super Usuario)"
+                            onClick={() => void regenerarPalabras(t)}
+                            disabled={regenerando}
+                          >
+                            Palabras
+                          </button>
+                        )}
                         <button className="btn btn-mini btn-peligro" onClick={() => desactivar(t)}>
                           Desactivar
                         </button>
@@ -384,7 +453,7 @@ export default function Tecnicos() {
             )}
           </tbody>
           <PieTabla
-            colSpan={soloLectura ? 8 : 9}
+            colSpan={soloLectura ? 9 : 10}
             total={items.length}
             singular="técnico"
             plural="técnicos"
@@ -392,6 +461,49 @@ export default function Tecnicos() {
           />
         </table>
       </div>
+
+      {/* Recuperación de seguridad: palabras nuevas (una sola vez) — solo SUPER */}
+      {palabrasP00 && (
+        <Modal
+          titulo={`Palabras de seguridad de ${palabrasP00}`}
+          onCerrar={() => {
+            setPalabrasP00(null);
+            setPalabrasNuevas(null);
+            setErrorPalabras('');
+          }}
+        >
+          <Mensaje tipo="error" texto={errorPalabras} onCerrar={() => setErrorPalabras('')} />
+          {regenerando && <p className="texto-pequeno">Generando…</p>}
+          {palabrasNuevas && (
+            <>
+              <p className="texto-pequeno">
+                Entregue estas <strong>12 palabras</strong> al técnico por un canal seguro. No se
+                volverán a mostrar y las anteriores dejan de funcionar. Con 3 de ellas podrá
+                desbloquear la cuenta o restablecer su clave.
+              </p>
+              <ol className="lista-palabras">
+                {palabrasNuevas.map((palabra, indice) => (
+                  <li key={indice}>
+                    <span className="mono">{palabra}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+          <div className="acciones-form">
+            <button
+              className="btn"
+              type="button"
+              onClick={() => {
+                setPalabrasP00(null);
+                setPalabrasNuevas(null);
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

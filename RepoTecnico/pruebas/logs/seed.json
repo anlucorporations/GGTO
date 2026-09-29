@@ -13,9 +13,17 @@
     "E2ETEC": {
       "rol": "TECNICO",
       "clave": "E2e.Clave.2026"
+    },
+    "E2ESUPR": {
+      "rol": "SUPER",
+      "clave": "E2e.Clave.2026"
     }
   },
   "sector": "E2E-S1",
   "cuadrilla": "E2E-C1",
+  "cuadrillas": [
+    "E2E-C1",
+    "E2E-C2"
+  ],
   "casos": 8
 }

@@ -16,12 +16,15 @@
    la central; si lo deja vacío, se usa la central configurada.
 3. Pulse **«Simular (preview)»**. Esa opción **no guarda nada**: solo muestra cuántas filas
    leyó, cuántas son de la central, cuántos casos son nuevos y cuántos repetidos.
-4. Revise el resumen y los avisos. Si todo está bien, pulse **«Cargar archivo»** y confirme.
-   El sistema crea los casos nuevos y deja un registro del lote en el historial.
+4. Revise el resumen y los avisos. Si aparece el aviso de **direcciones que no pertenecen a
+   ningún sector**, pulse **«Gestionar en SECTOR»**, elija a qué sector va cada dirección y el
+   sistema **vuelve a sectorizar** los casos pendientes. Cuando todo esté bien, pulse
+   **«Cargar archivo»** y confirme. El sistema crea los casos nuevos y deja un registro del lote
+   en el historial.
 5. Repita la carga con el mismo archivo no duplica nada: los casos ya existentes se cuentan
    como duplicados.
 
-## Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41)
+## Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41/D-66)
 
 El módulo INGESTA recibe el archivo diario de averías GPON del sistema origen de CANTV, lo
 depura, filtra los casos de la central configurada, evita duplicados y crea los casos nuevos.
@@ -39,9 +42,18 @@ Es la puerta de entrada principal del universo de casos de la plataforma.
 | Mapeo por posición de columna | Decisión D-04 |
 | Depuración del CSV (21 columnas) | Decisión D-27 |
 | Contrato de interfaz con el origen | Decisión D-41 |
+| Aviso de direcciones sin sector y re-sectorización | Decisión D-66 |
 
 El módulo usa el prefijo `/api/v1/ingesta` y la etiqueta «ingesta». Su descripción interna
 enumera los requisitos que cubre: «RF-01, RF-21, RF-22, RF-23, RF-25, RF-29».
+
+El ciclo **D-66** agregó dos capacidades a la ingesta:
+
+1. Si una **dirección del archivo no pertenece a ningún sector**, el resumen lo **avisa** y
+   muestra la cantidad de casos afectados.
+2. El botón **«Gestionar en SECTOR»** permite **asignar esa dirección a un sector** y, al
+   terminar, **volver a sectorizar** los casos que habían quedado pendientes, sin recargar el
+   archivo.
 
 La lógica de análisis y de escritura está separada de la capa web:
 
@@ -321,6 +333,29 @@ Los patrones provienen solo de sectores activos y patrones activos, ordenados po
 nombre. El resultado se guarda en el caso y se cuenta en el resumen como «sectorizados» o
 «sin sector».
 
+### Direcciones sin sector (D-66)
+
+Cuando una **dirección no coincide con ningún sector**, el caso queda «sin sector» y no puede
+entrar al despacho. Para resolverlo, la carga arma una lista de **direcciones pendientes**:
+
+- Agrupa las direcciones repetidas con el mismo texto (sin acentos ni mayúsculas) y suma cuántos
+  casos tienen.
+- Ordena la lista de mayor a menor cantidad y guarda hasta **50** direcciones.
+- Cada fila trae la dirección, el total de casos y un **ID de avería de ejemplo**.
+- El resumen entrega esa lista en el campo `direcciones_sin_sector`.
+
+En la pantalla se muestra un aviso con esa información y el botón **«Gestionar en SECTOR»**. Ese
+botón abre una ventana donde se elige, para cada dirección, el **sector destino**; al confirmar,
+el sistema:
+
+1. Agrega la dirección como **patrón** del sector (coincidencia «contiene», con normalización).
+2. Llama a la operación de **re-sectorización**, que repasa los casos de la central que quedaron
+   **sin sector** y les aplica los patrones vigentes.
+3. Informa cuántos casos se revisaron, cuántos se asignaron y cuántos siguen sin sector.
+
+Así, una dirección nueva se corrige una sola vez y los casos pendientes entran al despacho sin
+volver a cargar el archivo.
+
 ### Criterio de cuadrilla 0
 
 La función de cuadrilla 0 decide si un caso va al supervisor sin salir a la calle. Combina
@@ -362,7 +397,7 @@ falla.
 
 ## Endpoints
 
-Las cuatro operaciones del módulo se declaran bajo el prefijo `/api/v1/ingesta`.
+Las cinco operaciones del módulo se declaran bajo el prefijo `/api/v1/ingesta`.
 
 ### `POST /api/v1/ingesta/preview`
 
@@ -376,7 +411,8 @@ Las cuatro operaciones del módulo se declaran bajo el prefijo `/api/v1/ingesta`
 #### Contrato de la respuesta
 
 Los campos del resumen son: contadores de filas leídas, filas de la central, casos nuevos,
-duplicados y descartados, sectorizados, sin sector, cuadrilla 0, avisos y hasta diez ejemplos.
+duplicados y descartados, sectorizados, sin sector, cuadrilla 0, avisos, hasta diez ejemplos y
+hasta **50 direcciones sin sector** (con su total de casos y un ID de avería de ejemplo).
 
 ### `POST /api/v1/ingesta`
 
@@ -409,6 +445,21 @@ Devuelve el detalle de un lote. Si no existe, responde `404` con «Lote no encon
 La salida del lote expone: identificador del lote, archivo, fecha del archivo, central, los
 cinco contadores, estado, detalle de error, usuario y fecha de creación.
 
+### `POST /api/v1/ingesta/sectorizar-pendientes` (D-66)
+
+Vuelve a aplicar los patrones de sector a los casos de la central que quedaron **sin sector**.
+Se usa después de agregar direcciones nuevas desde el aviso de la ingesta.
+
+| Atributo | Valor |
+|---|---|
+| Autenticación | Token de sesión; rol ADMIN o SUPERVISOR |
+| Parámetro | `id_central` opcional (si no se envía, usa la central configurada) |
+| Respuesta | `revisados`, `asignados` y `sin_sector` |
+| Efecto en la base | Actualiza el sector de los casos que ahora coinciden con un patrón |
+
+Solo toca casos con `id_sector` vacío y con dirección cargada. Si ninguno cambia, no escribe
+nada.
+
 ## Esquemas y modelo `ingesta_lote`
 
 ### Esquemas Pydantic (`app/schemas/ingesta.py`)
@@ -418,7 +469,9 @@ Los **esquemas** son los contratos de datos de entrada y salida.
 | Esquema | Uso |
 |---|---|
 | `EjemploCaso` | Muestra de hasta diez casos candidatos |
+| `DireccionSinSector` | Una dirección que no coincide con ningún sector (D-66) |
 | `ResumenIngesta` | Respuesta de la simulación y de la carga |
+| `SectorizacionPendientesOut` | Resultado de volver a sectorizar los pendientes (D-66) |
 | `IngestaLoteOut` | Historial y detalle de lotes |
 
 La salida del lote valida directamente desde el objeto de base de datos. El resumen inicializa
@@ -483,6 +536,22 @@ Después de la operación se muestran ocho tarjetas: filas leídas, filas de la 
 nuevos, duplicados, descartados, sectorizados, sin sector y cuadrilla 0. Los avisos del
 analizador se muestran como mensajes de error y los ejemplos aparecen en una tabla con el
 identificador de avería, la dirección, el sector y la marca de cuadrilla 0.
+
+### Direcciones sin sector: aviso y gestión (D-66)
+
+Si el resumen trae direcciones que no pertenecen a ningún sector, la página muestra un **aviso**
+con el número de direcciones y de casos afectados, y el botón **«Gestionar en SECTOR»**.
+
+Al pulsarlo se abre una ventana con la lista de direcciones (dirección, cantidad de casos y un
+ID de avería de ejemplo) y un **selector de sector destino** por fila. El botón «Agregar
+direcciones y sectorizar»:
+
+1. Agrega cada dirección elegida como patrón del sector.
+2. Vuelve a sectorizar los casos pendientes.
+3. Cierra la ventana e informa cuántos casos cambiaron de sector.
+
+Si no hay sectores activos, la ventana avisa que primero hay que crearlos en **CONFIGURACIÓN →
+Sectores**.
 
 ### Historial y detalle de lotes
 
@@ -551,10 +620,12 @@ Nivel unitario, sin base de datos. El informe de Fase 4 lo registra con 12 prueb
 La muestra usada está en `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv`, y la lista de
 archivos excluidos de Git la mantiene versionada por estar pseudonimizada.
 
-### `test_ingesta_api.py` (6 pruebas)
+### `test_ingesta_api.py` (8 pruebas)
 
-Nivel de integración. El informe de Fase 4 lo registra con 6 pruebas y ámbito «Preview, carga,
-filtro por central y deduplicación». Cubre:
+Nivel de integración. El informe de Fase 4 lo registraba con 6 pruebas y ámbito «Preview, carga,
+filtro por central y deduplicación». El ciclo **D-66** agregó 2 pruebas (aviso y gestión de
+direcciones sin sector, y permiso de escritura de la re-sectorización), para un total de **8**.
+Cubre:
 
 | Prueba | Qué verifica |
 |---|---|
@@ -564,6 +635,8 @@ filtro por central y deduplicación». Cubre:
 | `test_ingesta_inserta_y_deduplica` | Carga y segunda carga duplicada |
 | `test_ingesta_registra_el_lote` | Historial y detalle del lote |
 | `test_sectorizacion_y_cuadrilla0` | Sectorización y marca guardada |
+| `test_direcciones_sin_sector_se_reportan_y_se_gestionan` (D-66) | El resumen lista la dirección sin sector y la re-sectorización la asigna |
+| `test_sectorizar_pendientes_requiere_escritura` (D-66) | Solo ADMIN o SUPERVISOR pueden re-sectorizar |
 
 ### Trazabilidad
 
@@ -572,6 +645,7 @@ filtro por central y deduplicación». Cubre:
 | RF-01/RF-02 (ingesta CSV) | Integración y E2E-07 |
 | RF-21 (filtro por central) | Pruebas del analizador y de la API |
 | RF-22 (deduplicación) | `test_ingesta_inserta_y_deduplica` |
+| RF-23 (sectorización y re-sectorización) | `test_sectorizacion_y_cuadrilla0` y las pruebas D-66 |
 | RT-05 (analizador) | `test_ingesta_parser.py` |
 
 La prueba E2E de ingesta (`07-ingesta.spec.js`, 2 pruebas) cubre «Previsualización del CSV

@@ -486,7 +486,7 @@ La página `Alertas` cubre RF-09, RF-16, RF-17, RF-18 y RNF-19/RNF-20
 | Acciones por falla | «Planificar», «Material» y selector de estado | `app/web/src/pages/Alertas.tsx:307-338` |
 | Bandeja de notificaciones | Tabla con canal, destinatario, asunto, estado, intentos, próximo intento y error | `app/web/src/pages/Alertas.tsx:348-418` |
 | Botones superiores | «Detectar fallas» y «Reportar falla» | `app/web/src/pages/Alertas.tsx:173-190` |
-| Modales | Reporte manual, planificación y solicitud de material | `app/web/src/pages/Alertas.tsx:420-453,462-677` |
+| Modales | Reporte manual, planificación y solicitud de material | `app/web/src/pages/Alertas.tsx:415-439,446-661` |
 
 Los estados de falla que ofrece la interfaz son `DETECTADA`, `PLANIFICADA`, `ATENDIDA` y
 `CERRADA` (`app/web/src/pages/Alertas.tsx:25`), coherentes con el patrón de
@@ -531,7 +531,8 @@ directamente porque la vía manual no lo carga
 ### Verificación en vivo
 
 **D-60** registra la verificación en vivo del ciclo con 42 casos, 0 fallas, outbox vacío,
-73 endpoints y respuesta `200` de la SPA en `/alertas`
+73 endpoints (cifra previa a los ciclos D-66/D-67, que dejaron la superficie en 79 paths / 109 operaciones)
+y respuesta `200` de la SPA en `/alertas`
 (`RepoTecnico/estado_proyecto.md:124` y la bitácora en `RepoTecnico/estado_proyecto.md:294`).
 
 ## Pendiente de confirmar

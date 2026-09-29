@@ -8,13 +8,13 @@ referencias se expresan como `ruta:línea`. Lo que no pudo verificarse se anota 
 
 | Recurso | Router | Página SPA | Tabla principal |
 |---|---|---|---|
-| Central | `app/api/routes_config.py:80-133` | `Centrales.tsx` | `central` |
-| Sectores | `app/api/routes_config.py:139-232` | `Sectores.tsx` | `sector`, `sector_direccion` |
-| Técnicos | `app/api/routes_config.py:238-293` | `Tecnicos.tsx` | `tecnico` |
-| Flota | `app/api/routes_config.py:299-351` | `Flota.tsx` | `flota` |
-| Cuadrillas | `app/api/routes_config.py:357-465` | `Cuadrillas.tsx` | `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta` |
-| Catálogos | `app/api/routes_config.py:471-523` | `Catalogos.tsx` | `causa`, `catalogo_metodo` |
-| Parámetros | `app/api/routes_config.py:529-549` | `Parametros.tsx` | `configuracion` |
+| Central | `app/api/routes_config.py:81-134` | `Centrales.tsx` | `central` |
+| Sectores | `app/api/routes_config.py:140-233` | `Sectores.tsx` | `sector`, `sector_direccion` |
+| Técnicos | `app/api/routes_config.py:289-344` | `Tecnicos.tsx` | `tecnico` |
+| Flota | `app/api/routes_config.py:350-402` | `Flota.tsx` | `flota` |
+| Cuadrillas | `app/api/routes_config.py:408-516` | `Cuadrillas.tsx` | `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta` |
+| Catálogos | `app/api/routes_config.py:522-574` | `Catalogos.tsx` | `causa`, `catalogo_metodo` |
+| Parámetros | `app/api/routes_config.py:580-600` | `Parametros.tsx` | `configuracion` |
 
 ## Visión general
 
@@ -40,16 +40,16 @@ RF-02, RF-03, RF-04, RF-07 y RF-38, con RNF-21 como requisito de autorización
 ### Estructura del router y convenciones
 
 El router usa el prefijo `/api/v1` y la etiqueta `configuración`
-(`app/api/routes_config.py:56`), y se monta en `app/main.py:79`. Sobre esa base se definen
+(`app/api/routes_config.py:57`), y se monta en `app/main.py:79`. Sobre esa base se definen
 tres convenciones transversales:
 
 - **Escritura restringida:** `_escritura = require_roles("ADMIN", "SUPERVISOR")`
-  (`app/api/routes_config.py:59`).
+  (`app/api/routes_config.py:60`).
 - **404 homogéneo:** `_o_404` busca por clave primaria y lanza `404` con el nombre del
-  recurso (`app/api/routes_config.py:62-66`).
+  recurso (`app/api/routes_config.py:63-67`).
 - **409 homogéneo:** `_commit` intenta el `commit`, y ante `IntegrityError` hace
   `rollback` y responde `409` con el mensaje recibido
-  (`app/api/routes_config.py:69-74`).
+  (`app/api/routes_config.py:70-75`).
 
 ### RBAC de escritura
 
@@ -58,13 +58,13 @@ Cada operación de lectura usa `Depends(get_current_user)` y cada operación de 
 
 | Operación | Dependencia | Referencia |
 |---|---|---|
-| Listar centrales | `get_current_user` | `app/api/routes_config.py:83` |
-| Crear central | `_escritura` | `app/api/routes_config.py:96` |
-| Crear sector | `_escritura` | `app/api/routes_config.py:156` |
-| Crear técnico | `_escritura` | `app/api/routes_config.py:255` |
-| Crear cuadrilla | `_escritura` | `app/api/routes_config.py:374` |
-| Crear causa | `_escritura` | `app/api/routes_config.py:485` |
-| Actualizar parámetro | `_escritura` | `app/api/routes_config.py:539` |
+| Listar centrales | `get_current_user` | `app/api/routes_config.py:84` |
+| Crear central | `_escritura` | `app/api/routes_config.py:97` |
+| Crear sector | `_escritura` | `app/api/routes_config.py:157` |
+| Crear técnico | `_escritura` | `app/api/routes_config.py:306` |
+| Crear cuadrilla | `_escritura` | `app/api/routes_config.py:425` |
+| Crear causa | `_escritura` | `app/api/routes_config.py:536` |
+| Actualizar parámetro | `_escritura` | `app/api/routes_config.py:590` |
 
 El detalle del mecanismo de roles está en el manual de autenticación y RBAC; en resumen,
 `require_roles` concede la operación a los roles enumerados y también al rol `SUPER`
@@ -73,12 +73,12 @@ El detalle del mecanismo de roles está en el manual de autenticación y RBAC; e
 ### Desactivación lógica (soft delete)
 
 Ningún recurso se borra físicamente desde estos endpoints: se marca un estado. Central
-pasa a `activa = False` (`app/api/routes_config.py:131-133`), sector a `activo = False`
-(`:195-197`), técnico a `status = "INACTIVO"` (`:291-293`), flota a
-`status = "FUERA_SERVICIO"` (`:349-351`) y causa a `activo = False` (`:498-500`). Las
+pasa a `activa = False` (`app/api/routes_config.py:132-134`), sector a `activo = False`
+(`:196-198`), técnico a `status = "INACTIVO"` (`:342-344`), flota a
+`status = "FUERA_SERVICIO"` (`:400-402`) y causa a `activo = False` (`:549-551`). Las
 relaciones de cuadrilla sí se cierran por fecha: `cuadrilla_tecnico.hasta = hoy`
-(`:454-464`). La única eliminación física del módulo es la de una dirección de sector
-(`:231`) y, con ella, el `DELETE` de `sector_direccion`.
+(`:505-515`). La única eliminación física del módulo es la de una dirección de sector
+(`:232`) y, con ella, el `DELETE` de `sector_direccion`.
 
 ## Endpoints por recurso
 
@@ -86,86 +86,115 @@ relaciones de cuadrilla sí se cierran por fecha: `cuadrilla_tecnico.hasta = hoy
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/central` | `app/api/routes_config.py:80` | Lista ordenada por `id_central`; filtro `solo_activas` |
-| `POST /api/v1/central` | `app/api/routes_config.py:92` | Crea; responde `201` |
-| `GET /api/v1/central/{id_central}` | `app/api/routes_config.py:105` | Obtiene o `404` |
-| `PATCH /api/v1/central/{id_central}` | `app/api/routes_config.py:112` | Actualización parcial |
-| `DELETE /api/v1/central/{id_central}` | `app/api/routes_config.py:127` | Desactiva; responde `204` |
+| `GET /api/v1/central` | `app/api/routes_config.py:81` | Lista ordenada por `id_central`; filtro `solo_activas` |
+| `POST /api/v1/central` | `app/api/routes_config.py:93` | Crea; responde `201` |
+| `GET /api/v1/central/{id_central}` | `app/api/routes_config.py:106` | Obtiene o `404` |
+| `PATCH /api/v1/central/{id_central}` | `app/api/routes_config.py:113` | Actualización parcial |
+| `DELETE /api/v1/central/{id_central}` | `app/api/routes_config.py:128` | Desactiva; responde `204` |
 
 El listado aplica el filtro `solo_activas` con `Central.activa.is_(True)`
-(`app/api/routes_config.py:87-88`). La creación construye el objeto con `model_dump()` y
+(`app/api/routes_config.py:88-89`). La creación construye el objeto con `model_dump()` y
 delega el conflicto de código duplicado a `_commit(db, "el código de central ya existe")`
-(`:98-100`). La actualización usa `model_dump(exclude_unset=True)`, de modo que solo se
-escriben los campos enviados (`:120-121`).
+(`:99-101`). La actualización usa `model_dump(exclude_unset=True)`, de modo que solo se
+escriben los campos enviados (`:121-122`).
 
 ### sectores y sector_direccion
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/sectores` | `app/api/routes_config.py:139` | Orden por `prioridad, nombre`; filtros `id_central`, `solo_activos` |
-| `POST /api/v1/sectores` | `app/api/routes_config.py:154` | Crea sector con direcciones anidadas; `201` |
-| `GET /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:169` | Obtiene o `404` |
-| `PATCH /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:176` | Actualización parcial |
-| `DELETE /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:191` | Desactiva; `204` |
-| `POST /api/v1/sectores/{id_sector}/direcciones` | `app/api/routes_config.py:200` | Agrega un patrón; `201` |
-| `DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}` | `app/api/routes_config.py:219` | Elimina el patrón; `204` |
+| `GET /api/v1/sectores` | `app/api/routes_config.py:140` | Orden por `prioridad, nombre`; filtros `id_central`, `solo_activos` |
+| `POST /api/v1/sectores` | `app/api/routes_config.py:155` | Crea sector con direcciones anidadas; `201` |
+| `GET /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:170` | Obtiene o `404` |
+| `PATCH /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:177` | Actualización parcial |
+| `DELETE /api/v1/sectores/{id_sector}` | `app/api/routes_config.py:192` | Desactiva; `204` |
+| `POST /api/v1/sectores/{id_sector}/direcciones` | `app/api/routes_config.py:201` | Agrega un patrón; `201` |
+| `DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}` | `app/api/routes_config.py:220` | Elimina el patrón; `204` |
 
 La creación valida primero que la central exista (`_o_404(db, Central, datos.id_central,
-"Central")`, `:158`) y luego separa las direcciones del resto de los campos
-(`:159-162`). El modelo declara la relación con `cascade="all, delete-orphan"` y carga
+"Central")`, `:159`) y luego separa las direcciones del resto de los campos
+(`:160-163`). El modelo declara la relación con `cascade="all, delete-orphan"` y carga
 anticipada con `lazy="selectin"` (`app/models/config_entities.py:41-43`), por lo que el
 `SectorOut` puede devolver sus direcciones. El `DELETE` de una dirección verifica que
 pertenezca al sector indicado y responde `404` en caso contrario
-(`app/api/routes_config.py:228-230`).
+(`app/api/routes_config.py:229-231`).
 
 ### tecnicos
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/tecnicos` | `app/api/routes_config.py:238` | Orden por `nombre, apellido`; filtros `id_central`, `status` |
-| `POST /api/v1/tecnicos` | `app/api/routes_config.py:253` | Valida central y crea; `201` |
-| `GET /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:265` | Obtiene o `404` |
-| `PATCH /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:272` | Actualización parcial |
-| `DELETE /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:287` | Pasa a `INACTIVO`; `204` |
+| `GET /api/v1/tecnicos` | `app/api/routes_config.py:289` | Orden por `nombre, apellido`; filtros `id_central`, `status` |
+| `POST /api/v1/tecnicos` | `app/api/routes_config.py:304` | Valida central y crea; `201` |
+| `GET /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:316` | Obtiene o `404` |
+| `PATCH /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:323` | Actualización parcial |
+| `DELETE /api/v1/tecnicos/{id_tecnico}` | `app/api/routes_config.py:338` | Pasa a `INACTIVO`; `204` |
 
 El filtro de estado usa el alias `status` sobre el parámetro `status_`
-(`app/api/routes_config.py:243`), porque `status` es el nombre real de la columna
+(`app/api/routes_config.py:294`), porque `status` es el nombre real de la columna
 (`app/models/entities.py:57`). La creación valida la central y documenta el conflicto de
-`P00` o cédula duplicados (`:257-260`).
+`P00` o cédula duplicados (`app/api/routes_config.py:308-311`).
+
+#### Estado de la cuenta del técnico (D-67)
+
+El alta de un técnico solo crea la fila `tecnico`; la cuenta de acceso
+(`usuario` + `dispositivo_seguridad`) la crea el propio técnico en su primer acceso. Para
+reflejar ese ciclo de vida, `TecnicoOut` incorpora el campo calculado `estado_cuenta`
+(`app/schemas/config.py:130-144`), que puede tomar cinco valores:
+
+| `estado_cuenta` | Significado |
+|---|---|
+| `SIN_ALTA` | El supervisor creó el P00 pero el técnico aún no activó su cuenta (o no tiene palabras de seguridad). |
+| `BLOQUEADO` | La cuenta superó los intentos permitidos. |
+| `REQUIERE_CAMBIO` | La cuenta debe cambiar la clave. |
+| `INACTIVO` | La cuenta (`usuario.activo`) o el técnico (`status`) están desactivados. |
+| `ACTIVO` | La cuenta puede iniciar sesión. |
+
+El cálculo vive en el helper `_estado_cuenta` (`app/api/routes_config.py:239-257`) y se
+aplica a todo el listado con `_tecnicos_con_estado` (`app/api/routes_config.py:260-282`),
+que resuelve usuarios y dispositivos con **dos consultas en lote** por `p00 IN (...)`
+(`:265-274`) para **evitar el problema N+1**; el detalle usa `_tecnico_con_estado`
+(`:285-286`). Los cinco endpoints de TÉCNICOS devuelven ya el campo
+(`app/api/routes_config.py:289-344`).
+
+El ciclo D-67 se apoya en los endpoints de primer acceso y regeneración del router de
+autenticación; su detalle está en el manual
+`03-Implementacion/01-autenticacion-y-rbac.md`. El estado `SIN_ALTA` se resuelve con
+`POST /api/v1/auth/setup` (`app/api/routes_auth.py:129-216`), y la regeneración de palabras
+—solo para el rol `SUPER`— con `POST /api/v1/auth/palabras/{p00}/regenerar`
+(`app/api/routes_auth.py:275-327`).
 
 ### flota
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/flota` | `app/api/routes_config.py:299` | Orden por `can`; filtro `id_central` |
-| `POST /api/v1/flota` | `app/api/routes_config.py:311` | Valida central y crea; `201` |
-| `GET /api/v1/flota/{id_flota}` | `app/api/routes_config.py:323` | Obtiene o `404` |
-| `PATCH /api/v1/flota/{id_flota}` | `app/api/routes_config.py:330` | Actualización parcial |
-| `DELETE /api/v1/flota/{id_flota}` | `app/api/routes_config.py:345` | Pasa a `FUERA_SERVICIO`; `204` |
+| `GET /api/v1/flota` | `app/api/routes_config.py:350` | Orden por `can`; filtro `id_central` |
+| `POST /api/v1/flota` | `app/api/routes_config.py:362` | Valida central y crea; `201` |
+| `GET /api/v1/flota/{id_flota}` | `app/api/routes_config.py:374` | Obtiene o `404` |
+| `PATCH /api/v1/flota/{id_flota}` | `app/api/routes_config.py:381` | Actualización parcial |
+| `DELETE /api/v1/flota/{id_flota}` | `app/api/routes_config.py:396` | Pasa a `FUERA_SERVICIO`; `204` |
 
 El conflicto de `can` o `placa` duplicados se traduce en `409`
-(`app/api/routes_config.py:318`). Ambos campos tienen restricción `UNIQUE` en el esquema
+(`app/api/routes_config.py:369`). Ambos campos tienen restricción `UNIQUE` en el esquema
 (`RepoTecnico/db/schema.sql:199,203`).
 
 ### cuadrillas (integrantes y herramientas)
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/cuadrillas` | `app/api/routes_config.py:357` | Orden por `codigo`; filtros `id_central`, `solo_activas` |
-| `POST /api/v1/cuadrillas` | `app/api/routes_config.py:372` | Crea con integrantes y herramientas; `201` |
-| `GET /api/v1/cuadrillas/{id_cuadrilla}` | `app/api/routes_config.py:398` | Obtiene o `404` |
-| `PATCH /api/v1/cuadrillas/{id_cuadrilla}` | `app/api/routes_config.py:405` | Actualización parcial |
-| `POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes` | `app/api/routes_config.py:420` | Incorpora un técnico; `201` |
-| `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` | `app/api/routes_config.py:444` | Cierra la pertenencia; `204` |
+| `GET /api/v1/cuadrillas` | `app/api/routes_config.py:408` | Orden por `codigo`; filtros `id_central`, `solo_activas` |
+| `POST /api/v1/cuadrillas` | `app/api/routes_config.py:423` | Crea con integrantes y herramientas; `201` |
+| `GET /api/v1/cuadrillas/{id_cuadrilla}` | `app/api/routes_config.py:449` | Obtiene o `404` |
+| `PATCH /api/v1/cuadrillas/{id_cuadrilla}` | `app/api/routes_config.py:456` | Actualización parcial |
+| `POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes` | `app/api/routes_config.py:471` | Incorpora un técnico; `201` |
+| `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` | `app/api/routes_config.py:495` | Cierra la pertenencia; `204` |
 
 La creación separa `integrantes` y `herramientas` del resto de los campos
-(`app/api/routes_config.py:377`) y arma las filas de `CuadrillaTecnico` con `desde` por
-defecto en la fecha de hoy (`:379-387`) y las de `CuadrillaHerramienta` con
-`asignada_en = datetime.now(UTC)` (`:388-391`). Al incorporar un integrante se validan
-cuadrilla y técnico (`:431-432`). El retiro busca la fila **activa** (`hasta IS NULL`) y
-responde `404` si no existe (`:455-463`); si existe, fija `hasta = hoy` (`:464`). No hay
+(`app/api/routes_config.py:429`) y arma las filas de `CuadrillaTecnico` con `desde` por
+defecto en la fecha de hoy (`:432-439`) y las de `CuadrillaHerramienta` con
+`asignada_en = datetime.now(UTC)` (`:440-443`). Al incorporar un integrante se validan
+cuadrilla y técnico (`:482-483`). El retiro busca la fila **activa** (`hasta IS NULL`) y
+responde `404` si no existe (`:513-514`); si existe, fija `hasta = hoy` (`:515-516`). No hay
 `DELETE /cuadrillas/{id}` en el router: la cuadrilla se desactiva con
-`PATCH { "activa": false }` (`app/api/routes_config.py:405-417`).
+`PATCH { "activa": false }` (`app/api/routes_config.py:456-468`).
 
 > Las rutas de direcciones de sector e integrantes de cuadrilla existen en el código con
 > sus líneas reales, aunque el inventario resumido de endpoints no las desglose. Se
@@ -175,16 +204,16 @@ responde `404` si no existe (`:455-463`); si existe, fija `hasta = hoy` (`:464`)
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/catalogos/causas` | `app/api/routes_config.py:471` | Orden por `codigo_causa, subcodigo_causa`; `solo_activos=True` por defecto |
-| `POST /api/v1/catalogos/causas` | `app/api/routes_config.py:483` | Crea; `201` |
-| `DELETE /api/v1/catalogos/causas/{id_causa}` | `app/api/routes_config.py:494` | Desactiva; `204` |
-| `GET /api/v1/catalogos/metodos` | `app/api/routes_config.py:503` | Orden por `dominio, codigo`; filtro `dominio` |
-| `POST /api/v1/catalogos/metodos` | `app/api/routes_config.py:515` | Crea; `201` |
+| `GET /api/v1/catalogos/causas` | `app/api/routes_config.py:522` | Orden por `codigo_causa, subcodigo_causa`; `solo_activos=True` por defecto |
+| `POST /api/v1/catalogos/causas` | `app/api/routes_config.py:534` | Crea; `201` |
+| `DELETE /api/v1/catalogos/causas/{id_causa}` | `app/api/routes_config.py:545` | Desactiva; `204` |
+| `GET /api/v1/catalogos/metodos` | `app/api/routes_config.py:554` | Orden por `dominio, codigo`; filtro `dominio` |
+| `POST /api/v1/catalogos/metodos` | `app/api/routes_config.py:566` | Crea; `201` |
 
 Las causas se filtran por `activo` cuando `solo_activos` es verdadero, que es el valor por
-defecto (`app/api/routes_config.py:475-479`). Los métodos se filtran por dominio
-(`:510-511`). La semilla del esquema trae 9 métodos distribuidos en los dominios `CIERRE`,
-`ENRUTE`, `CONTACTO` y `DIFERIDO` (`RepoTecnico/db/schema.sql:744-754`). El catálogo de
+defecto (`app/api/routes_config.py:528-530`). Los métodos se filtran por dominio
+(`:561-562`). La semilla del esquema trae 9 métodos distribuidos en los dominios `CIERRE`,
+`ENRUTE`, `CONTACTO` y `DIFERIDO` (`RepoTecnico/db/schema.sql:761-771`). El catálogo de
 causas se puebla desde el CSV de ingesta y la semilla del esquema no carga causas
 (`RepoTecnico/db/schema.sql:74-85`).
 
@@ -192,15 +221,15 @@ causas se puebla desde el CSV de ingesta y la semilla del esquema no carga causa
 
 | Método y ruta | Línea | Comportamiento |
 |---|---|---|
-| `GET /api/v1/configuracion` | `app/api/routes_config.py:529` | Lista todos los parámetros ordenados por `clave` |
-| `PUT /api/v1/configuracion/{clave}` | `app/api/routes_config.py:534` | Actualiza `valor` y, opcionalmente, `descripcion` |
+| `GET /api/v1/configuracion` | `app/api/routes_config.py:580` | Lista todos los parámetros ordenados por `clave` |
+| `PUT /api/v1/configuracion/{clave}` | `app/api/routes_config.py:585` | Actualiza `valor` y, opcionalmente, `descripcion` |
 
 El parámetro se busca por su clave primaria `clave` y, si no existe, responde `404`
-(`app/api/routes_config.py:541-543`). El valor es de tipo libre (`Any` en el esquema), lo
+(`app/api/routes_config.py:592-594`). El valor es de tipo libre (`Any` en el esquema), lo
 que refleja que la columna es `JSONB` (`app/models/config_entities.py:199`). La semilla del
 esquema carga 23 parámetros, entre ellos `ingesta.central_codigo`, `despacho.hora_reporte`,
 `despacho.min_referidos`, `fallas.umbral_casos`, `outbox.max_intentos` y
-`seguridad.max_intentos` (`RepoTecnico/db/schema.sql:771-797`).
+`seguridad.max_intentos` (`RepoTecnico/db/schema.sql:788-814`).
 
 ## Esquemas de entrada/salida (`app/schemas/config.py`)
 
@@ -227,6 +256,7 @@ esquema carga 23 parámetros, entre ellos `ingesta.central_codigo`, `despacho.ho
 | `STATUS_TECNICO` | `ACTIVO`, `INACTIVO`, `VACACIONES`, `SUSPENDIDO` | `app/schemas/config.py:104` |
 | `TecnicoCreate` | `id_central`, `nombre`, `p00`, `status` | `app/schemas/config.py:107-116` |
 | `TecnicoUpdate` | Sin `p00` (no editable) | `app/schemas/config.py:119-127` |
+| `TecnicoOut` | Añade `estado_cuenta` (D-67, por defecto `SIN_ALTA`) | `app/schemas/config.py:130-144` |
 | `STATUS_FLOTA` | `DISPONIBLE`, `EN_RUTA`, `MANTENIMIENTO`, `FUERA_SERVICIO` | `app/schemas/config.py:148` |
 | `FlotaCreate` | `can`, `tipo`, `marca`, `modelo`, `placa`, `combustible`, estados | `app/schemas/config.py:151-162` |
 | `ROL_CUADRILLA` | `REPARADOR_PRINCIPAL`, `AYUDANTE`, `SUPERVISOR` | `app/schemas/config.py:199` |
@@ -234,7 +264,7 @@ esquema carga 23 parámetros, entre ellos `ingesta.central_codigo`, `despacho.ho
 | `CuadrillaOut` | Incluye `integrantes` | `app/schemas/config.py:235-244` |
 
 `TecnicoUpdate` no expone `p00` (`app/schemas/config.py:119-127`), lo que coincide con la
-interfaz, que deshabilita el campo al editar (`app/web/src/pages/Tecnicos.tsx:225`).
+interfaz, que deshabilita el campo al editar (`app/web/src/pages/Tecnicos.tsx:299`).
 `CuadrillaUpdate` tampoco permite cambiar `id_central` ni los integrantes: solo `codigo`,
 `nombre`, `id_flota`, `es_supervisor` y `activa` (`app/schemas/config.py:227-232`).
 
@@ -274,8 +304,9 @@ Este archivo define siete modelos que se mapean al esquema desplegado
 
 Los modelos Central, Técnico y Usuario del Ciclo 1 viven en `app/models/entities.py`
 (`app/models/entities.py:1`): `Central` (`:26-42`), `Tecnico` (`:45-59`) y `Usuario`
-(`:62-82`), además de `Rol` (`:14-23`) y `DispositivoSeguridad` (`:85-97`). El router de
-configuración los importa junto con los del Ciclo 2 (`app/api/routes_config.py:13-26`).
+(`:62-82`), además de `Rol` (`:14-23`), `DispositivoSeguridad` (`:85-97`) y `Auditoria`
+(`:100-116`, incorporado por D-67). El router de
+configuración los importa junto con los del Ciclo 2 (`app/api/routes_config.py:13-27`).
 
 ### `RepoTecnico/db/schema.sql`
 
@@ -308,7 +339,7 @@ El DDL de referencia define las tablas del módulo con `CREATE TABLE IF NOT EXIS
 - **Trigger `actualizado_en`:** las tablas `central`, `sector`, `tecnico`, `usuario`,
   `flota`, `herramienta`, `cuadrilla` y `configuracion` reciben un trigger
   `BEFORE UPDATE` que actualiza la marca de tiempo
-  (`RepoTecnico/db/schema.sql:714-729`).
+  (`RepoTecnico/db/schema.sql:731-746`).
 - **Índice trigram:** `sector_direccion.patron` participa de la búsqueda difusa con
   `pg_trgm` (`RepoTecnico/db/schema.sql:143-153`; extensión en `:23-24`).
 
@@ -317,16 +348,16 @@ El DDL de referencia define las tablas del módulo con `CREATE TABLE IF NOT EXIS
 ### require_roles ADMIN/SUPERVISOR
 
 La línea clave del módulo es `_escritura = require_roles("ADMIN", "SUPERVISOR")`
-(`app/api/routes_config.py:59`), que se aplica con `Depends(_escritura)` en todos los
+(`app/api/routes_config.py:60`), que se aplica con `Depends(_escritura)` en todos los
 POST, PATCH, PUT y DELETE. El comentario del propio archivo lo resume: «Escritura solo para
 ADMIN y SUPERVISOR (RNF-21); lectura para cualquier usuario autenticado»
-(`app/api/routes_config.py:58`).
+(`app/api/routes_config.py:59`).
 
 ### Lectura autenticada
 
 Los `GET` exigen sesión válida pero no un rol concreto; por ejemplo, listar centrales
-depende de `get_current_user` (`app/api/routes_config.py:83`) y listar sectores también
-(`:142`). Esto se corresponde con la matriz, que da «Lectura + edición operativa» al
+depende de `get_current_user` (`app/api/routes_config.py:84`) y listar sectores también
+(`:143`). Esto se corresponde con la matriz, que da «Lectura + edición operativa» al
 SUPERVISOR y permite lectura a otros perfiles en módulos de consulta
 (`RepoTecnico/requerimientos.md:239`).
 
@@ -343,28 +374,28 @@ recorre lectura de los ocho recursos del módulo y escritura en flota, causas y 
 
 | Caso | Detalle | Referencia |
 |---|---|---|
-| Recurso inexistente | `_o_404` con el nombre del recurso | `app/api/routes_config.py:62-66` |
-| Central inexistente al crear sector/técnico/flota/cuadrilla | `_o_404(db, Central, ...)` | `:158`, `:257`, `:315`, `:376` |
-| Dirección de otro sector | «La dirección no pertenece al sector» | `app/api/routes_config.py:229-230` |
-| Integrante no activo | «El técnico no está activo en la cuadrilla» | `app/api/routes_config.py:462-463` |
-| Parámetro inexistente | «Parámetro no encontrado» | `app/api/routes_config.py:542-543` |
+| Recurso inexistente | `_o_404` con el nombre del recurso | `app/api/routes_config.py:63-67` |
+| Central inexistente al crear sector/técnico/flota/cuadrilla | `_o_404(db, Central, ...)` | `:159`, `:308`, `:366`, `:427` |
+| Dirección de otro sector | «La dirección no pertenece al sector» | `app/api/routes_config.py:230-231` |
+| Integrante no activo | «El técnico no está activo en la cuadrilla» | `app/api/routes_config.py:513-514` |
+| Parámetro inexistente | «Parámetro no encontrado» | `app/api/routes_config.py:593-594` |
 
 ### 409 Conflict
 
 `_commit` captura `IntegrityError`, hace `rollback` y responde `409`
-(`app/api/routes_config.py:69-74`). Los mensajes concretos identifican la restricción:
+(`app/api/routes_config.py:70-75`). Los mensajes concretos identifican la restricción:
 
 | Endpoint | Mensaje | Referencia |
 |---|---|---|
-| Crear central | «el código de central ya existe» | `app/api/routes_config.py:100` |
-| Crear sector | «el código de sector ya existe en la central» | `app/api/routes_config.py:164` |
-| Agregar dirección | «el patrón ya existe en el sector» | `app/api/routes_config.py:214` |
-| Crear técnico | «el P00 o la cédula ya existen» | `app/api/routes_config.py:260` |
-| Crear flota | «el CAN o la placa ya existen» | `app/api/routes_config.py:318` |
-| Crear cuadrilla | «el código de cuadrilla ya existe en la central» | `app/api/routes_config.py:393` |
-| Agregar integrante | «el técnico ya está en la cuadrilla desde esa fecha» | `app/api/routes_config.py:440` |
-| Crear causa | «la causa ya existe» | `app/api/routes_config.py:489` |
-| Crear método | «el método ya existe para ese dominio» | `app/api/routes_config.py:521` |
+| Crear central | «el código de central ya existe» | `app/api/routes_config.py:101` |
+| Crear sector | «el código de sector ya existe en la central» | `app/api/routes_config.py:165` |
+| Agregar dirección | «el patrón ya existe en el sector» | `app/api/routes_config.py:215` |
+| Crear técnico | «el P00 o la cédula ya existen» | `app/api/routes_config.py:311` |
+| Crear flota | «el CAN o la placa ya existen» | `app/api/routes_config.py:369` |
+| Crear cuadrilla | «el código de cuadrilla ya existe en la central» | `app/api/routes_config.py:444` |
+| Agregar integrante | «el técnico ya está en la cuadrilla desde esa fecha» | `app/api/routes_config.py:491` |
+| Crear causa | «la causa ya existe» | `app/api/routes_config.py:540` |
+| Crear método | «el método ya existe para ese dominio» | `app/api/routes_config.py:572` |
 
 ### 422 Unprocessable Entity
 
@@ -377,10 +408,10 @@ valores (`:267`).
 ### 201 y 204
 
 Las creaciones responden `201 CREATED` (por ejemplo central en
-`app/api/routes_config.py:92`, sector en `:154`, cuadrilla en `:372`) y las operaciones de
+`app/api/routes_config.py:93`, sector en `:155`, cuadrilla en `:423`) y las operaciones de
 desactivación o retiro responden `204 NO CONTENT`
-(`:127`, `:191`, `:287`, `:345`, `:444`). El cliente de la SPA trata el `204` como
-respuesta sin cuerpo (`app/web/src/api/client.ts:215`).
+(`:128`, `:192`, `:338`, `:396`, `:495`). El cliente de la SPA trata el `204` como
+respuesta sin cuerpo (`app/web/src/api/client.ts:221`).
 
 ## Página web de configuración
 
@@ -425,10 +456,27 @@ se permite agregar o quitar patrones uno a uno
 ### Tecnicos.tsx
 
 Formulario con central, nombre, apellido, cédula, P00, teléfono, correo, especialidad y
-status (`app/web/src/pages/Tecnicos.tsx:10-20`). El P00 se deshabilita al editar
-(`:225`), coherente con `TecnicoUpdate`, que no lo incluye. Los estados disponibles son
-`ACTIVO`, `INACTIVO`, `VACACIONES` y `SUSPENDIDO` (`:8`), con filtros por central y status
-(`:282-305`).
+status (`app/web/src/pages/Tecnicos.tsx:29-51`). El P00 se deshabilita al editar
+(`app/web/src/pages/Tecnicos.tsx:299`), coherente con `TecnicoUpdate`, que no lo incluye.
+Los estados disponibles son `ACTIVO`, `INACTIVO`, `VACACIONES` y `SUSPENDIDO`
+(`app/web/src/pages/Tecnicos.tsx:10`), con filtros por central y status
+(`app/web/src/pages/Tecnicos.tsx:356-379`).
+
+**Columna Cuenta (D-67).** El listado añade la columna **Cuenta** entre `Status` y
+`Acciones` (`app/web/src/pages/Tecnicos.tsx:393`) y pinta un chip con el valor de
+`t.estado_cuenta` (`app/web/src/pages/Tecnicos.tsx:421-428`). Los mapas `ETIQUETA_CUENTA`
+(texto legible) y `CLASE_CUENTA` (clase CSS por estado) traducen los cinco valores
+(`app/web/src/pages/Tecnicos.tsx:12-27`), y las clases `.estado-cuenta` /
+`.estado-cuenta.estado-*` viven en `app/web/src/styles.css:2090-2123`.
+
+**Botón «Palabras» (solo SUPER).** En la columna de acciones, el botón **Palabras** se
+renderiza únicamente si `usuario?.rol === 'SUPER'` (`app/web/src/pages/Tecnicos.tsx:55,435-444`).
+Al pulsarlo pide confirmación y llama a `api.regenerarPalabras(t.p00)`
+(`app/web/src/pages/Tecnicos.tsx:74-98`, `app/web/src/api/client.ts:298-304`), que invoca
+`POST /api/v1/auth/palabras/{p00}/regenerar`. El resultado se muestra en un `Modal` con la
+lista numerada de las 12 palabras nuevas, que solo se ven una vez
+(`app/web/src/pages/Tecnicos.tsx:465-506`). Un `ADMIN` o `SUPERVISOR` no ve el botón, y un
+`TECNICO` tampoco porque la página está en modo solo lectura.
 
 ### Flota.tsx
 
@@ -436,7 +484,7 @@ Formulario con central, CAN, tipo, marca, modelo, placa, combustible, status y t
 estados de mantenimiento (cauchos, fluidos, general)
 (`app/web/src/pages/Flota.tsx:10-22`). La acción destructiva no borra: pasa el vehículo a
 `FUERA_SERVICIO` con confirmación (`:160-166`), igual que hace la API
-(`app/api/routes_config.py:349-351`).
+(`app/api/routes_config.py:400-402`).
 
 ### Cuadrillas.tsx
 

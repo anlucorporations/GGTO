@@ -56,3 +56,26 @@ class SetupResponse(BaseModel):
     p00: str
     palabras: list[str]
     aviso: str = "Guarde estas 12 palabras: no se volverán a mostrar."
+
+
+class PrimerAccesoOut(BaseModel):
+    """Estado del P00 para ofrecer (o no) el proceso de primer acceso (D-67)."""
+
+    p00: str
+    registrado: bool
+    estado: str
+    puede_registrarse: bool = False
+    nombre: str | None = None
+    mensaje: str
+
+
+class RegenerarPalabrasRequest(BaseModel):
+    p00: str = Field(min_length=3, max_length=20)
+
+
+class RegenerarPalabrasResponse(BaseModel):
+    p00: str
+    palabras: list[str]
+    aviso: str = (
+        "Entregue estas 12 palabras al técnico por un canal seguro: no se volverán a mostrar."
+    )

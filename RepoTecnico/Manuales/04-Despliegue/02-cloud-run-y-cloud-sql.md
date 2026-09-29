@@ -61,7 +61,7 @@ La última revisión documentada del servicio es la siguiente:
 | Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v14` | `RepoTecnico/estado_proyecto.md:124` |
 | Versión funcional | Ciclo 9 — ALERTAS, Telegram y MCP | `RepoTecnico/estado_proyecto.md:124` |
 | Pruebas al cierre | 152/152 pytest | `RepoTecnico/estado_proyecto.md:124` |
-| Verificación en vivo | 42 casos, 0 fallas, outbox vacío, 73 endpoints | `RepoTecnico/estado_proyecto.md:124`, `:294` |
+| Verificación en vivo | 42 casos, 0 fallas, outbox vacío, 73 endpoints (cifra de D-60, previa a D-66) | `RepoTecnico/estado_proyecto.md:124`, `:294` |
 
 La revisión inmediatamente anterior documentada fue `ggto-web-00013-9pf` con la imagen `v13`
 (`RepoTecnico/entornos_globales.md:320-321`). Existe una secuencia completa de revisiones
@@ -113,7 +113,7 @@ aspecto señalado como riesgo en `RepoTecnico/GGTOv2_GCP.md:392-393`.
 
 El DDL completo (`RepoTecnico/db/schema.sql`, 38 821 bytes) se aplicó el 2026-09-26 en una sola
 transacción y sin errores (`RepoTecnico/entornos_globales.md:297`). La verificación posterior
-confirmó 35 tablas, las extensiones `pgcrypto 1.3` y `pg_trgm 1.6`, RLS en `caso` y `despacho`,
+confirmó entonces 35 tablas (el DDL vigente define 36 desde el ciclo D-66), las extensiones `pgcrypto 1.3` y `pg_trgm 1.6`, RLS en `caso` y `despacho`,
 14 triggers `actualizado_en`, 2 índices trigram y las semillas previstas
 (`RepoTecnico/entornos_globales.md:301-309`).
 

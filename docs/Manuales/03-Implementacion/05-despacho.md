@@ -11,11 +11,13 @@ Si es tu primer día con el DESPACHO, con estos cinco pasos ya puedes armar el d
 
 1. **Elige la fecha y la central.** Entra a **DESPACHO** desde la barra superior y selecciona la
    jornada. La central de esta versión es **FRANCISCO SALIAS** (código `2324X`).
-2. **Simula la propuesta.** Pulsa «Simular propuesta». El sistema reparte los casos entre las
-   cuadrillas activas y te muestra el resultado **sin guardar nada**. Revisa los chips de
-   reglas: citados del día, referidos, empresas y construcción en una sola cuadrilla.
-3. **Genera el despacho.** Si la propuesta te convence, pulsa «Generar despacho». El sistema
-   guarda un despacho en estado `BORRADOR` por cada cuadrilla con casos.
+2. **Mira la propuesta (no guarda nada).** Pulsa «Simular propuesta» para ver cómo quedaría el
+   reparto entre las cuadrillas activas. Revisa los chips de reglas: citados del día, casos
+   especiales (referidos, empresas y gobierno) y construcción en una sola cuadrilla.
+3. **Procesa el despacho.** Pulsa **«Procesar despacho»**. Se abre una **ventana grande** (90 %
+   de la pantalla) con el universo de casos, los sectores con su total y las cuadrillas con sus
+   sectores asignados. Revisa la asignación, cámbiala si hace falta y pulsa **«Procesar
+   despacho»**. El sistema guarda un despacho en estado `BORRADOR` por cada cuadrilla con casos.
 4. **Publica o cierra.** Cuando el despacho esté listo, publícalo (`PUBLICADO`). Si el día
    termina, ciérralo (`CERRADO`). También puedes imprimir la ficha de la cuadrilla en tamaño
    carta o enviarla por mensajería.
@@ -23,13 +25,29 @@ Si es tu primer día con el DESPACHO, con estos cinco pasos ya puedes armar el d
    citados, diferidos, gestionados, referidos y empresas. Si hubo una avería de muchos clientes,
    registra una **falla masiva**.
 
-## Visión general (RF-08/RF-24/RF-25/RF-27, D-52)
+## Visión general (RF-08/RF-24/RF-25/RF-27, D-52/D-66)
 
 El módulo **DESPACHO** arma, publica, imprime, envía y reporta el despacho diario de las
 cuadrillas de la Central **FRANCISCO SALIAS** (`2324X`). Es el **Ciclo 5** del proyecto.
 
-La decisión **D-52** da el módulo por completado con **96/96 pruebas**, el despliegue
-`ggto-web-00007-vsr` (imagen `v7`) y verificación en vivo.
+La decisión **D-52** dio el módulo por completado con **96/96 pruebas** y el despliegue
+`ggto-web-00007-vsr` (imagen `v7`).
+
+La decisión **D-66** cambió la forma de repartir el trabajo. Ahora:
+
+- Los **sectores que atiende cada cuadrilla se guardan por día** en una tabla nueva
+  (`cuadrilla_sector_dia`) y el **supervisor puede cambiarlos**. La base pasa a tener
+  **36 tablas**.
+- El reparto se hace **por el sector de cada cuadrilla**: un sector completo va a la cuadrilla
+  que lo tiene asignado.
+- Los **citados del día** tienen prioridad: se visitan primero y, si su sector no tiene
+  cuadrilla, se asignan a la menos cargada.
+- Los **casos especiales** (referidos, empresas y gobierno) también entran al despacho.
+- La **construcción** va completa a **una sola cuadrilla**.
+- Si un sector **no tiene cuadrilla**, sus casos quedan **sin asignar** y el sistema lo avisa en
+  pantalla.
+- El proceso se hace en un **formulario flotante** con el botón **«Procesar despacho»**.
+- Se mantiene **«Simular propuesta»**, que **no guarda nada**.
 
 > **Aviso de seguridad importante.** El servicio en la nube (Cloud Run) llamado `ggto-web` es
 > **público** y contiene datos personales reales (PII). Debe restringirse el acceso cuanto antes.
@@ -40,9 +58,12 @@ La decisión **D-52** da el módulo por completado con **96/96 pruebas**, el des
 ```mermaid
 flowchart TD
     A["Elegir fecha<br/>y central"] --> B["Simular propuesta<br/>(no guarda nada)"]
-    B --> C{"¿La propuesta<br/>sirve?"}
-    C -- "No" --> B
-    C -- "Sí" --> D["Generar despacho<br/>estado BORRADOR"]
+    B --> C["Abrir «Procesar despacho»<br/>ventana al 90 %"]
+    C --> C2["Revisar universo, sectores<br/>y asignación por cuadrilla"]
+    C2 --> C3{"¿Cambiar la<br/>asignación?"}
+    C3 -- "Sí" --> C4["Elegir cuadrilla<br/>para cada sector"]
+    C4 --> D["Procesar despacho<br/>estado BORRADOR"]
+    C3 -- "No" --> D
     D --> E["Editar casos,<br/>agregar o quitar"]
     E --> F["Publicar<br/>estado PUBLICADO"]
     F --> G["Imprimir ficha<br/>tamaño carta"]
@@ -62,11 +83,12 @@ flowchart TD
 |---|---|
 | **RF-08** | Distribuir el universo de averías entre las cuadrillas activas del día, agrupando por sector. |
 | **RF-24** | Proponer la distribución de casos antes de guardarla. |
-| **RF-25** | Excluir del despacho de calle los casos de la cuadrilla 0 (los que gestiona el supervisor). |
+| **RF-25** | Excluir del despacho de calle los casos de la cuadrilla 0 (los que gestiona el supervisor), salvo los citados del día. |
 | **RF-27** | Generar el reporte de producción: asignados, cerrados, citados, referidos, etc. |
 | **RT-08** | Imprimir en tamaño carta la ficha de la cuadrilla. |
 | **RF-09** | Registrar y listar fallas masivas desde el módulo de despacho. |
 | **RF-10** | Enviar la ficha de la cuadrilla por Telegram o por correo. |
+| **D-66** | Repartir los casos según el **sector de cada cuadrilla**, con la asignación del día editable por el supervisor en el formulario «Procesar despacho». |
 
 ### Archivos de referencia
 
@@ -76,11 +98,13 @@ operar el sistema.
 | Capa | Archivo |
 |---|---|
 | Direcciones de la API | `app/api/routes_despachos.py` |
-| Servicio de propuesta y balanceo | `app/services/despacho.py` |
+| Servicio de reparto y asignación de sectores | `app/services/despacho.py` |
 | Esquemas de validación | `app/schemas/despacho.py` |
 | Modelos de base de datos | `app/models/despacho_entities.py` |
 | Notificaciones y bandeja de salida | `app/services/notificaciones.py`, `app/services/outbox.py` |
 | Página web | `app/web/src/pages/Despacho.tsx` |
+| Formulario flotante para procesar | `app/web/src/components/ProcesarDespacho.tsx` |
+| Gestión de direcciones sin sector (ingesta) | `app/web/src/components/GestionDirecciones.tsx` |
 | Pruebas de integración | `app/tests/test_despacho_api.py` |
 
 El módulo se monta en la aplicación principal y publica sus operaciones bajo
@@ -137,6 +161,29 @@ Es la tabla de **detalle**: cada caso asignado dentro de un despacho.
 Otra regla clave: **el mismo caso no puede aparecer dos veces en el mismo despacho**. Lo impide
 una restricción de unicidad sobre la combinación de despacho y caso.
 
+### cuadrilla_sector_dia
+
+Es la tabla **nueva del ciclo D-66**. Guarda **qué sectores atiende cada cuadrilla cada día**. Es
+la lista de trabajo que el supervisor prepara antes de procesar el despacho.
+
+| Campo | Tipo | Qué significa |
+|---|---|---|
+| `id_asignacion` | número entero grande, clave | Identificador de la fila. |
+| `id_central` | entero, referencia a central | Central de la jornada. |
+| `fecha` | fecha | Día al que corresponde la asignación. |
+| `id_cuadrilla` | entero, referencia a cuadrilla | Cuadrilla que atiende. |
+| `id_sector` | entero, referencia a sector | Sector asignado. |
+| `usuario` | texto, referencia a usuario | Quién guardó la asignación. |
+| `creado_en` | fecha y hora | Cuándo se guardó. |
+
+Regla clave: **un sector pertenece como máximo a una cuadrilla por día**. Lo garantiza una
+restricción de unicidad sobre la combinación de fecha y sector.
+
+La asignación **se puede cambiar las veces que haga falta** durante la jornada: al guardarla de
+nuevo, se reemplaza la del día. Si no hay ninguna asignación guardada, el sistema **propone una
+equilibrada** (reparte los sectores entre las cuadrillas según cuántos casos tiene cada uno) y lo
+indica en pantalla con el texto «Asignación propuesta automática».
+
 ### estados
 
 Los estados válidos son los mismos en la base de datos, en el modelo, en la validación de la API
@@ -153,12 +200,13 @@ Al guardar una propuesta, cada caso nace en estado `ASIGNADO`.
 
 ---
 
-## Propuesta automática
+## Propuesta automática y asignación diaria
 
-El motor de la propuesta reparte el trabajo solo. Estas son las reglas que aplica, explicadas una
-por una.
+El motor de la propuesta reparte el trabajo solo. Desde el ciclo **D-66**, el reparto no se calcula
+«desde cero»: se basa en **qué sectores atiende cada cuadrilla**, una decisión que se guarda **por
+día** y que el supervisor puede cambiar. Estas son las reglas, explicadas una por una.
 
-### agrupación por sector
+### universo de casos
 
 Primero se arma el **universo de casos** que se puede repartir. Se aplican estos filtros, en
 este orden:
@@ -168,34 +216,48 @@ este orden:
    calle.
 3. Se excluye la **cuadrilla 0** (los casos que gestiona el supervisor), **salvo** que el caso
    tenga una **cita del día**: en ese caso sí entra.
-4. Se excluyen los casos **ya asignados** a un despacho que no esté cerrado, para no repetir
-   trabajo.
-5. El orden de la lista es: primero por sector, luego por fecha de reporte y por último por
-   número de caso.
+4. En la **simulación** se excluyen los casos ya asignados a un despacho abierto. En el
+   **proceso** del formulario flotante sí se incluyen los borradores del día, porque se van a
+   reemplazar; solo se respetan los despachos `PUBLICADO` o `CERRADO`.
+5. El universo incluye **casos comunes y especiales**. Son **especiales** las categorías
+   `REFERIDO`, `EMPRESA` y `GOBIERNO`; el resto son **comunes**.
+6. El orden de la lista es: primero por sector, luego por fecha de cita (o de reporte) y por
+   último por número de caso.
 
-Después, los casos se agrupan en un diccionario por sector. Los grupos se recorren **del más
-grande al más pequeño** y, en caso de empate, se prefiere el sector distinto de nulo. Las
-cuadrillas elegibles son las **activas** y **no supervisoras** de la central.
+Las cuadrillas elegibles son las **activas** y **no supervisoras** de la central.
 
-### balanceo greedy
+### asignación de sectores a cuadrillas por día
 
-El reparto es *greedy*, es decir, «voraz»: se va resolviendo lo más conveniente en cada paso sin
-recalcular todo.
+La asignación del día sale de la tabla `cuadrilla_sector_dia`:
 
-- Cada **sector completo** se entrega a la cuadrilla con **menor carga** acumulada. Si hay
-  empate, gana la de menor código.
-- Después de asignar el sector, se suma su carga a esa cuadrilla.
+- Si el supervisor ya guardó una asignación para esa fecha, se usa esa (`GUARDADA`).
+- Si no hay ninguna, el sistema **propone** una equilibrada (`PROPUESTA`): recorre los sectores
+  del más cargado al menos cargado y entrega cada uno a la cuadrilla con **menos casos**
+  acumulados; si hay empate, gana la de menor código.
+- Al **guardar** una asignación se **reemplaza** la del día: se borran las filas de esa fecha y se
+  inserta un registro por sector. Si un sector viene repetido en dos cuadrillas, se registra una
+  sola vez (gana la primera).
 
-Luego entra la regla de **construcción**: todos los casos de tipo `CONSTRUCCION` deben quedar en
-**una sola cuadrilla**. Para lograrlo:
+El formulario «Procesar despacho» indica de dónde salió la asignación y permite cambiarla con un
+selector por sector antes de procesar.
 
-1. Se elige la candidata con más casos que **no** son de construcción en los sectores de
-   construcción y, como desempate, la de mayor carga.
-2. Se mueven las construcciones de las demás cuadrillas a la elegida.
-3. Se ajustan las cargas.
+### reparto de los casos
 
-Por último, cada cuadrilla **renumera su orden de visita** de 1 a N, ordenando por sector y por
-número de caso.
+Con el universo y la asignación listos, el reparto es directo:
+
+1. Los casos se agrupan por **sector** y se recorren del grupo más grande al más pequeño (los
+   casos sin sector van al final).
+2. Cada **sector completo** va a la cuadrilla que lo tiene asignado.
+3. Si un sector **no tiene cuadrilla**, sus casos quedan **sin asignar** y se avisa en pantalla,
+   **salvo** los **citados del día**: como tienen prioridad, se asignan a la cuadrilla **menos
+   cargada** para no perder el compromiso.
+4. Los **casos especiales** (referidos, empresas y gobierno) entran igual que los comunes: siguen
+   el sector de su cuadrilla. La propuesta informa cuántos especiales quedaron asignados.
+5. La **construcción** va completa a **una sola cuadrilla**: se revisan los sectores con casos de
+   construcción, se elige la cuadrilla con más casos que **no** son de construcción en esos
+   sectores (desempate por mayor carga) y se mueven allí las construcciones de las demás.
+6. Por último, cada cuadrilla ordena su visita: **primero los citados**, luego por sector y por
+   número de caso, y renumera de 1 a N.
 
 Si **no hay cuadrillas activas de calle**, la propuesta se devuelve vacía con el motivo
 «No hay cuadrillas activas de calle» y todos los casos quedan en la lista de «sin asignar».
@@ -203,17 +265,23 @@ Si **no hay cuadrillas activas de calle**, la propuesta se devuelve vacía con e
 <!-- GENERAR_IMAGEN: propuesta-automatica.svg -->
 ```mermaid
 flowchart TD
-    A["Universo de casos<br/>de la central"] --> B["Quitar CERRADO,<br/>CANCELADO y ENRUTADO"]
+    A["Universo de casos<br/>comunes y especiales"] --> B["Quitar CERRADO,<br/>CANCELADO y ENRUTADO"]
     B --> C["Quitar cuadrilla 0<br/>(salvo cita del día)"]
-    C --> D["Quitar ya asignados<br/>a despacho abierto"]
-    D --> E["Agrupar por sector"]
-    E --> F["Ordenar grupos:<br/>del más grande al más chico"]
-    F --> G["Cada sector completo<br/>a la cuadrilla con menor carga"]
-    G --> H{"¿Hay casos<br/>CONSTRUCCION?"}
-    H -- "Sí" --> I["Juntar todas las construcciones<br/>en una sola cuadrilla"]
-    H -- "No" --> J["Renumerar orden de visita 1..N"]
-    I --> J
-    J --> K["Propuesta:<br/>grupos por cuadrilla,<br/>sin asignar y reglas"]
+    C --> D["Respetar despachos<br/>PUBLICADO o CERRADO"]
+    D --> E["Leer la asignación<br/>de sectores del día"]
+    E --> F{"¿Hay asignación<br/>guardada?"}
+    F -- "No" --> G["Proponer reparto<br/>equilibrado por carga"]
+    F -- "Sí" --> H["Usar la asignación<br/>GUARDADA"]
+    G --> I["Cada sector completo<br/>a su cuadrilla"]
+    H --> I
+    I --> J{"¿El sector tiene<br/>cuadrilla?"}
+    J -- "No, es citado" --> K["Citado a la cuadrilla<br/>menos cargada"]
+    J -- "No, es normal" --> L["Queda sin asignar"]
+    J -- "Sí" --> M["Asignado"]
+    K --> N["Juntar la construcción<br/>en una sola cuadrilla"]
+    M --> N
+    N --> O["Ordenar: citados primero<br/>y renumerar 1..N"]
+    O --> P["Propuesta:<br/>grupos, sin asignar y reglas"]
 ```
 
 ### reglas (citados del día, ≥2 referidos, ≥1 empresa, frases de exclusión)
@@ -224,11 +292,14 @@ requisitos del proyecto):
 | Clave | Qué significa |
 |---|---|
 | `citados_incluidos` | Casos que entraron por tener cita del día. |
+| `citados_reasignados` | Citados que no tenían cuadrilla en su sector y se movieron a la menos cargada. |
 | `referidos_asignados` / `referidos_disponibles` / `min_referidos` | Referidos asignados frente al mínimo 2. |
 | `cumple_min_referidos` | Se cumple si los referidos asignados llegan al mínimo permitido. |
 | `empresas_asignadas` / `empresas_disponibles` / `min_empresas` | Empresas (y gobierno) frente al mínimo 1. |
 | `cumple_min_empresas` | Se cumple si las empresas asignadas llegan al mínimo permitido. |
+| `especiales_asignados` | Cuántos casos especiales (referidos, empresas y gobierno) entraron. |
 | `construccion_cuadrilla` / `construccion_en_una_sola` | Cuadrilla única de construcción y si se logró. |
+| `sectores_sin_cuadrilla` | Lista de sectores sin cuadrilla cuyos casos quedaron sin asignar. |
 | `cuadrillas_activas` | Cuántas cuadrillas de calle se consideraron. |
 
 Los mínimos son constantes del módulo: **2 referidos** y **1 empresa**. Sus equivalentes
@@ -256,21 +327,46 @@ El servicio normaliza el texto de esas columnas y decide si el caso pasa al supe
 despacho de calle simplemente **respeta** la marca `en_gestion_supervisor` que ese criterio dejó
 en el caso.
 
-La persistencia la hace la rutina de guardado: crea un despacho en estado `BORRADOR` con
-`generado_auto=True` por cada cuadrilla **con casos**, y sus filas de detalle en estado
+La persistencia la hace la rutina de guardado al procesar: crea un despacho en estado `BORRADOR`
+con `generado_auto=True` por cada cuadrilla **con casos**, y sus filas de detalle en estado
 `ASIGNADO`.
+
+### proceso (formulario flotante)
+
+El botón **«Procesar despacho»** de la jornada abre una **ventana grande** que ocupa el **90 % de
+la pantalla**. Desde ahí se revisa y se confirma el trabajo del día. Tiene cuatro partes:
+
+1. **Datos generales.** Arriba se ven cuatro tarjetas: **universo de casos**, **comunes**,
+   **especiales** y **sin sector**. En la cabecera se indica si la asignación es la **guardada**
+   por el supervisor o una **propuesta automática** del sistema.
+2. **Universo de casos.** Una tabla con los casos que se van a repartir (ID de avería, cliente,
+   sector, tipo, categoría, estado y si tiene cita). Tres botones filtran la lista: **Todos**,
+   **Comunes** y **Especiales**.
+3. **Sectores y cuadrilla asignada.** Una tabla con cada sector, su **total de casos**, cuántos
+   son **especiales** y cuántos **citados**, y un **selector** para elegir la cuadrilla. La opción
+   «— Sin asignar —» deja el sector sin cuadrilla: sus casos no se despacharán (salvo los
+   citados).
+4. **Cuadrillas y sectores asignados.** Tarjetas con cada cuadrilla activa, los **sectores que
+   tiene asignados** y el **total de casos** que le tocarían. Si algún sector quedó sin cuadrilla,
+   aparece un aviso en pantalla.
+
+Al final están los botones **«Procesar despacho»** (guarda y cierra la ventana) y **«Cancelar»**
+(no guarda nada). La asignación guardada queda registrada con el usuario que la hizo y la fecha.
 
 ---
 
-## Endpoints (app/api/routes_despachos.py:63,76,117,135,166,174,181,204,249,271,299,407,420,432,486)
+## Endpoints (app/api/routes_despachos.py — 18 operaciones)
 
 Todas las rutas cuelgan de `/api/v1/despachos`. En la columna «Rol», **Escritura** significa
 `ADMIN` o `SUPERVISOR`; **Lectura** significa estar autenticado.
 
 | Método y ruta | Rol | Resumen |
 |---|---|---|
-| `POST /propuesta` | Escritura | Simula el despacho del día. |
-| `POST ""` | Escritura | Genera y guarda los despachos. |
+| `POST /propuesta` | Escritura | Simula el despacho del día (no guarda nada). |
+| `GET /proceso` | Lectura | Universo de casos, sectores y asignación del día (D-66). |
+| `PUT /asignacion` | Escritura | Guarda la asignación de sectores por cuadrilla del día. |
+| `POST /procesar` | Escritura | Procesa y guarda los despachos con esa asignación. |
+| `POST ""` | Escritura | Genera y guarda los despachos (ruta anterior, todavía disponible). |
 | `GET ""` | Lectura | Lista despachos por fecha y/o central. |
 | `POST /fallas-masivas` | Escritura | Reporta una falla masiva. |
 | `GET /fallas-masivas` | Lectura | Lista fallas masivas. |
@@ -290,14 +386,35 @@ Todas las rutas cuelgan de `/api/v1/despachos`. En la columna «Rol», **Escritu
 - **`POST /propuesta`** acepta `fecha` e `id_central` opcionales. Si no se envían, resuelve la
   central configurada. Llama al servicio que construye la propuesta y **no guarda nada**.
   Devuelve el objeto de propuesta.
-- **`POST ""`** genera y guarda. Si se envía `reemplazar=true`, primero borra los despachos en
-  estado `BORRADOR` de esa central y fecha. Si ya existe algún despacho para la fecha y no se
-  pidió reemplazar, responde **409** con el mensaje:
+- **`POST ""`** es la ruta anterior de generación: genera y guarda con el motor de reparto. Si se
+  envía `reemplazar=true`, primero borra los despachos en estado `BORRADOR` de esa central y
+  fecha. Si ya existe algún despacho para la fecha y no se pidió reemplazar, responde **409** con
+  el mensaje:
 
   > «Ya existe un despacho para esa fecha (use reemplazar=true o edite el existente)»
 
   Si todo va bien, persiste la propuesta y confirma la transacción. El código de respuesta es
-  **201** (creado).
+  **201** (creado). La pantalla web ya no usa esta ruta: usa `POST /procesar` desde el formulario
+  flotante.
+
+### Proceso del día con asignación de sectores (D-66)
+
+Estas tres operaciones son las que usa el formulario flotante «Procesar despacho»:
+
+- **`GET /proceso`** acepta `fecha` e `id_central` opcionales (si no se envían, resuelve la
+  central configurada y la fecha de hoy). Devuelve el **universo** de casos (comunes y
+  especiales), los **sectores** con su total (y cuántos son especiales o citados), las
+  **cuadrillas** activas con los sectores asignados, la asignación vigente y la propuesta de
+  reparto. El campo `asignacion_origen` dice si la asignación es `GUARDADA` o `PROPUESTA`.
+- **`PUT /asignacion`** recibe la fecha y una lista de bloques «cuadrilla → sectores». Reemplaza
+  la asignación del día y devuelve el proceso ya recalculado. Si un sector viene repetido, se
+  queda con la primera cuadrilla que lo pidió.
+- **`POST /procesar`** recibe la fecha, la asignación (opcional) y `reemplazar` (por defecto
+  verdadero). Antes de guardar comprueba que no haya despachos `PUBLICADO` o `CERRADO` de esa
+  fecha; si los hay, responde **409** con «Ya hay despachos publicados o cerrados para esa
+  fecha». Si `reemplazar` es verdadero, borra los `BORRADOR` previos; si es falso y ya existe
+  alguno, responde **409**. Luego guarda la asignación (si se envió) y crea los despachos. El
+  código de respuesta es **201** (creado).
 
 ### Consulta y edición del despacho
 
@@ -353,8 +470,9 @@ La página DESPACHO ofrece un detalle editable por despacho:
 
 Al agregar, la pantalla valida que el ID sea un entero positivo antes de llamar a la API.
 
-Cuando el usuario intenta generar sin pedir reemplazo y la API responde **409**, la pantalla
-pregunta si desea reemplazar los borradores y relanza la operación con `reemplazar=true`.
+Para procesar, el formulario flotante envía siempre `reemplazar=true`, así que los borradores del
+día se reemplazan sin preguntar. Si la API responde **409** porque ya hay despachos **publicados o
+cerrados** para esa fecha, la pantalla muestra el mensaje y no borra nada.
 
 ---
 
@@ -487,9 +605,16 @@ Los esquemas definen los literales de estado y canal, y estos modelos de entrada
 
 | Esquema | Para qué sirve |
 |---|---|
-| `CasoAsignadoOut` | Un caso dentro de una propuesta. |
+| `CasoAsignadoOut` | Un caso dentro de una propuesta (marca si es especial). |
 | `GrupoCuadrillaOut` | Un grupo de casos por cuadrilla. |
 | `PropuestaOut` | Respuesta de la simulación de propuesta. |
+| `SectorProcesoOut` | Un sector con su total de casos, especiales y citados (D-66). |
+| `CuadrillaProcesoOut` | Una cuadrilla con los sectores que tiene asignados (D-66). |
+| `UniversoOut` | El universo de casos del formulario de proceso (D-66). |
+| `AsignacionBloque` | Un bloque «cuadrilla → sectores» (D-66). |
+| `AsignacionUpdate` | Cuerpo para guardar la asignación del día (D-66). |
+| `ProcesoDespachoOut` | Respuesta completa del formulario de proceso (D-66). |
+| `ProcesarDespacho` | Cuerpo para procesar el despacho (D-66). |
 | `DespachoCasoOut` | Una fila del detalle en el despacho. |
 | `DespachoOut` | La cabecera del despacho. |
 | `DespachoDetalleOut` | Cabecera + cuadrilla + casos. |
@@ -506,18 +631,21 @@ de detalle amplía al de cabecera con el código de la cuadrilla, su nombre y la
 
 ### Modelos SQLAlchemy
 
-El archivo de modelos declara cuatro entidades:
+El archivo de modelos declara cinco entidades:
 
 | Modelo | Tabla |
 |---|---|
 | `Despacho` | `despacho` |
 | `DespachoCasos` | `despacho_caso` |
+| `CuadrillaSectorDia` | `cuadrilla_sector_dia` (nueva en D-66) |
 | `Notificacion` | `notificacion` |
 | `FallaMasiva` | `falla_masiva` |
 
 La relación de casos se borra en cascada y se carga junto con la cabecera; la relación inversa
 también está declarada. La tabla de notificaciones guarda los **intentos** y el **próximo
-intento**, que son las claves del patrón de bandeja de salida.
+intento**, que son las claves del patrón de bandeja de salida. El modelo de la asignación diaria
+(`CuadrillaSectorDia`) guarda central, fecha, cuadrilla, sector y usuario, y obliga a que un
+sector aparezca una sola vez por fecha.
 
 ---
 
@@ -529,19 +657,37 @@ La página se monta en la ruta protegida `/despacho` y usa el cliente de API com
 
 | Bloque | Contenido |
 |---|---|
-| Jornada | Selector de fecha, «Simular propuesta» y «Generar despacho». |
+| Jornada | Selector de fecha, «Simular propuesta» y «Procesar despacho». |
 | Propuesta | Resumen, chips de reglas y tablas por cuadrilla, más «Sin asignar». |
 | Despachos del día | Tabla con estado, casos, canal, origen y acciones. |
 | Detalle | Ficha, publicar o cerrar, casos editables, envío y notificaciones. |
 | Reporte de producción | Global del día y del despacho seleccionado. |
 | Fallas masivas | Alta y tabla de registradas. |
 
+### Formulario flotante de proceso (app/web/src/components/ProcesarDespacho.tsx)
+
+El componente implementa el requisito de UI 6 del ciclo **D-66** y es la ventana grande (90 % de
+la pantalla) que se abre con el botón «Procesar despacho»:
+
+- Al abrirse pide el proceso del día y arma la asignación local a partir de los sectores.
+- Muestra cuatro tarjetas con el **universo de casos**, los comunes, los especiales y los que
+  están **sin sector**.
+- Muestra la tabla del universo con los filtros **Todos / Comunes / Especiales**.
+- Muestra la tabla de **sectores** con su total, sus especiales, sus citados y un **selector de
+  cuadrilla por sector** (la asignación es modificable).
+- Muestra las **cuadrillas** con sus sectores y su total de casos, y avisa cuántos sectores
+  quedaron sin cuadrilla.
+- Al pie están los botones **«Procesar despacho»** y **«Cancelar»**; procesar envía la asignación
+  con `reemplazar=true`.
+
 ### Acciones y control por rol
 
 - El modo **solo lectura** para el rol `TECNICO` se anuncia con un aviso y oculta simular,
-  generar, editar y enviar.
+  procesar, editar y enviar.
 - Las reglas incumplidas (mínimo de referidos, mínimo de empresas y construcción en una sola
-  cuadrilla) se resaltan con chips de alerta.
+  cuadrilla) se resaltan con chips de alerta. También se avisa si hay sectores sin cuadrilla.
+- «Procesar despacho» abre el formulario flotante; al confirmar, la página recarga la lista de
+  despachos y abre el detalle del primero.
 - «Publicar» y «Cerrar» llaman a la actualización del despacho. «Imprimir» pide el HTML y lo abre
   en otra pestaña.
 - El formulario de envío usa el canal `TELEGRAM` o `CORREO` y un destinatario opcional cuya ayuda
@@ -549,12 +695,15 @@ La página se monta en la ruta protegida `/despacho` y usa el cliente de API com
 
 ---
 
-## Pruebas (app/tests/test_despacho_api.py 17)
+## Pruebas (app/tests/test_despacho_api.py — 23)
 
-La tabla de pruebas de la Fase 4 registra este archivo con **17 pruebas de integración** para:
-propuesta, balanceo, generación, publicación y fallas masivas. Todo dentro del total **169/169**
-en verde. El plan de pruebas asigna a la prueba E2E-06 la cobertura de propuesta, generación del
-despacho y falla masiva manual para RF-08, RF-09 y RF-24.
+La tabla de pruebas de la Fase 4 registraba este archivo con **17 pruebas de integración** para:
+propuesta, balanceo, generación, publicación y fallas masivas. El ciclo **D-66** agregó **6
+pruebas** (proceso, reparto por sector asignado, sector sin cuadrilla, citado reasignado, procesar
+con la asignación y casos especiales), para un total de **23**. El plan de pruebas asigna a la
+prueba E2E-06 la cobertura de propuesta, generación del despacho y falla masiva manual para RF-08,
+RF-09 y RF-24, y el archivo E2E **`15-proceso-despacho.spec.js`** cubre el formulario flotante y
+la asignación por sector.
 
 ### Escenarios cubiertos por la suite de integración
 
@@ -570,6 +719,12 @@ despacho y falla masiva manual para RF-08, RF-09 y RF-24.
 | Citados del día | Un caso de cuadrilla 0 con cita entra y marca `es_cita`. |
 | Sin cuadrillas | Propuesta vacía y cero cuadrillas activas. |
 | Generar y no duplicar | 201; 409 sin reemplazar; 201 con `reemplazar=true`. |
+| Proceso del día (D-66) | Devuelve universo, sectores con totales y cuadrillas. |
+| Reparto por sector asignado (D-66) | Cada caso cae en la cuadrilla de su sector. |
+| Sector sin cuadrilla (D-66) | Sus casos quedan en «sin asignar». |
+| Citado sin cuadrilla (D-66) | No se pierde: pasa a la cuadrilla menos cargada. |
+| Procesar con la asignación (D-66) | Guarda los despachos y la asignación del día. |
+| Casos especiales (D-66) | Referidos, empresas y gobierno entran al despacho. |
 | Agregar y quitar caso | 200; 409 al duplicar; cambio de estado. |
 | Publicar | Estado `PUBLICADO` y fecha de envío no vacía. |
 | Caso de cuadrilla 0 al agregar | Responde 409. |
@@ -584,5 +739,7 @@ forma determinista.
 
 **Modo de pruebas:** para no mezclar datos, las pruebas usan la variable `DB_SCHEMA` con
 esquemas aislados: `ggto_test` para las pruebas de backend con `pytest` y `ggto_e2e` para las
-pruebas de navegador con Playwright. La suite de navegador cerró en **46/46**, y las herramientas
-de calidad (ruff, mypy y tsc en modo estricto) no arrojaron hallazgos.
+pruebas de navegador con Playwright. El ciclo **D-66** amplió la suite de navegador con el archivo
+`15-proceso-despacho.spec.js` (formulario flotante y asignación por sector); sus resultados se
+registran en `RepoTecnico/pruebas/logs/e2e-resultados.json`. Las herramientas de calidad (ruff,
+mypy y tsc en modo estricto) no arrojaron hallazgos.

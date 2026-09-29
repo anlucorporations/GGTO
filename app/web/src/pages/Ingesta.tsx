@@ -4,6 +4,7 @@ import type { IngestaLoteOut, ResumenIngesta } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
+import GestionDirecciones from '../components/GestionDirecciones';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -31,6 +32,7 @@ export default function Ingesta() {
   const [detalle, setDetalle] = useState<IngestaLoteOut | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [modalCarga, setModalCarga] = useState(false);
+  const [modalDirecciones, setModalDirecciones] = useState(false);
 
   const cargarLotes = useCallback(async () => {
     setCargandoLotes(true);
@@ -259,6 +261,24 @@ export default function Ingesta() {
             </div>
           )}
 
+          {(resumen.direcciones_sin_sector?.length ?? 0) > 0 && (
+            <div className="aviso aviso-info">
+              <span>
+                {(resumen.direcciones_sin_sector ?? []).length} dirección(es) del archivo no
+                pertenecen a ningún sector:{' '}
+                {(resumen.direcciones_sin_sector ?? []).reduce((n, d) => n + d.total, 0)} caso(s)
+                pueden sectorizarse. Agréguelas a un sector para que entren al despacho.
+              </span>
+              <button
+                type="button"
+                className="btn btn-mini"
+                onClick={() => setModalDirecciones(true)}
+              >
+                Gestionar en SECTOR
+              </button>
+            </div>
+          )}
+
           {resumen.ejemplos.length > 0 && (
             <>
               <h3 className="subtitulo-seccion">Ejemplos de casos nuevos</h3>
@@ -293,6 +313,23 @@ export default function Ingesta() {
             </>
           )}
         </Modal>
+      )}
+
+      {/* Gestión de direcciones sin sector (D-66) */}
+      {modalDirecciones && resumen && (
+        <GestionDirecciones
+          direcciones={resumen.direcciones_sin_sector ?? []}
+          idCentral={parsearCentral(idCentral).valor}
+          onCerrar={() => setModalDirecciones(false)}
+          onResuelto={(asignados) => {
+            setModalDirecciones(false);
+            setOk(
+              asignados > 0
+                ? `Direcciones agregadas a un sector y ${asignados} caso(s) re-sectorizado(s).`
+                : 'Direcciones agregadas. Ningún caso pendiente cambió de sector.',
+            );
+          }}
+        />
       )}
 
       {/* Ficha del lote, en ventana flotante (requisito de UI 3). */}

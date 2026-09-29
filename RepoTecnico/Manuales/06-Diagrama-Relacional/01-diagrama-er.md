@@ -5,8 +5,8 @@
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor | PostgreSQL 15 (`ggtov2`) |
-| Script DDL | `RepoTecnico/db/schema.sql` — **35 tablas** |
-| Modelo de origen | `RepoTecnico/modelo_er.md` (647 líneas, 7 bloques `erDiagram`) |
+| Script DDL | `RepoTecnico/db/schema.sql` — **36 tablas** |
+| Modelo de origen | `RepoTecnico/modelo_er.md` (662 líneas, 7 bloques `erDiagram`) |
 | Diccionario asociado | `RepoTecnico/Manuales/05-Diccionario-de-Datos/01-entidades.md` |
 | Notación | Mermaid `erDiagram`, renderizable en GitLab/GitHub/VS Code |
 
@@ -18,26 +18,26 @@
 
 ## Visión general del modelo
 
-### 35 tablas y 7 dominios
+### 36 tablas y 7 dominios
 
-El esquema físico contiene 35 sentencias `CREATE TABLE`
-(`RepoTecnico/db/schema.sql:64-652`) y `modelo_er.md` los representa en siete
+El esquema físico contiene 36 sentencias `CREATE TABLE`
+(`RepoTecnico/db/schema.sql:64-669`) y `modelo_er.md` los representa en siete
 bloques temáticos:
 
 | # | Dominio (sección de `modelo_er.md`) | Entidades del diagrama | Nº |
 |---|---|---|---|
-| 1 | Vista general de relaciones (`RepoTecnico/modelo_er.md:30-77`) | Relaciones entre todas las entidades | — |
-| 2 | Núcleo organizacional y seguridad (`RepoTecnico/modelo_er.md:81-233`) | ROL, CENTRAL, SECTOR, SECTOR_DIRECCION, TECNICO, USUARIO, FLOTA, HERRAMIENTA, CUADRILLA, CUADRILLA_TECNICO, CUADRILLA_HERRAMIENTA, DISPOSITIVO_SEGURIDAD, SINCRONIZACION | 13 |
-| 3 | Casos: averías y solicitudes (`RepoTecnico/modelo_er.md:237-354`) | INGESTA_LOTE, CAUSA, CASO, CASO_ESPECIAL, SOLICITANTE, CASO_ESTADO_HIST, SEGUIMIENTO, CITA | 8 |
-| 4 | Despacho y fallas masivas (`RepoTecnico/modelo_er.md:358-427`) | DESPACHO, DESPACHO_CASO, FALLA_MASIVA (+ CASO, CUADRILLA, SECTOR, CENTRAL como referencia) | 3 propias |
-| 5 | Gestión técnica (`RepoTecnico/modelo_er.md:431-513`) | ACTIVIDAD, EVIDENCIA, INCIDENTE, CATALOGO_METODO (+ CAUSA, CASO, USUARIO, CUADRILLA, FLOTA, HERRAMIENTA) | 4 propias |
-| 6 | Insumos v2 (`RepoTecnico/modelo_er.md:517-577`) | INSUMO, ORDEN_MATERIAL, ORDEN_MATERIAL_DETALLE, INVENTARIO_MOVIMIENTO | 4 |
-| 7 | Soporte y auditoría (`RepoTecnico/modelo_er.md:581-620`) | CONFIGURACION, AUDITORIA, NOTIFICACION | 3 |
+| 1 | Vista general de relaciones (`RepoTecnico/modelo_er.md:30-79`) | Relaciones entre todas las entidades | — |
+| 2 | Núcleo organizacional y seguridad (`RepoTecnico/modelo_er.md:83-235`) | ROL, CENTRAL, SECTOR, SECTOR_DIRECCION, TECNICO, USUARIO, FLOTA, HERRAMIENTA, CUADRILLA, CUADRILLA_TECNICO, CUADRILLA_HERRAMIENTA, DISPOSITIVO_SEGURIDAD, SINCRONIZACION | 13 |
+| 3 | Casos: averías y solicitudes (`RepoTecnico/modelo_er.md:239-356`) | INGESTA_LOTE, CAUSA, CASO, CASO_ESPECIAL, SOLICITANTE, CASO_ESTADO_HIST, SEGUIMIENTO, CITA | 8 |
+| 4 | Despacho y fallas masivas (`RepoTecnico/modelo_er.md:360-442`) | DESPACHO, DESPACHO_CASO, CUADRILLA_SECTOR_DIA, FALLA_MASIVA (+ CASO, CUADRILLA, SECTOR, CENTRAL como referencia) | 4 propias |
+| 5 | Gestión técnica (`RepoTecnico/modelo_er.md:446-528`) | ACTIVIDAD, EVIDENCIA, INCIDENTE, CATALOGO_METODO (+ CAUSA, CASO, USUARIO, CUADRILLA, FLOTA, HERRAMIENTA) | 4 propias |
+| 6 | Insumos v2 (`RepoTecnico/modelo_er.md:532-592`) | INSUMO, ORDEN_MATERIAL, ORDEN_MATERIAL_DETALLE, INVENTARIO_MOVIMIENTO | 4 |
+| 7 | Soporte y auditoría (`RepoTecnico/modelo_er.md:596-635`) | CONFIGURACION, AUDITORIA, NOTIFICACION | 3 |
 
 Las entidades definidas con atributos propios en los dominios 2 a 7 suman
-13 + 8 + 3 + 4 + 4 + 3 = 35; además, cada bloque repite entidades de otros
+13 + 8 + 4 + 4 + 4 + 3 = 36; además, cada bloque repite entidades de otros
 dominios como referencia para dibujar la relación (por ejemplo, `CASO` en los
-dominios 4, 5 y 7). En total, **35 tablas** distintas.
+dominios 4, 5 y 7). En total, **36 tablas** distintas.
 
 ### Convención de diagramas (Mermaid erDiagram)
 
@@ -64,8 +64,8 @@ implementan con `CHECK`, `UNIQUE` o directamente en la capa de servicio.
 
 ### Vista general de relaciones
 
-Reproducido de `RepoTecnico/modelo_er.md:32-77`. Muestra el grafo completo de dependencias
-entre las 35 tablas.
+Reproducido de `RepoTecnico/modelo_er.md:32-79`. Muestra el grafo completo de dependencias
+entre las 36 tablas.
 
 ```mermaid
 erDiagram
@@ -83,6 +83,8 @@ erDiagram
     CUADRILLA      ||--o{ CUADRILLA_TECNICO : integra
     CUADRILLA      ||--o{ CUADRILLA_HERRAMIENTA : equipa
     CUADRILLA      ||--o{ DESPACHO : ejecuta
+    CUADRILLA      ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR         ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
     CUADRILLA      ||--o{ CITA : atiende
     FLOTA          ||--o| CUADRILLA : "es vehiculo de"
     SECTOR         ||--o{ CASO : ubica
@@ -117,18 +119,18 @@ erDiagram
 Observaciones verificadas sobre este grafo:
 
 - La relación «CASO `||--o{` EVIDENCIA» del diagrama **no** es directa en el
-  DDL: `evidencia` referencia a `actividad` (`RepoTecnico/db/schema.sql:517`) y
+  DDL: `evidencia` referencia a `actividad` (`RepoTecnico/db/schema.sql:534`) y
   llega al caso a través de ella. El bloque del dominio 5 sí modela la ruta
   correcta (`ACTIVIDAD ||--o{ EVIDENCIA`).
 - «CENTRAL `||--o{` INSUMO» se cumple solo si `id_central` está informado;
-  en el DDL la columna es **nullable** (`RepoTecnico/db/schema.sql:578`).
+  en el DDL la columna es **nullable** (`RepoTecnico/db/schema.sql:595`).
 - «FALLA_MASIVA `||--o{` CASO» no tiene FK: la pertenencia se marca con
   `caso.es_falla_masiva` (`RepoTecnico/db/schema.sql:304`) y la agrupación por
   concentración se calcula en `app/services/fallas.py`.
 
 ### Núcleo organizacional y seguridad
 
-Reproducido de `RepoTecnico/modelo_er.md:83-233`. Cubre los catálogos y los recursos de la
+Reproducido de `RepoTecnico/modelo_er.md:85-235`. Cubre los catálogos y los recursos de la
 central, incluidos los de la app de campo (dispositivo y sincronización).
 
 ```mermaid
@@ -285,7 +287,7 @@ erDiagram
 
 El comentario `"SUPERVISOR|TECNICO|ADMIN"` del atributo `ROL.codigo` quedó
 desactualizado respecto del DDL: la semilla real inserta **cuatro** roles
-(`SUPER`, `ADMIN`, `SUPERVISOR`, `TECNICO`) — `RepoTecnico/db/schema.sql:736-741`.
+(`SUPER`, `ADMIN`, `SUPERVISOR`, `TECNICO`) — `RepoTecnico/db/schema.sql:753-758`.
 Además, `sector.codigo` y `cuadrilla.codigo` son únicos **por central**
 (`UNIQUE (id_central, codigo)`), no globales (`schema.sql:139,238`), y
 `ux_cuadrilla_supervisor` garantiza una sola cuadrilla 0 por central
@@ -293,7 +295,7 @@ Además, `sector.codigo` y `cuadrilla.codigo` son únicos **por central**
 
 ### Casos (averías y solicitudes)
 
-Reproducido de `RepoTecnico/modelo_er.md:239-354`. Es el núcleo transaccional del sistema.
+Reproducido de `RepoTecnico/modelo_er.md:241-356`. Es el núcleo transaccional del sistema.
 
 ```mermaid
 erDiagram
@@ -416,13 +418,13 @@ Notas verificadas: el diagrama declara `CITA.id_cita` como `bigserial`, que es
 el tipo real (`RepoTecnico/db/schema.sql:422`); el diccionario de origen lo describía como
 `serial` (divergencia señalada en el manual del diccionario). La regla «sin
 solapamiento» del atributo `fecha_hora` se apoya en el índice
-`ix_cita_cuadrilla_fecha` (`RepoTecnico/db/schema.sql:670`); en el DDL **no** existe una
+`ix_cita_cuadrilla_fecha` (`RepoTecnico/db/schema.sql:687`); en el DDL **no** existe una
 restricción `EXCLUDE` (el propio modelo la considera «opcional»,
-`RepoTecnico/modelo_er.md:631`).
+`RepoTecnico/modelo_er.md:646`).
 
 ### Despacho y fallas masivas
 
-Reproducido de `RepoTecnico/modelo_er.md:360-427`.
+Reproducido de `RepoTecnico/modelo_er.md:362-442`.
 
 ```mermaid
 erDiagram
@@ -447,6 +449,15 @@ erDiagram
         varchar  tipo_asignacion
         varchar  estado
         text     observacion
+    }
+    CUADRILLA_SECTOR_DIA {
+        bigserial id_asignacion PK
+        int      id_central FK
+        date     fecha
+        int      id_cuadrilla FK
+        int      id_sector FK
+        varchar  usuario FK
+        timestamp creado_en
     }
     FALLA_MASIVA {
         bigserial id_falla PK
@@ -487,6 +498,10 @@ erDiagram
     DESPACHO   ||--o{ DESPACHO_CASO : detalla
     CASO       ||--o{ DESPACHO_CASO : asignado
     SECTOR     ||--o{ DESPACHO_CASO : agrupa
+    CENTRAL    ||--o{ CUADRILLA_SECTOR_DIA : programa
+    CUADRILLA  ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR     ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
+    USUARIO    ||--o{ CUADRILLA_SECTOR_DIA : define
     CENTRAL    ||--o{ FALLA_MASIVA : registra
     SECTOR     ||--o{ FALLA_MASIVA : ubica
     CUADRILLA  ||--o{ FALLA_MASIVA : atiende
@@ -499,11 +514,19 @@ El diagrama ya marca `id_despacho` como `bigserial`, que es el tipo real
 `caso.es_falla_masiva` (`RepoTecnico/db/schema.sql:304`) y con la detección por concentración de
 `app/services/fallas.py`, cuyos parámetros viven en `configuracion`
 (`fallas.activo`, `fallas.umbral_casos`, `fallas.ventana_horas`,
-`fallas.campo_concentracion` — `RepoTecnico/db/schema.sql:788-791`).
+`fallas.campo_concentracion` — `RepoTecnico/db/schema.sql:805-808`).
+
+La entidad **`CUADRILLA_SECTOR_DIA`** es la novedad del ciclo **D-66**: asigna dinámicamente
+sectores a cuadrillas por día. En el DDL ocupa
+`RepoTecnico/db/schema.sql:477-488` y su restricción `UNIQUE (fecha, id_sector)` garantiza
+que un sector pertenezca como máximo a una cuadrilla por jornada
+(`RepoTecnico/db/schema.sql:485`). Es la base del reparto del despacho descrito en
+`app/services/despacho.py:194-263` y se documenta en
+`RepoTecnico/Manuales/05-Diccionario-de-Datos/01-entidades.md`.
 
 ### Gestión técnica (offline)
 
-Reproducido de `RepoTecnico/modelo_er.md:433-513`. El título original del documento es
+Reproducido de `RepoTecnico/modelo_er.md:448-528`. El título original del documento es
 «Gestión técnica (app móvil)»; debe precisarse que **la aplicación móvil Flutter
 no está desarrollada** (Ciclo 8 pospuesto, hoja de hechos de verificación): el
 bloque describe el modelo previsto para la operación en campo y las tablas
@@ -595,11 +618,11 @@ El bloque del dominio 5 sí incluye `CATALOGO_METODO.dominio = CONTACTO`, que
 coincide con el `CHECK` real (`RepoTecnico/db/schema.sql:90-91`) y corrige la omisión del
 diccionario. La regla «`origen_camara` debe ser `true`» se expresa como
 `DEFAULT true` más la validación en servicio: el DDL no impone un `CHECK` que lo
-fuerce (`RepoTecnico/db/schema.sql:526`).
+fuerce (`RepoTecnico/db/schema.sql:543`).
 
 ### Insumos (v2)
 
-Reproducido de `RepoTecnico/modelo_er.md:519-577`. Corresponde al alcance de la v2 (RF-05);
+Reproducido de `RepoTecnico/modelo_er.md:534-592`. Corresponde al alcance de la v2 (RF-05);
 las tablas existen pero no tienen flujo de aplicación en la v1.
 
 ```mermaid
@@ -663,13 +686,13 @@ erDiagram
 ```
 
 Detalle verificado: `inventario_movimiento` tiene además la columna
-`observacion` que el diagrama no lista (`RepoTecnico/db/schema.sql:619`), y
+`observacion` que el diagrama no lista (`RepoTecnico/db/schema.sql:636`), y
 `orden_material_detalle` restringe cada insumo a una sola aparición por orden
-(`UNIQUE (id_orden, id_insumo)`, `RepoTecnico/db/schema.sql:607`).
+(`UNIQUE (id_orden, id_insumo)`, `RepoTecnico/db/schema.sql:624`).
 
 ### Soporte y auditoría
 
-Reproducido de `RepoTecnico/modelo_er.md:583-620`.
+Reproducido de `RepoTecnico/modelo_er.md:598-635`.
 
 ```mermaid
 erDiagram
@@ -711,9 +734,9 @@ erDiagram
 ```
 
 Detalle verificado: `auditoria.ip` es de tipo `inet`, no `varchar`
-(`RepoTecnico/db/schema.sql:650`), y tanto `auditoria` como `configuracion` carecen de clave
+(`RepoTecnico/db/schema.sql:667`), y tanto `auditoria` como `configuracion` carecen de clave
 foránea; `notificacion` incorpora la columna `error` que el diagrama no lista
-(`RepoTecnico/db/schema.sql:635`). En producción, los canales Telegram y correo aún no tienen
+(`RepoTecnico/db/schema.sql:652`). En producción, los canales Telegram y correo aún no tienen
 credenciales: las notificaciones quedan en estado `PENDIENTE` (patrón *outbox*,
 `app/services/outbox.py`).
 
@@ -736,6 +759,10 @@ Relaciones uno-a-muchos verificadas contra las claves foráneas del DDL
 | `central` | `despacho` | `despacho.id_central` | 1:N obligatoria |
 | `central` | `falla_masiva` | `falla_masiva.id_central` | 1:N obligatoria |
 | `central` | `insumo` | `insumo.id_central` | 1:N opcional |
+| `central` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_central` | 1:N obligatoria (**D-66**) |
+| `sector` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_sector` | 1:N con `ON DELETE CASCADE`; único por fecha (**D-66**) |
+| `cuadrilla` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_cuadrilla` | 1:N con `ON DELETE CASCADE` (**D-66**) |
+| `usuario` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.usuario` (→ `p00`) | 1:N opcional (**D-66**) |
 | `sector` | `sector_direccion` | `sector_direccion.id_sector` | 1:N con `ON DELETE CASCADE` |
 | `sector` | `caso` | `caso.id_sector` | 1:N opcional |
 | `sector` | `despacho_caso` | `despacho_caso.id_sector` | 1:N opcional |
@@ -798,12 +825,12 @@ Catálogos y su consumo:
 | Catálogo | Consumido por | FK | Notas |
 |---|---|---|---|
 | `rol` | `usuario.id_rol` | Sí, obligatoria | 4 roles sembrados, incluido `SUPER` con bypass (`app/api/deps.py:20,65`). |
-| `central` | 10 tablas (`sector`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `caso`, `ingesta_lote`, `despacho`, `falla_masiva`, `insumo`) | Sí | Base del filtro de ingesta y del alcance multi-central. |
-| `sector` | `caso`, `sector_direccion`, `despacho_caso`, `falla_masiva` | Sí | Sectorización por coincidencia de dirección. |
+| `central` | 11 tablas (`sector`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `caso`, `ingesta_lote`, `despacho`, `cuadrilla_sector_dia`, `falla_masiva`, `insumo`) | Sí | Base del filtro de ingesta y del alcance multi-central. |
+| `sector` | `caso`, `sector_direccion`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | Sí | Sectorización por coincidencia de dirección. |
 | `causa` | `caso.id_causa`, `actividad.id_causa` | Sí | Catálogo administrable; semilla actual 0 filas. |
-| `catalogo_metodo` | `actividad.id_metodo` | Sí | 9 métodos sembrados (`RepoTecnico/db/schema.sql:744-754`). |
+| `catalogo_metodo` | `actividad.id_metodo` | Sí | 9 métodos sembrados (`RepoTecnico/db/schema.sql:761-771`). |
 | `configuracion` | Ninguna FK; la leen los servicios | No | Parámetros en `jsonb`; se actualiza por `PUT /api/v1/configuracion/{clave}` (`app/api/routes_config.py:534`). |
-| `usuario` | `creado_por`, `usuario`, `creado_por` de `cita`, `solicitante_usuario`, `usuario_crea` | Parcial | `caso.creado_por` referencia `usuario(p00)` (`RepoTecnico/db/schema.sql:305`); otras columnas homónimas son `varchar(20)` sin FK. |
+| `usuario` | `creado_por`, `usuario`, `creado_por` de `cita`, `usuario_crea`, `cuadrilla_sector_dia.usuario` | Parcial | `caso.creado_por` referencia `usuario(p00)` (`RepoTecnico/db/schema.sql:305`); otras columnas homónimas son `varchar(20)` sin FK. |
 
 ## Claves y restricciones
 
@@ -812,7 +839,7 @@ Catálogos y su consumo:
 | Tipo | Tablas | Observación |
 |---|---|---|
 | PK simple `serial` | `rol`, `causa`, `catalogo_metodo`, `central`, `sector`, `sector_direccion`, `tecnico`, `usuario`, `flota`, `herramienta`, `cuadrilla`, `solicitante`, `caso_especial`, `insumo` | Catálogos y entidades maestras. |
-| PK simple `bigserial` | `ingesta_lote`, `caso`, `caso_estado_hist`, `seguimiento`, `cita`, `despacho`, `despacho_caso`, `falla_masiva`, `actividad`, `evidencia`, `incidente`, `dispositivo_seguridad`, `sincronizacion`, `orden_material`, `orden_material_detalle`, `inventario_movimiento`, `notificacion`, `auditoria` | Tablas transaccionales de alto volumen. |
+| PK simple `bigserial` | `ingesta_lote`, `caso`, `caso_estado_hist`, `seguimiento`, `cita`, `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva`, `actividad`, `evidencia`, `incidente`, `dispositivo_seguridad`, `sincronizacion`, `orden_material`, `orden_material_detalle`, `inventario_movimiento`, `notificacion`, `auditoria` | Tablas transaccionales de alto volumen. |
 | PK compuesta | `cuadrilla_tecnico` `(id_cuadrilla, id_tecnico, desde)`, `cuadrilla_herramienta` `(id_cuadrilla, id_herramienta, asignada_en)` | `schema.sql:251,259`. |
 | PK natural `varchar` | `configuracion.clave` | `RepoTecnico/db/schema.sql:100`. |
 
@@ -822,8 +849,8 @@ Políticas `ON DELETE` observadas en el DDL:
 
 | Política | Ejemplos |
 |---|---|
-| `ON DELETE CASCADE` | `sector_direccion.id_sector` (`:145`), `caso_estado_hist.id_caso` (`:398`), `seguimiento.id_caso` (`:409`), `cita.id_caso` (`:423`), `despacho_caso.id_despacho` (`:460`) y `id_caso` (`:461`), `actividad.id_caso` (`:498`), `evidencia.id_actividad` (`:517`), `caso_especial.id_caso` (`:378`), `orden_material_detalle.id_orden` (`:603`), `dispositivo_seguridad.p00` (`:547`) |
-| `ON DELETE SET NULL` | `incidente.id_actividad` (`:536`), `sincronizacion.id_dispositivo` (`:559`), `notificacion.id_caso` (`:632`) |
+| `ON DELETE CASCADE` | `sector_direccion.id_sector` (`:145`), `caso_estado_hist.id_caso` (`:398`), `seguimiento.id_caso` (`:409`), `cita.id_caso` (`:423`), `despacho_caso.id_despacho` (`:460`) y `id_caso` (`:461`), `actividad.id_caso` (`:515`), `evidencia.id_actividad` (`:534`), `caso_especial.id_caso` (`:378`), `orden_material_detalle.id_orden` (`:620`), `dispositivo_seguridad.p00` (`:564`), `cuadrilla_sector_dia.id_cuadrilla` (`:481`) y `id_sector` (`:482`) |
+| `ON DELETE SET NULL` | `incidente.id_actividad` (`:553`), `sincronizacion.id_dispositivo` (`:576`), `notificacion.id_caso` (`:649`) |
 | Sin `ON DELETE` (restrictivo por defecto) | La mayoría de las FK hacia catálogos (`central`, `rol`, `sector`, `causa`, `catalogo_metodo`, `tecnico`, `flota`, `herramienta`, `cuadrilla`) |
 
 Consecuencia operativa: no se puede eliminar una `central` que aún tenga
@@ -852,7 +879,8 @@ Otras restricciones únicas destacadas: `rol.codigo`, `central.codigo_central`,
 compuestas `sector(id_central, codigo)`, `cuadrilla(id_central, codigo)`,
 `sector_direccion(id_sector, patron)`, `causa(codigo_causa, subcodigo_causa)`,
 `catalogo_metodo(dominio, codigo)`, `despacho(fecha, id_cuadrilla)`,
-`despacho_caso(id_despacho, id_caso)`, `orden_material_detalle(id_orden, id_insumo)`.
+`despacho_caso(id_despacho, id_caso)`, `cuadrilla_sector_dia(fecha, id_sector)`,
+`orden_material_detalle(id_orden, id_insumo)`.
 El índice único parcial `ux_cuadrilla_supervisor` implementa «una sola cuadrilla
 0 por central» (`RepoTecnico/db/schema.sql:241-242`).
 
@@ -886,27 +914,27 @@ continuación; la columna «Valores» reproduce el orden del DDL:
 | `despacho.enviado_canal` | `TELEGRAM`, `CORREO` | `:449` |
 | `despacho_caso.tipo_asignacion` | `REPARACION`, `CONSTRUCCION`, `REFERIDO`, `EMPRESA`, `FALLA_MASIVA` | `:464-466` |
 | `despacho_caso.estado` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO` | `:467-468` |
-| `falla_masiva.origen` | `AUTOMATICA`, `REPORTE_TECNICO`, `MCP` | `:479-480` |
-| `falla_masiva.estado` | `DETECTADA`, `PLANIFICADA`, `ATENDIDA`, `CERRADA` | `:483-484` |
-| `actividad.tipo` | `CONTACTO`, `CIERRE`, `ENRUTE`, `DIFERIDO`, `INCIDENTE`, `FALLA_MASIVA` | `:501-502` |
-| `actividad.resultado` | `CONTACTADO`, `CERRADO`, `ENRUTADO`, `DIFERIDO` | `:503-504` |
-| `evidencia.tipo` | `POTENCIA`, `NAVEGACION`, `DEMO` | `:518-519` |
-| `incidente.tipo` | `FLOTA`, `HERRAMIENTA` | `:532` |
-| `incidente.estado` | `REPORTADO`, `EN_REVISION`, `RESUELTO` | `:537-538` |
-| `sincronizacion.estado` | `EN_PROCESO`, `OK`, `ERROR` | `:567-568` |
-| `orden_material.estado` | `SOLICITADA`, `APROBADA`, `ENTREGADA`, `RECHAZADA` | `:593-594` |
-| `inventario_movimiento.tipo` | `INGRESO`, `EGRESO`, `AJUSTE` | `:613` |
-| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA` | `:628` |
-| `notificacion.estado` | `PENDIENTE`, `ENVIADO`, `FALLIDO` | `:633-634` |
+| `falla_masiva.origen` | `AUTOMATICA`, `REPORTE_TECNICO`, `MCP` | `:496-497` |
+| `falla_masiva.estado` | `DETECTADA`, `PLANIFICADA`, `ATENDIDA`, `CERRADA` | `:500-501` |
+| `actividad.tipo` | `CONTACTO`, `CIERRE`, `ENRUTE`, `DIFERIDO`, `INCIDENTE`, `FALLA_MASIVA` | `:518-519` |
+| `actividad.resultado` | `CONTACTADO`, `CERRADO`, `ENRUTADO`, `DIFERIDO` | `:520-521` |
+| `evidencia.tipo` | `POTENCIA`, `NAVEGACION`, `DEMO` | `:535-536` |
+| `incidente.tipo` | `FLOTA`, `HERRAMIENTA` | `:549` |
+| `incidente.estado` | `REPORTADO`, `EN_REVISION`, `RESUELTO` | `:554-555` |
+| `sincronizacion.estado` | `EN_PROCESO`, `OK`, `ERROR` | `:584-585` |
+| `orden_material.estado` | `SOLICITADA`, `APROBADA`, `ENTREGADA`, `RECHAZADA` | `:610-611` |
+| `inventario_movimiento.tipo` | `INGRESO`, `EGRESO`, `AJUSTE` | `:630` |
+| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA` | `:645` |
+| `notificacion.estado` | `PENDIENTE`, `ENVIADO`, `FALLIDO` | `:650-651` |
 
 Restricciones `CHECK` de referencia (no enumeradas):
 
 | Nombre | Regla | Línea |
 |---|---|---|
 | — | `cita`: `id_caso IS NOT NULL OR id_caso_especial IS NOT NULL` | `:434` |
-| — | `incidente`: `id_flota IS NOT NULL OR id_herramienta IS NOT NULL` | `:540-541` |
-| — | `orden_material_detalle.cantidad_solicitada > 0` | `:605` |
-| — | `inventario_movimiento.cantidad > 0` | `:614` |
+| — | `incidente`: `id_flota IS NOT NULL OR id_herramienta IS NOT NULL` | `:557-558` |
+| — | `orden_material_detalle.cantidad_solicitada > 0` | `:622` |
+| — | `inventario_movimiento.cantidad > 0` | `:631` |
 
 ### Funciones (generar_id_averia_ref, triggers actualizado_en)
 
@@ -916,14 +944,14 @@ Funciones definidas en el esquema:
 |---|---|---|---|
 | `set_actualizado_en()` | `plpgsql`, trigger | Asigna `NEW.actualizado_en := now()` en cada `UPDATE` | `RepoTecnico/db/schema.sql:27-34` |
 | `generar_id_averia_ref(p_id_central integer)` | `plpgsql` | Devuelve `REF-<CÓDIGO>-<NNNNNN>` para casos sin incidencia | `RepoTecnico/db/schema.sql:41-57` |
-| `app_central_actual()` | `sql STABLE` | Lee `current_setting('app.id_central', true)` y lo convierte a entero | `RepoTecnico/db/schema.sql:691-695` |
+| `app_central_actual()` | `sql STABLE` | Lee `current_setting('app.id_central', true)` y lo convierte a entero | `RepoTecnico/db/schema.sql:708-712` |
 
 Disparadores `actualizado_en`: el bloque `DO` recorre el arreglo de 14 tablas
 (`central`, `sector`, `tecnico`, `usuario`, `flota`, `herramienta`, `cuadrilla`,
 `caso`, `caso_especial`, `despacho`, `falla_masiva`, `insumo`, `orden_material`,
 `configuracion`) y crea `trg_<tabla>_actualizado BEFORE UPDATE ... FOR EACH ROW`
-(`RepoTecnico/db/schema.sql:714-729`). Hallazgo verificado: `dispositivo_seguridad` declara la
-columna `actualizado_en` (`RepoTecnico/db/schema.sql:553`) pero **no** figura en el arreglo, por
+(`RepoTecnico/db/schema.sql:731-746`). Hallazgo verificado: `dispositivo_seguridad` declara la
+columna `actualizado_en` (`RepoTecnico/db/schema.sql:570`) pero **no** figura en el arreglo, por
 lo que su marca no se refresca automáticamente. La secuencia `seq_caso_ref`
 (`RepoTecnico/db/schema.sql:39`) alimenta la numeración de los identificadores `REF-`.
 
@@ -940,7 +968,7 @@ ALTER TABLE despacho ENABLE ROW LEVEL SECURITY;
 ALTER TABLE despacho FORCE  ROW LEVEL SECURITY;
 ```
 
-Referencias: `RepoTecnico/db/schema.sql:697-698` (`caso`) y `:704-705`
+Referencias: `RepoTecnico/db/schema.sql:714-715` (`caso`) y `:721-722`
 (`despacho`). `FORCE ROW LEVEL SECURITY` hace que las políticas se apliquen
 también al propietario de la tabla, de modo que no basta con ser dueño del
 objeto para saltarlas.
@@ -951,15 +979,15 @@ Se definen dos políticas, una por tabla, con la misma expresión:
 
 | Política | Tabla | Expresión `USING` / `WITH CHECK` | Línea |
 |---|---|---|---|
-| `p_caso_central` | `caso` | `app_central_actual() IS NULL OR id_central = app_central_actual()` | `RepoTecnico/db/schema.sql:699-702` |
-| `p_despacho_central` | `despacho` | idéntica expresión | `RepoTecnico/db/schema.sql:706-709` |
+| `p_caso_central` | `caso` | `app_central_actual() IS NULL OR id_central = app_central_actual()` | `RepoTecnico/db/schema.sql:716-719` |
+| `p_despacho_central` | `despacho` | idéntica expresión | `RepoTecnico/db/schema.sql:723-726` |
 
 La función auxiliar `app_central_actual()` devuelve `null` cuando el parámetro
-de sesión `app.id_central` no está definido (`RepoTecnico/db/schema.sql:691-695`). En ese caso
+de sesión `app.id_central` no está definido (`RepoTecnico/db/schema.sql:708-712`). En ese caso
 la política **permite todo** (modo compatibilidad declarado explícitamente en
-`RepoTecnico/db/schema.sql:683-686`). El comentario del propio DDL advierte que, antes de
+`RepoTecnico/db/schema.sql:700-703`). El comentario del propio DDL advierte que, antes de
 producción, debe eliminarse la cláusula `app_central_actual() IS NULL` para
-pasar a un comportamiento de «denegar por defecto» (`RepoTecnico/db/schema.sql:685-686`).
+pasar a un comportamiento de «denegar por defecto» (`RepoTecnico/db/schema.sql:702-703`).
 
 Estado real de la aplicación: una búsqueda en `app/**/*.py` **no encuentra
 ninguna sentencia `SET LOCAL app.id_central`** ni escritura equivalente. Es
@@ -979,12 +1007,12 @@ verificada es:
 | Elemento de RNF-21 | Estado verificado |
 |---|---|
 | Alcance por `usuario.id_central` | Columna presente (`RepoTecnico/db/schema.sql:184`), mapeada en el ORM (`app/models/entities.py:71`). |
-| RLS en PostgreSQL | Definida en `caso` y `despacho` (`RepoTecnico/db/schema.sql:697-709`), pero **no activada por la aplicación** (sin `SET LOCAL app.id_central`). |
-| Defensa en profundidad | Parcial: la extensión al resto de tablas con `id_central` (`sector`, `tecnico`, `flota`, `cuadrilla`, `insumo`) está prevista para la Fase 3 (`RepoTecnico/db/schema.sql:688-689`). |
+| RLS en PostgreSQL | Definida en `caso` y `despacho` (`RepoTecnico/db/schema.sql:714-726`), pero **no activada por la aplicación** (sin `SET LOCAL app.id_central`). |
+| Defensa en profundidad | Parcial: la extensión al resto de tablas con `id_central` (`sector`, `tecnico`, `flota`, `cuadrilla`, `insumo`) está prevista para la Fase 3 (`RepoTecnico/db/schema.sql:705-706`). |
 | Pruebas negativas entre centrales | **pendiente de confirmar**; no se localizaron pruebas de acceso denegado cruzado en `app/tests/`. |
 
 Implicación práctica: mientras exista una sola central sembrada (`2324X`
-FRANCISCO SALIAS, `RepoTecnico/db/schema.sql:757-761`), el comportamiento funcional es
+FRANCISCO SALIAS, `RepoTecnico/db/schema.sql:774-778`), el comportamiento funcional es
 correcto; al incorporar una segunda central, la ausencia de `app.id_central` en
 la conexión convierte las políticas en no restrictivas y el aislamiento recae
 por completo en la capa de servicio.
@@ -999,8 +1027,8 @@ operadores `gin_trgm_ops`:
 
 | Índice | Tabla.columna | Definición | Línea |
 |---|---|---|---|
-| `ix_caso_direccion_trgm` | `caso.direccion` | `USING gin (direccion gin_trgm_ops)` | `RepoTecnico/db/schema.sql:674` |
-| `ix_sector_patron_trgm` | `sector_direccion.patron` | `USING gin (patron gin_trgm_ops)` | `RepoTecnico/db/schema.sql:675` |
+| `ix_caso_direccion_trgm` | `caso.direccion` | `USING gin (direccion gin_trgm_ops)` | `RepoTecnico/db/schema.sql:691` |
+| `ix_sector_patron_trgm` | `sector_direccion.patron` | `USING gin (patron gin_trgm_ops)` | `RepoTecnico/db/schema.sql:692` |
 
 Estos índices habilitan búsquedas difusas/similares (`%`, `similarity`) sobre
 direcciones normalizadas y permiten que la asignación de sector escale con el
@@ -1014,26 +1042,27 @@ y `tipo_coincidencia` admite `CONTIENE`, `EXACTO` o `REGEX`
 | Índice | Tabla (columnas) | Propósito | Línea |
 |---|---|---|---|
 | `ux_cuadrilla_supervisor` | `cuadrilla (id_central) WHERE es_supervisor` | Único parcial: una cuadrilla 0 por central | `:241-242` |
-| `ix_caso_central` | `caso (id_central)` | Filtro por central (RLS y consultas) | `:657` |
-| `ix_caso_sector` | `caso (id_sector)` | Casos por sector | `:658` |
-| `ix_caso_telefono` | `caso (telefono)` | Búsqueda en PANEL | `:659` |
-| `ix_caso_estado` | `caso (estado_actual)` | Filtro por estado | `:660` |
-| `ix_caso_fecha_reporte` | `caso (fecha_reporte)` | Monitoreo por fecha | `:661` |
-| `ix_caso_gestion_supervisor` | `caso (en_gestion_supervisor)` | Cola de GESTIÓN (cuadrilla 0) | `:662` |
-| `ix_caso_falla_masiva` | `caso (es_falla_masiva)` | Casos agrupados en fallas | `:663` |
-| `ix_caso_lote` | `caso (id_lote_ingesta)` | Trazabilidad de la ingesta | `:664` |
-| `ix_despacho_caso_caso` | `despacho_caso (id_caso)` | Casos de un despacho | `:665` |
-| `ix_despacho_caso_despacho` | `despacho_caso (id_despacho)` | Detalle por despacho | `:666` |
-| `ix_actividad_caso` | `actividad (id_caso)` | Actividades de un caso | `:667` |
-| `ix_actividad_usuario` | `actividad (id_usuario)` | Actividades por técnico | `:668` |
-| `ix_evidencia_actividad` | `evidencia (id_actividad)` | Evidencias de una actividad | `:669` |
-| `ix_cita_cuadrilla_fecha` | `cita (id_cuadrilla, fecha_hora)` | Soporte de la regla «sin solapamiento» (RF-12) | `:670` |
-| `ix_seguimiento_caso` | `seguimiento (id_caso)` | Seguimientos de un caso | `:671` |
-| `ix_sector_direccion_sector` | `sector_direccion (id_sector)` | Patrones de un sector | `:672` |
-| `ix_notificacion_caso` | `notificacion (id_caso)` | Notificaciones de un caso (outbox) | `:676` |
-| `ix_auditoria_fecha` | `auditoria (fecha_hora)` | Consulta de bitácora por fecha | `:677` |
+| `ix_caso_central` | `caso (id_central)` | Filtro por central (RLS y consultas) | `:674` |
+| `ix_caso_sector` | `caso (id_sector)` | Casos por sector | `:675` |
+| `ix_caso_telefono` | `caso (telefono)` | Búsqueda en PANEL | `:676` |
+| `ix_caso_estado` | `caso (estado_actual)` | Filtro por estado | `:677` |
+| `ix_caso_fecha_reporte` | `caso (fecha_reporte)` | Monitoreo por fecha | `:678` |
+| `ix_caso_gestion_supervisor` | `caso (en_gestion_supervisor)` | Cola de GESTIÓN (cuadrilla 0) | `:679` |
+| `ix_caso_falla_masiva` | `caso (es_falla_masiva)` | Casos agrupados en fallas | `:680` |
+| `ix_caso_lote` | `caso (id_lote_ingesta)` | Trazabilidad de la ingesta | `:681` |
+| `ix_despacho_caso_caso` | `despacho_caso (id_caso)` | Casos de un despacho | `:682` |
+| `ix_despacho_caso_despacho` | `despacho_caso (id_despacho)` | Detalle por despacho | `:683` |
+| `ix_cuadrilla_sector_dia_fecha` | `cuadrilla_sector_dia (fecha, id_cuadrilla)` | Asignación de sectores del día (**D-66**) | `:487-488` |
+| `ix_actividad_caso` | `actividad (id_caso)` | Actividades de un caso | `:684` |
+| `ix_actividad_usuario` | `actividad (id_usuario)` | Actividades por técnico | `:685` |
+| `ix_evidencia_actividad` | `evidencia (id_actividad)` | Evidencias de una actividad | `:686` |
+| `ix_cita_cuadrilla_fecha` | `cita (id_cuadrilla, fecha_hora)` | Soporte de la regla «sin solapamiento» (RF-12) | `:687` |
+| `ix_seguimiento_caso` | `seguimiento (id_caso)` | Seguimientos de un caso | `:688` |
+| `ix_sector_direccion_sector` | `sector_direccion (id_sector)` | Patrones de un sector | `:689` |
+| `ix_notificacion_caso` | `notificacion (id_caso)` | Notificaciones de un caso (outbox) | `:693` |
+| `ix_auditoria_fecha` | `auditoria (fecha_hora)` | Consulta de bitácora por fecha | `:694` |
 
-Total de objetos de índice: **21** (20 `CREATE INDEX` más
+Total de objetos de índice: **22** (21 `CREATE INDEX` más
 `ux_cuadrilla_supervisor`), de los cuales 2 son trigram y 1 es único parcial.
 Observación: varias claves foráneas de catálogos pequeños (`causa`, `rol`,
 `catalogo_metodo`) no tienen índice dedicado; su volumen es bajo y el

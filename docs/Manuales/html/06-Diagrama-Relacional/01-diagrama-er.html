@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Diagrama Entidad-Relación — Modelo de datos GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, ">
+<meta name="description" content="Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, ">
 <meta property="og:image" content="../../../imagenes/modelo-relacional-general.png">
 <style>
 /* ==================================================================
@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-del-modelo" data-target="vision-general-del-modelo"><span class="tn">2</span> Visión general del modelo</a><span class="pag"></span><ul><li class="n3"><a href="#35-tablas-y-7-dominios" data-target="35-tablas-y-7-dominios"><span class="tn">2.1</span> 35 tablas y 7 dominios</a><span class="pag"></span></li><li class="n3"><a href="#convencion-de-diagramas-mermaid-erdiagram" data-target="convencion-de-diagramas-mermaid-erdiagram"><span class="tn">2.2</span> Convención de diagramas (Mermaid erDiagram)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#diagramas-mermaid-por-dominio" data-target="diagramas-mermaid-por-dominio"><span class="tn">3</span> Diagramas Mermaid por dominio</a><span class="pag"></span><ul><li class="n3"><a href="#vista-general-de-relaciones" data-target="vista-general-de-relaciones"><span class="tn">3.1</span> Vista general de relaciones</a><span class="pag"></span></li><li class="n3"><a href="#nucleo-organizacional-y-seguridad" data-target="nucleo-organizacional-y-seguridad"><span class="tn">3.2</span> Núcleo organizacional y seguridad</a><span class="pag"></span></li><li class="n3"><a href="#casos-averias-y-solicitudes" data-target="casos-averias-y-solicitudes"><span class="tn">3.3</span> Casos (averías y solicitudes)</a><span class="pag"></span></li><li class="n3"><a href="#despacho-y-fallas-masivas" data-target="despacho-y-fallas-masivas"><span class="tn">3.4</span> Despacho y fallas masivas</a><span class="pag"></span></li><li class="n3"><a href="#gestion-tecnica-offline" data-target="gestion-tecnica-offline"><span class="tn">3.5</span> Gestión técnica (offline)</a><span class="pag"></span></li><li class="n3"><a href="#insumos-v2" data-target="insumos-v2"><span class="tn">3.6</span> Insumos (v2)</a><span class="pag"></span></li><li class="n3"><a href="#soporte-y-auditoria" data-target="soporte-y-auditoria"><span class="tn">3.7</span> Soporte y auditoría</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#relaciones-principales" data-target="relaciones-principales"><span class="tn">4</span> Relaciones principales</a><span class="pag"></span><ul><li class="n3"><a href="#relaciones-1-n" data-target="relaciones-1-n"><span class="tn">4.1</span> Relaciones 1:N</a><span class="pag"></span></li><li class="n3"><a href="#relaciones-n-m" data-target="relaciones-n-m"><span class="tn">4.2</span> Relaciones N:M</a><span class="pag"></span></li><li class="n3"><a href="#dependencias-de-catalogo" data-target="dependencias-de-catalogo"><span class="tn">4.3</span> Dependencias de catálogo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#claves-y-restricciones" data-target="claves-y-restricciones"><span class="tn">5</span> Claves y restricciones</a><span class="pag"></span><ul><li class="n3"><a href="#claves-primarias" data-target="claves-primarias"><span class="tn">5.1</span> Claves primarias</a><span class="pag"></span></li><li class="n3"><a href="#claves-foraneas" data-target="claves-foraneas"><span class="tn">5.2</span> Claves foráneas</a><span class="pag"></span></li><li class="n3"><a href="#unique-id-averia" data-target="unique-id-averia"><span class="tn">5.3</span> UNIQUE (id_averia)</a><span class="pag"></span></li><li class="n3"><a href="#check-de-estados" data-target="check-de-estados"><span class="tn">5.4</span> CHECK de estados</a><span class="pag"></span></li><li class="n3"><a href="#funciones-generar-id-averia-ref-triggers-actualizado-en" data-target="funciones-generar-id-averia-ref-triggers-actualizado-en"><span class="tn">5.5</span> Funciones (generar_id_averia_ref, triggers actualizado_en)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rls" data-target="rls"><span class="tn">6</span> RLS</a><span class="pag"></span><ul><li class="n3"><a href="#caso-y-despacho" data-target="caso-y-despacho"><span class="tn">6.1</span> caso y despacho</a><span class="pag"></span></li><li class="n3"><a href="#politicas" data-target="politicas"><span class="tn">6.2</span> políticas</a><span class="pag"></span></li><li class="n3"><a href="#implicacion-multi-central-rnf-21" data-target="implicacion-multi-central-rnf-21"><span class="tn">6.3</span> implicación multi-central (RNF-21)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#indices" data-target="indices"><span class="tn">7</span> Índices</a><span class="pag"></span><ul><li class="n3"><a href="#trigram-caso-direccion-sector-direccion-patron" data-target="trigram-caso-direccion-sector-direccion-patron"><span class="tn">7.1</span> trigram (caso.direccion, sector_direccion.patron)</a><span class="pag"></span></li><li class="n3"><a href="#indices-de-apoyo" data-target="indices-de-apoyo"><span class="tn">7.2</span> índices de apoyo</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-del-modelo" data-target="vision-general-del-modelo"><span class="tn">2</span> Visión general del modelo</a><span class="pag"></span><ul><li class="n3"><a href="#36-tablas-y-7-dominios" data-target="36-tablas-y-7-dominios"><span class="tn">2.1</span> 36 tablas y 7 dominios</a><span class="pag"></span></li><li class="n3"><a href="#convencion-de-diagramas-mermaid-erdiagram" data-target="convencion-de-diagramas-mermaid-erdiagram"><span class="tn">2.2</span> Convención de diagramas (Mermaid erDiagram)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#diagramas-mermaid-por-dominio" data-target="diagramas-mermaid-por-dominio"><span class="tn">3</span> Diagramas Mermaid por dominio</a><span class="pag"></span><ul><li class="n3"><a href="#vista-general-de-relaciones" data-target="vista-general-de-relaciones"><span class="tn">3.1</span> Vista general de relaciones</a><span class="pag"></span></li><li class="n3"><a href="#nucleo-organizacional-y-seguridad" data-target="nucleo-organizacional-y-seguridad"><span class="tn">3.2</span> Núcleo organizacional y seguridad</a><span class="pag"></span></li><li class="n3"><a href="#casos-averias-y-solicitudes" data-target="casos-averias-y-solicitudes"><span class="tn">3.3</span> Casos (averías y solicitudes)</a><span class="pag"></span></li><li class="n3"><a href="#despacho-y-fallas-masivas" data-target="despacho-y-fallas-masivas"><span class="tn">3.4</span> Despacho y fallas masivas</a><span class="pag"></span></li><li class="n3"><a href="#gestion-tecnica-offline" data-target="gestion-tecnica-offline"><span class="tn">3.5</span> Gestión técnica (offline)</a><span class="pag"></span></li><li class="n3"><a href="#insumos-v2" data-target="insumos-v2"><span class="tn">3.6</span> Insumos (v2)</a><span class="pag"></span></li><li class="n3"><a href="#soporte-y-auditoria" data-target="soporte-y-auditoria"><span class="tn">3.7</span> Soporte y auditoría</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#relaciones-principales" data-target="relaciones-principales"><span class="tn">4</span> Relaciones principales</a><span class="pag"></span><ul><li class="n3"><a href="#relaciones-1-n" data-target="relaciones-1-n"><span class="tn">4.1</span> Relaciones 1:N</a><span class="pag"></span></li><li class="n3"><a href="#relaciones-n-m" data-target="relaciones-n-m"><span class="tn">4.2</span> Relaciones N:M</a><span class="pag"></span></li><li class="n3"><a href="#dependencias-de-catalogo" data-target="dependencias-de-catalogo"><span class="tn">4.3</span> Dependencias de catálogo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#claves-y-restricciones" data-target="claves-y-restricciones"><span class="tn">5</span> Claves y restricciones</a><span class="pag"></span><ul><li class="n3"><a href="#claves-primarias" data-target="claves-primarias"><span class="tn">5.1</span> Claves primarias</a><span class="pag"></span></li><li class="n3"><a href="#claves-foraneas" data-target="claves-foraneas"><span class="tn">5.2</span> Claves foráneas</a><span class="pag"></span></li><li class="n3"><a href="#unique-id-averia" data-target="unique-id-averia"><span class="tn">5.3</span> UNIQUE (id_averia)</a><span class="pag"></span></li><li class="n3"><a href="#check-de-estados" data-target="check-de-estados"><span class="tn">5.4</span> CHECK de estados</a><span class="pag"></span></li><li class="n3"><a href="#funciones-generar-id-averia-ref-triggers-actualizado-en" data-target="funciones-generar-id-averia-ref-triggers-actualizado-en"><span class="tn">5.5</span> Funciones (generar_id_averia_ref, triggers actualizado_en)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rls" data-target="rls"><span class="tn">6</span> RLS</a><span class="pag"></span><ul><li class="n3"><a href="#caso-y-despacho" data-target="caso-y-despacho"><span class="tn">6.1</span> caso y despacho</a><span class="pag"></span></li><li class="n3"><a href="#politicas" data-target="politicas"><span class="tn">6.2</span> políticas</a><span class="pag"></span></li><li class="n3"><a href="#implicacion-multi-central-rnf-21" data-target="implicacion-multi-central-rnf-21"><span class="tn">6.3</span> implicación multi-central (RNF-21)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#indices" data-target="indices"><span class="tn">7</span> Índices</a><span class="pag"></span><ul><li class="n3"><a href="#trigram-caso-direccion-sector-direccion-patron" data-target="trigram-caso-direccion-sector-direccion-patron"><span class="tn">7.1</span> trigram (caso.direccion, sector_direccion.patron)</a><span class="pag"></span></li><li class="n3"><a href="#indices-de-apoyo" data-target="indices-de-apoyo"><span class="tn">7.2</span> índices de apoyo</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -783,23 +783,23 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Diagrama Relacional</span>
           <h1 class="portada-titulo">Diagrama Entidad-Relación — Modelo de datos GGTO</h1>
-          <p class="portada-resumen">Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, pero los presenta con un lenguaje claro y con los vínculos simplificados para que se lean fácil. Si algo no se pudo verificar, se indica como pendiente de confirmar.</p>
+          <p class="portada-resumen">Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, pero los presenta con un lenguaje claro y con los vínculos simplificados para que se lean fácil. Si algo no se pudo verificar, se indica como pendiente de confirmar.</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Diagrama Relacional</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/06-Diagrama-Relacional/01-diagrama-er.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
-<p>Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de
+<p>Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de
 la base GGTO. Es la versión literal del manual técnico: conserva las mismas
 secciones y todos los diagramas por dominio, pero los presenta con un lenguaje
 claro y con los vínculos simplificados para que se lean fácil. Si algo no se
@@ -819,16 +819,18 @@ puede tener una cuenta de usuario, o ninguna.</li>
 <li><strong>Revisa los tres puentes.</strong> Tres relaciones de muchos a muchos se resuelven
 con tablas puente: <code>cuadrilla_tecnico</code>, <code>cuadrilla_herramienta</code> y
 <code>despacho_caso</code>.</li>
-<li><strong>Recuerda las reglas del sistema.</strong> La base tiene 35 tablas y ya contiene
+<li><strong>Recuerda las reglas del sistema.</strong> La base tiene 36 tablas y ya contiene
 datos reales (42 casos con datos personales) en un servicio público: el
-acceso debe restringirse. Telegram y correo no tienen credenciales, así que
-los envíos quedan PENDIENTES; WhatsApp no existe en la v1; la app móvil
-Flutter no está desarrollada (Ciclo 8 pospuesto); y el riesgo aceptado D-26
-indica que no hay respaldos/PITR hasta migrar de instancia.</li>
+acceso debe restringirse. La tabla número 36, <code>cuadrilla_sector_dia</code>, guarda
+qué sectores atiende cada cuadrilla cada día (ciclo D-66). Telegram y correo
+no tienen credenciales, así que los envíos quedan PENDIENTES; WhatsApp no
+existe en la v1; la app móvil Flutter no está desarrollada (Ciclo 8
+pospuesto); y el riesgo aceptado D-26 indica que no hay respaldos/PITR hasta
+migrar de instancia.</li>
 </ol>
 <h2 id="vision-general-del-modelo"><span class="sec-num">2</span>Visión general del modelo</h2>
-<h3 id="35-tablas-y-7-dominios"><span class="sec-num">2.1</span>35 tablas y 7 dominios</h3>
-<p>El esquema físico contiene 35 sentencias <code>CREATE TABLE</code> y el modelo de origen
+<h3 id="36-tablas-y-7-dominios"><span class="sec-num">2.1</span>36 tablas y 7 dominios</h3>
+<p>El esquema físico contiene 36 sentencias <code>CREATE TABLE</code> y el modelo de origen
 las representa en siete bloques temáticos:</p>
 <div class="tabla-scroll"><table>
 <thead>
@@ -861,8 +863,8 @@ las representa en siete bloques temáticos:</p>
 <tr>
 <td>4</td>
 <td>Despacho y fallas masivas</td>
-<td>DESPACHO, DESPACHO_CASO, FALLA_MASIVA (más CASO, CUADRILLA, SECTOR y CENTRAL como referencia)</td>
-<td>3 propias</td>
+<td>DESPACHO, DESPACHO_CASO, CUADRILLA_SECTOR_DIA, FALLA_MASIVA (más CASO, CUADRILLA, SECTOR y CENTRAL como referencia)</td>
+<td>4 propias</td>
 </tr>
 <tr>
 <td>5</td>
@@ -885,9 +887,9 @@ las representa en siete bloques temáticos:</p>
 </tbody>
 </table></div>
 <p>Las entidades definidas con atributos propios en los dominios 2 a 7 suman
-13 + 8 + 3 + 4 + 4 + 3 = 35. Además, cada bloque repite entidades de otros
+13 + 8 + 4 + 4 + 4 + 3 = 36. Además, cada bloque repite entidades de otros
 dominios como referencia para dibujar la relación (por ejemplo, <code>CASO</code> aparece
-en los dominios 4, 5 y 7). En total, <strong>35 tablas</strong> distintas.</p>
+en los dominios 4, 5 y 7). En total, <strong>36 tablas</strong> distintas.</p>
 <h3 id="convencion-de-diagramas-mermaid-erdiagram"><span class="sec-num">2.2</span>Convención de diagramas (Mermaid erDiagram)</h3>
 <p>El modelo fija las convenciones de tipos, porque <strong>Mermaid no admite
 paréntesis</strong> en la definición de atributos:</p>
@@ -933,7 +935,7 @@ textualmente; algunos describen reglas que en el script de la base se
 implementan con <code>CHECK</code>, <code>UNIQUE</code> o directamente en el servicio.</p>
 <h2 id="diagramas-mermaid-por-dominio"><span class="sec-num">3</span>Diagramas Mermaid por dominio</h2>
 <h3 id="vista-general-de-relaciones"><span class="sec-num">3.1</span>Vista general de relaciones</h3>
-<p>Muestra el grafo completo de dependencias entre las 35 tablas. La imagen
+<p>Muestra el grafo completo de dependencias entre las 36 tablas. La imagen
 siguiente es la versión simplificada y legible: solo nombres de tablas y
 relaciones.</p>
 <figure id="fig-0"><img src="../../../imagenes/modelo-relacional-general.png" alt="modelo relacional general"><figcaption>Figura 1 · modelo-relacional-general.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">erDiagram
@@ -945,18 +947,22 @@ relaciones.</p>
     CENTRAL      ||--o{ CASO : administra
     CENTRAL      ||--o{ INGESTA_LOTE : recibe
     CENTRAL      ||--o{ DESPACHO : genera
+    CENTRAL      ||--o{ CUADRILLA_SECTOR_DIA : programa
     CENTRAL      ||--o{ FALLA_MASIVA : registra
     CENTRAL      ||--o{ INSUMO : cataloga
     SECTOR       ||--o{ SECTOR_DIRECCION : agrupa
     SECTOR       ||--o{ CASO : ubica
+    SECTOR       ||--o{ CUADRILLA_SECTOR_DIA : &quot;asignado (único por fecha)&quot;
     TECNICO      ||--o| USUARIO : &quot;da identidad a&quot;
     ROL          ||--o{ USUARIO : asigna
     FLOTA        ||--o| CUADRILLA : &quot;es vehiculo de&quot;
     CUADRILLA    ||--o{ CUADRILLA_TECNICO : integra
     CUADRILLA    ||--o{ CUADRILLA_HERRAMIENTA : equipa
     CUADRILLA    ||--o{ DESPACHO : ejecuta
+    CUADRILLA    ||--o{ CUADRILLA_SECTOR_DIA : atiende
     CUADRILLA    ||--o{ CITA : atiende
     USUARIO      ||--o| DISPOSITIVO_SEGURIDAD : registra
+    USUARIO      ||--o{ CUADRILLA_SECTOR_DIA : define
     DISPOSITIVO_SEGURIDAD ||--o{ SINCRONIZACION : sincroniza
     TECNICO      ||--o{ SINCRONIZACION : realiza
     INGESTA_LOTE ||--o{ CASO : origina
@@ -992,6 +998,11 @@ script de la base la columna admite valores vacíos.</li>
 <li>«FALLA_MASIVA <code>||--o{</code> CASO» no tiene clave foránea: la pertenencia se marca
 con <code>caso.es_falla_masiva</code> y la agrupación por concentración se calcula en
 <code>app/services/fallas.py</code>.</li>
+<li>«CUADRILLA_SECTOR_DIA» es la <strong>tabla nueva del ciclo D-66</strong>: guarda qué
+sectores atiende cada cuadrilla cada día. La combinación <code>(fecha, id_sector)</code>
+es <strong>única</strong>, de modo que un sector pertenece como máximo a una cuadrilla por
+día. El servicio de despacho la usa para repartir los casos y propone una
+asignación equilibrada cuando no hay ninguna guardada.</li>
 </ul>
 <h3 id="nucleo-organizacional-y-seguridad"><span class="sec-num">3.2</span>Núcleo organizacional y seguridad</h3>
 <p>Cubre los catálogos y los recursos de la central, incluidos los de la app de
@@ -1313,6 +1324,15 @@ base <strong>no</strong> existe una restricción <code>EXCLUDE</code> (el propio
         text     reporte_simple
         timestamp planificada_en
     }
+    CUADRILLA_SECTOR_DIA {
+        bigserial id_asignacion PK
+        int      id_central FK
+        date     fecha
+        int      id_cuadrilla FK
+        int      id_sector FK
+        varchar  usuario FK
+        timestamp creado_en
+    }
     CASO {
         bigserial id_caso PK
         varchar  id_averia UK
@@ -1338,6 +1358,9 @@ base <strong>no</strong> existe una restricción <code>EXCLUDE</code> (el propio
     DESPACHO   ||--o{ DESPACHO_CASO : detalla
     CASO       ||--o{ DESPACHO_CASO : asignado
     SECTOR     ||--o{ DESPACHO_CASO : agrupa
+    CENTRAL    ||--o{ CUADRILLA_SECTOR_DIA : programa
+    CUADRILLA  ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR     ||--o{ CUADRILLA_SECTOR_DIA : &quot;asignado (único por fecha)&quot;
     CENTRAL    ||--o{ FALLA_MASIVA : registra
     SECTOR     ||--o{ FALLA_MASIVA : ubica
     CUADRILLA  ||--o{ FALLA_MASIVA : atiende
@@ -1350,6 +1373,11 @@ tiene clave foránea en el script: se materializa con la bandera
 (<code>fallas.activo</code>, <code>fallas.umbral_casos</code>, <code>fallas.ventana_horas</code> y
 <code>fallas.campo_concentracion</code>). El canal <code>enviado_canal</code> admite Telegram y correo,
 pero en producción <strong>aún no hay credenciales</strong>: los envíos quedan PENDIENTES.</p>
+<p>La entidad <code>CUADRILLA_SECTOR_DIA</code> es la incorporación del ciclo <strong>D-66</strong>. Une tres
+catálogos (<code>central</code>, <code>cuadrilla</code> y <code>sector</code>) y al usuario que guarda la
+asignación. Su restricción <code>UNIQUE (fecha, id_sector)</code> impide que un mismo sector
+quede en dos cuadrillas el mismo día. No se conecta con <code>DESPACHO</code>: es una lista
+de trabajo previa que el motor de reparto consulta.</p>
 <h3 id="gestion-tecnica-offline"><span class="sec-num">3.5</span>Gestión técnica (offline)</h3>
 <p>El título original del documento es «Gestión técnica (app móvil)». Debe
 precisarse que <strong>la aplicación móvil Flutter no está desarrollada</strong> (Ciclo 8
@@ -1620,6 +1648,12 @@ base:</p>
 <td>1:N opcional</td>
 </tr>
 <tr>
+<td><code>central</code></td>
+<td><code>cuadrilla_sector_dia</code></td>
+<td><code>cuadrilla_sector_dia.id_central</code></td>
+<td>1:N obligatoria</td>
+</tr>
+<tr>
 <td><code>sector</code></td>
 <td><code>sector_direccion</code></td>
 <td><code>sector_direccion.id_sector</code></td>
@@ -1636,6 +1670,12 @@ base:</p>
 <td><code>despacho_caso</code></td>
 <td><code>despacho_caso.id_sector</code></td>
 <td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>sector</code></td>
+<td><code>cuadrilla_sector_dia</code></td>
+<td><code>cuadrilla_sector_dia.id_sector</code></td>
+<td>1:N con borrado en cascada</td>
 </tr>
 <tr>
 <td><code>ingesta_lote</code></td>
@@ -1696,6 +1736,12 @@ base:</p>
 <td><code>orden_material</code></td>
 <td><code>orden_material.id_cuadrilla</code></td>
 <td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>cuadrilla</code></td>
+<td><code>cuadrilla_sector_dia</code></td>
+<td><code>cuadrilla_sector_dia.id_cuadrilla</code></td>
+<td>1:N con borrado en cascada</td>
 </tr>
 <tr>
 <td><code>caso</code></td>
@@ -1779,6 +1825,12 @@ base:</p>
 <td><code>usuario</code></td>
 <td><code>orden_material</code></td>
 <td><code>orden_material.solicitante_usuario</code> (apunta a <code>p00</code>)</td>
+<td>1:N opcional</td>
+</tr>
+<tr>
+<td><code>usuario</code></td>
+<td><code>cuadrilla_sector_dia</code></td>
+<td><code>cuadrilla_sector_dia.usuario</code> (apunta a <code>p00</code>)</td>
 <td>1:N opcional</td>
 </tr>
 <tr>
@@ -1895,15 +1947,15 @@ cuadrilla.</p>
 </tr>
 <tr>
 <td><code>central</code></td>
-<td>10 tablas (<code>sector</code>, <code>tecnico</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>, <code>caso</code>, <code>ingesta_lote</code>, <code>despacho</code>, <code>falla_masiva</code>, <code>insumo</code>)</td>
+<td>11 tablas (<code>sector</code>, <code>tecnico</code>, <code>flota</code>, <code>herramienta</code>, <code>cuadrilla</code>, <code>caso</code>, <code>ingesta_lote</code>, <code>despacho</code>, <code>cuadrilla_sector_dia</code>, <code>falla_masiva</code>, <code>insumo</code>)</td>
 <td>Sí</td>
 <td>Base del filtro de ingesta y del alcance multi-central.</td>
 </tr>
 <tr>
 <td><code>sector</code></td>
-<td><code>caso</code>, <code>sector_direccion</code>, <code>despacho_caso</code>, <code>falla_masiva</code></td>
+<td><code>caso</code>, <code>sector_direccion</code>, <code>despacho_caso</code>, <code>cuadrilla_sector_dia</code>, <code>falla_masiva</code></td>
 <td>Sí</td>
-<td>Asignación de sector por coincidencia de dirección.</td>
+<td>Asignación de sector por coincidencia de dirección; <code>cuadrilla_sector_dia</code> guarda qué cuadrilla lo atiende cada día.</td>
 </tr>
 <tr>
 <td><code>causa</code></td>
@@ -1949,7 +2001,7 @@ cuadrilla.</p>
 </tr>
 <tr>
 <td>PK simple <code>bigserial</code></td>
-<td><code>ingesta_lote</code>, <code>caso</code>, <code>caso_estado_hist</code>, <code>seguimiento</code>, <code>cita</code>, <code>despacho</code>, <code>despacho_caso</code>, <code>falla_masiva</code>, <code>actividad</code>, <code>evidencia</code>, <code>incidente</code>, <code>dispositivo_seguridad</code>, <code>sincronizacion</code>, <code>orden_material</code>, <code>orden_material_detalle</code>, <code>inventario_movimiento</code>, <code>notificacion</code>, <code>auditoria</code></td>
+<td><code>ingesta_lote</code>, <code>caso</code>, <code>caso_estado_hist</code>, <code>seguimiento</code>, <code>cita</code>, <code>despacho</code>, <code>despacho_caso</code>, <code>cuadrilla_sector_dia</code>, <code>falla_masiva</code>, <code>actividad</code>, <code>evidencia</code>, <code>incidente</code>, <code>dispositivo_seguridad</code>, <code>sincronizacion</code>, <code>orden_material</code>, <code>orden_material_detalle</code>, <code>inventario_movimiento</code>, <code>notificacion</code>, <code>auditoria</code></td>
 <td>Tablas transaccionales de alto volumen.</td>
 </tr>
 <tr>
@@ -1976,7 +2028,7 @@ cuadrilla.</p>
 <tbody>
 <tr>
 <td>Borrado en cascada (al borrar el padre se borran los hijos)</td>
-<td><code>sector_direccion.id_sector</code>, <code>caso_estado_hist.id_caso</code>, <code>seguimiento.id_caso</code>, <code>cita.id_caso</code>, <code>despacho_caso.id_despacho</code> e <code>id_caso</code>, <code>actividad.id_caso</code>, <code>evidencia.id_actividad</code>, <code>caso_especial.id_caso</code>, <code>orden_material_detalle.id_orden</code>, <code>dispositivo_seguridad.p00</code></td>
+<td><code>sector_direccion.id_sector</code>, <code>caso_estado_hist.id_caso</code>, <code>seguimiento.id_caso</code>, <code>cita.id_caso</code>, <code>despacho_caso.id_despacho</code> e <code>id_caso</code>, <code>actividad.id_caso</code>, <code>evidencia.id_actividad</code>, <code>caso_especial.id_caso</code>, <code>orden_material_detalle.id_orden</code>, <code>dispositivo_seguridad.p00</code>, <code>cuadrilla_sector_dia.id_cuadrilla</code> e <code>id_sector</code></td>
 </tr>
 <tr>
 <td>Borrado que deja el campo vacío (el hijo sobrevive)</td>
@@ -2011,7 +2063,8 @@ código a mayúsculas y rellena con ceros a la izquierda hasta 6 dígitos.</li>
 compuestas <code>sector(id_central, codigo)</code>, <code>cuadrilla(id_central, codigo)</code>,
 <code>sector_direccion(id_sector, patron)</code>, <code>causa(codigo_causa, subcodigo_causa)</code>,
 <code>catalogo_metodo(dominio, codigo)</code>, <code>despacho(fecha, id_cuadrilla)</code>,
-<code>despacho_caso(id_despacho, id_caso)</code>, <code>orden_material_detalle(id_orden, id_insumo)</code>. El índice único parcial <code>ux_cuadrilla_supervisor</code> implementa «una
+<code>despacho_caso(id_despacho, id_caso)</code>, <code>cuadrilla_sector_dia(fecha, id_sector)</code>,
+<code>orden_material_detalle(id_orden, id_insumo)</code>. El índice único parcial <code>ux_cuadrilla_supervisor</code> implementa «una
 sola cuadrilla 0 por central».</p>
 <h3 id="check-de-estados"><span class="sec-num">5.4</span>CHECK de estados</h3>
 <p>Los enumerados se modelan con listas cerradas <code>CHECK</code> (no con el tipo <code>ENUM</code>).
@@ -2409,6 +2462,11 @@ comparación se hace sin acentos ni mayúsculas, y <code>tipo_coincidencia</code
 <td>Detalle por despacho</td>
 </tr>
 <tr>
+<td><code>ix_cuadrilla_sector_dia_fecha</code></td>
+<td><code>cuadrilla_sector_dia (fecha, id_cuadrilla)</code></td>
+<td>Asignación de sectores del día (D-66)</td>
+</tr>
+<tr>
 <td><code>ix_actividad_caso</code></td>
 <td><code>actividad (id_caso)</code></td>
 <td>Actividades de un caso</td>
@@ -2450,7 +2508,7 @@ comparación se hace sin acentos ni mayúsculas, y <code>tipo_coincidencia</code
 </tr>
 </tbody>
 </table></div>
-<p>Total de objetos de índice: <strong>21</strong> (20 <code>CREATE INDEX</code> más
+<p>Total de objetos de índice: <strong>22</strong> (21 <code>CREATE INDEX</code> más
 <code>ux_cuadrilla_supervisor</code>), de los cuales 2 son trigram y 1 es único parcial.
 Observación: varias claves foráneas de catálogos pequeños (<code>causa</code>, <code>rol</code>,
 <code>catalogo_metodo</code>) no tienen índice dedicado; su volumen es bajo y el
@@ -2470,7 +2528,7 @@ reportes de monitoreo (<code>app/services/monitoreo.py</code>).</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Diagrama Relacional</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

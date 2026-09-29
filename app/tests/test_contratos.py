@@ -84,6 +84,7 @@ def test_las_rutas_privadas_exigen_seguridad():
         "/api/v1/auth/setup",
         "/api/v1/auth/unlock",
         "/api/v1/auth/reset-password",
+        "/api/v1/auth/primer-acceso",
         "/api/v1/telegram/webhook",
         "/api/v1/mcp",
     )

@@ -148,6 +148,128 @@ def test_propuesta_sin_cuadrillas(client, admin_token, db_session):
 
 
 # --------------------------------------------------------------------------- #
+# Asignación diaria de sectores por cuadrilla (D-66)
+# --------------------------------------------------------------------------- #
+def _proceso(client, entorno, fecha=HOY):
+    r = client.get(f"{BASE}/proceso", params={"fecha": fecha}, headers=entorno["headers"])
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _asignar(client, entorno, nombre_a_codigo, fecha=HOY):
+    """Asigna cada sector (por nombre) a la cuadrilla indicada por código."""
+    p = _proceso(client, entorno, fecha)
+    sectores = {s["nombre"]: s["id_sector"] for s in p["sectores"]}
+    cuadrillas = {c["codigo"]: c["id_cuadrilla"] for c in p["cuadrillas"]}
+    bloques: dict[int, list[int]] = {c["id_cuadrilla"]: [] for c in p["cuadrillas"]}
+    for nombre, codigo in nombre_a_codigo.items():
+        if nombre in sectores and codigo in cuadrillas:
+            bloques[cuadrillas[codigo]].append(sectores[nombre])
+    asignaciones = [{"id_cuadrilla": idc, "ids_sector": ids} for idc, ids in bloques.items()]
+    r = client.put(
+        f"{BASE}/asignacion",
+        json={"fecha": fecha, "asignaciones": asignaciones},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_proceso_muestra_universo_sectores_y_cuadrillas(client, entorno):
+    p = _proceso(client, entorno)
+
+    assert p["universo"]["total"] == 10
+    assert p["universo"]["comunes"] + p["universo"]["especiales"] == 10
+    assert p["universo"]["especiales"] == 4  # 2 referidos + empresa + construcción/empresa
+    assert len(p["universo"]["casos"]) == 10
+
+    # Sectores con su total de casos
+    totales = {s["nombre"]: s["total"] for s in p["sectores"]}
+    assert totales == {"Alfa": 6, "Beta": 4}
+    assert sum(totales.values()) == 10
+
+    # Cuadrillas con los sectores asignados (propuesta automática la primera vez)
+    assert len(p["cuadrillas"]) == 2
+    assert p["asignacion_origen"] == "PROPUESTA"
+
+    # Tras guardar, la asignación queda registrada
+    p2 = _asignar(client, entorno, {"Alfa": "TCD1", "Beta": "TCD2"})
+    assert p2["asignacion_origen"] == "GUARDADA"
+    por_codigo = {c["codigo"]: set(c["ids_sector"]) for c in p2["cuadrillas"]}
+    alfa = next(s["id_sector"] for s in p2["sectores"] if s["nombre"] == "Alfa")
+    beta = next(s["id_sector"] for s in p2["sectores"] if s["nombre"] == "Beta")
+    assert por_codigo["TCD1"] == {alfa}
+    assert por_codigo["TCD2"] == {beta}
+
+
+def test_reparto_por_sector_asignado(client, entorno):
+    p = _asignar(client, entorno, {"Alfa": "TCD1", "Beta": "TCD2"})
+    grupos = {g["codigo"]: {c["id_averia"] for c in g["casos"]} for g in p["grupos"]}
+
+    # Cada cuadrilla recibe los casos de su sector (la construcción queda en Alfa)
+    assert grupos["TCD1"] == {"TSTD-A0", "TSTD-A1", "TSTD-A2", "TSTD-A3", "TSTD-E0", "TSTD-C0"}
+    assert grupos["TCD2"] == {"TSTD-B0", "TSTD-B1", "TSTD-R0", "TSTD-R1"}
+    assert p["resumen"]["asignados"] == 10
+    assert p["resumen"]["por_cuadrilla"] == {"TCD1": 6, "TCD2": 4}
+
+
+def test_sector_sin_cuadrilla_queda_sin_asignar(client, entorno):
+    # Solo Beta tiene cuadrilla; Alfa queda sin asignar
+    p = _asignar(client, entorno, {"Beta": "TCD2"})
+    sin_asignar = {c["id_averia"] for c in p["sin_asignar"]}
+    assert "TSTD-A0" in sin_asignar
+    assert p["reglas"]["sectores_sin_cuadrilla"]
+    # Los referidos (Beta) sí se despachan
+    grupos = {g["codigo"]: [c["id_averia"] for c in g["casos"]] for g in p["grupos"]}
+    assert "TSTD-R0" in grupos["TCD2"]
+
+
+def test_citado_sin_sector_asignado_no_se_pierde(client, entorno, db_session):
+    from datetime import datetime
+
+    caso = db_session.scalar(select(Caso).where(Caso.id_averia == "TSTD-B0"))
+    caso.fecha_cita = datetime.fromisoformat(f"{HOY}T09:00:00")
+    db_session.commit()
+
+    # Alfa queda sin cuadrilla; el citado de Beta sí entra
+    p = _asignar(client, entorno, {"Alfa": "TCD1"})
+    asignados = {c["id_averia"] for g in p["grupos"] for c in g["casos"]}
+    assert "TSTD-B0" in asignados
+    assert p["reglas"]["citados_reasignados"] >= 1
+
+
+def test_procesar_guarda_despachos_con_la_asignacion(client, entorno):
+    _asignar(client, entorno, {"Alfa": "TCD1", "Beta": "TCD2"})
+
+    r = client.post(
+        f"{BASE}/procesar",
+        json={"fecha": HOY, "asignaciones": [], "reemplazar": True},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 201, r.text
+    creados = r.json()
+    assert len(creados) == 2
+
+    # Re-procesar reemplaza los borradores (no duplica)
+    r2 = client.post(
+        f"{BASE}/procesar",
+        json={"fecha": HOY, "asignaciones": [], "reemplazar": True},
+        headers=entorno["headers"],
+    )
+    assert r2.status_code == 201
+    assert len(r2.json()) == 2
+
+
+def test_despacho_incluye_casos_especiales(client, entorno):
+    p = _propuesta(client, entorno)
+    filas = [c for g in p["grupos"] for c in g["casos"]]
+    categorias = {c["categoria"] for c in filas}
+    assert {"REFERIDO", "EMPRESA"} <= categorias
+    assert p["reglas"]["especiales_asignados"] >= 4
+    assert all(c["especial"] for c in filas if c["categoria"] in ("REFERIDO", "EMPRESA", "GOBIERNO"))
+
+
+# --------------------------------------------------------------------------- #
 # Generación y edición
 # --------------------------------------------------------------------------- #
 def test_generar_persiste_y_no_duplica(client, entorno):

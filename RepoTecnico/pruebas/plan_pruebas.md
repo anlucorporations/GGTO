@@ -77,6 +77,8 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 | E2E-12 | `12-ayuda.spec.js` | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF | RF-33, D-63 |
 | E2E-13 | `13-ui-requisitos.spec.js` | Barra PC (solo nombres) y móvil (solo iconos), modales al 90 % con título/cerrar y tablas al 90 % con pie de conteo | RNF-09, D-64 |
 | E2E-14 | `14-operacion-filtros-ficha.spec.js` | Filtros en una fila sin Origen ni rango de fechas, OPERACIÓN fusionada y ficha rápida con pestañas | RNF-09, D-65 |
+| E2E-15 | `15-proceso-despacho.spec.js` | Proceso del despacho en formulario flotante (universo, sectores, cuadrillas), asignación dinámica de sectores y especiales | RF-24, D-66 |
+| E2E-16 | `16-primer-acceso-tecnicos.spec.js` | Primer acceso del técnico (clave + 12 palabras), estado de la cuenta y regeneración por el Super Usuario | RF-02, RF-20, D-67 |
 
 ---
 

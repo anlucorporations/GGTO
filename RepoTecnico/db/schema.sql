@@ -470,6 +470,23 @@ CREATE TABLE IF NOT EXISTS despacho_caso (
     UNIQUE (id_despacho, id_caso)
 );
 
+-- 5.4 Asignación dinámica de sectores a cuadrillas por día (D-66).
+--     El supervisor decide cada jornada qué sectores atiende cada cuadrilla;
+--     el despacho reparte los casos según esa asignación. Un sector pertenece
+--     como máximo a una cuadrilla por día.
+CREATE TABLE IF NOT EXISTS cuadrilla_sector_dia (
+    id_asignacion   bigserial    PRIMARY KEY,
+    id_central      integer      NOT NULL REFERENCES central(id_central),
+    fecha           date         NOT NULL,
+    id_cuadrilla    integer      NOT NULL REFERENCES cuadrilla(id_cuadrilla) ON DELETE CASCADE,
+    id_sector       integer      NOT NULL REFERENCES sector(id_sector) ON DELETE CASCADE,
+    usuario         varchar(20)  REFERENCES usuario(p00),
+    creado_en       timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (fecha, id_sector)
+);
+CREATE INDEX IF NOT EXISTS ix_cuadrilla_sector_dia_fecha
+    ON cuadrilla_sector_dia (fecha, id_cuadrilla);
+
 CREATE TABLE IF NOT EXISTS falla_masiva (
     id_falla            bigserial    PRIMARY KEY,
     id_central          integer      NOT NULL REFERENCES central(id_central),

@@ -15,13 +15,13 @@
 
 | Nivel | Herramienta | Ejecutadas | Pasadas | Fallidas |
 |---|---|---|---|---|
-| Unitarias + integración + contratos | `pytest` | **169** | **169** | **0** |
-| E2E de navegador | Playwright/Chromium | **60** | **60** | **0** |
+| Unitarias + integración + contratos | `pytest` | **181** | **181** | **0** |
+| E2E de navegador | Playwright/Chromium | **66** | **66** | **0** |
 | Calidad estática | `ruff` / `mypy` / `tsc` strict | 3 | 3 | 0 |
 
-- `pytest`: `169 passed (37.5m)` — resumen en `logs/pytest-resultados.txt`
+- `pytest`: `181 passed` — resumen en `logs/pytest-resultados.txt`
   (log completo en `logs/pytest.log`).
-- E2E: `60 passed (18.6m)` — informe en `logs/e2e-resultados.json` y
+- E2E: `66 passed (11.7m)` — informe en `logs/e2e-resultados.json` y
   `logs/e2e-reporte/`.
 - Cobertura E2E: autenticación, navegación y RBAC, casos, especiales, agenda,
   despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox),
@@ -66,26 +66,28 @@
 | `12-ayuda.spec.js` | 5 | 5 | AYUDA: índice temas/secciones/sub-secciones, buscador, HTML y PDF (Fase 5) |
 | `13-ui-requisitos.spec.js` | 5 | 5 | Barra PC/móvil, modal 90 % con título y cerrar, ficha modal y tabla 90 % con pie (D-64) |
 | `14-operacion-filtros-ficha.spec.js` | 4 | 4 | Filtros en una fila sin Origen ni rango de fechas, OPERACIÓN fusionada y ficha rápida con pestañas (D-65) |
-| **Total** | **60** | **60** | `60 passed (18.6m)` |
+| `15-proceso-despacho.spec.js` | 3 | 3 | Proceso del despacho en formulario flotante, asignación de sectores y especiales (D-66) |
+| `16-primer-acceso-tecnicos.spec.js` | 3 | 3 | Primer acceso del técnico, estado de la cuenta y regeneración por el SUPER (D-67) |
+| **Total** | **66** | **66** | `66 passed (11.7m)` |
 
 ### 3.2 `pytest` (esquema `ggto_test`)
 
 | Archivo | Pruebas | Nivel | Ámbito |
 |---|---|---|---|
 | `test_alertas_api.py` | 23 | Integración | Detección RF-09, planificación RF-17, material RF-18, outbox y canales |
-| `test_despacho_api.py` | 17 | Integración | Propuesta, balanceo, generación, publicación y fallas masivas |
+| `test_despacho_api.py` | 23 | Integración | Propuesta, asignación diaria de sectores, proceso, especiales y fallas masivas (D-66) |
 | `test_casos_api.py` | 17 | Integración | Búsqueda, filtros, ficha, edición, alta `REF-…` y bitácora |
 | `test_sectorizacion_cuadrilla0.py` | 16 | Unitaria | Sectorización por dirección y criterio de cuadrilla 0 |
 | `test_monitoreo_api.py` | 16 | Integración | Gestión diaria/semanal, globales, capacidad y reportes |
 | `test_especiales_api.py` | 15 | Integración | Referidos/empresas/gobierno, solicitante y seguimiento |
-| `test_contratos.py` | 14 | Contratos | Coherencia, versionado y protección del OpenAPI (73 endpoints) |
+| `test_contratos.py` | 14 | Contratos | Coherencia, versionado y protección del OpenAPI (79 endpoints) |
 | `test_config.py` | 13 | Integración | CRUD de configuración y RBAC de escritura |
 | `test_ingesta_parser.py` | 12 | Unitaria | Parser ISO-8859-1 de 80 columnas y fechas `a.m./p.m.` |
-| `test_auth.py` | 11 | Integración | Login, bloqueo, desbloqueo, 12 palabras y sesiones |
+| `test_auth.py` | 15 | Integración | Login, bloqueo, primer acceso, estado de cuenta, 12 palabras y regeneración (D-67) |
 | `test_security.py` | 6 | Unitaria | Hash Argon2id, JWT y utilidades de seguridad |
-| `test_ingesta_api.py` | 6 | Integración | Preview, carga, filtro por central y deduplicación |
+| `test_ingesta_api.py` | 8 | Integración | Preview, carga, direcciones sin sector y re-sectorización (D-66) |
 | `test_config_db.py` | 3 | Unitaria | Construcción de la URL de conexión y `search_path` |
-| **Total** | **169** | — | `169 passed (37.5m)` |
+| **Total** | **181** | — | `181 passed` |
 
 - Sin base de datos no se ejecuta la integración: el `conftest` omite esos casos
   cuando `GGTO_TEST_DB_URL` no está definida (las unitarias siguen corriendo).
@@ -94,8 +96,8 @@
 
 ## 4. Criterios de salida
 
-- [x] `pytest` completo en verde (169/169).
-- [x] Playwright E2E completo en verde (60/60).
+- [x] `pytest` completo en verde (181/181).
+- [x] Playwright E2E completo en verde (66/66).
 - [x] `ruff`, `mypy` y `tsc` strict sin hallazgos.
 - [x] Hallazgos corregidos y documentados.
 
@@ -103,7 +105,7 @@
 
 ## 5. Conclusión
 
-La **Fase 4 cierra con 229 pruebas en verde** (169 de `pytest` + 60 E2E) y los
+La **Fase 4 cierra con 247 pruebas en verde** (181 de `pytest` + 66 E2E) y los
 tres analizadores estáticos sin hallazgos. Se encontraron y corrigieron **seis
 hallazgos** (F4-01…F4-06): tres de producto/entorno de pruebas y tres defectos de
 las propias pruebas. **No quedan defectos funcionales abiertos** y los criterios
@@ -125,6 +127,21 @@ de salida de `plan_pruebas.md` §6 se cumplen en su totalidad.
 > `14-operacion-filtros-ficha.spec.js` (4 casos). Se actualizaron además
 > `02-navegacion` (5 secciones), `03-casos` (la búsqueda global abre la ficha
 > rápida), `09-alertas` y `11-rbac`.
+>
+> **Lógica del despacho (D-66):** nuevo motor por sector con asignación diaria
+> (`cuadrilla_sector_dia`), citados prioritarios, casos especiales incluidos y
+> proceso en formulario flotante; más el aviso de direcciones sin sector en la
+> ingesta. Validado con `15-proceso-despacho.spec.js` (3 E2E) y 8 pruebas de
+> integración nuevas (`test_despacho_api.py` 17→23, `test_ingesta_api.py` 6→8).
+> Se corrigió además una **contaminación entre pruebas** (un sector de prueba con
+> código fuera del patrón de limpieza y la tabla nueva sin limpiar).
+>
+> **Alta y recuperación de técnicos (D-67):** primer acceso del técnico con
+> generación de las 12 palabras, estado de la cuenta en TÉCNICOS y regeneración
+> exclusiva del Super Usuario (auditada). Validado con
+> `16-primer-acceso-tecnicos.spec.js` (3 E2E) y 4 pruebas de integración nuevas
+> (`test_auth.py` 11→15). El contrato OpenAPI pasó de 73 a **79 paths / 109
+> operaciones**.
 
 > **Pendientes que no bloquean la Fase 4:** la app móvil Flutter (Ciclo 8, fuera
 > de alcance), las credenciales de Telegram/correo (los envíos quedan en la

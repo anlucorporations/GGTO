@@ -25,7 +25,7 @@ La seguridad de GGTO se apoya en varias capas independientes:
 | Perímetro de red | Servicio Cloud Run y Cloud SQL en GCP | `RepoTecnico/entornos_globales.md:313-325` |
 | Autenticación | `P00` + clave con hash Argon2id y token JWT | `app/core/security.py:17,23-25,56-72` |
 | Autorización | RBAC por rol con *bypass* de `SUPER` | `app/api/deps.py:52-72` |
-| Aislamiento de datos | RLS en PostgreSQL sobre `caso` y `despacho` | `RepoTecnico/db/schema.sql:691-709` |
+| Aislamiento de datos | RLS en PostgreSQL sobre `caso` y `despacho` | `RepoTecnico/db/schema.sql:708-726` |
 | Secretos | Google Secret Manager con CMEK | `RepoTecnico/scripts/04_secretos_kms.sh:6-23,43-46` |
 | Observabilidad | `request-id` y métricas de negocio | `app/main.py:49-65`, `app/api/routes_alertas.py:400-423` |
 | Trazabilidad | Bitácora de estados del caso | `app/api/routes_casos.py:36-49,317-329` |
@@ -46,12 +46,14 @@ genera de forma aleatoria con `secrets.SystemRandom` (`app/core/words.py:23-27`)
 | Vigencia del token | 480 minutos (8 h) | `app/core/config.py:30` |
 | Contenido del token | `sub` (P00), `rol`, `exp`, `iat`, `jti` | `app/core/security.py:62-68` |
 | Intentos antes del bloqueo | 3 | `app/core/config.py:31` |
-| Rate limiting | 10 intentos / 60 s por `P00`+IP | `app/core/config.py:34-35`, `app/api/routes_auth.py:39-49,83` |
+| Rate limiting | 10 intentos / 60 s por `P00`+IP | `app/core/config.py:34-35`, `app/api/routes_auth.py:41-51,85` |
 | Normalización de palabras | minúsculas y sin acentos | `app/core/security.py:47-50` |
-| Mensaje ante `P00` inexistente | genérico (no revela existencia) | `app/api/routes_auth.py:86-88` |
-| Bloqueo | `usuario.bloqueado = true` al 3.er fallo; responde `423` | `app/api/routes_auth.py:97-109` |
-| Desbloqueo | 3 de las 12 palabras | `app/api/routes_auth.py:64-76,171-187` |
-| Restablecer clave | 3 de las 12 palabras | `app/api/routes_auth.py:190-206` |
+| Mensaje ante `P00` inexistente | genérico (no revela existencia) | `app/api/routes_auth.py:88-90` |
+| Bloqueo | `usuario.bloqueado = true` al 3.er fallo; responde `423` | `app/api/routes_auth.py:99-111` |
+| Desbloqueo | 3 de las 12 palabras | `app/api/routes_auth.py:66-78,330-346` |
+| Restablecer clave | 3 de las 12 palabras | `app/api/routes_auth.py:349-365` |
+| Primer acceso (D-67) | Comprueba el P00 y crea la cuenta con las 12 palabras; *rate limit* propio de 30/60 s por IP | `app/api/routes_auth.py:219-272` |
+| Regeneración de palabras (D-67) | Solo `SUPER`; 12 palabras nuevas, desbloquea y audita | `app/api/routes_auth.py:275-327` |
 
 El token se valida en cada petición: si falta, es inválido o está expirado se devuelve `401`; si el
 usuario está bloqueado se devuelve `423` (`app/api/deps.py:22-26,33-48`).
@@ -73,7 +75,7 @@ cualquier usuario autenticado mediante `Depends(get_current_user)`.
 | PANEL / CASOS | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_casos.py:26` |
 | DESPACHO | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_despachos.py:42` |
 | ESPECIALES / AGENDA | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_especiales.py:41` |
-| CONFIGURACIÓN | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_config.py:59` |
+| CONFIGURACIÓN | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_config.py:60` |
 | ALERTAS / OUTBOX | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_alertas.py:31` |
 | MONITOREO / REPORTES | Solo lectura (cualquier autenticado) | `app/api/routes_monitoreo.py:32-124` |
 
@@ -86,20 +88,31 @@ control de seguridad: la autorización efectiva ocurre en el backend.
 ### Auditoría
 
 La tabla `auditoria` está definida en el esquema con `usuario`, `accion`, `entidad`, `id_entidad`,
-`datos_antes`, `datos_despues`, `ip` y `fecha_hora` (`RepoTecnico/db/schema.sql:642-652`).
+`datos_antes`, `datos_despues`, `ip` y `fecha_hora` (`RepoTecnico/db/schema.sql:659-669`). Desde el
+ciclo **D-67** existe además el modelo ORM `Auditoria` (`app/models/entities.py:100-116`) y la
+aplicación **sí escribe** en la tabla en dos puntos del router de autenticación:
 
-> ⚠️ **La aplicación no escribe en `auditoria`.** No existe ninguna referencia a esa entidad en
-> `app/` (verificado por búsqueda de `Auditoria`/`auditoria`). La trazabilidad efectiva en v1 se
-> limita a:
-> - la **bitácora de estados** `caso_estado_hist`, que registra estado anterior, estado nuevo,
->   motivo y usuario (`app/api/routes_casos.py:36-49`) y se consulta por caso
->   (`app/api/routes_casos.py:317-329`);
-> - el campo `caso.creado_por` (`RepoTecnico/db/schema.sql:305`);
-> - el log del middleware, que **no incluye el usuario** (`app/main.py:62-64`).
+| Acción | Origen | Datos | Referencia |
+|---|---|---|---|
+| `ALTA_PRIMER_ACCESO` | `POST /auth/setup` | P00, correo y versión de palabras | `app/api/routes_auth.py:206-214` |
+| `REGENERAR_PALABRAS` | `POST /auth/palabras/{p00}/regenerar` (solo SUPER) | P00 solicitante, P00 afectado, versión anterior/nueva e IP | `app/api/routes_auth.py:315-325` |
+
+Las palabras de seguridad nunca se registran en claro: solo se guardan sus hashes Argon2id en
+`dispositivo_seguridad.palabras_hash` (`app/models/entities.py:92`,
+`RepoTecnico/db/schema.sql:565`), de modo que la auditoría de la regeneración no expone el secreto.
+
+La trazabilidad efectiva en v1 se completa con:
+
+- la **bitácora de estados** `caso_estado_hist`, que registra estado anterior, estado nuevo,
+  motivo y usuario (`app/api/routes_casos.py:36-49`) y se consulta por caso
+  (`app/api/routes_casos.py:317-329`);
+- el campo `caso.creado_por` (`RepoTecnico/db/schema.sql:305`);
+- el log del middleware, que **no incluye el usuario** (`app/main.py:62-64`).
 
 RNF-12 y RNF-19 exigen registro de usuario, fecha/hora y cambios sobre cada caso, además de logs con
-usuario (`RepoTecnico/requerimientos.md:191,198`). El registro general en `auditoria` y el usuario en
-los logs están **pendientes de confirmar / no implementados**.
+usuario (`RepoTecnico/requerimientos.md:191,198`). El registro en `auditoria` ya cubre el alta y la
+regeneración de accesos; el **usuario en los logs** del middleware sigue **pendiente de confirmar /
+no implementado**.
 
 ---
 
@@ -148,13 +161,16 @@ porque el bypass de `require_roles` le concede todo (`RepoTecnico/requerimientos
 
 > **Brechas verificadas entre la matriz y el código:**
 > 1. La matriz prevé la gestión de **USUARIOS y accesos**, pero el inventario de endpoints **no
->    incluye `/api/v1/usuarios`** ni existe pantalla dedicada: la creación/actualización de usuarios
->    se hace hoy con `scripts/inyectar_super_usuario.py`. Está **pendiente de confirmar**.
+>    incluye `/api/v1/usuarios`** ni existe pantalla dedicada para darlos de alta. Desde D-67 el
+>    **técnico** puede crear su propia cuenta en el primer acceso (`POST /auth/setup`, solo rol
+>    `TECNICO`), y el Super Usuario se sigue aprovisionando con `scripts/inyectar_super_usuario.py`;
+>    la administración de cuentas de otros roles queda **pendiente de confirmar**.
 > 2. La matriz limita al TECNICO a «sus casos», pero el listado de casos solo filtra por
 >    `id_central` si el cliente lo envía como parámetro (`app/api/routes_casos.py:126-127`); no hay
 >    acotación automática por `usuario.id_central`. **Pendiente de confirmar** (ver «RLS»).
 > 3. Toda la escritura por encima de TECNICO exige ADMIN o SUPERVISOR; no existe un rol con permiso
->    de escritura exclusivo de MONITOREO.
+>    de escritura exclusivo de MONITOREO. La excepción singular es la regeneración de palabras, que
+>    exige `SUPER` (`app/api/routes_auth.py:284`).
 
 ### Pruebas negativas
 
@@ -165,7 +181,7 @@ Las pruebas de autorización y de interfaz están documentadas en el informe de 
 | `test_config.py` (13) | RBAC de escritura en CONFIGURACIÓN | 13/13 | `RepoTecnico/pruebas/informe_fase4.md:79` |
 | `11-rbac.spec.js` (4) | TECNICO solo lectura, ADMIN operativo | 4/4 | `RepoTecnico/pruebas/informe_fase4.md:65` |
 | `02-navegacion.spec.js` (7) | RBAC del menú y secciones | 7/7 | `RepoTecnico/pruebas/informe_fase4.md:56` |
-| `test_auth.py` (11) | Login, bloqueo, desbloqueo y 12 palabras | 11/11 | `RepoTecnico/pruebas/informe_fase4.md:81` |
+| `test_auth.py` | Login, bloqueo, desbloqueo, 12 palabras y, desde D-67, primer acceso y regeneración solo SUPER (15 funciones) | — | `app/tests/test_auth.py:208-317` |
 
 El total de Fase 4 fue **169/169 `pytest` + 46/46 E2E = 215 pruebas en verde**
 (`RepoTecnico/pruebas/informe_fase4.md:16-20,103-107`). Las pruebas negativas **entre centrales**
@@ -181,24 +197,24 @@ confirmar**.
 
 El *Row Level Security* se aplica como **defensa en profundidad** sobre dos tablas:
 `caso` y `despacho`, ambas con `ENABLE ROW LEVEL SECURITY` y `FORCE ROW LEVEL SECURITY`
-(`RepoTecnico/db/schema.sql:697-698,704-705`). La función `app_central_actual()` lee el parámetro de
-sesión `app.id_central` y lo convierte a entero (`RepoTecnico/db/schema.sql:691-695`).
+(`RepoTecnico/db/schema.sql:714-715,721-722`). La función `app_central_actual()` lee el parámetro de
+sesión `app.id_central` y lo convierte a entero (`RepoTecnico/db/schema.sql:708-712`).
 
 ### Políticas
 
 | Tabla | Política | Regla | Referencia |
 |---|---|---|---|
-| `caso` | `p_caso_central` | `app_central_actual() IS NULL OR id_central = app_central_actual()` | `RepoTecnico/db/schema.sql:700-702` |
-| `despacho` | `p_despacho_central` | igual regla | `RepoTecnico/db/schema.sql:707-709` |
+| `caso` | `p_caso_central` | `app_central_actual() IS NULL OR id_central = app_central_actual()` | `RepoTecnico/db/schema.sql:717-719` |
+| `despacho` | `p_despacho_central` | igual regla | `RepoTecnico/db/schema.sql:724-726` |
 
 Ambas usan la misma expresión en `USING` y en `WITH CHECK`, de modo que la política limita tanto la
-lectura como la escritura (`RepoTecnico/db/schema.sql:701-702,708-709`).
+lectura como la escritura (`RepoTecnico/db/schema.sql:718-719,725-726`).
 
 > ⚠️ **La cláusula `app_central_actual() IS NULL` es un modo de compatibilidad.** El propio esquema
 > advierte que la aplicación debe fijar el alcance con
 > `SET LOCAL app.id_central = '<id_central>'` en cada conexión, y que **antes de producción** debe
 > eliminarse esa cláusula para que la política sea «denegar por defecto»
-> (`RepoTecnico/db/schema.sql:682-689`).
+> (`RepoTecnico/db/schema.sql:699-706`).
 >
 > **Estado real:** ninguna parte de `app/` ejecuta `SET LOCAL app.id_central` (verificado por
 > búsqueda de `app.id_central` y `SET LOCAL`). En consecuencia, el parámetro siempre es `NULL` y las
@@ -213,9 +229,9 @@ RNF-21 exige que `usuario.id_central` acote el alcance y que RLS refuerce la aut
 | Control | Estado | Evidencia |
 |---|---|---|
 | `usuario.id_central` existe en el modelo | ✅ | `RepoTecnico/db/schema.sql:177-195`; `app/api/deps.py:44-49` |
-| El token incorpora `id_central` | ✅ | `app/api/routes_auth.py:115-118` |
+| El token incorpora `id_central` | ✅ | `app/api/routes_auth.py:117-120` |
 | Las consultas acotan por el `id_central` del usuario | ❌ No; solo si el cliente lo pide | `app/api/routes_casos.py:126-127` |
-| RLS activa con `app.id_central` fijado por la app | ❌ No se fija | `RepoTecnico/db/schema.sql:682-689` |
+| RLS activa con `app.id_central` fijado por la app | ❌ No se fija | `RepoTecnico/db/schema.sql:699-706` |
 | Pruebas negativas entre centrales | ❌ No documentadas | `RepoTecnico/pruebas/informe_fase4.md:16-28` |
 
 > **Consecuencia de seguridad:** mientras no se conecte RLS y no se acoten las consultas, un usuario
@@ -420,8 +436,10 @@ Precisión técnica sobre esa afirmación:
 - La mayoría de los endpoints `/api/v1/*` **sí exigen token JWT** (`Depends(get_current_user)`),
   como se ve en `app/api/routes_casos.py:92` o `app/api/routes_despachos.py:122`.
 - Son **públicos** (sin token): `/api/v1/info`, `/health` y `/ready`
-  (`app/api/routes_health.py:17-57`), el `login` (`app/api/routes_auth.py:79`), el `setup` inicial
-  (`app/api/routes_auth.py:132`), `unlock` y `reset-password` (`app/api/routes_auth.py:171,190`).
+  (`app/api/routes_health.py:17-57`), el `login` (`app/api/routes_auth.py:81`), el `setup` inicial
+  (`app/api/routes_auth.py:129`), `primer-acceso` (`app/api/routes_auth.py:219`), `unlock` y
+  `reset-password` (`app/api/routes_auth.py:330,349`). El `primer-acceso` es público pero lleva
+  *rate limit* por IP de 30/60 s (`app/api/routes_auth.py:229-230`).
 - `/api/v1/telegram/webhook` y `/api/v1/mcp` se protegen con **cabecera secreta** solo si está
   configurada; si la clave está vacía, **no se exige**
   (`app/api/routes_alertas.py:260-265,350-356`).
@@ -506,7 +524,7 @@ para ADMIN y SUPERVISOR (`RepoTecnico/requerimientos.md:255`).
 | Control de RNF-22 | Estado real | Evidencia |
 |---|---|---|
 | Hash Argon2id | ✅ Implementado | `app/core/security.py:17,23-25` |
-| Bloqueo y rate limiting | ✅ Implementado | `app/api/routes_auth.py:39-49,97-109` |
+| Bloqueo y rate limiting | ✅ Implementado | `app/api/routes_auth.py:41-51,99-111` |
 | Expiración del token | ✅ 480 min | `app/core/config.py:30` |
 | MFA | ❌ No implementado (sin TOTP/OTP en `app/`) | — |
 | Complejidad/caducidad/historial de claves | ❌ No implementado | — |
@@ -529,7 +547,7 @@ para ADMIN y SUPERVISOR (`RepoTecnico/requerimientos.md:255`).
 | Tema | Responsable | Estado |
 |---|---|---|
 | Administración de catálogos, flota y almacén | SUPERVISOR | Cubierto en v1 |
-| Auditoría interna de la bitácora | ADMIN (solo lectura de `auditoria`) | **Sin datos**: la app no escribe `auditoria` |
+| Auditoría interna de la bitácora | ADMIN (solo lectura de `auditoria`) | **Parcial**: D-67 registra `ALTA_PRIMER_ACCESO` y `REGENERAR_PALABRAS`; no hay endpoints para consultar `auditoria` |
 | Soporte/helpdesk de la plataforma | SUPERVISOR (registro por correo) | Informal en v1 |
 | Responsable de protección de datos | **CANTV (externo)** | **Pendiente de designar** (`RepoTecnico/requerimientos.md:267`) |
 | Dueño del sistema origen (CSV) | **CANTV (externo)** | **Pendiente de formalizar** (`RepoTecnico/requerimientos.md:268`) |
@@ -545,7 +563,7 @@ lectura; no existe rol AUDITOR en v1.
 1. Restringir el acceso público de `ggto-web` con IAP o invocación autenticada.
 2. Migrar a `ggtov2-pg` con backups + PITR + SSL `ENCRYPTED_ONLY` + protección de borrado.
 3. Implementar el **enmascaramiento por rol** de teléfono, dirección y serial.
-4. Implementar el registro de **auditoría** y añadir el usuario a los logs.
+4. Extender el registro de **auditoría** (hoy limitado a alta y regeneración de accesos) y añadir el usuario a los logs.
 5. Conectar **RLS** fijando `app.id_central` por sesión y acotar las consultas por `usuario.id_central`.
 6. Habilitar **MFA** para ADMIN y SUPERVISOR y la política de claves de RNF-22.
 7. Fijar `cors_origins` a los orígenes reales y establecer `telegram.webhook_secret` y `mcp.api_key`.

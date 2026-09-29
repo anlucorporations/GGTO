@@ -27,8 +27,8 @@ El prefijo se declara de dos maneras según el archivo:
 | Archivo de rutas | Prefijo declarado | Línea |
 |---|---|---|
 | `app/api/routes_health.py` | sin prefijo (rutas absolutas) | `app/api/routes_health.py:14` |
-| `app/api/routes_auth.py` | `/api/v1/auth` | `app/api/routes_auth.py:33` |
-| `app/api/routes_config.py` | `/api/v1` | `app/api/routes_config.py:56` |
+| `app/api/routes_auth.py` | `/api/v1/auth` | `app/api/routes_auth.py:35` |
+| `app/api/routes_config.py` | `/api/v1` | `app/api/routes_config.py:57` |
 | `app/api/routes_ingesta.py` | `/api/v1/ingesta` | `app/api/routes_ingesta.py:21` |
 | `app/api/routes_casos.py` | `/api/v1/casos` | `app/api/routes_casos.py:24` |
 | `app/api/routes_despachos.py` | `/api/v1/despachos` | `app/api/routes_despachos.py:41` |
@@ -64,12 +64,20 @@ inactivo → 401; usuario bloqueado → 423. La respuesta 401 incluye la cabecer
 La SPA consume la API con el mismo esquema: el token se guarda en `localStorage` y
 se adjunta como `Bearer` en cada llamada (`app/web/src/api/client.ts:193,237`).
 
-### Relación 73 paths / 103 operaciones
+### Relación 79 paths / 109 operaciones
 
-El esquema OpenAPI publicado (`app.openapi()`) reporta **73 rutas (*paths*)** y
-**103 operaciones** (combinación método + path). La diferencia se explica porque
+El esquema OpenAPI publicado (`app.openapi()`) reporta **79 rutas (*paths*)** y
+**109 operaciones** (combinación método + path). La diferencia se explica porque
 **26 paths comparten varios métodos**; cada path adicional con *n* métodos aporta
-*n − 1* operaciones extra, en total **30 operaciones extra** (73 + 30 = 103).
+*n − 1* operaciones extra, en total **30 operaciones extra** (79 + 30 = 109). Cuatro de
+esos paths compartidos tienen tres métodos (`/central/{id_central}`, `/sectores/{id_sector}`,
+`/tecnicos/{id_tecnico}` y `/flota/{id_flota}`), lo que explica que 26 paths aporten 30
+operaciones extra. Las cuatro rutas incorporadas por el ciclo **D-66**
+(`GET /api/v1/despachos/proceso`, `PUT /api/v1/despachos/asignacion`,
+`POST /api/v1/despachos/procesar` y `POST /api/v1/ingesta/sectorizar-pendientes`) y las
+**dos incorporadas por D-67** (`GET /api/v1/auth/primer-acceso` y
+`POST /api/v1/auth/palabras/{p00}/regenerar`) son de un solo método, por lo que no alteran
+el número de paths compartidos.
 
 Los paths compartidos verificados son 26, entre ellos:
 
@@ -88,24 +96,28 @@ Los paths compartidos verificados son 26, entre ellos:
 | `/api/v1/catalogos/metodos` | GET, POST | `/api/v1/despachos/{id_despacho}` | GET, PATCH |
 | `/api/v1/cuadrillas/{id_cuadrilla}` | GET, PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | DELETE, PATCH |
 
-Por eso los documentos del proyecto y las pruebas hablan de **«73 endpoints»**
-cuando en realidad se refieren a *73 paths*: `RepoTecnico/plan_desarrollo.md:227`
+Por eso los documentos del proyecto y las pruebas hablaban de **«73 endpoints»**
+cuando en realidad se referían a *73 paths*: `RepoTecnico/plan_desarrollo.md:227`
 («73 endpoints OpenAPI»), `RepoTecnico/pruebas/informe_fase4.md:78` y
-`RepoTecnico/pruebas/plan_pruebas.md:21`.
+`RepoTecnico/pruebas/plan_pruebas.md:21`. Esa cifra es **anterior al ciclo D-66**;
+tras D-66 y D-67 la superficie vigente es de **79 paths**.
 
-En el código hay **103 decoradores `@router.*`** —uno por operación publicada—.
+En el código hay **109 decoradores `@router.*`** —uno por operación publicada—.
 La cifra de **98 operaciones** que aparece en notas previas del proyecto no
-coincide con el código verificado; la diferencia corresponde a cinco operaciones
-que sí existen y que aquel inventario no listaba: `POST /api/v1/auth/setup`
-(`app/api/routes_auth.py:127`), `POST /api/v1/sectores/{id_sector}/direcciones`
-(`app/api/routes_config.py:200`),
-`DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}`
-(`app/api/routes_config.py:219`),
-`POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes` (`app/api/routes_config.py:420`)
-y `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}`
-(`app/api/routes_config.py:444`). La cifra vigente y comprobable es **103
-operaciones / 73 paths**; el origen exacto del conteo de 98 queda **pendiente de
-confirmar**.
+coincide con el código verificado; la diferencia corresponde a las operaciones
+que sí existen y que aquel inventario no listaba: las cinco ya documentadas
+(`POST /api/v1/auth/setup` — `app/api/routes_auth.py:129`,
+`POST /api/v1/sectores/{id_sector}/direcciones` —
+`app/api/routes_config.py:201`,
+`DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}` —
+`app/api/routes_config.py:220`,
+`POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes` — `app/api/routes_config.py:471`
+y `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` —
+`app/api/routes_config.py:495`), las cuatro del ciclo D-66
+(`app/api/routes_despachos.py:177,190,207` y `app/api/routes_ingesta.py:217`) y las dos de
+D-67 (`app/api/routes_auth.py:219` y `app/api/routes_auth.py:275`).
+La cifra vigente y comprobable es **109 operaciones / 79 paths**; el origen exacto
+del conteo de 98 queda **pendiente de confirmar**.
 
 ### Documentación OpenAPI en /docs
 
@@ -117,8 +129,8 @@ la versión del esquema provienen de `app_name` y `app_version`
 (`app/main.py:39-40`), con versión por defecto **0.9.0** (`app/core/config.py:14`).
 
 Cada router se agrupa en el esquema mediante etiquetas (*tags*): «salud»
-(`app/api/routes_health.py:14`), «autenticación» (`app/api/routes_auth.py:33`),
-«configuración» (`app/api/routes_config.py:56`), «ingesta»
+(`app/api/routes_health.py:14`), «autenticación» (`app/api/routes_auth.py:35`),
+«configuración» (`app/api/routes_config.py:57`), «ingesta»
 (`app/api/routes_ingesta.py:21`), «casos» (`app/api/routes_casos.py:24`),
 «despacho» (`app/api/routes_despachos.py:41`), «seguimiento y especiales»
 (`app/api/routes_especiales.py:40`), «monitoreo y reportes»
@@ -132,7 +144,7 @@ que exista el esquema de seguridad Bearer (`:72-74`).
 
 ## Inventario por módulo
 
-A continuación, el inventario completo de las **103 operaciones**, agrupado por
+A continuación, el inventario completo de las **109 operaciones**, agrupado por
 archivo de rutas. La columna «roles» se interpreta así: **Público** = sin token;
 **Autenticado** = cualquier usuario con token válido (`get_current_user`);
 **ADMIN/SUPERVISOR** = `require_roles("ADMIN", "SUPERVISOR")`, con **bypass total
@@ -156,124 +168,144 @@ desplegado (`app/api/routes_health.py:62-78`).
 
 ### Autenticación (app/api/routes_auth.py)
 
-Cinco operaciones. Cuatro son públicas por diseño (login y recuperación); `me`
-exige token. La decisión de P00 + clave con bloqueo a los 3 intentos y 12
-palabras de seguridad está en `RepoTecnico/requerimientos.md:255-256`.
+**Siete operaciones.** Cinco son públicas por diseño (login, setup, `primer-acceso`,
+`unlock` y `reset-password`); `me` exige token y `regenerar` exige el rol `SUPER`. La
+decisión de P00 + clave con bloqueo a los 3 intentos y 12 palabras de seguridad está en
+`RepoTecnico/requerimientos.md:255-256`.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| POST | `/api/v1/auth/login` | Iniciar sesión con P00 + clave; emite JWT | Público | `app/api/routes_auth.py:79` |
-| GET | `/api/v1/auth/me` | Datos del usuario autenticado (P00, correo, rol, central, nombre) | Autenticado | `app/api/routes_auth.py:122` |
-| POST | `/api/v1/auth/setup` | Primer inicio: fija la clave y genera 12 palabras de seguridad | Público | `app/api/routes_auth.py:127` |
-| POST | `/api/v1/auth/unlock` | Desbloquear la cuenta con 3 de las 12 palabras | Público | `app/api/routes_auth.py:171` |
-| POST | `/api/v1/auth/reset-password` | Restablecer la clave con 3 de las 12 palabras | Público | `app/api/routes_auth.py:190` |
+| POST | `/api/v1/auth/login` | Iniciar sesión con P00 + clave; emite JWT | Público | `app/api/routes_auth.py:81` |
+| GET | `/api/v1/auth/me` | Datos del usuario autenticado (P00, correo, rol, central, nombre) | Autenticado | `app/api/routes_auth.py:124` |
+| POST | `/api/v1/auth/setup` | Primer acceso: **crea la cuenta**, fija la clave y genera 12 palabras (**D-67**) | Público | `app/api/routes_auth.py:129` |
+| GET | `/api/v1/auth/primer-acceso` | Comprueba si el P00 está registrado y su `estado` (**D-67**) | Público | `app/api/routes_auth.py:219` |
+| POST | `/api/v1/auth/palabras/{p00}/regenerar` | Super Usuario: genera 12 palabras nuevas y desbloquea (**D-67**) | SUPER | `app/api/routes_auth.py:275` |
+| POST | `/api/v1/auth/unlock` | Desbloquear la cuenta con 3 de las 12 palabras | Público | `app/api/routes_auth.py:330` |
+| POST | `/api/v1/auth/reset-password` | Restablecer la clave con 3 de las 12 palabras | Público | `app/api/routes_auth.py:349` |
 
 Detalles verificados de `login`: el límite de intentos se aplica por `p00|IP`
-(`app/api/routes_auth.py:82-83`); si el P00 no existe se devuelve un mensaje
-genérico para no revelar su existencia (`:86-88`); un usuario inactivo recibe 403
-(`:89-90`) y uno bloqueado, 423 (`:91-95`). Cada fallo incrementa
+(`app/api/routes_auth.py:84-85`); si el P00 no existe se devuelve un mensaje
+genérico para no revelar su existencia (`app/api/routes_auth.py:88-90`); un usuario
+inactivo recibe 403 (`:91-92`) y uno bloqueado, 423 (`:93-97`). Cada fallo incrementa
 `intentos_fallidos` y devuelve la cabecera `X-Intentos-Restantes`
-(`:98-109`). Un login correcto reinicia el contador y emite el token
-(`:111-119`). `setup` exige que la clave y su confirmación coincidan (422) y que
-el P00 ya exista (404) (`:134-139`), y versiona el dispositivo de seguridad
-(`:157-159`). `unlock` y `reset-password` validan 3 palabras por posición con
-`_verificar_palabras` (`:64-76`).
+(`:100-111`). Un login correcto reinicia el contador y emite el token
+(`:113-121`).
+
+Detalles de **D-67** verificados en `setup`: si la clave y su confirmación no coinciden
+responde 422 (`app/api/routes_auth.py:143-144`); si la cuenta ya tiene `palabras_hash`
+responde 409 (`:146-154`); si el P00 no existe como técnico responde 404 (`:156-162`); si el
+técnico no está `ACTIVO` responde 409 (`:163-167`); crea el `Usuario` con rol `TECNICO`, el
+`id_tecnico` y la central (`:168-181`); versiona el dispositivo de seguridad (`:192-198`) y
+registra `ALTA_PRIMER_ACCESO` en `auditoria` (`:206-214`). `primer-acceso` devuelve
+`INEXISTENTE`/`BLOQUEADO`/`ACTIVO`/`INACTIVO`/`PENDIENTE` (`:240-272`) con un *rate limit*
+propio de 30/60 s (`:229-230`). `regenerar` exige `require_roles("SUPER")` (`:284`),
+incrementa `version` (`:300-310`), desbloquea la cuenta y el dispositivo (`:310-313`) y
+escribe `REGENERAR_PALABRAS` en `auditoria` (`:315-325`). `unlock` y `reset-password` validan
+3 palabras por posición con `_verificar_palabras` (`app/api/routes_auth.py:66-78`).
 
 ### Configuración y catálogos (app/api/routes_config.py)
 
 El módulo más extenso: **35 operaciones**. La lectura queda abierta a cualquier
 usuario autenticado y la escritura se reserva a ADMIN y SUPERVISOR
-(`app/api/routes_config.py:58-59`). Los borrados son **desactivaciones lógicas**
+(`app/api/routes_config.py:59-60`). Los borrados son **desactivaciones lógicas**
 salvo en direcciones de sector e integrantes de cuadrilla.
 
 #### Central
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/central` | Listar centrales; filtro `solo_activas` | Autenticado | `app/api/routes_config.py:80` |
-| POST | `/api/v1/central` | Crear central | ADMIN/SUPERVISOR | `app/api/routes_config.py:92` |
-| GET | `/api/v1/central/{id_central}` | Obtener una central | Autenticado | `app/api/routes_config.py:105` |
-| PATCH | `/api/v1/central/{id_central}` | Actualizar una central | ADMIN/SUPERVISOR | `app/api/routes_config.py:112` |
-| DELETE | `/api/v1/central/{id_central}` | Desactivar (`activa = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:127` |
+| GET | `/api/v1/central` | Listar centrales; filtro `solo_activas` | Autenticado | `app/api/routes_config.py:81` |
+| POST | `/api/v1/central` | Crear central | ADMIN/SUPERVISOR | `app/api/routes_config.py:93` |
+| GET | `/api/v1/central/{id_central}` | Obtener una central | Autenticado | `app/api/routes_config.py:106` |
+| PATCH | `/api/v1/central/{id_central}` | Actualizar una central | ADMIN/SUPERVISOR | `app/api/routes_config.py:113` |
+| DELETE | `/api/v1/central/{id_central}` | Desactivar (`activa = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:128` |
 
 #### Sectores
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/sectores` | Listar sectores; filtros `id_central`, `solo_activos` | Autenticado | `app/api/routes_config.py:139` |
-| POST | `/api/v1/sectores` | Crear sector con sus direcciones/patrones | ADMIN/SUPERVISOR | `app/api/routes_config.py:154` |
-| GET | `/api/v1/sectores/{id_sector}` | Obtener un sector | Autenticado | `app/api/routes_config.py:169` |
-| PATCH | `/api/v1/sectores/{id_sector}` | Actualizar un sector | ADMIN/SUPERVISOR | `app/api/routes_config.py:176` |
-| DELETE | `/api/v1/sectores/{id_sector}` | Desactivar (`activo = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:191` |
-| POST | `/api/v1/sectores/{id_sector}/direcciones` | Agregar patrón de dirección al sector | ADMIN/SUPERVISOR | `app/api/routes_config.py:200` |
-| DELETE | `/api/v1/sectores/{id_sector}/direcciones/{id_direccion}` | Eliminar un patrón (borrado físico) | ADMIN/SUPERVISOR | `app/api/routes_config.py:219` |
+| GET | `/api/v1/sectores` | Listar sectores; filtros `id_central`, `solo_activos` | Autenticado | `app/api/routes_config.py:140` |
+| POST | `/api/v1/sectores` | Crear sector con sus direcciones/patrones | ADMIN/SUPERVISOR | `app/api/routes_config.py:155` |
+| GET | `/api/v1/sectores/{id_sector}` | Obtener un sector | Autenticado | `app/api/routes_config.py:170` |
+| PATCH | `/api/v1/sectores/{id_sector}` | Actualizar un sector | ADMIN/SUPERVISOR | `app/api/routes_config.py:177` |
+| DELETE | `/api/v1/sectores/{id_sector}` | Desactivar (`activo = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:192` |
+| POST | `/api/v1/sectores/{id_sector}/direcciones` | Agregar patrón de dirección al sector | ADMIN/SUPERVISOR | `app/api/routes_config.py:201` |
+| DELETE | `/api/v1/sectores/{id_sector}/direcciones/{id_direccion}` | Eliminar un patrón (borrado físico) | ADMIN/SUPERVISOR | `app/api/routes_config.py:220` |
 
 #### Técnicos
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/tecnicos` | Listar técnicos; filtros `id_central`, `status` | Autenticado | `app/api/routes_config.py:238` |
-| POST | `/api/v1/tecnicos` | Crear técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:253` |
-| GET | `/api/v1/tecnicos/{id_tecnico}` | Obtener un técnico | Autenticado | `app/api/routes_config.py:265` |
-| PATCH | `/api/v1/tecnicos/{id_tecnico}` | Actualizar un técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:272` |
-| DELETE | `/api/v1/tecnicos/{id_tecnico}` | Desactivar (`status = "INACTIVO"`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:287` |
+| GET | `/api/v1/tecnicos` | Listar técnicos; filtros `id_central`, `status` | Autenticado | `app/api/routes_config.py:289` |
+| POST | `/api/v1/tecnicos` | Crear técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:304` |
+| GET | `/api/v1/tecnicos/{id_tecnico}` | Obtener un técnico | Autenticado | `app/api/routes_config.py:316` |
+| PATCH | `/api/v1/tecnicos/{id_tecnico}` | Actualizar un técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:323` |
+| DELETE | `/api/v1/tecnicos/{id_tecnico}` | Desactivar (`status = "INACTIVO"`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:338` |
 
+Las cinco operaciones devuelven `TecnicoOut` con el campo calculado `estado_cuenta`
+(`SIN_ALTA`/`BLOQUEADO`/`REQUIERE_CAMBIO`/`INACTIVO`/`ACTIVO`, D-67), resuelto sin N+1 por
+`_tecnicos_con_estado` (`app/api/routes_config.py:260-282`).
 #### Flota
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/flota` | Listar flota; filtro `id_central` | Autenticado | `app/api/routes_config.py:299` |
-| POST | `/api/v1/flota` | Registrar vehículo | ADMIN/SUPERVISOR | `app/api/routes_config.py:311` |
-| GET | `/api/v1/flota/{id_flota}` | Obtener un vehículo | Autenticado | `app/api/routes_config.py:323` |
-| PATCH | `/api/v1/flota/{id_flota}` | Actualizar un vehículo | ADMIN/SUPERVISOR | `app/api/routes_config.py:330` |
-| DELETE | `/api/v1/flota/{id_flota}` | Retirar (`status = "FUERA_SERVICIO"`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:345` |
+| GET | `/api/v1/flota` | Listar flota; filtro `id_central` | Autenticado | `app/api/routes_config.py:350` |
+| POST | `/api/v1/flota` | Registrar vehículo | ADMIN/SUPERVISOR | `app/api/routes_config.py:362` |
+| GET | `/api/v1/flota/{id_flota}` | Obtener un vehículo | Autenticado | `app/api/routes_config.py:374` |
+| PATCH | `/api/v1/flota/{id_flota}` | Actualizar un vehículo | ADMIN/SUPERVISOR | `app/api/routes_config.py:381` |
+| DELETE | `/api/v1/flota/{id_flota}` | Retirar (`status = "FUERA_SERVICIO"`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:396` |
 
 #### Cuadrillas
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/cuadrillas` | Listar cuadrillas; filtros `id_central`, `solo_activas` | Autenticado | `app/api/routes_config.py:357` |
-| POST | `/api/v1/cuadrillas` | Crear cuadrilla con integrantes y herramientas | ADMIN/SUPERVISOR | `app/api/routes_config.py:372` |
-| GET | `/api/v1/cuadrillas/{id_cuadrilla}` | Obtener una cuadrilla | Autenticado | `app/api/routes_config.py:398` |
-| PATCH | `/api/v1/cuadrillas/{id_cuadrilla}` | Actualizar una cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_config.py:405` |
-| POST | `/api/v1/cuadrillas/{id_cuadrilla}/integrantes` | Agregar integrante a la cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_config.py:420` |
-| DELETE | `/api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` | Retirar integrante (fija `hasta`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:444` |
+| GET | `/api/v1/cuadrillas` | Listar cuadrillas; filtros `id_central`, `solo_activas` | Autenticado | `app/api/routes_config.py:408` |
+| POST | `/api/v1/cuadrillas` | Crear cuadrilla con integrantes y herramientas | ADMIN/SUPERVISOR | `app/api/routes_config.py:423` |
+| GET | `/api/v1/cuadrillas/{id_cuadrilla}` | Obtener una cuadrilla | Autenticado | `app/api/routes_config.py:449` |
+| PATCH | `/api/v1/cuadrillas/{id_cuadrilla}` | Actualizar una cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_config.py:456` |
+| POST | `/api/v1/cuadrillas/{id_cuadrilla}/integrantes` | Agregar integrante a la cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_config.py:471` |
+| DELETE | `/api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` | Retirar integrante (fija `hasta`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:495` |
 
 #### Catálogos y parámetros
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/catalogos/causas` | Listar causas; filtro `solo_activos` (por defecto `true`) | Autenticado | `app/api/routes_config.py:471` |
-| POST | `/api/v1/catalogos/causas` | Crear causa | ADMIN/SUPERVISOR | `app/api/routes_config.py:483` |
-| DELETE | `/api/v1/catalogos/causas/{id_causa}` | Desactivar (`activo = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:494` |
-| GET | `/api/v1/catalogos/metodos` | Listar métodos; filtro `dominio` | Autenticado | `app/api/routes_config.py:503` |
-| POST | `/api/v1/catalogos/metodos` | Crear método | ADMIN/SUPERVISOR | `app/api/routes_config.py:515` |
-| GET | `/api/v1/configuracion` | Listar parámetros de `configuracion` | Autenticado | `app/api/routes_config.py:529` |
-| PUT | `/api/v1/configuracion/{clave}` | Actualizar valor (y descripción) de un parámetro | ADMIN/SUPERVISOR | `app/api/routes_config.py:534` |
+| GET | `/api/v1/catalogos/causas` | Listar causas; filtro `solo_activos` (por defecto `true`) | Autenticado | `app/api/routes_config.py:522` |
+| POST | `/api/v1/catalogos/causas` | Crear causa | ADMIN/SUPERVISOR | `app/api/routes_config.py:534` |
+| DELETE | `/api/v1/catalogos/causas/{id_causa}` | Desactivar (`activo = false`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:545` |
+| GET | `/api/v1/catalogos/metodos` | Listar métodos; filtro `dominio` | Autenticado | `app/api/routes_config.py:554` |
+| POST | `/api/v1/catalogos/metodos` | Crear método | ADMIN/SUPERVISOR | `app/api/routes_config.py:566` |
+| GET | `/api/v1/configuracion` | Listar parámetros de `configuracion` | Autenticado | `app/api/routes_config.py:580` |
+| PUT | `/api/v1/configuracion/{clave}` | Actualizar valor (y descripción) de un parámetro | ADMIN/SUPERVISOR | `app/api/routes_config.py:585` |
 
 Las creaciones y actualizaciones traducen el `IntegrityError` de SQLAlchemy a
-**409** con un mensaje de conflicto (`app/api/routes_config.py:69-74`). Las
+**409** con un mensaje de conflicto (`app/api/routes_config.py:70-75`). Las
 creaciones devuelven **201** y los borrados **204** (por ejemplo,
-`app/api/routes_config.py:92,127`).
+`app/api/routes_config.py:93,128`).
 
 ### Ingesta (app/api/routes_ingesta.py)
 
-Cuatro operaciones. Las dos de escritura reciben el archivo por
+Cinco operaciones. Las dos de escritura reciben el archivo por
 `multipart/form-data` (`archivo`) e id_central opcional por formulario.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| POST | `/api/v1/ingesta/preview` | Simular la ingesta del CSV sin guardar | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:105` |
-| POST | `/api/v1/ingesta` | Cargar el archivo diario e insertar los casos nuevos | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:119` |
-| GET | `/api/v1/ingesta/lotes` | Historial de cargas (`limite` 1–200, por defecto 50) | Autenticado | `app/api/routes_ingesta.py:175` |
-| GET | `/api/v1/ingesta/lotes/{id_lote}` | Detalle de una carga | Autenticado | `app/api/routes_ingesta.py:188` |
+| POST | `/api/v1/ingesta/preview` | Simular la ingesta del CSV sin guardar | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:124` |
+| POST | `/api/v1/ingesta` | Cargar el archivo diario e insertar los casos nuevos | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:138` |
+| GET | `/api/v1/ingesta/lotes` | Historial de cargas (`limite` 1–200, por defecto 50) | Autenticado | `app/api/routes_ingesta.py:194` |
+| GET | `/api/v1/ingesta/lotes/{id_lote}` | Detalle de una carga | Autenticado | `app/api/routes_ingesta.py:207` |
+| POST | `/api/v1/ingesta/sectorizar-pendientes` | Re-sectorizar los casos con `id_sector` nulo de la central (**D-66**) | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:217` |
 
 La carga real crea un `IngestaLote` y luego los casos, dejando el lote en `OK` y
-los avisos en `detalle_error` (`app/api/routes_ingesta.py:133-160`). Tras insertar,
+los avisos en `detalle_error` (`app/api/routes_ingesta.py:152-179`). Tras insertar,
 dispara la detección automática de fallas masivas por concentración
-(`app/api/routes_ingesta.py:162-166`). El resumen incluye filas leídas, filas de
-la central, casos nuevos, duplicados, descartados, sectorizados, sin sector y
-casos de cuadrilla 0 (`app/api/routes_ingesta.py:65-98`).
+(`app/api/routes_ingesta.py:181-191`). El resumen incluye filas leídas, filas de
+la central, casos nuevos, duplicados, descartados, sectorizados, sin sector,
+casos de cuadrilla 0 y las **direcciones sin sector** agrupadas por dirección
+normalizada (`app/api/routes_ingesta.py:65-118`). El endpoint
+`sectorizar-pendientes` aplica los patrones vigentes a los casos de la central con
+`id_sector IS NULL` y devuelve `revisados`, `asignados` y `sin_sector`
+(`app/api/routes_ingesta.py:217-251`).
 
 ### Casos y PANEL (app/api/routes_casos.py)
 
@@ -302,35 +334,57 @@ dirección, el sector se recalcula (`:305-307`).
 
 ### Despacho (app/api/routes_despachos.py)
 
-Quince operaciones. Escritura para ADMIN/SUPERVISOR
-(`app/api/routes_despachos.py:42`).
+Dieciocho operaciones (D-66 incorporó `/proceso`, `/asignacion` y `/procesar`).
+Escritura para ADMIN/SUPERVISOR (`app/api/routes_despachos.py:42`).
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| POST | `/api/v1/despachos/propuesta` | Simular el despacho del día (sin guardar) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:63` |
-| POST | `/api/v1/despachos` | Generar y guardar el despacho del día (`reemplazar` opcional) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:76` |
-| GET | `/api/v1/despachos` | Listar despachos por `fecha` e `id_central` | Autenticado | `app/api/routes_despachos.py:117` |
-| POST | `/api/v1/despachos/fallas-masivas` | Reportar una falla masiva asociada al sector | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:135` |
-| GET | `/api/v1/despachos/fallas-masivas` | Listar las fallas masivas registradas | Autenticado | `app/api/routes_despachos.py:166` |
-| GET | `/api/v1/despachos/{id_despacho}` | Detalle del despacho | Autenticado | `app/api/routes_despachos.py:174` |
-| PATCH | `/api/v1/despachos/{id_despacho}` | Publicar o cerrar el despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:181` |
-| POST | `/api/v1/despachos/{id_despacho}/casos` | Agregar un caso al despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:204` |
-| DELETE | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Quitar un caso del despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:249` |
-| PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Actualizar el estado del caso en el despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:271` |
-| GET | `/api/v1/despachos/{id_despacho}/imprimible` | Ficha de la cuadrilla lista para imprimir (HTML carta) | Autenticado | `app/api/routes_despachos.py:299` |
-| GET | `/api/v1/despachos/reporte/produccion` | Reporte de producción del día | Autenticado | `app/api/routes_despachos.py:407` |
-| GET | `/api/v1/despachos/{id_despacho}/reporte` | Reporte de producción del despacho | Autenticado | `app/api/routes_despachos.py:420` |
-| POST | `/api/v1/despachos/{id_despacho}/enviar` | Enviar la ficha por `TELEGRAM` o `CORREO` | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:432` |
-| GET | `/api/v1/despachos/{id_despacho}/notificaciones` | Notificaciones asociadas al despacho | Autenticado | `app/api/routes_despachos.py:486` |
+| POST | `/api/v1/despachos/propuesta` | Simular el despacho del día (sin guardar) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:66` |
+| POST | `/api/v1/despachos` | Generar y guardar el despacho del día (`reemplazar` opcional) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:79` |
+| GET | `/api/v1/despachos` | Listar despachos por `fecha` e `id_central` | Autenticado | `app/api/routes_despachos.py:120` |
+| POST | `/api/v1/despachos/fallas-masivas` | Reportar una falla masiva asociada al sector | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:138` |
+| GET | `/api/v1/despachos/fallas-masivas` | Listar las fallas masivas registradas | Autenticado | `app/api/routes_despachos.py:169` |
+| GET | `/api/v1/despachos/proceso` | Universo, sectores y asignación por cuadrilla del día (**D-66**) | Autenticado | `app/api/routes_despachos.py:177` |
+| PUT | `/api/v1/despachos/asignacion` | Guardar la asignación de sectores por cuadrilla del día (**D-66**) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:190` |
+| POST | `/api/v1/despachos/procesar` | Procesar el despacho con la asignación del día (**D-66**) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:207` |
+| GET | `/api/v1/despachos/{id_despacho}` | Detalle del despacho | Autenticado | `app/api/routes_despachos.py:263` |
+| PATCH | `/api/v1/despachos/{id_despacho}` | Publicar o cerrar el despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:270` |
+| POST | `/api/v1/despachos/{id_despacho}/casos` | Agregar un caso al despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:293` |
+| DELETE | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Quitar un caso del despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:338` |
+| PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Actualizar el estado del caso en el despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:360` |
+| GET | `/api/v1/despachos/{id_despacho}/imprimible` | Ficha de la cuadrilla lista para imprimir (HTML carta) | Autenticado | `app/api/routes_despachos.py:388` |
+| GET | `/api/v1/despachos/reporte/produccion` | Reporte de producción del día | Autenticado | `app/api/routes_despachos.py:496` |
+| GET | `/api/v1/despachos/{id_despacho}/reporte` | Reporte de producción del despacho | Autenticado | `app/api/routes_despachos.py:509` |
+| POST | `/api/v1/despachos/{id_despacho}/enviar` | Enviar la ficha por `TELEGRAM` o `CORREO` | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:521` |
+| GET | `/api/v1/despachos/{id_despacho}/notificaciones` | Notificaciones asociadas al despacho | Autenticado | `app/api/routes_despachos.py:575` |
 
 Generar un despacho sin `reemplazar=true` cuando ya existe uno para la fecha
-devuelve **409** (`app/api/routes_despachos.py:100-109`). Agregar un caso de
-cuadrilla 0 o repetido también devuelve 409 (`:216-224`). Publicar un despacho
-fija `enviado_en` si no estaba enviado (`:194-195`). La ficha imprimible es HTML
-con `@page size: letter` (`:323-355`, evidencia de RT-08). El envío lee el destino
-desde `despacho.destino_<canal>` de la tabla `configuracion` (`:466-469`) y
-registra siempre una `Notificacion` (`:471-483`); si el canal no tiene
+devuelve **409** (`app/api/routes_despachos.py:103-112`). Agregar un caso de
+cuadrilla 0 o repetido también devuelve 409 (`:305-313`). Publicar un despacho
+fija `enviado_en` si no estaba enviado (`:283-284`). La ficha imprimible es HTML
+con `@page size: letter` (`:412-444`, evidencia de RT-08). El envío lee el destino
+desde `despacho.destino_<canal>` de la tabla `configuracion` (`:555-557`) y
+registra siempre una `Notificacion` (`:560-572`); si el canal no tiene
 credenciales, queda `PENDIENTE` (ver `app/services/notificaciones.py:20-22,40-42`).
+
+Las tres operaciones del **proceso de despacho (D-66)** se apoyan en
+`app/services/despacho.py`:
+
+- `GET /despachos/proceso` devuelve `ProcesoDespachoOut` con el universo de casos
+  (comunes y especiales, más `sin_sector`), los sectores con su total de casos,
+  especiales y citados, las cuadrillas con sus `ids_sector`, la asignación
+  efectiva y su origen (`GUARDADA`/`PROPUESTA`), los grupos, `sin_asignar`, las
+  `reglas` y el `resumen` (`app/api/routes_despachos.py:177-187`;
+  `app/services/despacho.py:469-535`).
+- `PUT /despachos/asignacion` recibe `AsignacionUpdate` (fecha, central y una
+  lista de bloques `{id_cuadrilla, ids_sector}`), reemplaza la asignación del día
+  con `guardar_asignacion(...)` (un sector solo puede pertenecer a una cuadrilla
+  por día) y devuelve el proceso recalculado
+  (`app/api/routes_despachos.py:190-204`; `app/services/despacho.py:233-263`).
+- `POST /despachos/procesar` responde **409** si ya hay despachos
+  `PUBLICADO`/`CERRADO` para la fecha; si `reemplazar` es verdadero (por defecto)
+  borra los borradores del día, guarda la asignación recibida y genera los
+  despachos con `guardar_propuesta(...)` (`app/api/routes_despachos.py:207-260`).
 
 ### Especiales, agenda y seguimiento (app/api/routes_especiales.py)
 
@@ -434,13 +488,13 @@ token JWT (`app/tests/test_contratos.py:139-143`).
 
 - **200** es el código por defecto de las operaciones de lectura y de las
   actualizaciones que devuelven cuerpo (`app/api/routes_casos.py:89`,
-  `app/api/routes_config.py:112`).
+  `app/api/routes_config.py:113`).
 - **201** se declara explícitamente en las creaciones, por ejemplo
   `POST /api/v1/casos` (`app/api/routes_casos.py:218`),
-  `POST /api/v1/despachos` (`app/api/routes_despachos.py:76`) y
-  `POST /api/v1/ingesta` (`app/api/routes_ingesta.py:119`).
+  `POST /api/v1/despachos` (`app/api/routes_despachos.py:79`) y
+  `POST /api/v1/ingesta` (`app/api/routes_ingesta.py:138`).
 - **204** se usa en los borrados/desactivaciones, por ejemplo
-  `DELETE /api/v1/central/{id_central}` (`app/api/routes_config.py:127`) y
+  `DELETE /api/v1/central/{id_central}` (`app/api/routes_config.py:128`) y
   `DELETE /api/v1/citas/{id_cita}` (`app/api/routes_especiales.py:355`).
 
 ### 401
@@ -449,9 +503,9 @@ Credenciales inválidas o token expirado. La constante reutilizable vive en
 `app/api/deps.py:22-26` y se lanza cuando falta la credencial (`:33-34`), el token
 no decodifica (`:35-38`), falta `sub` (`:40-42`) o el usuario no existe/está
 inactivo (`:44-46`). En el login, un P00 inexistente o una clave incorrecta
-también devuelven 401 (`app/api/routes_auth.py:86-88,105-109`), y `unlock` /
+también devuelven 401 (`app/api/routes_auth.py:88-90,107-111`), y `unlock` /
 `reset-password` devuelven 401 si las palabras no coinciden
-(`app/api/routes_auth.py:180,199`). La prueba de contrato lo verifica en
+(`app/api/routes_auth.py:339,358`). La prueba de contrato lo verifica en
 `app/tests/test_contratos.py:101-104`.
 
 ### 403
@@ -459,7 +513,7 @@ también devuelven 401 (`app/api/routes_auth.py:86-88,105-109`), y `unlock` /
 Operación no permitida para el rol. `require_roles` devuelve 403 cuando el usuario
 no tiene rol asociado o su rol no está en la lista permitida
 (`app/api/deps.py:60-70`). Otros casos: usuario inactivo en el login
-(`app/api/routes_auth.py:90`), intento de forzar un solapamiento de citas sin ser
+(`app/api/routes_auth.py:92`), intento de forzar un solapamiento de citas sin ser
 SUPER (`app/api/routes_especiales.py:320,347`) y secreto inválido del webhook de
 Telegram (`app/api/routes_alertas.py:265`). La prueba negativa de escritura con rol
 TECNICO está en `app/tests/test_contratos.py:107-111` y la matriz de RBAC en
@@ -469,20 +523,20 @@ TECNICO está en `app/tests/test_contratos.py:107-111` y la matriz de RBAC en
 
 Recurso inexistente. Se centraliza en los auxiliares `_o_404` de cada módulo:
 casos (`app/api/routes_casos.py:29-33`), configuración
-(`app/api/routes_config.py:62-66`), despachos (`app/api/routes_despachos.py:45-49`)
+(`app/api/routes_config.py:63-67`), despachos (`app/api/routes_despachos.py:45-49`)
 y fallas masivas (`app/api/routes_alertas.py:35-39`). También se devuelve 404 en
 `auth/unlock`, `auth/reset-password` y `auth/setup` cuando el P00 no existe
-(`app/api/routes_auth.py:139,175,194`), y en las validaciones de claves foráneas
+(`app/api/routes_auth.py:159,334,353`), y en las validaciones de claves foráneas
 de especiales (`app/api/routes_especiales.py:144,149,179,192,311,313,315,338,361,
 396,418,439`). La prueba de contrato está en `app/tests/test_contratos.py:114-117`.
 
 ### 409
 
 Conflicto de unicidad o de estado. Casos verificados: `IntegrityError` traducido en
-configuración (`app/api/routes_config.py:69-74`), `id_averia` duplicado en el alta
+configuración (`app/api/routes_config.py:70-75`), `id_averia` duplicado en el alta
 manual (`app/api/routes_casos.py:235-236`), despacho ya existente para la fecha
-(`app/api/routes_despachos.py:105-109`), caso ya asignado o perteneciente a la
-cuadrilla 0 (`app/api/routes_despachos.py:216-224`), caso especial con `id_averia`
+(`app/api/routes_despachos.py:103-112`), caso ya asignado o perteneciente a la
+cuadrilla 0 (`app/api/routes_despachos.py:305-313`), caso especial con `id_averia`
 repetido (`app/api/routes_especiales.py:77-78`) y solapamiento de citas
 (`app/api/routes_especiales.py:271-277`).
 
@@ -492,7 +546,7 @@ Validación. FastAPI devuelve 422 automáticamente ante cuerpos que no cumplen e
 esquema Pydantic; la prueba de contrato comprueba que el `detail` es una lista
 (`app/tests/test_contratos.py:120-124`). Además hay 422 explícitos: búsqueda sin
 criterio (`app/api/routes_casos.py:181-185`), clave y confirmación distintas
-(`app/api/routes_auth.py:134-135`), `id_solicitante` y `crear_solicitante`
+(`app/api/routes_auth.py:143-144`), `id_solicitante` y `crear_solicitante`
 simultáneos (`app/api/routes_especiales.py:131-135`), cita sin `id_caso` ni
 `id_caso_especial` (`app/api/routes_especiales.py:308-309`) y `periodo` inválido
 en reportes (`app/api/routes_monitoreo.py:107`).
@@ -501,17 +555,17 @@ en reportes (`app/api/routes_monitoreo.py:107`).
 
 Cuenta bloqueada. `get_current_user` devuelve 423 si `usuario.bloqueado`
 (`app/api/deps.py:47-48`). En el login, un usuario bloqueado recibe 423
-(`app/api/routes_auth.py:91-95`) y un fallo que alcanza `max_intentos = 3`
+(`app/api/routes_auth.py:93-97`) y un fallo que alcanza `max_intentos = 3`
 (`app/core/config.py:31`) bloquea la cuenta y responde 423 con el saldo de
-intentos en `X-Intentos-Restantes` (`app/api/routes_auth.py:98-109`).
+intentos en `X-Intentos-Restantes` (`app/api/routes_auth.py:100-111`).
 
 ### 429
 
 Demasiados intentos. El limitador en memoria `_rate_limit` cuenta por clave
 (`p00|IP`) dentro de una ventana y lanza 429 con el detalle «Demasiados intentos.
-Espere un momento.» (`app/api/routes_auth.py:39-49`). Los valores por defecto son
+Espere un momento.» (`app/api/routes_auth.py:41-51`). Los valores por defecto son
 **10 intentos en 60 s** (`app/core/config.py:34-35`), aplicados en el login con la
-IP del cliente (`app/api/routes_auth.py:82-83`).
+IP del cliente (`app/api/routes_auth.py:84-85`).
 
 ## Convenciones
 
@@ -527,9 +581,9 @@ claves (`app/tests/test_contratos.py:146-150`).
 
 Los demás listados no usan `page`: emplean un tope `limite`
 (`/api/v1/ingesta/lotes`, 1–200 y por defecto 50,
-`app/api/routes_ingesta.py:175-179`; `/api/v1/notificaciones`, 1–500 y por defecto
+`app/api/routes_ingesta.py:194-198`; `/api/v1/notificaciones`, 1–500 y por defecto
 100, `app/api/routes_alertas.py:169-176`) o devuelven la colección completa
-ordenada (por ejemplo, `/api/v1/central`, `app/api/routes_config.py:86-89`). La
+ordenada (por ejemplo, `/api/v1/central`, `app/api/routes_config.py:87-90`). La
 búsqueda de PANEL acota con `limite` (1–100, por defecto 20,
 `app/api/routes_casos.py:179`).
 
@@ -541,12 +595,12 @@ Los filtros se declaran como *query params* tipados. Los más relevantes:
 |---|---|---|
 | `GET /api/v1/casos` | `q`, `id_averia`, `telefono`, `id_central`, `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, `tipo_caso`, `categoria`, `origen`, `en_gestion_supervisor`, `es_falla_masiva`, `desde`, `hasta` | `app/api/routes_casos.py:93-109` |
 | `GET /api/v1/casos/buscar` | `q`, `id_averia`, `telefono`, `limite` | `app/api/routes_casos.py:176-179` |
-| `GET /api/v1/central` | `solo_activas` | `app/api/routes_config.py:84` |
-| `GET /api/v1/sectores` | `id_central`, `solo_activos` | `app/api/routes_config.py:143-144` |
-| `GET /api/v1/tecnicos` | `id_central`, `status` | `app/api/routes_config.py:242-243` |
-| `GET /api/v1/cuadrillas` | `id_central`, `solo_activas` | `app/api/routes_config.py:361-362` |
-| `GET /api/v1/catalogos/metodos` | `dominio` | `app/api/routes_config.py:507` |
-| `GET /api/v1/despachos` | `fecha`, `id_central` | `app/api/routes_despachos.py:119-120` |
+| `GET /api/v1/central` | `solo_activas` | `app/api/routes_config.py:85` |
+| `GET /api/v1/sectores` | `id_central`, `solo_activos` | `app/api/routes_config.py:144-145` |
+| `GET /api/v1/tecnicos` | `id_central`, `status` | `app/api/routes_config.py:293-294` |
+| `GET /api/v1/cuadrillas` | `id_central`, `solo_activas` | `app/api/routes_config.py:412-413` |
+| `GET /api/v1/catalogos/metodos` | `dominio` | `app/api/routes_config.py:558` |
+| `GET /api/v1/despachos` | `fecha`, `id_central` | `app/api/routes_despachos.py:122-123` |
 | `GET /api/v1/citas` | `desde`, `hasta`, `id_cuadrilla`, `estado` | `app/api/routes_especiales.py:284-287` |
 | `GET /api/v1/seguimiento` | `id_caso`, `estado`, `instancia_destino` | `app/api/routes_especiales.py:373-375` |
 | `GET /api/v1/fallas-masivas` | `estado`, `id_central`, `solo_activas` | `app/api/routes_alertas.py:50-52` |
@@ -568,7 +622,7 @@ En la práctica, cada archivo de rutas define una única dependencia de escritur
 
 | Archivo | Dependencia de escritura | Línea |
 |---|---|---|
-| `app/api/routes_config.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_config.py:59` |
+| `app/api/routes_config.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_config.py:60` |
 | `app/api/routes_ingesta.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_ingesta.py:23` |
 | `app/api/routes_casos.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_casos.py:26` |
 | `app/api/routes_despachos.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_despachos.py:42` |
@@ -602,10 +656,11 @@ excepción, se registra el fallo con el mismo `request_id` y se re-lanza
 | `GET /health` | *Liveness* para el orquestador; no toca la BD | `app/api/routes_health.py:28-31` |
 | `GET /ready` | *Readiness*; consulta PostgreSQL y responde 503 si falla | `app/api/routes_health.py:34-57` |
 | `GET /api/v1/info` | Metadatos del servicio (nombre, versión, entorno, `/docs`) | `app/api/routes_health.py:17-25` |
-| `POST /api/v1/auth/login` | Emisión inicial del token | `app/api/routes_auth.py:79` |
-| `POST /api/v1/auth/setup` | Primer inicio del usuario; el P00 lo crea antes el supervisor | `app/api/routes_auth.py:127` |
-| `POST /api/v1/auth/unlock` | Recuperación de cuenta bloqueada con 3 de 12 palabras | `app/api/routes_auth.py:171` |
-| `POST /api/v1/auth/reset-password` | Restablecimiento de clave con 3 de 12 palabras | `app/api/routes_auth.py:190` |
+| `POST /api/v1/auth/login` | Emisión inicial del token | `app/api/routes_auth.py:81` |
+| `POST /api/v1/auth/setup` | Primer acceso; **crea la cuenta** y el P00 lo registra antes el supervisor (**D-67**) | `app/api/routes_auth.py:129` |
+| `GET /api/v1/auth/primer-acceso` | Comprueba el P00 y su estado antes del alta (**D-67**) | `app/api/routes_auth.py:219` |
+| `POST /api/v1/auth/unlock` | Recuperación de cuenta bloqueada con 3 de 12 palabras | `app/api/routes_auth.py:330` |
+| `POST /api/v1/auth/reset-password` | Restablecimiento de clave con 3 de 12 palabras | `app/api/routes_auth.py:349` |
 
 ### Rutas sin JWT pero con secreto propio
 
@@ -624,10 +679,11 @@ valores ni credenciales en este manual.
 
 ### Resto de la superficie
 
-Descontadas las siete rutas públicas por diseño y las dos rutas con secreto
-propio, las **94 operaciones restantes** exigen token Bearer: o bien con la
+Descontadas las **ocho rutas públicas por diseño** y las dos rutas con secreto
+propio, las **99 operaciones restantes** exigen token Bearer: o bien con la
 dependencia `get_current_user` (lectura) o con `require_roles("ADMIN",
-"SUPERVISOR")` (escritura). La prueba
+"SUPERVISOR")` (escritura), o con `require_roles("SUPER")` en el caso singular de
+`POST /api/v1/auth/palabras/{p00}/regenerar`. La prueba
 `test_las_rutas_privadas_exigen_seguridad` enumera la lista exacta de rutas
 públicas y comprueba que el resto declare seguridad en OpenAPI
 (`app/tests/test_contratos.py:77-95`).

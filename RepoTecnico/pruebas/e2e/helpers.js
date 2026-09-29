@@ -11,6 +11,7 @@ const USUARIOS = {
   admin: { p00: 'E2EADM', clave: 'E2e.Clave.2026', rol: 'ADMIN' },
   supervisor: { p00: 'E2ESUP', clave: 'E2e.Clave.2026', rol: 'SUPERVISOR' },
   tecnico: { p00: 'E2ETEC', clave: 'E2e.Clave.2026', rol: 'TECNICO' },
+  super: { p00: 'E2ESUPR', clave: 'E2e.Clave.2026', rol: 'SUPER' },
 };
 
 /** Escribe un valor en un input/textarea (`fill`) o elige una opción de un `select`. */

@@ -136,9 +136,13 @@ aspecto está señalado como riesgo en la documentación de infraestructura.
 | Backups / PITR / protección de borrado | ❌ / ❌ / ❌ |
 
 El esquema completo de la base (`RepoTecnico/db/schema.sql`, 38 821 bytes) se aplicó el 2026-09-26
-en una sola transacción y sin errores. La verificación posterior confirmó 35 tablas, las extensiones
+en una sola transacción y sin errores. La verificación posterior confirmó 35 tablas (el DDL vigente
+define 36 desde el ciclo D-66), las extensiones
 `pgcrypto 1.3` y `pg_trgm 1.6`, seguridad por fila (RLS) en las tablas `caso` y `despacho`, 14
-disparadores `actualizado_en`, 2 índices trigram y los datos iniciales previstos.
+disparadores `actualizado_en`, 2 índices trigram y los datos iniciales previstos. El ciclo **D-66**
+agregó la tabla `cuadrilla_sector_dia` (asignación diaria de sectores a cuadrillas), por lo que el
+**esquema vigente suma 36 tablas**; para verlas en la base hay que volver a aplicar el script, que
+es idempotente.
 
 ### base ggtov2 y usuario ggtov2_app
 
@@ -479,7 +483,7 @@ Respuestas verificadas en producción al cierre del despliegue:
 | `GET /` | SPA React (`index.html` + `/assets/*`); enlaces profundos vía `SPAStaticFiles` |
 | `GET /api/v1/info` | `{"servicio":"GGTO API","version":"0.2.0","entorno":"production",...}` |
 | `GET /health` | `{"status":"ok"}` |
-| `GET /ready` | `{"status":"ready","base":"ggtov2","postgres":"PostgreSQL 15.18","tablas":35}` |
+| `GET /ready` | `{"status":"ready","base":"ggtov2","postgres":"PostgreSQL 15.18","tablas":36}` |
 | `GET /api/v1/resumen` | 🔒 requiere token |
 
 > Discrepancia entre documentos: la respuesta de `/api/v1/info` consignada en el documento de
@@ -494,8 +498,8 @@ Comprobaciones adicionales recomendadas tras cualquier despliegue:
 1. **Registros sin errores de autenticación** contra Cloud SQL: la aplicación registra cada petición
    con `request_id`, método, ruta, código y duración mediante `ObservabilidadMiddleware`, y el
    formato de registro incluye marca de tiempo, nivel y nombre del registrador.
-2. **Estado de los datos:** que `/ready` reporte `tablas: 35` y PostgreSQL `15.18`, coherentes con el
-   esquema desplegado.
+2. **Estado de los datos:** que `/ready` reporte `tablas: 36` y PostgreSQL `15.18`, coherentes con el
+   esquema desplegado (36 tablas desde la incorporación de `cuadrilla_sector_dia` en D-66).
 3. **Prueba de escritura:** un alta manual de caso debe generar un identificador
    `REF-<CENTRAL>-<NNNNNN>` mediante la función `generar_id_averia_ref`.
 4. **Revisión de estado** con `gcloud run revisions list`, para confirmar que la nueva revisión

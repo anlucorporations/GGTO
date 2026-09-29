@@ -9,8 +9,10 @@
 ## Empezar en 5 minutos
 
 1. **Entiende la idea general.** La base de datos es como un archivador gigante.
-   Dentro tiene 35 «cajones» llamados **tablas** (por ejemplo, `caso`, `despacho`
-   o `cuadrilla`). Cada tabla guarda un tipo de información distinto.
+   Dentro tiene 36 «cajones» llamados **tablas** (por ejemplo, `caso`, `despacho`
+   o `cuadrilla`). Cada tabla guarda un tipo de información distinto. La tabla
+   número 36, `cuadrilla_sector_dia`, es la que guarda qué sectores atiende cada
+   cuadrilla cada día (ciclo D-66).
 2. **Ubica el centro del sistema.** Casi todo gira alrededor de la tabla `caso`:
    allí se registra cada avería o solicitud de trabajo, con su dirección,
    teléfono y estado. Empieza por ahí para entender el resto.
@@ -38,7 +40,7 @@ Ficha de identificación del sistema y de la base que describe este manual:
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor de base de datos | PostgreSQL 15 (instancia compartida `truekeate-main:southamerica-east1:truekeate-db-dev`) |
 | Base | `ggtov2` · usuario de aplicación `ggtov2_app` |
-| Script de creación (DDL) | `RepoTecnico/db/schema.sql` — 803 líneas y **35 tablas** |
+| Script de creación (DDL) | `RepoTecnico/db/schema.sql` — 820 líneas y **36 tablas** |
 | Mapeo a objetos de Python (ORM) | `app/models/*.py` (SQLAlchemy 2.x declarativo) |
 | Diccionario de origen | `RepoTecnico/diccionario_datos.md` (Borrador v0.2, «sujeto a validación») |
 | Esquema de pruebas | La variable `DB_SCHEMA` agrega `options=-csearch_path=<esquema>,public` (en `app/core/db.py`) |
@@ -62,9 +64,9 @@ y el script real difieren, la diferencia se señala en la sección **Fuentes →
 Divergencias detectadas**. Lo que no se pudo verificar se marca como
 «pendiente de confirmar».
 
-### Las 35 tablas del esquema
+### Las 36 tablas del esquema
 
-El script de creación contiene **35 sentencias `CREATE TABLE`** (conteo directo
+El script de creación contiene **36 sentencias `CREATE TABLE`** (conteo directo
 sobre `RepoTecnico/db/schema.sql`). Se agrupan en siete dominios funcionales:
 
 | Dominio | Tablas | Nº |
@@ -73,27 +75,27 @@ sobre `RepoTecnico/db/schema.sql`). Se agrupan en siete dominios funcionales:
 | Configuración | `central`, `sector`, `sector_direccion`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta`, `causa`, `catalogo_metodo`, `configuracion` | 12 |
 | Operación | `ingesta_lote`, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 7 |
 | Especiales | `solicitante`, `caso_especial`, `seguimiento`, `cita` | 4 |
-| Despacho | `despacho`, `despacho_caso`, `falla_masiva` | 3 |
+| Despacho | `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | 4 |
 | Insumos (v2) | `insumo`, `orden_material`, `orden_material_detalle`, `inventario_movimiento` | 4 |
 | Notificaciones | `notificacion` | 1 |
-| **Total** | | **35** |
+| **Total** | | **36** |
 
 <!-- GENERAR_IMAGEN: dominios-datos.svg -->
 ```mermaid
 flowchart TB
-    BASE["Base de datos GGTO<br/>35 tablas en 7 dominios"]
+    BASE["Base de datos GGTO<br/>36 tablas en 7 dominios"]
     BASE --> D1["Seguridad y acceso<br/>4 tablas"]
     BASE --> D2["Configuración<br/>12 tablas"]
     BASE --> D3["Operación<br/>7 tablas"]
     BASE --> D4["Especiales<br/>4 tablas"]
-    BASE --> D5["Despacho<br/>3 tablas"]
+    BASE --> D5["Despacho<br/>4 tablas"]
     BASE --> D6["Insumos (v2)<br/>4 tablas"]
     BASE --> D7["Notificaciones<br/>1 tabla"]
     D1 --> T1["rol · usuario · dispositivo_seguridad · auditoria"]
     D2 --> T2["central · sector · sector_direccion · tecnico · flota · herramienta · cuadrilla · cuadrilla_tecnico · cuadrilla_herramienta · causa · catalogo_metodo · configuracion"]
     D3 --> T3["ingesta_lote · caso · caso_estado_hist · actividad · evidencia · incidente · sincronizacion"]
     D4 --> T4["solicitante · caso_especial · seguimiento · cita"]
-    D5 --> T5["despacho · despacho_caso · falla_masiva"]
+    D5 --> T5["despacho · despacho_caso · cuadrilla_sector_dia · falla_masiva"]
     D6 --> T6["insumo · orden_material · orden_material_detalle · inventario_movimiento"]
     D7 --> T7["notificacion"]
 ```
@@ -171,11 +173,11 @@ Notas de tipado verificadas:
   `varchar`.
 - `dispositivo_seguridad.palabras_hash` es `jsonb` con valor inicial `'[]'`;
   el modelo de Python lo expone como una lista.
-- Los modelos de Python mapean **27 de las 35 tablas**. Las ocho tablas
+- Los modelos de Python mapean **29 de las 36 tablas**. Las siete tablas
   restantes (`actividad`, `evidencia`, `incidente`, `sincronizacion`, `insumo`,
-  `orden_material_detalle`, `inventario_movimiento`, `auditoria`) no tienen
-  clase propia y solo existen en el script de la base (ver **Fuentes →
-  Cobertura del ORM**).
+  `orden_material_detalle`, `inventario_movimiento`) no tienen clase propia y
+  solo existen en el script de la base (ver **Fuentes → Cobertura del ORM**).
+  La tabla `auditoria` **sí** tiene modelo desde el ciclo D-67.
 
 ### Campos de auditoría (creado_en, actualizado_en)
 
@@ -288,8 +290,8 @@ de cada usuario.
 #### `auditoria` — bitácora de acciones
 
 Para qué sirve: es el libro de acciones del sistema, con el estado anterior y
-posterior de cada cambio, guardado en formato JSON (`jsonb`). No tiene modelo
-de Python.
+posterior de cada cambio, guardado en formato JSON (`jsonb`). Desde el ciclo
+D-67 sí tiene modelo de Python (`Auditoria`, en `app/models/entities.py`).
 
 | Campo | Tipo | Clave / Nulo | Para qué sirve |
 |---|---|---|---|
@@ -303,9 +305,21 @@ de Python.
 | `ip` | `inet` | — | Dirección de origen. |
 | `fecha_hora` | `timestamptz` | NN, `now()` | Momento del evento. |
 
-Índice de apoyo: `ix_auditoria_fecha` sobre `auditoria (fecha_hora)`. No se
-encontró código en `app/` que escriba en `auditoria`: **pendiente de
-confirmar** su punto de registro efectivo.
+Índice de apoyo: `ix_auditoria_fecha` sobre `auditoria (fecha_hora)`.
+
+**Quién escribe en esta tabla (D-67).** El ciclo D-67 conectó la bitácora con
+dos acciones del alta y la recuperación de técnicos:
+
+| Acción registrada | Cuándo ocurre | Qué guarda |
+|---|---|---|
+| `ALTA_PRIMER_ACCESO` | El técnico crea su cuenta desde «Primer acceso (obtener clave)» | El P00, el correo y la versión de las palabras |
+| `REGENERAR_PALABRAS` | El Super Usuario genera un juego nuevo desde el botón «Palabras» | Quién lo pidió, para qué P00, la versión anterior y la nueva |
+
+> Nota de fidelidad: el modelo `Auditoria` del programa no mapea la columna
+> `ip`. En la regeneración, la dirección de origen se guarda dentro de
+> `datos_antes` (con el nombre `ip_solicitante`), no en la columna `ip`. Que la
+> columna física quede sin usar queda **pendiente de confirmar** como decisión
+> de diseño.
 
 ### Configuración
 
@@ -771,6 +785,28 @@ visita y el tipo de asignación.
 Restricción `UNIQUE (id_despacho, id_caso)`: un caso aparece una sola vez por
 despacho. Índices `ix_despacho_caso_caso` e `ix_despacho_caso_despacho`.
 
+#### `cuadrilla_sector_dia` — asignación diaria de sectores
+
+Para qué sirve: guarda **qué sectores atiende cada cuadrilla cada día**. Es la
+tabla nueva del ciclo **D-66**; el supervisor puede cambiarla cuando quiera y el
+despacho reparte los casos según ella. No tiene modelo de relación con
+`despacho`: es una lista de trabajo previa al reparto.
+
+| Campo | Tipo | Clave / Nulo | Para qué sirve |
+|---|---|---|---|
+| `id_asignacion` | `bigserial` | PK, NN | Identificador de la fila. |
+| `id_central` | `integer` | FK→`central`, NN | Central de la jornada. |
+| `fecha` | `date` | NN | Día al que corresponde la asignación. |
+| `id_cuadrilla` | `integer` | FK→`cuadrilla` con borrado en cascada, NN | Cuadrilla que atiende. |
+| `id_sector` | `integer` | FK→`sector` con borrado en cascada, NN | Sector asignado. |
+| `usuario` | `varchar(20)` | FK→`usuario.p00` | Quién guardó la asignación. |
+| `creado_en` | `timestamptz` | NN, `now()` | Cuándo se guardó. |
+
+Restricción `UNIQUE (fecha, id_sector)`: **un sector pertenece como máximo a una
+cuadrilla por día**. Índice `ix_cuadrilla_sector_dia_fecha` sobre `(fecha,
+id_cuadrilla)`. Si no hay ninguna fila para la fecha, el sistema propone una
+asignación equilibrada sin guardarla hasta que el usuario procese el despacho.
+
 #### `falla_masiva` — evento de falla por concentración
 
 Para qué sirve: agrupa casos concentrados y documenta su planificación.
@@ -953,34 +989,39 @@ de requerimiento asociados y las cinco dudas abiertas.
 
 ### `RepoTecnico/db/schema.sql`
 
-Fuente normativa de la estructura física: 35 tablas, 2 extensiones, 2 funciones
+Fuente normativa de la estructura física: 36 tablas, 2 extensiones, 2 funciones
 (`set_actualizado_en` y `generar_id_averia_ref`), 1 secuencia (`seq_caso_ref`),
-21 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
+22 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
 idempotentes. Es el archivo que se aplica con
 `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f RepoTecnico/db/schema.sql`.
 
 ### Cobertura del ORM (`app/models/`)
 
-Los modelos de Python mapean 27 tablas mediante 6 módulos:
+Los modelos de Python mapean 29 tablas mediante 6 módulos:
 
-- `entities.py`: `rol`, `central`, `tecnico`, `usuario`, `dispositivo_seguridad`.
+- `entities.py`: `rol`, `central`, `tecnico`, `usuario`, `dispositivo_seguridad`,
+  `auditoria`.
 - `caso_entities.py`: `ingesta_lote`, `caso`, `caso_estado_hist`.
 - `config_entities.py`: `sector`, `sector_direccion`, `flota`, `herramienta`,
   `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta`, `causa`,
   `catalogo_metodo`, `configuracion`.
-- `despacho_entities.py`: `despacho`, `despacho_caso`, `notificacion`,
-  `falla_masiva`.
+- `despacho_entities.py`: `despacho`, `despacho_caso`, `cuadrilla_sector_dia`,
+  `notificacion`, `falla_masiva`.
 - `especiales_entities.py`: `solicitante`, `caso_especial`, `cita`,
   `seguimiento`.
 - `insumos_entities.py`: `orden_material`.
 
-Las ocho tablas sin modelo son `actividad`, `evidencia`, `incidente`,
-`sincronizacion`, `insumo`, `orden_material_detalle`, `inventario_movimiento` y
-`auditoria`; una búsqueda en el código Python confirma que tampoco se consultan
+Las siete tablas sin modelo son `actividad`, `evidencia`, `incidente`,
+`sincronizacion`, `insumo`, `orden_material_detalle` e `inventario_movimiento`;
+una búsqueda en el código Python confirma que tampoco se consultan
 con SQL directo. Es decir, en la v1 esas tablas existen en la base pero ningún
 flujo de la aplicación las escribe: **pendiente de confirmar** si corresponden
 a módulos diferidos (app móvil y v2 de insumos) o a trabajo aún no implementado.
 Recuerda que la app móvil Flutter no está desarrollada (Ciclo 8 pospuesto).
+
+La tabla `auditoria` era una de esas tablas sin modelo, pero dejó de serlo en el
+ciclo D-67: ahora tiene la clase `Auditoria` y la aplicación la escribe al dar de
+alta una cuenta y al regenerar las palabras de seguridad.
 
 ### Divergencias detectadas
 

@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#alcance-funcional-rf-02-rf-03-rf-04-rf-38" data-target="alcance-funcional-rf-02-rf-03-rf-04-rf-38"><span class="tn">2.1</span> Alcance funcional (RF-02, RF-03, RF-04, RF-38)</a><span class="pag"></span></li><li class="n3"><a href="#estructura-del-router-y-convenciones" data-target="estructura-del-router-y-convenciones"><span class="tn">2.2</span> Estructura del router y convenciones</a><span class="pag"></span></li><li class="n3"><a href="#rbac-de-escritura" data-target="rbac-de-escritura"><span class="tn">2.3</span> RBAC de escritura</a><span class="pag"></span></li><li class="n3"><a href="#desactivacion-logica-soft-delete" data-target="desactivacion-logica-soft-delete"><span class="tn">2.4</span> Desactivación lógica (soft delete)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints-por-recurso" data-target="endpoints-por-recurso"><span class="tn">3</span> Endpoints por recurso</a><span class="pag"></span><ul><li class="n3"><a href="#central" data-target="central"><span class="tn">3.1</span> central</a><span class="pag"></span></li><li class="n3"><a href="#sectores-y-sector-direccion" data-target="sectores-y-sector-direccion"><span class="tn">3.2</span> sectores y sector_direccion</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos" data-target="tecnicos"><span class="tn">3.3</span> tecnicos</a><span class="pag"></span></li><li class="n3"><a href="#flota" data-target="flota"><span class="tn">3.4</span> flota</a><span class="pag"></span></li><li class="n3"><a href="#cuadrillas-integrantes-y-herramientas" data-target="cuadrillas-integrantes-y-herramientas"><span class="tn">3.5</span> cuadrillas (integrantes y herramientas)</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-causas-y-metodos" data-target="catalogos-causas-y-metodos"><span class="tn">3.6</span> catalogos (causas y metodos)</a><span class="pag"></span></li><li class="n3"><a href="#configuracion-clave-valor" data-target="configuracion-clave-valor"><span class="tn">3.7</span> configuracion (clave/valor)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#esquemas-de-entrada-salida-app-schemas-config-py" data-target="esquemas-de-entrada-salida-app-schemas-config-py"><span class="tn">4</span> Esquemas de entrada/salida (<code>app/schemas/config.py</code>)</a><span class="pag"></span><ul><li class="n3"><a href="#central-y-sectores" data-target="central-y-sectores"><span class="tn">4.1</span> Central y sectores</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos-flota-y-cuadrillas" data-target="tecnicos-flota-y-cuadrillas"><span class="tn">4.2</span> Técnicos, flota y cuadrillas</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-y-parametros" data-target="catalogos-y-parametros"><span class="tn">4.3</span> Catálogos y parámetros</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#modelos-y-tablas" data-target="modelos-y-tablas"><span class="tn">5</span> Modelos y tablas</a><span class="pag"></span><ul><li class="n3"><a href="#app-models-config-entities-py" data-target="app-models-config-entities-py"><span class="tn">5.1</span> <code>app/models/config_entities.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-models-entities-py" data-target="app-models-entities-py"><span class="tn">5.2</span> <code>app/models/entities.py</code></a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-db-schema-sql" data-target="repotecnico-db-schema-sql"><span class="tn">5.3</span> <code>RepoTecnico/db/schema.sql</code></a><span class="pag"></span></li><li class="n3"><a href="#restricciones-e-indices" data-target="restricciones-e-indices"><span class="tn">5.4</span> Restricciones e índices</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rbac-de-escritura-de-configuracion" data-target="rbac-de-escritura-de-configuracion"><span class="tn">6</span> RBAC de escritura de configuración</a><span class="pag"></span><ul><li class="n3"><a href="#require-roles-admin-supervisor" data-target="require-roles-admin-supervisor"><span class="tn">6.1</span> require_roles ADMIN/SUPERVISOR</a><span class="pag"></span></li><li class="n3"><a href="#lectura-autenticada" data-target="lectura-autenticada"><span class="tn">6.2</span> Lectura autenticada</a><span class="pag"></span></li><li class="n3"><a href="#bypass-super" data-target="bypass-super"><span class="tn">6.3</span> Bypass SUPER</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#validez-y-errores-409-404-422" data-target="validez-y-errores-409-404-422"><span class="tn">7</span> Validez y errores (409/404/422)</a><span class="pag"></span><ul><li class="n3"><a href="#404-not-found" data-target="404-not-found"><span class="tn">7.1</span> 404 Not Found</a><span class="pag"></span></li><li class="n3"><a href="#409-conflict" data-target="409-conflict"><span class="tn">7.2</span> 409 Conflict</a><span class="pag"></span></li><li class="n3"><a href="#422-unprocessable-entity" data-target="422-unprocessable-entity"><span class="tn">7.3</span> 422 Unprocessable Entity</a><span class="pag"></span></li><li class="n3"><a href="#201-y-204" data-target="201-y-204"><span class="tn">7.4</span> 201 y 204</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-de-configuracion" data-target="pagina-web-de-configuracion"><span class="tn">8</span> Página web de configuración</a><span class="pag"></span><ul><li class="n3"><a href="#rutas-y-navegacion-app-web-src-app-tsx" data-target="rutas-y-navegacion-app-web-src-app-tsx"><span class="tn">8.1</span> Rutas y navegación (<code>app/web/src/App.tsx</code>)</a><span class="pag"></span></li><li class="n3"><a href="#centrales-tsx" data-target="centrales-tsx"><span class="tn">8.2</span> Centrales.tsx</a><span class="pag"></span></li><li class="n3"><a href="#sectores-tsx" data-target="sectores-tsx"><span class="tn">8.3</span> Sectores.tsx</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos-tsx" data-target="tecnicos-tsx"><span class="tn">8.4</span> Tecnicos.tsx</a><span class="pag"></span></li><li class="n3"><a href="#flota-tsx" data-target="flota-tsx"><span class="tn">8.5</span> Flota.tsx</a><span class="pag"></span></li><li class="n3"><a href="#cuadrillas-tsx" data-target="cuadrillas-tsx"><span class="tn">8.6</span> Cuadrillas.tsx</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-tsx" data-target="catalogos-tsx"><span class="tn">8.7</span> Catalogos.tsx</a><span class="pag"></span></li><li class="n3"><a href="#parametros-tsx" data-target="parametros-tsx"><span class="tn">8.8</span> Parametros.tsx</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">9</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#app-tests-test-config-py" data-target="app-tests-test-config-py"><span class="tn">9.1</span> <code>app/tests/test_config.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-tests-test-config-db-py" data-target="app-tests-test-config-db-py"><span class="tn">9.2</span> <code>app/tests/test_config_db.py</code></a><span class="pag"></span></li><li class="n3"><a href="#aislamiento-por-esquema" data-target="aislamiento-por-esquema"><span class="tn">9.3</span> Aislamiento por esquema</a><span class="pag"></span></li><li class="n3"><a href="#ci" data-target="ci"><span class="tn">9.4</span> CI</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#alcance-funcional-rf-02-rf-03-rf-04-rf-38" data-target="alcance-funcional-rf-02-rf-03-rf-04-rf-38"><span class="tn">2.1</span> Alcance funcional (RF-02, RF-03, RF-04, RF-38)</a><span class="pag"></span></li><li class="n3"><a href="#estructura-del-router-y-convenciones" data-target="estructura-del-router-y-convenciones"><span class="tn">2.2</span> Estructura del router y convenciones</a><span class="pag"></span></li><li class="n3"><a href="#rbac-de-escritura" data-target="rbac-de-escritura"><span class="tn">2.3</span> RBAC de escritura</a><span class="pag"></span></li><li class="n3"><a href="#desactivacion-logica-soft-delete" data-target="desactivacion-logica-soft-delete"><span class="tn">2.4</span> Desactivación lógica (soft delete)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints-por-recurso" data-target="endpoints-por-recurso"><span class="tn">3</span> Endpoints por recurso</a><span class="pag"></span><ul><li class="n3"><a href="#central" data-target="central"><span class="tn">3.1</span> central</a><span class="pag"></span></li><li class="n3"><a href="#sectores-y-sector-direccion" data-target="sectores-y-sector-direccion"><span class="tn">3.2</span> sectores y sector_direccion</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos" data-target="tecnicos"><span class="tn">3.3</span> tecnicos</a><span class="pag"></span><ul><li class="n4"><a href="#la-columna-cuenta-d-67" data-target="la-columna-cuenta-d-67"><span class="tn">3.3.1</span> La columna Cuenta (D-67)</a><span class="pag"></span></li><li class="n4"><a href="#el-boton-palabras-solo-super-usuario-d-67" data-target="el-boton-palabras-solo-super-usuario-d-67"><span class="tn">3.3.2</span> El botón «Palabras» (solo Super Usuario, D-67)</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#flota" data-target="flota"><span class="tn">3.4</span> flota</a><span class="pag"></span></li><li class="n3"><a href="#cuadrillas-integrantes-y-herramientas" data-target="cuadrillas-integrantes-y-herramientas"><span class="tn">3.5</span> cuadrillas (integrantes y herramientas)</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-causas-y-metodos" data-target="catalogos-causas-y-metodos"><span class="tn">3.6</span> catalogos (causas y metodos)</a><span class="pag"></span></li><li class="n3"><a href="#configuracion-clave-valor" data-target="configuracion-clave-valor"><span class="tn">3.7</span> configuracion (clave/valor)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#esquemas-de-entrada-salida-app-schemas-config-py" data-target="esquemas-de-entrada-salida-app-schemas-config-py"><span class="tn">4</span> Esquemas de entrada/salida (<code>app/schemas/config.py</code>)</a><span class="pag"></span><ul><li class="n3"><a href="#central-y-sectores" data-target="central-y-sectores"><span class="tn">4.1</span> Central y sectores</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos-flota-y-cuadrillas" data-target="tecnicos-flota-y-cuadrillas"><span class="tn">4.2</span> Técnicos, flota y cuadrillas</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-y-parametros" data-target="catalogos-y-parametros"><span class="tn">4.3</span> Catálogos y parámetros</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#modelos-y-tablas" data-target="modelos-y-tablas"><span class="tn">5</span> Modelos y tablas</a><span class="pag"></span><ul><li class="n3"><a href="#app-models-config-entities-py" data-target="app-models-config-entities-py"><span class="tn">5.1</span> <code>app/models/config_entities.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-models-entities-py" data-target="app-models-entities-py"><span class="tn">5.2</span> <code>app/models/entities.py</code></a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-db-schema-sql" data-target="repotecnico-db-schema-sql"><span class="tn">5.3</span> <code>RepoTecnico/db/schema.sql</code></a><span class="pag"></span></li><li class="n3"><a href="#restricciones-e-indices" data-target="restricciones-e-indices"><span class="tn">5.4</span> Restricciones e índices</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#rbac-de-escritura-de-configuracion" data-target="rbac-de-escritura-de-configuracion"><span class="tn">6</span> RBAC de escritura de configuración</a><span class="pag"></span><ul><li class="n3"><a href="#require-roles-admin-supervisor" data-target="require-roles-admin-supervisor"><span class="tn">6.1</span> require_roles ADMIN/SUPERVISOR</a><span class="pag"></span></li><li class="n3"><a href="#lectura-autenticada" data-target="lectura-autenticada"><span class="tn">6.2</span> Lectura autenticada</a><span class="pag"></span></li><li class="n3"><a href="#bypass-super" data-target="bypass-super"><span class="tn">6.3</span> Bypass SUPER</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#validez-y-errores-409-404-422" data-target="validez-y-errores-409-404-422"><span class="tn">7</span> Validez y errores (409/404/422)</a><span class="pag"></span><ul><li class="n3"><a href="#404-not-found" data-target="404-not-found"><span class="tn">7.1</span> 404 Not Found</a><span class="pag"></span></li><li class="n3"><a href="#409-conflict" data-target="409-conflict"><span class="tn">7.2</span> 409 Conflict</a><span class="pag"></span></li><li class="n3"><a href="#422-unprocessable-entity" data-target="422-unprocessable-entity"><span class="tn">7.3</span> 422 Unprocessable Entity</a><span class="pag"></span></li><li class="n3"><a href="#201-y-204" data-target="201-y-204"><span class="tn">7.4</span> 201 y 204</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-de-configuracion" data-target="pagina-web-de-configuracion"><span class="tn">8</span> Página web de configuración</a><span class="pag"></span><ul><li class="n3"><a href="#rutas-y-navegacion-app-web-src-app-tsx" data-target="rutas-y-navegacion-app-web-src-app-tsx"><span class="tn">8.1</span> Rutas y navegación (<code>app/web/src/App.tsx</code>)</a><span class="pag"></span></li><li class="n3"><a href="#centrales-tsx" data-target="centrales-tsx"><span class="tn">8.2</span> Centrales.tsx</a><span class="pag"></span></li><li class="n3"><a href="#sectores-tsx" data-target="sectores-tsx"><span class="tn">8.3</span> Sectores.tsx</a><span class="pag"></span></li><li class="n3"><a href="#tecnicos-tsx" data-target="tecnicos-tsx"><span class="tn">8.4</span> Tecnicos.tsx</a><span class="pag"></span></li><li class="n3"><a href="#flota-tsx" data-target="flota-tsx"><span class="tn">8.5</span> Flota.tsx</a><span class="pag"></span></li><li class="n3"><a href="#cuadrillas-tsx" data-target="cuadrillas-tsx"><span class="tn">8.6</span> Cuadrillas.tsx</a><span class="pag"></span></li><li class="n3"><a href="#catalogos-tsx" data-target="catalogos-tsx"><span class="tn">8.7</span> Catalogos.tsx</a><span class="pag"></span></li><li class="n3"><a href="#parametros-tsx" data-target="parametros-tsx"><span class="tn">8.8</span> Parametros.tsx</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">9</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#app-tests-test-config-py" data-target="app-tests-test-config-py"><span class="tn">9.1</span> <code>app/tests/test_config.py</code></a><span class="pag"></span></li><li class="n3"><a href="#app-tests-test-config-db-py" data-target="app-tests-test-config-db-py"><span class="tn">9.2</span> <code>app/tests/test_config_db.py</code></a><span class="pag"></span></li><li class="n3"><a href="#aislamiento-por-esquema" data-target="aislamiento-por-esquema"><span class="tn">9.3</span> Aislamiento por esquema</a><span class="pag"></span></li><li class="n3"><a href="#ci" data-target="ci"><span class="tn">9.4</span> CI</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/02-configuracion.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -816,6 +816,10 @@ guardar cambios. Para escribir se necesita rol <strong>Administrador</strong> o 
 <strong>sectores</strong> con sus direcciones (los patrones de texto que sirven para ubicar cada caso).</li>
 <li>Continúe con los <strong>técnicos</strong>, la <strong>flota</strong> de vehículos y las <strong>cuadrillas</strong> (los grupos
 de trabajo con su vehículo y sus herramientas).</li>
+<li>En la lista de <strong>Técnicos</strong>, mire la columna <strong>Cuenta</strong>: un distintivo de color indica si
+el técnico ya activó su acceso (<strong>Sin alta</strong>, <strong>Activo</strong>, <strong>Bloqueado</strong>,
+<strong>Cambio de clave</strong> o <strong>Inactivo</strong>). Si eres <strong>Super Usuario</strong>, verás además el botón
+<strong>«Palabras»</strong>, para generar un juego nuevo cuando un técnico pierde las suyas.</li>
 <li>Al terminar, revise los <strong>catálogos</strong> (causas y métodos) y los <strong>parámetros</strong>. Casi todo
 se desactiva en lugar de borrarse: así no se pierde el historial.</li>
 </ol>
@@ -919,6 +923,14 @@ pareja de operaciones:</p>
 <tr>
 <td>Actualizar parámetro</td>
 <td>ADMIN o SUPERVISOR</td>
+</tr>
+<tr>
+<td>Ver la columna Cuenta del listado de técnicos</td>
+<td>Cualquier usuario con sesión válida</td>
+</tr>
+<tr>
+<td>Regenerar las palabras de un técnico (botón «Palabras»)</td>
+<td><strong>Solo SUPER</strong> (D-67)</td>
 </tr>
 </tbody>
 </table></div>
@@ -1073,6 +1085,68 @@ responde <code>404</code>.</p>
 </table></div>
 <p>El filtro de estado usa el nombre real de la columna (<code>status</code>). La creación valida la
 central y avisa del choque de P00 o cédula duplicados.</p>
+<p>Además de los datos del trabajador, cada fila del listado trae un dato calculado llamado
+<strong>estado de la cuenta</strong> (<code>estado_cuenta</code>), que es el que alimenta la columna <strong>Cuenta</strong>.</p>
+<h4 id="la-columna-cuenta-d-67"><span class="sec-num">3.3.1</span>La columna Cuenta (D-67)</h4>
+<p>Cuando el supervisor da de alta a un técnico, ese técnico todavía no tiene cuenta de
+acceso. La columna <strong>Cuenta</strong> muestra, con un distintivo de color, en qué punto está:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Distintivo</th>
+<th>Color</th>
+<th>Qué significa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sin alta</strong></td>
+<td>Crema (ámbar)</td>
+<td>El P00 existe, pero el técnico aún no creó su cuenta</td>
+</tr>
+<tr>
+<td><strong>Activo</strong></td>
+<td>Verde claro</td>
+<td>La cuenta funciona: el técnico puede iniciar sesión</td>
+</tr>
+<tr>
+<td><strong>Bloqueado</strong></td>
+<td>Rojo claro</td>
+<td>Superó los intentos de clave y debe recuperarse</td>
+</tr>
+<tr>
+<td><strong>Cambio de clave</strong></td>
+<td>Azul claro</td>
+<td>La cuenta exige cambiar la clave antes de continuar</td>
+</tr>
+<tr>
+<td><strong>Inactivo</strong></td>
+<td>Gris</td>
+<td>La cuenta o el técnico está desactivado</td>
+</tr>
+</tbody>
+</table></div>
+<p>El cálculo lo hace el servidor, no el navegador, y se resume así:</p>
+<ol>
+<li>Si el técnico <strong>no tiene cuenta</strong> o <strong>no tiene palabras de seguridad</strong>, el estado es
+<strong>Sin alta</strong>.</li>
+<li>Si la cuenta está <strong>bloqueada</strong>, el estado es <strong>Bloqueado</strong>.</li>
+<li>Si la cuenta o el técnico están <strong>inactivos</strong>, el estado es <strong>Inactivo</strong>.</li>
+<li>Si la cuenta <strong>exige cambio de clave</strong>, el estado es <strong>Cambio de clave</strong>.</li>
+<li>En cualquier otro caso, el estado es <strong>Activo</strong>.</li>
+</ol>
+<p>Este dato se calcula sin hacer una consulta por cada fila: el servidor busca de una sola vez
+los usuarios y los dispositivos de seguridad de todos los técnicos del listado.</p>
+<h4 id="el-boton-palabras-solo-super-usuario-d-67"><span class="sec-num">3.3.2</span>El botón «Palabras» (solo Super Usuario, D-67)</h4>
+<p>En la columna de acciones aparece un botón <strong>«Palabras»</strong> que <strong>solo ve el Super Usuario</strong>.
+Sirve para cuando un técnico pierde sus 12 palabras de seguridad y ya no puede desbloquear
+su cuenta ni cambiar su clave.</p>
+<p>Al pulsarlo, el sistema pide confirmación al servidor, que genera <strong>12 palabras nuevas</strong>,
+reemplaza las anteriores (las viejas dejan de funcionar), desbloquea la cuenta y muestra las
+nuevas <strong>una sola vez</strong>. La acción queda registrada en la tabla <code>auditoria</code>. La operación de
+servidor es <code>POST /api/v1/auth/palabras/{p00}/regenerar</code> y el detalle está en el manual de
+autenticación y RBAC. Ni el rol <code>ADMIN</code> ni el rol <code>SUPERVISOR</code> pueden ejecutarla: el servidor
+responde <code>403</code>.</p>
 <h3 id="flota"><span class="sec-num">3.4</span>flota</h3>
 <div class="tabla-scroll"><table>
 <thead>
@@ -1285,6 +1359,10 @@ actualizar y qué campos se devuelven al consultar.</p>
 <td>No incluye el P00: no es editable</td>
 </tr>
 <tr>
+<td><code>TecnicoOut</code></td>
+<td>Agrega el identificador y el <strong>estado de la cuenta</strong> (<code>estado_cuenta</code>, D-67); su valor por defecto es <code>SIN_ALTA</code></td>
+</tr>
+<tr>
 <td><code>STATUS_FLOTA</code></td>
 <td>Valores permitidos: <code>DISPONIBLE</code>, <code>EN_RUTA</code>, <code>MANTENIMIENTO</code>, <code>FUERA_SERVICIO</code></td>
 </tr>
@@ -1405,7 +1483,10 @@ de datos.</p>
 </table></div>
 <h3 id="app-models-entities-py"><span class="sec-num">5.2</span><code>app/models/entities.py</code></h3>
 <p>Los modelos Central, Técnico y Usuario del Ciclo 1 viven en este otro archivo, junto con <code>Rol</code>
-y <code>DispositivoSeguridad</code>. El router de configuración los importa junto con los del Ciclo 2.</p>
+y <code>DispositivoSeguridad</code>. El router de configuración los importa junto con los del Ciclo 2.
+Desde el ciclo D-67 este archivo incluye además el modelo <code>Auditoria</code>, que representa la
+tabla <code>auditoria</code> donde quedan registradas el alta de primer acceso y la regeneración de
+palabras.</p>
 <h3 id="repotecnico-db-schema-sql"><span class="sec-num">5.3</span><code>RepoTecnico/db/schema.sql</code></h3>
 <p>El archivo de definición de la base de datos crea las tablas del módulo con
 <code>CREATE TABLE IF NOT EXISTS</code> (es decir, solo las crea si no existen):</p>
@@ -1650,6 +1731,10 @@ actuales y se pueden agregar o quitar patrones uno a uno. Los tipos disponibles 
 <p>Formulario con central, nombre, apellido, cédula, P00, teléfono, correo, especialidad y
 estado. El P00 se deshabilita al editar. Los estados disponibles son <code>ACTIVO</code>, <code>INACTIVO</code>,
 <code>VACACIONES</code> y <code>SUSPENDIDO</code>, con filtros por central y por estado.</p>
+<p>La tabla muestra, entre otras columnas, <strong>Cuenta</strong> (el distintivo de color del ciclo D-67).
+En la columna de acciones, el botón <strong>«Palabras»</strong> aparece <strong>solo</strong> para quien tiene el rol
+<code>SUPER</code>; al pulsarlo se abre una ventana que muestra las 12 palabras nuevas, con la
+advertencia de entregarlas por un canal seguro porque no se volverán a mostrar.</p>
 <h3 id="flota-tsx"><span class="sec-num">8.5</span>Flota.tsx</h3>
 <p>Formulario con central, CAN, tipo, marca, modelo, placa, combustible, estado y tres marcas de
 mantenimiento (cauchos, fluidos y general). La acción destructiva no borra: pasa el vehículo
@@ -1772,7 +1857,7 @@ recuperación a un punto en el tiempo (PITR) hasta migrar de instancia.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

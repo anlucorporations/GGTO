@@ -18,6 +18,7 @@ from ..models import (
     Cuadrilla,
     CuadrillaHerramienta,
     CuadrillaTecnico,
+    DispositivoSeguridad,
     Flota,
     Sector,
     SectorDireccion,
@@ -235,6 +236,56 @@ def eliminar_direccion(
 # --------------------------------------------------------------------------- #
 # TÉCNICOS
 # --------------------------------------------------------------------------- #
+def _estado_cuenta(tecnico: Tecnico, usuario: Usuario | None, con_palabras: bool) -> str:
+    """Ciclo de vida de la cuenta de acceso del técnico (D-67).
+
+    SIN_ALTA → el supervisor creó el P00 pero el técnico aún no activó su cuenta
+    (o no tiene palabras de seguridad); BLOQUEADO → superó los intentos;
+    REQUIERE_CAMBIO → debe cambiar la clave; INACTIVO → cuenta o técnico
+    desactivado; ACTIVO → puede iniciar sesión.
+    """
+    if usuario is None or not con_palabras:
+        return "SIN_ALTA"
+    if usuario.bloqueado:
+        return "BLOQUEADO"
+    if not usuario.activo:
+        return "INACTIVO"
+    if usuario.requiere_cambio_clave:
+        return "REQUIERE_CAMBIO"
+    if tecnico.status != "ACTIVO":
+        return "INACTIVO"
+    return "ACTIVO"
+
+
+def _tecnicos_con_estado(db: Session, tecnicos: list[Tecnico]) -> list[TecnicoOut]:
+    """Añade `estado_cuenta` evitando una consulta por fila."""
+    if not tecnicos:
+        return []
+    p00s = [t.p00 for t in tecnicos]
+    usuarios = {
+        u.p00: u for u in db.scalars(select(Usuario).where(Usuario.p00.in_(p00s))).all()
+    }
+    con_palabras = {
+        d.p00
+        for d in db.scalars(
+            select(DispositivoSeguridad).where(DispositivoSeguridad.p00.in_(p00s))
+        ).all()
+        if d.palabras_hash
+    }
+    salida: list[TecnicoOut] = []
+    for tecnico in tecnicos:
+        fila = TecnicoOut.model_validate(tecnico)
+        fila.estado_cuenta = _estado_cuenta(
+            tecnico, usuarios.get(tecnico.p00), tecnico.p00 in con_palabras
+        )
+        salida.append(fila)
+    return salida
+
+
+def _tecnico_con_estado(db: Session, tecnico: Tecnico) -> TecnicoOut:
+    return _tecnicos_con_estado(db, [tecnico])[0]
+
+
 @router.get("/tecnicos", response_model=list[TecnicoOut])
 def listar_tecnicos(
     db: Session = Depends(get_db),
@@ -247,7 +298,7 @@ def listar_tecnicos(
         stmt = stmt.where(Tecnico.id_central == id_central)
     if status_:
         stmt = stmt.where(Tecnico.status == status_)
-    return db.scalars(stmt).all()
+    return _tecnicos_con_estado(db, list(db.scalars(stmt).all()))
 
 
 @router.post("/tecnicos", response_model=TecnicoOut, status_code=status.HTTP_201_CREATED)
@@ -259,14 +310,14 @@ def crear_tecnico(
     db.add(obj)
     _commit(db, "el P00 o la cédula ya existen")
     db.refresh(obj)
-    return obj
+    return _tecnico_con_estado(db, obj)
 
 
 @router.get("/tecnicos/{id_tecnico}", response_model=TecnicoOut)
 def obtener_tecnico(
     id_tecnico: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
 ):
-    return _o_404(db, Tecnico, id_tecnico, "Técnico")
+    return _tecnico_con_estado(db, _o_404(db, Tecnico, id_tecnico, "Técnico"))
 
 
 @router.patch("/tecnicos/{id_tecnico}", response_model=TecnicoOut)
@@ -281,7 +332,7 @@ def actualizar_tecnico(
         setattr(obj, campo, valor)
     _commit(db, "datos inválidos")
     db.refresh(obj)
-    return obj
+    return _tecnico_con_estado(db, obj)
 
 
 @router.delete("/tecnicos/{id_tecnico}", status_code=status.HTTP_204_NO_CONTENT)

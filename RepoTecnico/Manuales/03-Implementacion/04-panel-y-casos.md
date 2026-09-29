@@ -388,7 +388,7 @@ sea igual al actual antes de llamar al API
 #### Historial
 
 Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y
-fecha y hora (`app/web/src/pages/Casos.tsx:929-959`), cargado con
+fecha y hora (`app/web/src/pages/Casos.tsx:896-921`), cargado con
 `api.obtenerHistorialCaso` (`app/web/src/pages/Casos.tsx:331-339`).
 
 ### PANEL (`app/web/src/pages/Panel.tsx`)

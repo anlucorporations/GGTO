@@ -104,6 +104,10 @@ declara `/login` como única ruta pública y agrupa el resto bajo `RutaProtegida
 | `*` | `Navigate to="/"` | Redirección de rutas desconocidas |
 
 Cada ruta del listado anterior corresponde a una línea concreta de `app/web/src/App.tsx:24-46`. La
+pantalla de acceso (`app/web/src/pages/Login.tsx`) ofrece, además del inicio de sesión, el
+**desbloqueo con 3 palabras** y el flujo de **primer acceso** (D-67): comprueba el P00 con
+`GET /api/v1/auth/primer-acceso`, crea la cuenta con `POST /api/v1/auth/setup` y muestra las
+12 palabras una sola vez (`app/web/src/pages/Login.tsx:34-45,118-177,287-381`). La
 barra superior no muestra las secciones de configuración a todos los roles: el componente
 `MenuConfiguracion` se pinta solo si el rol del usuario está en `ROLES_CONFIG`, definido como
 `['SUPER', 'ADMIN', 'SUPERVISOR']` (`app/web/src/components/Layout.tsx:53`) y evaluado en
@@ -127,21 +131,20 @@ mediante `include_router` en un bloque único (`app/main.py:77-85`). Los diez m�
 `routes_health`, `routes_auth`, `routes_config`, `routes_ingesta`, `routes_casos`,
 `routes_despachos`, `routes_especiales`, `routes_monitoreo` y `routes_alertas`.
 
-El inventario de endpoints verificado reporta **98 decoradores `@router.*`** en el código; el
-esquema OpenAPI publicado (`app.openapi()`) expone **73 rutas (paths)** y **103 operaciones**
+El inventario de endpoints verificado reporta **109 decoradores `@router.*`** en el código; el
+esquema OpenAPI publicado (`app.openapi()`) expone **79 rutas (paths)** y **109 operaciones**
 (método + path), porque varios paths comparten `GET`/`POST`/`PATCH`. Los documentos y las pruebas de
-contrato hablan de **73 endpoints** en el sentido de 73 paths. El detalle por archivo y línea está
-en `/tmp/ggto_endpoints.md` y el desglose funcional corresponde al manual
-`03-Implementacion/09-api-endpoints.md`.
+contrato hablaban de **77 endpoints** en el sentido de 77 paths (superficie anterior a D-67). El
+desglose funcional y por archivo corresponde al manual `03-Implementacion/09-api-endpoints.md`.
 
 | Módulo de rutas | Prefijo | Operaciones | Archivo |
 |---|---|---|---|
 | `routes_health` | sin prefijo (`/health`, `/ready`) | 4 | `app/api/routes_health.py` |
-| `routes_auth` | `/api/v1/auth` | 4 | `app/api/routes_auth.py` |
-| `routes_config` | `/api/v1` | 31 | `app/api/routes_config.py` |
-| `routes_ingesta` | `/api/v1/ingesta` | 4 | `app/api/routes_ingesta.py` |
+| `routes_auth` | `/api/v1/auth` | 7 | `app/api/routes_auth.py` |
+| `routes_config` | `/api/v1` | 35 | `app/api/routes_config.py` |
+| `routes_ingesta` | `/api/v1/ingesta` | 5 | `app/api/routes_ingesta.py` |
 | `routes_casos` | `/api/v1/casos` | 6 | `app/api/routes_casos.py` |
-| `routes_despachos` | `/api/v1/despachos` | 15 | `app/api/routes_despachos.py` |
+| `routes_despachos` | `/api/v1/despachos` | 18 | `app/api/routes_despachos.py` |
 | `routes_especiales` | `/api/v1` | 14 | `app/api/routes_especiales.py` |
 | `routes_monitoreo` | `/api/v1` | 9 | `app/api/routes_monitoreo.py` |
 | `routes_alertas` | `/api/v1` | 11 | `app/api/routes_alertas.py` |
@@ -200,8 +203,8 @@ abre una `Session` y la cierra en el bloque `finally` (`app/core/db.py:43-49`).
 | `DB_SSLMODE` | `prefer` | `app/core/config.py:23` |
 | `DB_SCHEMA` | vacío (esquema por defecto) | `app/core/config.py:25` |
 
-El esquema físico consta de **35 tablas**, según la verificación posterior a la aplicación del DDL
-registrada en `RepoTecnico/entornos_globales.md:303`. El detalle de las entidades corresponde a los
+El esquema físico consta de **36 tablas** (35 tras la verificación inicial registrada en
+`RepoTecnico/entornos_globales.md:303`, más `cuadrilla_sector_dia` del ciclo D-66). El detalle de las entidades corresponde a los
 manuales `05-Diccionario-de-Datos/01-entidades.md` y `06-Diagrama-Relacional/01-diagrama-er.md`.
 
 El estado de la base en producción es el siguiente (`RepoTecnico/entornos_globales.md:291-309`):

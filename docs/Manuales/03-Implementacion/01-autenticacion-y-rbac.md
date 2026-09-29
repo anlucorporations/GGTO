@@ -8,6 +8,11 @@
 > desarrollada (el Ciclo 8 quedó pospuesto), por lo que por ahora el acceso se hace
 > únicamente desde la interfaz web. Cuando algo aún no está cerrado, se indica con la
 > frase **«pendiente de confirmar»**.
+>
+> **Ciclo D-67.** Este manual incorpora el alta del técnico desde la pantalla de acceso
+> (enlace **«Primer acceso (obtener clave)»**), el estado de la cuenta en el listado de
+> **TÉCNICOS** y la regeneración de las 12 palabras de seguridad por parte del
+> **Super Usuario**.
 
 ## Empezar en 5 minutos
 
@@ -15,19 +20,28 @@
    trabajador de CANTV) y su clave personal.
 2. Presione «Iniciar sesión». Si los datos son correctos, entrará al sistema con el menú
    que corresponde a su rol.
-3. Si es su **primer inicio**, el sistema le pedirá crear su clave y le mostrará 12
-   palabras de seguridad. El supervisor debe haber registrado su P00 antes, desde
-   **CONFIGURACIÓN**.
-4. Anote las 12 palabras en un lugar seguro: se muestran **una sola vez**. Con 3 de ellas
+3. Si es su **primer acceso**, pulse el enlace **«Primer acceso (obtener clave)»** que
+   aparece debajo del formulario de acceso. Escriba su **P00** y pulse «Comprobar P00».
+   El sistema le dirá si su supervisor ya lo dio de alta, si la cuenta ya está activa,
+   si está bloqueada o si el P00 no existe.
+4. Si el sistema le permite registrarse, fije su **correo** y su **clave** (mínimo 8
+   caracteres, escrita dos veces). Al terminar, el sistema le mostrará
+   **12 palabras de seguridad**.
+5. Anote las 12 palabras en un lugar seguro: se muestran **una sola vez**. Con 3 de ellas
    podrá desbloquear su cuenta o restablecer la clave.
-5. Si se equivoca 3 veces con la clave, la cuenta se bloquea. Use la opción de
+6. Si se equivoca 3 veces con la clave, la cuenta se bloquea. Use la opción de
    recuperación con 3 palabras de seguridad para volver a entrar.
+7. Si pierde las 12 palabras, avise al **Super Usuario**: solo él ve el botón
+   **«Palabras»** en el listado de técnicos y puede generar un juego **nuevo**.
 
 | Aspecto | Pieza principal | Para qué sirve |
 |---|---|---|
 | Clave (contraseña) | Argon2id, un algoritmo de cifrado de claves | Guardar la clave convertida en un texto ilegible |
 | Token de sesión | JWT firmado con HS256 | Recordar quién entró, sin guardar sesiones en el servidor |
 | Palabras | Diccionario en español | Recuperar la cuenta |
+| Primer acceso | Enlace «Primer acceso (obtener clave)» | Que el técnico cree su cuenta sin ayuda del supervisor |
+| Estado de la cuenta | Distintivo de color en TÉCNICOS | Saber de un vistazo si el técnico ya tiene acceso |
+| Auditoría | Tabla `auditoria` | Dejar registro del alta y de cada recuperación |
 | Puntos de entrada | Direcciones web que empiezan con `/api/v1/auth` | Iniciar sesión y recuperar el acceso |
 | Autorización | Reglas de FastAPI | Decidir qué puede hacer cada rol |
 | Parámetros | Variables de entorno | Ajustar tiempos, intentos y límites |
@@ -68,14 +82,23 @@ bloqueada.
 
 #### Primer inicio y recuperación
 
-El flujo previsto combina tres momentos:
+El flujo del ciclo D-67 combina cuatro momentos:
 
-1. El **supervisor** registra el P00 en **CONFIGURACIÓN** (requerimiento RF-02).
-2. El **primer inicio** fija la clave y genera las 12 palabras, mediante la operación
-   `POST /api/v1/auth/setup`.
+1. El **supervisor** registra el P00 en **CONFIGURACIÓN** (requerimiento RF-02). En ese
+   momento el técnico todavía no tiene cuenta: en el listado aparece como **«Sin alta»**.
+2. El **primer acceso** lo hace el propio técnico desde la pantalla de acceso. Primero
+   consulta si su P00 está dado de alta, mediante
+   `GET /api/v1/auth/primer-acceso`. Si el sistema le dice que puede registrarse, fija su
+   correo, su clave y recibe las 12 palabras mediante `POST /api/v1/auth/setup`.
 3. La **recuperación** se hace con 3 de esas 12 palabras, mediante
    `POST /api/v1/auth/unlock` (desbloquear) o `POST /api/v1/auth/reset-password`
    (cambiar la clave).
+4. Si el técnico **pierde las 12 palabras**, el **Super Usuario** genera un juego nuevo
+   con `POST /api/v1/auth/palabras/{p00}/regenerar`. Esa operación es exclusiva de `SUPER`.
+
+La regla de oro de las palabras: el sistema guarda solo su **huella cifrada** (un *hash*).
+Eso quiere decir que **nunca** puede volver a mostrarlas ni recuperarlas. Las palabras en
+claro se ven **una sola vez**, en el momento en que se generan.
 
 ### Roles de la v1
 
@@ -120,6 +143,94 @@ datos que limita las filas visibles) en las tablas `caso` y `despacho`.
 
 El rol `SUPER` no está exento de esa regla a nivel de base de datos. Su pase libre es a
 nivel de las reglas de autorización de la aplicación, no a nivel de la base de datos.
+
+## Alta y recuperación de técnicos (ciclo D-67)
+
+Este ciclo agregó tres piezas pensadas para que el técnico no dependa de nadie para
+entrar la primera vez y para que el Super Usuario pueda rescatarlo si pierde sus
+palabras. Las tres se explican a continuación con el mismo lenguaje sencillo.
+
+### Primer acceso del técnico
+
+Antes, el supervisor debía crear el P00 y el técnico quedaba sin cuenta hasta que alguien
+la creara. Ahora el propio técnico la crea. En la pantalla de acceso —debajo del
+formulario de P00 y clave— hay un enlace que dice
+**«Primer acceso (obtener clave)»**. Al pulsarlo, el técnico:
+
+1. Escribe su **P00** y pulsa «Comprobar P00».
+2. El sistema responde con uno de estos cinco estados:
+
+| Lo que ve el técnico | Qué significa | Puede registrarse |
+|---|---|---|
+| «Su P00 está registrado y aún no tiene cuenta activada» | El supervisor ya lo dio de alta, pero todavía no tiene cuenta | **Sí** |
+| «La cuenta ya está activada» | Ya tiene cuenta: debe iniciar sesión o recuperar la clave | No |
+| «La cuenta está bloqueada» | Superó los intentos permitidos: debe usar 3 de sus 12 palabras | No |
+| «El técnico está en estado …» | El técnico figura como inactivo, de vacaciones o suspendido | No |
+| «Ese P00 no está registrado» | El supervisor todavía no lo ha creado | No |
+
+3. Si el sistema lo deja registrarse, aparece un pequeño formulario con tres campos:
+   **correo**, **clave** (mínimo 8 caracteres) y **confirmar clave**.
+4. Al pulsar «Crear mi acceso y ver las 12 palabras», el sistema crea la cuenta, guarda
+   la clave cifrada y muestra las **12 palabras de seguridad**.
+5. El técnico debe anotarlas y pulsar «Ir al acceso» para volver a la pantalla de inicio
+   de sesión. Las palabras **no se vuelven a mostrar**.
+
+Reglas verificables de esta operación:
+
+- La consulta previa es `GET /api/v1/auth/primer-acceso`. Es pública (no exige sesión)
+  porque el técnico todavía no tiene cuenta, y tiene su propio límite de consultas para
+  evitar abusos (30 consultas por minuto desde la misma dirección de red).
+- El alta es `POST /api/v1/auth/setup`. Si el P00 no existe, responde `404`; si la clave
+  y su confirmación no coinciden, responde `422`; y si la cuenta **ya estaba activada**,
+  responde `409` con el mensaje de que inicie sesión o use sus palabras.
+- Si el técnico está **inactivo** (por ejemplo, suspendido), el alta no procede y el
+  sistema pide consultar con el supervisor.
+- El correo se copia también a la ficha del técnico, para mantener los datos alineados.
+- Cada alta queda registrada en la tabla `auditoria` con la acción
+  `ALTA_PRIMER_ACCESO`.
+
+### Estado de la cuenta en TÉCNICOS
+
+El listado **CONFIGURACIÓN → Técnicos** tiene una columna nueva llamada **Cuenta**. Es un
+distintivo de color (una etiqueta redondeada) que resume, de un vistazo, si el técnico ya
+puede entrar. Sus cinco valores son:
+
+| Distintivo | Color del distintivo | Cuándo aparece |
+|---|---|---|
+| **Sin alta** | Crema (ámbar) | El supervisor creó el P00, pero el técnico aún no activó su cuenta |
+| **Activo** | Verde claro | La cuenta funciona y el técnico puede iniciar sesión |
+| **Bloqueado** | Rojo claro | Superó los intentos de clave permitidos |
+| **Cambio de clave** | Azul claro | La cuenta pide cambiar la clave antes de seguir |
+| **Inactivo** | Gris | La cuenta o el técnico está desactivado |
+
+El estado se calcula en el propio servidor y viaja en el campo `estado_cuenta` de cada
+fila del listado de técnicos. La regla de decisión es sencilla: si no hay cuenta o no hay
+palabras de seguridad, es **Sin alta**; después se revisa, en este orden, si está
+bloqueada, si está inactiva, si exige cambio de clave y si el técnico está activo.
+
+### Recuperación solo del Super Usuario
+
+Si el técnico pierde sus 12 palabras, no puede desbloquear la cuenta ni cambiar la clave.
+Para ese caso, el listado de técnicos tiene un botón llamado **«Palabras»**. Ese botón
+**solo lo ve el Super Usuario**; ningún otro rol puede usarlo (la operación responde `403`
+a cualquier rol distinto de `SUPER`).
+
+Al pulsarlo, el sistema:
+
+1. Genera **12 palabras nuevas** al azar.
+2. Reemplaza las anteriores. Las palabras viejas **dejan de funcionar** en el acto.
+3. Sube el número de versión del dispositivo de seguridad del técnico.
+4. Quita el bloqueo de la cuenta y reinicia el contador de intentos fallidos.
+5. Muestra las 12 palabras nuevas **una sola vez**, para que el Super Usuario se las
+   entregue al técnico por un canal seguro.
+6. Deja constancia en la tabla `auditoria` con la acción `REGENERAR_PALABRAS`, indicando
+   quién lo pidió, para qué P00, la versión anterior de las palabras y la nueva.
+
+Lo más importante de este apartado: **el sistema nunca puede mostrar las palabras
+guardadas**. No es que no quiera: no puede. Guarda solo una **huella irreversible**
+(*hash* con Argon2id) de cada palabra. Esa huella sirve para comprobar si la palabra
+escrita es la correcta, pero no permite reconstruirla. Por eso la única forma de
+«recuperar» unas palabras perdidas es generar un juego nuevo.
 
 ## Primitivas de seguridad
 
@@ -202,7 +313,7 @@ y en minúsculas. El primer inicio genera exactamente esas 12 palabras.
 ## Endpoints de autenticación
 
 Un «endpoint» es una dirección web que el sistema atiende. Este grupo de direcciones usa el
-prefijo `/api/v1/auth` y la etiqueta «autenticación». Son parte de las 73 direcciones
+prefijo `/api/v1/auth` y la etiqueta «autenticación». Son parte de las **79 direcciones**
 publicadas en la documentación técnica del proyecto.
 
 ### POST /api/v1/auth/login
@@ -258,6 +369,32 @@ previamente, creado por el supervisor (requerimiento RF-02). El comportamiento e
 - Devuelve las palabras **en claro** para que el usuario las guarde. Es la única vez que se
   muestran.
 
+### GET /api/v1/auth/primer-acceso
+
+Es la consulta previa del enlace **«Primer acceso (obtener clave)»**. Recibe el P00 como
+parámetro y no exige sesión, porque quien la usa todavía no tiene cuenta. Devuelve un
+«estado» y un mensaje pensado para mostrarse tal cual al técnico:
+
+| Estado | Significado |
+|---|---|
+| `INEXISTENTE` | El P00 no está registrado; debe hablar con su supervisor |
+| `PENDIENTE` | El supervisor ya lo dio de alta y todavía no tiene cuenta: **puede registrarse** |
+| `ACTIVO` | La cuenta ya está activada; debe iniciar sesión o recuperar la clave |
+| `BLOQUEADO` | La cuenta está bloqueada; debe usar 3 de sus 12 palabras |
+| `INACTIVO` | El técnico está suspendido, de vacaciones o inactivo; debe consultar al supervisor |
+
+La respuesta incluye el nombre del técnico (si existe) y una marca
+`puede_registrarse` que es verdadera solo en el estado `PENDIENTE`. La operación tiene su
+propio límite: 30 consultas por minuto desde la misma dirección de red.
+
+### POST /api/v1/auth/palabras/{p00}/regenerar
+
+Es la recuperación de último recurso, **exclusiva del Super Usuario**. Genera 12 palabras
+nuevas para el P00 indicado, reemplaza las anteriores (que dejan de funcionar),
+desbloquea la cuenta, reinicia los intentos fallidos y devuelve las palabras nuevas
+**una sola vez**. Si el P00 no tiene cuenta de acceso, responde `404`. Cada ejecución
+queda registrada en `auditoria`.
+
 ### POST /api/v1/auth/unlock
 
 Desbloquea una cuenta usando 3 de las 12 palabras. Si el P00 no existe, responde `404`. Si
@@ -286,6 +423,9 @@ negocio.
 | `ResetPasswordRequest` | 3 palabras y una clave nueva de 8 a 128 caracteres |
 | `SetupRequest` | Correo de 5 a 120 caracteres; clave y confirmación de 8 a 128 |
 | `SetupResponse` | Las palabras y el aviso de guardarlas |
+| `PrimerAccesoOut` | P00, si está registrado, el estado, si puede registrarse, el nombre y el mensaje |
+| `RegenerarPalabrasRequest` | El P00 del técnico (de 3 a 20 caracteres) |
+| `RegenerarPalabrasResponse` | Las 12 palabras nuevas y el aviso de entregarlas por un canal seguro |
 
 > La cantidad exacta de 3 palabras se impone en el contrato. En cambio, el parámetro
 > `palabras_requeridas` existe en la configuración pero **no se consulta** en la operación
@@ -357,6 +497,10 @@ palabras de seguridad. El sistema recorre las posiciones enviadas, calcula el í
 correspondiente, valida el rango y compara el cifrado guardado. Si alguna posición o palabra
 falla, devuelve «no coincide». Las pruebas cubren el desbloqueo correcto, el rechazo con
 palabras incorrectas y el restablecimiento de la clave.
+
+Si el técnico **perdió sus 12 palabras**, el desbloqueo con palabras ya no es posible. En ese
+caso, el **Super Usuario** genera un juego nuevo desde el botón «Palabras» del listado de
+técnicos (ciclo D-67).
 
 ## Sesión y token
 
@@ -451,6 +595,10 @@ El **bypass** (pase libre) del Super Usuario no requiere enumerarlo en cada oper
 como exige la decisión D-50. El patrón típico es declarar una vez la regla de escritura para
 `ADMIN` y `SUPERVISOR`, y aplicarla en cada operación que modifica datos.
 
+La **regeneración de palabras** del ciclo D-67 es una excepción deliberada: declara como
+único rol permitido `SUPER`. Por eso ni `ADMIN` ni `SUPERVISOR` pueden usarla, aunque sí
+puedan dar de alta técnicos.
+
 ### Matriz rol × módulo
 
 La matriz oficial de la primera versión cruza cada módulo con los cuatro roles. Se reproduce
@@ -469,6 +617,8 @@ de forma resumida, respetando el documento de requerimientos:
 | ALERTAS (falla masiva, incidentes, solicitud de material) | Completo | Lectura | Lectura | Completo |
 | INSUMOS (versión 2) | Completo | Completo | Completo | Solicitud |
 | AUDITORÍA | Lectura | Lectura | — | — |
+| ESTADO DE LA CUENTA (columna Cuenta) | Lectura | Lectura | Lectura | — |
+| RECUPERACIÓN DE PALABRAS (botón «Palabras») | Completo | — | — | — |
 | USUARIOS y accesos | Completo | Completo | Alta y baja de técnicos | — |
 
 Cada usuario pertenece a una central y el alcance se refuerza con la seguridad por fila. La
@@ -526,9 +676,11 @@ Las palabras se guardan únicamente como textos cifrados (hashes) en un campo de
 `dispositivo_seguridad`. El modelo incluye además una referencia a una clave privada, un
 documento cifrado, la marca de bloqueo y el número de versión.
 
-El script inserta o actualiza el registro e incrementa la versión. El primer inicio hace lo
-mismo desde la aplicación y también incrementa la versión. Las palabras en claro se muestran
-**una sola vez**.
+El script inserta o actualiza el registro e incrementa la versión. El primer acceso hace lo
+mismo desde la aplicación y también incrementa la versión. Cuando el Super Usuario regenera
+las palabras (D-67), reemplaza la lista completa de huellas, sube otra vez la versión y
+desbloquea el dispositivo. En todos los casos, las palabras en claro se muestran **una sola
+vez**.
 
 ### Verificación y bitácora
 
@@ -564,8 +716,13 @@ de integración se omiten.
 | `test_desbloqueo_con_palabras_incorrectas` | Respuesta `401` |
 | `test_me_requiere_token` | `401` sin token y `200` con token |
 | `test_restablecer_clave_con_palabras` | La clave nueva queda operativa |
+| `test_primer_acceso_p00_inexistente` | Un P00 sin registrar responde `INEXISTENTE` y no puede registrarse |
+| `test_autoalta_del_tecnico` | El listado muestra «Sin alta», el técnico crea su cuenta, recibe 12 palabras y pasa a «Activo» |
+| `test_estado_cuenta_bloqueado_tras_intentos` | Tras 3 fallos, la columna Cuenta muestra «Bloqueado» |
+| `test_regenerar_palabras_solo_super_usuario` | ADMIN y TECNICO reciben `403`; el SUPER obtiene 12 palabras nuevas y queda registro en `auditoria` |
 
-El informe de Fase 4 registra 11 pruebas en este archivo.
+El informe de Fase 4 registra 11 pruebas en este archivo, más las **cuatro pruebas del ciclo
+D-67** que se acaban de listar (15 en total en el archivo actual).
 
 ### `app/tests/test_security.py`
 

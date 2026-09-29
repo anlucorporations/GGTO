@@ -139,6 +139,9 @@ class TecnicoOut(BaseModel):
     correo: str | None = None
     especialidad: str | None = None
     status: str
+    # D-67: ciclo de vida de la cuenta de acceso
+    # (SIN_ALTA · BLOQUEADO · REQUIERE_CAMBIO · INACTIVO · ACTIVO)
+    estado_cuenta: str = "SIN_ALTA"
 
 
 # --------------------------------------------------------------------------- #

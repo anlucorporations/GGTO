@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41" data-target="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41"><span class="tn">2</span> Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41)</a><span class="pag"></span><ul><li class="n3"><a href="#roles-y-permisos-del-modulo" data-target="roles-y-permisos-del-modulo"><span class="tn">2.1</span> Roles y permisos del módulo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#contrato-del-archivo-origen" data-target="contrato-del-archivo-origen"><span class="tn">3</span> Contrato del archivo origen</a><span class="pag"></span><ul><li class="n3"><a href="#nombre-y-periodicidad" data-target="nombre-y-periodicidad"><span class="tn">3.1</span> Nombre y periodicidad</a><span class="pag"></span></li><li class="n3"><a href="#delimitador" data-target="delimitador"><span class="tn">3.2</span> Delimitador <code>;</code></a><span class="pag"></span></li><li class="n3"><a href="#codificacion-iso-8859-1-utf-8" data-target="codificacion-iso-8859-1-utf-8"><span class="tn">3.3</span> Codificación ISO-8859-1 → UTF-8</a><span class="pag"></span></li><li class="n3"><a href="#80-columnas-por-posicion-49-campos-destino" data-target="80-columnas-por-posicion-49-campos-destino"><span class="tn">3.4</span> 80 columnas por posición → 49 campos destino</a><span class="pag"></span><ul><li class="n4"><a href="#tipos-de-conversion" data-target="tipos-de-conversion"><span class="tn">3.4.1</span> Tipos de conversión</a><span class="pag"></span></li><li class="n4"><a href="#aritmetica-del-mapeo" data-target="aritmetica-del-mapeo"><span class="tn">3.4.2</span> Aritmética del mapeo</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#21-columnas-descartadas" data-target="21-columnas-descartadas"><span class="tn">3.5</span> 21 columnas descartadas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#parser" data-target="parser"><span class="tn">4</span> Parser</a><span class="pag"></span><ul><li class="n3"><a href="#decodificacion-estricta-nunca-errors-ignore" data-target="decodificacion-estricta-nunca-errors-ignore"><span class="tn">4.1</span> Decodificación estricta (nunca <code>errors='ignore'</code>)</a><span class="pag"></span></li><li class="n3"><a href="#fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m" data-target="fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m"><span class="tn">4.2</span> Fechas <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code></a><span class="pag"></span></li><li class="n3"><a href="#normalizacion-de-acentos-y-recorte-defensivo" data-target="normalizacion-de-acentos-y-recorte-defensivo"><span class="tn">4.3</span> Normalización de acentos y recorte defensivo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#flujo-de-carga" data-target="flujo-de-carga"><span class="tn">5</span> Flujo de carga</a><span class="pag"></span><ul><li class="n3"><a href="#preview" data-target="preview"><span class="tn">5.1</span> Preview</a><span class="pag"></span></li><li class="n3"><a href="#carga-y-creacion-de-ingesta-lote" data-target="carga-y-creacion-de-ingesta-lote"><span class="tn">5.2</span> Carga y creación de <code>ingesta_lote</code></a><span class="pag"></span></li><li class="n3"><a href="#filtro-por-central" data-target="filtro-por-central"><span class="tn">5.3</span> Filtro por central</a><span class="pag"></span></li><li class="n3"><a href="#deduplicacion-por-id-averia" data-target="deduplicacion-por-id-averia"><span class="tn">5.4</span> Deduplicación por <code>id_averia</code></a><span class="pag"></span></li><li class="n3"><a href="#sectorizacion" data-target="sectorizacion"><span class="tn">5.5</span> Sectorización</a><span class="pag"></span></li><li class="n3"><a href="#criterio-de-cuadrilla-0" data-target="criterio-de-cuadrilla-0"><span class="tn">5.6</span> Criterio de cuadrilla 0</a><span class="pag"></span></li><li class="n3"><a href="#deteccion-de-fallas-tras-la-ingesta" data-target="deteccion-de-fallas-tras-la-ingesta"><span class="tn">5.7</span> Detección de fallas tras la ingesta</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints" data-target="endpoints"><span class="tn">6</span> Endpoints</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-ingesta-preview" data-target="post-api-v1-ingesta-preview"><span class="tn">6.1</span> <code>POST /api/v1/ingesta/preview</code></a><span class="pag"></span><ul><li class="n4"><a href="#contrato-de-la-respuesta" data-target="contrato-de-la-respuesta"><span class="tn">6.1.1</span> Contrato de la respuesta</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#post-api-v1-ingesta" data-target="post-api-v1-ingesta"><span class="tn">6.2</span> <code>POST /api/v1/ingesta</code></a><span class="pag"></span><ul><li class="n4"><a href="#errores-esperados" data-target="errores-esperados"><span class="tn">6.2.1</span> Errores esperados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-ingesta-lotes" data-target="get-api-v1-ingesta-lotes"><span class="tn">6.3</span> <code>GET /api/v1/ingesta/lotes</code></a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-ingesta-lotes-id-lote" data-target="get-api-v1-ingesta-lotes-id-lote"><span class="tn">6.4</span> <code>GET /api/v1/ingesta/lotes/{id_lote}</code></a><span class="pag"></span><ul><li class="n4"><a href="#esquema-de-salida" data-target="esquema-de-salida"><span class="tn">6.4.1</span> Esquema de salida</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#esquemas-y-modelo-ingesta-lote" data-target="esquemas-y-modelo-ingesta-lote"><span class="tn">7</span> Esquemas y modelo <code>ingesta_lote</code></a><span class="pag"></span><ul><li class="n3"><a href="#esquemas-pydantic-app-schemas-ingesta-py" data-target="esquemas-pydantic-app-schemas-ingesta-py"><span class="tn">7.1</span> Esquemas Pydantic (<code>app/schemas/ingesta.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-sqlalchemy-y-ddl" data-target="modelo-sqlalchemy-y-ddl"><span class="tn">7.2</span> Modelo SQLAlchemy y DDL</a><span class="pag"></span></li><li class="n3"><a href="#correspondencia-entre-esquema-y-tabla" data-target="correspondencia-entre-esquema-y-tabla"><span class="tn">7.3</span> Correspondencia entre esquema y tabla</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-ingesta" data-target="pagina-web-ingesta"><span class="tn">8</span> Página web INGESTA</a><span class="pag"></span><ul><li class="n3"><a href="#estructura-y-permisos" data-target="estructura-y-permisos"><span class="tn">8.1</span> Estructura y permisos</a><span class="pag"></span></li><li class="n3"><a href="#simulacion-y-carga" data-target="simulacion-y-carga"><span class="tn">8.2</span> Simulación y carga</a><span class="pag"></span></li><li class="n3"><a href="#resumen-avisos-y-ejemplos" data-target="resumen-avisos-y-ejemplos"><span class="tn">8.3</span> Resumen, avisos y ejemplos</a><span class="pag"></span></li><li class="n3"><a href="#historial-y-detalle-de-lotes" data-target="historial-y-detalle-de-lotes"><span class="tn">8.4</span> Historial y detalle de lotes</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#datos-reales-cargados-en-produccion-42-casos-d-54" data-target="datos-reales-cargados-en-produccion-42-casos-d-54"><span class="tn">9</span> Datos reales cargados en producción (42 casos, D-54)</a><span class="pag"></span><ul><li class="n3"><a href="#hecho-verificado" data-target="hecho-verificado"><span class="tn">9.1</span> Hecho verificado</a><span class="pag"></span></li><li class="n3"><a href="#implicaciones-de-seguridad-y-privacidad" data-target="implicaciones-de-seguridad-y-privacidad"><span class="tn">9.2</span> Implicaciones de seguridad y privacidad</a><span class="pag"></span></li><li class="n3"><a href="#recalculo-posterior" data-target="recalculo-posterior"><span class="tn">9.3</span> Recalculo posterior</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">10</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#test-ingesta-parser-py-12-pruebas" data-target="test-ingesta-parser-py-12-pruebas"><span class="tn">10.1</span> <code>test_ingesta_parser.py</code> (12 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#test-ingesta-api-py-6-pruebas" data-target="test-ingesta-api-py-6-pruebas"><span class="tn">10.2</span> <code>test_ingesta_api.py</code> (6 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#trazabilidad" data-target="trazabilidad"><span class="tn">10.3</span> Trazabilidad</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41-d-66" data-target="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41-d-66"><span class="tn">2</span> Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41/D-66)</a><span class="pag"></span><ul><li class="n3"><a href="#roles-y-permisos-del-modulo" data-target="roles-y-permisos-del-modulo"><span class="tn">2.1</span> Roles y permisos del módulo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#contrato-del-archivo-origen" data-target="contrato-del-archivo-origen"><span class="tn">3</span> Contrato del archivo origen</a><span class="pag"></span><ul><li class="n3"><a href="#nombre-y-periodicidad" data-target="nombre-y-periodicidad"><span class="tn">3.1</span> Nombre y periodicidad</a><span class="pag"></span></li><li class="n3"><a href="#delimitador" data-target="delimitador"><span class="tn">3.2</span> Delimitador <code>;</code></a><span class="pag"></span></li><li class="n3"><a href="#codificacion-iso-8859-1-utf-8" data-target="codificacion-iso-8859-1-utf-8"><span class="tn">3.3</span> Codificación ISO-8859-1 → UTF-8</a><span class="pag"></span></li><li class="n3"><a href="#80-columnas-por-posicion-49-campos-destino" data-target="80-columnas-por-posicion-49-campos-destino"><span class="tn">3.4</span> 80 columnas por posición → 49 campos destino</a><span class="pag"></span><ul><li class="n4"><a href="#tipos-de-conversion" data-target="tipos-de-conversion"><span class="tn">3.4.1</span> Tipos de conversión</a><span class="pag"></span></li><li class="n4"><a href="#aritmetica-del-mapeo" data-target="aritmetica-del-mapeo"><span class="tn">3.4.2</span> Aritmética del mapeo</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#21-columnas-descartadas" data-target="21-columnas-descartadas"><span class="tn">3.5</span> 21 columnas descartadas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#parser" data-target="parser"><span class="tn">4</span> Parser</a><span class="pag"></span><ul><li class="n3"><a href="#decodificacion-estricta-nunca-errors-ignore" data-target="decodificacion-estricta-nunca-errors-ignore"><span class="tn">4.1</span> Decodificación estricta (nunca <code>errors='ignore'</code>)</a><span class="pag"></span></li><li class="n3"><a href="#fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m" data-target="fechas-dd-mm-aaaa-hh-mm-ss-a-m-p-m"><span class="tn">4.2</span> Fechas <code>dd/mm/aaaa hh:mm:ss a.m./p.m.</code></a><span class="pag"></span></li><li class="n3"><a href="#normalizacion-de-acentos-y-recorte-defensivo" data-target="normalizacion-de-acentos-y-recorte-defensivo"><span class="tn">4.3</span> Normalización de acentos y recorte defensivo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#flujo-de-carga" data-target="flujo-de-carga"><span class="tn">5</span> Flujo de carga</a><span class="pag"></span><ul><li class="n3"><a href="#preview" data-target="preview"><span class="tn">5.1</span> Preview</a><span class="pag"></span></li><li class="n3"><a href="#carga-y-creacion-de-ingesta-lote" data-target="carga-y-creacion-de-ingesta-lote"><span class="tn">5.2</span> Carga y creación de <code>ingesta_lote</code></a><span class="pag"></span></li><li class="n3"><a href="#filtro-por-central" data-target="filtro-por-central"><span class="tn">5.3</span> Filtro por central</a><span class="pag"></span></li><li class="n3"><a href="#deduplicacion-por-id-averia" data-target="deduplicacion-por-id-averia"><span class="tn">5.4</span> Deduplicación por <code>id_averia</code></a><span class="pag"></span></li><li class="n3"><a href="#sectorizacion" data-target="sectorizacion"><span class="tn">5.5</span> Sectorización</a><span class="pag"></span></li><li class="n3"><a href="#direcciones-sin-sector-d-66" data-target="direcciones-sin-sector-d-66"><span class="tn">5.6</span> Direcciones sin sector (D-66)</a><span class="pag"></span></li><li class="n3"><a href="#criterio-de-cuadrilla-0" data-target="criterio-de-cuadrilla-0"><span class="tn">5.7</span> Criterio de cuadrilla 0</a><span class="pag"></span></li><li class="n3"><a href="#deteccion-de-fallas-tras-la-ingesta" data-target="deteccion-de-fallas-tras-la-ingesta"><span class="tn">5.8</span> Detección de fallas tras la ingesta</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints" data-target="endpoints"><span class="tn">6</span> Endpoints</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-ingesta-preview" data-target="post-api-v1-ingesta-preview"><span class="tn">6.1</span> <code>POST /api/v1/ingesta/preview</code></a><span class="pag"></span><ul><li class="n4"><a href="#contrato-de-la-respuesta" data-target="contrato-de-la-respuesta"><span class="tn">6.1.1</span> Contrato de la respuesta</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#post-api-v1-ingesta" data-target="post-api-v1-ingesta"><span class="tn">6.2</span> <code>POST /api/v1/ingesta</code></a><span class="pag"></span><ul><li class="n4"><a href="#errores-esperados" data-target="errores-esperados"><span class="tn">6.2.1</span> Errores esperados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-ingesta-lotes" data-target="get-api-v1-ingesta-lotes"><span class="tn">6.3</span> <code>GET /api/v1/ingesta/lotes</code></a><span class="pag"></span></li><li class="n3"><a href="#get-api-v1-ingesta-lotes-id-lote" data-target="get-api-v1-ingesta-lotes-id-lote"><span class="tn">6.4</span> <code>GET /api/v1/ingesta/lotes/{id_lote}</code></a><span class="pag"></span><ul><li class="n4"><a href="#esquema-de-salida" data-target="esquema-de-salida"><span class="tn">6.4.1</span> Esquema de salida</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#post-api-v1-ingesta-sectorizar-pendientes-d-66" data-target="post-api-v1-ingesta-sectorizar-pendientes-d-66"><span class="tn">6.5</span> <code>POST /api/v1/ingesta/sectorizar-pendientes</code> (D-66)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#esquemas-y-modelo-ingesta-lote" data-target="esquemas-y-modelo-ingesta-lote"><span class="tn">7</span> Esquemas y modelo <code>ingesta_lote</code></a><span class="pag"></span><ul><li class="n3"><a href="#esquemas-pydantic-app-schemas-ingesta-py" data-target="esquemas-pydantic-app-schemas-ingesta-py"><span class="tn">7.1</span> Esquemas Pydantic (<code>app/schemas/ingesta.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-sqlalchemy-y-ddl" data-target="modelo-sqlalchemy-y-ddl"><span class="tn">7.2</span> Modelo SQLAlchemy y DDL</a><span class="pag"></span></li><li class="n3"><a href="#correspondencia-entre-esquema-y-tabla" data-target="correspondencia-entre-esquema-y-tabla"><span class="tn">7.3</span> Correspondencia entre esquema y tabla</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-ingesta" data-target="pagina-web-ingesta"><span class="tn">8</span> Página web INGESTA</a><span class="pag"></span><ul><li class="n3"><a href="#estructura-y-permisos" data-target="estructura-y-permisos"><span class="tn">8.1</span> Estructura y permisos</a><span class="pag"></span></li><li class="n3"><a href="#simulacion-y-carga" data-target="simulacion-y-carga"><span class="tn">8.2</span> Simulación y carga</a><span class="pag"></span></li><li class="n3"><a href="#resumen-avisos-y-ejemplos" data-target="resumen-avisos-y-ejemplos"><span class="tn">8.3</span> Resumen, avisos y ejemplos</a><span class="pag"></span></li><li class="n3"><a href="#direcciones-sin-sector-aviso-y-gestion-d-66" data-target="direcciones-sin-sector-aviso-y-gestion-d-66"><span class="tn">8.4</span> Direcciones sin sector: aviso y gestión (D-66)</a><span class="pag"></span></li><li class="n3"><a href="#historial-y-detalle-de-lotes" data-target="historial-y-detalle-de-lotes"><span class="tn">8.5</span> Historial y detalle de lotes</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#datos-reales-cargados-en-produccion-42-casos-d-54" data-target="datos-reales-cargados-en-produccion-42-casos-d-54"><span class="tn">9</span> Datos reales cargados en producción (42 casos, D-54)</a><span class="pag"></span><ul><li class="n3"><a href="#hecho-verificado" data-target="hecho-verificado"><span class="tn">9.1</span> Hecho verificado</a><span class="pag"></span></li><li class="n3"><a href="#implicaciones-de-seguridad-y-privacidad" data-target="implicaciones-de-seguridad-y-privacidad"><span class="tn">9.2</span> Implicaciones de seguridad y privacidad</a><span class="pag"></span></li><li class="n3"><a href="#recalculo-posterior" data-target="recalculo-posterior"><span class="tn">9.3</span> Recalculo posterior</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">10</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#test-ingesta-parser-py-12-pruebas" data-target="test-ingesta-parser-py-12-pruebas"><span class="tn">10.1</span> <code>test_ingesta_parser.py</code> (12 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#test-ingesta-api-py-8-pruebas" data-target="test-ingesta-api-py-8-pruebas"><span class="tn">10.2</span> <code>test_ingesta_api.py</code> (8 pruebas)</a><span class="pag"></span></li><li class="n3"><a href="#trazabilidad" data-target="trazabilidad"><span class="tn">10.3</span> Trazabilidad</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/03-ingesta-csv.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -815,12 +815,15 @@ rol Técnico solo puede consultar el historial.</li>
 la central; si lo deja vacío, se usa la central configurada.</li>
 <li>Pulse <strong>«Simular (preview)»</strong>. Esa opción <strong>no guarda nada</strong>: solo muestra cuántas filas
 leyó, cuántas son de la central, cuántos casos son nuevos y cuántos repetidos.</li>
-<li>Revise el resumen y los avisos. Si todo está bien, pulse <strong>«Cargar archivo»</strong> y confirme.
-El sistema crea los casos nuevos y deja un registro del lote en el historial.</li>
+<li>Revise el resumen y los avisos. Si aparece el aviso de <strong>direcciones que no pertenecen a
+ningún sector</strong>, pulse <strong>«Gestionar en SECTOR»</strong>, elija a qué sector va cada dirección y el
+sistema <strong>vuelve a sectorizar</strong> los casos pendientes. Cuando todo esté bien, pulse
+<strong>«Cargar archivo»</strong> y confirme. El sistema crea los casos nuevos y deja un registro del lote
+en el historial.</li>
 <li>Repita la carga con el mismo archivo no duplica nada: los casos ya existentes se cuentan
 como duplicados.</li>
 </ol>
-<h2 id="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41"><span class="sec-num">2</span>Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41)</h2>
+<h2 id="vision-general-rf-01-rf-02-rt-05-d-04-d-27-d-41-d-66"><span class="sec-num">2</span>Visión general (RF-01/RF-02, RT-05, D-04/D-27/D-41/D-66)</h2>
 <p>El módulo INGESTA recibe el archivo diario de averías GPON del sistema origen de CANTV, lo
 depura, filtra los casos de la central configurada, evita duplicados y crea los casos nuevos.
 Es la puerta de entrada principal del universo de casos de la plataforma.</p>
@@ -872,10 +875,22 @@ Es la puerta de entrada principal del universo de casos de la plataforma.</p>
 <td>Contrato de interfaz con el origen</td>
 <td>Decisión D-41</td>
 </tr>
+<tr>
+<td>Aviso de direcciones sin sector y re-sectorización</td>
+<td>Decisión D-66</td>
+</tr>
 </tbody>
 </table></div>
 <p>El módulo usa el prefijo <code>/api/v1/ingesta</code> y la etiqueta «ingesta». Su descripción interna
 enumera los requisitos que cubre: «RF-01, RF-21, RF-22, RF-23, RF-25, RF-29».</p>
+<p>El ciclo <strong>D-66</strong> agregó dos capacidades a la ingesta:</p>
+<ol>
+<li>Si una <strong>dirección del archivo no pertenece a ningún sector</strong>, el resumen lo <strong>avisa</strong> y
+muestra la cantidad de casos afectados.</li>
+<li>El botón <strong>«Gestionar en SECTOR»</strong> permite <strong>asignar esa dirección a un sector</strong> y, al
+terminar, <strong>volver a sectorizar</strong> los casos que habían quedado pendientes, sin recargar el
+archivo.</li>
+</ol>
 <p>La lógica de análisis y de escritura está separada de la capa web:</p>
 <ul>
 <li>El <strong>analizador</strong> (parser) y el filtro por central viven en un servicio aparte.</li>
@@ -1234,7 +1249,28 @@ regular, es decir, un patrón de búsqueda más flexible).</li>
 <p>Los patrones provienen solo de sectores activos y patrones activos, ordenados por prioridad y
 nombre. El resultado se guarda en el caso y se cuenta en el resumen como «sectorizados» o
 «sin sector».</p>
-<h3 id="criterio-de-cuadrilla-0"><span class="sec-num">5.6</span>Criterio de cuadrilla 0</h3>
+<h3 id="direcciones-sin-sector-d-66"><span class="sec-num">5.6</span>Direcciones sin sector (D-66)</h3>
+<p>Cuando una <strong>dirección no coincide con ningún sector</strong>, el caso queda «sin sector» y no puede
+entrar al despacho. Para resolverlo, la carga arma una lista de <strong>direcciones pendientes</strong>:</p>
+<ul>
+<li>Agrupa las direcciones repetidas con el mismo texto (sin acentos ni mayúsculas) y suma cuántos
+casos tienen.</li>
+<li>Ordena la lista de mayor a menor cantidad y guarda hasta <strong>50</strong> direcciones.</li>
+<li>Cada fila trae la dirección, el total de casos y un <strong>ID de avería de ejemplo</strong>.</li>
+<li>El resumen entrega esa lista en el campo <code>direcciones_sin_sector</code>.</li>
+</ul>
+<p>En la pantalla se muestra un aviso con esa información y el botón <strong>«Gestionar en SECTOR»</strong>. Ese
+botón abre una ventana donde se elige, para cada dirección, el <strong>sector destino</strong>; al confirmar,
+el sistema:</p>
+<ol>
+<li>Agrega la dirección como <strong>patrón</strong> del sector (coincidencia «contiene», con normalización).</li>
+<li>Llama a la operación de <strong>re-sectorización</strong>, que repasa los casos de la central que quedaron
+<strong>sin sector</strong> y les aplica los patrones vigentes.</li>
+<li>Informa cuántos casos se revisaron, cuántos se asignaron y cuántos siguen sin sector.</li>
+</ol>
+<p>Así, una dirección nueva se corrige una sola vez y los casos pendientes entran al despacho sin
+volver a cargar el archivo.</p>
+<h3 id="criterio-de-cuadrilla-0"><span class="sec-num">5.7</span>Criterio de cuadrilla 0</h3>
 <p>La función de cuadrilla 0 decide si un caso va al supervisor sin salir a la calle. Combina
 tres fuentes configurables:</p>
 <div class="tabla-scroll"><table>
@@ -1269,7 +1305,7 @@ resto vuelve a estar disponible para el despacho de calle». El modo efectivo en
 por tanto, el valor guardado en la tabla de configuración, no el valor por defecto del
 programa.</p>
 <p>La marca se guarda en el caso y además alimenta el icono «Gestión» del listado de casos.</p>
-<h3 id="deteccion-de-fallas-tras-la-ingesta"><span class="sec-num">5.7</span>Detección de fallas tras la ingesta</h3>
+<h3 id="deteccion-de-fallas-tras-la-ingesta"><span class="sec-num">5.8</span>Detección de fallas tras la ingesta</h3>
 <p>Después de confirmar los casos, la carga ejecuta la detección de fallas. Si se crean fallas
 masivas, se confirma otra vez y se informa el conteo. La detección agrupa casos no cerrados
 por el campo configurado y aplica un umbral y una ventana:</p>
@@ -1288,7 +1324,7 @@ herramientas); WhatsApp no existe en la versión 1. En producción, Telegram y e
 bandeja de salida (<em>outbox</em>). Hoy no se puede afirmar que esas alertas ya notifiquen.</p>
 </blockquote>
 <h2 id="endpoints"><span class="sec-num">6</span>Endpoints</h2>
-<p>Las cuatro operaciones del módulo se declaran bajo el prefijo <code>/api/v1/ingesta</code>.</p>
+<p>Las cinco operaciones del módulo se declaran bajo el prefijo <code>/api/v1/ingesta</code>.</p>
 <h3 id="post-api-v1-ingesta-preview"><span class="sec-num">6.1</span><code>POST /api/v1/ingesta/preview</code></h3>
 <div class="tabla-scroll"><table>
 <thead>
@@ -1318,7 +1354,8 @@ bandeja de salida (<em>outbox</em>). Hoy no se puede afirmar que esas alertas ya
 </table></div>
 <h4 id="contrato-de-la-respuesta"><span class="sec-num">6.1.1</span>Contrato de la respuesta</h4>
 <p>Los campos del resumen son: contadores de filas leídas, filas de la central, casos nuevos,
-duplicados y descartados, sectorizados, sin sector, cuadrilla 0, avisos y hasta diez ejemplos.</p>
+duplicados y descartados, sectorizados, sin sector, cuadrilla 0, avisos, hasta diez ejemplos y
+hasta <strong>50 direcciones sin sector</strong> (con su total de casos y un ID de avería de ejemplo).</p>
 <h3 id="post-api-v1-ingesta"><span class="sec-num">6.2</span><code>POST /api/v1/ingesta</code></h3>
 <div class="tabla-scroll"><table>
 <thead>
@@ -1365,6 +1402,37 @@ autenticado puede consultarlo.</p>
 <h4 id="esquema-de-salida"><span class="sec-num">6.4.1</span>Esquema de salida</h4>
 <p>La salida del lote expone: identificador del lote, archivo, fecha del archivo, central, los
 cinco contadores, estado, detalle de error, usuario y fecha de creación.</p>
+<h3 id="post-api-v1-ingesta-sectorizar-pendientes-d-66"><span class="sec-num">6.5</span><code>POST /api/v1/ingesta/sectorizar-pendientes</code> (D-66)</h3>
+<p>Vuelve a aplicar los patrones de sector a los casos de la central que quedaron <strong>sin sector</strong>.
+Se usa después de agregar direcciones nuevas desde el aviso de la ingesta.</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Autenticación</td>
+<td>Token de sesión; rol ADMIN o SUPERVISOR</td>
+</tr>
+<tr>
+<td>Parámetro</td>
+<td><code>id_central</code> opcional (si no se envía, usa la central configurada)</td>
+</tr>
+<tr>
+<td>Respuesta</td>
+<td><code>revisados</code>, <code>asignados</code> y <code>sin_sector</code></td>
+</tr>
+<tr>
+<td>Efecto en la base</td>
+<td>Actualiza el sector de los casos que ahora coinciden con un patrón</td>
+</tr>
+</tbody>
+</table></div>
+<p>Solo toca casos con <code>id_sector</code> vacío y con dirección cargada. Si ninguno cambia, no escribe
+nada.</p>
 <h2 id="esquemas-y-modelo-ingesta-lote"><span class="sec-num">7</span>Esquemas y modelo <code>ingesta_lote</code></h2>
 <h3 id="esquemas-pydantic-app-schemas-ingesta-py"><span class="sec-num">7.1</span>Esquemas Pydantic (<code>app/schemas/ingesta.py</code>)</h3>
 <p>Los <strong>esquemas</strong> son los contratos de datos de entrada y salida.</p>
@@ -1381,8 +1449,16 @@ cinco contadores, estado, detalle de error, usuario y fecha de creación.</p>
 <td>Muestra de hasta diez casos candidatos</td>
 </tr>
 <tr>
+<td><code>DireccionSinSector</code></td>
+<td>Una dirección que no coincide con ningún sector (D-66)</td>
+</tr>
+<tr>
 <td><code>ResumenIngesta</code></td>
 <td>Respuesta de la simulación y de la carga</td>
+</tr>
+<tr>
+<td><code>SectorizacionPendientesOut</code></td>
+<td>Resultado de volver a sectorizar los pendientes (D-66)</td>
 </tr>
 <tr>
 <td><code>IngestaLoteOut</code></td>
@@ -1502,7 +1578,20 @@ positivo, validado por una función que lo interpreta.</li>
 nuevos, duplicados, descartados, sectorizados, sin sector y cuadrilla 0. Los avisos del
 analizador se muestran como mensajes de error y los ejemplos aparecen en una tabla con el
 identificador de avería, la dirección, el sector y la marca de cuadrilla 0.</p>
-<h3 id="historial-y-detalle-de-lotes"><span class="sec-num">8.4</span>Historial y detalle de lotes</h3>
+<h3 id="direcciones-sin-sector-aviso-y-gestion-d-66"><span class="sec-num">8.4</span>Direcciones sin sector: aviso y gestión (D-66)</h3>
+<p>Si el resumen trae direcciones que no pertenecen a ningún sector, la página muestra un <strong>aviso</strong>
+con el número de direcciones y de casos afectados, y el botón <strong>«Gestionar en SECTOR»</strong>.</p>
+<p>Al pulsarlo se abre una ventana con la lista de direcciones (dirección, cantidad de casos y un
+ID de avería de ejemplo) y un <strong>selector de sector destino</strong> por fila. El botón «Agregar
+direcciones y sectorizar»:</p>
+<ol>
+<li>Agrega cada dirección elegida como patrón del sector.</li>
+<li>Vuelve a sectorizar los casos pendientes.</li>
+<li>Cierra la ventana e informa cuántos casos cambiaron de sector.</li>
+</ol>
+<p>Si no hay sectores activos, la ventana avisa que primero hay que crearlos en <strong>CONFIGURACIÓN →
+Sectores</strong>.</p>
+<h3 id="historial-y-detalle-de-lotes"><span class="sec-num">8.5</span>Historial y detalle de lotes</h3>
 <p>La tabla de historial pide los últimos 50 lotes al abrir la página y muestra trece columnas,
 entre ellas el archivo, la central, los contadores, el estado y el usuario. El botón «Ver
 detalle» consulta el detalle del lote y presenta una ficha con el estado, los contadores y el
@@ -1596,9 +1685,11 @@ sin hallazgos. Las pruebas que tocan base de datos usan esquemas aislados: <code
 </table></div>
 <p>La muestra usada está en <code>RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv</code>, y la lista de
 archivos excluidos de Git la mantiene versionada por estar pseudonimizada.</p>
-<h3 id="test-ingesta-api-py-6-pruebas"><span class="sec-num">10.2</span><code>test_ingesta_api.py</code> (6 pruebas)</h3>
-<p>Nivel de integración. El informe de Fase 4 lo registra con 6 pruebas y ámbito «Preview, carga,
-filtro por central y deduplicación». Cubre:</p>
+<h3 id="test-ingesta-api-py-8-pruebas"><span class="sec-num">10.2</span><code>test_ingesta_api.py</code> (8 pruebas)</h3>
+<p>Nivel de integración. El informe de Fase 4 lo registraba con 6 pruebas y ámbito «Preview, carga,
+filtro por central y deduplicación». El ciclo <strong>D-66</strong> agregó 2 pruebas (aviso y gestión de
+direcciones sin sector, y permiso de escritura de la re-sectorización), para un total de <strong>8</strong>.
+Cubre:</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1631,6 +1722,14 @@ filtro por central y deduplicación». Cubre:</p>
 <td><code>test_sectorizacion_y_cuadrilla0</code></td>
 <td>Sectorización y marca guardada</td>
 </tr>
+<tr>
+<td><code>test_direcciones_sin_sector_se_reportan_y_se_gestionan</code> (D-66)</td>
+<td>El resumen lista la dirección sin sector y la re-sectorización la asigna</td>
+</tr>
+<tr>
+<td><code>test_sectorizar_pendientes_requiere_escritura</code> (D-66)</td>
+<td>Solo ADMIN o SUPERVISOR pueden re-sectorizar</td>
+</tr>
 </tbody>
 </table></div>
 <h3 id="trazabilidad"><span class="sec-num">10.3</span>Trazabilidad</h3>
@@ -1655,6 +1754,10 @@ filtro por central y deduplicación». Cubre:</p>
 <td><code>test_ingesta_inserta_y_deduplica</code></td>
 </tr>
 <tr>
+<td>RF-23 (sectorización y re-sectorización)</td>
+<td><code>test_sectorizacion_y_cuadrilla0</code> y las pruebas D-66</td>
+</tr>
+<tr>
 <td>RT-05 (analizador)</td>
 <td><code>test_ingesta_parser.py</code></td>
 </tr>
@@ -1673,7 +1776,7 @@ diario e historial de lotes».</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

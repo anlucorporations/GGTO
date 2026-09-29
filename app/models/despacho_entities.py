@@ -65,6 +65,33 @@ class DespachoCasos(Base):
     despacho: Mapped[Despacho] = relationship(back_populates="casos")
 
 
+class CuadrillaSectorDia(Base):
+    """Asignación dinámica de sectores a cuadrillas para un día (D-66).
+
+    El supervisor decide, para cada jornada, qué sectores atiende cada
+    cuadrilla; el despacho reparte los casos según esa asignación. Un sector
+    pertenece como máximo a una cuadrilla por día.
+    """
+
+    __tablename__ = "cuadrilla_sector_dia"
+
+    id_asignacion: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_central: Mapped[int] = mapped_column(ForeignKey("central.id_central"), nullable=False)
+    fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    id_cuadrilla: Mapped[int] = mapped_column(
+        ForeignKey("cuadrilla.id_cuadrilla", ondelete="CASCADE"), nullable=False
+    )
+    id_sector: Mapped[int] = mapped_column(
+        ForeignKey("sector.id_sector", ondelete="CASCADE"), nullable=False
+    )
+    usuario: Mapped[str | None] = mapped_column(String(20))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("fecha", "id_sector", name="cuadrilla_sector_dia_fecha_id_sector_key"),
+    )
+
+
 class Notificacion(Base):
     __tablename__ = "notificacion"
 

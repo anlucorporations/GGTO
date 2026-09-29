@@ -35,6 +35,7 @@ DELETE FROM cita;
 DELETE FROM seguimiento;
 DELETE FROM caso_especial;
 DELETE FROM solicitante;
+DELETE FROM cuadrilla_sector_dia;
 DELETE FROM despacho;
 DELETE FROM notificacion;
 DELETE FROM orden_material;
@@ -49,9 +50,9 @@ DELETE FROM sector_direccion    WHERE id_sector IN (SELECT id_sector FROM sector
 DELETE FROM sector              WHERE codigo LIKE 'TS%';
 DELETE FROM flota               WHERE can LIKE 'TCAN%';
 DELETE FROM causa               WHERE codigo_causa LIKE 'T9%';
-DELETE FROM dispositivo_seguridad WHERE p00 IN ('TESTADM','TESTTEC');
-DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP');
-DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP');
+DELETE FROM dispositivo_seguridad WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP') OR p00 LIKE 'TST%';
+DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP') OR p00 LIKE 'TST%';
+DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP') OR p00 LIKE 'TST%';
 DELETE FROM central             WHERE codigo_central LIKE 'TST%';
 """
 

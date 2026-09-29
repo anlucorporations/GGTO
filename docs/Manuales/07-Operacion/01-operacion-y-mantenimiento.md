@@ -292,7 +292,7 @@ condición de cierre: «migrar a `ggtov2-pg` propio al desbloquear la facturaci�
 
 1. Desbloquear la facturación de GCP y aprovisionar `ggtov2-pg` con el script de Cloud SQL
    (instancia regional con alta disponibilidad, respaldos, PITR y SSL `ENCRYPTED_ONLY`).
-2. Migrar la base `ggtov2` con una ventana de mantenimiento y verificar los 35 objetos.
+2. Migrar la base `ggtov2` con una ventana de mantenimiento y verificar los 36 objetos.
 3. Reapuntar Cloud Run a la instancia propia y dejar de usar la instancia compartida
    `truekeate-db-dev`.
 4. Ejecutar y **documentar** una prueba de restauración trimestral (RNF-16).
@@ -308,9 +308,10 @@ archivos. Este procedimiento está **pendiente de confirmar y de documentar form
 
 ### Esquema (db/schema.sql) y recarga de catálogos
 
-El esquema completo está en el archivo `db/schema.sql` y define **35 tablas**, las extensiones
+El esquema completo está en el archivo `db/schema.sql` y define **36 tablas**, las extensiones
 `pgcrypto` y `pg_trgm`, seguridad por filas (RLS) en `caso` y `despacho`, y **14 disparadores**
-(*triggers*) de marca `actualizado_en`.
+(*triggers*) de marca `actualizado_en`. La tabla número 36 (`cuadrilla_sector_dia`, ciclo D-66)
+guarda qué sectores atiende cada cuadrilla cada día.
 
 El script es **idempotente**: usa `CREATE TABLE IF NOT EXISTS` y `CREATE INDEX IF NOT EXISTS`, así
 que puede volver a ejecutarse sin duplicar objetos. Una aplicación inicial carga las semillas:

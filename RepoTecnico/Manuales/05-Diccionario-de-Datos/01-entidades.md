@@ -6,7 +6,7 @@
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor | PostgreSQL 15 (instancia compartida `truekeate-main:southamerica-east1:truekeate-db-dev`) |
 | Base | `ggtov2` · usuario de aplicación `ggtov2_app` |
-| DDL de referencia | `RepoTecnico/db/schema.sql` (803 líneas, **35 tablas**) |
+| DDL de referencia | `RepoTecnico/db/schema.sql` (820 líneas, **36 tablas**) |
 | Mapeo ORM | `app/models/*.py` (SQLAlchemy 2.x declarativo) |
 | Diccionario de origen | `RepoTecnico/diccionario_datos.md` (Borrador v0.2, «sujeto a validación») |
 | Esquema de pruebas | `DB_SCHEMA` añade `options=-csearch_path=<esquema>,public` (`app/core/db.py:33-36`) |
@@ -19,9 +19,9 @@
 
 ## Visión general
 
-### Las 35 tablas del esquema
+### Las 36 tablas del esquema
 
-El DDL contiene **35 sentencias `CREATE TABLE`** (conteo directo sobre
+El DDL contiene **36 sentencias `CREATE TABLE`** (conteo directo sobre
 `RepoTecnico/db/schema.sql`). Se agrupan en siete dominios funcionales.
 
 | Dominio | Tablas | Nº |
@@ -30,21 +30,21 @@ El DDL contiene **35 sentencias `CREATE TABLE`** (conteo directo sobre
 | Configuración | `central`, `sector`, `sector_direccion`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta`, `causa`, `catalogo_metodo`, `configuracion` | 12 |
 | Operación | `ingesta_lote`, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 7 |
 | Especiales | `solicitante`, `caso_especial`, `seguimiento`, `cita` | 4 |
-| Despacho | `despacho`, `despacho_caso`, `falla_masiva` | 3 |
+| Despacho | `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | 4 |
 | Insumos (v2) | `insumo`, `orden_material`, `orden_material_detalle`, `inventario_movimiento` | 4 |
 | Notificaciones | `notificacion` | 1 |
-| **Total** | | **35** |
+| **Total** | | **36** |
 
 Tablas de catálogo sembradas con datos iniciales idempotentes:
 `rol` (4 filas: SUPER, ADMIN, SUPERVISOR, TECNICO), `catalogo_metodo` (9 filas),
 `central` (1 fila: `2324X` FRANCISCO SALIAS), `cuadrilla` (1 fila: `C-00`) y
-`configuracion` (22 parámetros) — `RepoTecnico/db/schema.sql:736-797`.
+`configuracion` (22 parámetros) — `RepoTecnico/db/schema.sql:753-814`.
 El catálogo `causa` **no** se puebla desde el CSV: es administrable y su
-mantenimiento corresponde al administrador de catálogos (`RepoTecnico/diccionario_datos.md:487-489`).
+mantenimiento corresponde al administrador de catálogos (`RepoTecnico/diccionario_datos.md:499-501`).
 
 ### Convenciones de nombres y tipos
 
-Convenciones observadas en el DDL (`RepoTecnico/db/schema.sql:64-652`):
+Convenciones observadas en el DDL (`RepoTecnico/db/schema.sql:64-669`):
 
 | Convención | Regla | Ejemplo |
 |---|---|---|
@@ -77,15 +77,16 @@ Notas de tipado verificadas:
   `bigserial`; los catálogos pequeños (`central`, `tecnico`, `sector`) son
   `serial` (`RepoTecnico/db/schema.sql:111,160,285,442`).
 - `actividad.latitud/longitud` y `evidencia.latitud/longitud` usan
-  `numeric(10,7)` (precisión GPS de ~1 cm) — `RepoTecnico/db/schema.sql:509-510,523-524`.
+  `numeric(10,7)` (precisión GPS de ~1 cm) — `RepoTecnico/db/schema.sql:526-527,540-541`.
 - `auditoria.ip` es del tipo PostgreSQL `inet` (no `varchar`) —
-  `RepoTecnico/db/schema.sql:650`.
+  `RepoTecnico/db/schema.sql:667`.
 - `dispositivo_seguridad.palabras_hash` es `jsonb` con `DEFAULT '[]'`
-  (`RepoTecnico/db/schema.sql:548`); el modelo lo expone como `list`
+  (`RepoTecnico/db/schema.sql:565`); el modelo lo expone como `list`
   (`app/models/entities.py:92`).
-- El ORM mapea **27 de las 35 tablas**. Las ocho tablas restantes
+- El ORM mapea **29 de las 36 tablas** (D-66 añadió `cuadrilla_sector_dia` y D-67 añadió
+  `auditoria`). Las **siete** tablas restantes
   (`actividad`, `evidencia`, `incidente`, `sincronizacion`, `insumo`,
-  `orden_material_detalle`, `inventario_movimiento`, `auditoria`) no tienen
+  `orden_material_detalle`, `inventario_movimiento`) no tienen
   clase declarativa y solo existen en el DDL (ver **Fuentes → Cobertura del ORM**).
 
 ### Campos de auditoría (creado_en, actualizado_en)
@@ -95,28 +96,28 @@ Quince tablas añaden además `actualizado_en`:
 
 | Tabla | `actualizado_en` | Disparador `trg_*_actualizado` |
 |---|---|---|
-| `central` | `RepoTecnico/db/schema.sql:125` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `sector` | `RepoTecnico/db/schema.sql:138` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `tecnico` | `RepoTecnico/db/schema.sql:173` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `usuario` | `RepoTecnico/db/schema.sql:192` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `flota` | `RepoTecnico/db/schema.sql:211` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `herramienta` | `RepoTecnico/db/schema.sql:224` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `cuadrilla` | `RepoTecnico/db/schema.sql:237` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `caso` | `RepoTecnico/db/schema.sql:363` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `caso_especial` | `RepoTecnico/db/schema.sql:392` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `despacho` | `RepoTecnico/db/schema.sql:454` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `falla_masiva` | `RepoTecnico/db/schema.sql:489` | Sí (`RepoTecnico/db/schema.sql:718`) |
-| `insumo` | `RepoTecnico/db/schema.sql:585` | Sí (`RepoTecnico/db/schema.sql:719`) |
-| `orden_material` | `RepoTecnico/db/schema.sql:598` | Sí (`RepoTecnico/db/schema.sql:719`) |
-| `configuracion` | `RepoTecnico/db/schema.sql:103` | Sí (`RepoTecnico/db/schema.sql:719`) |
-| `dispositivo_seguridad` | `RepoTecnico/db/schema.sql:553` | **No** (ausente del arreglo `tablas`) |
+| `central` | `RepoTecnico/db/schema.sql:125` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `sector` | `RepoTecnico/db/schema.sql:138` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `tecnico` | `RepoTecnico/db/schema.sql:173` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `usuario` | `RepoTecnico/db/schema.sql:192` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `flota` | `RepoTecnico/db/schema.sql:211` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `herramienta` | `RepoTecnico/db/schema.sql:224` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `cuadrilla` | `RepoTecnico/db/schema.sql:237` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `caso` | `RepoTecnico/db/schema.sql:363` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `caso_especial` | `RepoTecnico/db/schema.sql:392` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `despacho` | `RepoTecnico/db/schema.sql:454` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `falla_masiva` | `RepoTecnico/db/schema.sql:506` | Sí (`RepoTecnico/db/schema.sql:735`) |
+| `insumo` | `RepoTecnico/db/schema.sql:602` | Sí (`RepoTecnico/db/schema.sql:736`) |
+| `orden_material` | `RepoTecnico/db/schema.sql:615` | Sí (`RepoTecnico/db/schema.sql:736`) |
+| `configuracion` | `RepoTecnico/db/schema.sql:103` | Sí (`RepoTecnico/db/schema.sql:736`) |
+| `dispositivo_seguridad` | `RepoTecnico/db/schema.sql:570` | **No** (ausente del arreglo `tablas`) |
 
 La función `set_actualizado_en()` asigna `NEW.actualizado_en := now()` en cada
 `UPDATE` (`RepoTecnico/db/schema.sql:27-34`) y el bloque `DO` crea un disparador
 `BEFORE UPDATE ... FOR EACH ROW` sobre las 14 tablas editables del arreglo
-`tablas` (`RepoTecnico/db/schema.sql:714-729`). La tabla
+`tablas` (`RepoTecnico/db/schema.sql:731-746`). La tabla
 `dispositivo_seguridad` declara la columna `actualizado_en` pero **no** aparece
-en ese arreglo (`RepoTecnico/db/schema.sql:717-720`), por lo que su marca de
+en ese arreglo (`RepoTecnico/db/schema.sql:734-737`), por lo que su marca de
 actualización **no se refresca automáticamente**: se recomienda confirmar si es
 intencional o añadirla al arreglo. Las tablas transaccionales
 (`caso_estado_hist`, `actividad`, `evidencia`, `cita`, `seguimiento`,
@@ -130,7 +131,7 @@ El DDL crea dos extensiones al inicio de la transacción
 | Extensión | Uso declarado en el código | Versión |
 |---|---|---|
 | `pgcrypto` | `gen_random_uuid()` y `digest()` (`RepoTecnico/db/schema.sql:23`) | 1.3 (verificado en la instancia; hoja de hechos de verificación) |
-| `pg_trgm` | Búsqueda difusa por dirección para la sectorización (RF-23 / D-33) — índices GIN `gin_trgm_ops` (`schema.sql:24,674-675`) | 1.6 (verificado en la instancia; hoja de hechos de verificación) |
+| `pg_trgm` | Búsqueda difusa por dirección para la sectorización (RF-23 / D-33) — índices GIN `gin_trgm_ops` (`schema.sql:24,691-692`) | 1.6 (verificado en la instancia; hoja de hechos de verificación) |
 
 Como las extensiones viven en `public`, la cadena de conexión conserva ese
 esquema en el `search_path` cuando se usa `DB_SCHEMA`:
@@ -152,7 +153,7 @@ Propósito: catálogo de roles del sistema con su bolsa de permisos en `jsonb`
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
 | `id_rol` | `serial` | PK, NN | Identificador del rol. |
-| `codigo` | `varchar(30)` | UQ, NN | `SUPER`, `ADMIN`, `SUPERVISOR`, `TECNICO` (`RepoTecnico/db/schema.sql:736-741`). |
+| `codigo` | `varchar(30)` | UQ, NN | `SUPER`, `ADMIN`, `SUPERVISOR`, `TECNICO` (`RepoTecnico/db/schema.sql:753-758`). |
 | `nombre` | `varchar(80)` | NN | Nombre visible. |
 | `descripcion` | `text` | — | Alcance funcional resumido. |
 | `permisos` | `jsonb` | NN, `'{}'` | Permisos adicionales; el rol `SUPER` no depende de esta bolsa porque `require_roles` le concede bypass total (`app/api/deps.py:20,65`). |
@@ -184,7 +185,7 @@ central (`RepoTecnico/db/schema.sql:177-193`; ORM `app/models/entities.py:62-82`
 #### `dispositivo_seguridad` — recuperación y documento cifrado
 
 Propósito: 12 palabras de recuperación y documento cifrado por usuario
-(`RepoTecnico/db/schema.sql:545-554`; ORM `app/models/entities.py:85-97`).
+(`RepoTecnico/db/schema.sql:562-571`; ORM `app/models/entities.py:85-97`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -200,7 +201,7 @@ Propósito: 12 palabras de recuperación y documento cifrado por usuario
 #### `auditoria` — bitácora de acciones
 
 Propósito: bitácora de acciones con valores antes/después en `jsonb`
-(`RepoTecnico/db/schema.sql:642-652`; sin modelo ORM).
+(`RepoTecnico/db/schema.sql:659-669`; ORM `app/models/entities.py:100-116`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -215,15 +216,18 @@ Propósito: bitácora de acciones con valores antes/después en `jsonb`
 | `fecha_hora` | `timestamptz` | NN, `now()` | Momento del evento. |
 
 Índice de apoyo: `ix_auditoria_fecha ON auditoria (fecha_hora)`
-(`RepoTecnico/db/schema.sql:677`). No se encontró código en `app/` que escriba
-en `auditoria`: **pendiente de confirmar** su punto de registro efectivo.
+(`RepoTecnico/db/schema.sql:694`). El modelo ORM `Auditoria`
+(`app/models/entities.py:100-116`) se incorporó en el ciclo **D-67** y el router de
+autenticación es quien escribe en la tabla: `ALTA_PRIMER_ACCESO` en `POST /auth/setup`
+(`app/api/routes_auth.py:206-214`) y `REGENERAR_PALABRAS` en
+`POST /auth/palabras/{p00}/regenerar` (`app/api/routes_auth.py:315-325`).
 
 ### Configuración
 
 #### `central` — dirección operativa
 
 Propósito: base del filtro de ingesta; la central sembrada es `2324X`
-FRANCISCO SALIAS (`RepoTecnico/db/schema.sql:111-126,757-761`;
+FRANCISCO SALIAS (`RepoTecnico/db/schema.sql:111-126,774-778`;
 ORM `app/models/entities.py:26-42`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
@@ -278,7 +282,7 @@ ORM `app/models/config_entities.py:46-63`).
 | `creado_en` | `timestamptz` | NN | Auditoría. |
 
 Restricción `UNIQUE (id_sector, patron)` (`RepoTecnico/db/schema.sql:152`) e índice trigram
-`ix_sector_patron_trgm` (`RepoTecnico/db/schema.sql:675`).
+`ix_sector_patron_trgm` (`RepoTecnico/db/schema.sql:692`).
 
 #### `tecnico` — trabajador de la central
 
@@ -415,7 +419,7 @@ Propósito: métodos normalizados usados por `actividad.id_metodo`
 | `activo` | `boolean` | NN, `true` | Método vigente. |
 
 Restricción `UNIQUE (dominio, codigo)` (`RepoTecnico/db/schema.sql:95`); semilla de 9 métodos
-(`RepoTecnico/db/schema.sql:744-754`).
+(`RepoTecnico/db/schema.sql:761-771`).
 
 #### `configuracion` — parámetros del sistema
 
@@ -431,9 +435,9 @@ ORM `app/models/config_entities.py:195-201`).
 
 Los parámetros relacionados con secretos solo se nombran, nunca se transcriben:
 `telegram.webhook_secret` y `mcp.api_key` se siembran vacíos
-(`RepoTecnico/db/schema.sql:793-794`). El resto de claves sembradas
+(`RepoTecnico/db/schema.sql:810-811`). El resto de claves sembradas
 (`ingesta.*`, `despacho.*`, `fallas.*`, `outbox.max_intentos`,
-`seguridad.*`) consta en `RepoTecnico/db/schema.sql:771-797`.
+`seguridad.*`) consta en `RepoTecnico/db/schema.sql:788-814`.
 
 ### Operación
 
@@ -500,7 +504,7 @@ Propósito: historial de transiciones de estado de un caso
 
 Propósito: registrar contacto, cierre, enrute, diferido, incidente o falla
 masiva sobre un caso, con GPS y marca de sincronización
-(`RepoTecnico/db/schema.sql:496-513`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:513-530`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -518,14 +522,14 @@ masiva sobre un caso, con GPS y marca de sincronización
 | `sincronizado` | `boolean` | NN, `false` | Origen offline pendiente de subida. |
 | `creado_en` | `timestamptz` | NN | Auditoría. |
 
-Índices: `ix_actividad_caso`, `ix_actividad_usuario` (`RepoTecnico/db/schema.sql:667-668`).
+Índices: `ix_actividad_caso`, `ix_actividad_usuario` (`RepoTecnico/db/schema.sql:684-685`).
 Ninguna ruta de la API ni servicio referencia esta tabla: **pendiente de
 confirmar** dónde se persisten las actividades en la v1.
 
 #### `evidencia` — registro fotográfico
 
 Propósito: respaldo fotográfico de una actividad con GPS y marca temporal
-(`RepoTecnico/db/schema.sql:515-528`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:532-545`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -539,7 +543,7 @@ Propósito: respaldo fotográfico de una actividad con GPS y marca temporal
 | `origen_camara` | `boolean` | NN, `true` | `false` = galería, considerado inválido. |
 | `creado_en` | `timestamptz` | NN | Auditoría. |
 
-Índice `ix_evidencia_actividad` (`RepoTecnico/db/schema.sql:669`). La única mención en el
+Índice `ix_evidencia_actividad` (`RepoTecnico/db/schema.sql:686`). La única mención en el
 código es un docstring de `app/api/routes_health.py:62`, que cita la
 «evidencia del esquema desplegado» al contar entidades: **pendiente de
 confirmar** el flujo de carga de imágenes.
@@ -547,7 +551,7 @@ confirmar** el flujo de carga de imágenes.
 #### `incidente` — novedades de flota o herramienta
 
 Propósito: reportar incidentes de flota o herramienta asociados a una actividad
-(`RepoTecnico/db/schema.sql:530-542`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:547-559`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -561,12 +565,12 @@ Propósito: reportar incidentes de flota o herramienta asociados a una actividad
 | `creado_en` | `timestamptz` | NN | Auditoría. |
 
 Restricción `ck_incidente_referencia`: debe existir `id_flota` o
-`id_herramienta` (`RepoTecnico/db/schema.sql:540-541`).
+`id_herramienta` (`RepoTecnico/db/schema.sql:557-558`).
 
 #### `sincronizacion` — paquetes ZIP del dispositivo
 
 Propósito: historial de sincronizaciones con conteos y archivo ZIP
-(`RepoTecnico/db/schema.sql:557-570`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:574-587`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -631,7 +635,7 @@ Propósito: registrar el paso de un caso a otra cola/instancia y su retorno
 | `observacion` | `text` | — | Notas. |
 | `usuario` | `varchar(20)` | FK→`usuario.p00` | Autor. |
 
-Índice `ix_seguimiento_caso` (`RepoTecnico/db/schema.sql:671`).
+Índice `ix_seguimiento_caso` (`RepoTecnico/db/schema.sql:688`).
 
 #### `cita` — agenda de contacto/atención
 
@@ -653,7 +657,7 @@ Propósito: citas por caso o caso especial, **sin solapamiento** por cuadrilla
 
 Restricción `ck_cita_referencia`: debe existir `id_caso` o `id_caso_especial`
 (`RepoTecnico/db/schema.sql:434`). Índice `ix_cita_cuadrilla_fecha ON cita (id_cuadrilla, fecha_hora)`
-(`RepoTecnico/db/schema.sql:670`).
+(`RepoTecnico/db/schema.sql:687`).
 
 ### Despacho
 
@@ -677,7 +681,7 @@ Propósito: despacho de un día para una cuadrilla, con canal y hora de reporte
 | `creado_en` / `actualizado_en` | `timestamptz` | NN | Auditoría. |
 
 Restricción `UNIQUE (fecha, id_cuadrilla)`: un despacho por cuadrilla y día
-(`RepoTecnico/db/schema.sql:455`). Tabla sujeta a RLS (`RepoTecnico/db/schema.sql:704-709`).
+(`RepoTecnico/db/schema.sql:455`). Tabla sujeta a RLS (`RepoTecnico/db/schema.sql:721-726`).
 
 #### `despacho_caso` — detalle de casos asignados
 
@@ -697,12 +701,37 @@ asignación (`RepoTecnico/db/schema.sql:458-471`; ORM `app/models/despacho_entit
 
 Restricción `UNIQUE (id_despacho, id_caso)`: un caso una sola vez por despacho
 (`RepoTecnico/db/schema.sql:470`). Índices `ix_despacho_caso_caso` e `ix_despacho_caso_despacho`
-(`RepoTecnico/db/schema.sql:665-666`).
+(`RepoTecnico/db/schema.sql:682-683`).
+
+#### `cuadrilla_sector_dia` — asignación diaria de sectores a cuadrillas (D-66)
+
+Propósito: registrar qué sectores atiende cada cuadrilla en una jornada; es la base del
+reparto del despacho desde el ciclo **D-66**
+(`RepoTecnico/db/schema.sql:477-488`; ORM `app/models/despacho_entities.py:68-92`).
+
+| Campo | Tipo | Clave / Nulo | Descripción |
+|---|---|---|---|
+| `id_asignacion` | `bigserial` | PK, NN | Identificador. |
+| `id_central` | `integer` | FK→`central`, NN | Central de la jornada. |
+| `fecha` | `date` | NN | Día al que aplica la asignación. |
+| `id_cuadrilla` | `integer` | FK→`cuadrilla` `ON DELETE CASCADE`, NN | Cuadrilla que atiende. |
+| `id_sector` | `integer` | FK→`sector` `ON DELETE CASCADE`, NN | Sector asignado. |
+| `usuario` | `varchar(20)` | FK→`usuario.p00` | Supervisor que guardó la asignación. |
+| `creado_en` | `timestamptz` | NN, `now()` | Auditoría. |
+
+Restricción `UNIQUE (fecha, id_sector)`: **un sector pertenece como máximo a una cuadrilla
+por día** (`RepoTecnico/db/schema.sql:485`); en el ORM corresponde a
+`UniqueConstraint("fecha", "id_sector", ...)`
+(`app/models/despacho_entities.py:90-92`). Índice
+`ix_cuadrilla_sector_dia_fecha ON cuadrilla_sector_dia (fecha, id_cuadrilla)`
+(`RepoTecnico/db/schema.sql:487-488`). Los servicios de despacho escriben y leen esta tabla
+a través de `guardar_asignacion(...)`, `asignacion_guardada(...)` y
+`asignacion_efectiva(...)` (`app/services/despacho.py:194-263`).
 
 #### `falla_masiva` — evento de falla por concentración
 
 Propósito: agrupar casos concentrados y documentar su planificación
-(`RepoTecnico/db/schema.sql:473-490`; ORM `app/models/despacho_entities.py:85-103`).
+(`RepoTecnico/db/schema.sql:490-507`; ORM `app/models/despacho_entities.py:112-130`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -722,14 +751,14 @@ Propósito: agrupar casos concentrados y documentar su planificación
 
 Parámetros asociados en `configuracion`: `fallas.activo`, `fallas.umbral_casos`,
 `fallas.ventana_horas` y `fallas.campo_concentracion`
-(`RepoTecnico/db/schema.sql:788-791`).
+(`RepoTecnico/db/schema.sql:805-808`).
 
 ### Insumos (v2)
 
 #### `insumo` — catálogo de materiales
 
 Propósito: catálogo de insumos por central (v2, RF-05)
-(`RepoTecnico/db/schema.sql:576-586`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:593-603`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -745,7 +774,7 @@ Propósito: catálogo de insumos por central (v2, RF-05)
 #### `orden_material` — solicitud de material
 
 Propósito: cabecera de una orden de material (RF-18)
-(`RepoTecnico/db/schema.sql:588-599`; ORM mínimo `app/models/insumos_entities.py:13-24`).
+(`RepoTecnico/db/schema.sql:605-616`; ORM mínimo `app/models/insumos_entities.py:13-24`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -761,7 +790,7 @@ Propósito: cabecera de una orden de material (RF-18)
 #### `orden_material_detalle` — renglones de la orden
 
 Propósito: insumos y cantidades de cada orden
-(`RepoTecnico/db/schema.sql:601-608`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:618-625`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -771,12 +800,12 @@ Propósito: insumos y cantidades de cada orden
 | `cantidad_solicitada` | `numeric(12,2)` | NN, `CHECK > 0` | Cantidad pedida. |
 | `cantidad_entregada` | `numeric(12,2)` | NN, `0` | Cantidad entregada. |
 
-Restricción `UNIQUE (id_orden, id_insumo)` (`RepoTecnico/db/schema.sql:607`).
+Restricción `UNIQUE (id_orden, id_insumo)` (`RepoTecnico/db/schema.sql:624`).
 
 #### `inventario_movimiento` — ingresos, egresos y ajustes
 
 Propósito: kardex de movimientos de inventario
-(`RepoTecnico/db/schema.sql:610-620`; **sin modelo ORM**).
+(`RepoTecnico/db/schema.sql:627-637`; **sin modelo ORM**).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -798,8 +827,8 @@ no se encontraron rutas ni servicios que operen estas cuatro tablas en la v1.
 #### `notificacion` — bandeja de salida (outbox)
 
 Propósito: mensajes por Telegram, correo o MCP con reintentos y backoff
-(patrón *outbox*, RNF-20) (`RepoTecnico/db/schema.sql:626-640`;
-ORM `app/models/despacho_entities.py:68-82`).
+(patrón *outbox*, RNF-20) (`RepoTecnico/db/schema.sql:643-657`;
+ORM `app/models/despacho_entities.py:95-109`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
@@ -816,9 +845,9 @@ ORM `app/models/despacho_entities.py:68-82`).
 | `proximo_intento` | `timestamptz` | — | Próximo intento (backoff). |
 | `creado_en` | `timestamptz` | NN | Auditoría. |
 
-Índice `ix_notificacion_caso` (`RepoTecnico/db/schema.sql:676`). El procesamiento de la
+Índice `ix_notificacion_caso` (`RepoTecnico/db/schema.sql:693`). El procesamiento de la
 bandeja se apoya en `app/services/outbox.py` y el límite de reintentos en el
-parámetro `outbox.max_intentos` (`RepoTecnico/db/schema.sql:792`). En producción,
+parámetro `outbox.max_intentos` (`RepoTecnico/db/schema.sql:809`). En producción,
 Telegram y correo **aún no tienen credenciales**: las notificaciones quedan en
 estado `PENDIENTE` (hoja de hechos de verificación).
 
@@ -881,30 +910,30 @@ Documento de Fase 1 (Borrador v0.2, «sujeto a validación») con 33 entidades
 listadas en su inventario (`RepoTecnico/diccionario_datos.md:36-70`) y el mapeo posicional
 del CSV de 80 columnas a 49 campos destino (`RepoTecnico/diccionario_datos.md:230-297`).
 Aporta la justificación funcional de cada entidad, los códigos de requerimiento
-asociados y las cinco dudas abiertas (`RepoTecnico/diccionario_datos.md:480-494`).
+asociados y la sección de dudas abiertas (`RepoTecnico/diccionario_datos.md:492-506`).
 
 ### `RepoTecnico/db/schema.sql`
 
-Fuente normativa de la estructura física: 35 tablas, 2 extensiones, 2 funciones
+Fuente normativa de la estructura física: 36 tablas, 2 extensiones, 2 funciones
 (`set_actualizado_en`, `generar_id_averia_ref`), 1 secuencia (`seq_caso_ref`),
-21 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
-idempotentes (`RepoTecnico/db/schema.sql:18-799`). Es el archivo que se aplica
+22 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
+idempotentes (`RepoTecnico/db/schema.sql:18-820`). Es el archivo que se aplica
 con `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f RepoTecnico/db/schema.sql`
 (`RepoTecnico/db/schema.sql:12-15`).
 
 ### Cobertura del ORM (`app/models/`)
 
-El ORM mapea 27 tablas mediante 6 módulos
-(`app/models/__init__.py:1-17`): `entities.py` (rol, central, tecnico, usuario,
-dispositivo_seguridad), `caso_entities.py` (ingesta_lote, caso,
+El ORM mapea **29 tablas** mediante 6 módulos
+(`app/models/__init__.py:1-23`): `entities.py` (rol, central, tecnico, usuario,
+dispositivo_seguridad, **auditoria** —D-67—), `caso_entities.py` (ingesta_lote, caso,
 caso_estado_hist), `config_entities.py` (sector, sector_direccion, flota,
 herramienta, cuadrilla, cuadrilla_tecnico, cuadrilla_herramienta, causa,
 catalogo_metodo, configuracion), `despacho_entities.py` (despacho,
-despacho_caso, notificacion, falla_masiva), `especiales_entities.py`
+despacho_caso, cuadrilla_sector_dia, notificacion, falla_masiva), `especiales_entities.py`
 (solicitante, caso_especial, cita, seguimiento) e `insumos_entities.py`
-(orden_material). Las ocho tablas sin modelo son `actividad`, `evidencia`,
-`incidente`, `sincronizacion`, `insumo`, `orden_material_detalle`,
-`inventario_movimiento` y `auditoria`; una búsqueda en `app/**/*.py` confirma
+(orden_material). Las **siete tablas sin modelo** son `actividad`, `evidencia`,
+`incidente`, `sincronizacion`, `insumo`, `orden_material_detalle` e
+`inventario_movimiento`; una búsqueda en `app/**/*.py` confirma
 que tampoco son referenciadas por SQL directo. Es decir, en la v1 esas tablas
 existen en la base pero ningún flujo de la aplicación las escribe:
 **pendiente de confirmar** si corresponden a módulos diferidos (app móvil y
@@ -917,15 +946,15 @@ v2 de insumos) o a trabajo aún no implementado.
 | 1 | Tipo de `despacho.id_despacho` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:368` vs `RepoTecnico/db/schema.sql:442` |
 | 2 | Tipo de `cita.id_cita` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:351` vs `RepoTecnico/db/schema.sql:422` |
 | 3 | Hash de clave | «bcrypt/argon2» | Argon2id | `RepoTecnico/diccionario_datos.md:137` vs `app/core/security.py:16-25` |
-| 4 | Dominios de `catalogo_metodo` | `CIERRE`/`ENRUTE`/`DIFERIDO` | Incluye `CONTACTO` | `RepoTecnico/diccionario_datos.md:446` vs `RepoTecnico/db/schema.sql:90-91` |
-| 5 | Códigos de `rol` | `SUPERVISOR`, `TECNICO`, `ADMIN` | Además `SUPER` (bypass total) | `RepoTecnico/diccionario_datos.md:149` vs `RepoTecnico/db/schema.sql:736-741`, `app/api/deps.py:20,65` |
-| 6 | Columna `actividad.metodo` | Listada como `varchar(20)` | No existe; el método se referencia con `id_metodo` (FK) | `RepoTecnico/diccionario_datos.md:407-408` vs `RepoTecnico/db/schema.sql:506` |
+| 4 | Dominios de `catalogo_metodo` | `CIERRE`/`ENRUTE`/`DIFERIDO` | Incluye `CONTACTO` | `RepoTecnico/diccionario_datos.md:456` vs `RepoTecnico/db/schema.sql:90-91` |
+| 5 | Códigos de `rol` | `SUPERVISOR`, `TECNICO`, `ADMIN` | Además `SUPER` (bypass total) | `RepoTecnico/diccionario_datos.md:149` vs `RepoTecnico/db/schema.sql:753-758`, `app/api/deps.py:20,65` |
+| 6 | Columna `actividad.metodo` | Listada como `varchar(20)` | No existe; el método se referencia con `id_metodo` (FK) | `RepoTecnico/diccionario_datos.md:417-418` vs `RepoTecnico/db/schema.sql:523` |
 | 7 | `cita.estado` | Sin `CANCELADA` | Incluye `CANCELADA` | `RepoTecnico/diccionario_datos.md:356` vs `RepoTecnico/db/schema.sql:429-430` |
 | 8 | `caso_especial.estado` | Sin enumerado | `CHECK` con 4 estados | `RepoTecnico/diccionario_datos.md:337` vs `RepoTecnico/db/schema.sql:389-390` |
 | 9 | Nº de columnas de `caso` | «49 campos destino» (mapeo CSV) | 63 columnas físicas | `diccionario_datos.md:8,238` vs `RepoTecnico/db/schema.sql:286-363`, `app/models/caso_entities.py:42` |
 | 10 | Tipo de `ingesta_lote.fecha_archivo` | No precisado | `date` en DDL; `DateTime` en el ORM | `RepoTecnico/db/schema.sql:270` vs `app/models/caso_entities.py:28` |
 | 11 | Longitud de `caso.extra` | No precisada | `varchar(120)` en DDL; `String(40)` en el ORM | `RepoTecnico/db/schema.sql:343` vs `app/models/caso_entities.py:98` |
-| 12 | Disparador de `dispositivo_seguridad` | No aplica | Tiene `actualizado_en` pero sin disparador | `RepoTecnico/db/schema.sql:553` vs `RepoTecnico/db/schema.sql:717-720` |
+| 12 | Disparador de `dispositivo_seguridad` | No aplica | Tiene `actualizado_en` pero sin disparador | `RepoTecnico/db/schema.sql:570` vs `RepoTecnico/db/schema.sql:734-737` |
 
 Las divergencias 10 y 11 son de **mapeo ORM**, no del DDL: al no usar migraciones
 Alembic en el baseline actual, un `DateTime` sobre una columna `date` puede

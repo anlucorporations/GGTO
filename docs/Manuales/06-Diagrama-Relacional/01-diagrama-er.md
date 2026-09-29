@@ -1,6 +1,6 @@
 # Diagrama Entidad-Relación — Modelo de datos GGTO
 
-> Este manual explica, con palabras sencillas, cómo se conectan las 35 tablas de
+> Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de
 > la base GGTO. Es la versión literal del manual técnico: conserva las mismas
 > secciones y todos los diagramas por dominio, pero los presenta con un lenguaje
 > claro y con los vínculos simplificados para que se lean fácil. Si algo no se
@@ -20,18 +20,20 @@
 4. **Revisa los tres puentes.** Tres relaciones de muchos a muchos se resuelven
    con tablas puente: `cuadrilla_tecnico`, `cuadrilla_herramienta` y
    `despacho_caso`.
-5. **Recuerda las reglas del sistema.** La base tiene 35 tablas y ya contiene
+5. **Recuerda las reglas del sistema.** La base tiene 36 tablas y ya contiene
    datos reales (42 casos con datos personales) en un servicio público: el
-   acceso debe restringirse. Telegram y correo no tienen credenciales, así que
-   los envíos quedan PENDIENTES; WhatsApp no existe en la v1; la app móvil
-   Flutter no está desarrollada (Ciclo 8 pospuesto); y el riesgo aceptado D-26
-   indica que no hay respaldos/PITR hasta migrar de instancia.
+   acceso debe restringirse. La tabla número 36, `cuadrilla_sector_dia`, guarda
+   qué sectores atiende cada cuadrilla cada día (ciclo D-66). Telegram y correo
+   no tienen credenciales, así que los envíos quedan PENDIENTES; WhatsApp no
+   existe en la v1; la app móvil Flutter no está desarrollada (Ciclo 8
+   pospuesto); y el riesgo aceptado D-26 indica que no hay respaldos/PITR hasta
+   migrar de instancia.
 
 ## Visión general del modelo
 
-### 35 tablas y 7 dominios
+### 36 tablas y 7 dominios
 
-El esquema físico contiene 35 sentencias `CREATE TABLE` y el modelo de origen
+El esquema físico contiene 36 sentencias `CREATE TABLE` y el modelo de origen
 las representa en siete bloques temáticos:
 
 | # | Dominio | Entidades del diagrama | Nº |
@@ -39,15 +41,15 @@ las representa en siete bloques temáticos:
 | 1 | Vista general de relaciones | Relaciones entre todas las entidades | — |
 | 2 | Núcleo organizacional y seguridad | ROL, CENTRAL, SECTOR, SECTOR_DIRECCION, TECNICO, USUARIO, FLOTA, HERRAMIENTA, CUADRILLA, CUADRILLA_TECNICO, CUADRILLA_HERRAMIENTA, DISPOSITIVO_SEGURIDAD, SINCRONIZACION | 13 |
 | 3 | Casos: averías y solicitudes | INGESTA_LOTE, CAUSA, CASO, CASO_ESPECIAL, SOLICITANTE, CASO_ESTADO_HIST, SEGUIMIENTO, CITA | 8 |
-| 4 | Despacho y fallas masivas | DESPACHO, DESPACHO_CASO, FALLA_MASIVA (más CASO, CUADRILLA, SECTOR y CENTRAL como referencia) | 3 propias |
+| 4 | Despacho y fallas masivas | DESPACHO, DESPACHO_CASO, CUADRILLA_SECTOR_DIA, FALLA_MASIVA (más CASO, CUADRILLA, SECTOR y CENTRAL como referencia) | 4 propias |
 | 5 | Gestión técnica | ACTIVIDAD, EVIDENCIA, INCIDENTE, CATALOGO_METODO (más CAUSA, CASO, USUARIO, CUADRILLA, FLOTA y HERRAMIENTA) | 4 propias |
 | 6 | Insumos v2 | INSUMO, ORDEN_MATERIAL, ORDEN_MATERIAL_DETALLE, INVENTARIO_MOVIMIENTO | 4 |
 | 7 | Soporte y auditoría | CONFIGURACION, AUDITORIA, NOTIFICACION | 3 |
 
 Las entidades definidas con atributos propios en los dominios 2 a 7 suman
-13 + 8 + 3 + 4 + 4 + 3 = 35. Además, cada bloque repite entidades de otros
+13 + 8 + 4 + 4 + 4 + 3 = 36. Además, cada bloque repite entidades de otros
 dominios como referencia para dibujar la relación (por ejemplo, `CASO` aparece
-en los dominios 4, 5 y 7). En total, **35 tablas** distintas.
+en los dominios 4, 5 y 7). En total, **36 tablas** distintas.
 
 ### Convención de diagramas (Mermaid erDiagram)
 
@@ -74,7 +76,7 @@ implementan con `CHECK`, `UNIQUE` o directamente en el servicio.
 
 ### Vista general de relaciones
 
-Muestra el grafo completo de dependencias entre las 35 tablas. La imagen
+Muestra el grafo completo de dependencias entre las 36 tablas. La imagen
 siguiente es la versión simplificada y legible: solo nombres de tablas y
 relaciones.
 
@@ -89,18 +91,22 @@ erDiagram
     CENTRAL      ||--o{ CASO : administra
     CENTRAL      ||--o{ INGESTA_LOTE : recibe
     CENTRAL      ||--o{ DESPACHO : genera
+    CENTRAL      ||--o{ CUADRILLA_SECTOR_DIA : programa
     CENTRAL      ||--o{ FALLA_MASIVA : registra
     CENTRAL      ||--o{ INSUMO : cataloga
     SECTOR       ||--o{ SECTOR_DIRECCION : agrupa
     SECTOR       ||--o{ CASO : ubica
+    SECTOR       ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
     TECNICO      ||--o| USUARIO : "da identidad a"
     ROL          ||--o{ USUARIO : asigna
     FLOTA        ||--o| CUADRILLA : "es vehiculo de"
     CUADRILLA    ||--o{ CUADRILLA_TECNICO : integra
     CUADRILLA    ||--o{ CUADRILLA_HERRAMIENTA : equipa
     CUADRILLA    ||--o{ DESPACHO : ejecuta
+    CUADRILLA    ||--o{ CUADRILLA_SECTOR_DIA : atiende
     CUADRILLA    ||--o{ CITA : atiende
     USUARIO      ||--o| DISPOSITIVO_SEGURIDAD : registra
+    USUARIO      ||--o{ CUADRILLA_SECTOR_DIA : define
     DISPOSITIVO_SEGURIDAD ||--o{ SINCRONIZACION : sincroniza
     TECNICO      ||--o{ SINCRONIZACION : realiza
     INGESTA_LOTE ||--o{ CASO : origina
@@ -138,6 +144,11 @@ Observaciones verificadas sobre este grafo:
 - «FALLA_MASIVA `||--o{` CASO» no tiene clave foránea: la pertenencia se marca
   con `caso.es_falla_masiva` y la agrupación por concentración se calcula en
   `app/services/fallas.py`.
+- «CUADRILLA_SECTOR_DIA» es la **tabla nueva del ciclo D-66**: guarda qué
+  sectores atiende cada cuadrilla cada día. La combinación `(fecha, id_sector)`
+  es **única**, de modo que un sector pertenece como máximo a una cuadrilla por
+  día. El servicio de despacho la usa para repartir los casos y propone una
+  asignación equilibrada cuando no hay ninguna guardada.
 
 ### Núcleo organizacional y seguridad
 
@@ -473,6 +484,15 @@ erDiagram
         text     reporte_simple
         timestamp planificada_en
     }
+    CUADRILLA_SECTOR_DIA {
+        bigserial id_asignacion PK
+        int      id_central FK
+        date     fecha
+        int      id_cuadrilla FK
+        int      id_sector FK
+        varchar  usuario FK
+        timestamp creado_en
+    }
     CASO {
         bigserial id_caso PK
         varchar  id_averia UK
@@ -498,6 +518,9 @@ erDiagram
     DESPACHO   ||--o{ DESPACHO_CASO : detalla
     CASO       ||--o{ DESPACHO_CASO : asignado
     SECTOR     ||--o{ DESPACHO_CASO : agrupa
+    CENTRAL    ||--o{ CUADRILLA_SECTOR_DIA : programa
+    CUADRILLA  ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR     ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
     CENTRAL    ||--o{ FALLA_MASIVA : registra
     SECTOR     ||--o{ FALLA_MASIVA : ubica
     CUADRILLA  ||--o{ FALLA_MASIVA : atiende
@@ -512,6 +535,12 @@ tiene clave foránea en el script: se materializa con la bandera
 (`fallas.activo`, `fallas.umbral_casos`, `fallas.ventana_horas` y
 `fallas.campo_concentracion`). El canal `enviado_canal` admite Telegram y correo,
 pero en producción **aún no hay credenciales**: los envíos quedan PENDIENTES.
+
+La entidad `CUADRILLA_SECTOR_DIA` es la incorporación del ciclo **D-66**. Une tres
+catálogos (`central`, `cuadrilla` y `sector`) y al usuario que guarda la
+asignación. Su restricción `UNIQUE (fecha, id_sector)` impide que un mismo sector
+quede en dos cuadrillas el mismo día. No se conecta con `DESPACHO`: es una lista
+de trabajo previa que el motor de reparto consulta.
 
 ### Gestión técnica (offline)
 
@@ -744,9 +773,11 @@ base:
 | `central` | `despacho` | `despacho.id_central` | 1:N obligatoria |
 | `central` | `falla_masiva` | `falla_masiva.id_central` | 1:N obligatoria |
 | `central` | `insumo` | `insumo.id_central` | 1:N opcional |
+| `central` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_central` | 1:N obligatoria |
 | `sector` | `sector_direccion` | `sector_direccion.id_sector` | 1:N con borrado en cascada |
 | `sector` | `caso` | `caso.id_sector` | 1:N opcional |
 | `sector` | `despacho_caso` | `despacho_caso.id_sector` | 1:N opcional |
+| `sector` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_sector` | 1:N con borrado en cascada |
 | `ingesta_lote` | `caso` | `caso.id_lote_ingesta` | 1:N opcional |
 | `causa` | `caso` | `caso.id_causa` | 1:N opcional |
 | `causa` | `actividad` | `actividad.id_causa` | 1:N opcional |
@@ -757,6 +788,7 @@ base:
 | `cuadrilla` | `actividad` | `actividad.id_cuadrilla` | 1:N opcional |
 | `cuadrilla` | `falla_masiva` | `falla_masiva.id_cuadrilla` | 1:N opcional |
 | `cuadrilla` | `orden_material` | `orden_material.id_cuadrilla` | 1:N opcional |
+| `cuadrilla` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.id_cuadrilla` | 1:N con borrado en cascada |
 | `caso` | `caso_estado_hist` | `caso_estado_hist.id_caso` | 1:N con borrado en cascada |
 | `caso` | `seguimiento` | `seguimiento.id_caso` | 1:N con borrado en cascada |
 | `caso` | `cita` | `cita.id_caso` | 1:N con borrado en cascada |
@@ -771,6 +803,7 @@ base:
 | `actividad` | `incidente` | `incidente.id_actividad` | 1:N con borrado que deja el campo vacío |
 | `usuario` | `actividad` | `actividad.id_usuario` | 1:N opcional |
 | `usuario` | `orden_material` | `orden_material.solicitante_usuario` (apunta a `p00`) | 1:N opcional |
+| `usuario` | `cuadrilla_sector_dia` | `cuadrilla_sector_dia.usuario` (apunta a `p00`) | 1:N opcional |
 | `flota` | `incidente` | `incidente.id_flota` | 1:N opcional |
 | `herramienta` | `incidente` | `incidente.id_herramienta` | 1:N opcional |
 | `dispositivo_seguridad` | `sincronizacion` | `sincronizacion.id_dispositivo` | 1:N con borrado que deja el campo vacío |
@@ -805,8 +838,8 @@ Catálogos y su consumo:
 | Catálogo | Consumido por | Clave foránea | Notas |
 |---|---|---|---|
 | `rol` | `usuario.id_rol` | Sí, obligatoria | 4 roles cargados, incluido `SUPER` con permiso total. |
-| `central` | 10 tablas (`sector`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `caso`, `ingesta_lote`, `despacho`, `falla_masiva`, `insumo`) | Sí | Base del filtro de ingesta y del alcance multi-central. |
-| `sector` | `caso`, `sector_direccion`, `despacho_caso`, `falla_masiva` | Sí | Asignación de sector por coincidencia de dirección. |
+| `central` | 11 tablas (`sector`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `caso`, `ingesta_lote`, `despacho`, `cuadrilla_sector_dia`, `falla_masiva`, `insumo`) | Sí | Base del filtro de ingesta y del alcance multi-central. |
+| `sector` | `caso`, `sector_direccion`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | Sí | Asignación de sector por coincidencia de dirección; `cuadrilla_sector_dia` guarda qué cuadrilla lo atiende cada día. |
 | `causa` | `caso.id_causa`, `actividad.id_causa` | Sí | Catálogo administrable; hoy tiene 0 filas. |
 | `catalogo_metodo` | `actividad.id_metodo` | Sí | 9 métodos cargados. |
 | `configuracion` | Ninguna clave foránea; la leen los servicios | No | Parámetros en JSON; se actualiza por `PUT /api/v1/configuracion/{clave}`. |
@@ -819,7 +852,7 @@ Catálogos y su consumo:
 | Tipo | Tablas | Observación |
 |---|---|---|
 | PK simple `serial` | `rol`, `causa`, `catalogo_metodo`, `central`, `sector`, `sector_direccion`, `tecnico`, `usuario`, `flota`, `herramienta`, `cuadrilla`, `solicitante`, `caso_especial`, `insumo` | Catálogos y entidades maestras. |
-| PK simple `bigserial` | `ingesta_lote`, `caso`, `caso_estado_hist`, `seguimiento`, `cita`, `despacho`, `despacho_caso`, `falla_masiva`, `actividad`, `evidencia`, `incidente`, `dispositivo_seguridad`, `sincronizacion`, `orden_material`, `orden_material_detalle`, `inventario_movimiento`, `notificacion`, `auditoria` | Tablas transaccionales de alto volumen. |
+| PK simple `bigserial` | `ingesta_lote`, `caso`, `caso_estado_hist`, `seguimiento`, `cita`, `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva`, `actividad`, `evidencia`, `incidente`, `dispositivo_seguridad`, `sincronizacion`, `orden_material`, `orden_material_detalle`, `inventario_movimiento`, `notificacion`, `auditoria` | Tablas transaccionales de alto volumen. |
 | PK compuesta | `cuadrilla_tecnico` `(id_cuadrilla, id_tecnico, desde)`, `cuadrilla_herramienta` `(id_cuadrilla, id_herramienta, asignada_en)` | Dos tablas puente. |
 | PK natural `varchar` | `configuracion.clave` | La clave es el nombre del parámetro. |
 
@@ -829,7 +862,7 @@ Políticas de borrado observadas en el script de la base:
 
 | Política | Ejemplos |
 |---|---|
-| Borrado en cascada (al borrar el padre se borran los hijos) | `sector_direccion.id_sector`, `caso_estado_hist.id_caso`, `seguimiento.id_caso`, `cita.id_caso`, `despacho_caso.id_despacho` e `id_caso`, `actividad.id_caso`, `evidencia.id_actividad`, `caso_especial.id_caso`, `orden_material_detalle.id_orden`, `dispositivo_seguridad.p00` |
+| Borrado en cascada (al borrar el padre se borran los hijos) | `sector_direccion.id_sector`, `caso_estado_hist.id_caso`, `seguimiento.id_caso`, `cita.id_caso`, `despacho_caso.id_despacho` e `id_caso`, `actividad.id_caso`, `evidencia.id_actividad`, `caso_especial.id_caso`, `orden_material_detalle.id_orden`, `dispositivo_seguridad.p00`, `cuadrilla_sector_dia.id_cuadrilla` e `id_sector` |
 | Borrado que deja el campo vacío (el hijo sobrevive) | `incidente.id_actividad`, `sincronizacion.id_dispositivo`, `notificacion.id_caso` |
 | Sin política de borrado (restrictiva por defecto) | La mayoría de las claves foráneas hacia catálogos (`central`, `rol`, `sector`, `causa`, `catalogo_metodo`, `tecnico`, `flota`, `herramienta`, `cuadrilla`) |
 
@@ -858,7 +891,8 @@ Otras restricciones únicas destacadas: `rol.codigo`, `central.codigo_central`,
 compuestas `sector(id_central, codigo)`, `cuadrilla(id_central, codigo)`,
 `sector_direccion(id_sector, patron)`, `causa(codigo_causa, subcodigo_causa)`,
 `catalogo_metodo(dominio, codigo)`, `despacho(fecha, id_cuadrilla)`,
-`despacho_caso(id_despacho, id_caso)`, `orden_material_detalle(id_orden,
+`despacho_caso(id_despacho, id_caso)`, `cuadrilla_sector_dia(fecha, id_sector)`,
+`orden_material_detalle(id_orden,
 id_insumo)`. El índice único parcial `ux_cuadrilla_supervisor` implementa «una
 sola cuadrilla 0 por central».
 
@@ -1028,6 +1062,7 @@ comparación se hace sin acentos ni mayúsculas, y `tipo_coincidencia` admite
 | `ix_caso_lote` | `caso (id_lote_ingesta)` | Trazabilidad de la ingesta |
 | `ix_despacho_caso_caso` | `despacho_caso (id_caso)` | Casos de un despacho |
 | `ix_despacho_caso_despacho` | `despacho_caso (id_despacho)` | Detalle por despacho |
+| `ix_cuadrilla_sector_dia_fecha` | `cuadrilla_sector_dia (fecha, id_cuadrilla)` | Asignación de sectores del día (D-66) |
 | `ix_actividad_caso` | `actividad (id_caso)` | Actividades de un caso |
 | `ix_actividad_usuario` | `actividad (id_usuario)` | Actividades por técnico |
 | `ix_evidencia_actividad` | `evidencia (id_actividad)` | Evidencias de una actividad |
@@ -1037,7 +1072,7 @@ comparación se hace sin acentos ni mayúsculas, y `tipo_coincidencia` admite
 | `ix_notificacion_caso` | `notificacion (id_caso)` | Notificaciones de un caso (outbox) |
 | `ix_auditoria_fecha` | `auditoria (fecha_hora)` | Consulta de bitácora por fecha |
 
-Total de objetos de índice: **21** (20 `CREATE INDEX` más
+Total de objetos de índice: **22** (21 `CREATE INDEX` más
 `ux_cuadrilla_supervisor`), de los cuales 2 son trigram y 1 es único parcial.
 Observación: varias claves foráneas de catálogos pequeños (`causa`, `rol`,
 `catalogo_metodo`) no tienen índice dedicado; su volumen es bajo y el

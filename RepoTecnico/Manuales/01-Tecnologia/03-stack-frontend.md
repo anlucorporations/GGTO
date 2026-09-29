@@ -153,17 +153,17 @@ Extensión verificada de cada archivo (medida en líneas):
 |---|---|---|
 | Operacion | `app/web/src/pages/Operacion.tsx` | 49 |
 | Panel | `app/web/src/pages/Panel.tsx` | 116 |
-| Login | `app/web/src/pages/Login.tsx` | 202 |
-| Ingesta | `app/web/src/pages/Ingesta.tsx` | 447 |
+| Login | `app/web/src/pages/Login.tsx` | 386 |
+| Ingesta | `app/web/src/pages/Ingesta.tsx` | 484 |
 | Casos | `app/web/src/pages/Casos.tsx` | 931 |
-| Despacho | `app/web/src/pages/Despacho.tsx` | 1234 |
+| Despacho | `app/web/src/pages/Despacho.tsx` | 1213 |
 | Especiales | `app/web/src/pages/Especiales.tsx` | 509 |
 | Agenda | `app/web/src/pages/Agenda.tsx` | 805 |
 | Monitoreo | `app/web/src/pages/Monitoreo.tsx` | 777 |
 | Alertas | `app/web/src/pages/Alertas.tsx` | 661 |
 | Centrales | `app/web/src/pages/Centrales.tsx` | 366 |
 | Sectores | `app/web/src/pages/Sectores.tsx` | 548 |
-| Tecnicos | `app/web/src/pages/Tecnicos.tsx` | 397 |
+| Tecnicos | `app/web/src/pages/Tecnicos.tsx` | 509 |
 | Flota | `app/web/src/pages/Flota.tsx` | 402 |
 | Cuadrillas | `app/web/src/pages/Cuadrillas.tsx` | 583 |
 | Catalogos | `app/web/src/pages/Catalogos.tsx` | 464 |
@@ -213,8 +213,8 @@ El directorio `app/web/src/api/` contiene dos archivos:
 
 | Archivo | Líneas | Contenido |
 |---|---|---|
-| `app/web/src/api/client.ts` | 886 | Cliente HTTP, manejo de errores, token y funciones por recurso |
-| `app/web/src/api/types.ts` | 988 | Interfaces TypeScript espejo de los esquemas Pydantic |
+| `app/web/src/api/client.ts` | 954 | Cliente HTTP, manejo de errores, token y funciones por recurso |
+| `app/web/src/api/types.ts` | 1086 | Interfaces TypeScript espejo de los esquemas Pydantic |
 
 El encabezado de `types.ts` declara la correspondencia de forma explícita: *«Tipos del dominio GGTO —
 espejo de los esquemas Pydantic del backend (`app/schemas/auth.py` y `app/schemas/config.py`)»*
@@ -449,7 +449,7 @@ La clase se aplica a los filtros de:
 - **ESPECIALES**: `<form className="formulario filtros-tabla">` (`app/web/src/pages/Especiales.tsx:209`).
 - **MONITOREO**: `<form className="formulario filtros-tabla">` (`app/web/src/pages/Monitoreo.tsx:516`).
 - **DESPACHO** (Jornada): `<form className="formulario filtros-tabla">`
-  (`app/web/src/pages/Despacho.tsx:609`).
+  (`app/web/src/pages/Despacho.tsx:581`).
 - **AGENDA**: `<div className="cal-filtros filtros-tabla">` (`app/web/src/pages/Agenda.tsx:478`).
 - **CONFIGURACIÓN**: las pantallas Central, Técnicos, Flota, Sectores, Cuadrillas y Catálogos usan
   `.fila-filtros` (`app/web/src/pages/Centrales.tsx:286`, `app/web/src/pages/Tecnicos.tsx:306`,
@@ -518,7 +518,7 @@ El historial de estados se carga aparte con `api.obtenerHistorialCaso` al selecc
 
 ### app/web/src/api/client.ts
 
-El cliente HTTP (886 líneas) es la única puerta de salida hacia la API. Su encabezado documenta las
+El cliente HTTP (954 líneas) es la única puerta de salida hacia la API. Su encabezado documenta las
 tres decisiones de diseño: mismo origen con `API_BASE = '/api/v1'`, token en `localStorage` adjunto
 como `Bearer`, y conversión de cualquier respuesta no-2xx en `ApiError` con el `detail` de FastAPI
 (`app/web/src/api/client.ts:1-8`).
@@ -531,69 +531,69 @@ const TOKEN_KEY = 'ggto_token';
 const USER_KEY = 'ggto_usuario';
 ```
 
-(`app/web/src/api/client.ts:93-96`). La clase `ApiError` extiende `Error` y transporta el código HTTP
-en la propiedad `status` (`app/web/src/api/client.ts:102-110`).
+(`app/web/src/api/client.ts:99-102`). La clase `ApiError` extiende `Error` y transporta el código HTTP
+en la propiedad `status` (`app/web/src/api/client.ts:108-116`).
 
-Las funciones de sesión gestionan el `localStorage`: `getToken()` (`app/web/src/api/client.ts:141-143`),
+Las funciones de sesión gestionan el `localStorage`: `getToken()` (`app/web/src/api/client.ts:147-149`),
 `getUsuarioGuardado()` con `try/catch` sobre el `JSON.parse`
-(`app/web/src/api/client.ts:145-153`), `guardarSesion()` (`app/web/src/api/client.ts:155-158`) y
-`limpiarSesion()` (`app/web/src/api/client.ts:160-163`).
+(`app/web/src/api/client.ts:151-159`), `guardarSesion()` (`app/web/src/api/client.ts:161-164`) y
+`limpiarSesion()` (`app/web/src/api/client.ts:166-169`).
 
-El núcleo es la función `request<T>()` (`app/web/src/api/client.ts:178-203`), que:
+El núcleo es la función `request<T>()` (`app/web/src/api/client.ts:187-229`), que:
 
 1. Copia las cabeceras y fija `Accept: application/json`
-   (`app/web/src/api/client.ts:179-180`).
+   (`app/web/src/api/client.ts:188-189`).
 2. Fija `Content-Type: application/json` salvo cuando el cuerpo es `FormData`, porque en ese caso el
    navegador debe fijar su propio `Content-Type` con el *boundary*
-   (`app/web/src/api/client.ts:181-187`).
+   (`app/web/src/api/client.ts:190-197`).
 3. Adjunta el token como `Authorization: Bearer` si existe
-   (`app/web/src/api/client.ts:188-189`).
+   (`app/web/src/api/client.ts:198-199`).
 4. Envuelve el `fetch` en `try/catch` y convierte un fallo de red en `ApiError(0, ...)` con un
-   mensaje en español (`app/web/src/api/client.ts:191-198`).
+   mensaje en español (`app/web/src/api/client.ts:201-206`).
 5. Ante una respuesta no-OK, intenta leer el JSON y lanza `ApiError` con el mensaje extraído
-   (`app/web/src/api/client.ts:200-211`).
+   (`app/web/src/api/client.ts:208-219`).
 6. Devuelve `undefined` ante un `204` o un cuerpo vacío, y parsea el JSON en caso contrario
-   (`app/web/src/api/client.ts:213-220`).
+   (`app/web/src/api/client.ts:221-228`).
 
-El *helper* `extraerDetail()` (`app/web/src/api/client.ts:112-136`) maneja las tres formas en que
+El *helper* `extraerDetail()` (`app/web/src/api/client.ts:118-141`) maneja las tres formas en que
 FastAPI devuelve errores: una cadena, un objeto con `detail` de tipo cadena, o un arreglo de errores
 de validación Pydantic. En este último caso compone el mensaje con el nombre del campo y el `msg`
-(`app/web/src/api/client.ts:118-131`).
+(`app/web/src/api/client.ts:123-137`).
 
 Sobre `request` se construyen dos ayudantes: `conCuerpo()` para enviar JSON serializado
-(`app/web/src/api/client.ts:205-207`) y `requestTexto()` para respuestas que no son JSON, como el
-HTML del despacho imprimible (RT-08) (`app/web/src/api/client.ts:210-255`).
+(`app/web/src/api/client.ts:231-233`) y `requestTexto()` para respuestas que no son JSON, como el
+HTML del despacho imprimible (RT-08) (`app/web/src/api/client.ts:239-263`).
 
 Las funciones de recurso cubren todas las secciones. El listado siguiente es representativo y
 verificado por nombre de exportación:
 
 | Grupo | Funciones | Ejemplo de línea |
 |---|---|---|
-| Autenticación | `login`, `obtenerMe`, `desbloquear` | `app/web/src/api/client.ts:264,268,272` |
-| Central | `listarCentral`, `crearCentral`, `obtenerCentral`, `actualizarCentral`, `desactivarCentral` | `app/web/src/api/client.ts:280-298` |
-| Sectores | `listarSectores`, `crearSector`, `agregarDireccionSector`, `eliminarDireccionSector` | `app/web/src/api/client.ts:304-334` |
-| Técnicos y flota | `listarTecnicos`, `crearTecnico`, `listarFlota`, `crearFlota`, `retirarFlota` | `app/web/src/api/client.ts:341-384` |
-| Cuadrillas | `listarCuadrillas`, `crearCuadrilla`, `agregarIntegrante`, `retirarIntegrante` | `app/web/src/api/client.ts:391-417` |
-| Catálogos y parámetros | `listarCausas`, `listarMetodos`, `listarConfiguracion`, `actualizarConfiguracion` | `app/web/src/api/client.ts:426-455` |
-| Ingesta | `previewIngesta`, `cargarIngesta`, `listarLotes`, `obtenerLote` | `app/web/src/api/client.ts:477-492` |
-| Casos | `listarCasos`, `buscarCasos`, `obtenerCaso`, `crearCaso`, `actualizarCaso`, `obtenerHistorialCaso` | `app/web/src/api/client.ts:500-534` |
-| Despacho | `simularPropuesta`, `generarDespacho`, `listarDespachos`, `obtenerImprimible`, `enviarDespacho` | `app/web/src/api/client.ts:542-647` |
-| Especiales y agenda | `listarSolicitantes`, `listarCasosEspeciales`, `listarCitas`, `listarSeguimiento` | `app/web/src/api/client.ts:679-746` |
+| Autenticación | `login`, `obtenerMe`, `desbloquear`, `primerAcceso` (**D-67**), `completarSetup` (**D-67**), `regenerarPalabras` (**D-67**) | `app/web/src/api/client.ts:270-304` |
+| Central | `listarCentral`, `crearCentral`, `obtenerCentral`, `actualizarCentral`, `desactivarCentral` | `app/web/src/api/client.ts:310-328` |
+| Sectores | `listarSectores`, `crearSector`, `agregarDireccionSector`, `eliminarDireccionSector` | `app/web/src/api/client.ts:334-368` |
+| Técnicos y flota | `listarTecnicos`, `crearTecnico`, `listarFlota`, `crearFlota`, `retirarFlota` | `app/web/src/api/client.ts:371-417` |
+| Cuadrillas | `listarCuadrillas`, `crearCuadrilla`, `agregarIntegrante`, `retirarIntegrante` | `app/web/src/api/client.ts:421-452` |
+| Catálogos y parámetros | `listarCausas`, `listarMetodos`, `listarConfiguracion`, `actualizarConfiguracion` | `app/web/src/api/client.ts:456-505` |
+| Ingesta | `previewIngesta`, `cargarIngesta`, `listarLotes`, `obtenerLote`, `sectorizarPendientes` (**D-66**) | `app/web/src/api/client.ts:507-535` |
+| Casos | `listarCasos`, `buscarCasos`, `obtenerCaso`, `crearCaso`, `actualizarCaso`, `obtenerHistorialCaso` | `app/web/src/api/client.ts:538-576` |
+| Despacho | `simularPropuesta`, `generarDespacho`, `listarDespachos`, `obtenerProcesoDespacho`, `guardarAsignacionDespacho`, `procesarDespacho` (**D-66**), `obtenerImprimible`, `enviarDespacho`, `listarNotificaciones` | `app/web/src/api/client.ts:580-716` |
+| Especiales y agenda | `listarSolicitantes`, `listarCasosEspeciales`, `listarCitas`, `listarSeguimiento` | `app/web/src/api/client.ts:747-830` |
 
 La ingesta usa `FormData` para subir el archivo, lo que explica la excepción de `Content-Type` en
-`request` (`app/web/src/api/client.ts:181-187`). Las funciones `previewIngesta` y `cargarIngesta`
-reciben un `File` y un `idCentral` opcional (`app/web/src/api/client.ts:477-485`).
+`request` (`app/web/src/api/client.ts:190-197`). Las funciones `previewIngesta` y `cargarIngesta`
+reciben un `File` y un `idCentral` opcional (`app/web/src/api/client.ts:507-515`).
 
 ### app/web/src/api/types.ts
 
-`types.ts` (988 líneas) reúne las interfaces TypeScript que reflejan los contratos de la API. Los
+`types.ts` (1086 líneas) reúne las interfaces TypeScript que reflejan los contratos de la API. Los
 grupos verificados son:
 
 | Grupo | Interfaces | Referencia |
 |---|---|---|
-| Autenticación | `Usuario`, `TokenResponse`, `PalabraPosicion`, `UnlockResponse` | `app/web/src/api/types.ts:10-36` |
-| Central | `Central`, `CentralCreate`, `CentralUpdate` | `app/web/src/api/types.ts:42-58` |
-| Sectores | `TipoCoincidencia`, `SectorDireccionCreate`, `SectorDireccion`, `Sector`, `SectorCreate` | `app/web/src/api/types.ts:64-90` |
+| Autenticación | `Usuario`, `TokenResponse`, `PalabraPosicion`, `UnlockResponse`, `EstadoPrimerAcceso`, `PrimerAccesoOut`, `SetupResponse`, `RegenerarPalabrasResponse` (D-67), `EstadoCuentaTecnico` (D-67) | `app/web/src/api/types.ts:10-73` |
+| Central | `Central`, `CentralCreate`, `CentralUpdate` | `app/web/src/api/types.ts:79-95` |
+| Sectores | `TipoCoincidencia`, `SectorDireccionCreate`, `SectorDireccion`, `Sector`, `SectorCreate` | `app/web/src/api/types.ts:101-136` |
 
 Se observan dos convenciones útiles:
 
@@ -695,7 +695,12 @@ El estado verificado del frontend y sus pendientes son los siguientes:
   CASOS en una sola fila y sin Origen ni rango de fechas; barra con OPERACIÓN y sin las secciones
   fusionadas; OPERACIÓN con las cuatro secciones y las rutas antiguas redirigiendo; y ficha rápida
   con el buscador junto al título y las pestañas—, para un total del proyecto de **229 pruebas**
-  (169 `pytest` + 60 E2E) (`RepoTecnico/estado_proyecto.md:132`). El detalle de escenarios y su
+  (169 `pytest` + 60 E2E) (`RepoTecnico/estado_proyecto.md:132`). Con **D-66** se añadió
+  `RepoTecnico/pruebas/e2e/tests/15-proceso-despacho.spec.js` (**3 casos**) y con **D-67** el
+  `RepoTecnico/pruebas/e2e/tests/16-primer-acceso-tecnicos.spec.js` (**3 casos**: estado de la cuenta
+  en el listado de TÉCNICOS, primer acceso completo con las 12 palabras y regeneración solo por el
+  SUPER), de modo que la carpeta `RepoTecnico/pruebas/e2e/tests/` reúne **16 archivos `.spec.js`**
+  (`RepoTecnico/estado_proyecto.md:353`). El detalle de escenarios y su
   alcance exacto por página es **pendiente de confirmar** contra el informe de Fase 4.
 - **Accesibilidad.** RNF-23 exige que la web sea conforme a **WCAG 2.1 AA** y que la verificación se
   haga con auditoría automatizada (axe/Lighthouse) más revisión manual

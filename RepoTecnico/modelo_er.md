@@ -45,6 +45,8 @@ erDiagram
     CUADRILLA      ||--o{ CUADRILLA_TECNICO : integra
     CUADRILLA      ||--o{ CUADRILLA_HERRAMIENTA : equipa
     CUADRILLA      ||--o{ DESPACHO : ejecuta
+    CUADRILLA      ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR         ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
     CUADRILLA      ||--o{ CITA : atiende
     FLOTA          ||--o| CUADRILLA : "es vehiculo de"
     SECTOR         ||--o{ CASO : ubica
@@ -381,6 +383,15 @@ erDiagram
         varchar  estado
         text     observacion
     }
+    CUADRILLA_SECTOR_DIA {
+        bigserial id_asignacion PK
+        int      id_central FK
+        date     fecha
+        int      id_cuadrilla FK
+        int      id_sector FK
+        varchar  usuario FK
+        timestamp creado_en
+    }
     FALLA_MASIVA {
         bigserial id_falla PK
         int      id_central FK
@@ -420,6 +431,10 @@ erDiagram
     DESPACHO   ||--o{ DESPACHO_CASO : detalla
     CASO       ||--o{ DESPACHO_CASO : asignado
     SECTOR     ||--o{ DESPACHO_CASO : agrupa
+    CENTRAL    ||--o{ CUADRILLA_SECTOR_DIA : programa
+    CUADRILLA  ||--o{ CUADRILLA_SECTOR_DIA : atiende
+    SECTOR     ||--o{ CUADRILLA_SECTOR_DIA : "asignado (único por fecha)"
+    USUARIO    ||--o{ CUADRILLA_SECTOR_DIA : define
     CENTRAL    ||--o{ FALLA_MASIVA : registra
     SECTOR     ||--o{ FALLA_MASIVA : ubica
     CUADRILLA  ||--o{ FALLA_MASIVA : atiende

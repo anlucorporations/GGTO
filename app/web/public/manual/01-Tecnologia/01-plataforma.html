@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Tecnología</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/01-Tecnologia/01-plataforma.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1082,7 +1082,7 @@ afuera</strong> (Telegram, correo y MCP). Veamos cada una.</p>
         WEB --&gt;|&quot;misma dirección, sin CORS&quot;| API
     end
     subgraph Datos[&quot;Base de datos&quot;]
-        PG[(&quot;PostgreSQL 15&lt;br/&gt;base ggtov2&lt;br/&gt;35 tablas&quot;)]
+        PG[(&quot;PostgreSQL 15&lt;br/&gt;base ggtov2&lt;br/&gt;36 tablas&quot;)]
     end
     subgraph Canales[&quot;Canales hacia afuera&quot;]
         TG[&quot;Telegram&lt;br/&gt;(sin credenciales: PENDIENTE)&quot;]
@@ -1100,7 +1100,7 @@ afuera</strong> (Telegram, correo y MCP). Veamos cada una.</p>
 construir servicios web. Su trabajo es recibir cada petición, revisar quién la hace, aplicar las
 reglas y devolver la respuesta.</p>
 <p>Al arrancar, el sistema anuncia su nombre y su versión usando los datos de configuración: título
-<code>GGTO API</code>, versión <code>0.9.0</code>. Esas mismas reglas se reparten en <strong>diez módulos de rutas</strong>, cada uno
+<code>GGTO API</code>, versión <code>0.9.0</code>. Esas mismas reglas se reparten en <strong>nueve módulos de rutas</strong>, cada uno
 encargado de un tema:</p>
 <div class="tabla-scroll"><table>
 <thead>
@@ -1119,17 +1119,17 @@ encargado de un tema:</p>
 <tr>
 <td><code>routes_auth</code></td>
 <td>Acceso y sesión</td>
-<td>4</td>
+<td>7</td>
 </tr>
 <tr>
 <td><code>routes_config</code></td>
 <td>CONFIGURACIÓN</td>
-<td>31</td>
+<td>35</td>
 </tr>
 <tr>
 <td><code>routes_ingesta</code></td>
 <td>INGESTA</td>
-<td>4</td>
+<td>5</td>
 </tr>
 <tr>
 <td><code>routes_casos</code></td>
@@ -1139,7 +1139,7 @@ encargado de un tema:</p>
 <tr>
 <td><code>routes_despachos</code></td>
 <td>DESPACHO</td>
-<td>15</td>
+<td>18</td>
 </tr>
 <tr>
 <td><code>routes_especiales</code></td>
@@ -1159,9 +1159,9 @@ encargado de un tema:</p>
 </tbody>
 </table></div>
 <p>Un dato que conviene entender bien porque aparece en toda la documentación: el sistema habla de
-<strong>73 endpoints</strong> (direcciones de la API). En realidad son <strong>73 direcciones</strong> que agrupan <strong>103
+<strong>79 endpoints</strong> (direcciones de la API). En realidad son <strong>79 direcciones</strong> que agrupan <strong>109
 operaciones</strong>, porque una misma dirección puede atender varias acciones (por ejemplo, consultar y
-crear). Cuando alguien diga &quot;73 endpoints&quot;, se refiere a esas 73 direcciones.</p>
+crear). Cuando alguien diga &quot;79 endpoints&quot;, se refiere a esas 79 direcciones.</p>
 <h3 id="spa-react-servida-por-el-mismo-contenedor"><span class="sec-num">3.2</span>SPA React servida por el mismo contenedor</h3>
 <p>La parte visual es una <strong>SPA</strong> (<em>Single Page Application</em>): una aplicación web que se carga una vez y
 luego cambia de pantalla sin recargar el navegador. Está hecha con React y se compila con Vite.</p>
@@ -1177,7 +1177,9 @@ devuelve la página principal y React decide qué mostrar. A esto se le llama <e
 pura, sin pantallas.</p>
 <h3 id="base-de-datos-postgresql"><span class="sec-num">3.3</span>Base de datos PostgreSQL</h3>
 <p>El <strong>almacén</strong> de GGTO es una base de datos <strong>PostgreSQL</strong>. Guarda todo: usuarios, centrales,
-técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son <strong>35 tablas</strong>.</p>
+técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son <strong>36 tablas</strong>.
+La última en incorporarse (ciclo D-66) es <code>cuadrilla_sector_dia</code>, que guarda qué sectores atiende
+cada cuadrilla cada día.</p>
 <p>Datos de conexión usuales (los valores reales se cargan por entorno y no se escriben en este
 manual):</p>
 <div class="tabla-scroll"><table>
@@ -1596,7 +1598,7 @@ usarlas para una decisión.</strong> Lo que no se pueda comprobar se reporta com
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Tecnología</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

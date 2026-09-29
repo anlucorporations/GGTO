@@ -16,8 +16,12 @@ test.describe('Despacho', () => {
     await expect(page.getByText(/propuesta/i).first()).toBeVisible({ timeout: 30_000 });
   });
 
-  test('genera el despacho del día', async ({ page }) => {
-    await page.getByRole('button', { name: 'Generar despacho' }).click();
+  test('procesa el despacho del día desde el formulario flotante', async ({ page }) => {
+    await page.getByRole('button', { name: 'Procesar despacho' }).click();
+    const modal = page.getByRole('dialog', { name: /Procesar despacho/ });
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText('Universo de casos')).toBeVisible({ timeout: 30_000 });
+    await modal.getByRole('button', { name: 'Procesar despacho' }).click();
     await expect(page.locator('.aviso-ok, .aviso-error')).toBeVisible({ timeout: 60_000 });
   });
 

@@ -2069,3 +2069,56 @@ input[type='file'] {
   color: var(--texto);
   word-break: break-word;
 }
+
+/* ------------------ Primer acceso y palabras (D-67) ---------------- */
+
+.lista-palabras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 14px;
+  margin: 10px 0 14px;
+  padding-left: 22px;
+  font-size: 13px;
+}
+
+.lista-palabras li::marker {
+  color: var(--gris-texto);
+  font-weight: 600;
+}
+
+/* Estado de la cuenta del técnico en el listado de CONFIGURACIÓN. */
+.estado-cuenta {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.estado-cuenta.estado-activo {
+  background: var(--verde-claro, #e6f5ec);
+  color: #1f7a4d;
+}
+
+.estado-cuenta.estado-sin-alta {
+  background: #fff4e0;
+  color: #8a6100;
+}
+
+.estado-cuenta.estado-bloqueado {
+  background: var(--rojo-claro, #fdecea);
+  color: #b3261e;
+}
+
+.estado-cuenta.estado-requiere-cambio {
+  background: var(--azul-claro, #e8f0fa);
+  color: var(--azul-oscuro, #08396f);
+}
+
+.estado-cuenta.estado-inactivo {
+  background: #eef0f3;
+  color: #5b6472;
+}

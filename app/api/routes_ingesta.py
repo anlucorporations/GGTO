@@ -11,10 +11,10 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..models import Central, IngestaLote, Usuario
 from ..models.caso_entities import Caso
-from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta
+from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta, SectorizacionPendientesOut
 from ..services import cuadrilla0, fallas
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
-from ..services.ingesta import ESPECIFICACION, filtrar_por_central, parsear
+from ..services.ingesta import ESPECIFICACION, filtrar_por_central, normalizar, parsear
 from ..services.sectorizacion import Patron, asignar_sector
 from .deps import get_current_user, require_roles
 
@@ -86,6 +86,25 @@ def _analizar(
             resumen["sin_sector"] += 1
         if fila["_cuadrilla0"]:
             resumen["cuadrilla0"] += 1
+
+    # Direcciones que no pertenecen a ningún sector: se agrupan para que el
+    # usuario las gestione en SECTOR (requisito 2 del ciclo D-66).
+    pendientes: dict[str, dict[str, Any]] = {}
+    for fila in candidatas:
+        if fila.get("_id_sector"):
+            continue
+        direccion = (fila.get("direccion") or "").strip()
+        if not direccion:
+            continue
+        clave = normalizar(direccion)
+        registro = pendientes.setdefault(
+            clave, {"direccion": direccion, "total": 0, "ejemplo_id_averia": fila.get("id_averia")}
+        )
+        registro["total"] += 1
+
+    resumen["direcciones_sin_sector"] = sorted(
+        pendientes.values(), key=lambda d: (-d["total"], d["direccion"])
+    )[:50]
 
     resumen["ejemplos"] = [
         {
@@ -193,3 +212,40 @@ def obtener_lote(
     if lote is None:
         raise HTTPException(status_code=404, detail="Lote no encontrado")
     return lote
+
+
+@router.post("/sectorizar-pendientes", response_model=SectorizacionPendientesOut,
+             summary="Re-sectorizar los casos sin sector de la central (D-66)")
+def sectorizar_pendientes(
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> SectorizacionPendientesOut:
+    """Aplica los patrones vigentes a los casos que quedaron sin sector.
+
+    Se usa después de agregar direcciones nuevas a un sector desde la ingesta.
+    """
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    patrones = cargar_patrones(db, central.id_central)
+
+    pendientes = list(
+        db.scalars(
+            select(Caso).where(
+                Caso.id_central == central.id_central,
+                Caso.id_sector.is_(None),
+                Caso.direccion.isnot(None),
+            )
+        ).all()
+    )
+    asignados = 0
+    for caso in pendientes:
+        id_sector = asignar_sector(caso.direccion, patrones)
+        if id_sector:
+            caso.id_sector = id_sector
+            asignados += 1
+    if asignados:
+        db.commit()
+    return SectorizacionPendientesOut(
+        revisados=len(pendientes), asignados=asignados, sin_sector=len(pendientes) - asignados
+    )

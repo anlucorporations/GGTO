@@ -269,7 +269,8 @@ formalmente**.
 
 ### Esquema (db/schema.sql) y recarga de catálogos
 
-El esquema completo está en `RepoTecnico/db/schema.sql` y define **35 tablas**, las extensiones
+El esquema completo está en `RepoTecnico/db/schema.sql` y define **36 tablas** (35 originales más
+`cuadrilla_sector_dia` del ciclo D-66), las extensiones
 `pgcrypto` y `pg_trgm`, RLS en `caso` y `despacho`, y 14 triggers `actualizado_en`
 (`RepoTecnico/entornos_globales.md:299-309`). El script es idempotente por el uso de
 `CREATE TABLE IF NOT EXISTS` y `CREATE INDEX IF NOT EXISTS` (`RepoTecnico/db/schema.sql:64,665-677`).

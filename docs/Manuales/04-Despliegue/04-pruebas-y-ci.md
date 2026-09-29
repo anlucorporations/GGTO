@@ -55,7 +55,7 @@ esquema `ggto_test`. El esquema lo levanta el archivo `conftest.py` de la bater�
 
 #### Contratos
 
-Verifican que el contrato OpenAPI publicado (73 endpoints) sea coherente, esté versionado, esté
+Verifican que el contrato OpenAPI publicado (79 endpoints desde el ciclo D-67) sea coherente, esté versionado, esté
 documentado y proteja las rutas privadas. La prueba construye el esquema con `app.openapi()` y
 comprueba, entre otras cosas, que todas las rutas `/api/` estén bajo `/api/v1/`.
 

@@ -162,9 +162,9 @@ La carpeta `pages/` tiene **18 pantallas**, una por sección. Estas son, con su 
 | Operación | `Operacion.tsx` | 49 |
 | Panel | `Panel.tsx` | 116 |
 | Login | `Login.tsx` | 202 |
-| Ingesta | `Ingesta.tsx` | 447 |
+| Ingesta | `Ingesta.tsx` | 484 |
 | Casos | `Casos.tsx` | 931 |
-| Despacho | `Despacho.tsx` | 1234 |
+| Despacho | `Despacho.tsx` | 1213 |
 | Especiales | `Especiales.tsx` | 509 |
 | Agenda | `Agenda.tsx` | 805 |
 | Monitoreo | `Monitoreo.tsx` | 777 |
@@ -196,6 +196,8 @@ La carpeta `components/` guarda las piezas que se repiten en varias pantallas:
 | `FichaRapida` | La ficha de un caso con buscador junto al título y pestañas |
 | `ModalCaso` | La ventana del botón «Agregar caso» |
 | `Modal` | La ventana flotante grande donde se abren los formularios y las fichas |
+| `ProcesarDespacho` | El formulario flotante (90 % de la pantalla) para procesar el despacho y cambiar la asignación de sectores (D-66) |
+| `GestionDirecciones` | La ventana para asignar a un sector las direcciones que llegaron sin sector y re-sectorizar los pendientes (D-66) |
 | `PieTabla` | La franja al pie de cada tabla con el total de registros |
 | `graficos` | Los cuatro tipos de gráfico dibujados en SVG |
 | `Iconos` | El conjunto de iconos del sistema |

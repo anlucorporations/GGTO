@@ -8,6 +8,7 @@
  */
 
 import type {
+  AsignacionBloque,
   CanalDespacho,
   CasoAgregar,
   CasoEspecialCreate,
@@ -47,8 +48,11 @@ import type {
   NotificacionOut,
   OrdenMaterialOut,
   PlanificacionFalla,
+  PrimerAccesoOut,
   ProcesarOutboxOut,
+  ProcesoDespachoOut,
   PropuestaOut,
+  RegenerarPalabrasResponse,
   ReporteProduccionOut,
   Flota,
   FlotaCreate,
@@ -75,7 +79,9 @@ import type {
   SectorCreate,
   SectorDireccion,
   SectorDireccionCreate,
+  SectorizacionPendientesOut,
   SectorUpdate,
+  SetupResponse,
   SeguimientoCreate,
   SeguimientoFiltros,
   SeguimientoOut,
@@ -271,6 +277,30 @@ export function obtenerMe(): Promise<Usuario> {
 
 export function desbloquear(p00: string, palabras: PalabraPosicion[]): Promise<UnlockResponse> {
   return conCuerpo<UnlockResponse>('/auth/unlock', 'POST', { p00, palabras });
+}
+
+/** Comprueba si un P00 está registrado y si ya activó su cuenta (D-67). */
+export function primerAcceso(p00: string): Promise<PrimerAccesoOut> {
+  return request<PrimerAccesoOut>(`/auth/primer-acceso${construirQuery({ p00 })}`);
+}
+
+/** Primer acceso: fija la clave y devuelve las 12 palabras (una sola vez). */
+export function completarSetup(datos: {
+  p00: string;
+  correo: string;
+  clave: string;
+  confirmacion: string;
+}): Promise<SetupResponse> {
+  return conCuerpo<SetupResponse>('/auth/setup', 'POST', datos);
+}
+
+/** Super Usuario: regenera las 12 palabras de seguridad de un P00 (D-67). */
+export function regenerarPalabras(p00: string): Promise<RegenerarPalabrasResponse> {
+  return conCuerpo<RegenerarPalabrasResponse>(
+    `/auth/palabras/${encodeURIComponent(p00)}/regenerar`,
+    'POST',
+    {},
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -492,6 +522,14 @@ export function obtenerLote(idLote: number): Promise<IngestaLoteOut> {
   return request<IngestaLoteOut>(`/ingesta/lotes/${idLote}`);
 }
 
+/** Re-sectoriza los casos sin sector tras agregar direcciones nuevas (D-66). */
+export function sectorizarPendientes(idCentral: number | null = null): Promise<SectorizacionPendientesOut> {
+  return request<SectorizacionPendientesOut>(
+    `/ingesta/sectorizar-pendientes${construirQuery({ id_central: idCentral })}`,
+    { method: 'POST' },
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* CASOS (Ciclo 4)                                                     */
 /* ------------------------------------------------------------------ */
@@ -570,6 +608,36 @@ export function listarDespachos(
 
 export function obtenerDespacho(idDespacho: number): Promise<DespachoDetalleOut> {
   return request<DespachoDetalleOut>(`/despachos/${idDespacho}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Proceso de despacho con asignación de sectores (D-66)               */
+/* ------------------------------------------------------------------ */
+
+/** Universo de casos, sectores y asignación por cuadrilla del día. */
+export function obtenerProcesoDespacho(
+  params: { fecha?: string; id_central?: number } = {},
+): Promise<ProcesoDespachoOut> {
+  return request<ProcesoDespachoOut>(`/despachos/proceso${construirQuery(params)}`);
+}
+
+/** Guarda la asignación de sectores por cuadrilla del día. */
+export function guardarAsignacionDespacho(datos: {
+  fecha: string;
+  id_central?: number;
+  asignaciones: AsignacionBloque[];
+}): Promise<ProcesoDespachoOut> {
+  return conCuerpo<ProcesoDespachoOut>('/despachos/asignacion', 'PUT', datos);
+}
+
+/** Procesa el despacho del día con la asignación indicada. */
+export function procesarDespacho(datos: {
+  fecha: string;
+  id_central?: number;
+  asignaciones: AsignacionBloque[];
+  reemplazar?: boolean;
+}): Promise<DespachoDetalleOut[]> {
+  return conCuerpo<DespachoDetalleOut[]>('/despachos/procesar', 'POST', datos);
 }
 
 /** Publica, cierra o marca el canal del despacho (RF-25). */

@@ -130,3 +130,55 @@ def test_sectorizacion_y_cuadrilla0(client, admin_token, db_session):
     # El patrón quedó registrado (RNF-10: configurables)
     assert db_session.scalar(select(func.count()).select_from(SectorDireccion)) == 2
     assert db_session.scalar(select(func.count()).select_from(Sector)) == 2
+
+
+def test_direcciones_sin_sector_se_reportan_y_se_gestionan(client, admin_token, db_session):
+    """Sin sectores, la ingesta avisa de las direcciones nuevas y permite gestionarlas (D-66)."""
+    r = _subir(client, admin_token["admin"], "/api/v1/ingesta/preview")
+    assert r.status_code == 200, r.text
+    resumen = r.json()
+    assert resumen["sectorizados"] == 0
+    assert resumen["sin_sector"] == resumen["casos_nuevos"]
+    pendientes = resumen["direcciones_sin_sector"]
+    assert pendientes, "debe reportar las direcciones sin sector"
+    con_direccion = sum(p["total"] for p in pendientes)
+    # Solo se pueden gestionar los casos con dirección (algunos vienen sin ella)
+    assert 0 < con_direccion <= resumen["sin_sector"]
+    primera = pendientes[0]
+    assert primera["direccion"]
+    assert primera["ejemplo_id_averia"]
+
+    # Carga real: los casos quedan sin sector
+    r = _subir(client, admin_token["admin"])
+    assert r.status_code == 201, r.text
+    assert r.json()["sin_sector"] == FILAS_CENTRAL
+
+    # El supervisor agrega la dirección a un sector nuevo y re-sectoriza
+    r = client.post(
+        "/api/v1/sectores",
+        json={
+            "id_central": admin_token["id_central"],
+            "nombre": "Sector Nuevo",
+            "codigo": "TSTN1",
+            "direcciones": [{"patron": primera["direccion"]}],
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+
+    r = client.post("/api/v1/ingesta/sectorizar-pendientes", headers=admin_token["admin"])
+    assert r.status_code == 200, r.text
+    resultado = r.json()
+    assert resultado["revisados"] == con_direccion
+    assert resultado["asignados"] >= primera["total"]
+    assert resultado["asignados"] + resultado["sin_sector"] == resultado["revisados"]
+
+    con_sector = db_session.scalar(
+        select(func.count()).select_from(Caso).where(Caso.id_sector.is_not(None))
+    )
+    assert con_sector == resultado["asignados"]
+
+
+def test_sectorizar_pendientes_requiere_escritura(client, admin_token):
+    r = client.post("/api/v1/ingesta/sectorizar-pendientes", headers=admin_token["tecnico"])
+    assert r.status_code == 403

@@ -17,7 +17,11 @@
    **sectores** con sus direcciones (los patrones de texto que sirven para ubicar cada caso).
 4. Continúe con los **técnicos**, la **flota** de vehículos y las **cuadrillas** (los grupos
    de trabajo con su vehículo y sus herramientas).
-5. Al terminar, revise los **catálogos** (causas y métodos) y los **parámetros**. Casi todo
+5. En la lista de **Técnicos**, mire la columna **Cuenta**: un distintivo de color indica si
+   el técnico ya activó su acceso (**Sin alta**, **Activo**, **Bloqueado**,
+   **Cambio de clave** o **Inactivo**). Si eres **Super Usuario**, verás además el botón
+   **«Palabras»**, para generar un juego nuevo cuando un técnico pierde las suyas.
+6. Al terminar, revise los **catálogos** (causas y métodos) y los **parámetros**. Casi todo
    se desactiva en lugar de borrarse: así no se pierde el historial.
 
 ## Visión general
@@ -84,6 +88,8 @@ pareja de operaciones:
 | Crear cuadrilla | ADMIN o SUPERVISOR |
 | Crear causa | ADMIN o SUPERVISOR |
 | Actualizar parámetro | ADMIN o SUPERVISOR |
+| Ver la columna Cuenta del listado de técnicos | Cualquier usuario con sesión válida |
+| Regenerar las palabras de un técnico (botón «Palabras») | **Solo SUPER** (D-67) |
 
 El detalle del mecanismo de roles está en el manual de autenticación y RBAC. En resumen: la
 regla concede la operación a los roles enumerados y también al rol `SUPER`.
@@ -153,6 +159,47 @@ responde `404`.
 
 El filtro de estado usa el nombre real de la columna (`status`). La creación valida la
 central y avisa del choque de P00 o cédula duplicados.
+
+Además de los datos del trabajador, cada fila del listado trae un dato calculado llamado
+**estado de la cuenta** (`estado_cuenta`), que es el que alimenta la columna **Cuenta**.
+
+#### La columna Cuenta (D-67)
+
+Cuando el supervisor da de alta a un técnico, ese técnico todavía no tiene cuenta de
+acceso. La columna **Cuenta** muestra, con un distintivo de color, en qué punto está:
+
+| Distintivo | Color | Qué significa |
+|---|---|---|
+| **Sin alta** | Crema (ámbar) | El P00 existe, pero el técnico aún no creó su cuenta |
+| **Activo** | Verde claro | La cuenta funciona: el técnico puede iniciar sesión |
+| **Bloqueado** | Rojo claro | Superó los intentos de clave y debe recuperarse |
+| **Cambio de clave** | Azul claro | La cuenta exige cambiar la clave antes de continuar |
+| **Inactivo** | Gris | La cuenta o el técnico está desactivado |
+
+El cálculo lo hace el servidor, no el navegador, y se resume así:
+
+1. Si el técnico **no tiene cuenta** o **no tiene palabras de seguridad**, el estado es
+   **Sin alta**.
+2. Si la cuenta está **bloqueada**, el estado es **Bloqueado**.
+3. Si la cuenta o el técnico están **inactivos**, el estado es **Inactivo**.
+4. Si la cuenta **exige cambio de clave**, el estado es **Cambio de clave**.
+5. En cualquier otro caso, el estado es **Activo**.
+
+Este dato se calcula sin hacer una consulta por cada fila: el servidor busca de una sola vez
+los usuarios y los dispositivos de seguridad de todos los técnicos del listado.
+
+#### El botón «Palabras» (solo Super Usuario, D-67)
+
+En la columna de acciones aparece un botón **«Palabras»** que **solo ve el Super Usuario**.
+Sirve para cuando un técnico pierde sus 12 palabras de seguridad y ya no puede desbloquear
+su cuenta ni cambiar su clave.
+
+Al pulsarlo, el sistema pide confirmación al servidor, que genera **12 palabras nuevas**,
+reemplaza las anteriores (las viejas dejan de funcionar), desbloquea la cuenta y muestra las
+nuevas **una sola vez**. La acción queda registrada en la tabla `auditoria`. La operación de
+servidor es `POST /api/v1/auth/palabras/{p00}/regenerar` y el detalle está en el manual de
+autenticación y RBAC. Ni el rol `ADMIN` ni el rol `SUPERVISOR` pueden ejecutarla: el servidor
+responde `403`.
 
 ### flota
 
@@ -252,6 +299,7 @@ La prioridad del sector se declara entre 1 y 999. La salida de dirección de sec
 | `STATUS_TECNICO` | Valores permitidos: `ACTIVO`, `INACTIVO`, `VACACIONES`, `SUSPENDIDO` |
 | `TecnicoCreate` | Central, nombre, P00 y estado |
 | `TecnicoUpdate` | No incluye el P00: no es editable |
+| `TecnicoOut` | Agrega el identificador y el **estado de la cuenta** (`estado_cuenta`, D-67); su valor por defecto es `SIN_ALTA` |
 | `STATUS_FLOTA` | Valores permitidos: `DISPONIBLE`, `EN_RUTA`, `MANTENIMIENTO`, `FUERA_SERVICIO` |
 | `FlotaCreate` | CAN, tipo, marca, modelo, placa, combustible y estados |
 | `ROL_CUADRILLA` | Valores permitidos: `REPARADOR_PRINCIPAL`, `AYUDANTE`, `SUPERVISOR` |
@@ -299,6 +347,9 @@ Este archivo define los modelos que se mapean al esquema desplegado:
 
 Los modelos Central, Técnico y Usuario del Ciclo 1 viven en este otro archivo, junto con `Rol`
 y `DispositivoSeguridad`. El router de configuración los importa junto con los del Ciclo 2.
+Desde el ciclo D-67 este archivo incluye además el modelo `Auditoria`, que representa la
+tabla `auditoria` donde quedan registradas el alta de primer acceso y la regeneración de
+palabras.
 
 ### `RepoTecnico/db/schema.sql`
 
@@ -441,6 +492,11 @@ actuales y se pueden agregar o quitar patrones uno a uno. Los tipos disponibles 
 Formulario con central, nombre, apellido, cédula, P00, teléfono, correo, especialidad y
 estado. El P00 se deshabilita al editar. Los estados disponibles son `ACTIVO`, `INACTIVO`,
 `VACACIONES` y `SUSPENDIDO`, con filtros por central y por estado.
+
+La tabla muestra, entre otras columnas, **Cuenta** (el distintivo de color del ciclo D-67).
+En la columna de acciones, el botón **«Palabras»** aparece **solo** para quien tiene el rol
+`SUPER`; al pulsarlo se abre una ventana que muestra las 12 palabras nuevas, con la
+advertencia de entregarlas por un canal seguro porque no se volverán a mostrar.
 
 ### Flota.tsx
 

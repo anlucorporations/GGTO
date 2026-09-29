@@ -35,6 +35,43 @@ export interface UnlockResponse {
   mensaje: string;
 }
 
+/** Estado del P00 para el proceso de primer acceso (D-67). */
+export type EstadoPrimerAcceso =
+  | 'INEXISTENTE'
+  | 'PENDIENTE'
+  | 'ACTIVO'
+  | 'BLOQUEADO'
+  | 'INACTIVO';
+
+export interface PrimerAccesoOut {
+  p00: string;
+  registrado: boolean;
+  estado: EstadoPrimerAcceso;
+  puede_registrarse: boolean;
+  nombre: string | null;
+  mensaje: string;
+}
+
+export interface SetupResponse {
+  p00: string;
+  palabras: string[];
+  aviso: string;
+}
+
+export interface RegenerarPalabrasResponse {
+  p00: string;
+  palabras: string[];
+  aviso: string;
+}
+
+/** Ciclo de vida de la cuenta de acceso de un técnico (D-67). */
+export type EstadoCuentaTecnico =
+  | 'SIN_ALTA'
+  | 'BLOQUEADO'
+  | 'REQUIERE_CAMBIO'
+  | 'INACTIVO'
+  | 'ACTIVO';
+
 /* ------------------------------------------------------------------ */
 /* CENTRAL                                                             */
 /* ------------------------------------------------------------------ */
@@ -115,6 +152,7 @@ export interface Tecnico {
   correo: string | null;
   especialidad: string | null;
   status: StatusTecnico;
+  estado_cuenta?: EstadoCuentaTecnico;
 }
 
 export interface TecnicoCreate {
@@ -269,6 +307,12 @@ export interface EjemploCaso {
   cuadrilla0: boolean;
 }
 
+export interface DireccionSinSector {
+  direccion: string;
+  total: number;
+  ejemplo_id_averia: string | null;
+}
+
 export interface ResumenIngesta {
   archivo: string;
   filas_leidas: number;
@@ -281,7 +325,14 @@ export interface ResumenIngesta {
   cuadrilla0: number;
   avisos: string[];
   ejemplos: EjemploCaso[];
+  direcciones_sin_sector?: DireccionSinSector[];
   id_lote: number | null;
+}
+
+export interface SectorizacionPendientesOut {
+  revisados: number;
+  asignados: number;
+  sin_sector: number;
 }
 
 export interface IngestaLoteOut {
@@ -505,6 +556,53 @@ export interface CasoAsignadoOut {
   categoria: string;
   tipo_caso: string;
   es_cita: boolean;
+  especial?: boolean;
+}
+
+/* ------------------ Proceso de despacho (D-66) --------------------- */
+
+export interface SectorProcesoOut {
+  id_sector: number;
+  nombre: string | null;
+  total: number;
+  especiales: number;
+  citados: number;
+  id_cuadrilla: number | null;
+}
+
+export interface CuadrillaProcesoOut {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  ids_sector: number[];
+  total: number;
+}
+
+export interface UniversoOut {
+  total: number;
+  comunes: number;
+  especiales: number;
+  sin_sector: number;
+  casos: CasoAsignadoOut[];
+}
+
+export interface AsignacionBloque {
+  id_cuadrilla: number;
+  ids_sector: number[];
+}
+
+export interface ProcesoDespachoOut {
+  fecha: string;
+  id_central: number;
+  asignacion_origen: string;
+  universo: UniversoOut;
+  sectores: SectorProcesoOut[];
+  cuadrillas: CuadrillaProcesoOut[];
+  asignacion: AsignacionBloque[];
+  grupos: GrupoCuadrillaOut[];
+  sin_asignar: CasoAsignadoOut[];
+  reglas: Record<string, unknown>;
+  resumen: Record<string, unknown>;
 }
 
 export interface GrupoCuadrillaOut {

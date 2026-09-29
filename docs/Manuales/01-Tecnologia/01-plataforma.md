@@ -174,7 +174,7 @@ flowchart TB
         WEB -->|"misma dirección, sin CORS"| API
     end
     subgraph Datos["Base de datos"]
-        PG[("PostgreSQL 15<br/>base ggtov2<br/>35 tablas")]
+        PG[("PostgreSQL 15<br/>base ggtov2<br/>36 tablas")]
     end
     subgraph Canales["Canales hacia afuera"]
         TG["Telegram<br/>(sin credenciales: PENDIENTE)"]
@@ -196,25 +196,25 @@ construir servicios web. Su trabajo es recibir cada petición, revisar quién la
 reglas y devolver la respuesta.
 
 Al arrancar, el sistema anuncia su nombre y su versión usando los datos de configuración: título
-`GGTO API`, versión `0.9.0`. Esas mismas reglas se reparten en **diez módulos de rutas**, cada uno
+`GGTO API`, versión `0.9.0`. Esas mismas reglas se reparten en **nueve módulos de rutas**, cada uno
 encargado de un tema:
 
 | Módulo | Tema | Cantidad de operaciones |
 |---|---|---|
 | `routes_health` | Salud del servicio (`/health`, `/ready`) | 4 |
-| `routes_auth` | Acceso y sesión | 4 |
-| `routes_config` | CONFIGURACIÓN | 31 |
-| `routes_ingesta` | INGESTA | 4 |
+| `routes_auth` | Acceso y sesión | 7 |
+| `routes_config` | CONFIGURACIÓN | 35 |
+| `routes_ingesta` | INGESTA | 5 |
 | `routes_casos` | PANEL y CASOS | 6 |
-| `routes_despachos` | DESPACHO | 15 |
+| `routes_despachos` | DESPACHO | 18 |
 | `routes_especiales` | ESPECIALES, AGENDA y seguimiento | 14 |
 | `routes_monitoreo` | MONITOREO y reportes | 9 |
 | `routes_alertas` | ALERTAS, Telegram y MCP | 11 |
 
 Un dato que conviene entender bien porque aparece en toda la documentación: el sistema habla de
-**73 endpoints** (direcciones de la API). En realidad son **73 direcciones** que agrupan **103
+**79 endpoints** (direcciones de la API). En realidad son **79 direcciones** que agrupan **109
 operaciones**, porque una misma dirección puede atender varias acciones (por ejemplo, consultar y
-crear). Cuando alguien diga "73 endpoints", se refiere a esas 73 direcciones.
+crear). Cuando alguien diga "79 endpoints", se refiere a esas 79 direcciones.
 
 ### SPA React servida por el mismo contenedor
 
@@ -235,7 +235,9 @@ pura, sin pantallas.
 ### Base de datos PostgreSQL
 
 El **almacén** de GGTO es una base de datos **PostgreSQL**. Guarda todo: usuarios, centrales,
-técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son **35 tablas**.
+técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son **36 tablas**.
+La última en incorporarse (ciclo D-66) es `cuadrilla_sector_dia`, que guarda qué sectores atiende
+cada cuadrilla cada día.
 
 Datos de conexión usuales (los valores reales se cargan por entorno y no se escriben en este
 manual):

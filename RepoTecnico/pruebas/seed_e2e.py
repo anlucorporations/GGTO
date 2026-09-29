@@ -49,6 +49,7 @@ USUARIOS = [
     ("E2EADM", "ADMIN", "ADMIN", "E2E", "Administrador"),
     ("E2ESUP", "SUPERVISOR", "SUPERVISOR", "E2E", "Supervisor"),
     ("E2ETEC", "TECNICO", "TECNICO", "E2E", "Tecnico"),
+    ("E2ESUPR", "SUPER", "SUPER", "E2E", "Super Usuario"),
 ]
 
 
@@ -121,7 +122,15 @@ def sembrar(db) -> dict:
     db.add(SectorDireccion(id_sector=sector.id_sector, patron="CALLE E2E",
                            tipo_coincidencia="CONTIENE", normalizar=True, activo=True))
 
-    # --- Flota, cuadrilla de calle y cuadrilla 0 (supervisor ya existe: C-00) ---
+    # Segundo sector sin casos: permite probar la asignación dinámica (D-66).
+    sector2 = Sector(id_central=central.id_central, nombre="SECTOR E2E 2", codigo="E2E-S2",
+                     descripcion="Sector sintético secundario", prioridad=20, activo=True)
+    db.add(sector2)
+    db.flush()
+    db.add(SectorDireccion(id_sector=sector2.id_sector, patron="CALLE E2E DOS",
+                           tipo_coincidencia="CONTIENE", normalizar=True, activo=True))
+
+    # --- Flota, cuadrillas de calle y cuadrilla 0 (supervisor ya existe: C-00) ---
     flota = Flota(id_central=central.id_central, can="E2ECAN01", tipo="Camioneta",
                   marca="Toyota", modelo="Hilux", placa="E2E001", status="DISPONIBLE")
     db.add(flota)
@@ -133,6 +142,12 @@ def sembrar(db) -> dict:
     db.add(CuadrillaTecnico(id_cuadrilla=cuadrilla.id_cuadrilla,
                             id_tecnico=tecnicos["E2ETEC"].id_tecnico,
                             rol_cuadrilla="REPARADOR_PRINCIPAL"))
+
+    # Segunda cuadrilla de calle (para la asignación dinámica de sectores).
+    cuadrilla2 = Cuadrilla(id_central=central.id_central, codigo="E2E-C2",
+                           nombre="Cuadrilla E2E 2", es_supervisor=False, activa=True)
+    db.add(cuadrilla2)
+    db.flush()
 
     # --- Causa ---
     causa = Causa(codigo_causa="E2E", subcodigo_causa="01", descripcion="Causa E2E",
@@ -183,6 +198,7 @@ def sembrar(db) -> dict:
         "usuarios": {u[0]: {"rol": u[1], "clave": CLAVE} for u in USUARIOS},
         "sector": sector.codigo,
         "cuadrilla": cuadrilla.codigo,
+        "cuadrillas": [cuadrilla.codigo, cuadrilla2.codigo],
         "casos": len(definiciones),
     }
 

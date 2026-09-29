@@ -95,3 +95,22 @@ class DispositivoSeguridad(Base):
     bloqueado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Auditoria(Base):
+    """Bitácora de acciones sensibles (RF de gobernanza / D-67).
+
+    El acceso y la regeneración de palabras de seguridad quedan registrados
+    aquí para que el Super Usuario pueda auditar la recuperación de cuentas.
+    """
+
+    __tablename__ = "auditoria"
+
+    id_auditoria: Mapped[int] = mapped_column(Integer, primary_key=True)
+    usuario: Mapped[str | None] = mapped_column(String(20))
+    accion: Mapped[str] = mapped_column(String(60), nullable=False)
+    entidad: Mapped[str | None] = mapped_column(String(60))
+    id_entidad: Mapped[str | None] = mapped_column(String(40))
+    datos_antes: Mapped[dict | None] = mapped_column(JSONB)
+    datos_despues: Mapped[dict | None] = mapped_column(JSONB)
+    fecha_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

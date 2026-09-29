@@ -90,7 +90,7 @@ Los modelos (las tablas vistas desde el código) se agrupan por tema:
 | `entities.py` | Central, Rol, Usuario, Técnico, Dispositivo de seguridad | Ciclo 1 |
 | `config_entities.py` | Catálogos, causas, parámetros, cuadrillas, flota, sectores | Ciclo 2 |
 | `caso_entities.py` | Caso, historial de estados, lote de ingesta | Ciclos 3-4 |
-| `despacho_entities.py` | Despacho, casos del despacho, falla masiva, notificación | Ciclo 5 |
+| `despacho_entities.py` | Despacho, casos del despacho, asignación diaria de sectores (`cuadrilla_sector_dia`), falla masiva, notificación | Ciclo 5 / D-66 |
 | `especiales_entities.py` | Casos especiales, citas, seguimiento, solicitantes | Ciclo 6 |
 | `insumos_entities.py` | Orden de material | Versión 2 |
 
@@ -192,13 +192,13 @@ Los *routers* son las **puertas de entrada**. Cada uno atiende un tema. Están e
 | Archivo | Tema | Operaciones |
 |---|---|---|
 | `routes_alertas.py` | ALERTAS, Telegram y MCP | 11 |
-| `routes_auth.py` | Acceso y sesión | 4 |
+| `routes_auth.py` | Acceso y sesión | 5 |
 | `routes_casos.py` | PANEL y CASOS | 6 |
-| `routes_config.py` | CONFIGURACIÓN | 31 |
-| `routes_despachos.py` | DESPACHO | 15 |
+| `routes_config.py` | CONFIGURACIÓN | 35 |
+| `routes_despachos.py` | DESPACHO | 18 |
 | `routes_especiales.py` | ESPECIALES, AGENDA y seguimiento | 14 |
 | `routes_health.py` | Salud del servicio | 4 |
-| `routes_ingesta.py` | INGESTA | 4 |
+| `routes_ingesta.py` | INGESTA | 5 |
 | `routes_monitoreo.py` | MONITOREO y reportes | 9 |
 | `deps.py` | Piezas compartidas (verificar usuario) | — |
 
@@ -223,7 +223,7 @@ La carpeta `app/services/` guarda las **reglas del negocio**. Es la parte "pensa
 | `ingesta.py` | Leer y cargar el CSV diario (define las columnas) |
 | `sectorizacion.py` | Decidir a qué sector pertenece una dirección |
 | `cuadrilla0.py` | Aplicar el criterio de "cuadrilla 0" |
-| `despacho.py` | Armar la propuesta y balancear el despacho |
+| `despacho.py` | Armar el despacho por sectores y la asignación diaria de cuadrillas |
 | `fallas.py` | Detectar fallas masivas por concentración |
 | `notificaciones.py` | Componer los mensajes y elegir el canal |
 | `outbox.py` | Bandeja de salida con reintentos |

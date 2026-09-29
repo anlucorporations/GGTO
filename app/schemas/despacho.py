@@ -28,6 +28,7 @@ class CasoAsignadoOut(BaseModel):
     categoria: str
     tipo_caso: str
     es_cita: bool
+    especial: bool = False
 
 
 class GrupoCuadrillaOut(BaseModel):
@@ -85,6 +86,66 @@ class DespachoUpdate(BaseModel):
     estado: EstadoDespacho | None = None
     enviado_canal: Canal | None = None
     observacion: str | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Proceso de despacho con asignación diaria de sectores (D-66)
+# --------------------------------------------------------------------------- #
+class SectorProcesoOut(BaseModel):
+    id_sector: int
+    nombre: str | None = None
+    total: int = 0
+    especiales: int = 0
+    citados: int = 0
+    id_cuadrilla: int | None = None
+
+
+class CuadrillaProcesoOut(BaseModel):
+    id_cuadrilla: int
+    codigo: str
+    nombre: str
+    ids_sector: list[int] = Field(default_factory=list)
+    total: int = 0
+
+
+class UniversoOut(BaseModel):
+    total: int = 0
+    comunes: int = 0
+    especiales: int = 0
+    sin_sector: int = 0
+    casos: list[CasoAsignadoOut] = Field(default_factory=list)
+
+
+class AsignacionBloque(BaseModel):
+    id_cuadrilla: int
+    ids_sector: list[int] = Field(default_factory=list)
+
+
+class AsignacionUpdate(BaseModel):
+    fecha: date
+    id_central: int | None = None
+    asignaciones: list[AsignacionBloque] = Field(default_factory=list)
+
+
+class ProcesoDespachoOut(BaseModel):
+    fecha: date
+    id_central: int
+    asignacion_origen: str
+    universo: UniversoOut
+    sectores: list[SectorProcesoOut] = Field(default_factory=list)
+    cuadrillas: list[CuadrillaProcesoOut] = Field(default_factory=list)
+    asignacion: list[AsignacionBloque] = Field(default_factory=list)
+    grupos: list[GrupoCuadrillaOut] = Field(default_factory=list)
+    sin_asignar: list[CasoAsignadoOut] = Field(default_factory=list)
+    reglas: dict = Field(default_factory=dict)
+    resumen: dict = Field(default_factory=dict)
+
+
+class ProcesarDespacho(BaseModel):
+    fecha: date
+    id_central: int | None = None
+    asignaciones: list[AsignacionBloque] = Field(default_factory=list)
+    reemplazar: bool = True
 
 
 class CasoAgregar(BaseModel):

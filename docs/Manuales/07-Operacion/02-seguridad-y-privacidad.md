@@ -10,8 +10,10 @@
 
 1. **Cuida tu acceso.** Tu usuario es tu **P00** y tu clave se guarda cifrada con Argon2id. Nadie
    del equipo debe conocer tu clave.
-2. **Guarda tus 12 palabras.** Al configurar tu dispositivo recibes 12 palabras de seguridad. Se
-   piden **3** de ellas para desbloquear la cuenta o restablecer la clave.
+2. **Guarda tus 12 palabras.** En tu **primer acceso** (enlace «Primer acceso (obtener clave)» de la
+   pantalla de entrada) fijas tu correo y tu clave, y el sistema te muestra 12 palabras de seguridad.
+   Se piden **3** de ellas para desbloquear la cuenta o restablecer la clave. Si las pierdes, solo el
+   **Super Usuario** puede generarte un juego nuevo (botón «Palabras»).
 3. **Respeta tu rol.** Tu rol (SUPER, ADMIN, SUPERVISOR o TECNICO) define qué puedes ver y qué
    puedes escribir. Si el menú **CONFIGURACIÓN** no aparece, es porque tu rol no lo permite.
 4. **No compartas datos personales.** Teléfonos, direcciones, nombres y seriales son datos
@@ -44,7 +46,7 @@ protegiendo el sistema.
 | Aislamiento de datos | RLS en PostgreSQL sobre `caso` y `despacho` | Políticas en el esquema de la base |
 | Secretos | Google Secret Manager con cifrado CMEK | Script de aprovisionamiento de KMS |
 | Observabilidad | `request-id` y métricas de negocio | Middleware y endpoints de métricas |
-| Trazabilidad | Bitácora de estados del caso | Tabla `caso_estado_hist` |
+| Trazabilidad | Bitácora de estados del caso y registro de acciones sensibles | Tablas `caso_estado_hist` y `auditoria` |
 
 <!-- GENERAR_IMAGEN: defensa-en-capas.svg -->
 ```mermaid
@@ -54,7 +56,7 @@ flowchart TB
     C --> D[Autorizacion<br/>RBAC por rol, SUPER con acceso total]
     D --> E[Aislamiento de datos<br/>RLS en caso y despacho]
     E --> F[Secretos<br/>Google Secret Manager con CMEK]
-    F --> G[Observabilidad y trazabilidad<br/>request-id, metricas y bitacora de estados]
+    F --> G[Observabilidad y trazabilidad<br/>request-id, metricas, bitacora de estados y auditoria]
     G --> H[(Base de datos<br/>ggtov2)]
 ```
 
@@ -80,6 +82,9 @@ definido en el código y se genera de forma aleatoria y segura.
 | Bloqueo | Se marca el usuario como bloqueado al tercer fallo y la API responde `423` |
 | Desbloqueo | Con 3 de las 12 palabras |
 | Restablecer la clave | Con 3 de las 12 palabras |
+| Alta de primer acceso | La hace el propio técnico desde «Primer acceso (obtener clave)», si su supervisor ya registró el P00 |
+| Palabras perdidas | Solo el **Super Usuario** puede generar un juego nuevo; las anteriores dejan de funcionar y las nuevas se muestran una sola vez |
+| Guardado de las palabras | Solo huellas cifradas e irreversibles (hash Argon2id): el sistema nunca puede volver a mostrarlas |
 
 El token se valida en cada petición. Si falta, es inválido o está expirado, la API responde `401`.
 Si el usuario está bloqueado, responde `423`.
@@ -101,6 +106,7 @@ pueden **escribir**; la lectura se concede a cualquier usuario autenticado.
 | DESPACHO | `ADMIN` y `SUPERVISOR` |
 | ESPECIALES / AGENDA | `ADMIN` y `SUPERVISOR` |
 | CONFIGURACIÓN | `ADMIN` y `SUPERVISOR` |
+| Recuperación de palabras (botón «Palabras», D-67) | Solo `SUPER` |
 | ALERTAS / OUTBOX | `ADMIN` y `SUPERVISOR` |
 | MONITOREO / REPORTES | Solo lectura (cualquier usuario autenticado) |
 
@@ -116,17 +122,25 @@ En la aplicación web, el menú **CONFIGURACIÓN** solo se muestra a los roles `
 La tabla `auditoria` está definida en el esquema con los campos: `usuario`, `accion`, `entidad`,
 `id_entidad`, `datos_antes`, `datos_despues`, `ip` y `fecha_hora`.
 
-> ⚠️ **La aplicación no escribe en `auditoria`.** No existe ninguna referencia a esa tabla en el
-> código de la aplicación. La trazabilidad efectiva en la versión 1 se limita a:
+> ✅ **La aplicación ya escribe en `auditoria`** desde el ciclo D-67. Quedan registradas dos acciones
+> sensibles del alta y la recuperación de técnicos:
 >
-> - la **bitácora de estados** `caso_estado_hist`, que registra estado anterior, estado nuevo,
->   motivo y usuario, y se consulta por caso;
-> - el campo `caso.creado_por`;
-> - el registro del middleware, que **no incluye el usuario**.
+> - `ALTA_PRIMER_ACCESO`: cuando el técnico crea su cuenta desde «Primer acceso (obtener clave)».
+> - `REGENERAR_PALABRAS`: cuando el **Super Usuario** genera un juego nuevo desde el botón «Palabras».
+>   El registro guarda quién lo pidió, para qué P00, la versión anterior de las palabras y la nueva.
+
+La trazabilidad efectiva en la versión 1 se reparte así:
+
+- la **bitácora de estados** `caso_estado_hist`, que registra estado anterior, estado nuevo,
+  motivo y usuario, y se consulta por caso;
+- el campo `caso.creado_por`;
+- la tabla `auditoria`, con el alta y la regeneración de cuentas (D-67);
+- el registro del middleware, que **no incluye el usuario**.
 
 Los requerimientos RNF-12 y RNF-19 exigen registrar usuario, fecha y hora y los cambios sobre cada
-caso, además de incluir el usuario en los registros. **El registro general en `auditoria` y el
-usuario en los registros están pendientes de confirmar y no están implementados.**
+caso, además de incluir el usuario en los registros. La bitácora general todavía **no cubre todos los
+cambios** y el middleware **no registra el usuario**: esas dos partes siguen **pendientes de
+confirmar**.
 
 ---
 
@@ -167,6 +181,7 @@ variable de entorno `GGTO_SUPER_CLAVE` o la solicita de forma oculta.
 | ALERTAS (falla masiva, incidentes, solicitud de material) | CRUD | Lectura | Lectura | CRUD |
 | INSUMOS (versión 2) | CRUD | CRUD | CRUD | Solicitud |
 | AUDITORÍA | Lectura | Lectura | — | — |
+| RECUPERACIÓN DE PALABRAS (botón «Palabras», D-67) | CRUD | — | — | — |
 | USUARIOS y accesos | CRUD | CRUD | Alta y baja de técnicos | — |
 
 El rol `SUPER` no se enumera en los endpoints porque la guardia de roles le concede todo.
@@ -192,7 +207,7 @@ Las pruebas de autorización y de interfaz están documentadas en el informe de 
 | `test_config.py` (13) | RBAC de escritura en CONFIGURACIÓN | 13/13 |
 | `11-rbac.spec.js` (4) | TECNICO solo lectura, ADMIN operativo | 4/4 |
 | `02-navegacion.spec.js` (7) | RBAC del menú y de las secciones | 7/7 |
-| `test_auth.py` (11) | Inicio de sesión, bloqueo, desbloqueo y 12 palabras | 11/11 |
+| `test_auth.py` (11 en Fase 4, 15 hoy) | Inicio de sesión, bloqueo, desbloqueo, 12 palabras y las 4 pruebas del ciclo D-67 (primer acceso, estado de la cuenta y regeneración solo por SUPER) | En verde |
 
 El total de la Fase 4 fue **169/169 pruebas `pytest` + 46/46 pruebas E2E = 215 pruebas en verde**.
 Además, las herramientas `ruff`, `mypy` y `tsc` en modo estricto no reportaron hallazgos.
@@ -438,7 +453,8 @@ Precisión técnica sobre esa afirmación:
 
 - La mayoría de los endpoints `/api/v1/*` **sí exigen token JWT**.
 - Son **públicos** (sin token): `/api/v1/info`, `/health` y `/ready`; el inicio de sesión
-  (`login`); la configuración inicial (`setup`); y `unlock` y `reset-password`.
+  (`login`); la consulta del primer acceso (`primer-acceso`); la configuración inicial (`setup`); y
+  `unlock` y `reset-password`.
 - `/api/v1/telegram/webhook` y `/api/v1/mcp` se protegen con **cabecera secreta** solo si está
   configurada. Si la clave está vacía, **no se exige**.
 
@@ -529,7 +545,7 @@ SUPERVISOR.
 | Revocación de sesión o token | ❌ No implementado (JWT sin lista de revocación) |
 | Protección CSRF | ❌ No implementado (no hay referencias a CSRF) |
 | CORS restringido | ⚠️ Por defecto `cors_origins = "*"` |
-| Registro de eventos de inicio de sesión | ⚠️ Solo el registro general, sin usuario |
+| Registro de eventos de inicio de sesión | ⚠️ Parcial: el alta y la recuperación de cuentas quedan en `auditoria` (D-67); el inicio de sesión y el usuario en los registros siguen pendientes |
 | Autenticación de canales externos | ⚠️ Por cabecera, solo si la clave está configurada |
 
 > El **MFA, la política de claves, la revocación de tokens, la protección CSRF y un CORS
@@ -545,7 +561,7 @@ SUPERVISOR.
 | Tema | Responsable | Estado |
 |---|---|---|
 | Administración de catálogos, flota y almacén | SUPERVISOR | Cubierto en la versión 1 |
-| Auditoría interna de la bitácora | ADMIN (solo lectura de `auditoria`) | **Sin datos**: la aplicación no escribe en `auditoria` |
+| Auditoría interna de la bitácora | ADMIN (solo lectura de `auditoria`) | **Parcial**: el alta y la recuperación de cuentas quedan registradas (D-67); el resto de eventos, pendiente |
 | Soporte y mesa de ayuda de la plataforma | SUPERVISOR (registro por correo) | Informal en la versión 1 |
 | Responsable de protección de datos | **CANTV (externo)** | **Pendiente de designar** |
 | Dueño del sistema origen (CSV) | **CANTV (externo)** | **Pendiente de formalizar** |
@@ -561,7 +577,8 @@ AUDITOR en la versión 1.**
 1. Restringir el acceso público de `ggto-web` con IAP o invocación autenticada.
 2. Migrar a `ggtov2-pg` con respaldos, PITR, SSL `ENCRYPTED_ONLY` y protección de borrado.
 3. Implementar el **enmascaramiento por rol** de teléfono, dirección y serial.
-4. Implementar el registro de **auditoría** y añadir el usuario a los registros.
+4. Ampliar el registro de **auditoría** al resto de acciones y añadir el usuario a los registros
+   (el ciclo D-67 ya cubre el alta y la recuperación de cuentas).
 5. Conectar **RLS** fijando `app.id_central` por sesión y acotar las consultas por la central del
    usuario.
 6. Habilitar **MFA** para ADMIN y SUPERVISOR y la política de claves de RNF-22.

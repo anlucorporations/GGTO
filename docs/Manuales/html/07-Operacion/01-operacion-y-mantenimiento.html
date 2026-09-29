@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/01-operacion-y-mantenimiento.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1289,7 +1289,7 @@ documentada, por lo que <strong>la migración es una prioridad operativa</strong
 <ol>
 <li>Desbloquear la facturación de GCP y aprovisionar <code>ggtov2-pg</code> con el script de Cloud SQL
 (instancia regional con alta disponibilidad, respaldos, PITR y SSL <code>ENCRYPTED_ONLY</code>).</li>
-<li>Migrar la base <code>ggtov2</code> con una ventana de mantenimiento y verificar los 35 objetos.</li>
+<li>Migrar la base <code>ggtov2</code> con una ventana de mantenimiento y verificar los 36 objetos.</li>
 <li>Reapuntar Cloud Run a la instancia propia y dejar de usar la instancia compartida
 <code>truekeate-db-dev</code>.</li>
 <li>Ejecutar y <strong>documentar</strong> una prueba de restauración trimestral (RNF-16).</li>
@@ -1301,9 +1301,10 @@ archivos. Este procedimiento está <strong>pendiente de confirmar y de documenta
 <hr />
 <h2 id="mantenimiento"><span class="sec-num">5</span>Mantenimiento</h2>
 <h3 id="esquema-db-schema-sql-y-recarga-de-catalogos"><span class="sec-num">5.1</span>Esquema (db/schema.sql) y recarga de catálogos</h3>
-<p>El esquema completo está en el archivo <code>db/schema.sql</code> y define <strong>35 tablas</strong>, las extensiones
+<p>El esquema completo está en el archivo <code>db/schema.sql</code> y define <strong>36 tablas</strong>, las extensiones
 <code>pgcrypto</code> y <code>pg_trgm</code>, seguridad por filas (RLS) en <code>caso</code> y <code>despacho</code>, y <strong>14 disparadores</strong>
-(<em>triggers</em>) de marca <code>actualizado_en</code>.</p>
+(<em>triggers</em>) de marca <code>actualizado_en</code>. La tabla número 36 (<code>cuadrilla_sector_dia</code>, ciclo D-66)
+guarda qué sectores atiende cada cuadrilla cada día.</p>
 <p>El script es <strong>idempotente</strong>: usa <code>CREATE TABLE IF NOT EXISTS</code> y <code>CREATE INDEX IF NOT EXISTS</code>, así
 que puede volver a ejecutarse sin duplicar objetos. Una aplicación inicial carga las semillas:
 3 roles, 1 central (<code>2324X</code>), 1 cuadrilla (<code>C-00</code>), 9 métodos, 13 parámetros y 0 causas.</p>
@@ -1655,7 +1656,7 @@ confirmar»</strong>.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 

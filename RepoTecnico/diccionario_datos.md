@@ -383,7 +383,17 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 `orden_visita` · `tipo_asignacion` (`REPARACION`/`CONSTRUCCION`/`REFERIDO`/`EMPRESA`/`FALLA_MASIVA`) ·
 `estado` (`ASIGNADO`/`GESTIONADO`/`CERRADO`/`CITADO`/`DIFERIDO`) · `observacion`.
 
-### 5.3 `falla_masiva`
+### 5.3 `cuadrilla_sector_dia`
+
+Asignación **dinámica** de sectores a cuadrillas por día (D-66). El supervisor
+decide cada jornada qué sectores atiende cada cuadrilla y el despacho reparte los
+casos según esa asignación.
+
+`id_asignacion` PK · `id_central` FK · `fecha` · `id_cuadrilla` FK · `id_sector` FK ·
+`usuario` FK (`usuario.p00`) · `creado_en`. Restricción **UNIQUE (`fecha`, `id_sector`)**:
+un sector pertenece como máximo a una cuadrilla por día.
+
+### 5.4 `falla_masiva`
 
 `id_falla` PK · `id_central` FK · **`clave_concentracion`** (clave del grupo que la originó) · `descripcion` · `fecha_deteccion` · `id_sector` FK ·
 `id_cuadrilla` FK (mayor cercanía) · `estado` · `planificacion` (texto) · **`planificada_en`** (RF-17) ·
@@ -467,6 +477,8 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 central 1──N sector            sector  1──N sector_direccion
 central 1──N tecnico           central 1──N flota
 central 1──N cuadrilla         cuadrilla N──M tecnico   cuadrilla 1──N despacho
+central 1──N cuadrilla_sector_dia   cuadrilla 1──N cuadrilla_sector_dia
+sector  1──N cuadrilla_sector_dia   (UNIQUE fecha+sector: un sector, una cuadrilla por día)
 caso    N──1 central           caso     N──1 sector     caso    1──N actividad
 caso    1──N despacho_caso     despacho 1──N despacho_caso
 caso    1──1 caso_especial     caso_especial N──1 solicitante

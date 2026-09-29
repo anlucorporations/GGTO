@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,9 +18,11 @@ from ..core.security import (
     verify_password,
 )
 from ..core.words import generar_palabras
-from ..models import DispositivoSeguridad, Tecnico, Usuario
+from ..models import Auditoria, DispositivoSeguridad, Rol, Tecnico, Usuario
 from ..schemas.auth import (
     LoginRequest,
+    PrimerAccesoOut,
+    RegenerarPalabrasResponse,
     ResetPasswordRequest,
     SetupRequest,
     SetupResponse,
@@ -28,7 +30,7 @@ from ..schemas.auth import (
     UnlockRequest,
     UsuarioOut,
 )
-from .deps import get_current_user
+from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/auth", tags=["autenticación"])
 
@@ -129,33 +131,70 @@ def me(usuario: Usuario = Depends(get_current_user)) -> UsuarioOut:
     response_model=SetupResponse,
     summary="Primer inicio: fija la clave y genera 12 palabras",
 )
-def setup(datos: SetupRequest, db: Session = Depends(get_db)) -> SetupResponse:
-    """El P00 debe existir (creado por el supervisor en CONFIGURACIÓN — RF-02)."""
+def setup(
+    datos: SetupRequest, request: Request, db: Session = Depends(get_db)
+) -> SetupResponse:
+    """Alta de primer acceso (D-67).
+
+    El supervisor debe haber creado el **técnico** con ese P00 (RF-02); aquí se
+    crea la cuenta de usuario, se fija la clave y se generan las 12 palabras de
+    seguridad, que se muestran una sola vez.
+    """
     if datos.clave != datos.confirmacion:
         raise HTTPException(status_code=422, detail="La clave y su confirmación no coinciden")
 
-    usuario = db.scalar(select(Usuario).where(Usuario.p00 == datos.p00))
-    if usuario is None:
-        raise HTTPException(status_code=404, detail="El P00 no está registrado por el supervisor")
-
     s = get_settings()
-    palabras = generar_palabras(s.palabras_seguridad)
-    hashes = [hash_password(normalizar_palabra(p)) for p in palabras]
-
-    usuario.clave_hash = hash_password(datos.clave)
-    usuario.correo = datos.correo
-    usuario.intentos_fallidos = 0
-    usuario.bloqueado = False
-    usuario.requiere_cambio_clave = False
-
     dispositivo = db.scalar(
         select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == datos.p00)
     )
+    if dispositivo is not None and dispositivo.palabras_hash:
+        raise HTTPException(
+            status_code=409,
+            detail="La cuenta ya está activada. Inicie sesión o use la recuperación con sus palabras.",
+        )
+
+    usuario = db.scalar(select(Usuario).where(Usuario.p00 == datos.p00))
+    if usuario is None:
+        tecnico = db.scalar(select(Tecnico).where(Tecnico.p00 == datos.p00))
+        if tecnico is None:
+            raise HTTPException(
+                status_code=404, detail="El P00 no está registrado por el supervisor"
+            )
+        if tecnico.status != "ACTIVO":
+            raise HTTPException(
+                status_code=409,
+                detail=f"El técnico está en estado {tecnico.status}; consulte con su supervisor",
+            )
+        rol = db.scalar(select(Rol).where(Rol.codigo == "TECNICO"))
+        if rol is None:
+            raise HTTPException(status_code=500, detail="Falta el rol TECNICO en el catálogo")
+        usuario = Usuario(
+            p00=datos.p00,
+            clave_hash=hash_password(datos.clave),
+            correo=datos.correo,
+            id_rol=rol.id_rol,
+            id_tecnico=tecnico.id_tecnico,
+            id_central=tecnico.id_central,
+            activo=True,
+        )
+        db.add(usuario)
+        db.flush()  # la FK de dispositivo_seguridad exige el usuario ya insertado
+    else:
+        usuario.clave_hash = hash_password(datos.clave)
+        usuario.correo = datos.correo
+    usuario.intentos_fallidos = 0
+    usuario.bloqueado = False
+    usuario.requiere_cambio_clave = False
+    usuario.activo = True
+
+    palabras = generar_palabras(s.palabras_seguridad)
+    hashes = [hash_password(normalizar_palabra(p)) for p in palabras]
     if dispositivo is None:
-        dispositivo = DispositivoSeguridad(p00=datos.p00)
+        dispositivo = DispositivoSeguridad(p00=datos.p00, version=1)
         db.add(dispositivo)
+    else:
+        dispositivo.version = (dispositivo.version or 0) + 1
     dispositivo.palabras_hash = hashes
-    dispositivo.version = (dispositivo.version or 0) + 1
     dispositivo.bloqueado = False
 
     # Sincroniza el correo del técnico asociado, si existe.
@@ -164,8 +203,128 @@ def setup(datos: SetupRequest, db: Session = Depends(get_db)) -> SetupResponse:
         if tecnico:
             tecnico.correo = datos.correo
 
+    db.add(
+        Auditoria(
+            usuario=datos.p00,
+            accion="ALTA_PRIMER_ACCESO",
+            entidad="usuario",
+            id_entidad=datos.p00,
+            datos_despues={"correo": datos.correo, "version_palabras": dispositivo.version},
+        )
+    )
     db.commit()
     return SetupResponse(p00=datos.p00, palabras=palabras)
+
+
+@router.get(
+    "/primer-acceso",
+    response_model=PrimerAccesoOut,
+    summary="Comprueba si un P00 está registrado y si ya activó su cuenta",
+)
+def primer_acceso(
+    request: Request,
+    p00: str = Query(min_length=3, max_length=20),
+    db: Session = Depends(get_db),
+) -> PrimerAccesoOut:
+    ip = request.client.host if request.client else "desconocida"
+    _rate_limit(f"primer-acceso|{ip}", 30, 60)
+
+    tecnico = db.scalar(select(Tecnico).where(Tecnico.p00 == p00))
+    usuario = db.scalar(select(Usuario).where(Usuario.p00 == p00))
+    dispositivo = db.scalar(
+        select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == p00)
+    )
+    activada = bool(dispositivo is not None and dispositivo.palabras_hash)
+    nombre = f"{tecnico.nombre} {tecnico.apellido or ''}".strip() if tecnico else None
+
+    if usuario is None and tecnico is None:
+        return PrimerAccesoOut(
+            p00=p00,
+            registrado=False,
+            estado="INEXISTENTE",
+            mensaje="Ese P00 no está registrado. Consulte con su supervisor.",
+        )
+    if activada and usuario is not None:
+        if usuario.bloqueado:
+            return PrimerAccesoOut(
+                p00=p00, registrado=True, estado="BLOQUEADO", nombre=nombre,
+                mensaje="La cuenta está bloqueada: use 3 de sus 12 palabras de seguridad.",
+            )
+        return PrimerAccesoOut(
+            p00=p00, registrado=True, estado="ACTIVO", nombre=nombre,
+            mensaje="La cuenta ya está activada. Inicie sesión o recupere su clave.",
+        )
+    if tecnico is not None and tecnico.status != "ACTIVO":
+        return PrimerAccesoOut(
+            p00=p00, registrado=True, estado="INACTIVO", nombre=nombre,
+            mensaje=f"El técnico está en estado {tecnico.status}; consulte con su supervisor.",
+        )
+    return PrimerAccesoOut(
+        p00=p00,
+        registrado=True,
+        estado="PENDIENTE",
+        puede_registrarse=True,
+        nombre=nombre,
+        mensaje=(
+            "Su P00 está registrado y aún no tiene cuenta activada. "
+            "Fije su clave: el sistema le mostrará sus 12 palabras de seguridad."
+        ),
+    )
+
+
+@router.post(
+    "/palabras/{p00}/regenerar",
+    response_model=RegenerarPalabrasResponse,
+    summary="Super Usuario: regenera las 12 palabras de seguridad de un P00",
+)
+def regenerar_palabras(
+    p00: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("SUPER")),
+) -> RegenerarPalabrasResponse:
+    """Recuperación de seguridad (D-67): solo el Super Usuario.
+
+    Las 12 palabras se guardan **hasheadas** (nunca se pueden consultar); este
+    proceso genera un juego nuevo que se entrega al técnico una sola vez y que
+    sirve para desbloquear o restablecer la clave. Queda registrado en `auditoria`.
+    """
+    objetivo = db.scalar(select(Usuario).where(Usuario.p00 == p00))
+    if objetivo is None:
+        raise HTTPException(status_code=404, detail="Ese P00 no tiene cuenta de acceso")
+
+    s = get_settings()
+    palabras = generar_palabras(s.palabras_seguridad)
+    hashes = [hash_password(normalizar_palabra(p)) for p in palabras]
+
+    dispositivo = db.scalar(
+        select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == p00)
+    )
+    version_antes = dispositivo.version if dispositivo else None
+    if dispositivo is None:
+        dispositivo = DispositivoSeguridad(p00=p00, version=1)
+        db.add(dispositivo)
+    else:
+        dispositivo.version = (dispositivo.version or 0) + 1
+    dispositivo.palabras_hash = hashes
+    dispositivo.bloqueado = False
+
+    objetivo.bloqueado = False
+    objetivo.intentos_fallidos = 0
+
+    ip = request.client.host if request.client else None
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="REGENERAR_PALABRAS",
+            entidad="usuario",
+            id_entidad=p00,
+            datos_antes={"version_palabras": version_antes, "ip_solicitante": ip},
+            datos_despues={"version_palabras": dispositivo.version},
+        )
+    )
+    db.commit()
+    return RegenerarPalabrasResponse(p00=p00, palabras=palabras)
 
 
 @router.post("/unlock", summary="Desbloquear con 3 de las 12 palabras de seguridad")

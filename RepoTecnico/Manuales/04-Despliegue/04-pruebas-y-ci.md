@@ -32,7 +32,7 @@ esquema `ggto_test` (`RepoTecnico/pruebas/plan_pruebas.md:19-20`). El esquema lo
 
 #### Contratos
 
-Verifican que el contrato OpenAPI publicado (73 endpoints) sea coherente, esté versionado, esté
+Verifican que el contrato OpenAPI publicado (79 endpoints tras D-67) sea coherente, esté versionado, esté
 documentado y proteja las rutas privadas (`RepoTecnico/pruebas/plan_pruebas.md:21-23`). La prueba
 construye el esquema con `app.openapi()` (`app/tests/test_contratos.py:12`) y comprueba, entre otras
 cosas, que todas las rutas `/api/` estén bajo `/api/v1/`
@@ -163,6 +163,15 @@ El informe de la Fase 4 desglosa las **169** pruebas ejecutadas
 | `test_config_db.py` | 3 | Unitaria | `RepoTecnico/pruebas/informe_fase4.md:84` |
 | **Total** | **169** | — | `RepoTecnico/pruebas/informe_fase4.md:85` |
 
+> **Actualización posterior a la Fase 4.** Los conteos de la tabla anterior son los del cierre de la
+> Fase 4. Los ciclos de mantenimiento añadieron casos:
+> **D-66** llevó `test_despacho_api.py` de 17 a **23** y `test_ingesta_api.py` de 6 a **8**
+> (`RepoTecnico/estado_proyecto.md:352`); **D-67** llevó `test_auth.py` de 11 a **15** funciones
+> (4 nuevas de primer acceso, estado de la cuenta y regeneración solo SUPER)
+> (`app/tests/test_auth.py:208-317`, `RepoTecnico/estado_proyecto.md:353`). La suma vigente de
+> `def test_` en `app/tests/` no se ha vuelto a registrar en un informe cerrado; se documenta por
+> archivo en la tabla de arriba más estos deltas.
+
 Algunos archivos declaran menos funciones que pruebas ejecutadas porque usan parametrización de
 `pytest`: `test_sectorizacion_cuadrilla0.py` emplea `@pytest.mark.parametrize`
 (`app/tests/test_sectorizacion_cuadrilla0.py:22`) y `test_monitoreo_api.py` parametriza los periodos
@@ -196,7 +205,7 @@ Las pruebas E2E validan la SPA completa en un navegador real contra un *backend*
 
 El directorio `RepoTecnico/pruebas/e2e/` contiene el proyecto de Playwright: `package.json`,
 `playwright.config.js`, `helpers.js`, `inventario.js` (utilidad de inspección) y la carpeta `tests/`
-con once archivos `.spec.js`. La configuración fija `testDir: ./tests`, `timeout` de 90 s,
+con **dieciséis archivos `.spec.js`**. La configuración fija `testDir: ./tests`, `timeout` de 90 s,
 `expect` de 20 s, `workers: 1`, `fullyParallel: false` y `retries: 0`, con `baseURL` tomada de
 `GGTO_E2E_URL` (`RepoTecnico/pruebas/e2e/playwright.config.js:9-32`). El proyecto es solo
 `chromium` (`RepoTecnico/pruebas/e2e/playwright.config.js:33-38`), en modo `headless`, *viewport* 1440×900, idioma `es-VE` y
@@ -205,7 +214,7 @@ zona horaria `America/Caracas` (`RepoTecnico/pruebas/e2e/playwright.config.js:24
 (`RepoTecnico/pruebas/e2e/playwright.config.js:19-23`). La versión declarada de `@playwright/test` es `1.63.0`
 (`RepoTecnico/pruebas/e2e/package.json:11`).
 
-### 11 archivos y 46 pruebas
+### 11 archivos y 46 pruebas (cierre de Fase 4)
 
 El informe desglosa los once archivos y sus 46 pruebas
 (`RepoTecnico/pruebas/informe_fase4.md:55-66`):
@@ -225,9 +234,17 @@ El informe desglosa los once archivos y sus 46 pruebas
 | `11-rbac.spec.js` | 4 | TECNICO solo lectura y ADMIN operativo | `RepoTecnico/pruebas/informe_fase4.md:65` |
 | **Total** | **46** | — | `RepoTecnico/pruebas/informe_fase4.md:66` |
 
+Tras la Fase 4 se añadieron cinco archivos de especificación, de modo que la carpeta contiene
+**16 archivos `.spec.js`**: `12-ayuda.spec.js` (D-63), `13-ui-requisitos.spec.js` (D-64),
+`14-operacion-filtros-ficha.spec.js` (D-65), `15-proceso-despacho.spec.js` (D-66) y
+`16-primer-acceso-tecnicos.spec.js` (**D-67**, 3 casos: estado de la cuenta en TÉCNICOS, primer
+acceso completo con las 12 palabras y regeneración solo por el SUPER)
+(`RepoTecnico/estado_proyecto.md:353`).
+
 La utilidad `helpers.js` centraliza el inicio y cierre de sesión, el relleno de campos y la búsqueda
-global (`RepoTecnico/pruebas/e2e/helpers.js:16-54`); los usuarios de prueba son `E2EADM` (ADMIN),
-`E2ESUP` (SUPERVISOR) y `E2ETEC` (TECNICO) (`RepoTecnico/pruebas/e2e/helpers.js:10-14`). `inventario.js` no es una prueba,
+global (`RepoTecnico/pruebas/e2e/helpers.js:17-54`); los usuarios de prueba son `E2EADM` (ADMIN),
+`E2ESUP` (SUPERVISOR), `E2ETEC` (TECNICO) y `E2ESUPR` (**SUPER**, incorporado por D-67)
+(`RepoTecnico/pruebas/e2e/helpers.js:10-15`). `inventario.js` no es una prueba,
 sino un recorrido de rutas que vuelca encabezados, botones y tablas para inspección manual
 (`RepoTecnico/pruebas/e2e/inventario.js:1-28`).
 
@@ -259,24 +276,24 @@ Permite ejecutar un solo archivo pasando la ruta como argumento
 ### seed_e2e.py
 
 `seed_e2e.py` prepara el esquema y los datos deterministas
-(`RepoTecnico/pruebas/seed_e2e.py:1-203`). Crea el esquema y trunca sus tablas con
-`RESTART IDENTITY CASCADE` si ya existen (`RepoTecnico/pruebas/seed_e2e.py:60-76`) y luego aplica `schema.sql`
-(`RepoTecnico/pruebas/seed_e2e.py:78-84`). Siembra:
+(`RepoTecnico/pruebas/seed_e2e.py:1-219`). Crea el esquema y trunca sus tablas con
+`RESTART IDENTITY CASCADE` si ya existen (`RepoTecnico/pruebas/seed_e2e.py:61-85`) y luego aplica `schema.sql`
+(`RepoTecnico/pruebas/seed_e2e.py:82`). Siembra:
 
-- Tres usuarios con su ficha de técnico: `E2EADM` (ADMIN), `E2ESUP` (SUPERVISOR) y `E2ETEC`
-  (TECNICO), con una clave sintética común definida en el propio script
-  (`seed_e2e.py:48-52,104-114`). El valor no se reproduce aquí por ser una credencial.
-- El sector `E2E-S1` con el patrón `CALLE E2E` (`RepoTecnico/pruebas/seed_e2e.py:117-122`).
-- La flota `E2ECAN01` y la cuadrilla `E2E-C1` con el técnico `E2ETEC`
-  (`RepoTecnico/pruebas/seed_e2e.py:124-135`).
-- La causa `E2E`/`01` (`RepoTecnico/pruebas/seed_e2e.py:137-141`).
+- **Cuatro** usuarios con su ficha de técnico: `E2EADM` (ADMIN), `E2ESUP` (SUPERVISOR), `E2ETEC`
+  (TECNICO) y `E2ESUPR` (**SUPER**, incorporado por D-67), con una clave sintética común definida en
+  el propio script (`seed_e2e.py:48-54,94-115`). El valor no se reproduce aquí por ser una credencial.
+- El sector `E2E-S1` con el patrón `CALLE E2E` (`RepoTecnico/pruebas/seed_e2e.py:117-123`) y, desde
+  D-66, el sector `E2E-S2` con `CALLE E2E DOS` (`:125-131`).
+- La flota `E2ECAN01` y las cuadrillas `E2E-C1` y `E2E-C2` (`RepoTecnico/pruebas/seed_e2e.py:133-150`).
+- La causa `E2E`/`01` (`RepoTecnico/pruebas/seed_e2e.py:152-156`).
 - **Ocho casos** `E2E-0001`…`E2E-0008`, seis de ellos concentrados en `e2e-olt-00` para disparar la
-  detección de fallas con umbral 5 (`RepoTecnico/pruebas/seed_e2e.py:143-177`).
+  detección de fallas con umbral 5 (`RepoTecnico/pruebas/seed_e2e.py:158-192`).
 
-El resumen que imprime incluye esquema, central, usuarios, sector, cuadrilla y número de casos
-(`RepoTecnico/pruebas/seed_e2e.py:180-199`); la ejecución real dejó ese resumen en `RepoTecnico/pruebas/logs/seed.json`.
+El resumen que imprime incluye esquema, central, usuarios, sector, cuadrillas y número de casos
+(`RepoTecnico/pruebas/seed_e2e.py:195-203`); la ejecución real dejó ese resumen en `RepoTecnico/pruebas/logs/seed.json`.
 El script **aborta** si `DB_SCHEMA` es `public` o está vacío, para no tocar producción
-(`RepoTecnico/pruebas/seed_e2e.py:190-192`).
+(`RepoTecnico/pruebas/seed_e2e.py:207-208`).
 
 ## Calidad estática
 

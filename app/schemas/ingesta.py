@@ -14,6 +14,14 @@ class EjemploCaso(BaseModel):
     cuadrilla0: bool
 
 
+class DireccionSinSector(BaseModel):
+    """Dirección del archivo diario que no coincide con ningún sector (D-66)."""
+
+    direccion: str
+    total: int = 1
+    ejemplo_id_averia: str | None = None
+
+
 class ResumenIngesta(BaseModel):
     archivo: str
     filas_leidas: int
@@ -26,8 +34,15 @@ class ResumenIngesta(BaseModel):
     cuadrilla0: int
     avisos: list[str] = Field(default_factory=list)
     ejemplos: list[EjemploCaso] = Field(default_factory=list)
+    direcciones_sin_sector: list[DireccionSinSector] = Field(default_factory=list)
     id_lote: int | None = None
     fallas_masivas: int = 0
+
+
+class SectorizacionPendientesOut(BaseModel):
+    revisados: int = 0
+    asignados: int = 0
+    sin_sector: int = 0
 
 
 class IngestaLoteOut(BaseModel):

@@ -13,7 +13,7 @@
 2. **La gran mayoría de las direcciones son solo de consulta.** Salvo las de ingesta, casos, despacho,
    especiales, configuración y alertas, el resto solo **lee** información. Para **escribir** casi siempre se
    necesita rol **ADMIN** o **SUPERVISOR**; el rol **SUPER** puede hacer cualquier cosa.
-3. **El sistema publicado tiene 73 direcciones y 103 operaciones.** La diferencia se explica porque 26
+3. **El sistema publicado tiene 79 direcciones y 109 operaciones.** La diferencia se explica porque 26
    direcciones admiten **más de un método** (por ejemplo, consultar y crear en la misma dirección).
 4. **La documentación interactiva está en `/docs`.** Ahí se puede ver y probar cada operación. Una copia en
    formato legible está en `/redoc` y el esquema crudo en `/openapi.json`.
@@ -30,11 +30,12 @@ flowchart TB
     API --> ESC["Solo ADMIN o SUPERVISOR<br/>escritura"]
     API --> SEC["Con secreto propio<br/>Telegram y MCP"]
     PUB --> H["/health<br/>/ready<br/>/api/v1/info"]
-    PUB --> A["/api/v1/auth/login<br/>/setup<br/>/unlock<br/>/reset-password"]
+    PUB --> A["/api/v1/auth/login<br/>/setup<br/>/primer-acceso<br/>/unlock<br/>/reset-password"]
     AUT --> C1["PANEL y CASOS"]
     AUT --> C2["MONITOREO y reportes"]
     AUT --> C3["AGENDA y seguimiento"]
     AUT --> C4["Bandeja de notificaciones"]
+    API --> SUP["Solo SUPER<br/>/auth/palabras/{p00}/regenerar"]
     ESC --> E1["INGESTA"]
     ESC --> E2["DESPACHO"]
     ESC --> E3["ESPECIALES"]
@@ -99,12 +100,12 @@ La dependencia de usuario autenticado realiza esta secuencia:
 La respuesta 401 incluye la cabecera `WWW-Authenticate: Bearer`. La aplicación web consume la API con el
 mismo esquema: guarda el token en el almacenamiento local del navegador y lo adjunta en cada llamada.
 
-### Relación 73 paths / 103 operaciones
+### Relación 79 paths / 109 operaciones
 
-El esquema publicado reporta **73 rutas** (*paths*, es decir, direcciones) y **103 operaciones** (la
+El esquema publicado reporta **79 rutas** (*paths*, es decir, direcciones) y **109 operaciones** (la
 combinación de método más dirección). La diferencia se explica porque **26 direcciones comparten varios
-métodos**; cada dirección adicional con varios métodos aporta operaciones extra, en total **30 operaciones
-extra** (73 + 30 = 103).
+métodos**; cada dirección adicional con varios métodos aporta operaciones extra, en total **30
+operaciones extra** (79 + 30 = 109).
 
 Las direcciones compartidas verificadas son 26. Algunos ejemplos:
 
@@ -123,8 +124,8 @@ Las direcciones compartidas verificadas son 26. Algunos ejemplos:
 | `/api/v1/catalogos/metodos` | GET, POST | `/api/v1/despachos/{id_despacho}` | GET, PATCH |
 | `/api/v1/cuadrillas/{id_cuadrilla}` | GET, PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | DELETE, PATCH |
 
-Por eso los documentos del proyecto y las pruebas hablan de **«73 endpoints»** cuando en realidad se
-refieren a *73 direcciones*. En el código hay **103 decoradores de ruta**, uno por operación publicada.
+Por eso los documentos del proyecto y las pruebas hablan de **«79 endpoints»** cuando en realidad se
+refieren a *79 direcciones*. En el código hay **109 decoradores de ruta**, uno por operación publicada.
 
 La cifra de **98 operaciones** que aparece en notas previas del proyecto **no coincide** con el código
 verificado. La diferencia corresponde a **cinco operaciones que sí existen** y que aquel inventario no
@@ -136,8 +137,11 @@ listaba:
 4. `POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes`
 5. `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}`
 
-La cifra vigente y comprobable es **103 operaciones y 73 direcciones**. El origen exacto del conteo de 98
-**queda pendiente de confirmar**.
+La cifra vigente y comprobable es **109 operaciones y 79 direcciones**: el ciclo D-66 sumó cuatro
+operaciones y cuatro direcciones (`GET /despachos/proceso`, `PUT /despachos/asignacion`,
+`POST /despachos/procesar` y `POST /ingesta/sectorizar-pendientes`), y el ciclo D-67 sumó dos más
+(`GET /api/v1/auth/primer-acceso` y `POST /api/v1/auth/palabras/{p00}/regenerar`). El origen exacto del
+conteo de 98 **queda pendiente de confirmar**.
 
 ### Documentación OpenAPI en /docs
 
@@ -156,7 +160,7 @@ seguridad Bearer.
 
 ## Inventario por módulo
 
-A continuación está el inventario completo de las **103 operaciones**, agrupado por archivo de rutas. La
+A continuación está el inventario completo de las **109 operaciones**, agrupado por archivo de rutas. La
 columna «roles» se interpreta así:
 
 - **Público**: no requiere token.
@@ -180,17 +184,20 @@ Cuatro operaciones; tres son públicas y una exige token.
 
 ### Autenticación (app/api/routes_auth.py)
 
-Cinco operaciones. Cuatro son públicas por diseño (inicio de sesión y recuperación); la de datos propios
-exige token. La decisión de usar **P00 más clave, con bloqueo a los 3 intentos y 12 palabras de seguridad**,
-está registrada en los requerimientos.
+Siete operaciones. Cinco son públicas por diseño (inicio de sesión, primer acceso y recuperación); la de
+datos propios exige token y la de regenerar palabras es **exclusiva del rol SUPER**. La decisión de usar
+**P00 más clave, con bloqueo a los 3 intentos y 12 palabras de seguridad**, está registrada en los
+requerimientos.
 
 | Método | Ruta | Para qué sirve | Roles |
 |---|---|---|---|
 | POST | `/api/v1/auth/login` | Iniciar sesión con P00 y clave; entrega el pase de sesión | Público |
 | GET | `/api/v1/auth/me` | Datos del usuario autenticado (P00, correo, rol, central y nombre) | Autenticado |
-| POST | `/api/v1/auth/setup` | Primer inicio: fija la clave y genera 12 palabras de seguridad | Público |
+| POST | `/api/v1/auth/setup` | Primer acceso: fija correo y clave, y genera 12 palabras de seguridad | Público |
+| GET | `/api/v1/auth/primer-acceso` | Consultar si un P00 está dado de alta y si puede activar su cuenta (D-67) | Público |
 | POST | `/api/v1/auth/unlock` | Desbloquear la cuenta con 3 de las 12 palabras | Público |
 | POST | `/api/v1/auth/reset-password` | Restablecer la clave con 3 de las 12 palabras | Público |
+| POST | `/api/v1/auth/palabras/{p00}/regenerar` | Generar 12 palabras nuevas para un P00 (D-67) | **Solo SUPER** |
 
 Detalles verificados del inicio de sesión:
 
@@ -199,9 +206,23 @@ Detalles verificados del inicio de sesión:
 - Un usuario **inactivo** recibe **403** y uno **bloqueado**, **423**.
 - Cada fallo incrementa el contador de intentos fallidos y devuelve la cabecera `X-Intentos-Restantes`.
 - Un inicio de sesión correcto **reinicia el contador** y emite el token.
-- La operación de primer inicio exige que la clave y su confirmación coincidan (si no, 422) y que el P00 ya
-  exista (si no, 404).
+- La operación de primer acceso exige que la clave y su confirmación coincidan (si no, 422) y que el P00 ya
+  exista (si no, 404). Si la cuenta **ya está activada**, responde **409** (debe usar la recuperación).
 - Desbloqueo y restablecimiento validan **3 palabras por posición**.
+
+Detalles verificados del primer acceso y de la regeneración (D-67):
+
+- `GET /api/v1/auth/primer-acceso` recibe el P00 y responde uno de cinco estados: `INEXISTENTE`,
+  `PENDIENTE` (puede registrarse), `ACTIVO`, `BLOQUEADO` o `INACTIVO`. Incluye una marca
+  `puede_registrarse` que solo es verdadera en `PENDIENTE`. Tiene su propio límite de **30 consultas por
+  minuto** por dirección IP.
+- `POST /api/v1/auth/setup` crea la cuenta del técnico si el supervisor ya registró su P00, o actualiza la
+  clave y el correo si la cuenta existe pero todavía no tiene palabras. Devuelve las **12 palabras** en
+  claro **una sola vez**.
+- `POST /api/v1/auth/palabras/{p00}/regenerar` exige rol **SUPER**: cualquier otro rol recibe **403**.
+  Reemplaza las palabras anteriores (que dejan de funcionar), desbloquea la cuenta, reinicia los intentos
+  fallidos y devuelve las 12 nuevas **una sola vez**. Si el P00 no tiene cuenta, responde **404**.
+- Tanto el alta como la regeneración dejan registro en la tabla `auditoria`.
 
 ### Configuración y catálogos (app/api/routes_config.py)
 
@@ -241,6 +262,10 @@ no se elimina, solo se marca como inactivo), salvo en direcciones de sector e in
 | PATCH | `/api/v1/tecnicos/{id_tecnico}` | Actualizar un técnico | ADMIN/SUPERVISOR |
 | DELETE | `/api/v1/tecnicos/{id_tecnico}` | Desactivar (marca al técnico como inactivo) | ADMIN/SUPERVISOR |
 
+El listado y la ficha de cada técnico agregan un campo calculado, `estado_cuenta`, que resume el ciclo de
+vida de su acceso (D-67): `SIN_ALTA`, `ACTIVO`, `BLOQUEADO`, `REQUIERE_CAMBIO` o `INACTIVO`. Es el dato que
+alimenta la columna **Cuenta** de la pantalla.
+
 #### Flota
 
 | Método | Ruta | Para qué sirve | Roles |
@@ -279,20 +304,22 @@ de conflicto. Las creaciones devuelven **201** y los borrados **204**.
 
 ### Ingesta (app/api/routes_ingesta.py)
 
-Cuatro operaciones. Las dos de escritura reciben el archivo por formulario (multipart) y la central como dato
+Cinco operaciones. Las de escritura reciben el archivo por formulario (multipart) y la central como dato
 opcional.
 
 | Método | Ruta | Para qué sirve | Roles |
 |---|---|---|---|
 | POST | `/api/v1/ingesta/preview` | Simular la ingesta del CSV sin guardar nada | ADMIN/SUPERVISOR |
 | POST | `/api/v1/ingesta` | Cargar el archivo diario e insertar los casos nuevos | ADMIN/SUPERVISOR |
+| POST | `/api/v1/ingesta/sectorizar-pendientes` | Volver a sectorizar los casos sin sector (D-66) | ADMIN/SUPERVISOR |
 | GET | `/api/v1/ingesta/lotes` | Historial de cargas (límite entre 1 y 200; por defecto 50) | Autenticado |
 | GET | `/api/v1/ingesta/lotes/{id_lote}` | Detalle de una carga | Autenticado |
 
 La carga real crea un lote de ingesta y luego los casos, dejando el lote en estado **OK** y los avisos en el
 detalle de errores. Después de insertar, **dispara la detección automática de fallas masivas por
 concentración**. El resumen incluye filas leídas, filas de la central, casos nuevos, duplicados,
-descartados, sectorizados, sin sector y casos de cuadrilla 0.
+descartados, sectorizados, sin sector, casos de cuadrilla 0 y hasta 50 **direcciones sin sector** con su
+total de casos (D-66).
 
 ### Casos y PANEL (app/api/routes_casos.py)
 
@@ -317,11 +344,14 @@ recalcula**.
 
 ### Despacho (app/api/routes_despachos.py)
 
-Quince operaciones. La escritura es para ADMIN y SUPERVISOR.
+Dieciocho operaciones. La escritura es para ADMIN y SUPERVISOR.
 
 | Método | Ruta | Para qué sirve | Roles |
 |---|---|---|---|
 | POST | `/api/v1/despachos/propuesta` | Simular el despacho del día (sin guardar) | ADMIN/SUPERVISOR |
+| GET | `/api/v1/despachos/proceso` | Universo de casos, sectores y asignación del día (D-66) | Autenticado |
+| PUT | `/api/v1/despachos/asignacion` | Guardar los sectores de cada cuadrilla del día (D-66) | ADMIN/SUPERVISOR |
+| POST | `/api/v1/despachos/procesar` | Procesar y guardar el despacho con esa asignación (D-66) | ADMIN/SUPERVISOR |
 | POST | `/api/v1/despachos` | Generar y guardar el despacho del día (admite reemplazar) | ADMIN/SUPERVISOR |
 | GET | `/api/v1/despachos` | Listar despachos por fecha y central | Autenticado |
 | POST | `/api/v1/despachos/fallas-masivas` | Reportar una falla masiva asociada al sector | ADMIN/SUPERVISOR |
@@ -340,6 +370,8 @@ Quince operaciones. La escritura es para ADMIN y SUPERVISOR.
 Reglas verificadas:
 
 - Generar un despacho sin pedir reemplazo, cuando ya existe uno para la fecha, devuelve **409**.
+- Procesar el despacho cuando ya hay uno **publicado o cerrado** para la fecha devuelve **409**; con
+  `reemplazar=true` se reemplazan los borradores.
 - Agregar un caso de **cuadrilla 0** o un caso repetido también devuelve **409**.
 - Publicar un despacho fija la fecha de envío si no estaba enviado.
 - La ficha imprimible es HTML con **tamaño carta**.
@@ -461,15 +493,16 @@ y restablecimiento devuelven **401** si las palabras no coinciden. Una prueba de
 
 Operación no permitida para el rol. La validación de roles devuelve **403** cuando el usuario no tiene rol
 asociado o su rol no está en la lista permitida. Otros casos: usuario inactivo en el inicio de sesión,
-intento de **forzar un solapamiento de citas sin ser SUPER** y **secreto inválido del webhook de Telegram**.
+intento de **forzar un solapamiento de citas sin ser SUPER**, **regeneración de palabras sin ser SUPER**
+(D-67) y **secreto inválido del webhook de Telegram**.
 Existen una prueba negativa de escritura con rol TECNICO y una matriz de permisos por rol.
 
 ### 404
 
 Recurso inexistente. Se centraliza en auxiliares de cada módulo: casos, configuración, despachos y fallas
-masivas. También se devuelve 404 en las operaciones de desbloqueo, restablecimiento y primer inicio cuando
-el P00 no existe, y en las validaciones de referencias de casos especiales. Una prueba de contrato lo
-verifica.
+masivas. También se devuelve 404 en las operaciones de desbloqueo, restablecimiento, primer acceso y
+regeneración de palabras cuando el P00 no existe, y en las validaciones de referencias de casos especiales.
+Una prueba de contrato lo verifica.
 
 ### 409
 
@@ -477,6 +510,7 @@ Conflicto de unicidad o de estado. Casos verificados:
 
 - Error de duplicado traducido en configuración.
 - Identificador de avería duplicado en el alta manual.
+- Alta de primer acceso sobre una cuenta que **ya está activada** (debe usar la recuperación).
 - Despacho ya existente para la fecha.
 - Caso ya asignado o perteneciente a la cuadrilla 0.
 - Caso especial con identificador de avería repetido.
@@ -574,7 +608,8 @@ observabilidad, cuya verificación se apoya además en la ruta de métricas.
 | `GET /ready` | Comprobación de disponibilidad; consulta PostgreSQL y responde 503 si falla |
 | `GET /api/v1/info` | Metadatos del servicio (nombre, versión, entorno y ruta de la documentación) |
 | `POST /api/v1/auth/login` | Emisión inicial del pase de sesión |
-| `POST /api/v1/auth/setup` | Primer inicio del usuario; el P00 lo crea antes el supervisor |
+| `POST /api/v1/auth/setup` | Primer acceso del usuario; el P00 lo crea antes el supervisor |
+| `GET /api/v1/auth/primer-acceso` | Consulta previa del primer acceso: informa si el P00 está dado de alta |
 | `POST /api/v1/auth/unlock` | Recuperación de una cuenta bloqueada con 3 de 12 palabras |
 | `POST /api/v1/auth/reset-password` | Restablecimiento de la clave con 3 de 12 palabras |
 
@@ -593,10 +628,13 @@ reproducen valores ni credenciales en este manual.**
 
 ### Resto de la superficie
 
-Descontadas las **siete rutas públicas** por diseño y las **dos rutas con secreto propio**, las **94
+Descontadas las **ocho rutas públicas** por diseño y las **dos rutas con secreto propio**, las **99
 operaciones restantes** exigen el pase de sesión Bearer: o bien con la dependencia de usuario autenticado
 (lectura) o con la validación de rol ADMIN o SUPERVISOR (escritura). Una prueba de contrato enumera la lista
 exacta de rutas públicas y comprueba que el resto declare seguridad en el esquema publicado.
+
+> **Nota sobre la regeneración de palabras (D-67):** esa operación exige el pase de sesión y, además, el
+> rol **SUPER**; por eso no aparece en la lista de rutas públicas.
 
 ### Códigos adicionales de infraestructura
 

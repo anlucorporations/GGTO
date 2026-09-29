@@ -21,6 +21,7 @@ from ..models import (
     Usuario,
 )
 from ..schemas.despacho import (
+    AsignacionUpdate,
     CasoAgregar,
     CasoEstadoUpdate,
     DespachoDetalleOut,
@@ -30,6 +31,8 @@ from ..schemas.despacho import (
     FallaMasivaCreate,
     FallaMasivaOut,
     NotificacionOut,
+    ProcesarDespacho,
+    ProcesoDespachoOut,
     PropuestaOut,
     ReporteProduccionOut,
 )
@@ -169,6 +172,92 @@ def listar_fallas(
     db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
 ) -> list[FallaMasiva]:
     return list(db.scalars(select(FallaMasiva).order_by(FallaMasiva.id_falla.desc())).all())
+
+
+@router.get("/proceso", response_model=ProcesoDespachoOut,
+            summary="Universo de casos, sectores y asignación por cuadrilla del día (D-66)")
+def proceso_despacho(
+    fecha: date | None = Query(default=None),
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> ProcesoDespachoOut:
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    return ProcesoDespachoOut(**svc.proceso(db, central.id_central, fecha or date.today()))
+
+
+@router.put("/asignacion", response_model=ProcesoDespachoOut,
+            summary="Guardar la asignación de sectores por cuadrilla del día")
+def guardar_asignacion_dia(
+    datos: AsignacionUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> ProcesoDespachoOut:
+    config = cargar_config(db)
+    central = resolver_central(db, datos.id_central, config)
+    svc.guardar_asignacion(
+        db, central.id_central, datos.fecha,
+        [bloque.model_dump() for bloque in datos.asignaciones], usuario.p00,
+    )
+    db.commit()
+    return ProcesoDespachoOut(**svc.proceso(db, central.id_central, datos.fecha))
+
+
+@router.post("/procesar", response_model=list[DespachoOut], status_code=status.HTTP_201_CREATED,
+             summary="Procesar el despacho del día con la asignación de sectores")
+def procesar(
+    datos: ProcesarDespacho,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> list[Despacho]:
+    config = cargar_config(db)
+    central = resolver_central(db, datos.id_central, config)
+    dia = datos.fecha
+
+    publicados = db.scalar(
+        select(func.count()).select_from(Despacho).where(
+            Despacho.id_central == central.id_central,
+            Despacho.fecha == dia,
+            Despacho.estado.in_(("PUBLICADO", "CERRADO")),
+        )
+    )
+    if publicados:
+        raise HTTPException(
+            status_code=409,
+            detail="Ya hay despachos publicados o cerrados para esa fecha",
+        )
+
+    if datos.reemplazar:
+        for previo in db.scalars(
+            select(Despacho).where(
+                Despacho.id_central == central.id_central,
+                Despacho.fecha == dia,
+                Despacho.estado == "BORRADOR",
+            )
+        ).all():
+            db.delete(previo)
+        db.flush()
+    elif db.scalar(
+        select(func.count()).select_from(Despacho).where(
+            Despacho.id_central == central.id_central, Despacho.fecha == dia
+        )
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe un despacho para esa fecha (use reemplazar=true)",
+        )
+
+    if datos.asignaciones:
+        svc.guardar_asignacion(
+            db, central.id_central, dia,
+            [bloque.model_dump() for bloque in datos.asignaciones], usuario.p00,
+        )
+
+    resultado = svc.construir_propuesta(db, central.id_central, dia)
+    creados = svc.guardar_propuesta(db, resultado, usuario.p00)
+    db.commit()
+    return creados
 
 
 @router.get("/{id_despacho}", response_model=DespachoDetalleOut, summary="Detalle del despacho")

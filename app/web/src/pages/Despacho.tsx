@@ -17,6 +17,7 @@ import type {
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
+import ProcesarDespacho from '../components/ProcesarDespacho';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -200,7 +201,7 @@ export default function Despacho() {
   // Propuesta (RF-24).
   const [propuesta, setPropuesta] = useState<PropuestaOut | null>(null);
   const [simulando, setSimulando] = useState(false);
-  const [generando, setGenerando] = useState(false);
+  const [modalProcesar, setModalProcesar] = useState(false);
 
   // Despachos del día.
   const [despachos, setDespachos] = useState<DespachoDetalleOut[]>([]);
@@ -365,43 +366,14 @@ export default function Despacho() {
     }
   }
 
-  async function generar(reemplazar: boolean) {
+  /** Resultado de procesar el despacho desde el formulario flotante (D-66). */
+  async function alProcesar(creados: DespachoDetalleOut[]) {
     setError('');
-    setOk('');
-    if (
-      !reemplazar &&
-      !window.confirm(
-        `¿Generar y guardar el despacho del ${fechaSel}? Si ya existe se rechazará la operación.`,
-      )
-    ) {
-      return;
-    }
-    setGenerando(true);
-    try {
-      const creados = await api.generarDespacho(fechaSel, reemplazar);
-      setOk(
-        reemplazar
-          ? `Despacho regenerado: ${creados.length} cuadrilla(s).`
-          : `Despacho generado: ${creados.length} cuadrilla(s).`,
-      );
-      setPropuesta(null);
-      await refrescar();
-      if (creados.length > 0) await abrirDetalle(creados[0].id_despacho);
-    } catch (e) {
-      if (e instanceof api.ApiError && e.status === 409 && !reemplazar) {
-        const confirmar = window.confirm(
-          `${e.message}\n\n¿Desea reemplazar los borradores existentes y volver a generar?`,
-        );
-        if (confirmar) {
-          setGenerando(false);
-          await generar(true);
-          return;
-        }
-      }
-      setError(detalleDe(e, 'Error al generar el despacho.'));
-    } finally {
-      setGenerando(false);
-    }
+    setOk(`Despacho procesado: ${creados.length} cuadrilla(s).`);
+    setPropuesta(null);
+    setModalProcesar(false);
+    await refrescar();
+    if (creados.length > 0) await abrirDetalle(creados[0].id_despacho);
   }
 
   async function cambiarEstadoDespacho(estado: EstadoDespacho) {
@@ -624,15 +596,23 @@ export default function Despacho() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => void generar(false)}
-                disabled={generando}
+                onClick={() => setModalProcesar(true)}
               >
-                {generando ? 'Generando…' : 'Generar despacho'}
+                Procesar despacho
               </button>
             </div>
           )}
         </form>
       </div>
+
+      {/* Formulario flotante para procesar el despacho (UI 6, D-66) */}
+      {modalProcesar && !soloLectura && (
+        <ProcesarDespacho
+          fecha={fechaSel}
+          onCerrar={() => setModalProcesar(false)}
+          onProcesado={(creados) => void alProcesar(creados)}
+        />
+      )}
 
       {/* Propuesta */}
       {propuesta && (
@@ -1040,8 +1020,7 @@ export default function Despacho() {
       )}
 
       {/* Agregar caso al despacho, en ventana flotante */}
-      {seleccionado && !soloLectura && modalAgregarCaso && (
-        <Modal titulo="Agregar caso" onCerrar={() => setModalAgregarCaso(false)}>
+      {seleccionado && !soloLectura && modalAgregarCaso && (        <Modal titulo="Agregar caso" onCerrar={() => setModalAgregarCaso(false)}>
           <form className="formulario modal-formulario" onSubmit={(e) => void agregarCaso(e)}>
             <div className="campo">
               <label htmlFor="despacho-id-caso">ID de caso *</label>

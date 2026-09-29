@@ -10,7 +10,10 @@
 El módulo INGESTA recibe el archivo diario de averías GPON del sistema origen de
 CANTV, lo depura, filtra los casos de la central configurada, evita duplicados y
 crea los casos nuevos en la tabla `caso`. Es la puerta de entrada principal del
-universo de casos de la plataforma.
+universo de casos de la plataforma. El ciclo **D-66** añadió el reporte de
+**direcciones sin sector** en el resumen y la **re-sectorización de pendientes**
+para que esas direcciones se gestionen agregándolas a un sector
+(`RepoTecnico/estado_proyecto.md:133`).
 
 | Elemento | Valor verificado | Referencia |
 |---|---|---|
@@ -49,7 +52,7 @@ La escritura (simular y cargar) está restringida a ADMIN y SUPERVISOR mediante
 `_escritura = require_roles("ADMIN", "SUPERVISOR")`
 (`app/api/routes_ingesta.py:23`). La consulta del historial de lotes usa
 `get_current_user`, por lo que cualquier usuario autenticado puede leerla
-(`app/api/routes_ingesta.py:178`, `app/api/routes_ingesta.py:190`). El rol TECNICO
+(`app/api/routes_ingesta.py:197`, `app/api/routes_ingesta.py:210`). El rol TECNICO
 queda en modo solo lectura para este módulo.
 
 ## Contrato del archivo origen
@@ -71,8 +74,8 @@ validación y firma de CANTV**» (`RepoTecnico/interfaz_csv_origen.md:9`).
 
 El nombre del archivo es la referencia de trazabilidad de cada carga: se guarda
 en `ingesta_lote.archivo` con recorte a 255 caracteres
-(`app/api/routes_ingesta.py:134`). Si el navegador no envía nombre, se usa el
-literal `sin-nombre` (`app/api/routes_ingesta.py:128`).
+(`app/api/routes_ingesta.py:153`). Si el navegador no envía nombre, se usa el
+literal `sin-nombre` (`app/api/routes_ingesta.py:147`).
 
 El canal de entrega definitivo (carpeta/bucket dedicado o SFTP corporativo) está
 «Por definir con CANTV» (`RepoTecnico/interfaz_csv_origen.md:67`). El
@@ -117,7 +120,7 @@ campos destino se derivan de ella con
 `CAMPOS_DESTINO = tuple(campo for campo, _, _ in ESPECIFICACION)`
 (`app/services/ingesta.py:78`) y la carga los usa como lista blanca de columnas a
 insertar (`app/api/routes_ingesta.py:24`,
-`app/api/routes_ingesta.py:148`).
+`app/api/routes_ingesta.py:167`).
 
 #### Tipos de conversión
 
@@ -256,7 +259,7 @@ Los avisos resultantes se acumulan en una lista que acompaña al resumen
 
 El análisis se centraliza en `_analizar`, que devuelve el resumen, las filas
 candidatas, la central, los patrones y la configuración
-(`app/api/routes_ingesta.py:40-99`). Ambos endpoints de escritura comparten ese
+(`app/api/routes_ingesta.py:40-118`). Ambos endpoints de escritura comparten ese
 método, de modo que la simulación y la carga real aplican exactamente las mismas
 reglas.
 
@@ -264,28 +267,28 @@ reglas.
 
 `POST /api/v1/ingesta/preview` lee el archivo, ejecuta `_analizar` y devuelve el
 resumen **sin escribir en la base de datos**
-(`app/api/routes_ingesta.py:105-116`). El endpoint fija el nombre del archivo en
-el resumen (`app/api/routes_ingesta.py:114`). La prueba
+(`app/api/routes_ingesta.py:124-135`). El endpoint fija el nombre del archivo en
+el resumen (`app/api/routes_ingesta.py:133`). La prueba
 `test_preview_no_guarda` comprueba que no se crea ningún caso y que `id_lote` es
 `None` (`app/tests/test_ingesta_api.py:43-54`).
 
 ### Carga y creación de `ingesta_lote`
 
 `POST /api/v1/ingesta` responde `201 Created`
-(`app/api/routes_ingesta.py:119-120`). La secuencia es:
+(`app/api/routes_ingesta.py:138-139`). La secuencia es:
 
-1. Se analiza el archivo (`app/api/routes_ingesta.py:130`).
+1. Se analiza el archivo (`app/api/routes_ingesta.py:149`).
 2. Se crea el lote con `estado="PROCESANDO"` y el P00 del usuario
-   (`app/api/routes_ingesta.py:133-144`).
-3. `db.flush()` obtiene el `id_lote` antes de insertar los casos
-   (`app/api/routes_ingesta.py:145`).
+   (`app/api/routes_ingesta.py:152-163`).
+3. `db.add(lote)` y `db.flush()` obtienen el `id_lote` antes de insertar los casos
+   (`app/api/routes_ingesta.py:164-165`).
 4. Por cada fila candidata se construye un `Caso` con las 49 columnas de la
    especificación, la central, el lote, el sector, la marca de cuadrilla 0, el
    origen `INGESTA_CSV` y el P00 de quien carga
-   (`app/api/routes_ingesta.py:147-156`).
+   (`app/api/routes_ingesta.py:166-175`).
 5. El lote pasa a `OK` y sus avisos se guardan en `detalle_error`, unidos por
-   `"; "` (`app/api/routes_ingesta.py:158-159`).
-6. Se confirma la transacción (`app/api/routes_ingesta.py:160`).
+   `"; "` (`app/api/routes_ingesta.py:177-178`).
+6. Se confirma la transacción (`app/api/routes_ingesta.py:179`).
 
 ### Filtro por central
 
@@ -344,6 +347,26 @@ activos y patrones activos, ordenados por prioridad y nombre
 y se contabiliza en el resumen como `sectorizados` o `sin_sector`
 (`app/api/routes_ingesta.py:83-86`).
 
+### Direcciones sin sector y re-sectorización (D-66)
+
+Requisito del ciclo D-66: si una dirección del archivo no pertenece a ningún sector, el
+sistema **avisa** y permite gestionarla agregándola a un sector. El análisis la agrupa por
+dirección **normalizada** (`normalizar(direccion)`), cuenta sus casos y conserva un
+`ejemplo_id_averia`; el resultado se ordena por total descendente y se recorta a **50**
+elementos en `resumen["direcciones_sin_sector"]` (`app/api/routes_ingesta.py:90-107`).
+
+- Esquema `DireccionSinSector` (`direccion`, `total`, `ejemplo_id_averia`) en
+  `app/schemas/ingesta.py:17-22`, embebido en `ResumenIngesta`
+  (`app/schemas/ingesta.py:37`).
+- En la UI, el resumen muestra el aviso y el botón **«Gestionar en SECTOR»**
+  (`app/web/src/pages/Ingesta.tsx:264-280`).
+- El modal `GestionDirecciones` agrega cada dirección como patrón `CONTIENE` normalizado
+  del sector elegido (`app/web/src/components/GestionDirecciones.tsx:55-63`) y después
+  re-sectoriza.
+- `POST /api/v1/ingesta/sectorizar-pendientes` aplica los patrones vigentes a los casos de
+  la central con `id_sector IS NULL` y `direccion` no nula, y devuelve `revisados`,
+  `asignados` y `sin_sector` (`app/api/routes_ingesta.py:217-251`).
+
 ### Criterio de cuadrilla 0
 
 `cuadrilla0.evaluar` decide si un caso va al supervisor sin salir a calle
@@ -364,15 +387,15 @@ calle» (`RepoTecnico/estado_proyecto.md:116`). El modo efectivo en producción 
 por tanto, el valor de la tabla `configuracion`, no el defecto del módulo.
 
 La marca se persiste en `caso.en_gestion_supervisor`
-(`app/api/routes_ingesta.py:152`), que además alimenta el icono «Gestión» del
+(`app/api/routes_ingesta.py:171`), que además alimenta el icono «Gestión» del
 listado de casos (`app/api/routes_casos.py:69`).
 
 ### Detección de fallas tras la ingesta
 
 Tras confirmar los casos, la carga invoca `fallas.detectar(db, id_central)`
-(`app/api/routes_ingesta.py:162-163`). Si se crean fallas masivas, se confirma
+(`app/api/routes_ingesta.py:181-182`). Si se crean fallas masivas, se confirma
 otra vez y se informa el conteo en `fallas_masivas`
-(`app/api/routes_ingesta.py:164-166`). La detección agrupa casos no cerrados por
+(`app/api/routes_ingesta.py:183-185`). La detección agrupa casos no cerrados por
 el campo configurado y aplica umbral y ventana:
 
 - `fallas.activo` habilita o deshabilita la detección
@@ -387,17 +410,17 @@ Es idempotente por la clave de concentración, según el apartado 3.1 de
 
 ## Endpoints
 
-Los cuatro endpoints del módulo se declaran bajo el prefijo `/api/v1/ingesta`
+Los cinco endpoints del módulo se declaran bajo el prefijo `/api/v1/ingesta`
 (`app/api/routes_ingesta.py:21`).
 
 ### `POST /api/v1/ingesta/preview`
 
 | Atributo | Valor |
 |---|---|
-| Referencia | `app/api/routes_ingesta.py:105` |
-| Autenticación | Token JWT; rol ADMIN o SUPERVISOR (`app/api/routes_ingesta.py:110`) |
-| Cuerpo | `multipart/form-data` con `archivo` (obligatorio) e `id_central` (opcional) (`app/api/routes_ingesta.py:107-108`) |
-| Respuesta | `ResumenIngesta` (`app/api/routes_ingesta.py:115-116`) |
+| Referencia | `app/api/routes_ingesta.py:124` |
+| Autenticación | Token JWT; rol ADMIN o SUPERVISOR (`app/api/routes_ingesta.py:129`) |
+| Cuerpo | `multipart/form-data` con `archivo` (obligatorio) e `id_central` (opcional) (`app/api/routes_ingesta.py:126-127`) |
+| Respuesta | `ResumenIngesta` (`app/api/routes_ingesta.py:134-135`) |
 | Efecto en base | Ninguno (simulación) |
 
 #### Contrato de la respuesta
@@ -405,17 +428,17 @@ Los cuatro endpoints del módulo se declaran bajo el prefijo `/api/v1/ingesta`
 Los campos son los de `ResumenIngesta`: contadores de filas leídas, de la central,
 casos nuevos, duplicados y descartados, sectorizados, sin sector, cuadrilla 0,
 avisos y hasta diez ejemplos
-(`app/schemas/ingesta.py:17-30`, `app/api/routes_ingesta.py:90-98`).
+(`app/schemas/ingesta.py:25-39`, `app/api/routes_ingesta.py:65-118`).
 
 ### `POST /api/v1/ingesta`
 
 | Atributo | Valor |
 |---|---|
-| Referencia | `app/api/routes_ingesta.py:119` |
-| Autenticación | Token JWT; rol ADMIN o SUPERVISOR (`app/api/routes_ingesta.py:125`) |
-| Cuerpo | `multipart/form-data` con `archivo` e `id_central` (`app/api/routes_ingesta.py:122-123`) |
-| Respuesta | `ResumenIngesta` con `id_lote` y `fallas_masivas` (`app/api/routes_ingesta.py:168-172`) |
-| Código de éxito | `201 Created` (`app/api/routes_ingesta.py:119`) |
+| Referencia | `app/api/routes_ingesta.py:138` |
+| Autenticación | Token JWT; rol ADMIN o SUPERVISOR (`app/api/routes_ingesta.py:144`) |
+| Cuerpo | `multipart/form-data` con `archivo` e `id_central` (`app/api/routes_ingesta.py:141-142`) |
+| Respuesta | `ResumenIngesta` con `id_lote` y `fallas_masivas` (`app/api/routes_ingesta.py:187-191`) |
+| Código de éxito | `201 Created` (`app/api/routes_ingesta.py:138`) |
 | Efecto en base | Crea `ingesta_lote` y los casos nuevos |
 
 #### Errores esperados
@@ -429,20 +452,38 @@ avisos y hasta diez ejemplos
 
 Devuelve el historial de cargas, más recientes primero
 (`order_by(IngestaLote.id_lote.desc())`), con un límite por consulta de 50 por
-defecto y máximo 200 (`app/api/routes_ingesta.py:175-185`). Usa
+defecto y máximo 200 (`app/api/routes_ingesta.py:194-204`). Usa
 `get_current_user`, por lo que cualquier usuario autenticado puede consultarlo
-(`app/api/routes_ingesta.py:178`).
+(`app/api/routes_ingesta.py:197`).
 
 ### `GET /api/v1/ingesta/lotes/{id_lote}`
 
 Devuelve el detalle de un lote; si no existe responde `404` con «Lote no
-encontrado» (`app/api/routes_ingesta.py:188-195`).
+encontrado» (`app/api/routes_ingesta.py:207-214`).
 
 #### Esquema de salida
 
 `IngestaLoteOut` expone `id_lote`, `archivo`, `fecha_archivo`, `id_central`, los
 cinco contadores, `estado`, `detalle_error`, `usuario` y `creado_en`
-(`app/schemas/ingesta.py:33-48`).
+(`app/schemas/ingesta.py:48-63`).
+
+### `POST /api/v1/ingesta/sectorizar-pendientes`
+
+| Atributo | Valor |
+|---|---|
+| Referencia | `app/api/routes_ingesta.py:217` |
+| Autenticación | Token JWT; rol ADMIN o SUPERVISOR (`app/api/routes_ingesta.py:222`) |
+| Parámetros | `id_central` opcional por *query* (`app/api/routes_ingesta.py:220`) |
+| Respuesta | `SectorizacionPendientesOut` con `revisados`, `asignados` y `sin_sector` (`app/api/routes_ingesta.py:249-251`) |
+| Código de éxito | `200 OK` |
+| Efecto en base | Actualiza `caso.id_sector` de los casos re-sectorizados (`app/api/routes_ingesta.py:242-248`) |
+
+Se usa **después** de agregar direcciones nuevas a un sector desde la ingesta: vuelve a
+aplicar los patrones vigentes a los casos que quedaron con `id_sector` nulo
+(`app/api/routes_ingesta.py:232-243`) y solo confirma la transacción si hubo asignaciones
+(`app/api/routes_ingesta.py:247-248`). La prueba
+`test_sectorizar_pendientes_requiere_escritura` comprueba que el rol TECNICO recibe `403`
+(`app/tests/test_ingesta_api.py:182-184`).
 
 ## Esquemas y modelo `ingesta_lote`
 
@@ -451,13 +492,15 @@ cinco contadores, `estado`, `detalle_error`, `usuario` y `creado_en`
 | Esquema | Uso | Referencia |
 |---|---|---|
 | `EjemploCaso` | Muestra de hasta diez casos candidatos | `app/schemas/ingesta.py:10-14` |
-| `ResumenIngesta` | Respuesta de preview y de carga | `app/schemas/ingesta.py:17-30` |
-| `IngestaLoteOut` | Historial y detalle de lotes | `app/schemas/ingesta.py:33-48` |
+| `DireccionSinSector` | Dirección del archivo sin sector: `direccion`, `total` y `ejemplo_id_averia` (**D-66**) | `app/schemas/ingesta.py:17-22` |
+| `ResumenIngesta` | Respuesta de preview y de carga (incluye `direcciones_sin_sector`) | `app/schemas/ingesta.py:25-39` |
+| `SectorizacionPendientesOut` | Resultado de re-sectorizar: `revisados`, `asignados` y `sin_sector` (**D-66**) | `app/schemas/ingesta.py:42-45` |
+| `IngestaLoteOut` | Historial y detalle de lotes | `app/schemas/ingesta.py:48-63` |
 
 `IngestaLoteOut` usa `ConfigDict(from_attributes=True)` para validar directamente
-desde el objeto ORM (`app/schemas/ingesta.py:34`). `ResumenIngesta` inicializa
+desde el objeto ORM (`app/schemas/ingesta.py:49`). `ResumenIngesta` inicializa
 `id_lote` en `None` y `fallas_masivas` en 0, de modo que el preview los devuelve
-vacíos (`app/schemas/ingesta.py:29-30`).
+vacíos (`app/schemas/ingesta.py:38-39`).
 
 ### Modelo SQLAlchemy y DDL
 
@@ -488,17 +531,17 @@ Hay dos matices verificables que conviene conocer al mantener el módulo:
 1. **Tipo de `fecha_archivo`:** el DDL la declara `date`
    (`RepoTecnico/db/schema.sql:270`) mientras el modelo y el esquema Pydantic la
    exponen como `datetime`
-   (`app/models/caso_entities.py:28`, `app/schemas/ingesta.py:38`). El valor que
+   (`app/models/caso_entities.py:28`, `app/schemas/ingesta.py:53`). El valor que
    llega al cliente tiene, por tanto, resolución de día.
 2. **Origen del valor:** la carga nunca asigna `fecha_archivo` al construir el
-   `IngestaLote` (`app/api/routes_ingesta.py:133-143`), por lo que queda nula
+   `IngestaLote` (`app/api/routes_ingesta.py:152-163`), por lo que queda nula
    salvo que se complete por otra vía. En la interfaz se muestra como «—»
-   (`app/web/src/pages/Ingesta.tsx:275`).
+   (`app/web/src/pages/Ingesta.tsx:351`).
 
 El estado `ERROR` existe en el `CHECK` del DDL
 (`RepoTecnico/db/schema.sql:278`) pero la ruta de carga no lo utiliza: el lote
-pasa de `PROCESANDO` a `OK` (`app/api/routes_ingesta.py:141`,
-`app/api/routes_ingesta.py:158`). El uso de `ERROR` está **pendiente de
+pasa de `PROCESANDO` a `OK` (`app/api/routes_ingesta.py:160`,
+`app/api/routes_ingesta.py:177`). El uso de `ERROR` está **pendiente de
 confirmar**.
 
 ## Página web INGESTA
@@ -509,44 +552,57 @@ La vista está en `app/web/src/pages/Ingesta.tsx` y consume el cliente API de
 ### Estructura y permisos
 
 El componente consulta `useAuth()` para conocer `soloLectura`
-(`app/web/src/pages/Ingesta.tsx:20`). Si el rol es de solo lectura, oculta el
+(`app/web/src/pages/Ingesta.tsx:23`). Si el rol es de solo lectura, oculta el
 formulario de carga y muestra el aviso «Modo solo lectura: su rol TECNICO no
 permite simular ni cargar archivos»
-(`app/web/src/pages/Ingesta.tsx:148-154`).
+(`app/web/src/pages/Ingesta.tsx:179-185`).
 
 ### Simulación y carga
 
 - El campo de archivo acepta `.csv,text/csv`
-  (`app/web/src/pages/Ingesta.tsx:164`).
+  (`app/web/src/pages/Ingesta.tsx:197`).
 - El campo «ID de central» acepta vacío (central configurada) o un entero
   positivo, validado por `parsearCentral`
-  (`app/web/src/pages/Ingesta.tsx:9-17`,
-  `app/web/src/pages/Ingesta.tsx:169-177`).
+  (`app/web/src/pages/Ingesta.tsx:12-20`,
+  `app/web/src/pages/Ingesta.tsx:201-210`).
 - «Simular (preview)» llama a `api.previewIngesta`
-  (`app/web/src/pages/Ingesta.tsx:69`), que hace `POST /ingesta/preview`
-  (`app/web/src/api/client.ts:477-479`).
+  (`app/web/src/pages/Ingesta.tsx:80-100`), que hace `POST /ingesta/preview`
+  (`app/web/src/api/client.ts:480-483`).
 - «Cargar archivo» pide confirmación explícita con `window.confirm` y luego llama
-  a `api.cargarIngesta` (`app/web/src/pages/Ingesta.tsx:84-93`), que hace
-  `POST /ingesta` (`app/web/src/api/client.ts:482-484`).
+  a `api.cargarIngesta` (`app/web/src/pages/Ingesta.tsx:102-134`), que hace
+  `POST /ingesta` (`app/web/src/api/client.ts:485-488`).
 
 ### Resumen, avisos y ejemplos
 
 Tras la operación se muestran ocho tarjetas: filas leídas, filas de la central,
 casos nuevos, duplicados, descartados, sectorizados, sin sector y cuadrilla 0
-(`app/web/src/pages/Ingesta.tsx:123-134`). Los avisos del parser se muestran como
-mensajes de error (`app/web/src/pages/Ingesta.tsx:221-227`) y los ejemplos en una
-tabla con ID de avería, dirección, sector y marca de cuadrilla 0
-(`app/web/src/pages/Ingesta.tsx:231-257`).
+(`app/web/src/pages/Ingesta.tsx:149-159,245-252`). Los avisos del parser se
+muestran como mensajes de error (`app/web/src/pages/Ingesta.tsx:256-262`) y los
+ejemplos en una tabla con ID de avería, dirección, sector y marca de cuadrilla 0
+(`app/web/src/pages/Ingesta.tsx:282-313`).
 
 ### Historial y detalle de lotes
 
 La tabla de historial pide los últimos 50 lotes al montar el componente
-(`app/web/src/pages/Ingesta.tsx:35`) y muestra trece columnas, entre ellas el
+(`app/web/src/pages/Ingesta.tsx:40`) y muestra trece columnas, entre ellas el
 archivo, la central, los contadores, el estado y el usuario
-(`app/web/src/pages/Ingesta.tsx:340-356`). El botón «Ver detalle» consulta
-`GET /ingesta/lotes/{id_lote}` (`app/web/src/pages/Ingesta.tsx:110-121`,
-`app/web/src/api/client.ts:491-493`) y presenta una ficha con el estado, los
-contadores y el detalle de error (`app/web/src/pages/Ingesta.tsx:259-324`).
+(`app/web/src/pages/Ingesta.tsx:410-470`). El botón «Ver detalle» consulta
+`GET /ingesta/lotes/{id_lote}` (`app/web/src/pages/Ingesta.tsx:137-146`,
+`app/web/src/api/client.ts:490-493`) y presenta una ficha con el estado, los
+contadores y el detalle de error (`app/web/src/pages/Ingesta.tsx:336-395`).
+
+### Aviso de direcciones sin sector (D-66)
+
+Cuando `resumen.direcciones_sin_sector` trae elementos, la ventana de resumen muestra el
+número de direcciones y de casos afectados y el botón **«Gestionar en SECTOR»**
+(`app/web/src/pages/Ingesta.tsx:264-280`), que abre el modal `GestionDirecciones`
+(`app/web/src/pages/Ingesta.tsx:318-333`). El modal lista cada dirección con su total y su
+ID de avería de ejemplo, permite elegir un sector por dirección y, al guardar, agrega cada
+dirección como patrón `CONTIENE` normalizado del sector
+(`app/web/src/components/GestionDirecciones.tsx:55-63`) y llama a
+`api.sectorizarPendientes(...)` (`app/web/src/components/GestionDirecciones.tsx:64-65`),
+que ejecuta `POST /api/v1/ingesta/sectorizar-pendientes`
+(`app/web/src/api/client.ts:499-505`).
 
 ## Datos reales cargados en producción (42 casos, D-54)
 
@@ -566,7 +622,7 @@ de Fase 4 lista entre los pendientes que no bloquean la fase el «acceso públic
 del servicio con PII real, que debe restringirse antes de operar en producción»
 (`RepoTecnico/pruebas/informe_fase4.md:109-113`). La ingesta, por su parte, deja
 los avisos del parser en `detalle_error`, sin incluir valores de datos personales
-(`app/api/routes_ingesta.py:159`).
+(`app/api/routes_ingesta.py:178`).
 
 ### Recalculo posterior
 
@@ -604,11 +660,13 @@ La muestra usada está en `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv
 versionada por ser pseudonimizada
 (`RepoTecnico/interfaz_csv_origen.md:69-72`).
 
-### `test_ingesta_api.py` (6 pruebas)
+### `test_ingesta_api.py` (8 pruebas)
 
-Nivel de integración; el informe de Fase 4 lo registra con 6 pruebas y ámbito
+Nivel de integración; el informe de Fase 4 lo registraba con 6 pruebas y ámbito
 «Preview, carga, filtro por central y deduplicación»
-(`RepoTecnico/pruebas/informe_fase4.md:83`). Cubre:
+(`RepoTecnico/pruebas/informe_fase4.md:83`). Tras el ciclo **D-66** el archivo
+contiene **8 pruebas**; además de las seis originales se añadieron las de
+**direcciones sin sector** y **re-sectorización de pendientes**. Cubre:
 
 | Prueba | Qué verifica | Referencia |
 |---|---|---|
@@ -617,7 +675,9 @@ Nivel de integración; el informe de Fase 4 lo registra con 6 pruebas y ámbito
 | `test_preview_no_guarda` | Preview sin escritura | `app/tests/test_ingesta_api.py:43-54` |
 | `test_ingesta_inserta_y_deduplica` | Carga y segunda carga duplicada | `app/tests/test_ingesta_api.py:57-73` |
 | `test_ingesta_registra_el_lote` | Historial y detalle del lote | `app/tests/test_ingesta_api.py:76-89` |
-| `test_sectorizacion_y_cuadrilla0` | Sectorización y marca persistida | `app/tests/test_ingesta_api.py:92-131` |
+| `test_sectorizacion_y_cuadrilla0` | Sectorización y marca persistida | `app/tests/test_ingesta_api.py:92-132` |
+| `test_direcciones_sin_sector_se_reportan_y_se_gestionan` | El resumen lista las direcciones sin sector y la re-sectorización las asigna (**D-66**) | `app/tests/test_ingesta_api.py:135-180` |
+| `test_sectorizar_pendientes_requiere_escritura` | `403` para TECNICO (**D-66**) | `app/tests/test_ingesta_api.py:182-184` |
 
 ### Trazabilidad
 

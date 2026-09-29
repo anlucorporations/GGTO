@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/02-seguridad-y-privacidad.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/09/2026</span>
+          <span>Edición HTML y PDF generada el 29/09/2026</span>
         </div>
       </section>
 <blockquote>
@@ -809,8 +809,10 @@ los <strong>nombres</strong> de los secretos.</p>
 <ol>
 <li><strong>Cuida tu acceso.</strong> Tu usuario es tu <strong>P00</strong> y tu clave se guarda cifrada con Argon2id. Nadie
 del equipo debe conocer tu clave.</li>
-<li><strong>Guarda tus 12 palabras.</strong> Al configurar tu dispositivo recibes 12 palabras de seguridad. Se
-piden <strong>3</strong> de ellas para desbloquear la cuenta o restablecer la clave.</li>
+<li><strong>Guarda tus 12 palabras.</strong> En tu <strong>primer acceso</strong> (enlace «Primer acceso (obtener clave)» de la
+pantalla de entrada) fijas tu correo y tu clave, y el sistema te muestra 12 palabras de seguridad.
+Se piden <strong>3</strong> de ellas para desbloquear la cuenta o restablecer la clave. Si las pierdes, solo el
+<strong>Super Usuario</strong> puede generarte un juego nuevo (botón «Palabras»).</li>
 <li><strong>Respeta tu rol.</strong> Tu rol (SUPER, ADMIN, SUPERVISOR o TECNICO) define qué puedes ver y qué
 puedes escribir. Si el menú <strong>CONFIGURACIÓN</strong> no aparece, es porque tu rol no lo permite.</li>
 <li><strong>No compartas datos personales.</strong> Teléfonos, direcciones, nombres y seriales son datos
@@ -894,8 +896,8 @@ protegiendo el sistema.</p>
 </tr>
 <tr>
 <td>Trazabilidad</td>
-<td>Bitácora de estados del caso</td>
-<td>Tabla <code>caso_estado_hist</code></td>
+<td>Bitácora de estados del caso y registro de acciones sensibles</td>
+<td>Tablas <code>caso_estado_hist</code> y <code>auditoria</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -905,7 +907,7 @@ protegiendo el sistema.</p>
     C --&gt; D[Autorizacion&lt;br/&gt;RBAC por rol, SUPER con acceso total]
     D --&gt; E[Aislamiento de datos&lt;br/&gt;RLS en caso y despacho]
     E --&gt; F[Secretos&lt;br/&gt;Google Secret Manager con CMEK]
-    F --&gt; G[Observabilidad y trazabilidad&lt;br/&gt;request-id, metricas y bitacora de estados]
+    F --&gt; G[Observabilidad y trazabilidad&lt;br/&gt;request-id, metricas, bitacora de estados y auditoria]
     G --&gt; H[(Base de datos&lt;br/&gt;ggtov2)]</code></pre></details></figure>
 <h3 id="autenticacion"><span class="sec-num">2.2</span>Autenticación</h3>
 <p>El ingreso a la plataforma se realiza con <strong><code>P00</code> (identificador laboral) y clave</strong>. La clave se
@@ -965,6 +967,18 @@ definido en el código y se genera de forma aleatoria y segura.</p>
 <td>Restablecer la clave</td>
 <td>Con 3 de las 12 palabras</td>
 </tr>
+<tr>
+<td>Alta de primer acceso</td>
+<td>La hace el propio técnico desde «Primer acceso (obtener clave)», si su supervisor ya registró el P00</td>
+</tr>
+<tr>
+<td>Palabras perdidas</td>
+<td>Solo el <strong>Super Usuario</strong> puede generar un juego nuevo; las anteriores dejan de funcionar y las nuevas se muestran una sola vez</td>
+</tr>
+<tr>
+<td>Guardado de las palabras</td>
+<td>Solo huellas cifradas e irreversibles (hash Argon2id): el sistema nunca puede volver a mostrarlas</td>
+</tr>
 </tbody>
 </table></div>
 <p>El token se valida en cada petición. Si falta, es inválido o está expirado, la API responde <code>401</code>.
@@ -1007,6 +1021,10 @@ pueden <strong>escribir</strong>; la lectura se concede a cualquier usuario aute
 <td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
 </tr>
 <tr>
+<td>Recuperación de palabras (botón «Palabras», D-67)</td>
+<td>Solo <code>SUPER</code></td>
+</tr>
+<tr>
 <td>ALERTAS / OUTBOX</td>
 <td><code>ADMIN</code> y <code>SUPERVISOR</code></td>
 </tr>
@@ -1027,18 +1045,26 @@ valida el rol.</p>
 <p>La tabla <code>auditoria</code> está definida en el esquema con los campos: <code>usuario</code>, <code>accion</code>, <code>entidad</code>,
 <code>id_entidad</code>, <code>datos_antes</code>, <code>datos_despues</code>, <code>ip</code> y <code>fecha_hora</code>.</p>
 <blockquote>
-<p><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> <strong>La aplicación no escribe en <code>auditoria</code>.</strong> No existe ninguna referencia a esa tabla en el
-código de la aplicación. La trazabilidad efectiva en la versión 1 se limita a:</p>
+<p><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> <strong>La aplicación ya escribe en <code>auditoria</code></strong> desde el ciclo D-67. Quedan registradas dos acciones
+sensibles del alta y la recuperación de técnicos:</p>
+<ul>
+<li><code>ALTA_PRIMER_ACCESO</code>: cuando el técnico crea su cuenta desde «Primer acceso (obtener clave)».</li>
+<li><code>REGENERAR_PALABRAS</code>: cuando el <strong>Super Usuario</strong> genera un juego nuevo desde el botón «Palabras».
+El registro guarda quién lo pidió, para qué P00, la versión anterior de las palabras y la nueva.</li>
+</ul>
+</blockquote>
+<p>La trazabilidad efectiva en la versión 1 se reparte así:</p>
 <ul>
 <li>la <strong>bitácora de estados</strong> <code>caso_estado_hist</code>, que registra estado anterior, estado nuevo,
 motivo y usuario, y se consulta por caso;</li>
 <li>el campo <code>caso.creado_por</code>;</li>
+<li>la tabla <code>auditoria</code>, con el alta y la regeneración de cuentas (D-67);</li>
 <li>el registro del middleware, que <strong>no incluye el usuario</strong>.</li>
 </ul>
-</blockquote>
 <p>Los requerimientos RNF-12 y RNF-19 exigen registrar usuario, fecha y hora y los cambios sobre cada
-caso, además de incluir el usuario en los registros. <strong>El registro general en <code>auditoria</code> y el
-usuario en los registros están pendientes de confirmar y no están implementados.</strong></p>
+caso, además de incluir el usuario en los registros. La bitácora general todavía <strong>no cubre todos los
+cambios</strong> y el middleware <strong>no registra el usuario</strong>: esas dos partes siguen <strong>pendientes de
+confirmar</strong>.</p>
 <hr />
 <h2 id="rbac"><span class="sec-num">3</span>RBAC</h2>
 <h3 id="4-roles-y-bypass-super"><span class="sec-num">3.1</span>4 roles y bypass SUPER</h3>
@@ -1166,6 +1192,13 @@ variable de entorno <code>GGTO_SUPER_CLAVE</code> o la solicita de forma oculta.
 <td>—</td>
 </tr>
 <tr>
+<td>RECUPERACIÓN DE PALABRAS (botón «Palabras», D-67)</td>
+<td>CRUD</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
 <td>USUARIOS y accesos</td>
 <td>CRUD</td>
 <td>CRUD</td>
@@ -1216,9 +1249,9 @@ permiso de escritura exclusivo de MONITOREO.</li>
 <td>7/7</td>
 </tr>
 <tr>
-<td><code>test_auth.py</code> (11)</td>
-<td>Inicio de sesión, bloqueo, desbloqueo y 12 palabras</td>
-<td>11/11</td>
+<td><code>test_auth.py</code> (11 en Fase 4, 15 hoy)</td>
+<td>Inicio de sesión, bloqueo, desbloqueo, 12 palabras y las 4 pruebas del ciclo D-67 (primer acceso, estado de la cuenta y regeneración solo por SUPER)</td>
+<td>En verde</td>
 </tr>
 </tbody>
 </table></div>
@@ -1631,7 +1664,8 @@ restringir el acceso público antes de seguir cargando datos.</p>
 <ul>
 <li>La mayoría de los endpoints <code>/api/v1/*</code> <strong>sí exigen token JWT</strong>.</li>
 <li>Son <strong>públicos</strong> (sin token): <code>/api/v1/info</code>, <code>/health</code> y <code>/ready</code>; el inicio de sesión
-(<code>login</code>); la configuración inicial (<code>setup</code>); y <code>unlock</code> y <code>reset-password</code>.</li>
+(<code>login</code>); la consulta del primer acceso (<code>primer-acceso</code>); la configuración inicial (<code>setup</code>); y
+<code>unlock</code> y <code>reset-password</code>.</li>
 <li><code>/api/v1/telegram/webhook</code> y <code>/api/v1/mcp</code> se protegen con <strong>cabecera secreta</strong> solo si está
 configurada. Si la clave está vacía, <strong>no se exige</strong>.</li>
 </ul>
@@ -1785,7 +1819,7 @@ SUPERVISOR.</p>
 </tr>
 <tr>
 <td>Registro de eventos de inicio de sesión</td>
-<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Solo el registro general, sin usuario</td>
+<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Parcial: el alta y la recuperación de cuentas quedan en <code>auditoria</code> (D-67); el inicio de sesión y el usuario en los registros siguen pendientes</td>
 </tr>
 <tr>
 <td>Autenticación de canales externos</td>
@@ -1819,7 +1853,7 @@ fijarse a los orígenes reales en producción, y las claves <code>telegram.webho
 <tr>
 <td>Auditoría interna de la bitácora</td>
 <td>ADMIN (solo lectura de <code>auditoria</code>)</td>
-<td><strong>Sin datos</strong>: la aplicación no escribe en <code>auditoria</code></td>
+<td><strong>Parcial</strong>: el alta y la recuperación de cuentas quedan registradas (D-67); el resto de eventos, pendiente</td>
 </tr>
 <tr>
 <td>Soporte y mesa de ayuda de la plataforma</td>
@@ -1856,7 +1890,8 @@ AUDITOR en la versión 1.</strong></p>
 <li>Restringir el acceso público de <code>ggto-web</code> con IAP o invocación autenticada.</li>
 <li>Migrar a <code>ggtov2-pg</code> con respaldos, PITR, SSL <code>ENCRYPTED_ONLY</code> y protección de borrado.</li>
 <li>Implementar el <strong>enmascaramiento por rol</strong> de teléfono, dirección y serial.</li>
-<li>Implementar el registro de <strong>auditoría</strong> y añadir el usuario a los registros.</li>
+<li>Ampliar el registro de <strong>auditoría</strong> al resto de acciones y añadir el usuario a los registros
+(el ciclo D-67 ya cubre el alta y la recuperación de cuentas).</li>
 <li>Conectar <strong>RLS</strong> fijando <code>app.id_central</code> por sesión y acotar las consultas por la central del
 usuario.</li>
 <li>Habilitar <strong>MFA</strong> para ADMIN y SUPERVISOR y la política de claves de RNF-22.</li>
@@ -1883,7 +1918,7 @@ no se haya podido verificar.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 28/09/2026</span>
+    <span>Generado el 29/09/2026</span>
   </div>
 </footer>
 
