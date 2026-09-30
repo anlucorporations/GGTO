@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, SmallInteger, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    SmallInteger,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -114,3 +124,53 @@ class Auditoria(Base):
     datos_antes: Mapped[dict | None] = mapped_column(JSONB)
     datos_despues: Mapped[dict | None] = mapped_column(JSONB)
     fecha_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Actividad(Base):
+    """Acción de campo sobre un caso: contacto, cierre, enrutado o diferido.
+
+    Es la tabla que usa la app móvil (Ciclo 8); el escritorio también registra
+    aquí los cierres y enrutados hechos desde la ficha del caso (D-70), para no
+    duplicar el modelo. `id_metodo` apunta al catálogo (IVR/COS/SACAS en CIERRE).
+    """
+
+    __tablename__ = "actividad"
+
+    id_actividad: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_caso: Mapped[int] = mapped_column(
+        ForeignKey("caso.id_caso", ondelete="CASCADE"), nullable=False
+    )
+    id_usuario: Mapped[int | None] = mapped_column(ForeignKey("usuario.id_usuario"))
+    id_cuadrilla: Mapped[int | None] = mapped_column(ForeignKey("cuadrilla.id_cuadrilla"))
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    resultado: Mapped[str | None] = mapped_column(String(20))
+    reporte_corto: Mapped[str | None] = mapped_column(Text)
+    id_metodo: Mapped[int | None] = mapped_column(ForeignKey("catalogo_metodo.id_metodo"))
+    id_causa: Mapped[int | None] = mapped_column(ForeignKey("causa.id_causa"))
+    fecha_hora: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    latitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    longitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    sincronizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Evidencia(Base):
+    """Evidencia asociada a una actividad (potencia, navegación o demostración)."""
+
+    __tablename__ = "evidencia"
+
+    id_evidencia: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_actividad: Mapped[int] = mapped_column(
+        ForeignKey("actividad.id_actividad", ondelete="CASCADE"), nullable=False
+    )
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    serial_imagen: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    ruta_local: Mapped[str | None] = mapped_column(String(255))
+    ruta_remota: Mapped[str | None] = mapped_column(String(255))
+    latitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    longitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    fecha_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    origen_camara: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

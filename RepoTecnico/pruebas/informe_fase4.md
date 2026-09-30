@@ -15,13 +15,13 @@
 
 | Nivel | Herramienta | Ejecutadas | Pasadas | Fallidas |
 |---|---|---|---|---|
-| Unitarias + integración + contratos | `pytest` | **181** | **181** | **0** |
-| E2E de navegador | Playwright/Chromium | **66** | **66** | **0** |
+| Unitarias + integración + contratos | `pytest` | **195** | **195** | **0** |
+| E2E de navegador | Playwright/Chromium | **77** | **77** | **0** |
 | Calidad estática | `ruff` / `mypy` / `tsc` strict | 3 | 3 | 0 |
 
-- `pytest`: `181 passed` — resumen en `logs/pytest-resultados.txt`
+- `pytest`: `195 passed (1:01:03)` — resumen en `logs/pytest-resultados.txt`
   (log completo en `logs/pytest.log`).
-- E2E: `66 passed (11.7m)` — informe en `logs/e2e-resultados.json` y
+- E2E: `77 passed (23.8m)` — informe en `logs/e2e-resultados.json` y
   `logs/e2e-reporte/`.
 - Cobertura E2E: autenticación, navegación y RBAC, casos, especiales, agenda,
   despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox),
@@ -68,13 +68,16 @@
 | `14-operacion-filtros-ficha.spec.js` | 4 | 4 | Filtros en una fila sin Origen ni rango de fechas, OPERACIÓN fusionada y ficha rápida con pestañas (D-65) |
 | `15-proceso-despacho.spec.js` | 3 | 3 | Proceso del despacho en formulario flotante, asignación de sectores y especiales (D-66) |
 | `16-primer-acceso-tecnicos.spec.js` | 3 | 3 | Primer acceso del técnico, estado de la cuenta y regeneración por el SUPER (D-67) |
-| **Total** | **66** | **66** | `66 passed (11.7m)` |
+| `17-sistemas-y-roles.spec.js` | 5 | 5 | SISTEMAS solo para el SUPER, cambio de rol en TÉCNICOS y gestión del estado por el TECNICO (D-68/D-69) |
+| `18-ficha-pestanas.spec.js` | 6 | 6 | Ficha en pestañas con 3 datos por línea, edición limitada por icono, Resolución (cerrar/cita/enrutar) e Histórico (D-70) |
+| **Total** | **77** | **77** | `77 passed (23.8m)` |
 
 ### 3.2 `pytest` (esquema `ggto_test`)
 
 | Archivo | Pruebas | Nivel | Ámbito |
 |---|---|---|---|
 | `test_alertas_api.py` | 23 | Integración | Detección RF-09, planificación RF-17, material RF-18, outbox y canales |
+| `test_sistemas_api.py` | 3 | Integración | Inspección de la BD: estructura, detalle y contenido ofuscado (D-69) |
 | `test_despacho_api.py` | 23 | Integración | Propuesta, asignación diaria de sectores, proceso, especiales y fallas masivas (D-66) |
 | `test_casos_api.py` | 17 | Integración | Búsqueda, filtros, ficha, edición, alta `REF-…` y bitácora |
 | `test_sectorizacion_cuadrilla0.py` | 16 | Unitaria | Sectorización por dirección y criterio de cuadrilla 0 |
@@ -87,7 +90,7 @@
 | `test_security.py` | 6 | Unitaria | Hash Argon2id, JWT y utilidades de seguridad |
 | `test_ingesta_api.py` | 8 | Integración | Preview, carga, direcciones sin sector y re-sectorización (D-66) |
 | `test_config_db.py` | 3 | Unitaria | Construcción de la URL de conexión y `search_path` |
-| **Total** | **181** | — | `181 passed` |
+| **Total** | **195** | — | `195 passed (1:01:03)` |
 
 - Sin base de datos no se ejecuta la integración: el `conftest` omite esos casos
   cuando `GGTO_TEST_DB_URL` no está definida (las unitarias siguen corriendo).
@@ -96,8 +99,8 @@
 
 ## 4. Criterios de salida
 
-- [x] `pytest` completo en verde (181/181).
-- [x] Playwright E2E completo en verde (66/66).
+- [x] `pytest` completo en verde (195/195).
+- [x] Playwright E2E completo en verde (77/77).
 - [x] `ruff`, `mypy` y `tsc` strict sin hallazgos.
 - [x] Hallazgos corregidos y documentados.
 
@@ -105,7 +108,7 @@
 
 ## 5. Conclusión
 
-La **Fase 4 cierra con 247 pruebas en verde** (181 de `pytest` + 66 E2E) y los
+La **Fase 4 cierra con 272 pruebas en verde** (195 de `pytest` + 77 E2E) y los
 tres analizadores estáticos sin hallazgos. Se encontraron y corrigieron **seis
 hallazgos** (F4-01…F4-06): tres de producto/entorno de pruebas y tres defectos de
 las propias pruebas. **No quedan defectos funcionales abiertos** y los criterios

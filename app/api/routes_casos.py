@@ -2,21 +2,37 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Caso, CasoEstadoHist, Cita, DespachoCasos, Sector, Usuario
+from ..models import (
+    Actividad,
+    Caso,
+    CasoEstadoHist,
+    CatalogoMetodo,
+    Cita,
+    DespachoCasos,
+    Evidencia,
+    Sector,
+    Seguimiento,
+    Usuario,
+)
 from ..schemas.casos import (
     CasoEstadoHistOut,
     CasoGestionEstado,
     CasoManualCreate,
     CasoOut,
+    CasoRelacionado,
     CasoUpdate,
+    CierreCaso,
+    CitaRapida,
+    EnrutadoCaso,
     PaginaCasos,
+    ResolucionOut,
 )
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
@@ -354,3 +370,228 @@ def historial(
             .order_by(CasoEstadoHist.id_hist.desc())
         ).all()
     )
+
+
+# --------------------------------------------------------------------------- #
+# Resolución del caso: cierre, cita y enrutado (D-70)
+# Se apoya en las tablas ya existentes `actividad` / `evidencia` / `cita` /
+# `seguimiento`, y en el catálogo `catalogo_metodo` (dominio CIERRE: IVR/COS/SACAS).
+# --------------------------------------------------------------------------- #
+def _metodo_cierre(db: Session, codigo: str) -> CatalogoMetodo:
+    metodo = db.scalar(
+        select(CatalogoMetodo).where(
+            CatalogoMetodo.dominio == "CIERRE", CatalogoMetodo.codigo == codigo
+        )
+    )
+    if metodo is None:
+        raise HTTPException(status_code=404, detail=f"El modo de cierre {codigo} no está en el catálogo")
+    return metodo
+
+
+@router.post("/{id_caso}/cierre", response_model=ResolucionOut,
+             summary="Cerrar el caso con modo, descripción y evidencias")
+def cerrar_caso(
+    id_caso: int,
+    datos: CierreCaso,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> ResolucionOut:
+    """Registra la actividad de cierre (tipo CIERRE) y pasa el caso a CERRADO."""
+    caso = _o_404(db, id_caso)
+    if caso.estado_actual == "CERRADO":
+        raise HTTPException(
+            status_code=409,
+            detail="El caso ya está cerrado; reabra el estado antes de registrar otro cierre",
+        )
+    metodo = _metodo_cierre(db, datos.modo)
+
+    actividad = Actividad(
+        id_caso=caso.id_caso,
+        id_usuario=usuario.id_usuario,
+        tipo="CIERRE",
+        resultado="CERRADO",
+        reporte_corto=datos.descripcion,
+        id_metodo=metodo.id_metodo,
+        id_causa=datos.id_causa,
+        fecha_hora=datetime.now(UTC),
+        sincronizado=True,
+    )
+    db.add(actividad)
+    db.flush()
+
+    ahora = datetime.now(UTC)
+    for indice, serial in enumerate(datos.evidencias, start=1):
+        limpio = serial.strip()
+        if not limpio:
+            continue
+        db.add(
+            Evidencia(
+                id_actividad=actividad.id_actividad,
+                tipo="DEMO",
+                # El serial debe ser único en toda la tabla: se incluye el id de la
+                # actividad para poder cerrar/reabrir el mismo caso varias veces.
+                serial_imagen=(
+                    f"{caso.id_averia}-A{actividad.id_actividad}-CIERRE-{indice:02d}"[:160]
+                ),
+                ruta_remota=limpio[:255],
+                fecha_hora=ahora,
+                origen_camara=False,
+            )
+        )
+
+    if caso.estado_actual != "CERRADO":
+        _registrar_estado(db, caso, "CERRADO", f"Cierre con {datos.modo}", usuario.p00)
+    db.commit()
+    db.refresh(caso)
+    return ResolucionOut(
+        accion="CIERRE",
+        id_actividad=actividad.id_actividad,
+        estado_actual=caso.estado_actual,
+        mensaje=f"Caso cerrado con {datos.modo}.",
+    )
+
+
+@router.post("/{id_caso}/cita", response_model=ResolucionOut,
+             summary="Agendar una cita desde la ficha del caso")
+def agendar_cita(
+    id_caso: int,
+    datos: CitaRapida,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> ResolucionOut:
+    """Crea la cita vinculada al caso y deja constancia de la fecha comprometida."""
+    caso = _o_404(db, id_caso)
+    cita = Cita(
+        id_caso=caso.id_caso,
+        fecha_hora=datos.fecha_hora,
+        tipo=datos.tipo,
+        estado="PROPUESTA",
+        observacion=datos.observacion,
+        creado_por=usuario.p00,
+    )
+    db.add(cita)
+    caso.fecha_cita = datos.fecha_hora
+    db.commit()
+    db.refresh(caso)
+    db.refresh(cita)
+    return ResolucionOut(
+        accion="CITA",
+        id_cita=cita.id_cita,
+        estado_actual=caso.estado_actual,
+        mensaje=f"Cita agendada para {datos.fecha_hora:%d/%m/%Y %H:%M}.",
+    )
+
+
+@router.post("/{id_caso}/enrutado", response_model=ResolucionOut,
+             summary="Enrutar el caso a otra instancia")
+def enrutar_caso(
+    id_caso: int,
+    datos: EnrutadoCaso,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> ResolucionOut:
+    """Registra la actividad de enrutado, el seguimiento y pasa el caso a ENRUTADO."""
+    caso = _o_404(db, id_caso)
+    actividad = Actividad(
+        id_caso=caso.id_caso,
+        id_usuario=usuario.id_usuario,
+        tipo="ENRUTE",
+        resultado="ENRUTADO",
+        reporte_corto=datos.motivo,
+        id_metodo=datos.id_metodo,
+        fecha_hora=datetime.now(UTC),
+        sincronizado=True,
+    )
+    db.add(actividad)
+    db.flush()
+
+    seguimiento = Seguimiento(
+        id_caso=caso.id_caso,
+        instancia_destino=datos.destino,
+        motivo=datos.motivo,
+        estado="EN_COLA",
+    )
+    db.add(seguimiento)
+
+    if caso.estado_actual != "ENRUTADO":
+        _registrar_estado(db, caso, "ENRUTADO", f"Enrutado a {datos.destino}", usuario.p00)
+    db.commit()
+    db.refresh(caso)
+    return ResolucionOut(
+        accion="ENRUTE",
+        id_actividad=actividad.id_actividad,
+        id_seguimiento=seguimiento.id_seguimiento,
+        estado_actual=caso.estado_actual,
+        mensaje=f"Caso enrutado a {datos.destino}.",
+    )
+
+
+@router.get("/{id_caso}/relacionados", response_model=list[CasoRelacionado],
+            summary="Antecedentes del mismo teléfono o dirección")
+def relacionados(
+    id_caso: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+    limite: int = Query(default=20, ge=1, le=100),
+) -> list[CasoRelacionado]:
+    """Casos previos asociados al teléfono del caso (pestaña Histórico, D-70).
+
+    Toma el `telefono` del caso y, si viene vacío, el `contacto_cliente`. Cada
+    antecedente incluye el id de avería anterior, la fecha de cierre, el problema
+    reportado y la justificación del cierre (última actividad de CIERRE).
+    """
+    caso = _o_404(db, id_caso)
+    telefono = (caso.telefono or caso.contacto_cliente or "").strip()
+    if not telefono:
+        return []
+
+    anteriores = list(
+        db.scalars(
+            select(Caso)
+            .where(Caso.telefono == telefono, Caso.id_caso != caso.id_caso)
+            .order_by(Caso.fecha_reporte.desc().nulls_last(), Caso.id_caso.desc())
+            .limit(limite)
+        ).all()
+    )
+    if not anteriores:
+        return []
+
+    ids = [c.id_caso for c in anteriores]
+    cierres = db.execute(
+        text(
+            """
+            SELECT DISTINCT ON (a.id_caso)
+                   a.id_caso, a.reporte_corto, a.fecha_hora, m.codigo
+              FROM actividad a
+              LEFT JOIN catalogo_metodo m ON m.id_metodo = a.id_metodo
+             WHERE a.id_caso = ANY(:ids) AND a.tipo = 'CIERRE'
+             ORDER BY a.id_caso, a.fecha_hora DESC
+            """
+        ),
+        {"ids": ids},
+    ).mappings().all()
+    por_caso = {f["id_caso"]: f for f in cierres}
+
+    salida: list[CasoRelacionado] = []
+    for c in anteriores:
+        cierre = por_caso.get(c.id_caso)
+        justificacion = None
+        if cierre is not None:
+            modo = cierre["codigo"] or ""
+            detalle = cierre["reporte_corto"] or ""
+            justificacion = f"{('Cierre con ' + modo + ': ') if modo else ''}{detalle}".strip()
+        salida.append(
+            CasoRelacionado(
+                id_caso=c.id_caso,
+                id_averia=c.id_averia,
+                fecha_reporte=c.fecha_reporte,
+                fecha_cierre=(cierre["fecha_hora"] if cierre is not None else None),
+                estado_actual=c.estado_actual,
+                categoria=c.categoria,
+                problema_reporte=c.problema_reporte,
+                justificacion_cierre=justificacion or None,
+                direccion=c.direccion,
+                nombre_cliente=c.nombre_cliente,
+            )
+        )
+    return salida

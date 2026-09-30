@@ -41,8 +41,11 @@ test.describe('Casos', () => {
 
   test('ver ficha abre el detalle del caso', async ({ page }) => {
     await page.getByRole('row', { name: /E2E-0005/ }).getByRole('button', { name: 'Ver ficha' }).click();
-    await expect(page.getByRole('heading', { name: /Ficha del caso/ })).toBeVisible();
-    await expect(page.getByText('Cliente E2E 5')).toBeVisible();
+    const ficha = page.getByRole('dialog');
+    await expect(ficha.getByRole('heading', { name: /Ficha del caso/ })).toBeVisible();
+    // D-70: los datos se reparten en pestañas; el cliente vive en CONTACTO
+    await ficha.getByRole('tab', { name: 'Contacto' }).click();
+    await expect(ficha.getByText('Cliente E2E 5')).toBeVisible();
   });
 
   test('el alta manual genera un caso REF- y lo lista', async ({ page }) => {

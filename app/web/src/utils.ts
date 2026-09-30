@@ -9,3 +9,8 @@ export function fecha(valor: string | null | undefined): string {
   if (!valor) return '—';
   return valor.length >= 10 ? valor.slice(0, 10) : valor;
 }
+
+/** Formatea una marca de tiempo ISO (`2026-09-30T18:04:00...` → `2026-09-30 18:04:00`). */
+export function fechaHora(valor: string | null | undefined): string {
+  return valor ? valor.replace('T', ' ').slice(0, 19) : '—';
+}

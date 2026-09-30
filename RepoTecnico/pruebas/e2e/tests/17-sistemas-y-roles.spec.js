@@ -22,16 +22,17 @@ test.describe('Sistemas y roles', () => {
     await page.getByRole('menuitem', { name: 'Sistemas' }).click();
     await expect(page).toHaveURL(/\/sistemas$/);
 
+    // El arranque en frío y la BD remota tardan: se espera por el contenido real
     await expect(
       page.getByRole('heading', { name: 'Análisis de la estructura de la base de datos' }),
-    ).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText('Extensiones').first()).toBeVisible();
+    ).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByText(/pg_trgm|plpgsql/i).first()).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('.tabla-envoltura').first().locator('tbody tr').first()).toBeVisible();
 
     // Ficha de una tabla concreta con contenido paginado
     await page.selectOption('#sistemas-tabla', 'usuario');
     await expect(page.getByRole('heading', { name: 'Estructura de usuario' })).toBeVisible({
-      timeout: 60_000,
+      timeout: 90_000,
     });
     await expect(page.getByText('Columnas ofuscadas por seguridad')).toBeVisible();
     await expect(page.getByRole('cell', { name: /^•••• hash no reversible/ }).first()).toBeVisible();
@@ -85,7 +86,9 @@ test.describe('Sistemas y roles', () => {
     await page.locator('tbody tr').first().getByRole('button', { name: 'Ver ficha' }).click();
     const ficha = page.getByRole('dialog');
     await expect(ficha).toBeVisible();
-    await expect(ficha.getByRole('heading', { name: 'Editar caso' })).toHaveCount(0);
+    // D-70: la gestión vive en su pestaña; el TECNICO no obtiene edición de ficha
+    await ficha.getByRole('tab', { name: 'Gestión' }).click();
+    await expect(ficha.getByRole('button', { name: 'Guardar cambios' })).toHaveCount(0);
     await expect(ficha.getByRole('heading', { name: 'Cambiar estado' })).toBeVisible();
 
     await ficha.getByLabel('Nuevo estado').selectOption('EN_GESTION');

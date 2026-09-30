@@ -249,3 +249,14 @@ export function IconoAyuda(props: Props) {
     </svg>
   );
 }
+
+/* --- Edición de la ficha (D-70) --- */
+
+export function IconoEditar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 20h4l10-10a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5V20z" />
+      <path d="M13.5 6.5 17.5 10.5" />
+    </svg>
+  );
+}

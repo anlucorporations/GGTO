@@ -128,3 +128,14 @@ RepoTecnico/pruebas/run_e2e.sh
 # 3. Un solo archivo E2E
 RepoTecnico/pruebas/run_e2e.sh tests/09-alertas.spec.js
 ```
+
+### E2E-18 · Ficha del caso en pestañas (D-70)
+
+| Id | Escenario | Esperado |
+|---|---|---|
+| E2E-18.1 | Abrir la ficha de un caso | 8 pestañas y rejilla de **3 datos por línea** en PC |
+| E2E-18.2 | Icono de edición del título | habilita solo **Sector**, **Fecha de cita** e **Información (máx. 200)** |
+| E2E-18.3 | Pestaña Resolución | selector **CERRAR / CITA / ENRRUTAR** con su formulario; modos **IVR · COS · SACAS** |
+| E2E-18.4 | Cerrar un caso con evidencias | actividad `CIERRE`, estado **CERRADO** y bitácora actualizada |
+| E2E-18.5 | Pestaña Histórico | antecedentes del mismo teléfono con id anterior, cierre y justificación |
+| E2E-18.6 | Rol TECNICO | sin icono de edición; la Resolución muestra el aviso de falta de permiso |

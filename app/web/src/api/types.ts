@@ -1154,3 +1154,48 @@ export interface ContenidoTabla {
   paginas: number;
   ofuscadas: string[];
 }
+
+/* ---------------- Resolución del caso (D-70) -------------------- */
+
+export type ModoCierre = 'IVR' | 'COS' | 'SACAS';
+
+export interface CierreCaso {
+  modo: ModoCierre;
+  descripcion: string;
+  evidencias: string[];
+  id_causa?: number | null;
+}
+
+export interface CitaRapida {
+  fecha_hora: string;
+  tipo: 'CONTACTO' | 'ATENCION';
+  observacion?: string | null;
+}
+
+export interface EnrutadoCaso {
+  destino: string;
+  motivo?: string | null;
+  id_metodo?: number | null;
+}
+
+export interface ResolucionOut {
+  accion: string;
+  id_actividad: number | null;
+  id_cita: number | null;
+  id_seguimiento: number | null;
+  estado_actual: string;
+  mensaje: string;
+}
+
+export interface CasoRelacionado {
+  id_caso: number;
+  id_averia: string;
+  fecha_reporte: string | null;
+  fecha_cierre: string | null;
+  estado_actual: string;
+  categoria: string | null;
+  problema_reporte: string | null;
+  justificacion_cierre: string | null;
+  direccion: string | null;
+  nombre_cliente: string | null;
+}

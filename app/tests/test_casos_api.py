@@ -314,3 +314,183 @@ def test_estado_invalido_en_gestion(client, admin_token):
     r = client.post(f"/api/v1/casos/{creado['id_caso']}/estado",
                     json={"estado_actual": "INVENTADO"}, headers=admin_token["admin"])
     assert r.status_code == 422
+
+
+# --------------------------------------------------------------------------- #
+# Resolución del caso: cierre, cita, enrutado e histórico (D-70)
+# --------------------------------------------------------------------------- #
+def _caso_con_telefono(client, admin_token, id_averia="TSTRES01", telefono="+582121111111"):
+    r = client.post(
+        "/api/v1/casos",
+        json={
+            "id_averia": id_averia,
+            "direccion": "CALLE TST RESUELVE",
+            "telefono": telefono,
+            "nombre_cliente": "RESOLUCION",
+            "problema_reporte": "SIN SERVICIO GPON",
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_cierre_registra_actividad_evidencias_y_estado(client, admin_token, db_session):
+    """El cierre guarda la actividad con su modo del catálogo y sus evidencias."""
+    from app.models import Actividad, Evidencia
+
+    caso = _caso_con_telefono(client, admin_token, "TSTRES02")
+    r = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/cierre",
+        json={"modo": "COS", "descripcion": "Se restableció el enlace y se verificó navegación",
+              "evidencias": ["EVD-001", "EVD-002"]},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["accion"] == "CIERRE" and cuerpo["estado_actual"] == "CERRADO"
+
+    actividad = db_session.get(Actividad, cuerpo["id_actividad"])
+    assert actividad is not None
+    assert actividad.tipo == "CIERRE" and actividad.resultado == "CERRADO"
+    assert actividad.id_metodo == 2  # COS en el catálogo sembrado
+    evidencias = db_session.scalars(
+        select(Evidencia).where(Evidencia.id_actividad == actividad.id_actividad)
+    ).all()
+    assert len(evidencias) == 2
+    # El serial lleva el id de la actividad para garantizar unicidad (D-70)
+    seriales = {e.serial_imagen for e in evidencias}
+    assert len(seriales) == 2
+    assert all(s.startswith(f"TSTRES02-A{actividad.id_actividad}-CIERRE-") for s in seriales)
+
+    # El TECNICO no puede cerrar (edición reservada a ADMIN/SUPERVISOR/SUPER)
+    assert client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
+                       json={"modo": "IVR", "descripcion": "intenta cerrar"},
+                       headers=admin_token["tecnico"]).status_code == 403
+
+
+def test_cierre_rechaza_modo_inexistente_y_descripcion_corta(client, admin_token):
+    """El modo solo admite IVR/COS/SACAS y la descripción no puede ser vacía."""
+    caso = _caso_con_telefono(client, admin_token, "TSTRES03")
+    # Modo fuera del enumerado -> validación de esquema (422)
+    assert client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
+                       json={"modo": "MAGIA", "descripcion": "una descripcion larga"},
+                       headers=admin_token["admin"]).status_code == 422
+    # Descripción demasiado corta -> 422
+    assert client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
+                       json={"modo": "IVR", "descripcion": "muy corta"},
+                       headers=admin_token["admin"]).status_code == 422
+    # Sin autenticación no se cierra
+    assert client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
+                       json={"modo": "IVR", "descripcion": "se verifico el enlace"}).status_code == 401
+
+
+def test_agendar_cita_desde_la_ficha(client, admin_token, db_session):
+    from app.models import Cita
+
+    caso = _caso_con_telefono(client, admin_token, "TSTRES04")
+    r = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/cita",
+        json={"fecha_hora": "2026-10-05T09:30:00+00:00", "tipo": "ATENCION",
+              "observacion": "Cliente solicita atención en la mañana"},
+        headers=admin_token["supervisor"],
+    )
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["accion"] == "CITA" and cuerpo["id_cita"]
+
+    cita = db_session.get(Cita, cuerpo["id_cita"])
+    assert cita is not None and cita.id_caso == caso["id_caso"]
+    assert cita.tipo == "ATENCION" and cita.estado == "PROPUESTA"
+    actualizado = client.get(f"/api/v1/casos/{caso['id_caso']}",
+                             headers=admin_token["admin"]).json()
+    assert actualizado["fecha_cita"] is not None
+
+
+def test_enrutado_crea_seguimiento_y_estado(client, admin_token, db_session):
+    from app.models import Actividad, Seguimiento
+
+    caso = _caso_con_telefono(client, admin_token, "TSTRES05")
+    r = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/enrutado",
+        json={"destino": "Planta externa Baruta", "motivo": "Requiere obra civil"},
+        headers=admin_token["supervisor"],
+    )
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["accion"] == "ENRUTE" and cuerpo["estado_actual"] == "ENRUTADO"
+
+    seguimiento = db_session.get(Seguimiento, cuerpo["id_seguimiento"])
+    assert seguimiento.instancia_destino == "Planta externa Baruta"
+    actividad = db_session.get(Actividad, cuerpo["id_actividad"])
+    assert actividad.tipo == "ENRUTE" and actividad.resultado == "ENRUTADO"
+
+
+def test_relacionados_agrupa_antecedentes_por_telefono(client, admin_token):
+    """La pestaña Histórico muestra ids anteriores con su cierre y justificación."""
+    telefono = "+582129999888"
+    viejo = _caso_con_telefono(client, admin_token, "TSTHIST01", telefono)
+    nuevo = _caso_con_telefono(client, admin_token, "TSTHIST02", telefono)
+
+    # Sin antecedentes todavía para el primero
+    assert client.get(f"/api/v1/casos/{nuevo['id_caso']}/relacionados",
+                      headers=admin_token["admin"]).json()[0]["id_averia"] == "TSTHIST01"
+
+    # Se cierra el viejo con SACAS: la justificación debe aparecer
+    cerrado = client.post(
+        f"/api/v1/casos/{viejo['id_caso']}/cierre",
+        json={"modo": "SACAS", "descripcion": "Reparación de acometida ejecutada"},
+        headers=admin_token["admin"],
+    )
+    assert cerrado.status_code == 200, cerrado.text
+
+    relacionados = client.get(f"/api/v1/casos/{nuevo['id_caso']}/relacionados",
+                              headers=admin_token["admin"]).json()
+    assert len(relacionados) == 1
+    antecedente = relacionados[0]
+    assert antecedente["id_averia"] == "TSTHIST01"
+    assert antecedente["fecha_cierre"] is not None
+    assert antecedente["problema_reporte"] == "SIN SERVICIO GPON"
+    assert "SACAS" in antecedente["justificacion_cierre"]
+    assert "Reparación de acometida" in antecedente["justificacion_cierre"]
+
+    # Un caso sin teléfono no tiene antecedentes
+    suelto = client.post("/api/v1/casos",
+                         json={"id_averia": "TSTHIST03", "direccion": "CALLE TST SUELTO"},
+                         headers=admin_token["admin"]).json()
+    assert client.get(f"/api/v1/casos/{suelto['id_caso']}/relacionados",
+                      headers=admin_token["admin"]).json() == []
+
+
+def test_no_se_puede_cerrar_dos_veces_y_los_seriales_no_colisionan(client, admin_token):
+    """Regresión D-70: el segundo cierre responde 409 y los seriales son únicos."""
+    caso = _caso_con_telefono(client, admin_token, "TSTRES06")
+    primero = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/cierre",
+        json={"modo": "SACAS", "descripcion": "Reparacion de acometida ejecutada",
+              "evidencias": ["EVD-01", "EVD-02"]},
+        headers=admin_token["admin"],
+    )
+    assert primero.status_code == 200, primero.text
+
+    # Reabrir y volver a cerrar con las mismas referencias no debe chocar por UNIQUE
+    assert client.post(f"/api/v1/casos/{caso['id_caso']}/estado",
+                       json={"estado_actual": "EN_GESTION"},
+                       headers=admin_token["admin"]).status_code == 200
+    segundo = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/cierre",
+        json={"modo": "COS", "descripcion": "Segunda verificacion del enlace GPON",
+              "evidencias": ["EVD-01", "EVD-02"]},
+        headers=admin_token["admin"],
+    )
+    assert segundo.status_code == 200, segundo.text
+    assert segundo.json()["id_actividad"] != primero.json()["id_actividad"]
+
+    # Cerrar un caso ya cerrado: 409 claro, no un error de base de datos
+    tercero = client.post(
+        f"/api/v1/casos/{caso['id_caso']}/cierre",
+        json={"modo": "IVR", "descripcion": "Intento de cierre duplicado"},
+        headers=admin_token["admin"],
+    )
+    assert tercero.status_code == 409, tercero.text
+    assert "cerrado" in tercero.json()["detail"].lower()

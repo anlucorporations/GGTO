@@ -176,3 +176,63 @@ class CasoGestionEstado(BaseModel):
 
     estado_actual: EstadoCaso
     motivo_estado: str | None = Field(default=None, max_length=200)
+
+
+# --------------------------------------------------------------------------- #
+# Resolución del caso: cierre, cita y enrutado (D-70)
+# --------------------------------------------------------------------------- #
+MODOS_CIERRE = Literal["IVR", "COS", "SACAS"]
+
+
+class CierreCaso(BaseModel):
+    """Cierre del caso con la descripción de lo realizado y sus evidencias."""
+
+    modo: MODOS_CIERRE = Field(description="Cómo se cerró: IVR, COS o SACAS")
+    descripcion: str = Field(min_length=10, max_length=2000,
+                             description="Resumen corto de lo realizado")
+    evidencias: list[str] = Field(default_factory=list, max_length=20,
+                                  description="Seriales o rutas de las evidencias cargadas")
+    id_causa: int | None = None
+
+
+class CitaRapida(BaseModel):
+    """Agendamiento de una cita desde la ficha del caso."""
+
+    fecha_hora: datetime
+    tipo: Literal["CONTACTO", "ATENCION"] = "ATENCION"
+    observacion: str | None = Field(default=None, max_length=500)
+
+
+class EnrutadoCaso(BaseModel):
+    """Enrutado del caso a otra instancia con su motivo."""
+
+    destino: str = Field(min_length=3, max_length=120,
+                         description="Instancia destino (seguimiento, planta, masivos…)")
+    motivo: str | None = Field(default=None, max_length=500)
+    id_metodo: int | None = None
+
+
+class ResolucionOut(BaseModel):
+    """Resultado de registrar un cierre, una cita o un enrutado."""
+
+    accion: str
+    id_actividad: int | None = None
+    id_cita: int | None = None
+    id_seguimiento: int | None = None
+    estado_actual: str
+    mensaje: str
+
+
+class CasoRelacionado(BaseModel):
+    """Antecedente del mismo teléfono o dirección (pestaña Histórico)."""
+
+    id_caso: int
+    id_averia: str
+    fecha_reporte: datetime | None = None
+    fecha_cierre: datetime | None = None
+    estado_actual: str
+    categoria: str | None = None
+    problema_reporte: str | None = None
+    justificacion_cierre: str | None = None
+    direccion: str | None = None
+    nombre_cliente: str | None = None

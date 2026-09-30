@@ -18,11 +18,21 @@ from .despacho_entities import (
     FallaMasiva,
     Notificacion,
 )
-from .entities import Auditoria, Central, DispositivoSeguridad, Rol, Tecnico, Usuario
+from .entities import (
+    Actividad,
+    Auditoria,
+    Central,
+    DispositivoSeguridad,
+    Evidencia,
+    Rol,
+    Tecnico,
+    Usuario,
+)
 from .especiales_entities import CasoEspecial, Cita, Seguimiento, Solicitante
 from .insumos_entities import OrdenMaterial
 
 __all__ = [
+    "Actividad",
     "Auditoria",
     "Caso",
     "CasoEspecial",
@@ -39,6 +49,7 @@ __all__ = [
     "Despacho",
     "DespachoCasos",
     "DispositivoSeguridad",
+    "Evidencia",
     "FallaMasiva",
     "Flota",
     "Herramienta",

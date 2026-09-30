@@ -2190,3 +2190,86 @@ input[type='file'] {
   letter-spacing: 0.4px;
   color: var(--gris-texto);
 }
+
+/* ---------- Ficha del caso en pestañas (D-70) ---------- */
+
+.ficha-pestanas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Hasta 3 datos por línea en PC */
+.datos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.datos-grid-ancha .dato {
+  grid-column: span 3;
+}
+
+.datos-columna {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dato-etiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--gris-texto);
+}
+
+.dato-valor {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.dato-valor.vacio {
+  color: var(--gris-texto);
+  opacity: 0.6;
+}
+
+.fila-campos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+@media (max-width: 900px) {
+  .datos-grid,
+  .fila-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Formularios de resolución: campos anchos y selectores legibles (D-70) */
+
+.cierre-formulario .campo {
+  grid-column: span 3;
+}
+
+.cierre-formulario .fila-campos {
+  grid-column: span 3;
+}
+
+.fila-campos-medias {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.fila-campos .campo select,
+.fila-campos .campo input {
+  width: 100%;
+  min-width: 0;
+}

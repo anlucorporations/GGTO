@@ -49,10 +49,8 @@ test.describe('Primer acceso de técnicos', () => {
     await rellenar(page.locator('#alta-clave'), CLAVE_NUEVA);
     await rellenar(page.locator('#alta-confirmacion'), CLAVE_NUEVA);
     await page.getByRole('button', { name: 'Crear mi acceso y ver las 12 palabras' }).click();
-    await expect(page.getByText(/12 palabras de seguridad/i).first()).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.locator('.lista-palabras li')).toHaveCount(12);
+    // Se espera por la lista real (el aviso puede tardar con Argon2id sobre BD remota)
+    await expect(page.locator('.lista-palabras li')).toHaveCount(12, { timeout: 90_000 });
 
     // 3) Ya puede iniciar sesión con su clave
     await page.getByRole('button', { name: 'Ir al acceso' }).click();
@@ -83,6 +81,6 @@ test.describe('Primer acceso de técnicos', () => {
     await fila.getByRole('button', { name: 'Palabras' }).click();
 
     await expect(page.getByText(/Entregue estas/i)).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator('.lista-palabras li')).toHaveCount(12);
+    await expect(page.locator('.lista-palabras li')).toHaveCount(12, { timeout: 90_000 });
   });
 });

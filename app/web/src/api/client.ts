@@ -9,6 +9,11 @@
 
 import type {
   AsignacionBloque,
+  ResolucionOut,
+  EnrutadoCaso,
+  CasoRelacionado,
+  CitaRapida,
+  CierreCaso,
   ContenidoTabla,
   EstructuraBD,
   FichaTabla,
@@ -998,4 +1003,24 @@ export function obtenerTablaDatos(
   return request<ContenidoTabla>(
     `/sistemas/tabla/${encodeURIComponent(nombre)}/datos${construirQuery({ pagina, tamano })}`,
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Resolución del caso: cierre, cita, enrutado e histórico (D-70)      */
+/* ------------------------------------------------------------------ */
+
+export function cerrarCaso(idCaso: number, datos: CierreCaso): Promise<ResolucionOut> {
+  return conCuerpo<ResolucionOut>(`/casos/${idCaso}/cierre`, 'POST', datos);
+}
+
+export function agendarCitaCaso(idCaso: number, datos: CitaRapida): Promise<ResolucionOut> {
+  return conCuerpo<ResolucionOut>(`/casos/${idCaso}/cita`, 'POST', datos);
+}
+
+export function enrutarCaso(idCaso: number, datos: EnrutadoCaso): Promise<ResolucionOut> {
+  return conCuerpo<ResolucionOut>(`/casos/${idCaso}/enrutado`, 'POST', datos);
+}
+
+export function casosRelacionados(idCaso: number): Promise<CasoRelacionado[]> {
+  return request<CasoRelacionado[]>(`/casos/${idCaso}/relacionados`);
 }

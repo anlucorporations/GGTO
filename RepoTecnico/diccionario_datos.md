@@ -405,6 +405,14 @@ un sector pertenece como máximo a una cuadrilla por día.
 
 ### 6.1 `actividad`
 
+**Uso en el escritorio (D-70):** la pestaña **Resolución** de la ficha del caso
+registra aquí los cierres (`tipo='CIERRE'`, `resultado='CERRADO'`, `id_metodo` →
+`catalogo_metodo` dominio `CIERRE`: **IVR / COS / SACAS**) y los enrutados
+(`tipo='ENRUTE'`, `resultado='ENRUTADO'`), además de crear el `seguimiento` y
+mover el estado del caso. Las referencias de evidencias se guardan en `evidencia`
+con `serial_imagen = <id_averia>-A<id_actividad>-CIERRE-NN` para garantizar la
+unicidad cuando un caso se reabre y vuelve a cerrarse.
+
 | Campo | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | id_actividad | bigserial | PK | |

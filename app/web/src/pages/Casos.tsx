@@ -9,14 +9,17 @@ import type {
   CategoriaCaso,
   EstadoCaso,
   PaginaCasos,
+  Sector,
   TipoCaso,
 } from '../api/types';
+import FichaCaso, { type Pestana as PestanaFicha } from '../components/FichaCaso';
+import { IconoEditar } from '../components/Iconos';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import EstadoChips from '../components/EstadoChips';
 import { useAuth } from '../auth/AuthContext';
-import { fecha, nv } from '../utils';
+import { fecha, fechaHora, nv } from '../utils';
 
 const ESTADOS: EstadoCaso[] = [
   'NUEVO',
@@ -96,10 +99,6 @@ function detalleDe(e: unknown, fallback: string): string {
 
 function soloFecha(valor: string | null): string {
   return valor ? valor.slice(0, 10) : '';
-}
-
-function fechaHora(valor: string | null): string {
-  return valor ? valor.replace('T', ' ').slice(0, 19) : '—';
 }
 
 function aEdicion(c: CasoOut): EdicionForm {
@@ -252,6 +251,15 @@ export default function Casos() {
   const { soloLectura, usuario } = useAuth();
   // El rol TECNICO no edita casos, pero sí gestiona el estado del que atiende (D-68).
   const puedeGestionarEstado = !soloLectura || usuario?.rol === 'TECNICO';
+  // Edición de la ficha: ADMIN, SUPERVISOR y Super Usuario (D-70).
+  const puedeEditarCaso = !soloLectura;
+  const [sectores, setSectores] = useState<Sector[]>([]);
+  // Señal para que la ficha salte a una pestaña (el icono de edición del título).
+  const [solicitud, setSolicitud] = useState<{ id: PestanaFicha; secuencia: number }>({
+    id: 'resumen',
+    secuencia: 0,
+  });
+  const { secuencia } = solicitud;
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
@@ -289,9 +297,6 @@ export default function Casos() {
   const [cargandoFicha, setCargandoFicha] = useState(false);
   const [edicion, setEdicion] = useState<EdicionForm>(EDICION_VACIA);
   const [guardando, setGuardando] = useState(false);
-  const [nuevoEstado, setNuevoEstado] = useState<string>('');
-  const [motivoEstado, setMotivoEstado] = useState('');
-  const [cambiandoEstado, setCambiandoEstado] = useState(false);
   const [historial, setHistorial] = useState<CasoEstadoHistOut[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
@@ -343,8 +348,6 @@ export default function Casos() {
         const caso = await api.obtenerCaso(idCaso);
         setFicha(caso);
         setEdicion(aEdicion(caso));
-        setNuevoEstado(caso.estado_actual);
-        setMotivoEstado('');
         await cargarHistorial(idCaso);
       } catch (e) {
         setError(detalleDe(e, 'Error al obtener la ficha del caso.'));
@@ -395,40 +398,6 @@ export default function Casos() {
       setError(detalleDe(e, 'Error al guardar los cambios del caso.'));
     } finally {
       setGuardando(false);
-    }
-  }
-
-  async function cambiarEstado(evento: FormEvent) {
-    evento.preventDefault();
-    if (!ficha) return;
-    setError('');
-    setOk('');
-    if (!nuevoEstado) {
-      setError('Seleccione el nuevo estado del caso.');
-      return;
-    }
-    if (nuevoEstado === ficha.estado_actual) {
-      setError('El nuevo estado debe ser distinto del estado actual.');
-      return;
-    }
-    setCambiandoEstado(true);
-    try {
-      // Endpoint de gestión: accesible también para el rol TECNICO (D-68).
-      const actualizado = await api.cambiarEstadoCaso(ficha.id_caso, {
-        estado_actual: nuevoEstado,
-        motivo_estado: nv(motivoEstado),
-      });
-      setFicha(actualizado);
-      setEdicion(aEdicion(actualizado));
-      setNuevoEstado(actualizado.estado_actual);
-      setMotivoEstado('');
-      setOk('Estado actualizado y registrado en la bitácora.');
-      await cargarHistorial(actualizado.id_caso);
-      await cargarLista();
-    } catch (e) {
-      setError(detalleDe(e, 'Error al cambiar el estado del caso.'));
-    } finally {
-      setCambiandoEstado(false);
     }
   }
 
@@ -597,302 +566,49 @@ export default function Casos() {
         <Modal
           titulo={`Ficha del caso #${ficha.id_caso} — ${ficha.id_averia}`}
           onCerrar={() => setFicha(null)}
+          cabeceraExtra={
+            puedeEditarCaso ? (
+              <button
+                type="button"
+                className="btn btn-mini btn-secundario"
+                title="Activar la edición de la ficha"
+                aria-label="Activar la edición de la ficha"
+                onClick={() => setSolicitud({ id: 'gestion', secuencia: secuencia + 1 })}
+              >
+                <IconoEditar width={16} height={16} />
+                Editar
+              </button>
+            ) : null
+          }
         >
-          <div className="tabla-envoltura">
-            <table className="tabla-ficha">
-              <tbody>
-                <Grupo titulo="Identificación" />
-                <Fila etiqueta="ID caso" valor={ficha.id_caso} />
-                <Fila etiqueta="ID avería" valor={<span className="mono">{ficha.id_averia}</span>} />
-                <Fila
-                  etiqueta="Central"
-                  valor={
-                    ficha.nombre_central
-                      ? `${ficha.codigo_central ?? ''} — ${ficha.nombre_central}`.trim()
-                      : ficha.id_central
-                  }
-                />
-                <Fila etiqueta="Origen" valor={ficha.origen} />
-                <Fila etiqueta="Estado actual" valor={ficha.estado_actual} />
-                <Fila etiqueta="Cuadrilla 0 (supervisor)" valor={ficha.en_gestion_supervisor ? 'Sí' : 'No'} />
-                <Fila etiqueta="Falla masiva" valor={ficha.es_falla_masiva ? 'Sí' : 'No'} />
-                <Fila etiqueta="Lote de ingesta" valor={ficha.id_lote_ingesta} />
-                <Fila etiqueta="Creado en" valor={fechaHora(ficha.creado_en)} />
-                <Fila etiqueta="Actualizado en" valor={fechaHora(ficha.actualizado_en)} />
-
-                <Grupo titulo="Contacto" />
-                <Fila etiqueta="Cliente" valor={ficha.nombre_cliente} />
-                <Fila etiqueta="Teléfono" valor={ficha.telefono} />
-                <Fila etiqueta="Dirección" valor={ficha.direccion} />
-                <Fila etiqueta="Persona que reporta" valor={ficha.persona_reporta} />
-                <Fila etiqueta="Contacto del cliente" valor={ficha.contacto_cliente} />
-
-                <Grupo titulo="Fechas" />
-                <Fila etiqueta="Fecha de reporte" valor={fechaHora(ficha.fecha_reporte)} />
-                <Fila etiqueta="Fecha de compromiso" valor={fechaHora(ficha.fecha_compromiso)} />
-                <Fila etiqueta="Fecha de cita" valor={fechaHora(ficha.fecha_cita)} />
-
-                <Grupo titulo="Textos" />
-                <Fila etiqueta="Problema reportado" valor={ficha.problema_reporte} />
-                <Fila etiqueta="Último comentario" valor={ficha.ultimo_comentario} />
-                <Fila etiqueta="Información" valor={ficha.informacion} />
-                <Fila etiqueta="Results" valor={ficha.results} />
-                <Fila etiqueta="Estatus de origen" valor={ficha.estatus_origen} />
-
-                <Grupo titulo="Datos técnicos" />
-                <Fila etiqueta="OLT" valor={ficha.olt} />
-                <Fila etiqueta="Plan" valor={ficha.plan} />
-                <Fila etiqueta="Slot" valor={ficha.slot} />
-                <Fila etiqueta="Puerto" valor={ficha.puerto} />
-                <Fila etiqueta="FAT" valor={ficha.fat} />
-                <Fila etiqueta="Serial" valor={ficha.serial} />
-                <Fila etiqueta="Tipo de servicio" valor={ficha.tipo_servicio} />
-                <Fila etiqueta="Tipo de problema" valor={ficha.tipo_problema} />
-                <Fila etiqueta="Área de trabajo" valor={ficha.area_trabajo} />
-                <Fila etiqueta="Unidad de negocio" valor={ficha.unidad_negocio} />
-                <Fila etiqueta="Reparador principal" valor={ficha.reparador_principal} />
-                <Fila etiqueta="Cuadrilla externa" valor={ficha.cuadrilla_externa} />
-                <Fila etiqueta="Flota CAN" valor={ficha.flota_can} />
-                <Fila
-                  etiqueta="Ayudantes"
-                  valor={ficha.ayudantes.length > 0 ? ficha.ayudantes.map(String).join(', ') : ''}
-                />
-
-                <Grupo titulo="Clasificación y geografía" />
-                <Fila etiqueta="Clase" valor={ficha.categoria} />
-                <Fila etiqueta="Tipo" valor={ficha.tipo_caso} />
-                <Fila etiqueta="Sector" valor={ficha.sector_nombre ?? ficha.id_sector} />
-                <Fila etiqueta="ID causa" valor={ficha.id_causa} />
-                <Fila etiqueta="Región" valor={ficha.region} />
-                <Fila etiqueta="Estado geográfico" valor={ficha.estado_geografico} />
-                <Fila etiqueta="Municipio" valor={ficha.municipio} />
-                <Fila etiqueta="Parroquia" valor={ficha.parroquia} />
-                <Fila etiqueta="Área" valor={ficha.area} />
-              </tbody>
-            </table>
-          </div>
-
-          {!soloLectura && (
-            <>
-              <h3 className="subtitulo-seccion">Editar caso</h3>
-              <form
-                className="formulario modal-formulario"
-                onSubmit={(e) => void guardarEdicion(e)}
-              >
-                <div className="campo">
-                  <label htmlFor="edit-cliente">Nombre del cliente</label>
-                  <input
-                    id="edit-cliente"
-                    value={edicion.nombre_cliente}
-                    onChange={(e) => setEdicion({ ...edicion, nombre_cliente: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-telefono">Teléfono</label>
-                  <input
-                    id="edit-telefono"
-                    value={edicion.telefono}
-                    onChange={(e) => setEdicion({ ...edicion, telefono: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-persona">Persona que reporta</label>
-                  <input
-                    id="edit-persona"
-                    value={edicion.persona_reporta}
-                    onChange={(e) => setEdicion({ ...edicion, persona_reporta: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-contacto">Contacto del cliente</label>
-                  <input
-                    id="edit-contacto"
-                    value={edicion.contacto_cliente}
-                    onChange={(e) => setEdicion({ ...edicion, contacto_cliente: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-categoria">Clase</label>
-                  <select
-                    id="edit-categoria"
-                    value={edicion.categoria}
-                    onChange={(e) =>
-                      setEdicion({ ...edicion, categoria: e.target.value as CategoriaCaso })
-                    }
-                  >
-                    {CATEGORIAS.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-tipo">Tipo</label>
-                  <select
-                    id="edit-tipo"
-                    value={edicion.tipo_caso}
-                    onChange={(e) => setEdicion({ ...edicion, tipo_caso: e.target.value as TipoCaso })}
-                  >
-                    {TIPOS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-sector">ID sector</label>
-                  <input
-                    id="edit-sector"
-                    type="number"
-                    value={edicion.id_sector}
-                    onChange={(e) => setEdicion({ ...edicion, id_sector: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-causa">ID causa</label>
-                  <input
-                    id="edit-causa"
-                    type="number"
-                    value={edicion.id_causa}
-                    onChange={(e) => setEdicion({ ...edicion, id_causa: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-servicio">Tipo de servicio</label>
-                  <input
-                    id="edit-servicio"
-                    value={edicion.tipo_servicio}
-                    onChange={(e) => setEdicion({ ...edicion, tipo_servicio: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-cita">Fecha de cita</label>
-                  <input
-                    id="edit-cita"
-                    type="date"
-                    value={edicion.fecha_cita}
-                    onChange={(e) => setEdicion({ ...edicion, fecha_cita: e.target.value })}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor="edit-compromiso">Fecha de compromiso</label>
-                  <input
-                    id="edit-compromiso"
-                    type="date"
-                    value={edicion.fecha_compromiso}
-                    onChange={(e) => setEdicion({ ...edicion, fecha_compromiso: e.target.value })}
-                  />
-                </div>
-                <div className="campo campo-check">
-                  <input
-                    id="edit-gestion"
-                    type="checkbox"
-                    checked={edicion.en_gestion_supervisor}
-                    onChange={(e) =>
-                      setEdicion({ ...edicion, en_gestion_supervisor: e.target.checked })
-                    }
-                  />
-                  <label htmlFor="edit-gestion">Cuadrilla 0 (supervisor)</label>
-                </div>
-                <div className="campo campo-check">
-                  <input
-                    id="edit-masiva"
-                    type="checkbox"
-                    checked={edicion.es_falla_masiva}
-                    onChange={(e) => setEdicion({ ...edicion, es_falla_masiva: e.target.checked })}
-                  />
-                  <label htmlFor="edit-masiva">Falla masiva</label>
-                </div>
-                <div className="campo campo-ancho">
-                  <label htmlFor="edit-direccion">Dirección</label>
-                  <input
-                    id="edit-direccion"
-                    value={edicion.direccion}
-                    onChange={(e) => setEdicion({ ...edicion, direccion: e.target.value })}
-                  />
-                </div>
-                <div className="campo campo-ancho">
-                  <label htmlFor="edit-problema">Problema reportado</label>
-                  <textarea
-                    id="edit-problema"
-                    value={edicion.problema_reporte}
-                    onChange={(e) => setEdicion({ ...edicion, problema_reporte: e.target.value })}
-                  />
-                </div>
-                <div className="campo campo-ancho">
-                  <label htmlFor="edit-comentario">Último comentario</label>
-                  <textarea
-                    id="edit-comentario"
-                    value={edicion.ultimo_comentario}
-                    onChange={(e) => setEdicion({ ...edicion, ultimo_comentario: e.target.value })}
-                  />
-                </div>
-                <div className="campo campo-ancho">
-                  <label htmlFor="edit-informacion">Información</label>
-                  <textarea
-                    id="edit-informacion"
-                    value={edicion.informacion}
-                    onChange={(e) => setEdicion({ ...edicion, informacion: e.target.value })}
-                  />
-                </div>
-                <div className="acciones-form">
-                  <button className="btn" type="submit" disabled={guardando}>
-                    {guardando ? 'Guardando…' : 'Guardar'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secundario"
-                    onClick={() => setEdicion(aEdicion(ficha))}
-                    disabled={guardando}
-                  >
-                    Descartar cambios
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
-
-          {/* Gestión del estado: también para el rol TECNICO (D-68) */}
-          {puedeGestionarEstado && (
-            <>
-              <h3 className="subtitulo-seccion">Cambiar estado</h3>
-              <form
-                className="formulario modal-formulario"
-                onSubmit={(e) => void cambiarEstado(e)}
-              >
-                <div className="campo">
-                  <label htmlFor="estado-nuevo">Nuevo estado</label>
-                  <select
-                    id="estado-nuevo"
-                    value={nuevoEstado}
-                    onChange={(e) => setNuevoEstado(e.target.value)}
-                  >
-                    {ESTADOS.map((e) => (
-                      <option key={e} value={e}>
-                        {e}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="estado-motivo">Motivo</label>
-                  <input
-                    id="estado-motivo"
-                    value={motivoEstado}
-                    onChange={(e) => setMotivoEstado(e.target.value)}
-                    placeholder="Motivo del cambio (queda en la bitácora)"
-                  />
-                </div>
-                <div className="acciones-form">
-                  <button className="btn" type="submit" disabled={cambiandoEstado}>
-                    {cambiandoEstado ? 'Cambiando…' : 'Cambiar estado'}
-                  </button>
-                </div>
-              </form>
-            </>
-          )}
+          <FichaCaso
+            caso={ficha}
+            solicitudPestana={solicitud}
+            sectores={sectores}
+            puedeEditar={puedeEditarCaso}
+            puedeResolver={puedeEditarCaso}
+            alActivarEdicion={() => undefined}
+            puedeGestionarEstado={puedeGestionarEstado}
+            estados={ESTADOS}
+            estadoActual={ficha.estado_actual}
+            onCambiarEstado={async (estado, motivo) => {
+              const actualizado = await api.cambiarEstadoCaso(ficha.id_caso, {
+                estado_actual: estado,
+                motivo_estado: motivo,
+              });
+              setFicha(actualizado);
+              setEdicion(aEdicion(actualizado));
+              setOk('Estado actualizado y registrado en la bitácora.');
+              await cargarHistorial(actualizado.id_caso);
+              await cargarLista();
+            }}
+            onActualizar={(actualizado) => {
+              setFicha(actualizado);
+              setEdicion(aEdicion(actualizado));
+              void cargarHistorial(actualizado.id_caso);
+              void cargarLista();
+            }}
+          />
 
           <h3 className="subtitulo-seccion">Historial de estados (bitácora)</h3>
           {cargandoHistorial ? (
