@@ -250,3 +250,67 @@ def test_modelo_caso_no_se_duplica(client, admin_token, db_session):
     assert db_session.scalar(
         select(func.count()).select_from(Caso).where(Caso.id_averia == "MAN-0050")
     ) == 1
+
+
+# --------------------------------------------------------------------------- #
+# Gestión del estado por el rol TECNICO (D-68)
+# --------------------------------------------------------------------------- #
+def test_tecnico_puede_cambiar_el_estado_desde_la_gestion(client, admin_token, db_session):
+    """El TECNICO no edita casos, pero sí mueve su estado con bitácora (D-68)."""
+    from app.models import CasoEstadoHist
+
+    creado = client.post(
+        "/api/v1/casos",
+        json={"id_averia": "TSTG01", "direccion": "CALLE TST G01", "nombre_cliente": "GESTION"},
+        headers=admin_token["admin"],
+    )
+    assert creado.status_code == 201, creado.text
+    id_caso = creado.json()["id_caso"]
+
+    # La edición completa sigue vedada para TECNICO
+    assert client.patch(f"/api/v1/casos/{id_caso}", json={"nombre_cliente": "X"},
+                        headers=admin_token["tecnico"]).status_code == 403
+
+    # El cambio de estado por gestión sí está permitido
+    r = client.post(
+        f"/api/v1/casos/{id_caso}/estado",
+        json={"estado_actual": "ASIGNADO", "motivo_estado": "Cuadrilla en ruta"},
+        headers=admin_token["tecnico"],
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["estado_actual"] == "ASIGNADO"
+
+    # Queda registrado en la bitácora con el autor (el alta ya dejó el registro
+    # inicial NUEVO, así que se esperan dos movimientos)
+    historial = list(
+        db_session.scalars(
+            select(CasoEstadoHist)
+            .where(CasoEstadoHist.id_caso == id_caso)
+            .order_by(CasoEstadoHist.id_hist)
+        ).all()
+    )
+    assert len(historial) == 2
+    assert historial[0].estado_anterior is None and historial[0].estado_nuevo == "NUEVO"
+    assert historial[1].estado_anterior == "NUEVO"
+    assert historial[1].estado_nuevo == "ASIGNADO"
+    assert historial[1].usuario == "TESTTEC"
+    assert historial[1].motivo == "Cuadrilla en ruta"
+
+    # El mismo estado se rechaza para no duplicar la bitácora
+    assert client.post(f"/api/v1/casos/{id_caso}/estado", json={"estado_actual": "ASIGNADO"},
+                       headers=admin_token["tecnico"]).status_code == 409
+
+    # Y sin token no se puede gestionar
+    assert client.post(f"/api/v1/casos/{id_caso}/estado",
+                       json={"estado_actual": "CERRADO"}).status_code == 401
+
+
+def test_estado_invalido_en_gestion(client, admin_token):
+    creado = client.post(
+        "/api/v1/casos",
+        json={"id_averia": "TSTG02", "direccion": "CALLE TST G02"},
+        headers=admin_token["admin"],
+    ).json()
+    r = client.post(f"/api/v1/casos/{creado['id_caso']}/estado",
+                    json={"estado_actual": "INVENTADO"}, headers=admin_token["admin"])
+    assert r.status_code == 422

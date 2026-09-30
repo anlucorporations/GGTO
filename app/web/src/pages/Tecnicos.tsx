@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
-import type { Central, StatusTecnico, Tecnico, TecnicoCreate, TecnicoUpdate } from '../api/types';
+import type {
+  Central,
+  RolAsignable,
+  StatusTecnico,
+  Tecnico,
+  TecnicoCreate,
+  TecnicoUpdate,
+} from '../api/types';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
@@ -8,6 +15,13 @@ import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
 const STATUS: StatusTecnico[] = ['ACTIVO', 'INACTIVO', 'VACACIONES', 'SUSPENDIDO'];
+
+/** Roles asignables desde la ficha (el SUPER no se reparte). */
+const ROLES_ASIGNABLES: { valor: RolAsignable; etiqueta: string }[] = [
+  { valor: 'TECNICO', etiqueta: 'Técnico' },
+  { valor: 'SUPERVISOR', etiqueta: 'Supervisor' },
+  { valor: 'ADMIN', etiqueta: 'Administrador' },
+];
 
 /** Etiquetas y clases del ciclo de vida de la cuenta (D-67). */
 const ETIQUETA_CUENTA: Record<string, string> = {
@@ -53,6 +67,8 @@ const FORM_VACIO: TecnicoForm = {
 export default function Tecnicos() {
   const { soloLectura, usuario } = useAuth();
   const esSuper = usuario?.rol === 'SUPER';
+  // Cambiar el rol de una cuenta: solo el Super Usuario y el Supervisor (D-68).
+  const puedeCambiarRol = ['SUPER', 'SUPERVISOR'].includes(usuario?.rol ?? '');
   const [items, setItems] = useState<Tecnico[]>([]);
   const [centrales, setCentrales] = useState<Central[]>([]);
   const [filtroCentral, setFiltroCentral] = useState('');
@@ -64,6 +80,7 @@ export default function Tecnicos() {
   const [editando, setEditando] = useState<Tecnico | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [rolSeleccionado, setRolSeleccionado] = useState<RolAsignable | ''>('');
 
   // Recuperación de seguridad: el Super Usuario regenera las 12 palabras (D-67).
   const [palabrasP00, setPalabrasP00] = useState<string | null>(null);
@@ -131,6 +148,7 @@ export default function Tecnicos() {
   function limpiarFormulario() {
     setForm(FORM_VACIO);
     setEditando(null);
+    setRolSeleccionado('');
   }
 
   function cerrarModal() {
@@ -158,6 +176,10 @@ export default function Tecnicos() {
       especialidad: t.especialidad ?? '',
       status: t.status,
     });
+    // Rol actual de la cuenta ('' si aún no tiene cuenta de acceso).
+    setRolSeleccionado(
+      t.rol && t.rol !== 'SUPER' ? (t.rol as RolAsignable) : '',
+    );
     setOk('');
     setError('');
     setModalAbierto(true);
@@ -190,6 +212,15 @@ export default function Tecnicos() {
         };
         await api.actualizarTecnico(editando.id_tecnico, payload);
         setOk('Técnico actualizado.');
+        // Rol de la cuenta: solo SUPER/SUPERVISOR y si cambió (D-68).
+        if (
+          puedeCambiarRol &&
+          rolSeleccionado &&
+          rolSeleccionado !== editando.rol
+        ) {
+          await api.cambiarRolTecnico(editando.id_tecnico, rolSeleccionado);
+          setOk(`Técnico actualizado y rol asignado: ${rolSeleccionado}.`);
+        }
         cerrarModal();
       } else {
         const payload: TecnicoCreate = {
@@ -339,6 +370,34 @@ export default function Tecnicos() {
                 ))}
               </select>
             </div>
+            {/* Rol de la cuenta de acceso: solo SUPER y SUPERVISOR (D-68) */}
+            {editando && puedeCambiarRol && (
+              <div className="campo">
+                <label htmlFor="tecnico-rol">Rol de acceso</label>
+                <select
+                  id="tecnico-rol"
+                  value={rolSeleccionado}
+                  onChange={(e) =>
+                    setRolSeleccionado(e.target.value ? (e.target.value as RolAsignable) : '')
+                  }
+                  disabled={editando.rol === 'SUPER'}
+                >
+                  <option value="">
+                    {editando.rol === 'SUPER' ? 'Super Usuario (no modificable)' : 'Sin cambiar'}
+                  </option>
+                  {ROLES_ASIGNABLES.map((r) => (
+                    <option key={r.valor} value={r.valor}>
+                      {r.etiqueta} ({r.valor})
+                    </option>
+                  ))}
+                </select>
+                <span className="texto-pequeno">
+                  {editando.rol
+                    ? `Rol actual: ${editando.rol}.`
+                    : 'El técnico aún no tiene cuenta; al asignar un rol se pre-registra y él fijará su clave en el primer acceso.'}
+                </span>
+              </div>
+            )}
             <div className="acciones-form">
               <button className="btn" type="submit" disabled={guardando}>
                 {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear técnico'}
@@ -425,6 +484,8 @@ export default function Tecnicos() {
                     >
                       {ETIQUETA_CUENTA[t.estado_cuenta ?? 'SIN_ALTA'] ?? t.estado_cuenta}
                     </span>
+                    {/* Rol efectivo de la cuenta (D-68) */}
+                    {t.rol && <div className="texto-pequeno">{t.rol}</div>}
                   </td>
                   {!soloLectura && (
                     <td>

@@ -15,6 +15,7 @@ import Cuadrillas from './pages/Cuadrillas';
 import Catalogos from './pages/Catalogos';
 import Parametros from './pages/Parametros';
 import Ayuda from './pages/Ayuda';
+import Sistemas from './pages/Sistemas';
 
 export default function App() {
   return (
@@ -40,6 +41,8 @@ export default function App() {
           <Route path="catalogos" element={<Catalogos />} />
           <Route path="parametros" element={<Parametros />} />
           <Route path="ayuda" element={<Ayuda />} />
+          {/* SISTEMAS: solo Super Usuario (se filtra en el menú y en la página). */}
+          <Route path="sistemas" element={<Sistemas />} />
         </Route>
       </Route>
 

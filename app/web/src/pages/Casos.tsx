@@ -249,7 +249,9 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
 }
 
 export default function Casos() {
-  const { soloLectura } = useAuth();
+  const { soloLectura, usuario } = useAuth();
+  // El rol TECNICO no edita casos, pero sí gestiona el estado del que atiende (D-68).
+  const puedeGestionarEstado = !soloLectura || usuario?.rol === 'TECNICO';
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
@@ -411,8 +413,9 @@ export default function Casos() {
     }
     setCambiandoEstado(true);
     try {
-      const actualizado = await api.actualizarCaso(ficha.id_caso, {
-        estado_actual: nuevoEstado as EstadoCaso,
+      // Endpoint de gestión: accesible también para el rol TECNICO (D-68).
+      const actualizado = await api.cambiarEstadoCaso(ficha.id_caso, {
+        estado_actual: nuevoEstado,
         motivo_estado: nv(motivoEstado),
       });
       setFicha(actualizado);
@@ -848,7 +851,12 @@ export default function Casos() {
                   </button>
                 </div>
               </form>
+            </>
+          )}
 
+          {/* Gestión del estado: también para el rol TECNICO (D-68) */}
+          {puedeGestionarEstado && (
+            <>
               <h3 className="subtitulo-seccion">Cambiar estado</h3>
               <form
                 className="formulario modal-formulario"

@@ -315,3 +315,111 @@ def test_regenerar_palabras_solo_super_usuario(client, admin_token, db_session):
     )
     assert fila is not None
     assert fila.id_entidad == "TSTRECUP"
+
+
+# --------------------------------------------------------------------------- #
+# Cambio de rol de la cuenta del técnico (D-68)
+# --------------------------------------------------------------------------- #
+def test_cambio_rol_solo_super_y_supervisor(client, admin_token, db_session):
+    """El rol lo cambian SUPER y SUPERVISOR; ADMIN y TECNICO no (D-68)."""
+    from app.models import Auditoria
+
+    r = client.post(
+        "/api/v1/tecnicos",
+        json={"id_central": admin_token["id_central"], "nombre": "ROLESDOS", "p00": "TSTROL"},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    id_tecnico = r.json()["id_tecnico"]
+    assert r.json()["rol"] is None
+    assert r.json()["estado_cuenta"] == "SIN_ALTA"
+
+    # ADMIN y TECNICO no pueden cambiar roles
+    assert client.patch(f"/api/v1/tecnicos/{id_tecnico}/rol", json={"rol": "SUPERVISOR"},
+                        headers=admin_token["admin"]).status_code == 403
+    assert client.patch(f"/api/v1/tecnicos/{id_tecnico}/rol", json={"rol": "SUPERVISOR"},
+                        headers=admin_token["tecnico"]).status_code == 403
+
+    # El SUPER sí: pre-crea la cuenta con el rol indicado
+    r = client.patch(f"/api/v1/tecnicos/{id_tecnico}/rol", json={"rol": "SUPERVISOR"},
+                     headers=admin_token["super"])
+    assert r.status_code == 200, r.text
+    assert r.json()["rol"] == "SUPERVISOR"
+    assert r.json()["estado_cuenta"] == "SIN_ALTA"  # aún sin clave propia ni palabras
+
+    # Con cuenta ya creada, el SUPERVISOR también puede reasignar
+    r = client.patch(f"/api/v1/tecnicos/{id_tecnico}/rol", json={"rol": "TECNICO"},
+                     headers=admin_token["supervisor"])
+    assert r.status_code == 200, r.text
+    assert r.json()["rol"] == "TECNICO"
+
+    # SUPER no es asignable desde este endpoint
+    assert client.patch(f"/api/v1/tecnicos/{id_tecnico}/rol", json={"rol": "SUPER"},
+                        headers=admin_token["super"]).status_code == 422
+
+    # La cuenta pre-creada tiene clave inalcanzable: nadie puede iniciar sesión
+    assert client.post("/api/v1/auth/login",
+                       json={"p00": "TSTROL", "clave": "cualquiera123"}).status_code == 401
+
+    # El primer acceso conserva el rol asignado
+    setup = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTROL", "correo": "rol@cantv.com.ve",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert setup.status_code == 200, setup.text
+    fila = next(t for t in client.get("/api/v1/tecnicos",
+                                      headers=admin_token["admin"]).json() if t["p00"] == "TSTROL")
+    assert fila["rol"] == "TECNICO"
+    assert fila["estado_cuenta"] == "ACTIVO"
+
+    # Y cada cambio quedó en la auditoría
+    movimientos = db_session.scalars(
+        select(Auditoria).where(Auditoria.accion == "CAMBIO_ROL")
+    ).all()
+    assert len(movimientos) >= 2
+    assert {m.datos_despues.get("rol") for m in movimientos} >= {"SUPERVISOR", "TECNICO"}
+
+
+def test_cambio_rol_sin_cuenta_inexistente(client, admin_token):
+    r = client.patch("/api/v1/tecnicos/999999/rol", json={"rol": "TECNICO"},
+                     headers=admin_token["super"])
+    assert r.status_code == 404
+
+
+def test_setup_rechaza_correo_duplicado(client, admin_token):
+    """Un correo ya registrado devuelve 409 claro, no un error 500 (D-69)."""
+    compartido = "mismo@cantv.com.ve"
+    for p00 in ("TSTCDPA", "TSTCDPB"):
+        r = client.post(
+            "/api/v1/tecnicos",
+            json={"id_central": admin_token["id_central"], "nombre": p00, "p00": p00},
+            headers=admin_token["admin"],
+        )
+        assert r.status_code == 201, r.text
+
+    # El primer técnico activa su cuenta con ese correo
+    primero = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTCDPA", "correo": compartido,
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert primero.status_code == 200, primero.text
+
+    # El segundo no puede reutilizarlo: 409 con mensaje claro (no un 500)
+    segundo = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTCDPB", "correo": compartido,
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert segundo.status_code == 409, segundo.text
+    assert "correo" in segundo.json()["detail"].lower()
+
+    # Con su propio correo sí puede activarse
+    tercero = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": "TSTCDPB", "correo": "otro@cantv.com.ve",
+              "clave": "clave12345", "confirmacion": "clave12345"},
+    )
+    assert tercero.status_code == 200, tercero.text
+    assert len(tercero.json()["palabras"]) == 12

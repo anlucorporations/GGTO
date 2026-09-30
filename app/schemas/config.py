@@ -127,6 +127,17 @@ class TecnicoUpdate(BaseModel):
     status: STATUS_TECNICO | None = None
 
 
+# Roles que pueden asignarse desde TÉCNICOS. El rol SUPER queda excluido a
+# propósito: es la cuenta única del Super Usuario y no se reparte (D-68).
+ROL_ASIGNABLE = Literal["TECNICO", "SUPERVISOR", "ADMIN"]
+
+
+class CambioRol(BaseModel):
+    """Cambio de rol de la cuenta de acceso del técnico (solo SUPER/SUPERVISOR)."""
+
+    rol: ROL_ASIGNABLE
+
+
 class TecnicoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id_tecnico: int
@@ -142,6 +153,8 @@ class TecnicoOut(BaseModel):
     # D-67: ciclo de vida de la cuenta de acceso
     # (SIN_ALTA · BLOQUEADO · REQUIERE_CAMBIO · INACTIVO · ACTIVO)
     estado_cuenta: str = "SIN_ALTA"
+    # D-68: rol de la cuenta de acceso (None si aún no tiene cuenta)
+    rol: str | None = None
 
 
 # --------------------------------------------------------------------------- #

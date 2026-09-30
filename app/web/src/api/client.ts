@@ -9,6 +9,9 @@
 
 import type {
   AsignacionBloque,
+  ContenidoTabla,
+  EstructuraBD,
+  FichaTabla,
   CanalDespacho,
   CasoAgregar,
   CasoEspecialCreate,
@@ -74,6 +77,7 @@ import type {
   PeriodoReporte,
   Resumen,
   ResumenIngesta,
+  RolAsignable,
   ReporteTrabajo,
   Sector,
   SectorCreate,
@@ -388,6 +392,19 @@ export function actualizarTecnico(id: number, data: TecnicoUpdate): Promise<Tecn
 
 export function desactivarTecnico(id: number): Promise<void> {
   return request<void>(`/tecnicos/${id}`, { method: 'DELETE' });
+}
+
+/** Asigna el rol de la cuenta del técnico (solo SUPER y SUPERVISOR, D-68). */
+export function cambiarRolTecnico(idTecnico: number, rol: RolAsignable): Promise<Tecnico> {
+  return conCuerpo<Tecnico>(`/tecnicos/${idTecnico}/rol`, 'PATCH', { rol });
+}
+
+/** Cambio de estado del caso desde su gestión (lo puede hacer TECNICO, D-68). */
+export function cambiarEstadoCaso(
+  idCaso: number,
+  datos: { estado_actual: string; motivo_estado?: string | null },
+): Promise<CasoOut> {
+  return conCuerpo<CasoOut>(`/casos/${idCaso}/estado`, 'POST', datos);
 }
 
 /* ------------------------------------------------------------------ */
@@ -951,4 +968,34 @@ export function procesarOutbox(limite = 50): Promise<ProcesarOutboxOut> {
 /** Métricas de negocio y estado de los canales (RNF-19). */
 export function obtenerMetricas(): Promise<MetricasOut> {
   return request<MetricasOut>('/metricas');
+}
+
+/* ------------------------------------------------------------------ */
+/* SISTEMAS: inspección de la base de datos (solo SUPER, D-69)         */
+/* ------------------------------------------------------------------ */
+
+/** Análisis general de la estructura del esquema activo. */
+export function obtenerEstructura(): Promise<EstructuraBD> {
+  return request<EstructuraBD>('/sistemas/estructura');
+}
+
+/** Listado simple de tablas. */
+export function listarTablas(): Promise<{ total: number; tablas: string[] }> {
+  return request<{ total: number; tablas: string[] }>('/sistemas/tablas');
+}
+
+/** Estructura de una tabla concreta. */
+export function obtenerTabla(nombre: string): Promise<FichaTabla> {
+  return request<FichaTabla>(`/sistemas/tabla/${encodeURIComponent(nombre)}`);
+}
+
+/** Contenido paginado de una tabla, con las columnas sensibles ofuscadas. */
+export function obtenerTablaDatos(
+  nombre: string,
+  pagina = 1,
+  tamano = 50,
+): Promise<ContenidoTabla> {
+  return request<ContenidoTabla>(
+    `/sistemas/tabla/${encodeURIComponent(nombre)}/datos${construirQuery({ pagina, tamano })}`,
+  );
 }

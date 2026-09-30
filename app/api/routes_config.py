@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,7 +11,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
+from ..core.security import hash_password
 from ..models import (
+    Auditoria,
     CatalogoMetodo,
     Causa,
     Central,
@@ -20,12 +23,14 @@ from ..models import (
     CuadrillaTecnico,
     DispositivoSeguridad,
     Flota,
+    Rol,
     Sector,
     SectorDireccion,
     Tecnico,
     Usuario,
 )
 from ..schemas.config import (
+    CambioRol,
     CausaCreate,
     CausaOut,
     CentralCreate,
@@ -58,6 +63,9 @@ router = APIRouter(prefix="/api/v1", tags=["configuración"])
 
 # Escritura solo para ADMIN y SUPERVISOR (RNF-21); lectura para cualquier usuario autenticado.
 _escritura = require_roles("ADMIN", "SUPERVISOR")
+# Cambiar el rol de una cuenta es delicado: lo hacen el Super Usuario (acceso
+# total implícito en `require_roles`) y el Supervisor (D-68).
+_gestor_roles = require_roles("SUPERVISOR")
 
 
 def _o_404(db: Session, modelo, pk, nombre: str):
@@ -275,9 +283,12 @@ def _tecnicos_con_estado(db: Session, tecnicos: list[Tecnico]) -> list[TecnicoOu
     salida: list[TecnicoOut] = []
     for tecnico in tecnicos:
         fila = TecnicoOut.model_validate(tecnico)
+        cuenta = usuarios.get(tecnico.p00)
         fila.estado_cuenta = _estado_cuenta(
-            tecnico, usuarios.get(tecnico.p00), tecnico.p00 in con_palabras
+            tecnico, cuenta, tecnico.p00 in con_palabras
         )
+        # D-68: rol efectivo de la cuenta de acceso (None si no tiene cuenta).
+        fila.rol = cuenta.rol.codigo if (cuenta is not None and cuenta.rol) else None
         salida.append(fila)
     return salida
 
@@ -331,6 +342,64 @@ def actualizar_tecnico(
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(obj, campo, valor)
     _commit(db, "datos inválidos")
+    db.refresh(obj)
+    return _tecnico_con_estado(db, obj)
+
+
+@router.patch("/tecnicos/{id_tecnico}/rol", response_model=TecnicoOut,
+              summary="Asignar el rol de la cuenta de acceso (solo SUPER y SUPERVISOR)")
+def cambiar_rol_tecnico(
+    id_tecnico: int,
+    datos: CambioRol,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_gestor_roles),
+):
+    """Cambia el rol del técnico (D-68).
+
+    Solo lo hacen el **Super Usuario** y el **Supervisor**. Si el P00 aún no tiene
+    cuenta de acceso se crea con una clave inalcanzable (hash aleatorio) para
+    dejar el rol preasignado: el técnico la completa en su primer acceso
+    (`POST /auth/setup` conserva el rol) y el estado seguirá siendo `SIN_ALTA`.
+    El rol `SUPER` no es asignable desde aquí.
+    """
+    obj = _o_404(db, Tecnico, id_tecnico, "Técnico")
+    rol = db.scalar(select(Rol).where(Rol.codigo == datos.rol))
+    if rol is None:
+        raise HTTPException(status_code=404, detail=f"El rol {datos.rol} no existe")
+
+    cuenta = db.scalar(select(Usuario).where(Usuario.p00 == obj.p00))
+    anterior = cuenta.rol.codigo if (cuenta is not None and cuenta.rol) else None
+    if cuenta is None:
+        cuenta = Usuario(
+            p00=obj.p00,
+            # Clave aleatoria e inconmensurable: nadie puede iniciar sesión con ella.
+            clave_hash=hash_password(secrets.token_urlsafe(24)),
+            correo=obj.correo,
+            id_rol=rol.id_rol,
+            id_tecnico=obj.id_tecnico,
+            id_central=obj.id_central,
+            activo=True,
+        )
+        db.add(cuenta)
+    elif anterior == datos.rol:
+        return _tecnico_con_estado(db, obj)
+    else:
+        cuenta.id_rol = rol.id_rol
+
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="CAMBIO_ROL",
+            entidad="usuario",
+            id_entidad=obj.p00,
+            datos_antes={"rol": anterior},
+            datos_despues={"rol": datos.rol},
+        )
+    )
+    _commit(db, "no se pudo cambiar el rol")
+    # `Usuario.rol` es una relación lazy="joined": al cambiar solo `id_rol` hay que
+    # expirar la instancia para que el rol efectivo se vuelva a cargar.
+    db.expire_all()
     db.refresh(obj)
     return _tecnico_con_estado(db, obj)
 

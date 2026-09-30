@@ -149,6 +149,18 @@ function MenuUsuario() {
             </div>
           </dl>
           {soloLectura && <p className="insignia-lectura insignia-lectura-bloque">solo lectura</p>}
+          {/* SISTEMAS: el acceso solo se muestra al Super Usuario (D-69). */}
+          {usuario?.rol === 'SUPER' && (
+            <Link
+              to="/sistemas"
+              role="menuitem"
+              className="usuario-menu-item"
+              onClick={cerrar}
+            >
+              <IconoConfig width={17} height={17} />
+              Sistemas
+            </Link>
+          )}
           <button
             type="button"
             className="usuario-menu-salir"

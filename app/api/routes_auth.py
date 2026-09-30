@@ -6,7 +6,8 @@ import time
 from collections import defaultdict, deque
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
@@ -153,6 +154,18 @@ def setup(
             detail="La cuenta ya está activada. Inicie sesión o use la recuperación con sus palabras.",
         )
 
+    # El correo es único en la plataforma: se comprueba para no devolver un 500.
+    correo_en_uso = db.scalar(
+        select(func.count()).select_from(Usuario).where(
+            Usuario.correo == datos.correo, Usuario.p00 != datos.p00
+        )
+    )
+    if correo_en_uso:
+        raise HTTPException(
+            status_code=409,
+            detail="Ese correo ya está registrado en otra cuenta. Use su propio correo.",
+        )
+
     usuario = db.scalar(select(Usuario).where(Usuario.p00 == datos.p00))
     if usuario is None:
         tecnico = db.scalar(select(Tecnico).where(Tecnico.p00 == datos.p00))
@@ -212,7 +225,14 @@ def setup(
             datos_despues={"correo": datos.correo, "version_palabras": dispositivo.version},
         )
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="No se pudo activar la cuenta: revise el correo indicado.",
+        ) from exc
     return SetupResponse(p00=datos.p00, palabras=palabras)
 
 

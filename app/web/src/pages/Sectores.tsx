@@ -94,6 +94,17 @@ export default function Sectores() {
     return c ? `${c.codigo_central} — ${c.nombre_central}` : `#${id}`;
   }
 
+  /** Título de la tabla: la central a la que pertenecen los sectores listados. */
+  function tituloTablaSectores(): string {
+    if (filtroCentral) {
+      const c = centrales.find((x) => String(x.id_central) === filtroCentral);
+      return c ? `${c.codigo_central} — ${c.nombre_central}` : `Central #${filtroCentral}`;
+    }
+    const unicas = new Set(items.map((s) => s.id_central));
+    if (unicas.size === 1) return nombreCentral([...unicas][0]);
+    return 'Todas las centrales';
+  }
+
   function limpiarFormulario() {
     setForm(FORM_VACIO);
     setDirecciones([]);
@@ -481,16 +492,19 @@ export default function Sectores() {
         </div>
       </div>
 
-      <div className="tabla-envoltura">
+      <div className="panel-bloque">
+        <div className="pagina-cabecera">
+          <h2>Sectores — {tituloTablaSectores()}</h2>
+        </div>
+        <div className="tabla-envoltura">
         <table>
           <thead>
             <tr>
               <th>ID</th>
-              <th>Central</th>
               <th>Código</th>
               <th>Nombre</th>
               <th>Prioridad</th>
-              <th>Direcciones</th>
+              <th>Direcciones asociadas</th>
               <th>Activo</th>
               {!soloLectura && <th>Acciones</th>}
             </tr>
@@ -498,13 +512,13 @@ export default function Sectores() {
           <tbody>
             {cargando ? (
               <tr>
-                <td colSpan={soloLectura ? 7 : 8} className="vacio">
+                <td colSpan={soloLectura ? 6 : 7} className="vacio">
                   Cargando…
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={soloLectura ? 7 : 8} className="vacio">
+                <td colSpan={soloLectura ? 6 : 7} className="vacio">
                   No hay sectores registrados.
                 </td>
               </tr>
@@ -512,11 +526,31 @@ export default function Sectores() {
               items.map((s) => (
                 <tr key={s.id_sector}>
                   <td>{s.id_sector}</td>
-                  <td>{nombreCentral(s.id_central)}</td>
                   <td>{s.codigo}</td>
                   <td>{s.nombre}</td>
                   <td>{s.prioridad}</td>
-                  <td>{s.direcciones.length}</td>
+                  <td>
+                    {s.direcciones.length === 0 ? (
+                      <span className="texto-pequeno">Sin direcciones</span>
+                    ) : (
+                      <div className="lista-direcciones">
+                        {s.direcciones.slice(0, 4).map((d) => (
+                          <span
+                            className="chip"
+                            key={d.id_sector_direccion}
+                            title={`${d.tipo_coincidencia}${d.normalizar ? ' · normalizada' : ''}`}
+                          >
+                            {d.patron}
+                          </span>
+                        ))}
+                        {s.direcciones.length > 4 && (
+                          <span className="chip chip-mas" title={s.direcciones.slice(4).map((d) => d.patron).join(', ')}>
+                            +{s.direcciones.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td>{s.activo ? 'Sí' : 'No'}</td>
                   {!soloLectura && (
                     <td>
@@ -535,13 +569,14 @@ export default function Sectores() {
             )}
           </tbody>
           <PieTabla
-            colSpan={soloLectura ? 7 : 8}
+            colSpan={soloLectura ? 6 : 7}
             total={items.length}
             singular="sector"
             plural="sectores"
             cargando={cargando}
           />
         </table>
+      </div>
       </div>
     </>
   );

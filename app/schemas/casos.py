@@ -165,3 +165,14 @@ class CasoEstadoHistOut(BaseModel):
     motivo: str | None = None
     usuario: str | None = None
     fecha_hora: datetime | None = None
+
+
+class CasoGestionEstado(BaseModel):
+    """Cambio de estado desde la gestión del caso (D-68).
+
+    Lo usa también el rol TECNICO: puede mover el estado del caso que atiende,
+    sin poder editar el resto de los campos.
+    """
+
+    estado_actual: EstadoCaso
+    motivo_estado: str | None = Field(default=None, max_length=200)

@@ -5,7 +5,11 @@
 const { test, expect } = require('@playwright/test');
 const { USUARIOS, rellenar, iniciarSesion, cerrarSesion } = require('../helpers');
 
-const P00_NUEVO = 'E2EAUTO1';
+// P00 y correo únicos por corrida: el seed recrea el esquema, pero se evita
+// cualquier resto de ejecuciones previas sobre el mismo esquema.
+const SUFIJO = String(Date.now()).slice(-6);
+const P00_NUEVO = `E2EAUT${SUFIJO}`;
+const CORREO_NUEVO = `autoalta${SUFIJO}@e2e.local`;
 const CLAVE_NUEVA = 'Auto.Clave.2026';
 
 test.describe('Primer acceso de técnicos', () => {
@@ -41,7 +45,7 @@ test.describe('Primer acceso de técnicos', () => {
     await page.getByRole('button', { name: 'Comprobar P00' }).click();
     await expect(page.getByText(/aún no tiene cuenta activada/i)).toBeVisible({ timeout: 30_000 });
 
-    await rellenar(page.locator('#alta-correo'), 'autoalta@e2e.local');
+    await rellenar(page.locator('#alta-correo'), CORREO_NUEVO);
     await rellenar(page.locator('#alta-clave'), CLAVE_NUEVA);
     await rellenar(page.locator('#alta-confirmacion'), CLAVE_NUEVA);
     await page.getByRole('button', { name: 'Crear mi acceso y ver las 12 palabras' }).click();

@@ -153,7 +153,12 @@ export interface Tecnico {
   especialidad: string | null;
   status: StatusTecnico;
   estado_cuenta?: EstadoCuentaTecnico;
+  /** Rol efectivo de la cuenta de acceso (D-68). `null` si aún no tiene cuenta. */
+  rol?: RolAsignable | 'SUPER' | null;
 }
+
+/** Roles asignables desde TÉCNICOS; el SUPER no se reparte (D-68). */
+export type RolAsignable = 'TECNICO' | 'SUPERVISOR' | 'ADMIN';
 
 export interface TecnicoCreate {
   id_central: number;
@@ -1083,4 +1088,69 @@ export interface MetricasOut {
   notificaciones_enviadas: number;
   notificaciones_fallidas: number;
   canales_configurados: Record<string, boolean>;
+}
+
+/* ------------------ SISTEMAS: inspección de la BD (D-69) ----------- */
+
+export interface TablaEstructura {
+  tabla: string;
+  comentario: string | null;
+  columnas: number;
+  renglones: number;
+  bytes: number;
+  kilobytes: number;
+  claves_primarias: number;
+  claves_foraneas: number;
+  unicas: number;
+  indices: number;
+  disparadores: number;
+}
+
+export interface EstructuraBD {
+  servidor: string;
+  base: string;
+  esquema: string;
+  usuario: string;
+  total_tablas: number;
+  total_renglones: number;
+  total_bytes: number;
+  extensiones: { nombre: string; version: string }[];
+  tablas: TablaEstructura[];
+}
+
+export interface ColumnaTabla {
+  nombre: string;
+  tipo: string;
+  nulo: boolean;
+  por_defecto: string | null;
+  comentario: string | null;
+  es_clave: boolean;
+  sensible: boolean;
+}
+
+export interface FichaTabla {
+  tabla: string;
+  esquema: string;
+  comentario: string | null;
+  renglones: number;
+  columnas: ColumnaTabla[];
+  claves_primarias: string[];
+  unicas: { nombre: string; columnas: string }[];
+  claves_foraneas: { nombre: string; columnas: string; hacia: string; on_delete: string }[];
+  referencias_recibidas: { tabla: string; constraint: string }[];
+  indices: { nombre: string; definicion: string }[];
+  total_columnas: number;
+  columnas_ofuscadas: string[];
+}
+
+export interface ContenidoTabla {
+  tabla: string;
+  esquema: string;
+  columnas: string[];
+  filas: Record<string, unknown>[];
+  total: number;
+  pagina: number;
+  tamano: number;
+  paginas: number;
+  ofuscadas: string[];
 }

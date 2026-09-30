@@ -26,6 +26,7 @@ from .api import (
     routes_health,
     routes_ingesta,
     routes_monitoreo,
+    routes_sistemas,
 )
 from .core.config import get_settings
 
@@ -83,6 +84,7 @@ app.include_router(routes_despachos.router)
 app.include_router(routes_especiales.router)
 app.include_router(routes_monitoreo.router)
 app.include_router(routes_alertas.router)
+app.include_router(routes_sistemas.router)
 
 
 # --------------------------------------------------------------------------- #

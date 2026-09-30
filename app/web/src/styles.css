@@ -2122,3 +2122,71 @@ input[type='file'] {
   background: #eef0f3;
   color: #5b6472;
 }
+
+/* ---------- Direcciones del sector en el listado (D-68) ------------ */
+
+.lista-direcciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 520px;
+}
+
+.lista-direcciones .chip {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-mas {
+  background: var(--gris-fondo);
+  color: var(--gris-texto);
+  font-weight: 700;
+}
+
+/* ---------------- SISTEMAS: inspección de la BD (D-69) ------------- */
+
+.usuario-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--texto);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.usuario-menu-item:hover {
+  background: var(--azul-claro);
+  color: var(--azul-oscuro);
+}
+
+.lista-simple {
+  margin: 4px 0 12px;
+  padding-left: 18px;
+  font-size: 12.5px;
+}
+
+.lista-simple li {
+  margin-bottom: 3px;
+}
+
+.celula-dato {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.subpanel h4 {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--gris-texto);
+}

@@ -12,6 +12,7 @@ from ..core.db import get_db
 from ..models import Caso, CasoEstadoHist, Cita, DespachoCasos, Sector, Usuario
 from ..schemas.casos import (
     CasoEstadoHistOut,
+    CasoGestionEstado,
     CasoManualCreate,
     CasoOut,
     CasoUpdate,
@@ -23,7 +24,10 @@ from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/casos", tags=["casos"])
 
+# Edición completa de casos: ADMIN y SUPERVISOR (SUPER tiene acceso total).
 _escritura = require_roles("ADMIN", "SUPERVISOR")
+# Gestión del estado del caso: se suma el rol TECNICO (D-68).
+_gestion = require_roles("ADMIN", "SUPERVISOR", "TECNICO")
 
 
 def _o_404(db: Session, id_caso: int) -> Caso:
@@ -309,6 +313,29 @@ def actualizar(
     if nuevo_estado is not None:
         _registrar_estado(db, caso, nuevo_estado, motivo, usuario.p00)
 
+    db.commit()
+    db.refresh(caso)
+    return _resumen(db, [caso])[0]
+
+
+@router.post("/{id_caso}/estado", response_model=CasoOut,
+             summary="Cambiar el estado del caso desde su gestión")
+def cambiar_estado(
+    id_caso: int,
+    datos: CasoGestionEstado,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_gestion),
+) -> CasoOut:
+    """Movimiento de estado con bitácora (RF-31 / RNF-12).
+
+    A diferencia del `PATCH /casos/{id}` (edición completa), este endpoint lo
+    puede usar también el **rol TECNICO**: es la gestión del caso que atiende
+    (D-68). No permite modificar ningún otro campo.
+    """
+    caso = _o_404(db, id_caso)
+    if datos.estado_actual == caso.estado_actual:
+        raise HTTPException(status_code=409, detail="El caso ya está en ese estado")
+    _registrar_estado(db, caso, datos.estado_actual, datos.motivo_estado, usuario.p00)
     db.commit()
     db.refresh(caso)
     return _resumen(db, [caso])[0]
