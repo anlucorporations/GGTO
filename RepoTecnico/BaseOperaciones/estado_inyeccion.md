@@ -141,7 +141,16 @@ hacerse con la lista explícita de abajo (política D-55: nunca `DELETE` sin fil
 - El archivo **no** se guardó en el repositorio (contiene PII); la copia vive en los adjuntos de
   la sesión.
 
-**Retirada (cuando el usuario lo indique):** borrar por `id_averia` (el `caso_especial` y el
+**Estado al 2026-09-30 (tarde):** se ejecutó el **borrado de los 89 casos comunes** por orden
+explícita del usuario («borra solo los casos»), en una sola transacción y con el criterio
+`caso.id_caso not in (select id_caso from caso_especial)`. La base quedó en **11 casos, todos
+especiales** (los 10 de esta carga + `REF-2324X-000003`). Por cascada se eliminaron **75 líneas de
+despacho** y **13 de bitácora**; los **6 despachos** y los **6 lotes de ingesta** se **conservaron**
+(decisión del usuario: no tocarlos), de modo que tres despachos del 28-09 y uno del 29-09 quedaron
+con 0 casos. Verificado en la API: CASOS lista 11, ESPECIALES 11 y el universo del despacho muestra
+10 especiales (0 comunes). El respaldo de lo eliminado sigue íntegro en `/home/dsh/backups/ggto/`.
+
+**Retirada (si además se pidieran los especiales):** borrar por `id_averia` (el `caso_especial` y el
 `solicitante` asociados se eliminan en cascada / quedan sin uso):
 
 ```sql
