@@ -413,9 +413,32 @@ Se propone abordar el trabajo en **6 mini-ciclos** (≈ 3–4 semanas con 1 desa
 
 ---
 
-## 12. Conclusión y recomendación
+## 12. Estado de implementación (D-73 aplicada)
 
-Se recomienda **aprobar esta propuesta como D-73** y priorizar la recuperación/creación del repositorio Flutter para iniciar el Ciclo 8 de desarrollo.
-La mayoría del trabajo del backend se puede implementar en aproximadamente una semana (DESCARGA + CARGA + evidencias), mientras que el desarrollo Flutter completo requiere entre dos y tres semanas adicionales.
+Esta propuesta fue **aprobada e implementada** el 2026-10-01. Resumen de lo entregado:
 
-El resultado será una APK funcional, offline-first, segura y alineada con la identidad institucional y legal del proyecto GGTO.
+### Backend
+- `app/api/routes_sync.py` — endpoints `GET /api/v1/sync/cuadrilla`, `GET /api/v1/sync/descarga`, `POST /api/v1/evidencias/upload`, `POST /api/v1/sync/carga`.
+- `app/services/sync.py` — resolución de cuadrilla activa, carga diferencial por cuadrilla y aplicación del batch de actividades/estados.
+- `app/services/storage.py` — subida a Cloud Storage con fallback local para desarrollo/pruebas.
+- `app/schemas/sync.py` — modelos Pydantic de entrada/salida.
+- `app/models/sync_entities.py` + tabla `sync_log` en `db/schema.sql`.
+- Se registró el router en `app/main.py` y se añadió `httpx` a `requirements.txt`.
+
+### APK Flutter (`app_movil/`)
+- `login_screen.dart`: logo CANTV centrado, título «PLANTA EXTERNA GPON», pie exacto de confidencialidad.
+- `disclaimer_storage.dart` + `main.dart`: el aviso se muestra en **cada inicio de sesión**.
+- `download_service.dart`: DESCARGA diferencial contra `/sync/descarga`.
+- `upload_service.dart`: CARGA directa de fotos vía multipart y envío de actividades pendientes vía `/sync/carga`.
+- `casos_provider.dart`: ahora consume `DownloadService` en lugar del listado global `/casos`.
+- `sync_screen.dart`: reemplazado el botón EXPORTAR ZIP por botones **DESCARGA** y **CARGA**.
+- `camara_screen.dart` + `evidencia_service.dart`: límite de 5 fotos por caso y validación/recompresión ≤ 3 MB.
+- Asset agregado: `assets/logo_CANTV.webp` (declarado en `pubspec.yaml`).
+
+### Pendientes para cierre total del ciclo
+1. Ejecutar pruebas de integración del backend sync en un entorno con base de datos disponible.
+2. Compilar el APK firmado y probarlo en dispositivo/emulador.
+3. Configurar credenciales/bucket de GCS reales para producción (`GGTO_GCS_BUCKET`, `GOOGLE_APPLICATION_CREDENTIALS`).
+4. Actualizar manuales técnicos/literales de la sección móvil una vez verificadas las rutas nuevas.
+
+El resultado es una APK funcional, offline-first, segura y alineada con la identidad institucional y legal del proyecto GGTO.
