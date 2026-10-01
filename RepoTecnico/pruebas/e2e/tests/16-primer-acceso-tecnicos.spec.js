@@ -59,7 +59,16 @@ test.describe('Primer acceso de técnicos', () => {
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
     await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 40_000 });
 
-    // 4) El estado de la cuenta cambió a Activo
+    // 4) D-72 (requisito 5): el TÉCNICO no accede a CONFIGURACIÓN — /tecnicos
+    //    lo devuelve a OPERACIÓN (la cuenta quedó demostrada ACTIVA al poder
+    //    iniciar sesión en el paso anterior).
+    await page.goto('/tecnicos');
+    await expect(page.getByRole('heading', { name: 'Widget', level: 1 })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Cuenta' })).toHaveCount(0);
+
+    // 5) Como ADMIN se confirma el cambio de estado de la cuenta a ACTIVO.
+    await cerrarSesion(page);
+    await iniciarSesion(page, USUARIOS.admin);
     await page.goto('/tecnicos');
     const filaActiva = page.getByRole('row', { name: new RegExp(P00_NUEVO) });
     await expect(filaActiva.locator('.estado-cuenta')).toHaveText(/activo/i);

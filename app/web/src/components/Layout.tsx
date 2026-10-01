@@ -16,30 +16,36 @@ import {
   IconoDespacho,
   IconoEspeciales,
   IconoPanel,
+  IconoPerfil,
   IconoSalir,
 } from './Iconos';
 
 type Icono = ComponentType<SVGProps<SVGSVGElement>>;
+
+/** Roles de gestión: ven CONFIGURACIÓN y DESPACHO (D-72). SUPER tiene acceso total. */
+const ROLES_CONFIG = ['SUPER', 'ADMIN', 'SUPERVISOR'];
 
 interface Seccion {
   ruta: string;
   etiqueta: string;
   fin: boolean;
   Icono: Icono;
+  /** Roles que ven la sección en la barra; `null` = todos (D-72). */
+  roles: string[] | null;
 }
 
 /**
  * Secciones principales de la barra superior (RF-33).
- * OPERACIÓN fusiona PANEL, INGESTA, MONITOREO y ALERTAS en una sola página
- * con las cuatro secciones apiladas (requisito de UI 2 del ciclo D-65).
+ * OPERACIÓN fusiona PANEL, INGESTA, MONITOREO y ALERTAS en una sola página con
+ * pestañas (ciclo D-72). DESPACHO no se muestra al rol TECNICO (requisito 5).
  */
 const SECCIONES: Seccion[] = [
-  { ruta: '/', etiqueta: 'OPERACIÓN', fin: true, Icono: IconoPanel },
-  { ruta: '/casos', etiqueta: 'CASOS', fin: false, Icono: IconoCasos },
-  { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales },
-  { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda },
-  { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho },
-  { ruta: '/ayuda', etiqueta: 'AYUDA', fin: false, Icono: IconoAyuda },
+  { ruta: '/', etiqueta: 'OPERACIÓN', fin: true, Icono: IconoPanel, roles: null },
+  { ruta: '/casos', etiqueta: 'CASOS', fin: false, Icono: IconoCasos, roles: null },
+  { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales, roles: null },
+  { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda, roles: null },
+  { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho, roles: ROLES_CONFIG },
+  { ruta: '/ayuda', etiqueta: 'AYUDA', fin: false, Icono: IconoAyuda, roles: null },
 ];
 
 const CONFIGURACION: { ruta: string; etiqueta: string }[] = [
@@ -51,8 +57,6 @@ const CONFIGURACION: { ruta: string; etiqueta: string }[] = [
   { ruta: '/catalogos', etiqueta: 'Catálogos' },
   { ruta: '/parametros', etiqueta: 'Parámetros' },
 ];
-
-const ROLES_CONFIG = ['SUPER', 'ADMIN', 'SUPERVISOR'];
 
 /** Desplegable CONFIGURACIÓN (3.1), solo para SUPER, ADMIN y SUPERVISOR. */
 function MenuConfiguracion() {
@@ -149,6 +153,11 @@ function MenuUsuario() {
             </div>
           </dl>
           {soloLectura && <p className="insignia-lectura insignia-lectura-bloque">solo lectura</p>}
+          {/* Perfil y Cuenta (D-72): datos, cambio de clave y palabras. */}
+          <Link to="/perfil" role="menuitem" className="usuario-menu-item" onClick={cerrar}>
+            <IconoPerfil width={17} height={17} />
+            Perfil y Cuenta
+          </Link>
           {/* SISTEMAS: el acceso solo se muestra al Super Usuario (D-69). */}
           {usuario?.rol === 'SUPER' && (
             <Link
@@ -182,7 +191,10 @@ export default function Layout() {
   const { usuario, soloLectura } = useAuth();
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fichaGlobal, setFichaGlobal] = useState<CasoOut | null>(null);
-  const puedeConfigurar = ROLES_CONFIG.includes(usuario?.rol ?? '');
+  const rol = usuario?.rol ?? '';
+  const puedeConfigurar = ROLES_CONFIG.includes(rol);
+  // D-72: DESPACHO (y CONFIGURACIÓN) quedan fuera del alcance del Técnico.
+  const seccionesVisibles = SECCIONES.filter((s) => s.roles === null || s.roles.includes(rol));
 
   return (
     <div className="app-shell">
@@ -207,7 +219,7 @@ export default function Layout() {
         </button>
 
         <nav className="topbar-nav" aria-label="Secciones">
-          {SECCIONES.map((s) => (
+          {seccionesVisibles.map((s) => (
             <NavLink
               key={s.ruta}
               to={s.ruta}

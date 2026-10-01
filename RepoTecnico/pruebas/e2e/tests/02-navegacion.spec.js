@@ -27,11 +27,14 @@ test.describe('Navegación', () => {
       await page.getByRole('link', { name: seccion.titulo.toUpperCase(), exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${seccion.ruta === '/' ? '/$' : seccion.ruta}$`));
       if (seccion.ruta === '/') {
-        // OPERACIÓN fusiona PANEL, INGESTA, MONITOREO y ALERTAS (UI 2).
-        for (const ancla of ['#panel', '#ingesta', '#monitoreo', '#alertas']) {
-          await expect(page.locator(ancla)).toBeAttached();
+        // OPERACIÓN muestra sus sub-secciones como pestañas (D-72):
+        // WIDGET, INGESTA, MONITOREO y ALERTAS.
+        for (const nombre of ['Widget', 'Ingesta', 'Monitoreo', 'Alertas']) {
+          await expect(
+            page.getByRole('tab', { name: nombre }),
+          ).toBeVisible();
         }
-        await expect(page.getByRole('heading', { name: 'Panel', level: 1 })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Widget', level: 1 })).toBeVisible();
       } else {
         await expect(page.getByRole('heading', { name: seccion.titulo, level: 1 })).toBeVisible();
       }
@@ -54,10 +57,17 @@ test.describe('Navegación', () => {
     }
   });
 
-  test('TECNICO no ve CONFIGURACIÓN', async ({ page }) => {
+  test('TECNICO no ve CONFIGURACIÓN ni DESPACHO (D-72)', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.tecnico);
     await expect(page.getByRole('button', { name: 'Configuración' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'DESPACHO', exact: true })).toHaveCount(0);
     await expect(page.getByText('Modo solo lectura').first()).toBeVisible();
+    // Requisito 5: la navegación directa tampoco está disponible para el Técnico.
+    await page.goto('/despacho');
+    await expect(page).toHaveURL(/\/(\?pestana=widget)?$/);
+    await expect(page.getByRole('heading', { name: 'Despacho', level: 1 })).toHaveCount(0);
+    await page.goto('/central');
+    await expect(page.getByRole('heading', { name: 'Central', level: 1 })).toHaveCount(0);
   });
 
   test('SUPERVISOR sí ve CONFIGURACIÓN', async ({ page }) => {

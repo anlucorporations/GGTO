@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import * as api from '../api/client';
 import type {
@@ -7,12 +7,14 @@ import type {
   CasosFiltros,
   CasoUpdate,
   CategoriaCaso,
+  Cuadrilla,
   EstadoCaso,
   PaginaCasos,
   Sector,
   TipoCaso,
 } from '../api/types';
 import FichaCaso, { type Pestana as PestanaFicha } from '../components/FichaCaso';
+import { CeldaClase, CeldaTipoCaso } from '../components/CeldasIcono';
 import { IconoEditar } from '../components/Iconos';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
@@ -42,7 +44,9 @@ interface Filtros {
   estado_actual: string;
   categoria: string;
   tipo_caso: string;
-  en_gestion_supervisor: string;
+  id_sector: string;
+  /** Cuadrilla: '', 'gestion' (Cuadrilla 0 del supervisor) o 'id:<n>'. */
+  cuadrilla: string;
 }
 
 const FILTROS_VACIOS: Filtros = {
@@ -50,7 +54,8 @@ const FILTROS_VACIOS: Filtros = {
   estado_actual: '',
   categoria: '',
   tipo_caso: '',
-  en_gestion_supervisor: '',
+  id_sector: '',
+  cuadrilla: '',
 };
 
 interface EdicionForm {
@@ -167,25 +172,7 @@ function construirPayload(original: CasoOut, form: EdicionForm): CasoUpdate {
   return p;
 }
 
-function Fila({ etiqueta, valor }: { etiqueta: string; valor: ReactNode }) {
-  const vacio = valor === null || valor === undefined || valor === '';
-  return (
-    <tr>
-      <th>{etiqueta}</th>
-      <td>{vacio ? '—' : valor}</td>
-    </tr>
-  );
-}
-
-function Grupo({ titulo }: { titulo: string }) {
-  return (
-    <tr className="ficha-grupo">
-      <th colSpan={2}>{titulo}</th>
-    </tr>
-  );
-}
-
-/** Listado resumido: ID, tipo, clase, sector y los cuatro iconos de estado. */
+/** Listado resumido: ID, iconos de Tipo/Clase, Sector, Dirección, Nombre y estado. */
 function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number) => void }) {
   return (
     <div className="tabla-envoltura">
@@ -196,8 +183,9 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
             <th>Tipo</th>
             <th>Clase</th>
             <th>Sector</th>
+            <th>Dirección</th>
+            <th>Nombre</th>
             <th>Estado</th>
-            <th>Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -215,9 +203,15 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
               }}
             >
               <td className="mono">{c.id_averia}</td>
-              <td>{c.tipo_caso}</td>
-              <td>{c.categoria}</td>
+              <td>
+                <CeldaTipoCaso valor={c.tipo_caso} />
+              </td>
+              <td>
+                <CeldaClase valor={c.categoria} />
+              </td>
               <td>{c.sector_nombre ?? '—'}</td>
+              <td>{c.direccion ?? '—'}</td>
+              <td>{c.nombre_cliente ?? '—'}</td>
               <td>
                 <EstadoChips
                   pendiente={c.pendiente}
@@ -226,22 +220,10 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
                   gestion={c.gestion}
                 />
               </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-mini btn-secundario"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVer(c.id_caso);
-                  }}
-                >
-                  Ver ficha
-                </button>
-              </td>
             </tr>
           ))}
         </tbody>
-        <PieTabla colSpan={6} total={items.length} singular="caso" plural="casos" />
+        <PieTabla colSpan={7} total={items.length} singular="caso" plural="casos" />
       </table>
     </div>
   );
@@ -254,6 +236,7 @@ export default function Casos() {
   // Edición de la ficha: ADMIN, SUPERVISOR y Super Usuario (D-70).
   const puedeEditarCaso = !soloLectura;
   const [sectores, setSectores] = useState<Sector[]>([]);
+  const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
   // Señal para que la ficha salte a una pestaña (el icono de edición del título).
   const [solicitud, setSolicitud] = useState<{ id: PestanaFicha; secuencia: number }>({
     id: 'resumen',
@@ -311,9 +294,12 @@ export default function Casos() {
         page,
         page_size: tamanio,
       };
-      if (aplicados.en_gestion_supervisor !== '') {
-        params.en_gestion_supervisor = aplicados.en_gestion_supervisor === 'true';
-      }
+      if (aplicados.id_sector !== '') params.id_sector = Number(aplicados.id_sector);
+      // D-72: «Cuadrilla 0» = casos en gestión del supervisor; el resto se
+      // filtra por la cuadrilla del último despacho que incluyó el caso.
+      if (aplicados.cuadrilla === 'gestion') params.en_gestion_supervisor = true;
+      else if (aplicados.cuadrilla.startsWith('id:'))
+        params.id_cuadrilla = Number(aplicados.cuadrilla.slice(3));
       setResultado(await api.listarCasos(params));
       setError('');
     } catch (e) {
@@ -326,6 +312,22 @@ export default function Casos() {
   useEffect(() => {
     void cargarLista();
   }, [cargarLista]);
+
+  // Catálogos de filtros (D-72): sectores y cuadrillas para poblar los selects.
+  useEffect(() => {
+    let vivo = true;
+    api
+      .listarSectores({ solo_activos: true })
+      .then((s) => vivo && setSectores(s))
+      .catch(() => vivo && setSectores([]));
+    api
+      .listarCuadrillas({ solo_activas: true })
+      .then((c) => vivo && setCuadrillas(c))
+      .catch(() => vivo && setCuadrillas([]));
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const cargarHistorial = useCallback(async (idCaso: number) => {
     setCargandoHistorial(true);
@@ -439,23 +441,8 @@ export default function Casos() {
               id="filtro-q"
               value={borrador.q}
               onChange={(e) => setBorrador({ ...borrador, q: e.target.value })}
-              placeholder="Avería, teléfono, cliente o dirección"
+              placeholder="Busca en todos los renglones: avería, tipo, clase, sector, dirección, nombre, estado…"
             />
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-estado">Estado</label>
-            <select
-              id="filtro-estado"
-              value={borrador.estado_actual}
-              onChange={(e) => setBorrador({ ...borrador, estado_actual: e.target.value })}
-            >
-              <option value="">Todos</option>
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="campo">
             <label htmlFor="filtro-categoria">Clase</label>
@@ -468,6 +455,21 @@ export default function Casos() {
               {CATEGORIAS.map((c) => (
                 <option key={c} value={c}>
                   {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="filtro-sector">Sector</label>
+            <select
+              id="filtro-sector"
+              value={borrador.id_sector}
+              onChange={(e) => setBorrador({ ...borrador, id_sector: e.target.value })}
+            >
+              <option value="">Todos</option>
+              {sectores.map((s) => (
+                <option key={s.id_sector} value={s.id_sector}>
+                  {s.nombre}
                 </option>
               ))}
             </select>
@@ -488,15 +490,36 @@ export default function Casos() {
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="filtro-gestion">Cuadrilla 0 (supervisor)</label>
+            <label htmlFor="filtro-cuadrilla">Cuadrilla</label>
             <select
-              id="filtro-gestion"
-              value={borrador.en_gestion_supervisor}
-              onChange={(e) => setBorrador({ ...borrador, en_gestion_supervisor: e.target.value })}
+              id="filtro-cuadrilla"
+              value={borrador.cuadrilla}
+              onChange={(e) => setBorrador({ ...borrador, cuadrilla: e.target.value })}
+            >
+              <option value="">Todas</option>
+              <option value="gestion">Cuadrilla 0 (supervisor)</option>
+              {cuadrillas
+                .filter((c) => !c.es_supervisor)
+                .map((c) => (
+                  <option key={c.id_cuadrilla} value={`id:${c.id_cuadrilla}`}>
+                    {c.codigo} — {c.nombre}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="filtro-estado">Estado</label>
+            <select
+              id="filtro-estado"
+              value={borrador.estado_actual}
+              onChange={(e) => setBorrador({ ...borrador, estado_actual: e.target.value })}
             >
               <option value="">Todos</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
             </select>
           </div>
           <div className="acciones-form">

@@ -1931,40 +1931,132 @@ input[type='file'] {
   margin-top: 0;
 }
 
-/* ------------- Página OPERACIÓN: secciones apiladas (UI 2) --------- */
+/* ------------- Página OPERACIÓN: pestañas por sub-sección (D-72) --- */
 
-.operacion-anclas {
+.operacion-pestanas {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 18px;
+  border-bottom: 2px solid var(--azul);
 }
 
-.operacion-anclas a {
-  padding: 6px 12px;
-  border: 1px solid var(--gris-borde);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--texto);
-  font-size: 12.5px;
-  font-weight: 600;
-  text-decoration: none;
+.operacion-pestana {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-texto);
+  cursor: pointer;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
 }
 
-.operacion-anclas a:hover {
+.operacion-pestana:hover {
+  color: var(--azul);
   background: var(--azul-claro);
-  border-color: var(--azul);
 }
 
-.operacion-seccion {
-  border-top: 3px solid var(--azul);
-  padding-top: 14px;
-  margin-bottom: 10px;
-  scroll-margin-top: 90px;
+.operacion-pestana.activa {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+  background: var(--azul-claro);
 }
 
-.operacion-seccion + .operacion-seccion {
-  margin-top: 34px;
+.operacion-panel {
+  min-height: 50vh;
+}
+
+.operacion-panel > * + .panel-bloque {
+  margin-top: 18px;
+}
+
+/* Iconos en celdas de tablas (Tipo, Clase, Prioridad, Actividad) — D-72 */
+
+.celda-icono {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.celda-icono svg {
+  flex: 0 0 auto;
+  color: var(--azul);
+}
+
+.celda-icono .etiqueta-icono {
+  font-size: 12.5px;
+}
+
+/* Color semántico del icono según el valor de la celda */
+.ci-tipo-AVERIA svg {
+  color: var(--rojo);
+}
+.ci-tipo-REPARACION svg {
+  color: var(--azul);
+}
+.ci-tipo-CONSTRUCCION svg {
+  color: #5b21b6;
+}
+.ci-clase-RESIDENCIAL svg {
+  color: var(--verde);
+}
+.ci-clase-EMPRESA svg {
+  color: var(--azul);
+}
+.ci-clase-REFERIDO svg {
+  color: var(--ambar);
+}
+.ci-clase-GOBIERNO svg {
+  color: #0e7490;
+}
+.ci-prioridad-ALTA svg {
+  color: var(--rojo);
+}
+.ci-prioridad-MEDIA svg {
+  color: var(--ambar);
+}
+.ci-prioridad-BAJA svg {
+  color: var(--verde);
+}
+.ci-actividad-REPARACION svg {
+  color: var(--azul);
+}
+.ci-actividad-CONSTRUCCION svg {
+  color: #5b21b6;
+}
+
+/* ------------- Perfil y Cuenta (D-72) ------------------------------ */
+
+.rejilla-perfil {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.lista-palabras .num-palabra {
+  display: inline-block;
+  min-width: 28px;
+  color: var(--gris-texto);
+  font-size: 12px;
+}
+
+/* Localizador de caso en Nueva Cita (D-72) */
+
+.localizador-caso {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.localizador-resultados {
+  max-height: 260px;
+  overflow: auto;
 }
 
 /* --------------- Buscador dentro de la cabecera del modal ---------- */

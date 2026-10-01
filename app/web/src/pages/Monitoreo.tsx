@@ -1,13 +1,21 @@
 /**
- * MONITOREO (Ciclo 7) — panel de solo lectura con gráficos y reportes.
+ * MONITOREO (Ciclo 7) reorganizado en pestañas (ciclo D-72).
  *
- * Reúne los indicadores de gestión diaria, semanal, globales, reparación,
- * construcción, cuadrilla y capacidad operativa, más el reporte de trabajo
- * (`/reportes/trabajo`) y su versión imprimible. Todo se dibuja con SVG en
- * línea (ver `components/graficos.tsx`); no se usan librerías de gráficos.
+ * Este archivo exporta los bloques («fichas») que se reparten entre las
+ * pestañas de la página OPERACIÓN:
+ *
+ *  - WIDGET   : `BloqueReportes` y `BloqueGestionDiaria` (ver `Widget.tsx`).
+ *  - INGESTA  : `BloqueCasosGlobales` y `BloqueCapacidadOperativa`.
+ *  - MONITOREO: la vista por defecto (parámetros + semanal + reparación +
+ *               construcción + cuadrilla). El rol TECNICO ve solo los datos de
+ *               su cuadrilla: la API los limita automáticamente (D-72); el
+ *               SUPERVISOR y los roles de gestión ven los datos globales.
+ *
+ * Cada bloque carga sus propios datos; todo se dibuja con SVG en línea (ver
+ * `components/graficos.tsx`); no se usan librerías de gráficos.
  */
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type {
   MonitoreoCapacidad,
@@ -31,6 +39,7 @@ import {
 } from '../components/graficos';
 import Mensaje from '../components/Mensaje';
 import PieTabla from '../components/PieTabla';
+import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -50,7 +59,7 @@ function aISO(d: Date): string {
   return new Date(d.getTime() - desfase).toISOString().slice(0, 10);
 }
 
-function hoyISO(): string {
+export function hoyISO(): string {
   return aISO(new Date());
 }
 
@@ -60,7 +69,7 @@ function primerDiaMes(): string {
 }
 
 /** Lunes de la semana a la que pertenece `valor` (la semana corre lun–sáb). */
-function lunesDe(valor: string): string {
+export function lunesDe(valor: string): string {
   const d = new Date(`${valor}T00:00:00`);
   if (Number.isNaN(d.getTime())) return valor;
   const dia = d.getDay();
@@ -119,6 +128,28 @@ function tarjetasCapacidad(c: MonitoreoCapacidad): DatoBarra[] {
     { etiqueta: 'Herramientas disponibles', valor: c.herramientas_disponibles },
     { etiqueta: 'Sectores activos', valor: c.sectores_activos },
   ];
+}
+
+/** Carga simple con estado de error para los bloques autocontenidos. */
+function useCarga<T>(cargar: () => Promise<T>, dependencias: unknown[]): [T | null, string] {
+  const [datos, setDatos] = useState<T | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let activo = true;
+    setError('');
+    cargar()
+      .then((d) => {
+        if (activo) setDatos(d);
+      })
+      .catch((e) => {
+        if (activo) setError(detalleDe(e, 'Error al cargar los indicadores.'));
+      });
+    return () => {
+      activo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencias);
+  return [datos, error];
 }
 
 /* ------------------------------------------------------------------ */
@@ -393,76 +424,47 @@ function ResumenReporte({ reporte }: { reporte: ReporteTrabajo }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Página                                                              */
+/* Fichas exportadas (D-72: se reparten entre las pestañas)            */
 /* ------------------------------------------------------------------ */
 
-export default function Monitoreo() {
+/** Ficha «Gestión diaria» (pestaña WIDGET): tarjetas + barras del día dado. */
+export function BloqueGestionDiaria({ fechaDia }: { fechaDia: string }) {
+  const [diario, error] = useCarga<MonitoreoDiario>(
+    () => api.monitoreoDiario(fechaDia),
+    [fechaDia],
+  );
+  return (
+    <div className="panel-bloque">
+      <h2>Zona gestión diaria — {fecha(fechaDia)}</h2>
+      <Mensaje tipo="error" texto={error} />
+      {diario ? (
+        <>
+          <Tarjetas datos={tarjetasDiario(diario)} />
+          <h3 className="subtitulo-seccion">Gráfico de barras</h3>
+          <GraficoBarras datos={tarjetasDiario(diario)} />
+        </>
+      ) : (
+        !error && <p className="vacio">Cargando…</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Reportes» (pestaña WIDGET): reporte de trabajo + imprimible. */
+export function BloqueReportes() {
   const [fechaSel, setFechaSel] = useState(hoyISO());
-  const [desde, setDesde] = useState(primerDiaMes());
-  const [hasta, setHasta] = useState(hoyISO());
-
-  const [diario, setDiario] = useState<MonitoreoDiario | null>(null);
-  const [semanal, setSemanal] = useState<MonitoreoSemanal | null>(null);
-  const [globales, setGlobales] = useState<MonitoreoGlobales | null>(null);
-  const [reparacion, setReparacion] = useState<MonitoreoReparacion | null>(null);
-  const [construccion, setConstruccion] = useState<MonitoreoConstruccion | null>(null);
-  const [cuadrilla, setCuadrilla] = useState<MonitoreoCuadrillaOut | null>(null);
-  const [capacidad, setCapacidad] = useState<MonitoreoCapacidad | null>(null);
-
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
-  const [ok, setOk] = useState('');
-
   const [periodo, setPeriodo] = useState<PeriodoReporte>('diario');
   const [reporte, setReporte] = useState<ReporteTrabajo | null>(null);
-  const [cargandoReporte, setCargandoReporte] = useState(false);
+  const [cargando, setCargando] = useState(false);
   const [imprimiendo, setImprimiendo] = useState(false);
-
-  const lunes = useMemo(() => lunesDe(fechaSel), [fechaSel]);
-
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    setError('');
-    setOk('');
-    const resultados = await Promise.allSettled([
-      api.monitoreoDiario(fechaSel),
-      api.monitoreoSemanal(lunesDe(fechaSel)),
-      api.monitoreoGlobales(desde, hasta),
-      api.monitoreoReparacion(),
-      api.monitoreoConstruccion(),
-      api.monitoreoCuadrilla(lunesDe(fechaSel), 6),
-      api.monitoreoCapacidad(),
-    ]);
-
-    setDiario(resultados[0].status === 'fulfilled' ? resultados[0].value : null);
-    setSemanal(resultados[1].status === 'fulfilled' ? resultados[1].value : null);
-    setGlobales(resultados[2].status === 'fulfilled' ? resultados[2].value : null);
-    setReparacion(resultados[3].status === 'fulfilled' ? resultados[3].value : null);
-    setConstruccion(resultados[4].status === 'fulfilled' ? resultados[4].value : null);
-    setCuadrilla(resultados[5].status === 'fulfilled' ? resultados[5].value : null);
-    setCapacidad(resultados[6].status === 'fulfilled' ? resultados[6].value : null);
-
-    const fallo = resultados.find((r) => r.status === 'rejected');
-    if (fallo && fallo.status === 'rejected') {
-      setError(detalleDe(fallo.reason, 'Error al cargar los indicadores de monitoreo.'));
-    }
-    setCargando(false);
-  }, [fechaSel, desde, hasta]);
-
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
-
-  function actualizar(evento: FormEvent) {
-    evento.preventDefault();
-    void cargar();
-  }
+  const [error, setError] = useState('');
+  const [ok, setOk] = useState('');
 
   async function verReporte(evento: FormEvent) {
     evento.preventDefault();
     setError('');
     setOk('');
-    setCargandoReporte(true);
+    setCargando(true);
     try {
       const datos = await api.reporteTrabajo(periodo, fechaSel);
       setReporte(datos);
@@ -471,7 +473,7 @@ export default function Monitoreo() {
       setReporte(null);
       setError(detalleDe(e, 'Error al obtener el reporte de trabajo.'));
     } finally {
-      setCargandoReporte(false);
+      setCargando(false);
     }
   }
 
@@ -496,26 +498,317 @@ export default function Monitoreo() {
     }
   }
 
+  return (
+    <div className="panel-bloque">
+      <h2>Reportes</h2>
+      <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+      <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
+      <form className="formulario filtros-tabla" onSubmit={(e) => void verReporte(e)}>
+        <div className="campo">
+          <label htmlFor="reportes-fecha">Fecha de referencia</label>
+          <input
+            id="reportes-fecha"
+            type="date"
+            value={fechaSel}
+            onChange={(e) => setFechaSel(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="reportes-periodo">Periodo</label>
+          <select
+            id="reportes-periodo"
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value as PeriodoReporte)}
+          >
+            {PERIODOS.map((p) => (
+              <option key={p.valor} value={p.valor}>
+                {p.etiqueta}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="acciones-form">
+          <button type="submit" className="btn" disabled={cargando}>
+            {cargando ? 'Generando…' : 'Ver reporte'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secundario"
+            onClick={() => void imprimir()}
+            disabled={imprimiendo}
+          >
+            {imprimiendo ? 'Preparando…' : 'Imprimir / PDF'}
+          </button>
+        </div>
+      </form>
+      {reporte ? (
+        <div className="subpanel">
+          <ResumenReporte reporte={reporte} />
+        </div>
+      ) : (
+        <p className="vacio">Genere un reporte para ver el resumen consolidado.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona casos globales» (pestaña INGESTA). */
+export function BloqueCasosGlobales() {
+  const [desde, setDesde] = useState(primerDiaMes());
+  const [hasta, setHasta] = useState(hoyISO());
+  const [globales, error] = useCarga<MonitoreoGlobales>(
+    () => api.monitoreoGlobales(desde, hasta),
+    [desde, hasta],
+  );
+
+  return (
+    <div className="panel-bloque">
+      <h2>Zona casos globales</h2>
+      <Mensaje tipo="error" texto={error} />
+      <div className="formulario filtros-tabla">
+        <div className="campo">
+          <label htmlFor="globales-desde">Desde</label>
+          <input
+            id="globales-desde"
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="globales-hasta">Hasta</label>
+          <input
+            id="globales-hasta"
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+          />
+        </div>
+      </div>
+      {globales ? (
+        <>
+          <Tarjetas datos={tarjetasGlobales(globales)} />
+          <h3 className="subtitulo-seccion">
+            Pendientes vs resueltos ({fecha(globales.desde)} — {fecha(globales.hasta)})
+          </h3>
+          <GraficoBarras
+            datos={[
+              { etiqueta: 'Pendientes', valor: globales.pendientes, color: PALETA[3] },
+              { etiqueta: 'Resueltos', valor: globales.resueltos, color: PALETA[1] },
+            ]}
+            alto={220}
+          />
+          <h3 className="subtitulo-seccion">Por estado</h3>
+          <TablaDesglose titulo="Estado" columna="Casos" datos={entradas(globales.por_estado)} />
+          <h3 className="subtitulo-seccion">Por categoría</h3>
+          <TablaDesglose titulo="Categoría" columna="Casos" datos={entradas(globales.por_categoria)} />
+        </>
+      ) : (
+        !error && <p className="vacio">Sin datos globales para el rango indicado.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona capacidad operativa» (pestaña INGESTA). */
+export function BloqueCapacidadOperativa() {
+  const [capacidad, error] = useCarga<MonitoreoCapacidad>(() => api.monitoreoCapacidad(), []);
+  return (
+    <div className="panel-bloque">
+      <h2>Zona capacidad operativa</h2>
+      <Mensaje tipo="error" texto={error} />
+      {capacidad ? (
+        <>
+          <Tarjetas datos={tarjetasCapacidad(capacidad)} />
+          <h3 className="subtitulo-seccion">Detalle de cuadrillas</h3>
+          <TablaCapacidad data={capacidad} />
+        </>
+      ) : (
+        !error && <p className="vacio">Sin datos de capacidad operativa.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona gestión semanal» (pestaña MONITOREO). */
+export function BloqueGestionSemanal({ fechaDia }: { fechaDia: string }) {
+  const lunes = useMemo(() => lunesDe(fechaDia), [fechaDia]);
+  const [semanal, error] = useCarga<MonitoreoSemanal>(
+    () => api.monitoreoSemanal(lunes),
+    [lunes],
+  );
   const datosSemanal = semanal?.dias ?? [];
+  return (
+    <div className="panel-bloque">
+      <h2>Zona gestión semanal — semana del {fecha(semanal?.desde ?? lunes)}</h2>
+      <Mensaje tipo="error" texto={error} />
+      {datosSemanal.length > 0 ? (
+        <>
+          <GraficoLineas
+            etiquetas={datosSemanal.map((d) => diaCorto(d.fecha))}
+            series={[
+              {
+                nombre: 'Asignados',
+                color: PALETA[0],
+                valores: datosSemanal.map((d) => d.asignados),
+              },
+              {
+                nombre: 'Cerrados',
+                color: PALETA[1],
+                valores: datosSemanal.map((d) => d.cerrados),
+              },
+              {
+                nombre: 'Gestionados',
+                color: PALETA[2],
+                valores: datosSemanal.map((d) => d.gestionados),
+              },
+            ]}
+          />
+          <h3 className="subtitulo-seccion">Detalle diario</h3>
+          <TablaSemanal dias={datosSemanal} />
+        </>
+      ) : (
+        !error && <p className="vacio">Sin datos semanales para la fecha indicada.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona reparación» (pestaña MONITOREO). */
+export function BloqueReparacion() {
+  const [reparacion, error] = useCarga<MonitoreoReparacion>(() => api.monitoreoReparacion(), []);
+  return (
+    <div className="panel-bloque">
+      <h2>Zona reparación</h2>
+      <Mensaje tipo="error" texto={error} />
+      {reparacion ? (
+        <GraficoTorta
+          porciones={[
+            {
+              etiqueta: 'Residenciales comunes',
+              valor: reparacion.residenciales_comunes,
+              color: PALETA[0],
+            },
+            {
+              etiqueta: 'Residenciales referidos',
+              valor: reparacion.residenciales_referidos,
+              color: PALETA[2],
+            },
+            { etiqueta: 'Empresariales', valor: reparacion.empresariales, color: PALETA[1] },
+          ]}
+          centro={String(reparacion.total)}
+        />
+      ) : (
+        !error && <p className="vacio">Sin datos de reparación.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona construcción» (pestaña MONITOREO). */
+export function BloqueConstruccion() {
+  const [construccion, error] = useCarga<MonitoreoConstruccion>(
+    () => api.monitoreoConstruccion(),
+    [],
+  );
+  return (
+    <div className="panel-bloque">
+      <h2>Zona construcción</h2>
+      <Mensaje tipo="error" texto={error} />
+      {construccion ? (
+        <>
+          <Tarjetas
+            datos={[
+              { etiqueta: 'Residenciales', valor: construccion.residenciales },
+              { etiqueta: 'Empresariales', valor: construccion.empresariales },
+              { etiqueta: 'Total', valor: construccion.total },
+            ]}
+          />
+          <h3 className="subtitulo-seccion">Gráfico de barras</h3>
+          <GraficoBarras
+            datos={[
+              {
+                etiqueta: 'Residenciales',
+                valor: construccion.residenciales,
+                color: PALETA[0],
+              },
+              {
+                etiqueta: 'Empresariales',
+                valor: construccion.empresariales,
+                color: PALETA[1],
+              },
+            ]}
+            alto={220}
+          />
+        </>
+      ) : (
+        !error && <p className="vacio">Sin datos de construcción.</p>
+      )}
+    </div>
+  );
+}
+
+/** Ficha «Zona cuadrilla» (pestaña MONITOREO): el técnico ve solo la suya. */
+export function BloqueCuadrilla({ fechaDia }: { fechaDia: string }) {
+  const lunes = useMemo(() => lunesDe(fechaDia), [fechaDia]);
+  const [cuadrilla, error] = useCarga<MonitoreoCuadrillaOut>(
+    () => api.monitoreoCuadrilla(lunes, 6),
+    [lunes],
+  );
+  return (
+    <div className="panel-bloque">
+      <h2>Zona cuadrilla — semana del {fecha(cuadrilla?.desde ?? lunes)}</h2>
+      <Mensaje tipo="error" texto={error} />
+      {cuadrilla && cuadrilla.cuadrillas.length > 0 ? (
+        <>
+          <GraficoBarrasAgrupadas
+            grupos={cuadrilla.cuadrillas.map((c) => ({
+              etiqueta: c.codigo,
+              valores: [c.totales.asignados, c.totales.cerrados, c.totales.gestionados],
+            }))}
+            series={['Asignados', 'Cerrados', 'Gestionados']}
+          />
+          <h3 className="subtitulo-seccion">Totales por cuadrilla</h3>
+          <TablaCuadrillas data={cuadrilla} />
+        </>
+      ) : (
+        !error && <p className="vacio">Sin producción por cuadrilla en el periodo.</p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pestaña MONITOREO (vista por defecto)                               */
+/* ------------------------------------------------------------------ */
+
+export default function Monitoreo() {
+  const { usuario } = useAuth();
+  const [fechaSel, setFechaSel] = useState(hoyISO());
 
   return (
     <>
       <div className="pagina-cabecera">
         <div>
           <h1>Monitoreo</h1>
-          <p>Indicadores de gestión, gráficos y reportes de trabajo (solo lectura).</p>
+          <p>
+            {usuario?.rol === 'TECNICO'
+              ? 'Indicadores de monitoreo de los casos de su cuadrilla (solo lectura).'
+              : 'Indicadores de monitoreo de los casos: globales y por cuadrilla (solo lectura).'}
+          </p>
         </div>
       </div>
 
-      <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
-      <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
-
-      {/* Filtros */}
       <div className="panel-bloque">
         <h2>Parámetros de consulta</h2>
-        <form className="formulario filtros-tabla" onSubmit={actualizar}>
+        <form
+          className="formulario filtros-tabla"
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+        >
           <div className="campo">
-            <label htmlFor="monitoreo-fecha">Fecha (diario y semana)</label>
+            <label htmlFor="monitoreo-fecha">Fecha (semana y cuadrilla)</label>
             <input
               id="monitoreo-fecha"
               type="date"
@@ -523,255 +816,22 @@ export default function Monitoreo() {
               onChange={(e) => setFechaSel(e.target.value)}
             />
           </div>
-          <div className="campo">
-            <label htmlFor="monitoreo-desde">Globales desde</label>
-            <input
-              id="monitoreo-desde"
-              type="date"
-              value={desde}
-              onChange={(e) => setDesde(e.target.value)}
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="monitoreo-hasta">Globales hasta</label>
-            <input
-              id="monitoreo-hasta"
-              type="date"
-              value={hasta}
-              onChange={(e) => setHasta(e.target.value)}
-            />
-          </div>
           <div className="acciones-form">
-            <button type="submit" className="btn" disabled={cargando}>
-              {cargando ? 'Actualizando…' : 'Actualizar'}
-            </button>
             <span className="texto-pequeno">
-              Semana del <strong>{fecha(lunes)}</strong> (lunes a sábado).
+              Semana del <strong>{fecha(lunesDe(fechaSel))}</strong> (lunes a sábado).
             </span>
           </div>
         </form>
       </div>
 
-      {/* Reportes */}
-      <div className="panel-bloque">
-        <h2>Reportes</h2>
-        <form className="formulario" onSubmit={(e) => void verReporte(e)}>
-          <div className="campo">
-            <label htmlFor="monitoreo-periodo">Periodo</label>
-            <select
-              id="monitoreo-periodo"
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value as PeriodoReporte)}
-            >
-              {PERIODOS.map((p) => (
-                <option key={p.valor} value={p.valor}>
-                  {p.etiqueta}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="acciones-form">
-            <button type="submit" className="btn" disabled={cargandoReporte}>
-              {cargandoReporte ? 'Generando…' : 'Ver reporte'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secundario"
-              onClick={() => void imprimir()}
-              disabled={imprimiendo}
-            >
-              {imprimiendo ? 'Preparando…' : 'Imprimir / PDF'}
-            </button>
-          </div>
-        </form>
-        {reporte ? (
-          <div className="subpanel">
-            <ResumenReporte reporte={reporte} />
-          </div>
-        ) : (
-          <p className="vacio">Genere un reporte para ver el resumen consolidado.</p>
-        )}
-      </div>
+      <BloqueGestionSemanal fechaDia={fechaSel} />
 
-      {/* Fila superior: diario (izquierda) + globales (derecha) */}
       <div className="monitoreo-columnas">
-        <div className="panel-bloque">
-          <h2>Zona gestión diaria — {fecha(fechaSel)}</h2>
-          {diario ? (
-            <>
-              <Tarjetas datos={tarjetasDiario(diario)} />
-              <h3 className="subtitulo-seccion">Gráfico de barras</h3>
-              <GraficoBarras datos={tarjetasDiario(diario)} />
-            </>
-          ) : (
-            <p className="vacio">Sin datos para la fecha indicada.</p>
-          )}
-        </div>
-
-        <div className="panel-bloque">
-          <h2>
-            Zona casos globales ({fecha(globales?.desde ?? desde)} — {fecha(globales?.hasta ?? hasta)})
-          </h2>
-          {globales ? (
-            <>
-              <Tarjetas datos={tarjetasGlobales(globales)} />
-              <h3 className="subtitulo-seccion">Pendientes vs resueltos</h3>
-              <GraficoBarras
-                datos={[
-                  { etiqueta: 'Pendientes', valor: globales.pendientes, color: PALETA[3] },
-                  { etiqueta: 'Resueltos', valor: globales.resueltos, color: PALETA[1] },
-                ]}
-                alto={220}
-              />
-              <h3 className="subtitulo-seccion">Por estado</h3>
-              <TablaDesglose
-                titulo="Estado"
-                columna="Casos"
-                datos={entradas(globales.por_estado)}
-              />
-              <h3 className="subtitulo-seccion">Por categoría</h3>
-              <TablaDesglose
-                titulo="Categoría"
-                columna="Casos"
-                datos={entradas(globales.por_categoria)}
-              />
-            </>
-          ) : (
-            <p className="vacio">Sin datos globales para el rango indicado.</p>
-          )}
-        </div>
+        <BloqueReparacion />
+        <BloqueConstruccion />
       </div>
 
-      {/* Semanal */}
-      <div className="panel-bloque">
-        <h2>Zona gestión semanal — semana del {fecha(semanal?.desde ?? lunes)}</h2>
-        {datosSemanal.length > 0 ? (
-          <>
-            <GraficoLineas
-              etiquetas={datosSemanal.map((d) => diaCorto(d.fecha))}
-              series={[
-                {
-                  nombre: 'Asignados',
-                  color: PALETA[0],
-                  valores: datosSemanal.map((d) => d.asignados),
-                },
-                {
-                  nombre: 'Cerrados',
-                  color: PALETA[1],
-                  valores: datosSemanal.map((d) => d.cerrados),
-                },
-                {
-                  nombre: 'Gestionados',
-                  color: PALETA[2],
-                  valores: datosSemanal.map((d) => d.gestionados),
-                },
-              ]}
-            />
-            <h3 className="subtitulo-seccion">Detalle diario</h3>
-            <TablaSemanal dias={datosSemanal} />
-          </>
-        ) : (
-          <p className="vacio">Sin datos semanales para la fecha indicada.</p>
-        )}
-      </div>
-
-      {/* Reparación + construcción */}
-      <div className="monitoreo-columnas">
-        <div className="panel-bloque">
-          <h2>Zona reparación</h2>
-          {reparacion ? (
-            <GraficoTorta
-              porciones={[
-                {
-                  etiqueta: 'Residenciales comunes',
-                  valor: reparacion.residenciales_comunes,
-                  color: PALETA[0],
-                },
-                {
-                  etiqueta: 'Residenciales referidos',
-                  valor: reparacion.residenciales_referidos,
-                  color: PALETA[2],
-                },
-                { etiqueta: 'Empresariales', valor: reparacion.empresariales, color: PALETA[1] },
-              ]}
-              centro={String(reparacion.total)}
-            />
-          ) : (
-            <p className="vacio">Sin datos de reparación.</p>
-          )}
-        </div>
-
-        <div className="panel-bloque">
-          <h2>Zona construcción</h2>
-          {construccion ? (
-            <>
-              <Tarjetas
-                datos={[
-                  { etiqueta: 'Residenciales', valor: construccion.residenciales },
-                  { etiqueta: 'Empresariales', valor: construccion.empresariales },
-                  { etiqueta: 'Total', valor: construccion.total },
-                ]}
-              />
-              <h3 className="subtitulo-seccion">Gráfico de barras</h3>
-              <GraficoBarras
-                datos={[
-                  {
-                    etiqueta: 'Residenciales',
-                    valor: construccion.residenciales,
-                    color: PALETA[0],
-                  },
-                  {
-                    etiqueta: 'Empresariales',
-                    valor: construccion.empresariales,
-                    color: PALETA[1],
-                  },
-                ]}
-                alto={220}
-              />
-            </>
-          ) : (
-            <p className="vacio">Sin datos de construcción.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Cuadrilla */}
-      <div className="panel-bloque">
-        <h2>Zona cuadrilla — semana del {fecha(cuadrilla?.desde ?? lunes)}</h2>
-        {cuadrilla && cuadrilla.cuadrillas.length > 0 ? (
-          <>
-            <GraficoBarrasAgrupadas
-              grupos={cuadrilla.cuadrillas.map((c) => ({
-                etiqueta: c.codigo,
-                valores: [
-                  c.totales.asignados,
-                  c.totales.cerrados,
-                  c.totales.gestionados,
-                ],
-              }))}
-              series={['Asignados', 'Cerrados', 'Gestionados']}
-            />
-            <h3 className="subtitulo-seccion">Totales por cuadrilla</h3>
-            <TablaCuadrillas data={cuadrilla} />
-          </>
-        ) : (
-          <p className="vacio">Sin producción por cuadrilla en el periodo.</p>
-        )}
-      </div>
-
-      {/* Capacidad operativa */}
-      <div className="panel-bloque">
-        <h2>Zona capacidad operativa</h2>
-        {capacidad ? (
-          <>
-            <Tarjetas datos={tarjetasCapacidad(capacidad)} />
-            <h3 className="subtitulo-seccion">Detalle de cuadrillas</h3>
-            <TablaCapacidad data={capacidad} />
-          </>
-        ) : (
-          <p className="vacio">Sin datos de capacidad operativa.</p>
-        )}
-      </div>
+      <BloqueCuadrilla fechaDia={fechaSel} />
     </>
   );
 }

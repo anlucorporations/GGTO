@@ -8,29 +8,43 @@ import type {
   ClasificacionEspecial,
   EstadoEspecial,
   PrioridadEspecial,
+  Solicitante,
+  TipoActividadEspecial,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import EstadoChips from '../components/EstadoChips';
+import { CeldaActividad, CeldaClase, CeldaPrioridad } from '../components/CeldasIcono';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
 
 const CLASIFICACIONES: ClasificacionEspecial[] = ['REFERIDO', 'EMPRESA', 'GOBIERNO'];
+const ACTIVIDADES: TipoActividadEspecial[] = ['REPARACION', 'CONSTRUCCION'];
 const PRIORIDADES: PrioridadEspecial[] = ['ALTA', 'MEDIA', 'BAJA'];
 const ESTADOS: EstadoEspecial[] = ['ABIERTO', 'EN_PROCESO', 'ATENDIDO', 'CERRADO'];
 
 interface Filtros {
+  /** D-72: texto libre sobre todos los renglones de la tabla. */
+  q: string;
+  /** D-72: «Tipo» = clasificación del especial (REFERIDO/EMPRESA/GOBIERNO). */
   clasificacion: string;
-  estado: string;
   prioridad: string;
+  /** D-72: actividad (REPARACION/CONSTRUCCION). */
+  tipo_actividad: string;
+  /** D-72: solicitante registrado. */
+  id_solicitante: string;
+  estado: string;
   solo_pendientes: boolean;
 }
 
 const FILTROS_VACIOS: Filtros = {
+  q: '',
   clasificacion: '',
-  estado: '',
   prioridad: '',
+  tipo_actividad: '',
+  id_solicitante: '',
+  estado: '',
   solo_pendientes: false,
 };
 
@@ -74,6 +88,7 @@ export default function Especiales() {
   const [aplicados, setAplicados] = useState<Filtros>(FILTROS_VACIOS);
   const [items, setItems] = useState<CasoEspecialOut[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);
 
   // Ficha / edición.
   const [seleccion, setSeleccion] = useState<CasoEspecialOut | null>(null);
@@ -90,10 +105,13 @@ export default function Especiales() {
     setCargando(true);
     try {
       const filtros: CasosEspecialesFiltros = {
+        q: aplicados.q,
         clasificacion: aplicados.clasificacion,
         estado: aplicados.estado,
         prioridad: aplicados.prioridad,
+        tipo_actividad: aplicados.tipo_actividad,
       };
+      if (aplicados.id_solicitante !== '') filtros.id_solicitante = Number(aplicados.id_solicitante);
       if (aplicados.solo_pendientes) filtros.solo_pendientes = true;
       setItems(await api.listarCasosEspeciales(filtros));
       setError('');
@@ -107,6 +125,18 @@ export default function Especiales() {
   useEffect(() => {
     void cargarLista();
   }, [cargarLista]);
+
+  // Solicitantes para el filtro por nombre (D-72).
+  useEffect(() => {
+    let vivo = true;
+    api
+      .listarSolicitantes()
+      .then((s) => vivo && setSolicitantes(s))
+      .catch(() => vivo && setSolicitantes([]));
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   function filtrar(evento: FormEvent) {
     evento.preventDefault();
@@ -208,31 +238,25 @@ export default function Especiales() {
         <h2>Listado de casos especiales</h2>
         <form className="formulario filtros-tabla" onSubmit={filtrar}>
           <div className="campo">
-            <label htmlFor="filtro-clasificacion">Clasificación</label>
+            <label htmlFor="filtro-q">Texto libre</label>
+            <input
+              id="filtro-q"
+              value={borrador.q}
+              onChange={(e) => setBorrador({ ...borrador, q: e.target.value })}
+              placeholder="Busca en todos los renglones: tipo, sector, prioridad, solicitante, dirección, nombre, estado…"
+            />
+          </div>
+          <div className="campo">
+            <label htmlFor="filtro-clasificacion">Tipo</label>
             <select
               id="filtro-clasificacion"
               value={borrador.clasificacion}
               onChange={(e) => setBorrador({ ...borrador, clasificacion: e.target.value })}
             >
-              <option value="">Todas</option>
+              <option value="">Todos</option>
               {CLASIFICACIONES.map((c) => (
                 <option key={c} value={c}>
                   {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="filtro-estado">Estado</label>
-            <select
-              id="filtro-estado"
-              value={borrador.estado}
-              onChange={(e) => setBorrador({ ...borrador, estado: e.target.value })}
-            >
-              <option value="">Todos</option>
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
                 </option>
               ))}
             </select>
@@ -248,6 +272,36 @@ export default function Especiales() {
               {PRIORIDADES.map((p) => (
                 <option key={p} value={p}>
                   {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="filtro-actividad">Actividad</label>
+            <select
+              id="filtro-actividad"
+              value={borrador.tipo_actividad}
+              onChange={(e) => setBorrador({ ...borrador, tipo_actividad: e.target.value })}
+            >
+              <option value="">Todas</option>
+              {ACTIVIDADES.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="filtro-solicitante">Solicitante</label>
+            <select
+              id="filtro-solicitante"
+              value={borrador.id_solicitante}
+              onChange={(e) => setBorrador({ ...borrador, id_solicitante: e.target.value })}
+            >
+              <option value="">Todos</option>
+              {solicitantes.map((s) => (
+                <option key={s.id_solicitante} value={s.id_solicitante}>
+                  {s.nombre} — {s.unidad}
                 </option>
               ))}
             </select>
@@ -287,11 +341,13 @@ export default function Especiales() {
               <thead>
                 <tr>
                   <th>Tipo</th>
-                  <th>Sector</th>
+                  <th>Actividad</th>
                   <th>Prioridad</th>
+                  <th>Sector</th>
+                  <th>Dirección</th>
+                  <th>Nombre</th>
                   <th>Solicitante</th>
                   <th>Estado</th>
-                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -308,11 +364,18 @@ export default function Especiales() {
                       }
                     }}
                   >
-                    <td>{c.tipo_actividad}</td>
-                    <td>{c.sector_nombre ?? '—'}</td>
                     <td>
-                      <span className={clasePrioridad(c.prioridad)}>{c.prioridad}</span>
+                      <CeldaClase valor={c.clasificacion} />
                     </td>
+                    <td>
+                      <CeldaActividad valor={c.tipo_actividad} />
+                    </td>
+                    <td>
+                      <CeldaPrioridad valor={c.prioridad} />
+                    </td>
+                    <td>{c.sector_nombre ?? '—'}</td>
+                    <td>{c.direccion ?? '—'}</td>
+                    <td>{c.nombre_cliente ?? c.solicitante_nombre ?? '—'}</td>
                     <td>
                       {c.solicitante_nombre ?? '—'}
                       {c.solicitante_unidad && (
@@ -327,23 +390,11 @@ export default function Especiales() {
                         gestion={c.gestion}
                       />
                     </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-mini btn-secundario"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirRegistro(c);
-                        }}
-                      >
-                        {c.id_caso !== null ? 'Ver caso' : soloLectura ? 'Ver' : 'Ver/Editar'}
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
               <PieTabla
-                colSpan={6}
+                colSpan={8}
                 total={items.length}
                 singular="caso"
                 plural="casos"

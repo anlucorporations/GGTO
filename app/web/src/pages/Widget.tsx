@@ -1,45 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import * as api from '../api/client';
-import type { Resumen } from '../api/types';
+/**
+ * Pestaña WIDGET (ciclo D-72): sustituye a la antigua ficha PANEL.
+ *
+ * Muestra solo las fichas «Búsqueda rápida», «Reportes» y «Zona gestión
+ * diaria». Las demás fichas se repartieron entre las pestañas INGESTA,
+ * MONITOREO y ALERTAS de la página OPERACIÓN.
+ */
+import { useState, type FormEvent } from 'react';
 import Mensaje from '../components/Mensaje';
 import FichaRapida from '../components/FichaRapida';
 import { useAuth } from '../auth/AuthContext';
+import { BloqueGestionDiaria, BloqueReportes, hoyISO } from './Monitoreo';
 
-const TARJETAS: { clave: keyof Resumen; etiqueta: string }[] = [
-  { clave: 'tablas', etiqueta: 'Tablas' },
-  { clave: 'centrales', etiqueta: 'Centrales' },
-  { clave: 'roles', etiqueta: 'Roles' },
-  { clave: 'cuadrillas', etiqueta: 'Cuadrillas' },
-  { clave: 'causas', etiqueta: 'Causas' },
-  { clave: 'parametros', etiqueta: 'Parámetros' },
-];
-
-export default function Panel() {
+export default function Widget() {
   const { usuario } = useAuth();
-  const [resumen, setResumen] = useState<Resumen | null>(null);
-  const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(true);
   const [termino, setTermino] = useState('');
   const [errorBusqueda, setErrorBusqueda] = useState('');
   const [fichaTermino, setFichaTermino] = useState<string | null>(null);
-
-  useEffect(() => {
-    let activo = true;
-    api
-      .obtenerResumen()
-      .then((r) => {
-        if (activo) setResumen(r);
-      })
-      .catch((e) => {
-        if (activo) setError(e instanceof api.ApiError ? e.message : 'Error al cargar el resumen.');
-      })
-      .finally(() => {
-        if (activo) setCargando(false);
-      });
-    return () => {
-      activo = false;
-    };
-  }, []);
 
   const nombreCompleto = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ');
 
@@ -58,14 +34,13 @@ export default function Panel() {
     <>
       <div className="pagina-cabecera">
         <div>
-          <h1>Panel</h1>
+          <h1>Widget</h1>
           <p>
             Sesión de <strong>{nombreCompleto || usuario?.p00}</strong> · rol {usuario?.rol}
           </p>
         </div>
       </div>
 
-      <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="error" texto={errorBusqueda} onCerrar={() => setErrorBusqueda('')} />
 
       <div className="panel-bloque">
@@ -93,24 +68,12 @@ export default function Panel() {
       </div>
 
       {fichaTermino !== null && (
-        <FichaRapida
-          terminoInicial={fichaTermino}
-          onCerrar={() => setFichaTermino(null)}
-        />
+        <FichaRapida terminoInicial={fichaTermino} onCerrar={() => setFichaTermino(null)} />
       )}
 
-      {cargando ? (
-        <p className="texto-pequeno">Cargando resumen…</p>
-      ) : (
-        <div className="rejilla-tarjetas">
-          {TARJETAS.map((t) => (
-            <div className="tarjeta" key={t.clave}>
-              <div className="valor">{resumen ? resumen[t.clave] : '—'}</div>
-              <div className="etiqueta">{t.etiqueta}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <BloqueReportes />
+
+      <BloqueGestionDiaria fechaDia={hoyISO()} />
     </>
   );
 }

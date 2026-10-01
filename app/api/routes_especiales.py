@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
@@ -107,6 +107,13 @@ def listar_especiales(
     clasificacion: str | None = None,
     estado: str | None = None,
     prioridad: str | None = None,
+    tipo_actividad: str | None = None,
+    id_solicitante: int | None = None,
+    q: str | None = Query(
+        default=None,
+        description="Texto libre: busca en todos los renglones de la tabla "
+        "(tipo, sector, prioridad, solicitante, dirección, nombre y estado)",
+    ),
     solo_pendientes: bool = Query(default=False),
 ) -> list[CasoEspecialOut]:
     stmt = select(CasoEspecial).order_by(CasoEspecial.id_caso_especial.desc())
@@ -116,8 +123,41 @@ def listar_especiales(
         stmt = stmt.where(CasoEspecial.estado == estado)
     if prioridad:
         stmt = stmt.where(CasoEspecial.prioridad == prioridad)
+    if tipo_actividad:
+        stmt = stmt.where(CasoEspecial.tipo_actividad == tipo_actividad)
+    if id_solicitante is not None:
+        stmt = stmt.where(CasoEspecial.id_solicitante == id_solicitante)
     if solo_pendientes:
         stmt = stmt.where(CasoEspecial.estado.in_(("ABIERTO", "EN_PROCESO")))
+    if q:
+        patron = f"%{q.strip()}%"
+        # subconsultas sobre el caso asociado (dirección, nombre, sector y avería)
+        casos_q = select(Caso.id_caso).where(
+            or_(
+                Caso.id_averia.ilike(patron),
+                Caso.direccion.ilike(patron),
+                Caso.nombre_cliente.ilike(patron),
+                Caso.telefono.ilike(patron),
+            )
+        )
+        sectores_q = select(Caso.id_caso).join(Sector, Sector.id_sector == Caso.id_sector).where(
+            Sector.nombre.ilike(patron)
+        )
+        solicitantes_q = select(Solicitante.id_solicitante).where(
+            or_(Solicitante.nombre.ilike(patron), Solicitante.unidad.ilike(patron))
+        )
+        stmt = stmt.where(
+            or_(
+                CasoEspecial.id_caso.in_(casos_q),
+                CasoEspecial.id_caso.in_(sectores_q),
+                CasoEspecial.id_solicitante.in_(solicitantes_q),
+                CasoEspecial.clasificacion.ilike(patron),
+                CasoEspecial.tipo_actividad.ilike(patron),
+                CasoEspecial.prioridad.ilike(patron),
+                CasoEspecial.estado.ilike(patron),
+                CasoEspecial.descripcion.ilike(patron),
+            )
+        )
     return _resumen_especiales(db, list(db.scalars(stmt).all()))
 
 
@@ -127,7 +167,7 @@ def crear_especial(
     datos: CasoEspecialCreate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> CasoEspecial:
+) -> CasoEspecialOut:
     if datos.id_caso and datos.id_solicitante and datos.crear_solicitante:
         raise HTTPException(
             status_code=422,
@@ -167,7 +207,9 @@ def crear_especial(
     db.add(especial)
     db.commit()
     db.refresh(especial)
-    return especial
+    # D-72: se responde con el resumen enriquecido (sector, solicitante,
+    # dirección y nombre del caso asociado), igual que el listado.
+    return _resumen_especiales(db, [especial])[0]
 
 
 @router.get("/casos-especiales/{id_caso_especial}", response_model=CasoEspecialOut)
@@ -235,6 +277,9 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             sector_nombre=(sectores.get(caso.id_sector) if caso and caso.id_sector else None),
             solicitante_nombre=(sol.nombre if sol else None),
             solicitante_unidad=(sol.unidad if sol else None),
+            # D-72: columnas Dirección y Nombre del listado de ESPECIALES.
+            direccion=(caso.direccion if caso else None),
+            nombre_cliente=(caso.nombre_cliente if caso else None),
             pendiente=esp.estado in ("ABIERTO", "EN_PROCESO"),
             asignado=(esp.id_caso in asignados) if esp.id_caso else False,
             citado=esp.id_caso_especial in citados
@@ -285,6 +330,8 @@ def listar_citas(
     hasta: datetime | None = None,
     id_cuadrilla: int | None = None,
     estado: str | None = None,
+    tipo_caso: str | None = Query(default=None, description="Tipo del caso asociado (D-72)"),
+    categoria: str | None = Query(default=None, description="Clase del caso asociado (D-72)"),
 ) -> list[Cita]:
     stmt = select(Cita).order_by(Cita.fecha_hora)
     if desde:
@@ -295,7 +342,14 @@ def listar_citas(
         stmt = stmt.where(Cita.id_cuadrilla == id_cuadrilla)
     if estado:
         stmt = stmt.where(Cita.estado == estado)
-    return list(db.scalars(stmt).all())
+    # D-72: el calendario puede filtrarse por Tipo y Clase del caso asociado.
+    if tipo_caso or categoria:
+        stmt = stmt.outerjoin(Caso, Caso.id_caso == Cita.id_caso)
+        if tipo_caso:
+            stmt = stmt.where(Caso.tipo_caso == tipo_caso)
+        if categoria:
+            stmt = stmt.where(Caso.categoria == categoria)
+    return list(db.scalars(stmt).unique().all())
 
 
 @router.post("/citas", response_model=CitaOut, status_code=status.HTTP_201_CREATED,

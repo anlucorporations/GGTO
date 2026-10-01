@@ -163,10 +163,10 @@ export default function Alertas() {
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      {/* Métricas (RNF-19) */}
+      {/* Alertas Diarias (RNF-19) */}
       <div className="panel-bloque">
         <h2>
-          <IconoAlertas width={18} height={18} /> Estado de las alertas
+          <IconoAlertas width={18} height={18} /> Alertas Diarias
         </h2>
         {metricas ? (
           <>

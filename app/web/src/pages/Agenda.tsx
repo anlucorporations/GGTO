@@ -1,13 +1,28 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
-import type { CitaCreate, CitaOut, CitasFiltros, CitaUpdate, EstadoCita, TipoCita } from '../api/types';
+import type {
+  CasoOut,
+  CategoriaCaso,
+  CitaCreate,
+  CitaOut,
+  CitasFiltros,
+  CitaUpdate,
+  Cuadrilla,
+  EstadoCita,
+  TipoCaso,
+  TipoCita,
+} from '../api/types';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
-import { IconoChevronDerecha, IconoChevronIzquierda } from '../components/Iconos';
+import { IconoBuscar, IconoChevronDerecha, IconoChevronIzquierda } from '../components/Iconos';
 
 const TIPOS: TipoCita[] = ['CONTACTO', 'ATENCION'];
+
+// Catálogos de casos para el localizador y los filtros del calendario (D-72).
+const TIPOS_CASO: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION'];
+const CLASES_CASO: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
 
 const ESTADOS: EstadoCita[] = [
   'PROPUESTA',
@@ -155,8 +170,8 @@ interface CitaForm {
   tipo: TipoCita;
   estado: EstadoCita;
   id_cuadrilla: string;
+  /** Caso localizado en la ficha (D-72): solo se llena vía el localizador. */
   id_caso: string;
-  id_caso_especial: string;
   observacion: string;
 }
 
@@ -167,9 +182,224 @@ function altaVacia(): CitaForm {
     estado: 'PROPUESTA',
     id_cuadrilla: '',
     id_caso: '',
-    id_caso_especial: '',
     observacion: '',
   };
+}
+
+/* ----------------------- localizador de caso (D-72) ---------------------- */
+
+type Criterio = 'averia' | 'tipo' | 'numero' | 'clase';
+
+const CRITERIOS: { id: Criterio; etiqueta: string }[] = [
+  { id: 'averia', etiqueta: 'Id de Avería' },
+  { id: 'tipo', etiqueta: 'Tipo' },
+  { id: 'numero', etiqueta: 'Número (teléfono)' },
+  { id: 'clase', etiqueta: 'Clase' },
+];
+
+interface LocalizadorProps {
+  casoSel: CasoOut | null;
+  onSeleccionar: (c: CasoOut | null) => void;
+}
+
+/**
+ * Localiza el caso SOLO por Id de Avería, Tipo, Número o Clase. Al localizarlo
+ * y seleccionarlo muestra su información básica en solo lectura.
+ */
+function LocalizadorCaso({ casoSel, onSeleccionar }: LocalizadorProps) {
+  const [criterio, setCriterio] = useState<Criterio>('averia');
+  const [valor, setValor] = useState('');
+  const [resultados, setResultados] = useState<CasoOut[] | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const [error, setError] = useState('');
+
+  async function localizar(evento: FormEvent) {
+    evento.preventDefault();
+    setError('');
+    const v = valor.trim();
+    if (!v) {
+      setError('Indique un valor para localizar el caso.');
+      setResultados(null);
+      return;
+    }
+    setBuscando(true);
+    try {
+      const filtros =
+        criterio === 'averia'
+          ? { id_averia: v, page_size: 30 }
+          : criterio === 'numero'
+            ? { telefono: v, page_size: 30 }
+            : criterio === 'tipo'
+              ? { tipo_caso: v, page_size: 30 }
+              : { categoria: v, page_size: 30 };
+      const pagina = await api.listarCasos(filtros);
+      setResultados(pagina.items);
+      if (pagina.items.length === 0) setError('No se localizó ningún caso con ese criterio.');
+    } catch (e) {
+      setResultados(null);
+      setError(detalleDe(e, 'Error al localizar el caso.'));
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  function limpiar() {
+    onSeleccionar(null);
+    setResultados(null);
+    setValor('');
+    setError('');
+  }
+
+  return (
+    <div className="localizador-caso">
+      <form className="formulario fila-campos" onSubmit={(e) => void localizar(e)}>
+        <div className="campo">
+          <label htmlFor="loc-criterio">Criterio</label>
+          <select
+            id="loc-criterio"
+            value={criterio}
+            onChange={(e) => {
+              setCriterio(e.target.value as Criterio);
+              setValor('');
+              setResultados(null);
+            }}
+          >
+            {CRITERIOS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.etiqueta}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor="loc-valor">
+            {criterio === 'tipo' ? 'Tipo de caso' : criterio === 'clase' ? 'Clase' : 'Valor'}
+          </label>
+          {criterio === 'tipo' ? (
+            <select id="loc-valor" value={valor} onChange={(e) => setValor(e.target.value)}>
+              <option value="">Seleccione…</option>
+              {TIPOS_CASO.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          ) : criterio === 'clase' ? (
+            <select id="loc-valor" value={valor} onChange={(e) => setValor(e.target.value)}>
+              <option value="">Seleccione…</option>
+              {CLASES_CASO.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="loc-valor"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder={criterio === 'numero' ? 'Teléfono' : 'ID de avería'}
+            />
+          )}
+        </div>
+        <div className="acciones-form">
+          <button type="submit" className="btn" disabled={buscando}>
+            <IconoBuscar width={16} height={16} /> {buscando ? 'Buscando…' : 'Localizar'}
+          </button>
+          {casoSel && (
+            <button type="button" className="btn btn-secundario" onClick={limpiar}>
+              Cambiar
+            </button>
+          )}
+        </div>
+      </form>
+
+      {error && <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />}
+
+      {casoSel ? (
+        <div className="subpanel">
+          <h3 className="subtitulo-seccion">Información del caso (solo lectura)</h3>
+          <div className="datos-grid">
+            <div className="dato">
+              <span className="dato-etiqueta">Id de avería</span>
+              <span className="dato-valor mono">{casoSel.id_averia}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Tipo</span>
+              <span className="dato-valor">{casoSel.tipo_caso}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Clase</span>
+              <span className="dato-valor">{casoSel.categoria}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Cliente</span>
+              <span className="dato-valor">{casoSel.nombre_cliente ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Teléfono</span>
+              <span className="dato-valor mono">{casoSel.telefono ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Sector</span>
+              <span className="dato-valor">{casoSel.sector_nombre ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Dirección</span>
+              <span className="dato-valor">{casoSel.direccion ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Estado</span>
+              <span className="dato-valor">{casoSel.estado_actual}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">ID caso</span>
+              <span className="dato-valor mono">{casoSel.id_caso}</span>
+            </div>
+          </div>
+        </div>
+      ) : resultados && resultados.length > 0 ? (
+        <div className="tabla-envoltura localizador-resultados">
+          <table className="tabla-resumen">
+            <thead>
+              <tr>
+                <th>ID avería</th>
+                <th>Tipo</th>
+                <th>Clase</th>
+                <th>Cliente</th>
+                <th>Sector</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resultados.map((c) => (
+                <tr
+                  key={c.id_caso}
+                  className="fila-clicable"
+                  tabIndex={0}
+                  onClick={() => onSeleccionar(c)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSeleccionar(c);
+                    }
+                  }}
+                >
+                  <td className="mono">{c.id_averia}</td>
+                  <td>{c.tipo_caso}</td>
+                  <td>{c.categoria}</td>
+                  <td>{c.nombre_cliente ?? '—'}</td>
+                  <td>{c.sector_nombre ?? '—'}</td>
+                  <td>{c.estado_actual}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="texto-pequeno">Seleccione un renglón para localizar el caso.</p>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export default function Agenda() {
@@ -183,12 +413,16 @@ export default function Agenda() {
   const [ancla, setAncla] = useState<string>(() => fechaLocal(new Date()));
 
   const [filtroCuadrilla, setFiltroCuadrilla] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
+  // D-72: el calendario se filtra por Cuadrilla, Tipo y Clase del caso.
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroClase, setFiltroClase] = useState('');
+  const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
 
   const [citas, setCitas] = useState<CitaOut[]>([]);
   const [cargando, setCargando] = useState(true);
 
   const [alta, setAlta] = useState<CitaForm>(altaVacia);
+  const [casoSel, setCasoSel] = useState<CasoOut | null>(null);
   const [creando, setCreando] = useState(false);
   const [forzarSolape, setForzarSolape] = useState(false);
   const [modalAlta, setModalAlta] = useState(false);
@@ -220,7 +454,8 @@ export default function Agenda() {
         hasta: `${rango.hasta}T23:59:59`,
       };
       if (idValido(filtroCuadrilla)) filtros.id_cuadrilla = Number(filtroCuadrilla);
-      if (filtroEstado) filtros.estado = filtroEstado;
+      if (filtroTipo) filtros.tipo_caso = filtroTipo;
+      if (filtroClase) filtros.categoria = filtroClase;
       setCitas(await api.listarCitas(filtros));
       setError('');
     } catch (e) {
@@ -228,11 +463,23 @@ export default function Agenda() {
     } finally {
       setCargando(false);
     }
-  }, [rango, filtroCuadrilla, filtroEstado]);
+  }, [rango, filtroCuadrilla, filtroTipo, filtroClase]);
 
   useEffect(() => {
     void cargarCitas();
   }, [cargarCitas]);
+
+  // Cuadrillas para los filtros del calendario y la ficha de nueva cita (D-72).
+  useEffect(() => {
+    let vivo = true;
+    api
+      .listarCuadrillas({ solo_activas: true })
+      .then((c) => vivo && setCuadrillas(c))
+      .catch(() => vivo && setCuadrillas([]));
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const citasPorDia = useMemo(() => {
     const mapa = new Map<string, CitaOut[]>();
@@ -296,22 +543,13 @@ export default function Agenda() {
       setError('Indique la fecha y hora de la cita.');
       return;
     }
-    const idCaso = alta.id_caso.trim();
-    const idEspecial = alta.id_caso_especial.trim();
-    if (idCaso === '' && idEspecial === '') {
-      setError('La cita requiere un ID de caso o un ID de caso especial (al menos uno).');
-      return;
-    }
-    if (idCaso !== '' && !idValido(idCaso)) {
-      setError('ID de caso: indique un número entero positivo.');
-      return;
-    }
-    if (idEspecial !== '' && !idValido(idEspecial)) {
-      setError('ID de caso especial: indique un número entero positivo.');
+    // D-72: el caso se localiza en la ficha; id_caso proviene del caso seleccionado.
+    if (!casoSel || alta.id_caso.trim() === '') {
+      setError('Localice el caso (Id de Avería, Tipo, Número o Clase) antes de agendar.');
       return;
     }
     if (alta.id_cuadrilla.trim() !== '' && !idValido(alta.id_cuadrilla)) {
-      setError('ID de cuadrilla: indique un número entero positivo.');
+      setError('Cuadrilla: indique un número entero positivo.');
       return;
     }
 
@@ -320,9 +558,8 @@ export default function Agenda() {
       tipo: alta.tipo,
       estado: alta.estado,
       observacion: nv(alta.observacion),
+      id_caso: Number(alta.id_caso),
     };
-    if (idCaso !== '') payload.id_caso = Number(idCaso);
-    if (idEspecial !== '') payload.id_caso_especial = Number(idEspecial);
     if (alta.id_cuadrilla.trim() !== '') payload.id_cuadrilla = Number(alta.id_cuadrilla);
     if (puedeForzar && forzarSolape) payload.permitir_solape = true;
 
@@ -330,6 +567,7 @@ export default function Agenda() {
     try {
       await api.crearCita(payload);
       setAlta({ ...altaVacia(), fecha_hora: alta.fecha_hora });
+      setCasoSel(null);
       setForzarSolape(false);
       setModalAlta(false);
       setOk('Cita agendada correctamente.');
@@ -478,26 +716,45 @@ export default function Agenda() {
         <div className="cal-filtros filtros-tabla">
           <div className="campo">
             <label htmlFor="cal-cuadrilla">Cuadrilla</label>
-            <input
+            <select
               id="cal-cuadrilla"
-              type="number"
-              min="1"
               value={filtroCuadrilla}
               onChange={(e) => setFiltroCuadrilla(e.target.value)}
-              placeholder="Todas"
-            />
+            >
+              <option value="">Todas</option>
+              {cuadrillas.map((c) => (
+                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                  {c.codigo} — {c.nombre}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="campo">
-            <label htmlFor="cal-estado">Estado</label>
+            <label htmlFor="cal-tipo">Tipo</label>
             <select
-              id="cal-estado"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
+              id="cal-tipo"
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value)}
             >
               <option value="">Todos</option>
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
+              {TIPOS_CASO.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="cal-clase">Clase</label>
+            <select
+              id="cal-clase"
+              value={filtroClase}
+              onChange={(e) => setFiltroClase(e.target.value)}
+            >
+              <option value="">Todas</option>
+              {CLASES_CASO.map((c) => (
+                <option key={c} value={c}>
+                  {c}
                 </option>
               ))}
             </select>
@@ -700,7 +957,26 @@ export default function Agenda() {
 
       {/* Nueva cita (RF-12), en ventana flotante (requisito de UI 3). */}
       {!soloLectura && modalAlta && (
-        <Modal titulo="Nueva cita" onCerrar={() => setModalAlta(false)}>
+        <Modal
+          titulo="Nueva cita"
+          onCerrar={() => {
+            setModalAlta(false);
+            setCasoSel(null);
+          }}
+        >
+          {/* D-72: el caso se localiza solo por Id de Avería, Tipo, Número o
+              Clase. Va FUERA del <form> de la cita (los formularios no se
+              anidan en HTML) con su propio formulario de búsqueda. */}
+          <div className="localizador-wrap">
+            <h3 className="subtitulo-seccion">Localización del caso</h3>
+            <LocalizadorCaso
+              casoSel={casoSel}
+              onSeleccionar={(c) => {
+                setCasoSel(c);
+                setAlta({ ...alta, id_caso: c ? String(c.id_caso) : '' });
+              }}
+            />
+          </div>
           <form className="formulario modal-formulario" onSubmit={(e) => void crearCita(e)}>
             <div className="campo">
               <label htmlFor="cita-fecha">Fecha y hora</label>
@@ -739,35 +1015,20 @@ export default function Agenda() {
                 ))}
               </select>
             </div>
-            <div className="campo">
-              <label htmlFor="cita-cuadrilla">ID cuadrilla (opcional)</label>
-              <input
+            <div className="campo campo-ancho">
+              <label htmlFor="cita-cuadrilla">Cuadrilla (opcional)</label>
+              <select
                 id="cita-cuadrilla"
-                type="number"
-                min="1"
                 value={alta.id_cuadrilla}
                 onChange={(e) => setAlta({ ...alta, id_cuadrilla: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="cita-caso">ID caso</label>
-              <input
-                id="cita-caso"
-                type="number"
-                min="1"
-                value={alta.id_caso}
-                onChange={(e) => setAlta({ ...alta, id_caso: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="cita-especial">ID caso especial</label>
-              <input
-                id="cita-especial"
-                type="number"
-                min="1"
-                value={alta.id_caso_especial}
-                onChange={(e) => setAlta({ ...alta, id_caso_especial: e.target.value })}
-              />
+              >
+                <option value="">Sin cuadrilla</option>
+                {cuadrillas.map((c) => (
+                  <option key={c.id_cuadrilla} value={String(c.id_cuadrilla)}>
+                    {c.codigo} — {c.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="campo campo-check">
               <input
@@ -794,9 +1055,10 @@ export default function Agenda() {
             </div>
           </form>
           <p className="texto-pequeno">
-            Se exige al menos un ID de caso o de caso especial. Si la cuadrilla ya tiene una cita en
-            ese horario, la API responde <strong>409</strong> con el detalle del conflicto; solo el
-            Super Usuario puede forzar el solape.
+            El caso se localiza <strong>solo por Id de Avería, Tipo, Número o Clase</strong>; al
+            seleccionarlo se muestra su información básica en solo lectura. Si la cuadrilla ya tiene
+            una cita en ese horario, la API responde <strong>409</strong> con el detalle del
+            conflicto; solo el Super Usuario puede forzar el solape.
           </p>
         </Modal>
       )}

@@ -64,6 +64,28 @@ export interface RegenerarPalabrasResponse {
   aviso: string;
 }
 
+/** Estado de la seguridad de la propia cuenta (Perfil, D-72). */
+export interface MiSeguridad {
+  p00: string;
+  tiene_palabras: boolean;
+  version: number | null;
+  cantidad: number;
+  actualizado_en: string | null;
+  requiere_cambio_clave: boolean;
+  bloqueado: boolean;
+}
+
+/** Datos editables del propio perfil (D-72). */
+export interface MeUpdate {
+  correo: string;
+}
+
+export interface CambioClaveRequest {
+  clave_actual: string;
+  clave_nueva: string;
+  confirmacion: string;
+}
+
 /** Ciclo de vida de la cuenta de acceso de un técnico (D-67). */
 export type EstadoCuentaTecnico =
   | 'SIN_ALTA'
@@ -508,6 +530,7 @@ export type CasosFiltros = {
   telefono?: string;
   id_central?: number;
   id_sector?: number;
+  id_cuadrilla?: number;
   id_causa?: number;
   id_lote_ingesta?: number;
   estado_actual?: string;
@@ -795,6 +818,9 @@ export interface CasoEspecialOut {
   sector_nombre: string | null;
   solicitante_nombre: string | null;
   solicitante_unidad: string | null;
+  /* D-72: Dirección y Nombre tomados del caso asociado. */
+  direccion: string | null;
+  nombre_cliente: string | null;
   pendiente: boolean;
   asignado: boolean;
   citado: boolean;
@@ -806,6 +832,10 @@ export type CasosEspecialesFiltros = {
   clasificacion?: string;
   estado?: string;
   prioridad?: string;
+  /** D-72: Actividad, Solicitante y texto libre sobre todos los renglones. */
+  tipo_actividad?: string;
+  id_solicitante?: number;
+  q?: string;
   solo_pendientes?: boolean;
 };
 
@@ -860,6 +890,9 @@ export type CitasFiltros = {
   hasta?: string;
   id_cuadrilla?: number;
   estado?: string;
+  /** D-72: Tipo y Clase del caso asociado. */
+  tipo_caso?: string;
+  categoria?: string;
 };
 
 /* --- Seguimiento (RF-34) ------------------------------------------ */

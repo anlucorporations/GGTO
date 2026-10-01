@@ -6,10 +6,11 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import HTMLResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Usuario
+from ..models import CuadrillaTecnico, Usuario
 from ..services import monitoreo as svc
 from ..services.consultas import cargar_config, resolver_central
 from .deps import get_current_user
@@ -21,6 +22,30 @@ def _central(db: Session, id_central: int | None):
     return resolver_central(db, id_central, cargar_config(db))
 
 
+def _cuadrilla_tecnico(db: Session, usuario: Usuario) -> int | None:
+    """D-72: cuadrilla activa del técnico vinculado a la cuenta (si la tiene)."""
+    if usuario.id_tecnico is None:
+        return None
+    return db.scalar(
+        select(CuadrillaTecnico.id_cuadrilla)
+        .where(CuadrillaTecnico.id_tecnico == usuario.id_tecnico,
+               CuadrillaTecnico.hasta.is_(None))
+        .limit(1)
+    )
+
+
+def _alcance(db: Session, usuario: Usuario, id_cuadrilla: int | None) -> int | None:
+    """Cuadrilla efectiva de las consultas de monitoreo (D-72).
+
+    El rol **TECNICO** solo ve los datos de su cuadrilla: se fuerza la suya y
+    se ignora cualquier parámetro. El SUPERVISOR (y demás roles de gestión) ve
+    lo global o la cuadrilla que seleccione.
+    """
+    if usuario.rol is not None and usuario.rol.codigo == "TECNICO":
+        return _cuadrilla_tecnico(db, usuario)
+    return id_cuadrilla
+
+
 # --------------------------------------------------------------------------- #
 # MONITOREO
 # --------------------------------------------------------------------------- #
@@ -28,22 +53,26 @@ def _central(db: Session, id_central: int | None):
 def diario(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
     central = _central(db, id_central)
-    return svc.gestion_diaria(db, central.id_central, fecha or date.today())
+    return svc.gestion_diaria(db, central.id_central, fecha or date.today(),
+                              _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/semanal", summary="Gestión semanal (curva lunes a sábado)")
 def semanal(
     desde: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
     central = _central(db, id_central)
-    return svc.gestion_semanal(db, central.id_central, desde or date.today())
+    return svc.gestion_semanal(db, central.id_central, desde or date.today(),
+                               _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/globales", summary="Casos globales: pendientes vs resueltos")
@@ -51,30 +80,36 @@ def globales(
     desde: date | None = Query(default=None),
     hasta: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
     central = _central(db, id_central)
     hoy = date.today()
-    return svc.casos_globales(db, central.id_central, desde or hoy.replace(day=1), hasta or hoy)
+    return svc.casos_globales(db, central.id_central, desde or hoy.replace(day=1), hasta or hoy,
+                              _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/reparacion", summary="Pendientes de reparación por tipo")
 def reparacion(
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.reparacion(db, _central(db, id_central).id_central)
+    return svc.reparacion(db, _central(db, id_central).id_central,
+                          _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/construccion", summary="Pendientes de construcción por tipo")
 def construccion(
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.construccion(db, _central(db, id_central).id_central)
+    return svc.construccion(db, _central(db, id_central).id_central,
+                            _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/cuadrilla", summary="Asignados vs cerrados vs gestionados por cuadrilla")
@@ -82,21 +117,25 @@ def cuadrilla(
     desde: date | None = Query(default=None),
     dias: int = Query(default=6, ge=1, le=31),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
     central = _central(db, id_central)
     base, _sab = svc.rango_semana(desde or date.today())
-    return svc.por_cuadrilla(db, central.id_central, base, dias)
+    return svc.por_cuadrilla(db, central.id_central, base, dias,
+                             _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/monitoreo/capacidad", summary="Capacidad operativa")
 def capacidad(
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.capacidad(db, _central(db, id_central).id_central)
+    return svc.capacidad(db, _central(db, id_central).id_central,
+                         _alcance(db, usuario, id_cuadrilla))
 
 
 # --------------------------------------------------------------------------- #
@@ -107,11 +146,13 @@ def reporte(
     periodo: str = Query(default="diario", pattern="^(diario|semanal|mensual)$"),
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> dict:
     central = _central(db, id_central)
-    return svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today())
+    return svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today(),
+                               _alcance(db, usuario, id_cuadrilla))
 
 
 @router.get("/reportes/trabajo/imprimible", response_class=HTMLResponse,
@@ -120,11 +161,13 @@ def reporte_imprimible(
     periodo: str = Query(default="diario", pattern="^(diario|semanal|mensual)$"),
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None, description="Limitar a una cuadrilla (D-72)"),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> HTMLResponse:
     central = _central(db, id_central)
-    datos = svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today())
+    datos = svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today(),
+                                _alcance(db, usuario, id_cuadrilla))
     d, g, r, c = datos["diario"], datos["globales"], datos["reparacion"], datos["construccion"]
 
     filas_diario = "".join(

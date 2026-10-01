@@ -53,6 +53,7 @@ import type {
   FallaMasivaUpdate,
   MaterialFalla,
   MetricasOut,
+  MiSeguridad,
   NotificacionOut,
   OrdenMaterialOut,
   PlanificacionFalla,
@@ -282,6 +283,25 @@ export function login(p00: string, clave: string): Promise<TokenResponse> {
 
 export function obtenerMe(): Promise<Usuario> {
   return request<Usuario>('/auth/me');
+}
+
+/** Perfil (D-72): actualiza el propio correo. Devuelve el usuario actualizado. */
+export function actualizarPerfilMe(correo: string): Promise<Usuario> {
+  return conCuerpo<Usuario>('/auth/me', 'PATCH', { correo });
+}
+
+/** Perfil (D-72): cambia la propia clave verificando la actual. */
+export function cambiarClave(datos: {
+  clave_actual: string;
+  clave_nueva: string;
+  confirmacion: string;
+}): Promise<{ p00: string; mensaje: string }> {
+  return conCuerpo<{ p00: string; mensaje: string }>('/auth/cambio-clave', 'POST', datos);
+}
+
+/** Perfil (D-72): estado de las palabras de seguridad (nunca los valores). */
+export function obtenerMiSeguridad(): Promise<MiSeguridad> {
+  return request<MiSeguridad>('/auth/mi-seguridad');
 }
 
 export function desbloquear(p00: string, palabras: PalabraPosicion[]): Promise<UnlockResponse> {

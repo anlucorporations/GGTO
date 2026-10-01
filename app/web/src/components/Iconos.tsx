@@ -260,3 +260,150 @@ export function IconoEditar(props: Props) {
     </svg>
   );
 }
+
+/* --- Tipo y Clase de caso; Prioridad y Actividad (D-72) --- */
+
+/** Tipo · AVERÍA: rayo. */
+export function IconoAveria(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" />
+    </svg>
+  );
+}
+
+/** Tipo/Actividad · REPARACIÓN: llave inglesa. */
+export function IconoReparacion(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14.5 6.5a4 4 0 0 0-5.3 5.1L3.5 17.3a1.8 1.8 0 0 0 2.6 2.6l5.7-5.7a4 4 0 0 0 5.1-5.3l-2.4 2.4-2.1-.5-.5-2.1z" />
+      <path d="M18.5 14.5 21 17" />
+    </svg>
+  );
+}
+
+/** Tipo/Actividad · CONSTRUCCIÓN: grúa. */
+export function IconoConstruccion(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 21h8M8 21V6M8 6l10-2.5M8 6l4 3.5" />
+      <path d="M18 3.5v5M15.5 8.5h5l-2.5 4z" />
+    </svg>
+  );
+}
+
+/** Clase · RESIDENCIAL: casa. */
+export function IconoResidencial(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 11 12 4l8 7" />
+      <path d="M6.5 9.5V20h11V9.5" />
+      <path d="M10.5 20v-5h3v5" />
+    </svg>
+  );
+}
+
+/** Clase · EMPRESA: edificio de oficinas. */
+export function IconoEmpresa(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="5" y="3.5" width="9" height="17" rx="1" />
+      <path d="M14 9.5h5V20.5H5" />
+      <path d="M8 7.5h.01M8 11h.01M8 14.5h.01M11 7.5h.01M11 11h.01M11 14.5h.01" />
+    </svg>
+  );
+}
+
+/** Clase · REFERIDO: dos flechas cruzadas (traspaso). */
+export function IconoReferido(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 8.5h13l-3-3M20 15.5H7l3 3" />
+    </svg>
+  );
+}
+
+/** Clase · GOBIERNO: edificio público con columnas. */
+export function IconoGobierno(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3.5 9 12 4l8.5 5" />
+      <path d="M6 9.5V17M10 9.5V17M14 9.5V17M18 9.5V17" />
+      <path d="M4 20h16" />
+    </svg>
+  );
+}
+
+/** Prioridad · ALTA: flecha hacia arriba. */
+export function IconoPrioridadAlta(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16V8m0 0-3.2 3.2M12 8l3.2 3.2" />
+    </svg>
+  );
+}
+
+/** Prioridad · MEDIA: guion doble. */
+export function IconoPrioridadMedia(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 10.5h7M8.5 13.5h7" />
+    </svg>
+  );
+}
+
+/** Prioridad · BAJA: flecha hacia abajo. */
+export function IconoPrioridadBaja(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8m0 0-3.2-3.2M12 16l3.2-3.2" />
+    </svg>
+  );
+}
+
+/* --- Perfil y Cuenta (D-72) --- */
+
+/** Seguridad: escudo. */
+export function IconoEscudo(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3 5 5.8v5.4c0 4.2 2.9 7.3 7 9.3 4.1-2 7-5.1 7-9.3V5.8z" />
+      <path d="M9.2 12 11 13.8l3.8-4" />
+    </svg>
+  );
+}
+
+/** Clave: candado. */
+export function IconoCandado(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="5" y="10.5" width="14" height="10" rx="1.5" />
+      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+      <path d="M12 14v3" />
+    </svg>
+  );
+}
+
+/** Perfil: usuario con marco (cuenta). */
+export function IconoPerfil(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="9.5" r="3.5" />
+      <path d="M5.5 19.5c0-3.4 2.9-5.2 6.5-5.2s6.5 1.8 6.5 5.2" />
+      <circle cx="12" cy="12" r="9.5" strokeDasharray="2.2 2.6" />
+    </svg>
+  );
+}
+
+/** Actividad genérica (reloj de historial). */
+export function IconoActividad(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}

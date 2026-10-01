@@ -50,11 +50,37 @@ def _conteo(db: Session, *condiciones) -> int:
     return db.scalar(select(func.count()).select_from(Caso).where(*condiciones)) or 0
 
 
-def _resueltos(db: Session, id_central: int, desde: date, hasta: date, categoria: str | None) -> int:
+def _casos_de_cuadrilla(id_cuadrilla: int):
+    """D-72: subconsulta con los ids de los casos despachados a la cuadrilla.
+
+    Se usa para limitar los indicadores de MONITOREO a los datos de la cuadrilla
+    del técnico (el rol TECNICO solo ve su cuadrilla; el SUPERVISOR ve lo global).
+    """
+    return (
+        select(DespachoCasos.id_caso)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(Despacho.id_cuadrilla == id_cuadrilla)
+    )
+
+
+def _scope_cuadrilla(id_cuadrilla: int | None):
+    """Condición (o vacío) para restringir consultas a una cuadrilla (D-72)."""
+    return [Caso.id_caso.in_(_casos_de_cuadrilla(id_cuadrilla))] if id_cuadrilla is not None else []
+
+
+def _resueltos(
+    db: Session,
+    id_central: int,
+    desde: date,
+    hasta: date,
+    categoria: str | None,
+    id_cuadrilla: int | None = None,
+) -> int:
     condiciones = [
         Caso.id_central == id_central,
         CasoEstadoHist.estado_nuevo == "CERRADO",
         func.date(CasoEstadoHist.fecha_hora).between(desde, hasta),
+        *_scope_cuadrilla(id_cuadrilla),
     ]
     if categoria:
         condiciones.append(Caso.categoria == categoria)
@@ -64,11 +90,19 @@ def _resueltos(db: Session, id_central: int, desde: date, hasta: date, categoria
     ) or 0
 
 
-def _cambiaron_a(db: Session, id_central: int, estado: str, desde: date, hasta: date) -> int:
+def _cambiaron_a(
+    db: Session,
+    id_central: int,
+    estado: str,
+    desde: date,
+    hasta: date,
+    id_cuadrilla: int | None = None,
+) -> int:
     return db.scalar(
         select(func.count()).select_from(CasoEstadoHist).join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
         .where(Caso.id_central == id_central, CasoEstadoHist.estado_nuevo == estado,
-               func.date(CasoEstadoHist.fecha_hora).between(desde, hasta))
+               func.date(CasoEstadoHist.fecha_hora).between(desde, hasta),
+               *_scope_cuadrilla(id_cuadrilla))
     ) or 0
 
 
@@ -79,30 +113,37 @@ def _pendientes(db: Session, id_central: int, *extra):
 # --------------------------------------------------------------------------- #
 # Gestión diaria / semanal
 # --------------------------------------------------------------------------- #
-def gestion_diaria(db: Session, id_central: int, fecha: date) -> dict:
+def gestion_diaria(db: Session, id_central: int, fecha: date,
+                   id_cuadrilla: int | None = None) -> dict:
+    extra = _scope_cuadrilla(id_cuadrilla)
+    citados_cond = [func.date(Cita.fecha_hora) == fecha, Cita.id_caso.is_not(None)]
+    if id_cuadrilla is not None:
+        citados_cond.append(Cita.id_cuadrilla == id_cuadrilla)
     return {
         "fecha": fecha.isoformat(),
-        "ingresos_nuevos": _conteo(db, Caso.id_central == id_central, func.date(Caso.creado_en) == fecha),
-        "resueltos_residencial": _resueltos(db, id_central, fecha, fecha, "RESIDENCIAL"),
+        "ingresos_nuevos": _conteo(db, Caso.id_central == id_central,
+                                   func.date(Caso.creado_en) == fecha, *extra),
+        "resueltos_residencial": _resueltos(db, id_central, fecha, fecha, "RESIDENCIAL", id_cuadrilla),
         "resueltos_empresarial": db.scalar(
             select(func.count()).select_from(CasoEstadoHist)
             .join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
             .where(Caso.id_central == id_central, CasoEstadoHist.estado_nuevo == "CERRADO",
-                   func.date(CasoEstadoHist.fecha_hora) == fecha, Caso.categoria.in_(EMPRESARIAL))
+                   func.date(CasoEstadoHist.fecha_hora) == fecha, Caso.categoria.in_(EMPRESARIAL),
+                   *extra)
         ) or 0,
-        "resueltos_referidos": _resueltos(db, id_central, fecha, fecha, "REFERIDO"),
+        "resueltos_referidos": _resueltos(db, id_central, fecha, fecha, "REFERIDO", id_cuadrilla),
         "citados": db.scalar(
-            select(func.count(func.distinct(Cita.id_caso))).where(func.date(Cita.fecha_hora) == fecha,
-                                                                  Cita.id_caso.is_not(None))
+            select(func.count(func.distinct(Cita.id_caso))).where(*citados_cond)
         ) or 0,
-        "diferidos": _cambiaron_a(db, id_central, "DIFERIDO", fecha, fecha),
+        "diferidos": _cambiaron_a(db, id_central, "DIFERIDO", fecha, fecha, id_cuadrilla),
         "gestionados": db.scalar(
             select(func.count(func.distinct(DespachoCasos.id_caso)))
             .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
             .where(Despacho.id_central == id_central, Despacho.fecha == fecha,
-                   DespachoCasos.estado == "GESTIONADO")
+                   DespachoCasos.estado == "GESTIONADO",
+                   *([Despacho.id_cuadrilla == id_cuadrilla] if id_cuadrilla is not None else []))
         ) or 0,
-        "pendientes_total": _pendientes(db, id_central),
+        "pendientes_total": _pendientes(db, id_central, *extra),
     }
 
 
@@ -132,42 +173,48 @@ def _por_dia_cuadrilla(db: Session, id_central: int, id_cuadrilla: int, dia: dat
             "gestionados": gestionados}
 
 
-def gestion_semanal(db: Session, id_central: int, desde: date) -> dict:
+def gestion_semanal(db: Session, id_central: int, desde: date,
+                    id_cuadrilla: int | None = None) -> dict:
     lunes, sabado = rango_semana(desde)
+    desp_cond = [Despacho.id_central == id_central]
+    if id_cuadrilla is not None:
+        desp_cond.append(Despacho.id_cuadrilla == id_cuadrilla)
     dias = []
     for dia in _dias(lunes):
         asignados = db.scalar(
             select(func.count()).select_from(DespachoCasos)
             .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
-            .where(Despacho.id_central == id_central, Despacho.fecha == dia)
+            .where(*desp_cond, Despacho.fecha == dia)
         ) or 0
         gestionados = db.scalar(
             select(func.count()).select_from(DespachoCasos)
             .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
-            .where(Despacho.id_central == id_central, Despacho.fecha == dia,
+            .where(*desp_cond, Despacho.fecha == dia,
                    DespachoCasos.estado == "GESTIONADO")
         ) or 0
         dias.append({
             "fecha": dia.isoformat(),
             "asignados": asignados,
-            "cerrados": _resueltos(db, id_central, dia, dia, None),
+            "cerrados": _resueltos(db, id_central, dia, dia, None, id_cuadrilla),
             "gestionados": gestionados,
         })
     return {"desde": lunes.isoformat(), "hasta": sabado.isoformat(), "dias": dias}
 
 
-def casos_globales(db: Session, id_central: int, desde: date, hasta: date) -> dict:
-    pendientes = _pendientes(db, id_central)
-    resueltos = _resueltos(db, id_central, desde, hasta, None)
+def casos_globales(db: Session, id_central: int, desde: date, hasta: date,
+                   id_cuadrilla: int | None = None) -> dict:
+    extra = _scope_cuadrilla(id_cuadrilla)
+    pendientes = _pendientes(db, id_central, *extra)
+    resueltos = _resueltos(db, id_central, desde, hasta, None, id_cuadrilla)
     por_estado = dict(
         db.execute(
-            select(Caso.estado_actual, func.count()).where(Caso.id_central == id_central)
+            select(Caso.estado_actual, func.count()).where(Caso.id_central == id_central, *extra)
             .group_by(Caso.estado_actual)
         ).all()
     )
     por_categoria = dict(
         db.execute(
-            select(Caso.categoria, func.count()).where(Caso.id_central == id_central)
+            select(Caso.categoria, func.count()).where(Caso.id_central == id_central, *extra)
             .group_by(Caso.categoria)
         ).all()
     )
@@ -176,30 +223,35 @@ def casos_globales(db: Session, id_central: int, desde: date, hasta: date) -> di
             "por_estado": por_estado, "por_categoria": por_categoria}
 
 
-def reparacion(db: Session, id_central: int) -> dict:
+def reparacion(db: Session, id_central: int, id_cuadrilla: int | None = None) -> dict:
+    extra = _scope_cuadrilla(id_cuadrilla)
     residenciales = _pendientes(db, id_central, Caso.categoria == "RESIDENCIAL",
-                                Caso.tipo_caso != "CONSTRUCCION")
+                                Caso.tipo_caso != "CONSTRUCCION", *extra)
     referidos = _pendientes(db, id_central, Caso.categoria == "REFERIDO",
-                            Caso.tipo_caso != "CONSTRUCCION")
+                            Caso.tipo_caso != "CONSTRUCCION", *extra)
     empresariales = _pendientes(db, id_central, Caso.categoria.in_(EMPRESARIAL),
-                                Caso.tipo_caso != "CONSTRUCCION")
+                                Caso.tipo_caso != "CONSTRUCCION", *extra)
     return {"residenciales_comunes": residenciales, "residenciales_referidos": referidos,
             "empresariales": empresariales, "total": residenciales + referidos + empresariales}
 
 
-def construccion(db: Session, id_central: int) -> dict:
+def construccion(db: Session, id_central: int, id_cuadrilla: int | None = None) -> dict:
+    extra = _scope_cuadrilla(id_cuadrilla)
     residenciales = _pendientes(db, id_central, Caso.tipo_caso == "CONSTRUCCION",
-                                Caso.categoria == "RESIDENCIAL")
+                                Caso.categoria == "RESIDENCIAL", *extra)
     empresariales = _pendientes(db, id_central, Caso.tipo_caso == "CONSTRUCCION",
-                                Caso.categoria.in_(EMPRESARIAL))
+                                Caso.categoria.in_(EMPRESARIAL), *extra)
     return {"residenciales": residenciales, "empresariales": empresariales,
             "total": residenciales + empresariales}
 
 
-def por_cuadrilla(db: Session, id_central: int, desde: date, dias: int = DIAS_SEMANA) -> dict:
+def por_cuadrilla(db: Session, id_central: int, desde: date, dias: int = DIAS_SEMANA,
+                  id_cuadrilla: int | None = None) -> dict:
+    cond = [Cuadrilla.id_central == id_central, Cuadrilla.es_supervisor.is_(False)]
+    if id_cuadrilla is not None:
+        cond.append(Cuadrilla.id_cuadrilla == id_cuadrilla)
     cuadrillas = db.scalars(
-        select(Cuadrilla).where(Cuadrilla.id_central == id_central, Cuadrilla.es_supervisor.is_(False))
-        .order_by(Cuadrilla.codigo)
+        select(Cuadrilla).where(*cond).order_by(Cuadrilla.codigo)
     ).all()
     resultado = []
     for cu in cuadrillas:
@@ -216,10 +268,12 @@ def por_cuadrilla(db: Session, id_central: int, desde: date, dias: int = DIAS_SE
     return {"desde": desde.isoformat(), "dias": dias, "cuadrillas": resultado}
 
 
-def capacidad(db: Session, id_central: int) -> dict:
+def capacidad(db: Session, id_central: int, id_cuadrilla: int | None = None) -> dict:
+    cond = [Cuadrilla.id_central == id_central, Cuadrilla.activa.is_(True)]
+    if id_cuadrilla is not None:
+        cond.append(Cuadrilla.id_cuadrilla == id_cuadrilla)
     cuadrillas = db.scalars(
-        select(Cuadrilla).where(Cuadrilla.id_central == id_central, Cuadrilla.activa.is_(True))
-        .order_by(Cuadrilla.codigo)
+        select(Cuadrilla).where(*cond).order_by(Cuadrilla.codigo)
     ).all()
     detalle = []
     for cu in cuadrillas:
@@ -259,19 +313,20 @@ def capacidad(db: Session, id_central: int) -> dict:
 # --------------------------------------------------------------------------- #
 # Reporte de trabajo consolidado
 # --------------------------------------------------------------------------- #
-def reporte_trabajo(db: Session, id_central: int, periodo: str, fecha: date) -> dict:
+def reporte_trabajo(db: Session, id_central: int, periodo: str, fecha: date,
+                    id_cuadrilla: int | None = None) -> dict:
     desde, hasta = rango_periodo(periodo, fecha)
     lunes, _sabado = rango_semana(fecha)
     return {
         "periodo": periodo,
         "desde": desde.isoformat(),
         "hasta": hasta.isoformat(),
-        "diario": gestion_diaria(db, id_central, fecha),
-        "semanal": gestion_semanal(db, id_central, lunes),
-        "globales": casos_globales(db, id_central, desde, hasta),
-        "reparacion": reparacion(db, id_central),
-        "construccion": construccion(db, id_central),
-        "cuadrilla": por_cuadrilla(db, id_central, lunes),
-        "capacidad": capacidad(db, id_central),
+        "diario": gestion_diaria(db, id_central, fecha, id_cuadrilla),
+        "semanal": gestion_semanal(db, id_central, lunes, id_cuadrilla),
+        "globales": casos_globales(db, id_central, desde, hasta, id_cuadrilla),
+        "reparacion": reparacion(db, id_central, id_cuadrilla),
+        "construccion": construccion(db, id_central, id_cuadrilla),
+        "cuadrilla": por_cuadrilla(db, id_central, lunes, DIAS_SEMANA, id_cuadrilla),
+        "capacidad": capacidad(db, id_central, id_cuadrilla),
     }
 

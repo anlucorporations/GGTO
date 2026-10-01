@@ -5,7 +5,8 @@ const { USUARIOS, rellenar, iniciarSesion, cerrarSesion } = require('../helpers'
 test.describe('Login', () => {
   test('credenciales válidas entran al panel', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.admin);
-    await expect(page.getByRole('heading', { name: 'Panel', level: 1 })).toBeVisible();
+    // D-72: OPERACIÓN abre en la pestaña WIDGET.
+    await expect(page.getByRole('heading', { name: 'Widget', level: 1 })).toBeVisible();
     await expect(page.getByText('GGTO', { exact: false }).first()).toBeVisible();
   });
 

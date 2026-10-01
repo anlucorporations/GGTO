@@ -39,8 +39,8 @@ test.describe('Casos', () => {
     await expect(resultados.getByRole('option', { name: /E2E-0004/ })).toBeVisible();
   });
 
-  test('ver ficha abre el detalle del caso', async ({ page }) => {
-    await page.getByRole('row', { name: /E2E-0005/ }).getByRole('button', { name: 'Ver ficha' }).click();
+  test('al seleccionar el renglón se abre la ficha del caso (D-72)', async ({ page }) => {
+    await page.getByRole('row', { name: /E2E-0005/ }).click();
     const ficha = page.getByRole('dialog');
     await expect(ficha.getByRole('heading', { name: /Ficha del caso/ })).toBeVisible();
     // D-70: los datos se reparten en pestañas; el cliente vive en CONTACTO

@@ -15,6 +15,7 @@ from ..models import (
     CasoEstadoHist,
     CatalogoMetodo,
     Cita,
+    Despacho,
     DespachoCasos,
     Evidencia,
     Sector,
@@ -106,15 +107,48 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
 # --------------------------------------------------------------------------- #
 # Listado con filtros (RF-33)
 # --------------------------------------------------------------------------- #
+def _casos_de_cuadrilla(id_cuadrilla: int):
+    """Subconsulta: id de los casos cuyo **último despacho** es de la cuadrilla.
+
+    Ciclo D-72: el filtro «Cuadrilla» de CASOS toma la cuadrilla de origen del
+    despacho más reciente (`fecha` y `id_despacho` descendentes) que incluyó el
+    caso. Si el caso no ha sido despachado nunca, no pertenece a ninguna.
+    """
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=DespachoCasos.id_caso,
+            order_by=(Despacho.fecha.desc(), Despacho.id_despacho.desc()),
+        )
+        .label("rn")
+    )
+    por_caso = (
+        select(DespachoCasos.id_caso.label("id_caso"), Despacho.id_cuadrilla.label("id_cuadrilla"), rn)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .subquery()
+    )
+    return select(por_caso.c.id_caso).where(
+        por_caso.c.id_cuadrilla == id_cuadrilla, por_caso.c.rn == 1
+    )
+
+
 @router.get("", response_model=PaginaCasos, summary="Listado de casos con filtros")
 def listar(
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
-    q: str | None = Query(default=None, description="Texto libre: avería, teléfono, cliente o dirección"),
+    q: str | None = Query(
+        default=None,
+        description="Texto libre: busca en todos los renglones de la tabla "
+        "(avería, tipo, clase, sector, dirección, nombre y estado)",
+    ),
     id_averia: str | None = None,
     telefono: str | None = None,
     id_central: int | None = None,
     id_sector: int | None = None,
+    id_cuadrilla: int | None = Query(
+        default=None,
+        description="Cuadrilla del último despacho que incluyó el caso (D-72)",
+    ),
     id_causa: int | None = None,
     id_lote_ingesta: int | None = None,
     estado_actual: str | None = None,
@@ -131,12 +165,17 @@ def listar(
     condiciones = []
     if q:
         patron = f"%{q.strip()}%"
+        sectores_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
         condiciones.append(
             or_(
                 Caso.id_averia.ilike(patron),
                 Caso.telefono.ilike(patron),
                 Caso.nombre_cliente.ilike(patron),
                 Caso.direccion.ilike(patron),
+                Caso.tipo_caso.ilike(patron),
+                Caso.categoria.ilike(patron),
+                Caso.estado_actual.ilike(patron),
+                Caso.id_sector.in_(sectores_q),
             )
         )
     if id_averia:
@@ -147,6 +186,8 @@ def listar(
         condiciones.append(Caso.id_central == id_central)
     if id_sector is not None:
         condiciones.append(Caso.id_sector == id_sector)
+    if id_cuadrilla is not None:
+        condiciones.append(Caso.id_caso.in_(_casos_de_cuadrilla(id_cuadrilla)))
     if id_causa is not None:
         condiciones.append(Caso.id_causa == id_causa)
     if id_lote_ingesta is not None:

@@ -42,7 +42,7 @@ async function abrirFichaPorId(page, idAveria) {
   await page.locator('#filtro-q').press('Enter');
   const fila = page.locator('tbody tr', { hasText: idAveria }).first();
   await fila.waitFor({ state: 'visible', timeout: 60_000 });
-  await fila.getByRole('button', { name: 'Ver ficha' }).click();
+  await fila.click();
   const ficha = page.getByRole('dialog');
   await expect(ficha).toBeVisible({ timeout: 30_000 });
   return ficha;
@@ -51,7 +51,7 @@ async function abrirFichaPorId(page, idAveria) {
 async function abrirPrimeraFicha(page) {
   await page.goto('/casos');
   await page.locator('tbody tr').first().waitFor({ state: 'visible', timeout: 60_000 });
-  await page.locator('tbody tr').first().getByRole('button', { name: 'Ver ficha' }).click();
+  await page.locator('tbody tr').first().click();
   const ficha = page.getByRole('dialog');
   await expect(ficha).toBeVisible({ timeout: 30_000 });
   return ficha;

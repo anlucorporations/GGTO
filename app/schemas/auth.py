@@ -79,3 +79,32 @@ class RegenerarPalabrasResponse(BaseModel):
     aviso: str = (
         "Entregue estas 12 palabras al técnico por un canal seguro: no se volverán a mostrar."
     )
+
+
+# --------------------------------------------------------------------------- #
+# Perfil y cuenta (D-72)
+# --------------------------------------------------------------------------- #
+class CambioClaveRequest(BaseModel):
+    """Cambio de la propia clave: exige la clave actual (RNF-01)."""
+
+    clave_actual: str = Field(min_length=1, max_length=128)
+    clave_nueva: str = Field(min_length=8, max_length=128)
+    confirmacion: str = Field(min_length=8, max_length=128)
+
+
+class MeUpdate(BaseModel):
+    """Edición del propio perfil: solo el correo por ahora (D-72)."""
+
+    correo: str = Field(min_length=5, max_length=120)
+
+
+class MiSeguridadOut(BaseModel):
+    """Estado de las 12 palabras de seguridad (nunca devuelven valores)."""
+
+    p00: str
+    tiene_palabras: bool
+    version: int | None = None
+    cantidad: int = 0
+    actualizado_en: str | None = None
+    requiere_cambio_clave: bool = False
+    bloqueado: bool = False

@@ -82,6 +82,9 @@ class CasoEspecialOut(BaseModel):
     sector_nombre: str | None = None
     solicitante_nombre: str | None = None
     solicitante_unidad: str | None = None
+    # Datos tomados del caso asociado (D-72): columnas Direccion y Nombre.
+    direccion: str | None = None
+    nombre_cliente: str | None = None
     pendiente: bool = True
     asignado: bool = False
     citado: bool = False

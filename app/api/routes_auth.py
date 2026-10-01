@@ -21,7 +21,10 @@ from ..core.security import (
 from ..core.words import generar_palabras
 from ..models import Auditoria, DispositivoSeguridad, Rol, Tecnico, Usuario
 from ..schemas.auth import (
+    CambioClaveRequest,
     LoginRequest,
+    MeUpdate,
+    MiSeguridadOut,
     PrimerAccesoOut,
     RegenerarPalabrasResponse,
     ResetPasswordRequest,
@@ -383,3 +386,96 @@ def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)) -
     usuario.requiere_cambio_clave = False
     db.commit()
     return {"p00": usuario.p00, "mensaje": "Clave restablecida"}
+
+
+# --------------------------------------------------------------------------- #
+# Perfil y cuenta (D-72): los endpoints exigen la sesión iniciada.
+# --------------------------------------------------------------------------- #
+@router.patch("/me", response_model=UsuarioOut, summary="Actualizar el propio perfil (correo)")
+def actualizar_me(
+    datos: MeUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> UsuarioOut:
+    correo = datos.correo.strip()
+    en_uso = db.scalar(
+        select(func.count()).select_from(Usuario).where(
+            Usuario.correo == correo, Usuario.p00 != usuario.p00
+        )
+    )
+    if en_uso:
+        raise HTTPException(status_code=409, detail="Ese correo ya está registrado en otra cuenta.")
+    antes = usuario.correo
+    usuario.correo = correo
+    if usuario.id_tecnico:
+        tecnico = db.get(Tecnico, usuario.id_tecnico)
+        if tecnico:
+            tecnico.correo = correo
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="CAMBIO_CORREO",
+            entidad="usuario",
+            id_entidad=usuario.p00,
+            datos_antes={"correo": antes},
+            datos_despues={"correo": correo},
+        )
+    )
+    db.commit()
+    db.refresh(usuario)
+    return _usuario_out(usuario)
+
+
+@router.post("/cambio-clave", summary="Cambiar la propia clave (exige la actual)")
+def cambio_clave(
+    datos: CambioClaveRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> dict:
+    if datos.clave_nueva != datos.confirmacion:
+        raise HTTPException(status_code=422, detail="La clave nueva y su confirmación no coinciden.")
+    if not verify_password(usuario.clave_hash, datos.clave_actual):
+        raise HTTPException(status_code=401, detail="La clave actual no es correcta.")
+    if datos.clave_actual == datos.clave_nueva:
+        raise HTTPException(status_code=422, detail="La clave nueva debe ser distinta a la actual.")
+    usuario.clave_hash = hash_password(datos.clave_nueva)
+    usuario.requiere_cambio_clave = False
+    usuario.intentos_fallidos = 0
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="CAMBIO_CLAVE",
+            entidad="usuario",
+            id_entidad=usuario.p00,
+            datos_despues={"origen": "perfil"},
+        )
+    )
+    db.commit()
+    return {"p00": usuario.p00, "mensaje": "Clave actualizada correctamente."}
+
+
+@router.get("/mi-seguridad", response_model=MiSeguridadOut,
+            summary="Estado de las palabras de seguridad de la cuenta")
+def mi_seguridad(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> MiSeguridadOut:
+    """Devuelve el estado de las 12 palabras; los valores están hasheados y no
+    se pueden consultar (D-67). Solo el Super Usuario puede regenerarlas."""
+    dispositivo = db.scalar(
+        select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == usuario.p00)
+    )
+    cantidad = len(dispositivo.palabras_hash) if dispositivo and dispositivo.palabras_hash else 0
+    return MiSeguridadOut(
+        p00=usuario.p00,
+        tiene_palabras=cantidad > 0,
+        version=(dispositivo.version if dispositivo else None),
+        cantidad=cantidad,
+        actualizado_en=(
+            dispositivo.actualizado_en.isoformat()
+            if dispositivo and dispositivo.actualizado_en
+            else None
+        ),
+        requiere_cambio_clave=usuario.requiere_cambio_clave,
+        bloqueado=usuario.bloqueado,
+    )

@@ -83,7 +83,7 @@ test.describe('Sistemas y roles', () => {
     await expect(page.getByText('Modo solo lectura').first()).toBeVisible();
 
     // No puede editar el caso, pero sí cambiar su estado
-    await page.locator('tbody tr').first().getByRole('button', { name: 'Ver ficha' }).click();
+    await page.locator('tbody tr').first().click();
     const ficha = page.getByRole('dialog');
     await expect(ficha).toBeVisible();
     // D-70: la gestión vive en su pestaña; el TECNICO no obtiene edición de ficha

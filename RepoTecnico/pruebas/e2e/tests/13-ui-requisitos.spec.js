@@ -51,7 +51,9 @@ test.describe('Requisitos de UI', () => {
   test('las fichas de detalle también son modales', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto('/casos');
-    await page.getByRole('row', { name: /E2E-0005/ }).getByRole('button', { name: 'Ver ficha' }).click();
+    // D-72: se eliminó la columna Acción; al seleccionar cualquier parte del
+    // renglón se abre la ficha del caso.
+    await page.getByRole('row', { name: /E2E-0005/ }).click();
     const dialogo = page.getByRole('dialog', { name: /Ficha del caso/ });
     await expect(dialogo).toBeVisible();
     const vp = page.viewportSize();

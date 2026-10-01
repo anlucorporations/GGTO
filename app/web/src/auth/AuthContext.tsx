@@ -18,6 +18,8 @@ interface AuthContextValue {
   soloLectura: boolean;
   iniciarSesion: (p00: string, clave: string) => Promise<Usuario>;
   cerrarSesion: () => void;
+  /** Vuelve a leer GET /auth/me (p. ej. tras editar el perfil, D-72). */
+  refrescarUsuario: () => Promise<Usuario>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -65,6 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return respuesta.usuario;
   }, []);
 
+  const refrescarUsuario = useCallback(async () => {
+    const u = await api.obtenerMe();
+    api.guardarSesion(api.getToken() ?? '', u);
+    setUsuario(u);
+    return u;
+  }, []);
+
   const valor = useMemo<AuthContextValue>(
     () => ({
       usuario,
@@ -73,8 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       soloLectura: usuario?.rol === 'TECNICO',
       iniciarSesion,
       cerrarSesion,
+      refrescarUsuario,
     }),
-    [usuario, cargando, iniciarSesion, cerrarSesion],
+    [usuario, cargando, iniciarSesion, cerrarSesion, refrescarUsuario],
   );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
