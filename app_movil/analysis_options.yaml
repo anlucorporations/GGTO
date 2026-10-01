@@ -1,0 +1,23 @@
+# Reglas de análisis estático de la app móvil.
+#
+# `flutter_lints` ya estaba declarado en `pubspec.yaml` pero **inactivo** por
+# falta de este archivo (H-45 del informe de la APK). Activa las reglas
+# recomendadas y exige la verificación de `context` tras un `await`.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # El código del proyecto evita `print`; se deja como aviso, no como error.
+    avoid_print: warning
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_final_locals
+    - unnecessary_await_in_return
+    - use_build_context_synchronously

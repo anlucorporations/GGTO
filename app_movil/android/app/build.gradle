@@ -1,0 +1,73 @@
+import java.util.Properties
+
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+// ---------------------------------------------------------------------------
+// Firma de release (H-28)
+// ---------------------------------------------------------------------------
+// Lee `android/key.properties` (no versionado). Si no existe, cae a la firma de
+// depuración para no romper el desarrollo; en ese caso se avisa por consola.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def tieneFirmaRelease = keystorePropertiesFile.exists()
+if (tieneFirmaRelease) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+} else {
+    logger.lifecycle("AVISO: no se encontró android/key.properties; el release se firmará con la clave de depuración.")
+}
+
+android {
+    namespace = "com.example.ggto_tecnico"
+    compileSdk = 35
+    ndkVersion = "26.1.10909125"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId = "com.example.ggto_tecnico"
+        minSdk = 21
+        targetSdk = 35
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    signingConfigs {
+        if (tieneFirmaRelease) {
+            release {
+                storeFile = file(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = tieneFirmaRelease ? signingConfigs.release : signingConfigs.debug
+            // Reduce el tamaño y evita exponer símbolos (H-35). Las reglas que
+            // Flutter necesita están en proguard-rules.pro.
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+}
+
+flutter {
+    source = "../.."
+}

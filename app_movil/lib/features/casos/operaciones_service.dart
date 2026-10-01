@@ -1,0 +1,369 @@
+import '../../core/api_client.dart';
+import '../../core/api_error.dart';
+import '../../core/database.dart';
+
+/// Resultado de una operación de campo.
+class ResultadoOperacion {
+  const ResultadoOperacion({
+    required this.mensaje,
+    required this.enviada,
+    this.caso,
+  });
+
+  /// Mensaje para mostrar al técnico.
+  final String mensaje;
+
+  /// `true` si se aplicó en el servidor; `false` si quedó en la cola offline.
+  final bool enviada;
+
+  /// Caso actualizado devuelto por el servidor (si lo hubo).
+  final Map<String, dynamic>? caso;
+
+  bool get encolada => !enviada;
+}
+
+/// Operaciones de campo del técnico contra el contrato real de la API.
+///
+/// Cada operación intenta el envío y, si no hay red (o el servidor falla con un
+/// error recuperable), la **encola con su payload exacto** para sincronizarla
+/// después. Los errores que no se resuelven reintentando (403, 404, 409, 422)
+/// se devuelven al usuario en lugar de perderse.
+class OperacionesService {
+  const OperacionesService._();
+
+  /// Marca el caso como CONTACTADO (RF-12).
+  static Future<ResultadoOperacion> marcarContactado({
+    required int idCaso,
+    required String idAveria,
+    String? motivo,
+  }) async {
+    final payload = {
+      'estado_actual': 'CONTACTADO',
+      if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
+    };
+    return _enviarEstado(
+      idCaso: idCaso,
+      idAveria: idAveria,
+      payload: payload,
+      tipo: 'CONTACTADO',
+      exito: 'Caso marcado como CONTACTADO.',
+    );
+  }
+
+  /// Marca el caso como CITADO (RF-12).
+  static Future<ResultadoOperacion> marcarCitado({
+    required int idCaso,
+    required String idAveria,
+    String? motivo,
+  }) async {
+    return _enviarEstado(
+      idCaso: idCaso,
+      idAveria: idAveria,
+      payload: {
+        'estado_actual': 'CITADO',
+        if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
+      },
+      tipo: 'CITADO',
+      exito: 'Caso marcado como CITADO.',
+    );
+  }
+
+  /// Marca el caso como DIFERIDO con su justificación (RF-13).
+  static Future<ResultadoOperacion> diferir({
+    required int idCaso,
+    required String idAveria,
+    required String justificacion,
+    List<String> evidencias = const [],
+  }) async {
+    final resultado = await _enviarEstado(
+      idCaso: idCaso,
+      idAveria: idAveria,
+      payload: {
+        'estado_actual': 'DIFERIDO',
+        'motivo_estado': _recortar(justificacion, 200),
+      },
+      tipo: 'DIFERIDO',
+      exito: 'Caso diferido con su justificación.',
+    );
+    // Las evidencias se conservan en la cola aunque el estado ya se aplicara.
+    if (evidencias.isNotEmpty) {
+      await _encolarEvidencias(idCaso, idAveria, evidencias);
+    }
+    return resultado;
+  }
+
+  /// Agenda una cita para el caso (RF-12).
+  ///
+  /// Usa `POST /citas` con `fecha_hora`, el campo que exige el backend (H-07).
+  static Future<ResultadoOperacion> agendarCita({
+    required int idCaso,
+    required String idAveria,
+    required DateTime fechaHora,
+    String tipo = 'ATENCION',
+    String? observacion,
+  }) async {
+    final payload = {
+      'id_caso': idCaso,
+      'fecha_hora': fechaHora.toIso8601String(),
+      'tipo': tipo,
+      if (observacion != null && observacion.trim().isNotEmpty) 'observacion': observacion.trim(),
+    };
+    const endpoint = '/citas';
+
+    try {
+      final datos = await ApiClient.post(endpoint, data: payload);
+      final caso = await _refrescarCaso(idCaso);
+      final hora = _formato(fechaHora);
+      return ResultadoOperacion(
+        mensaje: 'Cita agendada para el $hora.',
+        enviada: true,
+        caso: caso ?? _conEstado(datos),
+      );
+    } on ApiError catch (error) {
+      if (error.esConflicto) {
+        // Solapamiento con otra cita de la cuadrilla (RNF-04).
+        return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+      }
+      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'CITA',
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: la cita quedó guardada y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// Cierra el caso con modo, descripción y evidencias (RF-15 / §4.2).
+  static Future<ResultadoOperacion> cerrar({
+    required int idCaso,
+    required String idAveria,
+    required String modo,
+    required String descripcion,
+    List<String> evidencias = const [],
+    int? idCausa,
+  }) async {
+    final payload = {
+      'modo': modo,
+      'descripcion': descripcion.trim(),
+      'evidencias': evidencias,
+      if (idCausa != null) 'id_causa': idCausa,
+    };
+    final endpoint = '/casos/$idCaso/cierre';
+
+    try {
+      final datos = await ApiClient.post(endpoint, data: payload);
+      final caso = await _refrescarCaso(idCaso);
+      await _marcarEvidencias(evidencias);
+      final mensaje = datos is Map && datos['mensaje'] != null
+          ? '${datos['mensaje']}'
+          : 'Caso cerrado con $modo.';
+      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
+    } on ApiError catch (error) {
+      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'CIERRE',
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: el cierre quedó guardado y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// Enruta el caso a otra instancia (RF-13 / §4.2).
+  static Future<ResultadoOperacion> enrutar({
+    required int idCaso,
+    required String idAveria,
+    required String destino,
+    required String motivo,
+    List<String> evidencias = const [],
+    int? idMetodo,
+  }) async {
+    final payload = {
+      'destino': destino.trim(),
+      'motivo': motivo.trim(),
+      if (idMetodo != null) 'id_metodo': idMetodo,
+    };
+    final endpoint = '/casos/$idCaso/enrutado';
+
+    try {
+      final datos = await ApiClient.post(endpoint, data: payload);
+      final caso = await _refrescarCaso(idCaso);
+      if (evidencias.isNotEmpty) {
+        await _encolarEvidencias(idCaso, idAveria, evidencias);
+      }
+      final mensaje = datos is Map && datos['mensaje'] != null
+          ? '${datos['mensaje']}'
+          : 'Caso enrutado a $destino.';
+      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
+    } on ApiError catch (error) {
+      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'ENRUTADO',
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        if (evidencias.isNotEmpty) {
+          await _encolarEvidencias(idCaso, idAveria, evidencias);
+        }
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: el enrutado quedó guardado y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// Reporta una falla masiva desde el campo (RF-16).
+  ///
+  /// El contrato real (`FallaMasivaManual`) acepta `descripcion`, `id_sector`,
+  /// `id_cuadrilla` y `origen`; el tipo OLT/FAT/SECTOR viaja dentro de la
+  /// descripción porque el modelo no tiene ese campo (H-09).
+  static Future<ResultadoOperacion> reportarFallaMasiva({
+    required String tipo,
+    required String descripcion,
+    int? idSector,
+    int? idCuadrilla,
+  }) async {
+    final texto = _recortar('[$tipo] ${descripcion.trim()}', 500);
+    if (texto.trim().length < 5) {
+      return const ResultadoOperacion(
+        mensaje: 'Describa la falla con al menos 5 caracteres.',
+        enviada: true,
+      );
+    }
+    final payload = {
+      'descripcion': texto,
+      'origen': 'REPORTE_TECNICO',
+      if (idSector != null) 'id_sector': idSector,
+      if (idCuadrilla != null) 'id_cuadrilla': idCuadrilla,
+    };
+    const endpoint = '/fallas-masivas';
+
+    try {
+      await ApiClient.post(endpoint, data: payload);
+      return const ResultadoOperacion(mensaje: 'Falla masiva reportada.', enviada: true);
+    } on ApiError catch (error) {
+      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'FALLA_MASIVA',
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: la falla quedó guardada y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// Encola las evidencias de un caso para subirlas al sincronizar.
+  static Future<void> _encolarEvidencias(
+    int idCaso,
+    String idAveria,
+    List<String> seriales,
+  ) async {
+    if (seriales.isEmpty) return;
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'EVIDENCIA',
+      endpoint: '/casos/$idCaso/cierre',
+      metodo: 'POST',
+      payload: {'evidencias': seriales},
+    );
+    await _marcarEvidencias(seriales);
+  }
+
+  static Future<void> _marcarEvidencias(List<String> seriales) async {
+    if (seriales.isEmpty) return;
+    final db = await DatabaseHelper.instance.database;
+    for (final serial in seriales) {
+      await db.update(
+        'evidencia_local',
+        {'subida': 1},
+        where: 'serial_imagen = ?',
+        whereArgs: [serial],
+      );
+    }
+  }
+
+  static Future<ResultadoOperacion> _enviarEstado({
+    required int idCaso,
+    required String idAveria,
+    required Map<String, dynamic> payload,
+    required String tipo,
+    required String exito,
+  }) async {
+    final endpoint = '/casos/$idCaso/estado';
+    try {
+      final datos = await ApiClient.post(endpoint, data: payload);
+      final caso = datos is Map
+          ? Map<String, dynamic>.from(datos)
+          : await _refrescarCaso(idCaso);
+      return ResultadoOperacion(mensaje: exito, enviada: true, caso: caso);
+    } on ApiError catch (error) {
+      if (error.esConflicto) {
+        // El caso ya está en ese estado: no es un fallo para el usuario.
+        return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+      }
+      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: tipo,
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: la acción quedó guardada y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  static Future<Map<String, dynamic>?> _refrescarCaso(int idCaso) async {
+    try {
+      final datos = await ApiClient.get('/casos/$idCaso');
+      if (datos is Map) {
+        final caso = Map<String, dynamic>.from(datos);
+        await DatabaseHelper.instance.actualizarCasoLocal(caso);
+        return caso;
+      }
+    } on ApiError {
+      // Si no se puede refrescar, se devuelve `null` y la pantalla se recarga.
+    }
+    return null;
+  }
+
+  static Map<String, dynamic>? _conEstado(dynamic datos) {
+    if (datos is Map) return Map<String, dynamic>.from(datos);
+    return null;
+  }
+
+  static String _recortar(String texto, int maximo) {
+    final limpio = texto.trim();
+    return limpio.length <= maximo ? limpio : limpio.substring(0, maximo);
+  }
+
+  static String _formato(DateTime fecha) {
+    String dos(int valor) => valor.toString().padLeft(2, '0');
+    return '${dos(fecha.day)}/${dos(fecha.month)}/${fecha.year} ${dos(fecha.hour)}:${dos(fecha.minute)}';
+  }
+}

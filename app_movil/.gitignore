@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# App móvil GGTO Técnico — exclusiones de git
+# ---------------------------------------------------------------------------
+# Este archivo **no existía** (H-46/H-50 del informe de la APK), por lo que
+# `build/` (223 MB / 6 330 archivos) y las dos copias del APK quedaban a un
+# `git add .` de entrar al repositorio.
+
+# Construcción y herramientas
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Proyecto Android
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+*.jks
+*.keystore
+
+# iOS / escritorio (no se usan, pero evitan ruido)
+ios/Pods/
+ios/.symlinks/
+macos/Pods/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# APK de entrega: se publican con `scripts/publicar_apk.py`
+GGTOv2.apk
+app-release.apk
+*.apk
+*.aab
+
+# Firmas y salidas de depuración
+*.log
