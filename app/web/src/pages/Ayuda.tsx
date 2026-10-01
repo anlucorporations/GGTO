@@ -40,6 +40,26 @@ interface Tema {
 
 const TEMAS: Tema[] = [
   {
+    nombre: 'General',
+    descripcion:
+      'Aviso legal y de confidencialidad del proyecto: carácter académico, límites de uso y compromisos aceptados al ingresar.',
+    secciones: [
+      {
+        titulo: 'Aviso legal y de confidencialidad',
+        archivo: '/manual/00-General/01-aviso-legal.html',
+        pdf: '/manual/pdf/00-General/01-aviso-legal.pdf',
+        subsecciones: [
+          { num: '1', titulo: 'Naturaleza del producto', ancla: '1-naturaleza-del-producto' },
+          { num: '2', titulo: 'Prohibicion de divulgacion, publicacion y distribucion', ancla: '2-prohibicion-de-divulgacion-publicacion-y-distribucion' },
+          { num: '3', titulo: 'Ausencia de responsabilidad empresarial', ancla: '3-ausencia-de-responsabilidad-empresarial' },
+          { num: '4', titulo: 'Informacion sensible y confidencial', ancla: '4-informacion-sensible-y-confidencial' },
+          { num: '5', titulo: 'Exhortacion al uso correcto y a la evaluacion del producto', ancla: '5-exhortacion-al-uso-correcto-y-a-la-evaluacion-del-producto' },
+          { num: '6', titulo: 'Aceptacion y compromiso etico', ancla: '6-aceptacion-y-compromiso-etico' },
+        ],
+      },
+    ],
+  },
+  {
     nombre: 'Tecnología',
     descripcion: 'Visión general de la plataforma y del stack tecnológico (backend Python/FastAPI y web React).',
     secciones: [

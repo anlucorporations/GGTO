@@ -38,6 +38,7 @@ CLIENTE = "CANTV C.A. — Central Francisco Salias (Área 4)"
 VERSION_SISTEMA = "0.9.0"
 
 TEMAS = {
+    "00-General": "General",
     "01-Tecnologia": "Tecnología",
     "02-Dependencias": "Dependencias",
     "03-Implementacion": "Implementación",

@@ -2273,3 +2273,82 @@ input[type='file'] {
   width: 100%;
   min-width: 0;
 }
+
+/* ---------------- Muro del aviso legal (D-71) -------------------- */
+
+.aviso-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.aviso-legal-cabecera h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.aviso-legal-resumen {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--texto);
+}
+
+.aviso-legal-lista {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 42vh;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.aviso-legal-lista strong {
+  color: var(--azul-oscuro);
+}
+
+.aviso-legal-enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.aviso-legal-enlaces a {
+  color: var(--azul);
+  font-weight: 600;
+}
+
+.aviso-legal-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  background: var(--gris-fondo);
+  font-size: 12.5px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.aviso-legal-check input {
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+
+.aviso-legal-boton {
+  width: 100%;
+}
+
+.aviso-legal-boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.aviso-legal-ayuda {
+  text-align: center;
+}

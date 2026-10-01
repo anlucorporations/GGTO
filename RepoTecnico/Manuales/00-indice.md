@@ -16,6 +16,7 @@ Documentación completa del sistema GGTO (CANTV C.A., Central Francisco Salias).
 
 | Tema | Manual | Título |
 |---|---|---|
+| `00-General` | `01-aviso-legal.md` | Aviso legal del proyecto |
 | `01-Tecnologia` | `01-plataforma.md` | Plataforma GGTO — Visión general y arquitectura |
 | `01-Tecnologia` | `02-stack-backend.md` | Stack del backend GGTO |
 | `01-Tecnologia` | `03-stack-frontend.md` | Stack del frontend GGTO (SPA React) |
@@ -45,6 +46,7 @@ Documentación completa del sistema GGTO (CANTV C.A., Central Francisco Salias).
 
 | Tema | Manual | Título |
 |---|---|---|
+| `00-General` | `01-aviso-legal.md` | Aviso legal del proyecto |
 | `01-Tecnologia` | `01-plataforma.md` | Plataforma GGTO — Visión general y arquitectura |
 | `01-Tecnologia` | `02-stack-backend.md` | Stack del backend GGTO |
 | `01-Tecnologia` | `03-stack-frontend.md` | Stack del frontend GGTO (SPA React) |

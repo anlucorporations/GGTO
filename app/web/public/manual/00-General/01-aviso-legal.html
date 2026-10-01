@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dependencias del frontend GGTO — Manual GGTO (CANTV)</title>
+<title>Aviso legal y de confidencialidad — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Manual para todo público. Explica qué piezas de software usa la web de GGTO. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza. La web de GGTO tiene una virtud poco común: depende de ">
-<meta property="og:image" content="../../../imagenes/dependencias-frontend.png">
+<meta name="description" content="Lee esto antes de usar la aplicación. Este aviso aparece también en la pantalla de acceso: no podrás ingresar sin aceptarlo.">
+
 <style>
 /* ==================================================================
    GGTO · CANTV — Manuales literales (versión HTML y PDF)
@@ -763,16 +763,16 @@ a { color: var(--azul); }
 <body>
 <header class="doc-topbar">
   <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
-  <span class="chip">Dependencias</span>
+  <span class="chip">General</span>
   <span class="topbar-sep"></span>
-  <a class="boton" href="../../pdf/02-Dependencias/02-frontend.pdf">Descargar PDF</a>
+  <a class="boton" href="../pdf/00-General/01-aviso-legal.pdf">Descargar PDF</a>
   <a class="boton" href="../index.html">Índice general</a>
 </header>
 
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#fuentes" data-target="fuentes"><span class="tn">2</span> Fuentes</a><span class="pag"></span><ul><li class="n3"><a href="#app-web-package-json" data-target="app-web-package-json"><span class="tn">2.1</span> app/web/package.json</a><span class="pag"></span></li><li class="n3"><a href="#app-web-package-lock-json" data-target="app-web-package-lock-json"><span class="tn">2.2</span> app/web/package-lock.json</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#dependencias-de-ejecucion" data-target="dependencias-de-ejecucion"><span class="tn">3</span> Dependencias de ejecución</a><span class="pag"></span><ul><li class="n3"><a href="#react" data-target="react"><span class="tn">3.1</span> react</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta" data-target="version-declarada-y-resuelta"><span class="tn">3.1.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto" data-target="uso-en-el-proyecto"><span class="tn">3.1.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia" data-target="licencia"><span class="tn">3.1.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#react-dom" data-target="react-dom"><span class="tn">3.2</span> react-dom</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-2" data-target="version-declarada-y-resuelta-2"><span class="tn">3.2.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-2" data-target="uso-en-el-proyecto-2"><span class="tn">3.2.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-2" data-target="licencia-2"><span class="tn">3.2.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#react-router-dom" data-target="react-router-dom"><span class="tn">3.3</span> react-router-dom</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-3" data-target="version-declarada-y-resuelta-3"><span class="tn">3.3.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-3" data-target="uso-en-el-proyecto-3"><span class="tn">3.3.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-3" data-target="licencia-3"><span class="tn">3.3.3</span> Licencia</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#dependencias-de-desarrollo" data-target="dependencias-de-desarrollo"><span class="tn">4</span> Dependencias de desarrollo</a><span class="pag"></span><ul><li class="n3"><a href="#typescript" data-target="typescript"><span class="tn">4.1</span> typescript</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-4" data-target="version-declarada-y-resuelta-4"><span class="tn">4.1.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-4" data-target="uso-en-el-proyecto-4"><span class="tn">4.1.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-4" data-target="licencia-4"><span class="tn">4.1.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#vite" data-target="vite"><span class="tn">4.2</span> vite</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-5" data-target="version-declarada-y-resuelta-5"><span class="tn">4.2.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-5" data-target="uso-en-el-proyecto-5"><span class="tn">4.2.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-5" data-target="licencia-5"><span class="tn">4.2.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#vitejs-plugin-react" data-target="vitejs-plugin-react"><span class="tn">4.3</span> @vitejs/plugin-react</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-6" data-target="version-declarada-y-resuelta-6"><span class="tn">4.3.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-6" data-target="uso-en-el-proyecto-6"><span class="tn">4.3.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-6" data-target="licencia-6"><span class="tn">4.3.3</span> Licencia</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#types-react-y-types-react-dom" data-target="types-react-y-types-react-dom"><span class="tn">4.4</span> @types/react y @types/react-dom</a><span class="pag"></span><ul><li class="n4"><a href="#version-declarada-y-resuelta-7" data-target="version-declarada-y-resuelta-7"><span class="tn">4.4.1</span> Versión declarada y resuelta</a><span class="pag"></span></li><li class="n4"><a href="#uso-en-el-proyecto-7" data-target="uso-en-el-proyecto-7"><span class="tn">4.4.2</span> Uso en el proyecto</a><span class="pag"></span></li><li class="n4"><a href="#licencia-7" data-target="licencia-7"><span class="tn">4.4.3</span> Licencia</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#scripts-npm-y-su-efecto" data-target="scripts-npm-y-su-efecto"><span class="tn">5</span> Scripts npm y su efecto</a><span class="pag"></span><ul><li class="n3"><a href="#detalle-de-cada-script" data-target="detalle-de-cada-script"><span class="tn">5.1</span> Detalle de cada script</a><span class="pag"></span><ul><li class="n4"><a href="#dev" data-target="dev"><span class="tn">5.1.1</span> dev</a><span class="pag"></span></li><li class="n4"><a href="#build" data-target="build"><span class="tn">5.1.2</span> build</a><span class="pag"></span></li><li class="n4"><a href="#preview" data-target="preview"><span class="tn">5.1.3</span> preview</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#configuracion-de-typescript-y-vite" data-target="configuracion-de-typescript-y-vite"><span class="tn">6</span> Configuración de TypeScript y Vite</a><span class="pag"></span><ul><li class="n3"><a href="#tsconfig-json" data-target="tsconfig-json"><span class="tn">6.1</span> tsconfig.json</a><span class="pag"></span><ul><li class="n4"><a href="#modo-estricto" data-target="modo-estricto"><span class="tn">6.1.1</span> Modo estricto</a><span class="pag"></span></li><li class="n4"><a href="#tsconfig-node-json" data-target="tsconfig-node-json"><span class="tn">6.1.2</span> tsconfig.node.json</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#vite-config-ts" data-target="vite-config-ts"><span class="tn">6.2</span> vite.config.ts</a><span class="pag"></span><ul><li class="n4"><a href="#paridad-de-versiones-de-node" data-target="paridad-de-versiones-de-node"><span class="tn">6.2.1</span> Paridad de versiones de Node</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#ausencia-de-libreria-de-graficos-externa" data-target="ausencia-de-libreria-de-graficos-externa"><span class="tn">7</span> Ausencia de librería de gráficos externa</a><span class="pag"></span><ul><li class="n3"><a href="#graficos-svg-propios" data-target="graficos-svg-propios"><span class="tn">7.1</span> Gráficos SVG propios</a><span class="pag"></span><ul><li class="n4"><a href="#componentes-exportados" data-target="componentes-exportados"><span class="tn">7.1.1</span> Componentes exportados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#contraste-con-la-prevision-documental" data-target="contraste-con-la-prevision-documental"><span class="tn">7.2</span> Contraste con la previsión documental</a><span class="pag"></span></li><li class="n3"><a href="#otras-ausencias-verificadas" data-target="otras-ausencias-verificadas"><span class="tn">7.3</span> Otras ausencias verificadas</a><span class="pag"></span></li><li class="n3"><a href="#implicacion-para-la-cadena-de-suministro" data-target="implicacion-para-la-cadena-de-suministro"><span class="tn">7.4</span> Implicación para la cadena de suministro</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#1-naturaleza-del-producto" data-target="1-naturaleza-del-producto"><span class="tn">1</span> 1. Naturaleza del producto</a><span class="pag"></span></li><li class="n2"><a href="#2-prohibicion-de-divulgacion-publicacion-y-distribucion" data-target="2-prohibicion-de-divulgacion-publicacion-y-distribucion"><span class="tn">2</span> 2. Prohibición de divulgación, publicación y distribución</a><span class="pag"></span></li><li class="n2"><a href="#3-ausencia-de-responsabilidad-empresarial" data-target="3-ausencia-de-responsabilidad-empresarial"><span class="tn">3</span> 3. Ausencia de responsabilidad empresarial</a><span class="pag"></span></li><li class="n2"><a href="#4-informacion-sensible-y-confidencial" data-target="4-informacion-sensible-y-confidencial"><span class="tn">4</span> 4. Información sensible y confidencial</a><span class="pag"></span></li><li class="n2"><a href="#5-exhortacion-al-uso-correcto-y-a-la-evaluacion-del-producto" data-target="5-exhortacion-al-uso-correcto-y-a-la-evaluacion-del-producto"><span class="tn">5</span> 5. Exhortación al uso correcto y a la evaluación del producto</a><span class="pag"></span></li><li class="n2"><a href="#6-aceptacion-y-compromiso-etico" data-target="6-aceptacion-y-compromiso-etico"><span class="tn">6</span> 6. Aceptación y compromiso ético</a><span class="pag"></span></li><li class="n2"><a href="#como-se-acepta" data-target="como-se-acepta"><span class="tn">7</span> ¿Cómo se acepta?</a><span class="pag"></span></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -781,16 +781,16 @@ a { color: var(--azul); }
         <div class="portada-cuerpo">
           <div class="portada-marca">GGTO <span>· CANTV</span></div>
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
-          <span class="portada-etiqueta">Manual literal · Dependencias</span>
-          <h1 class="portada-titulo">Dependencias del frontend GGTO</h1>
-          <p class="portada-resumen">Manual para todo público. Explica qué piezas de software usa la web de GGTO. Una &quot;dependencia&quot; es un programa ya hecho que el sistema reutiliza. La web de GGTO tiene una virtud poco común: depende de muy pocas cosas, y eso la hace más segura y más fácil de mantener.</p>
+          <span class="portada-etiqueta">Manual literal · General</span>
+          <h1 class="portada-titulo">Aviso legal y de confidencialidad</h1>
+          <p class="portada-resumen">Lee esto antes de usar la aplicación. Este aviso aparece también en la pantalla de acceso: no podrás ingresar sin aceptarlo.</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
-            <div><dt>Colección</dt><dd>Manuales literales · Dependencias</dd></div>
-            <div><dt>Documento</dt><dd>docs/Manuales/02-Dependencias/02-frontend.md</dd></div>
+            <div><dt>Colección</dt><dd>Manuales literales · General</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/00-General/01-aviso-legal.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>28/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>01/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
@@ -799,430 +799,171 @@ a { color: var(--azul); }
         </div>
       </section>
 <blockquote>
-<p>Manual para todo público. Explica <strong>qué piezas de software usa la web de GGTO</strong>. Una &quot;dependencia&quot;
-es un programa ya hecho que el sistema reutiliza. La web de GGTO tiene una virtud poco común:
-depende de muy pocas cosas, y eso la hace más segura y más fácil de mantener.</p>
+<p><strong>Lee esto antes de usar la aplicación.</strong> Este aviso aparece también en la pantalla de acceso:
+no podrás ingresar sin aceptarlo.</p>
 </blockquote>
-<h2 id="empezar-en-5-minutos"><span class="sec-num">1</span>Empezar en 5 minutos</h2>
+<p><strong>Proyecto experimental · Uso académico · Distribución prohibida</strong></p>
+<hr />
+<h2 id="1-naturaleza-del-producto"><span class="sec-num">1</span>1. Naturaleza del producto</h2>
+<p>Esta aplicación (<strong>GGTO — Gestión de Tráfico y Operación</strong>, versión <code>0.9.0</code>), tanto en su interfaz
+web como en cualquier paquete instalable (<code>.apk</code>) derivado, es un <strong>proyecto de experimento</strong>
+desarrollado por el <strong>Ing. Angel H. Lucci</strong> como parte de una <strong>actividad académica</strong>.</p>
+<p>El producto se entrega <strong>&quot;tal cual&quot;</strong>, con fines de demostración, evaluación y aprendizaje. <strong>No
+constituye un sistema en producción</strong>, no ha sido sometido a los controles de certificación,
+endurecimiento ni garantía de servicio exigibles para una operación comercial real, y puede contener
+defectos, datos de prueba o comportamientos no definidos.</p>
+<h2 id="2-prohibicion-de-divulgacion-publicacion-y-distribucion"><span class="sec-num">2</span>2. Prohibición de divulgación, publicación y distribución</h2>
+<p>La persona que accede al sistema, al código fuente, a sus pantallas, a su documentación o a
+cualesquiera de sus artefactos <strong>se compromete a</strong>:</p>
+<ul>
+<li><strong>No divulgar</strong> la existencia, el contenido ni el funcionamiento de la aplicación fuera del ámbito
+académico y del equipo autorizado del proyecto.</li>
+<li><strong>No publicar</strong> el proyecto ni partes de él en sitios web, repositorios públicos, redes sociales,
+foros, tiendas de aplicaciones ni cualquier medio de difusión abierto o cerrado.</li>
+<li><strong>No distribuir</strong> el binario, el <code>.apk</code>, el código fuente, capturas, informes, exportaciones ni
+respaldos de la base de datos a terceros, bajo ninguna modalidad (gratuita u onerosa).</li>
+<li><strong>No reproducir, modificar, descompilar ni crear obras derivadas</strong> con propósito distinto de la
+evaluación autorizada.</li>
+</ul>
+<h2 id="3-ausencia-de-responsabilidad-empresarial"><span class="sec-num">3</span>3. Ausencia de responsabilidad empresarial</h2>
+<p>El uso de esta aplicación <strong>no debe acarrear responsabilidades a CANTV C.A.</strong> (en adelante, «la
+Empresa»), ni a sus unidades comerciales, técnicas o administrativas. En consecuencia:</p>
+<ul>
+<li>Los resultados, cálculos, despachos, estados de casos, reportes y cualquier información exhibida
+tienen <strong>carácter ilustrativo</strong> y <strong>carecen de validez operativa, contractual, técnica o legal</strong>.</li>
+<li><strong>No deben emplearse</strong> como sustento de decisiones reales de negocio, de campo, comerciales,
+regulatorias ni de atención al abonado.</li>
+<li>Ninguna acción ejecutada dentro de la aplicación genera derechos, obligaciones, órdenes de trabajo
+ni compromisos frente a terceros ni frente a la Empresa.</li>
+<li>El titular del proyecto y la institución académica correspondiente <strong>no otorgan garantías</strong> de
+disponibilidad, exactitud, integridad ni idoneidad para un fin particular, y no responden por
+daños directos o indirectos derivados de su uso o mal uso.</li>
+</ul>
+<h2 id="4-informacion-sensible-y-confidencial"><span class="sec-num">4</span>4. Información sensible y confidencial</h2>
+<p>El sistema manipula <strong>información confidencial</strong> de dos tipos, cuya protección es obligatoria:</p>
 <ol>
-<li><strong>La web usa solo tres programas para funcionar:</strong> React, React DOM y React Router. Nada más.</li>
-<li><strong>Sí tiene un archivo de versiones exactas</strong> (<code>package-lock.json</code>). Eso significa que la web se
-construye siempre igual, en cualquier computadora. Es una ventaja frente al motor, que todavía no
-lo tiene.</li>
-<li><strong>Los gráficos de MONITOREO no usan ninguna librería externa.</strong> Se dibujan a mano. Por eso no
-verás Recharts ni Chart.js en la lista, aunque documentos antiguos los mencionaran.</li>
-<li><strong>Los tres comandos que existen son <code>dev</code>, <code>build</code> y <code>preview</code>.</strong> El más importante es <code>build</code>:
-primero revisa errores y, solo si todo está bien, arma la versión final.</li>
-<li><strong>Todas las licencias se pueden verificar.</strong> React, React DOM, React Router y Vite son MIT;
-TypeScript es Apache-2.0. No hay licencias desconocidas en la web.</li>
+<li><strong>Datos personales de usuarios y abonados</strong>: nombres, apellidos, cédulas, teléfonos, direcciones,
+correos electrónicos, contactos y datos de facturación o servicio.</li>
+<li><strong>Información del sistema y de la operación</strong>: credenciales, hashes y palabras de seguridad,
+roles y permisos, estructura de la base de datos, central(es), sectores, cuadrillas, técnicos,
+parámetros de configuración, claves de acceso (<code>P00</code>), rutas internas y secretos de infraestructura.</li>
 </ol>
-<figure id="fig-0"><img src="../../../imagenes/dependencias-frontend.png" alt="dependencias frontend"><figcaption>Figura 1 · dependencias-frontend.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
-    subgraph Ejecucion[&quot;Tres programas para que la web funcione&quot;]
-        R[&quot;react&lt;br/&gt;construye las pantallas&quot;]
-        RD[&quot;react-dom&lt;br/&gt;las muestra en el navegador&quot;]
-        RR[&quot;react-router-dom&lt;br/&gt;cambia de pantalla&quot;]
-    end
-    subgraph Desarrollo[&quot;Cinco programas del equipo técnico&quot;]
-        TS[&quot;typescript&lt;br/&gt;revisa los tipos&quot;]
-        V[&quot;vite&lt;br/&gt;arma y compila&quot;]
-        PR[&quot;@vitejs/plugin-react&lt;br/&gt;entiende el formato React&quot;]
-        T1[&quot;@types/react&quot;]
-        T2[&quot;@types/react-dom&quot;]
-    end
-    subgraph Sin[&quot;Lo que NO se usa&quot;]
-        N1[&quot;Recharts / Chart.js&lt;br/&gt;(gráficos: se dibujan a mano)&quot;]
-        N2[&quot;axios&lt;br/&gt;(se usa fetch nativo)&quot;]
-        N3[&quot;Redux / Zustand&lt;br/&gt;(se usa contexto propio)&quot;]
-        N4[&quot;Librería de componentes&quot;]
-    end</code></pre></details></figure>
-<h2 id="fuentes"><span class="sec-num">2</span>Fuentes</h2>
-<p>La web declara sus dependencias en <strong>dos archivos que se complementan</strong>:</p>
-<ol>
-<li><code>app/web/package.json</code> → la lista con rangos de versión.</li>
-<li><code>app/web/package-lock.json</code> → las versiones exactas que se instalaron.</li>
-</ol>
-<p>A diferencia del motor, <strong>sí existe el archivo de versiones exactas</strong> y está guardado en el
-repositorio. Eso permite saber con precisión qué se instaló.</p>
-<h3 id="app-web-package-json"><span class="sec-num">2.1</span>app/web/package.json</h3>
-<p>Este archivo describe el paquete de la web:</p>
+<p>Queda <strong>expresamente prohibido</strong> compartir, exponer, exportar, fotografiar, capturar, transmitir o
+entregar total o parcialmente esta información a <strong>terceros no autorizados</strong>, así como utilizarla con
+fines ajenos a la evaluación del producto. Esto incluye, entre otros, volcados de base de datos,
+listados, archivos CSV/JSON, respaldos, registros de bitácora y capturas de pantalla donde sean
+visibles datos reales.</p>
+<p>Cualquier dato personal que aparezca en el sistema debe tratarse conforme a la normativa vigente de
+<strong>protección de datos personales</strong>: recolección mínima, acceso restringido, conservación limitada y
+eliminación cuando deje de ser necesario.</p>
+<h2 id="5-exhortacion-al-uso-correcto-y-a-la-evaluacion-del-producto"><span class="sec-num">5</span>5. Exhortación al uso correcto y a la evaluación del producto</h2>
+<p>Se exhorta a quien utilice esta aplicación a:</p>
+<ul>
+<li>Emplearla <strong>únicamente</strong> con fines de estudio, demostración y evaluación del producto.</li>
+<li>Respetar los niveles de acceso asignados: no intentar elevar privilegios, acceder a secciones de
+otros roles (en particular <strong>SISTEMAS</strong>, reservada al Super Usuario) ni evadir los controles de
+autenticación, bloqueo o auditoría.</li>
+<li>No ingresar datos reales de abonados ni información confidencial de operaciones vigentes; usar
+datos ficticios o de prueba claramente identificados.</li>
+<li><strong>Evaluar el producto y reportar sus hallazgos</strong>: fallos, errores de cálculo, textos confusivos,
+comportamientos inesperados, problemas de usabilidad y oportunidades de mejora. La retroalimentación
+es el propósito central de este ejercicio y alimenta el ciclo de mejora del desarrollo.</li>
+<li>Reportar de forma responsable cualquier vulnerabilidad o debilidad de seguridad que se detecte,
+directamente al titular del proyecto y <strong>sin divulgarla públicamente</strong>.</li>
+</ul>
+<h2 id="6-aceptacion-y-compromiso-etico"><span class="sec-num">6</span>6. Aceptación y compromiso ético</h2>
+<p>Al ingresar, navegar o utilizar esta aplicación (o al instalar su <code>.apk</code>), la persona declara haber
+leído y <strong>aceptado íntegramente</strong> este aviso, y asume el compromiso de cumplir los siguientes
+supuestos de comportamiento conforme a la <strong>ética profesional</strong>:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Supuesto de comportamiento aceptado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Reconozco que se trata de un <strong>proyecto experimental de carácter académico</strong> y no de un sistema productivo.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>No divulgaré</strong> ni haré accesible a terceros el producto, su documentación o su código.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>No publicaré ni distribuiré</strong> la aplicación, sus paquetes ni sus artefactos por ningún medio.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>No atribuiré responsabilidad a CANTV C.A.</strong> por el uso, los resultados o eventuales perjuicios derivados de esta aplicación.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>No compartiré información sensible ni confidencial</strong> de usuarios, abonados o del sistema.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Haré un <strong>uso correcto, lícito y limitado a la evaluación</strong>, sin evadir controles ni suplantar identidades.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Colaboraré con la mejora del producto</strong>, reportando hallazgos, defectos y sugerencias de forma veraz y oportuna.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Actuaré con <strong>honestidad, buena fe y confidencialidad</strong>, conforme a la ética profesional y a la normativa aplicable de protección de datos.</td>
+</tr>
+</tbody>
+</table></div>
+<p>El incumplimiento de estos compromisos faculta al titular del proyecto a <strong>retirar el acceso</strong> y a
+dejar constancia de la falta, sin perjuicio de las responsabilidades a que hubiere lugar.</p>
+<hr />
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
 <th>Dato</th>
-<th>Valor</th>
-<th>Para qué sirve</th>
+<th>Detalle</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Nombre</td>
-<td><code>ggto-web</code></td>
-<td>Nombre del paquete</td>
+<td><strong>Titular del proyecto</strong></td>
+<td>Ing. Angel H. Lucci</td>
 </tr>
 <tr>
-<td>Privado</td>
-<td>Sí</td>
-<td>Evita que se publique por accidente</td>
+<td><strong>Producto</strong></td>
+<td>GGTO — Gestión de Tráfico y Operación · v0.9.0 (web y <code>.apk</code>)</td>
 </tr>
 <tr>
-<td>Versión</td>
-<td><code>0.1.0</code></td>
-<td>Versión de la web, independiente del motor</td>
+<td><strong>Contexto de referencia</strong></td>
+<td>CANTV C.A. — Central Francisco Salias, Área 4</td>
 </tr>
 <tr>
-<td>Tipo de módulo</td>
-<td>ES</td>
-<td>Forma moderna de organizar el código</td>
+<td><strong>Carácter</strong></td>
+<td>Experimento académico: uso restringido, confidencial y no distribuible</td>
+</tr>
+<tr>
+<td><strong>Fecha del aviso</strong></td>
+<td>2026-09-30</td>
 </tr>
 </tbody>
 </table></div>
-<p>Las versiones se declaran con el signo <code>^</code>, que significa &quot;acepta mejoras dentro de la misma versión
-mayor&quot;. Por ejemplo, <code>^18.3.1</code> acepta <code>18.4.x</code>, pero no <code>19.x</code>.</p>
-<h3 id="app-web-package-lock-json"><span class="sec-num">2.2</span>app/web/package-lock.json</h3>
-<p>Este archivo es el que <strong>fija las versiones exactas</strong>. Es un documento grande: contiene <strong>119
-entradas de paquete</strong>. Su valor práctico es doble:</p>
-<ol>
-<li><strong>Fija la resolución exacta.</strong> Las versiones de este manual salen de aquí, no del rango de
-<code>package.json</code>.</li>
-<li><strong>Permite el comando <code>npm ci</code></strong>, que exige que ambos archivos estén sincronizados. Si alguien
-cambia uno y olvida el otro, la construcción falla. Esa es la garantía de que la web se arma
-siempre igual.</li>
-</ol>
-<p>La carpeta de paquetes instalados y la de resultados están excluidas del repositorio, pero el
-archivo de bloqueo <strong>sí</strong> se guarda. Esa es la práctica correcta.</p>
-<h2 id="dependencias-de-ejecucion"><span class="sec-num">3</span>Dependencias de ejecución</h2>
-<p>La web declara <strong>solo tres</strong> dependencias de ejecución. No usa librería de estado global, ni cliente
-HTTP, ni librería de componentes, ni librería de gráficos.</p>
-<h3 id="react"><span class="sec-num">3.1</span>react</h3>
-<h4 id="version-declarada-y-resuelta"><span class="sec-num">3.1.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^18.3.1</code>.</li>
-<li><strong>Instalada realmente: 18.3.1.</strong></li>
-</ul>
-<h4 id="uso-en-el-proyecto"><span class="sec-num">3.1.2</span>Uso en el proyecto</h4>
-<p>React es el <strong>núcleo de la interfaz</strong>. Con él se construyen las pantallas y se maneja su estado
-interno (por ejemplo, si un dato está cargando o si hay un error). También aporta el modo estricto
-de desarrollo, que ayuda a detectar problemas a tiempo.</p>
-<h4 id="licencia"><span class="sec-num">3.1.3</span>Licencia</h4>
-<p><strong>MIT.</strong> La licencia está escrita en el propio archivo de bloqueo, así que se puede verificar.</p>
-<h3 id="react-dom"><span class="sec-num">3.2</span>react-dom</h3>
-<h4 id="version-declarada-y-resuelta-2"><span class="sec-num">3.2.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^18.3.1</code>.</li>
-<li><strong>Instalada realmente: 18.3.1.</strong></li>
-</ul>
-<h4 id="uso-en-el-proyecto-2"><span class="sec-num">3.2.2</span>Uso en el proyecto</h4>
-<p>Es la pieza que <strong>muestra React en el navegador</strong>. Se usa una sola vez, al arrancar la web: conecta
-la aplicación con el contenedor <code>#root</code> de la página HTML.</p>
-<h4 id="licencia-2"><span class="sec-num">3.2.3</span>Licencia</h4>
-<p><strong>MIT</strong>, verificable en el archivo de bloqueo.</p>
-<h3 id="react-router-dom"><span class="sec-num">3.3</span>react-router-dom</h3>
-<h4 id="version-declarada-y-resuelta-3"><span class="sec-num">3.3.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^6.26.2</code>.</li>
-<li><strong>Instalada realmente: 6.30.6.</strong></li>
-</ul>
-<p>El salto de 6.26.2 a 6.30.6 es normal: el signo <code>^</code> permite mejoras dentro de la misma versión
-mayor. La versión que manda es la del archivo de bloqueo.</p>
-<h4 id="uso-en-el-proyecto-3"><span class="sec-num">3.3.2</span>Uso en el proyecto</h4>
-<p>Es el <strong>enrutador</strong>: decide qué pantalla mostrar según la dirección. Sus usos principales son:</p>
-<div class="tabla-scroll"><table>
-<thead>
-<tr>
-<th>Para qué</th>
-<th>Dónde se usa</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Tabla de rutas y redirección de direcciones desconocidas</td>
-<td>Mapa de la aplicación</td>
-</tr>
-<tr>
-<td>Guardián de sesión y anidamiento</td>
-<td>Guardián de ruta</td>
-</tr>
-<tr>
-<td>Barra superior y contenido interno</td>
-<td>Armazón</td>
-</tr>
-<tr>
-<td>Navegación desde el código</td>
-<td>Acceso, PANEL, ESPECIALES y buscador</td>
-</tr>
-<tr>
-<td>Lectura de la dirección y sus parámetros</td>
-<td>CASOS</td>
-</tr>
-</tbody>
-</table></div>
-<p>El árbol de rutas tiene <strong>una ruta pública</strong> (<code>/login</code>) y <strong>quince rutas protegidas</strong> dentro del
-guardián y del armazón: PANEL, INGESTA, CASOS, DESPACHO, ESPECIALES, AGENDA, MONITOREO, ALERTAS y las
-siete pantallas de CONFIGURACIÓN. Cualquier dirección desconocida vuelve al PANEL.</p>
-<h4 id="licencia-3"><span class="sec-num">3.3.3</span>Licencia</h4>
-<p><strong>MIT</strong>, verificable en el archivo de bloqueo.</p>
-<h2 id="dependencias-de-desarrollo"><span class="sec-num">4</span>Dependencias de desarrollo</h2>
-<p>Las dependencias de desarrollo son <strong>cinco</strong>: el compilador de TypeScript, la herramienta de
-construcción, su complemento para React y los dos paquetes de tipos.</p>
-<h3 id="typescript"><span class="sec-num">4.1</span>typescript</h3>
-<h4 id="version-declarada-y-resuelta-4"><span class="sec-num">4.1.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^5.6.3</code>.</li>
-<li><strong>Instalada realmente: 5.9.3.</strong></li>
-</ul>
-<h4 id="uso-en-el-proyecto-4"><span class="sec-num">4.1.2</span>Uso en el proyecto</h4>
-<p>Es el <strong>revisor de tipos</strong>. Se ejecuta como primer paso de la construcción. Si encuentra un error,
-la construcción se detiene. El informe de la Fase 4 lo registra <strong>sin hallazgos</strong>.</p>
-<h4 id="licencia-4"><span class="sec-num">4.1.3</span>Licencia</h4>
-<p><strong>Apache-2.0.</strong> Es la única dependencia directa del proyecto que no usa licencia MIT.</p>
-<h3 id="vite"><span class="sec-num">4.2</span>vite</h3>
-<h4 id="version-declarada-y-resuelta-5"><span class="sec-num">4.2.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^5.4.9</code>.</li>
-<li><strong>Instalada realmente: 5.4.21.</strong></li>
-</ul>
-<h4 id="uso-en-el-proyecto-5"><span class="sec-num">4.2.2</span>Uso en el proyecto</h4>
-<p>Es el <strong>servidor de desarrollo y el empaquetador</strong>. En desarrollo enciende la web y reenvía las
-llamadas al motor. Al construir, produce la carpeta que después se copia al contenedor de
-producción.</p>
-<h4 id="licencia-5"><span class="sec-num">4.2.3</span>Licencia</h4>
-<p><strong>MIT</strong>, verificable en el archivo de bloqueo.</p>
-<h3 id="vitejs-plugin-react"><span class="sec-num">4.3</span>@vitejs/plugin-react</h3>
-<h4 id="version-declarada-y-resuelta-6"><span class="sec-num">4.3.1</span>Versión declarada y resuelta</h4>
-<ul>
-<li>Declarada: <code>^4.3.2</code>.</li>
-<li><strong>Instalada realmente: 4.7.0.</strong></li>
-</ul>
-<h4 id="uso-en-el-proyecto-6"><span class="sec-num">4.3.2</span>Uso en el proyecto</h4>
-<p>Es el complemento que permite a Vite <strong>entender el formato de React</strong> (los archivos con extensión
-<code>.tsx</code>) y recargar la pantalla al instante mientras se programa. Sin él, Vite no compilaría la
-aplicación.</p>
-<h4 id="licencia-6"><span class="sec-num">4.3.3</span>Licencia</h4>
-<p><strong>MIT</strong>, verificable en el archivo de bloqueo.</p>
-<h3 id="types-react-y-types-react-dom"><span class="sec-num">4.4</span>@types/react y @types/react-dom</h3>
-<h4 id="version-declarada-y-resuelta-7"><span class="sec-num">4.4.1</span>Versión declarada y resuelta</h4>
-<div class="tabla-scroll"><table>
-<thead>
-<tr>
-<th>Paquete</th>
-<th>Declarada</th>
-<th>Instalada realmente</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>@types/react</code></td>
-<td><code>^18.3.11</code></td>
-<td><strong>18.3.31</strong></td>
-</tr>
-<tr>
-<td><code>@types/react-dom</code></td>
-<td><code>^18.3.1</code></td>
-<td><strong>18.3.7</strong></td>
-</tr>
-</tbody>
-</table></div>
-<h4 id="uso-en-el-proyecto-7"><span class="sec-num">4.4.2</span>Uso en el proyecto</h4>
-<p>Son los <strong>diccionarios de tipos</strong> de React. No se usan en el código: sirven para que el revisor de
-tipos entienda los componentes de React. Su versión mayor debe acompañar a la de React; ambas
-familias están en 18.</p>
-<h4 id="licencia-7"><span class="sec-num">4.4.3</span>Licencia</h4>
-<p><strong>MIT</strong>, verificable en el archivo de bloqueo.</p>
-<h2 id="scripts-npm-y-su-efecto"><span class="sec-num">5</span>Scripts npm y su efecto</h2>
-<p>Existen exactamente <strong>tres comandos</strong>:</p>
-<div class="tabla-scroll"><table>
-<thead>
-<tr>
-<th>Comando</th>
-<th>Qué hace</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>dev</code></td>
-<td>Enciende la web de desarrollo con recarga automática y reenvío a la API</td>
-</tr>
-<tr>
-<td><code>build</code></td>
-<td>Primero revisa tipos y, si todo está bien, arma la versión final en <code>dist/</code></td>
-</tr>
-<tr>
-<td><code>preview</code></td>
-<td>Muestra localmente la versión ya construida</td>
-</tr>
-</tbody>
-</table></div>
-<h3 id="detalle-de-cada-script"><span class="sec-num">5.1</span>Detalle de cada script</h3>
-<h4 id="dev"><span class="sec-num">5.1.1</span>dev</h4>
-<p>Enciende la web en el puerto <strong>5173</strong> y reenvía todo lo que empieza por <code>/api</code> al puerto <strong>8000</strong>,
-donde está el motor. Es el modo de trabajo normal del equipo técnico: permite programar y ver los
-cambios al instante.</p>
-<h4 id="build"><span class="sec-num">5.1.2</span>build</h4>
-<p>El comando usa el operador &quot;y luego&quot; (<code>&amp;&amp;</code>): si la revisión de tipos falla, <strong>no se llega a
-construir</strong>. La revisión de tipos no genera archivos; solo comprueba. El empaquetado real lo hace
-Vite, que escribe el resultado en <code>dist/</code>. Este es el comando que ejecuta la primera etapa del
-contenedor.</p>
-<h4 id="preview"><span class="sec-num">5.1.3</span>preview</h4>
-<p>Sirve localmente la carpeta <code>dist/</code>. Requiere que antes se haya construido. <strong>No</strong> reenvía las
-llamadas a la API ni reemplaza al motor. Su uso en producción está <strong>pendiente de confirmar</strong>; el
-despliegue real usa el motor sirviendo la carpeta tal como está.</p>
-<h2 id="configuracion-de-typescript-y-vite"><span class="sec-num">6</span>Configuración de TypeScript y Vite</h2>
-<h3 id="tsconfig-json"><span class="sec-num">6.1</span>tsconfig.json</h3>
-<p>Este archivo define cómo se revisan los tipos. Los ajustes relevantes:</p>
-<div class="tabla-scroll"><table>
-<thead>
-<tr>
-<th>Ajuste</th>
-<th>Valor</th>
-<th>Efecto</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>target</code></td>
-<td><code>ES2020</code></td>
-<td>Nivel de lenguaje JavaScript</td>
-</tr>
-<tr>
-<td><code>lib</code></td>
-<td>ES2020, DOM, DOM.Iterable</td>
-<td>Tipos del navegador disponibles</td>
-</tr>
-<tr>
-<td><code>module</code></td>
-<td><code>ESNext</code></td>
-<td>Módulos modernos</td>
-</tr>
-<tr>
-<td><code>skipLibCheck</code></td>
-<td>Sí</td>
-<td>No revisa los archivos de tipos de terceros</td>
-</tr>
-<tr>
-<td><code>moduleResolution</code></td>
-<td><code>bundler</code></td>
-<td>Resolución al estilo empaquetador</td>
-</tr>
-<tr>
-<td><code>allowImportingTsExtensions</code></td>
-<td>Sí</td>
-<td>Permite importar con extensión</td>
-</tr>
-<tr>
-<td><code>resolveJsonModule</code></td>
-<td>Sí</td>
-<td>Permite importar archivos JSON</td>
-</tr>
-<tr>
-<td><code>isolatedModules</code></td>
-<td>Sí</td>
-<td>Exige módulos compilables por separado</td>
-</tr>
-<tr>
-<td><code>noEmit</code></td>
-<td>Sí</td>
-<td>No genera archivos: solo valida</td>
-</tr>
-<tr>
-<td><code>jsx</code></td>
-<td><code>react-jsx</code></td>
-<td>Transformación automática del formato React</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Sí</td>
-<td>Activa todas las comprobaciones estrictas</td>
-</tr>
-<tr>
-<td><code>noFallthroughCasesInSwitch</code></td>
-<td>Sí</td>
-<td>Prohíbe casos sin cierre en las decisiones múltiples</td>
-</tr>
-</tbody>
-</table></div>
-<p>El análisis cubre solo la carpeta del código fuente y usa un archivo aparte para la configuración de
-Node.</p>
-<h4 id="modo-estricto"><span class="sec-num">6.1.1</span>Modo estricto</h4>
-<p>El modo estricto activa la familia completa de comprobaciones: obliga a declarar tipos, evita
-errores con valores vacíos y valida las funciones. Se refuerza con la regla de no dejar casos
-abiertos en las decisiones múltiples. El resultado verificado fue <strong>sin hallazgos</strong> en la Fase 4.</p>
-<h4 id="tsconfig-node-json"><span class="sec-num">6.1.2</span>tsconfig.node.json</h4>
-<p>Configura por separado el archivo de Vite, que se ejecuta en Node (no en el navegador). Sus ajustes
-son equivalentes y también en modo estricto.</p>
-<h3 id="vite-config-ts"><span class="sec-num">6.2</span>vite.config.ts</h3>
-<p>Este archivo tiene 20 líneas y tres bloques:</p>
-<ol>
-<li><strong>Importaciones</strong> de Vite y del complemento de React.</li>
-<li><strong>Servidor de desarrollo:</strong> puerto <strong>5173</strong> y reenvío de <code>/api</code> a <code>http://localhost:8000</code>.</li>
-<li><strong>Construcción:</strong> la salida queda en <code>dist</code>.</li>
-</ol>
-<p>El puerto 8000 es una convención de desarrollo. En producción el puerto real es <strong>8080</strong>.</p>
-<h4 id="paridad-de-versiones-de-node"><span class="sec-num">6.2.1</span>Paridad de versiones de Node</h4>
-<p>El contenedor compila con <strong>Node 20</strong>, mientras que la estación de verificación tiene <strong>Node 22</strong>.
-El archivo de bloqueo garantiza los mismos paquetes en ambos entornos, pero <strong>no la misma versión de
-Node</strong>. Esto es relevante para el requisito RNF-25 (paridad de entornos) y queda <strong>pendiente de
-confirmar</strong> si el proyecto exige igualar las versiones mayores de Node.</p>
-<h2 id="ausencia-de-libreria-de-graficos-externa"><span class="sec-num">7</span>Ausencia de librería de gráficos externa</h2>
-<h3 id="graficos-svg-propios"><span class="sec-num">7.1</span>Gráficos SVG propios</h3>
-<p>El proyecto <strong>no usa Recharts ni ninguna otra librería de gráficos</strong>. Los gráficos de MONITOREO se
-dibujan a mano con SVG, dentro de un solo componente propio. Cuatro tipos:</p>
-<div class="tabla-scroll"><table>
-<thead>
-<tr>
-<th>Gráfico</th>
-<th>Qué muestra</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Barras</td>
-<td>Comparar valores entre categorías</td>
-</tr>
-<tr>
-<td>Barras agrupadas</td>
-<td>Comparar varias series por categoría</td>
-</tr>
-<tr>
-<td>Líneas (curva)</td>
-<td>Ver la evolución en el tiempo</td>
-</tr>
-<tr>
-<td>Torta</td>
-<td>Ver proporciones de un total</td>
-</tr>
-</tbody>
-</table></div>
-<p>El módulo define su propia paleta de seis colores y fija un ancho de dibujo de 640 unidades que se
-estira al ancho disponible de la pantalla.</p>
-<h4 id="componentes-exportados"><span class="sec-num">7.1.1</span>Componentes exportados</h4>
-<p>Los cuatro componentes de gráfico son barras simples, barras agrupadas, curva de líneas y torta.
-Todos reciben <strong>datos ya calculados</strong> por el motor: solo se encargan de dibujar.</p>
-<h3 id="contraste-con-la-prevision-documental"><span class="sec-num">7.2</span>Contraste con la previsión documental</h3>
-<p>Aquí hay una diferencia importante que conviene aclarar para que nadie busque algo que no existe:</p>
-<ul>
-<li>Documentos antiguos de decisión decían que la web usaría <strong>Recharts</strong>.</li>
-<li>La verificación del código muestra que <strong>Recharts no está instalado ni declarado</strong>.</li>
-</ul>
-<p>La afirmación correcta es: <strong>los gráficos son propios, dibujados en SVG, sin dependencia externa</strong>.
-No es una función que falta: es una decisión de implementación distinta de la prevista. Se registra
-como una desviación entre lo previsto y lo real.</p>
-<h3 id="otras-ausencias-verificadas"><span class="sec-num">7.3</span>Otras ausencias verificadas</h3>
-<ol>
-<li><strong>Cliente HTTP:</strong> no hay <code>axios</code>. Se usa <code>fetch</code>, que ya viene en el navegador. El pase de sesión
-se guarda en el almacenamiento local del navegador.</li>
-<li><strong>Estado global:</strong> no hay Redux, Zustand ni MobX. El estado de la sesión se maneja con un
-contexto propio.</li>
-<li><strong>Librería de componentes:</strong> no hay ninguna. La apariencia se apoya en una hoja de estilos
-propia.</li>
-</ol>
-<h3 id="implicacion-para-la-cadena-de-suministro"><span class="sec-num">7.4</span>Implicación para la cadena de suministro</h3>
-<p>Al no haber más dependencias de ejecución que React, React DOM y React Router, <strong>el riesgo de la web
-en producción es mínimo</strong> y <strong>todas las licencias de las dependencias directas se pueden
-verificar</strong>: MIT para React, React DOM, React Router DOM y Vite; Apache-2.0 para TypeScript.</p>
-<p>Si algún día se incorpora una librería de gráficos, habría que actualizar los dos archivos de
-dependencias y cerrar su licencia. Mientras eso no ocurra, el estado real es el descrito aquí.</p>
+<p><em>Este documento forma parte de la entrega del proyecto y su texto prevalece sobre cualquier indicación
+contraria que no conste por escrito del titular.</em></p>
+<hr />
+<h2 id="como-se-acepta"><span class="sec-num">7</span>¿Cómo se acepta?</h2>
+<p>En la pantalla de acceso verás el resumen con seis cláusulas y los enlaces a este documento y a su
+PDF. Al marcar la casilla y pulsar <strong>«Aceptar e ingresar»</strong> queda constancia de tu aceptación en este
+dispositivo; si usas otro equipo o borras los datos del navegador, deberás aceptar otra vez.</p>
+<p>Al aceptar declaras que entiendes y cumples los ocho supuestos de comportamiento de la sección 6,
+en particular: uso exclusivo de evaluación, cero divulgación, cero distribución, ninguna
+responsabilidad para CANTV C.A. y protección de los datos personales y del sistema.</p>
+<p><strong>Gracias por usar el producto correctamente y por enviar tus observaciones: son lo que permite
+mejorarlo.</strong></p>
 
-<nav class="pie-nav"><a class="izq" href="../02-Dependencias/01-backend.html">← Manual anterior: Dependencias del backend GGTO</a><a href="../index.html">Índice general</a><a class="der" href="../03-Implementacion/01-autenticacion-y-rbac.html">Manual siguiente →: Manual de implementación: autenticación y RBAC</a></nav>
+<nav class="pie-nav"><span class="izq"></span><a href="../index.html">Índice general</a><a class="der" href="../01-Tecnologia/01-plataforma.html">Manual siguiente →: Plataforma GGTO — Visión general y arquitectura</a></nav>
     </article>
   </main>
 </div>
@@ -1231,13 +972,13 @@ dependencias y cerrar su licencia. Mientras eso no ocurra, el estado real es el 
   <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-    <span>Manual literal · Dependencias</span>
+    <span>Manual literal · General</span>
     <span>Generado el 01/10/2026</span>
   </div>
 </footer>
 
 <script>
-window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Dependencias · 02-frontend", "pieIzq": "Dependencias del frontend GGTO", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Dependencias del frontend GGTO"};
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "General · 01-aviso-legal", "pieIzq": "Aviso legal y de confidencialidad", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "Aviso legal y de confidencialidad"};
 </script>
 <script>
 /* ==================================================================

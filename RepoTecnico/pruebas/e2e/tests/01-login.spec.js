@@ -11,6 +11,12 @@ test.describe('Login', () => {
 
   test('clave incorrecta muestra error y no entra', async ({ page }) => {
     await page.goto('/login');
+    // D-71: hay que aceptar el aviso legal para que aparezca el formulario.
+    const muro = page.locator('.aviso-legal');
+    if (await muro.isVisible().catch(() => false)) {
+      await page.locator('#aviso-acepto').check();
+      await page.getByRole('button', { name: 'Aceptar e ingresar' }).click();
+    }
     await rellenar(page.getByLabel('P00'), USUARIOS.admin.p00);
     await rellenar(page.getByLabel('Clave'), 'clave-incorrecta');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
@@ -20,6 +26,12 @@ test.describe('Login', () => {
 
   test('P00 inexistente muestra error', async ({ page }) => {
     await page.goto('/login');
+    // D-71: hay que aceptar el aviso legal para que aparezca el formulario.
+    const muro = page.locator('.aviso-legal');
+    if (await muro.isVisible().catch(() => false)) {
+      await page.locator('#aviso-acepto').check();
+      await page.getByRole('button', { name: 'Aceptar e ingresar' }).click();
+    }
     await rellenar(page.getByLabel('P00'), 'NOEXISTE');
     await rellenar(page.getByLabel('Clave'), 'cualquiera');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();

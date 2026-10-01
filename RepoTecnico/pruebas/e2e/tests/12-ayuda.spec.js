@@ -14,8 +14,10 @@ test.describe('Ayuda', () => {
   test('el índice agrupa temas, secciones y sub-secciones', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.admin);
     await page.goto('/ayuda');
-    await expect(page.locator('.ayuda-tema')).toHaveCount(7);
-    await expect(page.locator('.ayuda-seccion')).toHaveCount(22);
+    // 8 temas tras añadir el aviso legal (D-71)
+    await expect(page.locator('.ayuda-tema')).toHaveCount(8);
+    // 23 secciones: se publicó el aviso legal como tema General (D-71)
+    await expect(page.locator('.ayuda-seccion')).toHaveCount(23);
     expect(await page.locator('.ayuda-subsecciones a').count()).toBeGreaterThan(100);
     await expect(page.getByRole('link', { name: 'Abrir manual HTML' }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Descargar PDF' }).first()).toBeVisible();

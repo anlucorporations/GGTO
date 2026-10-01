@@ -16,12 +16,12 @@
 | Nivel | Herramienta | Ejecutadas | Pasadas | Fallidas |
 |---|---|---|---|---|
 | Unitarias + integración + contratos | `pytest` | **195** | **195** | **0** |
-| E2E de navegador | Playwright/Chromium | **77** | **77** | **0** |
+| E2E de navegador | Playwright/Chromium | **80** | **80** | **0** |
 | Calidad estática | `ruff` / `mypy` / `tsc` strict | 3 | 3 | 0 |
 
 - `pytest`: `195 passed (1:01:03)` — resumen en `logs/pytest-resultados.txt`
   (log completo en `logs/pytest.log`).
-- E2E: `77 passed (23.8m)` — informe en `logs/e2e-resultados.json` y
+- E2E: `80 passed (10.9m)` — informe en `logs/e2e-resultados.json` y
   `logs/e2e-reporte/`.
 - Cobertura E2E: autenticación, navegación y RBAC, casos, especiales, agenda,
   despacho, ingesta CSV, monitoreo/reportes, alertas (RF-09/16/17/18 y outbox),
@@ -70,7 +70,8 @@
 | `16-primer-acceso-tecnicos.spec.js` | 3 | 3 | Primer acceso del técnico, estado de la cuenta y regeneración por el SUPER (D-67) |
 | `17-sistemas-y-roles.spec.js` | 5 | 5 | SISTEMAS solo para el SUPER, cambio de rol en TÉCNICOS y gestión del estado por el TECNICO (D-68/D-69) |
 | `18-ficha-pestanas.spec.js` | 6 | 6 | Ficha en pestañas con 3 datos por línea, edición limitada por icono, Resolución (cerrar/cita/enrutar) e Histórico (D-70) |
-| **Total** | **77** | **77** | `77 passed (23.8m)` |
+| `19-aviso-legal.spec.js` | 3 | 3 | Muro del aviso legal antes del acceso, enlaces HTML/PDF/Ayuda y publicación en AYUDA (D-71) |
+| **Total** | **80** | **80** | `80 passed (10.9m)` |
 
 ### 3.2 `pytest` (esquema `ggto_test`)
 
@@ -100,7 +101,7 @@
 ## 4. Criterios de salida
 
 - [x] `pytest` completo en verde (195/195).
-- [x] Playwright E2E completo en verde (77/77).
+- [x] Playwright E2E completo en verde (80/80).
 - [x] `ruff`, `mypy` y `tsc` strict sin hallazgos.
 - [x] Hallazgos corregidos y documentados.
 

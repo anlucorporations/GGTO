@@ -11,8 +11,14 @@ const MUESTRA = path.resolve(
 test.describe('Ingesta', () => {
   test('la muestra CSV se previsualiza sin errores', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.admin);
-    await page.goto('/ingesta');
-    await expect(page.getByRole('heading', { name: 'Ingesta', level: 1 })).toBeVisible();
+    // INGESTA se fusionó en OPERACIÓN (D-65): la ruta redirige a la home.
+    await page.goto('/');
+    // Se espera por el encabezado real de la sección (válido también tras D-65).
+    const ingesta = page.locator('#ingesta');
+    await expect(ingesta.getByRole('heading', { name: 'Ingesta', level: 1 })).toBeVisible({
+      timeout: 60_000,
+    });
+    await ingesta.scrollIntoViewIfNeeded();
 
     await page.getByRole('button', { name: 'Cargar archivo diario' }).click();
     await expect(page.getByRole('dialog', { name: 'Cargar archivo diario' })).toBeVisible();

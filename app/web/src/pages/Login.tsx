@@ -3,7 +3,9 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
 import type { PrimerAccesoOut } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import AvisoLegal from '../components/AvisoLegal';
 import Mensaje from '../components/Mensaje';
+import { aceptacionPrevia, registrarAceptacion } from '../disclaimer';
 
 interface PalabraForm {
   pos: number;
@@ -13,6 +15,9 @@ interface PalabraForm {
 export default function Login() {
   const { iniciarSesion, autenticado } = useAuth();
   const navigate = useNavigate();
+
+  // D-71: el aviso legal se acepta antes de mostrar el formulario de acceso.
+  const [aceptado, setAceptado] = useState<boolean>(() => aceptacionPrevia());
 
   const [p00, setP00] = useState('');
   const [clave, setClave] = useState('');
@@ -181,7 +186,16 @@ export default function Login() {
         <h1>GGTO</h1>
         <p className="subtitulo">Plataforma de gestión de averías — CANTV</p>
 
-        <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+        {!aceptado ? (
+          <AvisoLegal
+            onAceptar={() => {
+              registrarAceptacion();
+              setAceptado(true);
+            }}
+          />
+        ) : (
+          <>
+            <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
         <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
         <form onSubmit={enviarLogin}>
@@ -211,6 +225,10 @@ export default function Login() {
           </button>
         </form>
 
+          </>
+        )}
+
+        {aceptado && (
         <div className="login-pie">
           <button
             type="button"
@@ -380,6 +398,8 @@ export default function Login() {
             </div>
           )}
         </div>
+        )}
+
       </div>
     </div>
   );

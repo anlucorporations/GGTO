@@ -32,6 +32,12 @@ async function marcar(locator, activo = true) {
 /** Rellena el formulario de login y espera a entrar al panel. */
 async function iniciarSesion(page, usuario = USUARIOS.admin) {
   await page.goto('/login');
+  // D-71: el aviso legal oculta el formulario hasta aceptarlo.
+  const muro = page.locator('.aviso-legal');
+  if (await muro.isVisible().catch(() => false)) {
+    await page.locator('#aviso-acepto').check();
+    await page.getByRole('button', { name: 'Aceptar e ingresar' }).click();
+  }
   await rellenar(page.getByLabel('P00'), usuario.p00);
   await rellenar(page.getByLabel('Clave'), usuario.clave);
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
