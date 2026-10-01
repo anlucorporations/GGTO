@@ -838,6 +838,40 @@ tbody tr:hover {
   gap: 14px;
 }
 
+/* ------------- Pestañas del login (D-74): Login · Primer acceso ---- */
+
+.login-pestanas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--azul);
+}
+
+.login-pestana {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-texto);
+  cursor: pointer;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
+}
+
+.login-pestana:hover {
+  color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.login-pestana.activa {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+  background: var(--azul-claro);
+}
+
 .login-pie {
   margin-top: 18px;
   padding-top: 14px;

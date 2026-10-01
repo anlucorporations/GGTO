@@ -1,3 +1,13 @@
+/**
+ * Pantalla de acceso (RF-20 / RNF-22) con dos pestañas (ciclo D-74):
+ *
+ *  - **Login** : P00 + clave, con el desbloqueo por 3 palabras como panel
+ *    desplegable del pie.
+ *  - **Primer acceso** : el técnico registrado por el supervisor fija su
+ *    clave y recibe las 12 palabras de seguridad (D-67).
+ *
+ * D-71: el aviso legal se acepta antes de mostrar cualquiera de las dos.
+ */
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
@@ -12,12 +22,17 @@ interface PalabraForm {
   valor: string;
 }
 
+type Pestana = 'login' | 'alta';
+
 export default function Login() {
   const { iniciarSesion, autenticado } = useAuth();
   const navigate = useNavigate();
 
   // D-71: el aviso legal se acepta antes de mostrar el formulario de acceso.
   const [aceptado, setAceptado] = useState<boolean>(() => aceptacionPrevia());
+
+  // D-74: dos pestañas de acceso.
+  const [pestana, setPestana] = useState<Pestana>('login');
 
   const [p00, setP00] = useState('');
   const [clave, setClave] = useState('');
@@ -37,7 +52,6 @@ export default function Login() {
   const [desbloqueando, setDesbloqueando] = useState(false);
 
   // Primer acceso (D-67): el técnico recibe su clave y sus 12 palabras.
-  const [mostrarPrimerAcceso, setMostrarPrimerAcceso] = useState(false);
   const [p00Alta, setP00Alta] = useState('');
   const [infoAlta, setInfoAlta] = useState<PrimerAccesoOut | null>(null);
   const [correoAlta, setCorreoAlta] = useState('');
@@ -50,6 +64,19 @@ export default function Login() {
   const [registrandoAlta, setRegistrandoAlta] = useState(false);
 
   if (autenticado) return <Navigate to="/" replace />;
+
+  function abrirPestana(destino: Pestana) {
+    setPestana(destino);
+    setError('');
+    setOk('');
+    if (destino === 'alta') {
+      // Al entrar en la pestaña se limpia el flujo anterior.
+      setInfoAlta(null);
+      setPalabrasGeneradas(null);
+      setErrorAlta('');
+      setOkAlta('');
+    }
+  }
 
   async function enviarLogin(evento: FormEvent) {
     evento.preventDefault();
@@ -87,9 +114,7 @@ export default function Login() {
   function cambiarPalabra(indice: number, campo: keyof PalabraForm, valor: string) {
     setPalabras((actual) =>
       actual.map((p, i) =>
-        i === indice
-          ? { ...p, [campo]: campo === 'pos' ? Number(valor) : valor }
-          : p,
+        i === indice ? { ...p, [campo]: campo === 'pos' ? Number(valor) : valor } : p,
       ),
     );
   }
@@ -135,9 +160,7 @@ export default function Login() {
       setInfoAlta(await api.primerAcceso(p00Alta.trim()));
     } catch (e) {
       setInfoAlta(null);
-      setErrorAlta(
-        e instanceof api.ApiError ? e.message : 'No se pudo comprobar el P00.',
-      );
+      setErrorAlta(e instanceof api.ApiError ? e.message : 'No se pudo comprobar el P00.');
     } finally {
       setVerificandoAlta(false);
     }
@@ -173,16 +196,15 @@ export default function Login() {
       setClaveAlta('');
       setConfirmacionAlta('');
     } catch (e) {
-      setErrorAlta(
-        e instanceof api.ApiError ? e.message : 'No se pudo crear el acceso.',
-      );
+      setErrorAlta(e instanceof api.ApiError ? e.message : 'No se pudo crear el acceso.');
     } finally {
       setRegistrandoAlta(false);
     }
   }
 
   return (
-    <div className="login-fondo">      <div className="login-caja">
+    <div className="login-fondo">
+      <div className="login-caja">
         <h1>GGTO</h1>
         <p className="subtitulo">Plataforma de gestión de averías — CANTV</p>
 
@@ -195,211 +217,225 @@ export default function Login() {
           />
         ) : (
           <>
-            <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
-        <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
-
-        <form onSubmit={enviarLogin}>
-          <div className="campo">
-            <label htmlFor="p00">P00</label>
-            <input
-              id="p00"
-              type="text"
-              autoComplete="username"
-              value={p00}
-              onChange={(e) => setP00(e.target.value)}
-              placeholder="Ej. 2324X001"
-            />
-          </div>
-          <div className="campo">
-            <label htmlFor="clave">Clave</label>
-            <input
-              id="clave"
-              type="password"
-              autoComplete="current-password"
-              value={clave}
-              onChange={(e) => setClave(e.target.value)}
-            />
-          </div>
-          <button className="btn" type="submit" disabled={enviando}>
-            {enviando ? 'Ingresando…' : 'Iniciar sesión'}
-          </button>
-        </form>
-
-          </>
-        )}
-
-        {aceptado && (
-        <div className="login-pie">
-          <button
-            type="button"
-            className="enlace"
-            onClick={() => setMostrarDesbloqueo((v) => !v)}
-          >
-            {mostrarDesbloqueo ? 'Ocultar desbloqueo' : 'Desbloquear con 3 palabras'}
-          </button>
-
-          {mostrarDesbloqueo && (
-            <div className="subpanel" style={{ marginTop: 14 }}>
-              <Mensaje
-                tipo="error"
-                texto={errorDesbloqueo}
-                onCerrar={() => setErrorDesbloqueo('')}
-              />
-              <Mensaje
-                tipo="ok"
-                texto={okDesbloqueo}
-                onCerrar={() => setOkDesbloqueo('')}
-              />
-              <form onSubmit={enviarDesbloqueo}>
-                <div className="campo" style={{ marginBottom: 10 }}>
-                  <label htmlFor="p00-unlock">P00</label>
-                  <input
-                    id="p00-unlock"
-                    type="text"
-                    value={p00Desbloqueo}
-                    onChange={(e) => setP00Desbloqueo(e.target.value)}
-                  />
-                </div>
-                <div className="palabras">
-                  {palabras.map((palabra, indice) => (
-                    <div className="palabra-fila" key={indice}>
-                      <input
-                        type="number"
-                        min={1}
-                        max={12}
-                        value={palabra.pos}
-                        onChange={(e) => cambiarPalabra(indice, 'pos', e.target.value)}
-                        aria-label={`Posición ${indice + 1}`}
-                      />
-                      <input
-                        type="password"
-                        value={palabra.valor}
-                        placeholder={`Palabra ${indice + 1}`}
-                        onChange={(e) => cambiarPalabra(indice, 'valor', e.target.value)}
-                        aria-label={`Valor ${indice + 1}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <button className="btn" type="submit" disabled={desbloqueando}>
-                  {desbloqueando ? 'Desbloqueando…' : 'Desbloquear'}
-                </button>
-              </form>
+            {/* D-74: dos pestañas — Login y Primer acceso. */}
+            <div className="login-pestanas" role="tablist" aria-label="Modos de acceso">
+              <button
+                type="button"
+                role="tab"
+                id="tab-login"
+                aria-selected={pestana === 'login'}
+                aria-controls="panel-login"
+                className={`login-pestana${pestana === 'login' ? ' activa' : ''}`}
+                onClick={() => abrirPestana('login')}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="tab-alta"
+                aria-selected={pestana === 'alta'}
+                aria-controls="panel-alta"
+                className={`login-pestana${pestana === 'alta' ? ' activa' : ''}`}
+                onClick={() => abrirPestana('alta')}
+              >
+                Primer acceso
+              </button>
             </div>
-          )}
 
-          <button
-            type="button"
-            className="enlace"
-            onClick={() => {
-              setMostrarPrimerAcceso((v) => !v);
-              setInfoAlta(null);
-              setPalabrasGeneradas(null);
-              setErrorAlta('');
-              setOkAlta('');
-            }}
-          >
-            {mostrarPrimerAcceso ? 'Ocultar primer acceso' : 'Primer acceso (obtener clave)'}
-          </button>
+            {pestana === 'login' && (
+              <div id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+                <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+                <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-          {mostrarPrimerAcceso && (
-            <div className="subpanel" style={{ marginTop: 14 }}>
-              <Mensaje tipo="error" texto={errorAlta} onCerrar={() => setErrorAlta('')} />
-              <Mensaje tipo="ok" texto={okAlta} onCerrar={() => setOkAlta('')} />
-
-              {palabrasGeneradas ? (
-                <>
-                  <p className="texto-pequeno">
-                    Guarde estas <strong>12 palabras de seguridad</strong> en un lugar seguro: no se
-                    volverán a mostrar. Con 3 de ellas puede desbloquear su cuenta o restablecer la
-                    clave. Si las pierde, el Super Usuario puede generar un juego nuevo.
-                  </p>
-                  <ol className="lista-palabras">
-                    {palabrasGeneradas.map((palabra, indice) => (
-                      <li key={indice}>
-                        <span className="mono">{palabra}</span>
-                      </li>
-                    ))}
-                  </ol>
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      setP00(p00Alta.trim());
-                      setMostrarPrimerAcceso(false);
-                      setInfoAlta(null);
-                      setPalabrasGeneradas(null);
-                    }}
-                  >
-                    Ir al acceso
+                <form onSubmit={enviarLogin}>
+                  <div className="campo">
+                    <label htmlFor="p00">P00</label>
+                    <input
+                      id="p00"
+                      type="text"
+                      autoComplete="username"
+                      value={p00}
+                      onChange={(e) => setP00(e.target.value)}
+                      placeholder="Ej. 2324X001"
+                    />
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="clave">Clave</label>
+                    <input
+                      id="clave"
+                      type="password"
+                      autoComplete="current-password"
+                      value={clave}
+                      onChange={(e) => setClave(e.target.value)}
+                    />
+                  </div>
+                  <button className="btn" type="submit" disabled={enviando}>
+                    {enviando ? 'Ingresando…' : 'Iniciar sesión'}
                   </button>
-                </>
-              ) : (
-                <>
-                  <form onSubmit={(e) => void verificarP00(e)}>
-                    <div className="campo" style={{ marginBottom: 10 }}>
-                      <label htmlFor="p00-alta">P00</label>
-                      <input
-                        id="p00-alta"
-                        type="text"
-                        value={p00Alta}
-                        onChange={(e) => setP00Alta(e.target.value)}
-                        placeholder="Su código de personal"
-                      />
-                    </div>
-                    <button className="btn btn-secundario" type="submit" disabled={verificandoAlta}>
-                      {verificandoAlta ? 'Comprobando…' : 'Comprobar P00'}
-                    </button>
-                  </form>
+                </form>
 
-                  {infoAlta && (
-                    <div style={{ marginTop: 12 }}>
-                      <p className="texto-pequeno">{infoAlta.mensaje}</p>
-                      {infoAlta.puede_registrarse && (
-                        <form onSubmit={(e) => void crearAcceso(e)}>
-                          <div className="campo" style={{ marginBottom: 10 }}>
-                            <label htmlFor="alta-correo">Correo</label>
-                            <input
-                              id="alta-correo"
-                              type="email"
-                              value={correoAlta}
-                              onChange={(e) => setCorreoAlta(e.target.value)}
-                            />
-                          </div>
-                          <div className="campo" style={{ marginBottom: 10 }}>
-                            <label htmlFor="alta-clave">Clave (mínimo 8 caracteres)</label>
-                            <input
-                              id="alta-clave"
-                              type="password"
-                              value={claveAlta}
-                              onChange={(e) => setClaveAlta(e.target.value)}
-                            />
-                          </div>
-                          <div className="campo" style={{ marginBottom: 10 }}>
-                            <label htmlFor="alta-confirmacion">Confirmar clave</label>
-                            <input
-                              id="alta-confirmacion"
-                              type="password"
-                              value={confirmacionAlta}
-                              onChange={(e) => setConfirmacionAlta(e.target.value)}
-                            />
-                          </div>
-                          <button className="btn" type="submit" disabled={registrandoAlta}>
-                            {registrandoAlta
-                              ? 'Creando…'
-                              : 'Crear mi acceso y ver las 12 palabras'}
-                          </button>
-                        </form>
-                      )}
+                <div className="login-pie">
+                  <button
+                    type="button"
+                    className="enlace"
+                    onClick={() => setMostrarDesbloqueo((v) => !v)}
+                  >
+                    {mostrarDesbloqueo ? 'Ocultar desbloqueo' : 'Desbloquear con 3 palabras'}
+                  </button>
+
+                  {mostrarDesbloqueo && (
+                    <div className="subpanel" style={{ marginTop: 14 }}>
+                      <Mensaje
+                        tipo="error"
+                        texto={errorDesbloqueo}
+                        onCerrar={() => setErrorDesbloqueo('')}
+                      />
+                      <Mensaje tipo="ok" texto={okDesbloqueo} onCerrar={() => setOkDesbloqueo('')} />
+                      <form onSubmit={enviarDesbloqueo}>
+                        <div className="campo" style={{ marginBottom: 10 }}>
+                          <label htmlFor="p00-unlock">P00</label>
+                          <input
+                            id="p00-unlock"
+                            type="text"
+                            value={p00Desbloqueo}
+                            onChange={(e) => setP00Desbloqueo(e.target.value)}
+                          />
+                        </div>
+                        <div className="palabras">
+                          {palabras.map((palabra, indice) => (
+                            <div className="palabra-fila" key={indice}>
+                              <input
+                                type="number"
+                                min={1}
+                                max={12}
+                                value={palabra.pos}
+                                onChange={(e) => cambiarPalabra(indice, 'pos', e.target.value)}
+                                aria-label={`Posición ${indice + 1}`}
+                              />
+                              <input
+                                type="password"
+                                value={palabra.valor}
+                                placeholder={`Palabra ${indice + 1}`}
+                                onChange={(e) => cambiarPalabra(indice, 'valor', e.target.value)}
+                                aria-label={`Valor ${indice + 1}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <button className="btn" type="submit" disabled={desbloqueando}>
+                          {desbloqueando ? 'Desbloqueando…' : 'Desbloquear'}
+                        </button>
+                      </form>
                     </div>
                   )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-        )}
+                </div>
+              </div>
+            )}
 
+            {pestana === 'alta' && (
+              <div id="panel-alta" role="tabpanel" aria-labelledby="tab-alta">
+                <div className="subpanel" style={{ marginTop: 4 }}>
+                  <Mensaje tipo="error" texto={errorAlta} onCerrar={() => setErrorAlta('')} />
+                  <Mensaje tipo="ok" texto={okAlta} onCerrar={() => setOkAlta('')} />
+
+                  {palabrasGeneradas ? (
+                    <>
+                      <p className="texto-pequeno">
+                        Guarde estas <strong>12 palabras de seguridad</strong> en un lugar seguro: no
+                        se volverán a mostrar. Con 3 de ellas puede desbloquear su cuenta o
+                        restablecer la clave. Si las pierde, el Super Usuario puede generar un juego
+                        nuevo.
+                      </p>
+                      <ol className="lista-palabras">
+                        {palabrasGeneradas.map((palabra, indice) => (
+                          <li key={indice}>
+                            <span className="mono">{palabra}</span>
+                          </li>
+                        ))}
+                      </ol>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => {
+                          setP00(p00Alta.trim());
+                          setInfoAlta(null);
+                          setPalabrasGeneradas(null);
+                          abrirPestana('login');
+                        }}
+                      >
+                        Ir al acceso
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="texto-pequeno" style={{ marginTop: 0 }}>
+                        ¿Es la primera vez que ingresa? Su P00 debió registrarlo el supervisor.
+                        Compruébelo aquí y defina su clave: el sistema le mostrará sus{' '}
+                        <strong>12 palabras de seguridad</strong> una sola vez.
+                      </p>
+                      <form onSubmit={(e) => void verificarP00(e)}>
+                        <div className="campo" style={{ marginBottom: 10 }}>
+                          <label htmlFor="p00-alta">P00</label>
+                          <input
+                            id="p00-alta"
+                            type="text"
+                            value={p00Alta}
+                            onChange={(e) => setP00Alta(e.target.value)}
+                            placeholder="Su código de personal"
+                          />
+                        </div>
+                        <button className="btn btn-secundario" type="submit" disabled={verificandoAlta}>
+                          {verificandoAlta ? 'Comprobando…' : 'Comprobar P00'}
+                        </button>
+                      </form>
+
+                      {infoAlta && (
+                        <div style={{ marginTop: 12 }}>
+                          <p className="texto-pequeno">{infoAlta.mensaje}</p>
+                          {infoAlta.puede_registrarse && (
+                            <form onSubmit={(e) => void crearAcceso(e)}>
+                              <div className="campo" style={{ marginBottom: 10 }}>
+                                <label htmlFor="alta-correo">Correo</label>
+                                <input
+                                  id="alta-correo"
+                                  type="email"
+                                  value={correoAlta}
+                                  onChange={(e) => setCorreoAlta(e.target.value)}
+                                />
+                              </div>
+                              <div className="campo" style={{ marginBottom: 10 }}>
+                                <label htmlFor="alta-clave">Clave (mínimo 8 caracteres)</label>
+                                <input
+                                  id="alta-clave"
+                                  type="password"
+                                  value={claveAlta}
+                                  onChange={(e) => setClaveAlta(e.target.value)}
+                                />
+                              </div>
+                              <div className="campo" style={{ marginBottom: 10 }}>
+                                <label htmlFor="alta-confirmacion">Confirmar clave</label>
+                                <input
+                                  id="alta-confirmacion"
+                                  type="password"
+                                  value={confirmacionAlta}
+                                  onChange={(e) => setConfirmacionAlta(e.target.value)}
+                                />
+                              </div>
+                              <button className="btn" type="submit" disabled={registrandoAlta}>
+                                {registrandoAlta ? 'Creando…' : 'Crear mi acceso y ver las 12 palabras'}
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

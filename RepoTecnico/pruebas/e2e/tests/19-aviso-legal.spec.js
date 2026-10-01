@@ -14,8 +14,10 @@ test.describe('Aviso legal previo al acceso', () => {
     const muro = page.locator('.aviso-legal');
     await expect(muro).toBeVisible({ timeout: 30_000 });
 
-    // El acceso está oculto mientras no se acepte
+    // El acceso está oculto mientras no se acepte (D-74: tampoco las pestañas)
     await expect(page.locator('#p00')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Login' })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Primer acceso' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Desbloquear con 3 palabras' })).toHaveCount(0);
 
     // Enlaces del aviso

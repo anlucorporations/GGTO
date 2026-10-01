@@ -58,4 +58,39 @@ test.describe('Login', () => {
     await expect(menu).toContainText('E2ETEC');
     await expect(menu).toContainText('TECNICO');
   });
+
+  // --- D-74: pestañas Login · Primer acceso ---------------------------
+  async function aceptarAviso(page) {
+    await page.goto('/login');
+    const muro = page.locator('.aviso-legal');
+    if (await muro.isVisible().catch(() => false)) {
+      await page.locator('#aviso-acepto').check();
+      await page.getByRole('button', { name: 'Aceptar e ingresar' }).click();
+    }
+  }
+
+  test('el login muestra dos pestañas y solo el formulario de la activa', async ({ page }) => {
+    await aceptarAviso(page);
+    await expect(page.getByRole('tab', { name: 'Login' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Primer acceso' })).toBeVisible();
+
+    // Pestaña Login activa: el formulario de acceso existe y el de alta no.
+    await expect(page.locator('#p00')).toBeVisible();
+    await expect(page.locator('#p00-alta')).toHaveCount(0);
+
+    // Pestaña Primer acceso: se invierte la visibilidad (no se apilan).
+    await page.getByRole('tab', { name: 'Primer acceso' }).click();
+    await expect(page.locator('#p00-alta')).toBeVisible();
+    await expect(page.locator('#p00')).toHaveCount(0);
+  });
+
+  test('Primer acceso informa sobre un P00 no registrado', async ({ page }) => {
+    await aceptarAviso(page);
+    await page.getByRole('tab', { name: 'Primer acceso' }).click();
+    await rellenar(page.locator('#p00-alta'), 'NOEXISTE74');
+    await page.getByRole('button', { name: 'Comprobar P00' }).click();
+    await expect(page.getByText(/no está registrado/i)).toBeVisible({ timeout: 30_000 });
+    // Sin registro no se ofrece el formulario de alta.
+    await expect(page.getByRole('button', { name: /Crear mi acceso/ })).toHaveCount(0);
+  });
 });

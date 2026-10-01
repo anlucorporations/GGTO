@@ -40,7 +40,7 @@ test.describe('Primer acceso de técnicos', () => {
 
     // 2) El técnico entra por «Primer acceso» y crea su cuenta
     await cerrarSesion(page);
-    await page.getByRole('button', { name: 'Primer acceso (obtener clave)' }).click();
+    await page.getByRole('tab', { name: 'Primer acceso' }).click();
     await rellenar(page.locator('#p00-alta'), P00_NUEVO);
     await page.getByRole('button', { name: 'Comprobar P00' }).click();
     await expect(page.getByText(/aún no tiene cuenta activada/i)).toBeVisible({ timeout: 30_000 });
