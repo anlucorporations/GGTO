@@ -27,6 +27,7 @@ from .api import (
     routes_ingesta,
     routes_monitoreo,
     routes_sistemas,
+    routes_sync,
 )
 from .core.config import get_settings
 
@@ -85,6 +86,7 @@ app.include_router(routes_especiales.router)
 app.include_router(routes_monitoreo.router)
 app.include_router(routes_alertas.router)
 app.include_router(routes_sistemas.router)
+app.include_router(routes_sync.router)
 
 
 # --------------------------------------------------------------------------- #

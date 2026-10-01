@@ -30,6 +30,7 @@ from .entities import (
 )
 from .especiales_entities import CasoEspecial, Cita, Seguimiento, Solicitante
 from .insumos_entities import OrdenMaterial
+from .sync_entities import SyncLog
 
 __all__ = [
     "Actividad",
@@ -61,6 +62,7 @@ __all__ = [
     "SectorDireccion",
     "Seguimiento",
     "Solicitante",
+    "SyncLog",
     "Tecnico",
     "Usuario",
 ]

@@ -531,7 +531,7 @@ CREATE TABLE IF NOT EXISTS actividad (
 
 CREATE TABLE IF NOT EXISTS evidencia (
     id_evidencia    bigserial    PRIMARY KEY,
-    id_actividad    bigint       NOT NULL REFERENCES actividad(id_actividad) ON DELETE CASCADE,
+    id_actividad    bigint       REFERENCES actividad(id_actividad) ON DELETE CASCADE,
     tipo            varchar(20)  NOT NULL
                     CHECK (tipo IN ('POTENCIA','NAVEGACION','DEMO')),
     serial_imagen   varchar(160) NOT NULL UNIQUE,   -- caso + id_averia + tipo + fecha/hora
@@ -585,6 +585,26 @@ CREATE TABLE IF NOT EXISTS sincronizacion (
                         CHECK (estado IN ('EN_PROCESO','OK','ERROR')),
     detalle_json        jsonb
 );
+
+-- 6.3 Bitácora de sincronizaciones por tipo (D-73: DESCARGA / CARGA)
+CREATE TABLE IF NOT EXISTS sync_log (
+    id_sync_log     bigserial    PRIMARY KEY,
+    p00             varchar(20)  NOT NULL,
+    id_cuadrilla    integer      REFERENCES cuadrilla(id_cuadrilla),
+    tipo            varchar(20)  NOT NULL CHECK (tipo IN ('DESCARGA','CARGA')),
+    dispositivo_id  varchar(80),
+    version_app     varchar(20),
+    iniciado_en     timestamptz  NOT NULL DEFAULT now(),
+    finalizado_en   timestamptz,
+    recibidos       integer      NOT NULL DEFAULT 0,
+    procesados      integer      NOT NULL DEFAULT 0,
+    errores         integer      NOT NULL DEFAULT 0,
+    estado          varchar(20)  NOT NULL DEFAULT 'EN_PROCESO'
+                    CHECK (estado IN ('EN_PROCESO','OK','PARCIAL','ERROR')),
+    detalle         jsonb
+);
+
+CREATE INDEX IF NOT EXISTS ix_sync_log_p00_fecha ON sync_log (p00, iniciado_en DESC);
 
 -- -----------------------------------------------------------------------------
 -- 7. Insumos (v2 — RF-05) y material
@@ -745,6 +765,7 @@ BEGIN
 END;
 $$;
 
+-- sync_log no tiene actualizado_en: usa finalizado_en como cierre de sesión.
 -- -----------------------------------------------------------------------------
 -- 11. Datos iniciales (idempotentes)
 -- -----------------------------------------------------------------------------

@@ -162,8 +162,8 @@ class Evidencia(Base):
     __tablename__ = "evidencia"
 
     id_evidencia: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_actividad: Mapped[int] = mapped_column(
-        ForeignKey("actividad.id_actividad", ondelete="CASCADE"), nullable=False
+    id_actividad: Mapped[int | None] = mapped_column(
+        ForeignKey("actividad.id_actividad", ondelete="CASCADE")
     )
     tipo: Mapped[str] = mapped_column(String(20), nullable=False)
     serial_imagen: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
