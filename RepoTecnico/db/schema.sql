@@ -625,6 +625,7 @@ CREATE TABLE IF NOT EXISTS insumo (
 CREATE TABLE IF NOT EXISTS orden_material (
     id_orden            bigserial    PRIMARY KEY,
     id_caso             bigint       REFERENCES caso(id_caso),
+    id_falla            bigint       REFERENCES falla_masiva(id_falla) ON DELETE CASCADE,
     id_cuadrilla        integer      REFERENCES cuadrilla(id_cuadrilla),
     solicitante_usuario varchar(20)  REFERENCES usuario(p00),
     estado              varchar(20)  NOT NULL DEFAULT 'SOLICITADA'
@@ -634,6 +635,19 @@ CREATE TABLE IF NOT EXISTS orden_material (
     creado_en           timestamptz  NOT NULL DEFAULT now(),
     actualizado_en      timestamptz  NOT NULL DEFAULT now()
 );
+
+-- D-75: el vínculo de las órdenes con la falla masiva pasa a ser FK real
+-- (`id_falla`). Este bloque auto-corrige las bases creadas en ciclos previos:
+-- añade la columna y el índice si faltan y repasa las filas históricas cuyo
+-- enlace vivía solo en el texto «[Falla N] …» de la observación.
+ALTER TABLE orden_material ADD COLUMN IF NOT EXISTS id_falla bigint
+    REFERENCES falla_masiva(id_falla) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS ix_orden_material_id_falla
+    ON orden_material (id_falla);
+UPDATE orden_material
+   SET id_falla = substring(observacion from '\[Falla (\d+)\]')::int
+ WHERE id_falla IS NULL
+   AND observacion ~ '^\[Falla [0-9]+\]';
 
 CREATE TABLE IF NOT EXISTS orden_material_detalle (
     id_orden_detalle    bigserial    PRIMARY KEY,

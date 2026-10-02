@@ -60,3 +60,10 @@
     java.lang.Object writeReplace();
     java.lang.Object readResolve();
 }
+
+
+# ---- D-73 · Google Play Core (deferred components) -------------------------
+# Flutter referencia clases de Play Core para *deferred components*, pero el SDK
+# no está en el classpath de una APK clásica (no usamos App Bundle). R8 aborta por
+# esas referencias; se silencian con dontwarn (código muerto para nuestra build).
+-dontwarn com.google.android.play.core.**

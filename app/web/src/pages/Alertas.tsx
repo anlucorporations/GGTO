@@ -5,6 +5,11 @@
  * desde Telegram), RF-17 (planificación de la atención), RF-18 (solicitud de
  * material) y RNF-19/RNF-20 (métricas y outbox con reintentos).
  *
+ * D-75: la tabla de fallas muestra Sector + Dirección corta, RUTA unificada
+ * (Tarjeta · Puerto · FAT) e iconos Planificado/Materiales/Cerrado; las
+ * acciones se trasladaron a la ficha flotante `FichaFalla` (pestañas Masiva,
+ * Planificar, Materiales y Cerrar), que se abre al seleccionar el renglón.
+ *
  * El envío real lo hace el backend: Telegram y el correo se habilitan al
  * configurar `TELEGRAM_BOT_TOKEN` / `SMTP_HOST`; hasta entonces las
  * notificaciones permanecen PENDIENTES en la bandeja (no se pierden).
@@ -12,19 +17,13 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
-import type {
-  EstadoFallaMasiva,
-  FallaMasivaOut,
-  MetricasOut,
-  NotificacionOut,
-} from '../api/types';
+import type { FallaMasivaOut, MetricasOut, NotificacionOut } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
+import FichaFalla, { IndicadoresFalla } from '../components/FichaFalla';
 import { IconoAlertas, IconoFalla, IconoTelegram } from '../components/Iconos';
-
-const ESTADOS_FALLA: EstadoFallaMasiva[] = ['DETECTADA', 'PLANIFICADA', 'ATENDIDA', 'CERRADA'];
 
 const ESTADOS_NOTIFICACION = ['PENDIENTE', 'ENVIADO', 'FALLIDO'];
 
@@ -68,8 +67,8 @@ export default function Alertas() {
   const [ok, setOk] = useState('');
 
   const [modalManual, setModalManual] = useState(false);
-  const [planificar, setPlanificar] = useState<FallaMasivaOut | null>(null);
-  const [material, setMaterial] = useState<FallaMasivaOut | null>(null);
+  // D-75: una sola ficha flotante con pestañas sustituye a los dos modales.
+  const [ficha, setFicha] = useState<FallaMasivaOut | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -92,6 +91,13 @@ export default function Alertas() {
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  /** La ficha informa de cambios: se refresca la tabla y el objeto abierto. */
+  function fallaActualizada(actualizada: FallaMasivaOut, mensaje: string) {
+    setFicha(actualizada);
+    setOk(mensaje);
+    void cargar();
+  }
 
   async function ejecutar(clave: string, accion: () => Promise<string>) {
     setOcupado(clave);
@@ -122,12 +128,6 @@ export default function Alertas() {
         `Outbox procesado: ${r.enviadas} enviada(s), ${r.diferidas} diferida(s) ` +
         `y ${r.fallidas} fallida(s) de ${r.intentadas} intento(s).`
       );
-    });
-
-  const cambiarEstado = (falla: FallaMasivaOut, estado: EstadoFallaMasiva) =>
-    ejecutar(`estado-${falla.id_falla}`, async () => {
-      await api.actualizarFallaMasiva(falla.id_falla, { estado });
-      return `Falla #${falla.id_falla} actualizada a ${estado}.`;
     });
 
   return (
@@ -238,7 +238,7 @@ export default function Alertas() {
           <p className="vacio">No hay fallas masivas que mostrar.</p>
         ) : (
           <div className="tabla-envoltura">
-            <table>
+            <table className="tabla-resumen">
               <thead>
                 <tr>
                   <th>#</th>
@@ -246,67 +246,44 @@ export default function Alertas() {
                   <th>Concentración</th>
                   <th>Descripción</th>
                   <th>Sector</th>
-                  <th>Cuadrilla</th>
+                  <th>Ruta</th>
+                  <th>Indicadores</th>
                   <th>Estado</th>
                   <th>Detectada</th>
-                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {fallas.map((f) => (
-                  <tr key={f.id_falla}>
+                  <tr
+                    key={f.id_falla}
+                    className="fila-clicable"
+                    tabIndex={0}
+                    onClick={() => setFicha(f)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setFicha(f);
+                      }
+                    }}
+                  >
                     <td className="mono">{f.id_falla}</td>
                     <td>{f.origen}</td>
                     <td className="mono">{txt(f.clave_concentracion)}</td>
+                    <td>{f.descripcion}</td>
                     <td>
-                      {f.descripcion}
-                      {f.planificacion && (
-                        <div className="texto-pequeno">Plan: {f.planificacion}</div>
-                      )}
-                      {f.reporte_simple && (
-                        <div className="texto-pequeno">Reporte: {f.reporte_simple}</div>
+                      {txt(f.sector_nombre)}
+                      {f.direccion_corta && (
+                        <div className="texto-pequeno">{f.direccion_corta}</div>
                       )}
                     </td>
-                    <td>{txt(f.id_sector)}</td>
-                    <td>{txt(f.id_cuadrilla)}</td>
+                    <td className="mono">{txt(f.ruta)}</td>
+                    <td>
+                      <IndicadoresFalla falla={f} />
+                    </td>
                     <td>
                       <span className={`chip-estado ${claseEstado(f.estado)}`}>{f.estado}</span>
                     </td>
                     <td>{fechaHora(f.fecha_deteccion)}</td>
-                    <td>
-                      <div className="acciones-fila">
-                        <button
-                          type="button"
-                          className="btn btn-mini btn-secundario"
-                          onClick={() => setPlanificar(f)}
-                          disabled={soloLectura}
-                        >
-                          Planificar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-mini btn-secundario"
-                          onClick={() => setMaterial(f)}
-                          disabled={soloLectura}
-                        >
-                          Material
-                        </button>
-                        <select
-                          value={f.estado}
-                          disabled={soloLectura || ocupado === `estado-${f.id_falla}`}
-                          onChange={(e) =>
-                            void cambiarEstado(f, e.target.value as EstadoFallaMasiva)
-                          }
-                          aria-label={`Estado de la falla ${f.id_falla}`}
-                        >
-                          {ESTADOS_FALLA.map((estado) => (
-                            <option key={estado} value={estado}>
-                              {estado}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -412,28 +389,10 @@ export default function Alertas() {
         />
       )}
 
-      {planificar && (
-        <ModalPlanificacion
-          falla={planificar}
-          onCerrar={() => setPlanificar(null)}
-          onListo={(texto) => {
-            setPlanificar(null);
-            setOk(texto);
-            void cargar();
-          }}
-        />
-      )}
-
-      {material && (
-        <ModalMaterial
-          falla={material}
-          onCerrar={() => setMaterial(null)}
-          onListo={(texto) => {
-            setMaterial(null);
-            setOk(texto);
-            void cargar();
-          }}
-        />
+      {/* D-75: ficha flotante con pestañas (Masiva · Planificar · Materiales ·
+          Cerrar) que concentra todas las acciones de la falla. */}
+      {ficha && (
+        <FichaFalla falla={ficha} onCerrar={() => setFicha(null)} onActualizada={fallaActualizada} />
       )}
     </>
   );
@@ -504,152 +463,6 @@ function ModalManual({
         <div className="acciones-form">
           <button type="submit" className="btn" disabled={enviando}>
             {enviando ? 'Registrando…' : 'Registrar falla'}
-          </button>
-          <button type="button" className="btn btn-secundario" onClick={onCerrar}>
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function ModalPlanificacion({
-  falla,
-  onCerrar,
-  onListo,
-}: {
-  falla: FallaMasivaOut;
-  onCerrar: () => void;
-  onListo: (texto: string) => void;
-}) {
-  const [planificacion, setPlanificacion] = useState(falla.planificacion ?? '');
-  const [reporte, setReporte] = useState(falla.reporte_simple ?? '');
-  const [evidencias, setEvidencias] = useState('');
-  const [error, setError] = useState('');
-  const [enviando, setEnviando] = useState(false);
-
-  async function enviar(evento: FormEvent) {
-    evento.preventDefault();
-    setError('');
-    setEnviando(true);
-    try {
-      const lista = evidencias
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      await api.planificarFallaMasiva(falla.id_falla, {
-        planificacion: planificacion.trim(),
-        reporte_simple: reporte.trim() || null,
-        evidencias: lista,
-      });
-      onListo(`Planificación de la falla #${falla.id_falla} guardada (RF-17).`);
-    } catch (e) {
-      setError(detalleDe(e, 'No se pudo guardar la planificación.'));
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <Modal titulo={`Planificar falla #${falla.id_falla}`} onCerrar={onCerrar}>
-      <form className="formulario modal-formulario" onSubmit={(e) => void enviar(e)}>
-        <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
-        <div className="campo campo-ancho">
-          <label htmlFor="plan-texto">Planificación *</label>
-          <textarea
-            id="plan-texto"
-            value={planificacion}
-            onChange={(e) => setPlanificacion(e.target.value)}
-            required
-            minLength={5}
-            maxLength={2000}
-            rows={3}
-            placeholder="Ej.: cuadrilla 1 a las 8:00 con fusionadora y 100 m de fibra"
-          />
-        </div>
-        <div className="campo campo-ancho">
-          <label htmlFor="plan-reporte">Reporte simple</label>
-          <textarea
-            id="plan-reporte"
-            value={reporte}
-            onChange={(e) => setReporte(e.target.value)}
-            maxLength={2000}
-            rows={2}
-            placeholder="Resumen de la atención para el reporte"
-          />
-        </div>
-        <div className="campo campo-ancho">
-          <label htmlFor="plan-evidencias">Evidencias (separadas por coma)</label>
-          <input
-            id="plan-evidencias"
-            value={evidencias}
-            onChange={(e) => setEvidencias(e.target.value)}
-            placeholder="Seriales o rutas: IMG-001, IMG-002"
-          />
-        </div>
-        <div className="acciones-form">
-          <button type="submit" className="btn" disabled={enviando}>
-            {enviando ? 'Guardando…' : 'Guardar planificación'}
-          </button>
-          <button type="button" className="btn btn-secundario" onClick={onCerrar}>
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function ModalMaterial({
-  falla,
-  onCerrar,
-  onListo,
-}: {
-  falla: FallaMasivaOut;
-  onCerrar: () => void;
-  onListo: (texto: string) => void;
-}) {
-  const [descripcion, setDescripcion] = useState('');
-  const [error, setError] = useState('');
-  const [enviando, setEnviando] = useState(false);
-
-  async function enviar(evento: FormEvent) {
-    evento.preventDefault();
-    setError('');
-    setEnviando(true);
-    try {
-      const orden = await api.solicitarMaterialFalla(falla.id_falla, {
-        descripcion: descripcion.trim(),
-      });
-      onListo(`Orden de material #${orden.id_orden} creada para la falla #${falla.id_falla} (RF-18).`);
-    } catch (e) {
-      setError(detalleDe(e, 'No se pudo solicitar el material.'));
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <Modal titulo={`Material para la falla #${falla.id_falla}`} onCerrar={onCerrar}>
-      <form className="formulario modal-formulario" onSubmit={(e) => void enviar(e)}>
-        <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
-        <div className="campo campo-ancho">
-          <label htmlFor="mat-descripcion">Material requerido *</label>
-          <textarea
-            id="mat-descripcion"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            required
-            minLength={3}
-            maxLength={500}
-            rows={2}
-            placeholder="Ej.: 50 m de fibra y 4 conectores SC/APC"
-          />
-        </div>
-        <div className="acciones-form">
-          <button type="submit" className="btn" disabled={enviando}>
-            {enviando ? 'Solicitando…' : 'Solicitar material'}
           </button>
           <button type="button" className="btn btn-secundario" onClick={onCerrar}>
             Cancelar

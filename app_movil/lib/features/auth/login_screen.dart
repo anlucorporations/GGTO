@@ -68,7 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                // El Spacer() del pie exige `start`; el centrado vertical se
+                // logra con los SizedBox superiores.
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Marca institucional centrada (D-73).

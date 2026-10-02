@@ -10,9 +10,10 @@
 
 La API es una aplicación **FastAPI** construida en `app/main.py`. La instancia se
 declara con título, versión y descripción tomados de la configuración
-(`app/main.py:38-47`), y monta nueve routers de negocio en un orden explícito:
+(`app/main.py:38-47`), y monta los routers de negocio en un orden explícito:
 salud, autenticación, configuración, ingesta, casos, despachos, especiales,
-monitoreo y alertas (`app/main.py:77-85`). Al final se monta la SPA React para no
+monitoreo, alertas, sistemas y —desde la D-73— sincronización móvil
+(`app/main.py:78-89`). Al final se monta la SPA React para no
 tapar las rutas de la API (`app/main.py:88-105`).
 
 El middleware de observabilidad asigna un `request-id` a cada petición y registra
@@ -35,6 +36,8 @@ El prefijo se declara de dos maneras según el archivo:
 | `app/api/routes_especiales.py` | `/api/v1` | `app/api/routes_especiales.py:40` |
 | `app/api/routes_monitoreo.py` | `/api/v1` | `app/api/routes_monitoreo.py:17` |
 | `app/api/routes_alertas.py` | `/api/v1` | `app/api/routes_alertas.py:30` |
+| `app/api/routes_sync.py` | `/api/v1` | `app/api/routes_sync.py:31` |
+| `app/api/routes_sistemas.py` | `/api/v1/sistemas` | `app/api/routes_sistemas.py:18` |
 
 `routes_health.py` es la única excepción: declara rutas absolutas porque expone
 `/health` y `/ready` fuera del espacio versionado (`app/api/routes_health.py:28,34`).
@@ -64,10 +67,12 @@ inactivo → 401; usuario bloqueado → 423. La respuesta 401 incluye la cabecer
 La SPA consume la API con el mismo esquema: el token se guarda en `localStorage` y
 se adjunta como `Bearer` en cada llamada (`app/web/src/api/client.ts:193,237`).
 
-### Relación 79 paths / 109 operaciones
+### Relación 95 paths / 126 operaciones
 
-El esquema OpenAPI publicado (`app.openapi()`) reporta **79 rutas (*paths*)** y
-**109 operaciones** (combinación método + path). La diferencia se explica porque
+El esquema OpenAPI publicado (`app.openapi()`) reporta **95 rutas (*paths*)** y
+**126 operaciones** (combinación método + path) tras incorporar las cuatro
+operaciones de sincronización móvil de la D-73 (`/sync/cuadrilla`,
+`/sync/descarga`, `/evidencias/upload`, `/sync/carga`). La diferencia se explica porque
 **26 paths comparten varios métodos**; cada path adicional con *n* métodos aporta
 *n − 1* operaciones extra, en total **30 operaciones extra** (79 + 30 = 109). Cuatro de
 esos paths compartidos tienen tres métodos (`/central/{id_central}`, `/sectores/{id_sector}`,
@@ -100,7 +105,8 @@ Por eso los documentos del proyecto y las pruebas hablaban de **«73 endpoints»
 cuando en realidad se referían a *73 paths*: `RepoTecnico/plan_desarrollo.md:227`
 («73 endpoints OpenAPI»), `RepoTecnico/pruebas/informe_fase4.md:78` y
 `RepoTecnico/pruebas/plan_pruebas.md:21`. Esa cifra es **anterior al ciclo D-66**;
-tras D-66 y D-67 la superficie vigente es de **79 paths**.
+tras D-66 y D-67 la superficie fue de **79 paths**; con las cuatro operaciones
+de sincronización móvil de la D-73, la cifra vigente es de **95 paths**.
 
 En el código hay **109 decoradores `@router.*`** —uno por operación publicada—.
 La cifra de **98 operaciones** que aparece en notas previas del proyecto no
@@ -116,8 +122,9 @@ y `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` —
 `app/api/routes_config.py:495`), las cuatro del ciclo D-66
 (`app/api/routes_despachos.py:177,190,207` y `app/api/routes_ingesta.py:217`) y las dos de
 D-67 (`app/api/routes_auth.py:219` y `app/api/routes_auth.py:275`).
-La cifra vigente y comprobable es **109 operaciones / 79 paths**; el origen exacto
-del conteo de 98 queda **pendiente de confirmar**.
+La cifra vigente y comprobable era **109 operaciones / 79 paths** hasta D-72; con
+las cuatro operaciones móviles suma **126 / 95**. El origen exacto del conteo de
+98 queda **pendiente de confirmar**.
 
 ### Documentación OpenAPI en /docs
 
@@ -144,7 +151,7 @@ que exista el esquema de seguridad Bearer (`:72-74`).
 
 ## Inventario por módulo
 
-A continuación, el inventario completo de las **109 operaciones**, agrupado por
+A continuación, el inventario completo de las **126 operaciones**, agrupado por
 archivo de rutas. La columna «roles» se interpreta así: **Público** = sin token;
 **Autenticado** = cualquier usuario con token válido (`get_current_user`);
 **ADMIN/SUPERVISOR** = `require_roles("ADMIN", "SUPERVISOR")`, con **bypass total
@@ -481,6 +488,80 @@ herramienta se devuelven como `-32602` y un método desconocido como `-32601`
 
 El modo de prueba de contrato confirma que ambos webhooks son públicos y no exigen
 token JWT (`app/tests/test_contratos.py:139-143`).
+
+## Sincronización móvil — APK (D-73)
+
+El módulo `app/api/routes_sync.py` (prefijo `/api/v1`, tag *sincronización móvil*,
+`app/api/routes_sync.py:31`) da servicio a la aplicación Flutter de técnicos. Se
+registra el último en `app/main.py:89`. Son **cuatro operaciones nuevas**:
+
+| Método | Ruta | Resumen | Línea |
+|---|---|---|---|
+| GET | `/api/v1/sync/cuadrilla` | Cuadrilla activa del usuario | `app/api/routes_sync.py:45` |
+| GET | `/api/v1/sync/descarga` | Descarga diferencial por cuadrilla | `app/api/routes_sync.py:53` |
+| POST | `/api/v1/evidencias/upload` | Subir una foto de evidencia (multipart) | `app/api/routes_sync.py:65` |
+| POST | `/api/v1/sync/carga` | Cargar actividades y estados del día | `app/api/routes_sync.py:120` |
+
+### Alcance por rol
+
+La resolución de cuadrilla vive en `app/services/sync.py:35` (`_cuadrilla_activa`):
+enlaza `usuario.id_tecnico` → `cuadrilla_tecnico` con vigencia
+(`desde <= hoy` y `hasta IS NULL o >= hoy`). El rol **TECNICO** queda forzado a su
+propia cuadrilla; **SUPERVISOR/ADMIN/SUPER** conservan alcance amplio
+(`app/services/sync.py:55`). Un TECNICO sin cuadrilla recibe una descarga vacía,
+no un error.
+
+### GET /sync/descarga
+
+`construir_descarga` (`app/services/sync.py:123`) retorna solo los casos cuyo
+último despacho pertenece a la cuadrilla y cuyo estado sigue siendo operable
+(`ASIGNADO`, `CONTACTADO`, `CITADO`, `DIFERIDO`, `EN_GESTION`). Admite dos
+parámetros diferenciales: `desde` (ISO 8601) e `ids_conocidos[]` (lista de ids
+locales ya en caché); con ellos solo viajan los casos nuevos o cambiados. El
+payload incluye `server_ts` (marca que la APK guarda como punto de corte), los
+casos con su línea de despacho (`orden_visita`, `tipo_asignacion`, `observacion`)
+y los catálogos de métodos y causas para operar offline.
+
+### POST /evidencias/upload
+
+Endpoint **multipart/form-data** (`app/api/routes_sync.py:65`). Valida:
+
+- peso ≤ **3 MB** (`MAX_FOTO_BYTES`, `app/api/routes_sync.py:33`; excedido → 413);
+- formato JPEG/PNG/WebP (otro content-type → 422);
+- **idempotencia** por `serial_local`: si el serial ya existe con archivo subido,
+  se devuelve la fila existente sin duplicar el objeto en storage.
+
+El archivo se almacena vía `subir_evidencia` (`app/services/storage.py:58`): si
+está configurado `GGTO_GCS_BUCKET` con credenciales ADC, sube a Cloud Storage
+(`gcs://bucket/evidencias/<uuid>/<nombre>`); si no, cae a un directorio local
+(`GGTO_EVIDENCIAS_DIR`), lo que permite desarrollo y pruebas sin credenciales.
+La fila resultante queda en `evidencia` con `id_actividad = NULL` hasta que el
+batch la vincule.
+
+### POST /sync/carga
+
+`aplicar_carga` (`app/services/sync.py:213`) recibe el batch diario
+(`SyncCargaIn`, `app/schemas/sync.py`): lista de `actividades` (máx. 200, cada una
+con máx. **5 evidencias**) y de `estados`. Por cada actividad crea la fila en
+`actividad` (`sincronizado=true`), vincula las evidencias previamente subidas por
+su serial, traduce el tipo al estado objetivo (`CIERRE→CERRADO`,
+`CONTACTO→CONTACTADO`, etc.) y registra la bitácora en `caso_estado_hist`
+reutilizando `_registrar_estado` (`app/services/sync.py:199`). Verifica además que
+cada `id_caso` pertenezca a la cuadrilla del técnico (403 implícito: se reporta
+como error por ítem, no aborta el lote). Responde `{aceptadas, rechazadas,
+errores[], server_ts}`.
+
+### Tabla sync_log
+
+La D-73 añadió la tabla `sync_log` (`RepoTecnico/db/schema.sql:590`, ORM en
+`app/models/sync_entities.py:18`) para bitacorar sesiones DESCARGA/CARGA por
+dispositivo: `p00`, `id_cuadrilla`, `tipo`, `dispositivo_id`, `version_app`,
+contadores (`recibidos/procesados/errores`) y `estado`
+(`EN_PROCESO/OK/PARCIAL/ERROR`). Su migración sobre la base vigente se aplica con
+`scripts/migrar_d73_sync.py` (dry-run por defecto, transacción única, verificación
+post). La relajación asociada —`evidencia.id_actividad` pasa de `NOT NULL` a
+nullable (`RepoTecnico/db/schema.sql:534`)— es la que habilita el flujo
+foto-primero-actividad-después.
 
 ## Códigos de respuesta
 

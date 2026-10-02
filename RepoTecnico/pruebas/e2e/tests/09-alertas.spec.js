@@ -24,7 +24,7 @@ test.describe('Alertas', () => {
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
   });
 
-  test('reporta, planifica y pide material para una falla', async ({ page }) => {
+  test('reporta, planifica y pide material desde la ficha con pestañas (D-75)', async ({ page }) => {
     // Alta manual
     await page.getByRole('button', { name: 'Reportar falla' }).click();
     const modalAlta = page.getByRole('dialog', { name: 'Reportar falla masiva' });
@@ -33,23 +33,48 @@ test.describe('Alertas', () => {
     await modalAlta.getByRole('button', { name: 'Registrar falla' }).click();
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
 
-    // Planificación (RF-17)
-    await page.locator('#alertas tbody tr').first().getByRole('button', { name: 'Planificar' }).click();
-    const modalPlan = page.getByRole('dialog', { name: /Planificar falla/ });
-    await expect(modalPlan).toBeVisible();
-    await rellenar(modalPlan.getByLabel('Planificación *'), 'Cuadrilla E2E a las 8:00 con fusionadora');
-    await rellenar(modalPlan.getByLabel('Reporte simple'), 'Se atendió el tramo afectado');
-    await rellenar(modalPlan.getByLabel(/Evidencias/), 'IMG-001, IMG-002');
-    await modalPlan.getByRole('button', { name: 'Guardar planificación' }).click();
+    // La ficha flotante se abre al seleccionar el renglón (ya no hay botones en la fila)
+    const fila = page.locator('#alertas tbody tr').first();
+    await expect(fila.getByRole('button', { name: 'Planificar' })).toHaveCount(0);
+    await fila.click();
+    const ficha = page.getByRole('dialog', { name: /Falla masiva #/ });
+    await expect(ficha).toBeVisible();
+    for (const pestana of ['Masiva', 'Planificar', 'Materiales', 'Cerrar']) {
+      await expect(ficha.getByRole('tab', { name: pestana })).toBeVisible();
+    }
+
+    // Pestaña MASIVA: sector, ruta y dirección (campos D-75)
+    await expect(ficha.getByText('Ruta (T · P · FAT)')).toBeVisible();
+    await expect(ficha.getByText('Dirección (corta)')).toBeVisible();
+
+    // Pestaña PLANIFICAR (RF-17)
+    await ficha.getByRole('tab', { name: 'Planificar' }).click();
+    await rellenar(ficha.getByLabel('Planificación *'), 'Cuadrilla E2E a las 8:00 con fusionadora');
+    await rellenar(ficha.getByLabel('Reporte simple'), 'Se atendió el tramo afectado');
+    await rellenar(ficha.getByLabel(/Evidencias/), 'IMG-001, IMG-002');
+    await ficha.getByRole('button', { name: 'Guardar planificación' }).click();
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
 
-    // Material (RF-18)
-    await page.locator('#alertas tbody tr').first().getByRole('button', { name: 'Material' }).click();
-    const modalMat = page.getByRole('dialog', { name: /Material para la falla/ });
-    await expect(modalMat).toBeVisible();
-    await rellenar(modalMat.getByLabel('Material requerido *'), '50 m de fibra y 4 conectores SC/APC');
-    await modalMat.getByRole('button', { name: 'Solicitar material' }).click();
-    await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
+    // Pestaña MATERIALES (RF-18): la orden queda ligada a la falla
+    await ficha.getByRole('tab', { name: 'Materiales' }).click();
+    await rellenar(ficha.getByLabel('Material requerido *'), '50 m de fibra y 4 conectores SC/APC');
+    await ficha.getByRole('button', { name: 'Solicitar material' }).click();
+    await expect(ficha.getByRole('cell', { name: /50 m de fibra/ })).toBeVisible({ timeout: 40_000 });
+
+    // Pestaña CERRAR: flujo de estados con Cerrar rápido
+    await ficha.getByRole('tab', { name: 'Cerrar' }).click();
+    await expect(ficha.getByRole('button', { name: 'CERRADA' })).toBeVisible();
+  });
+
+  test('la tabla muestra Ruta e Indicadores y ya no la columna Acciones (D-75)', async ({ page }) => {
+    await page.getByRole('button', { name: 'Detectar fallas' }).click();
+    await expect(page.locator('.aviso-ok, .aviso-error').first()).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByRole('columnheader', { name: 'Ruta' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Indicadores' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Acciones' })).toHaveCount(0);
+    // Renglón clicable: cualquier parte abre la ficha
+    const fila = page.locator('#alertas tbody tr').first();
+    await expect(fila).toHaveClass(/fila-clicable/);
   });
 
   test('procesa la bandeja de notificaciones (outbox)', async ({ page }) => {

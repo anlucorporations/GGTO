@@ -407,3 +407,36 @@ export function IconoActividad(props: Props) {
     </svg>
   );
 }
+
+/* --- Indicadores de falla masiva (D-75): Planificado · Materiales · Cerrado --- */
+
+/** Planificado: calendario con marca. */
+export function IconoPlanificado(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4" />
+      <path d="m9 14 2 2 4-4" />
+    </svg>
+  );
+}
+
+/** Materiales: caja de inventario. */
+export function IconoMateriales(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" />
+      <path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9" />
+    </svg>
+  );
+}
+
+/** Cerrado: escudo con palomita (atención finalizada). */
+export function IconoCerrado(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3 5 5.8v5.4c0 4.2 2.9 7.3 7 9.3 4.1-2 7-5.1 7-9.3V5.8z" />
+      <path d="m8.8 12 2.2 2.2 4.2-4.4" />
+    </svg>
+  );
+}

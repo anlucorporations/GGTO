@@ -967,6 +967,16 @@ export function planificarFallaMasiva(
   return conCuerpo<FallaMasivaOut>(`/fallas-masivas/${idFalla}/planificacion`, 'POST', data);
 }
 
+/** Ficha completa de una falla masiva (D-75). */
+export function obtenerFallaMasiva(idFalla: number): Promise<FallaMasivaOut> {
+  return request<FallaMasivaOut>(`/fallas-masivas/${idFalla}`);
+}
+
+/** Órdenes de material asociadas a una falla (D-75). */
+export function listarOrdenesFalla(idFalla: number): Promise<OrdenMaterialOut[]> {
+  return request<OrdenMaterialOut[]>(`/fallas-masivas/${idFalla}/ordenes`);
+}
+
 /** Solicita material asociado a la falla (RF-18). */
 export function solicitarMaterialFalla(
   idFalla: number,

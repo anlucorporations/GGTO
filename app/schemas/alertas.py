@@ -25,6 +25,19 @@ class FallaMasivaOut(BaseModel):
     planificada_en: datetime | None = None
     actualizado_en: datetime | None = None
 
+    # Resumen enriquecido para la tabla y la ficha (D-75): se calcula en el
+    # endpoint a partir del sector, la cuadrilla, el caso representativo de la
+    # concentración y las órdenes de material.
+    sector_nombre: str | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
+    # RUTA unificada: Tarjeta (slot) + Puerto + FAT del caso representativo.
+    ruta: str | None = None
+    # Dirección corta (truncada) del caso representativo.
+    direccion_corta: str | None = None
+    ordenes_count: int = 0
+    casos_afectos: int | None = None
+
 
 class FallaMasivaManual(BaseModel):
     descripcion: str = Field(min_length=5, max_length=500)
@@ -38,6 +51,8 @@ class FallaMasivaUpdate(BaseModel):
                                pattern="^(DETECTADA|PLANIFICADA|ATENDIDA|CERRADA)$")
     id_cuadrilla: int | None = None
     id_sector: int | None = None
+    # D-75: la ficha flotante permite editar la descripción de la masiva.
+    descripcion: str | None = Field(default=None, min_length=5, max_length=500)
 
 
 class PlanificacionRequest(BaseModel):
@@ -55,6 +70,20 @@ class MaterialRequest(BaseModel):
 
     descripcion: str = Field(min_length=3, max_length=500)
     id_cuadrilla: int | None = None
+
+
+class OrdenMaterialOut(BaseModel):
+    """Orden de material devuelta por la API (D-75: ya con `id_falla` real)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_orden: int
+    id_falla: int | None = None
+    id_cuadrilla: int | None = None
+    solicitante_usuario: str | None = None
+    estado: str
+    observacion: str | None = None
+    fecha: datetime | None = None
 
 
 class NotificacionOut(BaseModel):

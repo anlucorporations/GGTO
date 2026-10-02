@@ -2093,6 +2093,70 @@ input[type='file'] {
   overflow: auto;
 }
 
+/* ----- Ficha de Falla Masiva en pestañas (D-75) --------------------- */
+
+.falla-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--azul);
+}
+
+.falla-pestana {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-texto);
+  cursor: pointer;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
+}
+
+.falla-pestana:hover {
+  color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.falla-pestana.activa {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.falla-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Dato que ocupa toda la fila en la rejilla de 3 columnas de la ficha */
+
+.dato-ancha {
+  grid-column: 1 / -1;
+}
+
+/* Columna «Indicadores»: Planificado · Materiales · Cerrado */
+
+.celda-indicadores {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.indicador {
+  display: inline-flex;
+  color: var(--gris-borde);
+}
+
+.indicador-on {
+  color: var(--verde);
+}
+
 /* --------------- Buscador dentro de la cabecera del modal ---------- */
 
 .modal-cabecera-busqueda {

@@ -744,6 +744,15 @@ export interface FallaMasivaOut {
   reporte_simple?: string | null;
   planificada_en?: string | null;
   actualizado_en?: string | null;
+  /* Resumen enriquecido (D-75): sector, ruta unificada, dirección corta y
+   * contador de órdenes de material. */
+  sector_nombre?: string | null;
+  cuadrilla_codigo?: string | null;
+  cuadrilla_nombre?: string | null;
+  ruta?: string | null;
+  direccion_corta?: string | null;
+  ordenes_count?: number;
+  casos_afectos?: number | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1077,6 +1086,7 @@ export interface FallaMasivaUpdate {
   estado?: EstadoFallaMasiva;
   id_cuadrilla?: number | null;
   id_sector?: number | null;
+  descripcion?: string | null;
 }
 
 /** Planificación de la atención (RF-17): plan, reporte simple y evidencias. */
@@ -1096,8 +1106,11 @@ export interface MaterialFalla {
 export interface OrdenMaterialOut {
   id_orden: number;
   estado: string;
-  observacion: string;
-  id_falla: number;
+  observacion: string | null;
+  id_falla: number | null;
+  id_cuadrilla: number | null;
+  solicitante_usuario: string | null;
+  fecha: string | null;
 }
 
 /** Resultado de procesar el outbox de notificaciones (RNF-20). */

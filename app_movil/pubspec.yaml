@@ -29,7 +29,10 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 dependency_overrides:
-  geolocator_android: ^5.0.0
+  # El SDK de compilación es Flutter 3.24.5 (Dart 3.5). geolocator_android ≥5.0 usa
+  # Color.toARGB32() (Dart ≥3.6); se retrotrae el par completo a la serie compatible.
+  geolocator: ^13.0.1
+  geolocator_android: ^4.6.1
 
 flutter:
   uses-material-design: true

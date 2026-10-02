@@ -47,6 +47,7 @@ class _SyncScreenState extends State<SyncScreen> {
     setState(() => _procesando = true);
     try {
       final resultado = await UploadService.cargar();
+      if (!mounted) return;
       final sync = Provider.of<SyncProvider>(context, listen: false);
       await sync.refrescar();
       if (!mounted) return;

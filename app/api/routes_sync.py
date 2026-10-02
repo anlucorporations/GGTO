@@ -83,12 +83,29 @@ async def upload_evidencia(
     if not contenido:
         raise HTTPException(status_code=422, detail="Archivo vacío")
 
+    # Validar tipo de archivo (solo JPEG/PNG/WebP — evidencia fotográfica).
+    if (file.content_type or "") not in {"image/jpeg", "image/jpg", "image/png", "image/webp"}:
+        raise HTTPException(status_code=422, detail="Formato no permitido: use JPEG/PNG/WebP")
+
     nombre = file.filename or "foto.jpg"
-    ruta_remota = subir_evidencia(nombre, contenido, content_type=file.content_type or "image/jpeg")
     serial = serial_local or serial_desde_nombre(nombre)
 
+    # Idempotencia: si el serial ya fue subido, se devuelve la fila existente.
     existente = db.query(Evidencia).filter(Evidencia.serial_imagen == serial).first()
+    if existente is not None and existente.ruta_remota:
+        return EvidenciaUploadOut(
+            id_evidencia=existente.id_evidencia,
+            serial_imagen=existente.serial_imagen,
+            ruta_remota=existente.ruta_remota or "",
+            url_firmada=None,
+        )
+
+    ruta_remota = subir_evidencia(nombre, contenido, content_type=file.content_type or "image/jpeg")
     if existente is not None:
+        # Fila huérfana previa (sin archivo): se completa con la ruta remota.
+        existente.ruta_remota = ruta_remota[:255]
+        db.commit()
+        db.refresh(existente)
         return EvidenciaUploadOut(
             id_evidencia=existente.id_evidencia,
             serial_imagen=existente.serial_imagen,

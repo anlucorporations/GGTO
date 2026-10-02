@@ -85,9 +85,17 @@ class OperacionesService {
       tipo: 'DIFERIDO',
       exito: 'Caso diferido con su justificación.',
     );
-    // Las evidencias se conservan en la cola aunque el estado ya se aplicara.
-    if (evidencias.isNotEmpty) {
-      await _encolarEvidencias(idCaso, idAveria, evidencias);
+    // D-73: si el diferido quedó encolado, sus evidencias viajan con la acción
+    // de estado (UploadService sube los archivos antes del batch).
+    if (evidencias.isNotEmpty && resultado.encolada) {
+      await DatabaseHelper.instance.encolarAccion(
+        tipo: 'DIFERIDO_EVIDENCIAS',
+        endpoint: '/casos/$idCaso/estado',
+        metodo: 'POST',
+        payload: {'evidencias': evidencias},
+      );
+    } else if (evidencias.isNotEmpty) {
+      await _marcarEvidencias(evidencias);
     }
     return resultado;
   }
@@ -167,6 +175,8 @@ class OperacionesService {
       return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
     } on ApiError catch (error) {
       if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        // D-73: las evidencias NO se marcan como subidas aquí; `UploadService`
+        // sube primero el archivo y luego envía la acción por `/sync/carga`.
         await DatabaseHelper.instance.encolarAccion(
           tipo: 'CIERRE',
           endpoint: endpoint,
@@ -210,15 +220,14 @@ class OperacionesService {
       return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
     } on ApiError catch (error) {
       if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+        // D-73: la evidencia viaja dentro de la propia acción ENRUTADO; no se
+        // marca subida ni se encola aparte (UploadService sube el archivo).
         await DatabaseHelper.instance.encolarAccion(
           tipo: 'ENRUTADO',
           endpoint: endpoint,
           metodo: 'POST',
-          payload: payload,
+          payload: {...payload, 'evidencias': evidencias},
         );
-        if (evidencias.isNotEmpty) {
-          await _encolarEvidencias(idCaso, idAveria, evidencias);
-        }
         return const ResultadoOperacion(
           mensaje: 'Sin conexión: el enrutado quedó guardado y se enviará al sincronizar.',
           enviada: false,

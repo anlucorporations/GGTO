@@ -13,7 +13,7 @@
 2. **La gran mayoría de las direcciones son solo de consulta.** Salvo las de ingesta, casos, despacho,
    especiales, configuración y alertas, el resto solo **lee** información. Para **escribir** casi siempre se
    necesita rol **ADMIN** o **SUPERVISOR**; el rol **SUPER** puede hacer cualquier cosa.
-3. **El sistema publicado tiene 79 direcciones y 109 operaciones.** La diferencia se explica porque 26
+3. **El sistema publicado tiene 95 direcciones y 126 operaciones.** La diferencia se explica porque 26
    direcciones admiten **más de un método** (por ejemplo, consultar y crear en la misma dirección).
 4. **La documentación interactiva está en `/docs`.** Ahí se puede ver y probar cada operación. Una copia en
    formato legible está en `/redoc` y el esquema crudo en `/openapi.json`.
@@ -470,6 +470,49 @@ Detalles verificados:
 > quedan **PENDIENTES** en la bandeja (patrón de bandeja de salida) y **no se completan**. El canal
 > **WhatsApp no existe** en la versión 1. En este manual solo se **nombran** los secretos y las claves; **no
 > se transcriben valores**.
+
+## Sincronización de la aplicación móvil (APK)
+
+Desde octubre de 2026 el sistema ofrece **cuatro puertas nuevas** pensadas para el
+trabajo del técnico en la calle, donde muchas veces no hay señal. El técnico ya no
+necesita exportar ningún archivo comprimido: la aplicación conversa directamente con
+el servidor cuando puede.
+
+| Puerta | Para qué sirve | Quién la usa |
+|---|---|---|
+| `GET /api/v1/sync/cuadrilla` | Preguntar a qué cuadrilla pertenece el usuario conectado | Cualquier usuario con sesión |
+| `GET /api/v1/sync/descarga` | Traer **solo los casos asignados a la cuadrilla** del técnico | Técnico (y supervisores con alcance amplio) |
+| `POST /api/v1/evidencias/upload` | Subir una fotografía de evidencia (máximo 3 MB, formatos JPEG/PNG/WebP) | Técnico |
+| `POST /api/v1/sync/carga` | Enviar el trabajo del día: actividades, cambios de estado y sus fotos | Técnico |
+
+### Cómo funciona la DESCARGA
+
+El servidor identifica primero la **cuadrilla vigente** del técnico (la asignación
+activa en la tabla de integrantes; si el técnico no tiene cuadrilla, la respuesta es
+una lista vacía, nunca un error). Sobre esa cuadrilla devuelve únicamente los casos
+que aún admiten trabajo en campo —asignados, contactados, citados, diferidos o en
+gestión— cerrando el paso a casos ajenos o ya terminados. La aplicación informa qué
+casos ya tiene guardados, de modo que por la red solo viajan los **nuevos o
+cambiados**. Junto con los casos llegan las listas de causas y métodos necesarias
+para trabajar sin conexión.
+
+### Cómo funciona la CARGA
+
+Primero suben las **fotografías pendientes**, una por una, cada una con su número de
+identificación (serial). Una foto repetida no se duplica: el servidor reconoce el
+serial y responde con la evidencia ya existente. Después viaja en un solo paquete el
+registro del día: cierres, contactos, citas, diferidos y enrutados con su ubicación
+y hora. Por cada actividad el servidor crea el movimiento correspondiente, cambia el
+estado del caso y deja constancia en la bitácora. Si algún caso ya no pertenece a la
+cuadrilla del técnico, ese ítem se rechaza con su explicación, pero **el resto del
+paquete se procesa**: nada se pierde. Las fotografías se almacenan en el depósito de
+objetos de Google Cloud (o en una carpeta local mientras no se configure el
+depósito), con nombres imposibles de adivinar.
+
+Cada sesión de sincronización queda registrada en la tabla nueva **`sync_log`**:
+quién sincronizó, desde qué dispositivo, cuántos casos o actividades se movieron y
+si terminó bien o hubo errores. Con eso el supervisor puede auditar jornadas que no
+han subido su trabajo.
 
 ## Códigos de respuesta
 

@@ -1,3 +1,13 @@
+// ---------------------------------------------------------------------------
+// D-73 · Compatibilidad Flutter 3.24 + AGP 8.x.
+// Los plugins Groovy legados `geolocator_android` y `share_plus` usan dentro de
+// android{} `flutter.compileSdkVersion`, que con AGP 8 lanza MissingProperty y
+// deja compileSdk null (el detector global del FlutterPlugin hace substring(8)
+// sobre null). Se resuelve fijando literales en el cache de pub mediante
+// scripts/parchar_geolocator.py --aplicar, que se ejecuta tras cada `pub get`.
+// No hay lógica Gradle aquí: el ciclo de vida queda intacto.
+// ---------------------------------------------------------------------------
+
 allprojects {
     repositories {
         google()

@@ -7,11 +7,20 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Caso, FallaMasiva, IngestaLote, Notificacion, OrdenMaterial, Usuario
+from ..models import (
+    Caso,
+    Cuadrilla,
+    FallaMasiva,
+    IngestaLote,
+    Notificacion,
+    OrdenMaterial,
+    Sector,
+    Usuario,
+)
 from ..schemas.alertas import (
     FallaMasivaManual,
     FallaMasivaOut,
@@ -19,6 +28,7 @@ from ..schemas.alertas import (
     MaterialRequest,
     MetricasOut,
     NotificacionOut,
+    OrdenMaterialOut,
     PlanificacionRequest,
     ProcesarOutboxOut,
 )
@@ -39,6 +49,86 @@ def _o_404(db: Session, id_falla: int) -> FallaMasiva:
     return falla
 
 
+def _ruta_desde_caso(caso: Caso | None) -> tuple[str | None, str | None]:
+    """D-75: RUTA unificada (Tarjeta/slot + Puerto + FAT) y dirección corta del
+    caso representativo de la concentración."""
+    if caso is None:
+        return None, None
+    partes = [p for p in (caso.slot, caso.puerto, caso.fat) if p]
+    ruta = " · ".join(partes) or None
+    direccion = (caso.direccion or "").strip()
+    if not direccion:
+        return ruta, None
+    return ruta, (direccion[:40] + "…") if len(direccion) > 40 else direccion
+
+
+def _caso_representativo(db: Session, falla: FallaMasiva) -> tuple[Caso | None, int | None]:
+    """Caso más reciente de la concentración + nº de casos afectados (D-75).
+
+    Con `clave_concentracion` «campo:valor» se filtra por ese campo; si la falla
+    es manual (sin clave) se usa el sector. Devuelve también el conteo.
+    """
+    campo = valor = None
+    if falla.clave_concentracion and ":" in falla.clave_concentracion:
+        campo, valor = falla.clave_concentracion.split(":", 1)
+    columna = {"olt": Caso.olt, "fat": Caso.fat, "id_sector": Caso.id_sector}.get(campo or "")
+    if columna is None:
+        if falla.id_sector is None:
+            return None, None
+        columna, valor = Caso.id_sector, str(falla.id_sector)
+    condiciones = [Caso.id_central == falla.id_central]
+    if columna is Caso.id_sector:
+        try:
+            valor_num = int(str(valor))
+        except ValueError:
+            return None, None
+        condiciones.append(columna == valor_num)
+    else:
+        condiciones.append(columna == valor)
+    total = db.scalar(select(func.count()).select_from(Caso).where(*condiciones)) or 0
+    caso = db.scalar(
+        select(Caso).where(*condiciones).order_by(Caso.id_caso.desc()).limit(1)
+    )
+    return caso, total
+
+
+def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
+    """Enriquece las fallas para la tabla y la ficha (D-75)."""
+    if not fallas:
+        return []
+    sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
+    cuadrillas = {c.id_cuadrilla: c for c in db.scalars(select(Cuadrilla)).all()}
+    ids = [f.id_falla for f in fallas]
+    ordenes = dict(
+        db.execute(
+            select(OrdenMaterial.id_falla, func.count())
+            .where(OrdenMaterial.id_falla.in_(ids))
+            .group_by(OrdenMaterial.id_falla)
+        ).all()
+    )
+    salida: list[FallaMasivaOut] = []
+    for f in fallas:
+        caso, casos_afectos = _caso_representativo(db, f)
+        ruta, dir_corta = _ruta_desde_caso(caso)
+        cu = cuadrillas.get(f.id_cuadrilla) if f.id_cuadrilla else None
+        datos = FallaMasivaOut.model_validate(f).model_dump()
+        datos.update(
+            sector_nombre=(sectores.get(f.id_sector) if f.id_sector is not None else None),
+            cuadrilla_codigo=(cu.codigo if cu else None),
+            cuadrilla_nombre=(cu.nombre if cu else None),
+            ruta=ruta,
+            direccion_corta=dir_corta,
+            ordenes_count=ordenes.get(f.id_falla, 0),
+            casos_afectos=casos_afectos,
+        )
+        salida.append(FallaMasivaOut(**datos))
+    return salida
+
+
+def _salida1(db: Session, falla: FallaMasiva) -> FallaMasivaOut:
+    return _salida(db, [falla])[0]
+
+
 # --------------------------------------------------------------------------- #
 # Fallas masivas (RF-09, RF-16, RF-17)
 # --------------------------------------------------------------------------- #
@@ -50,7 +140,7 @@ def listar_fallas(
     estado: str | None = None,
     id_central: int | None = None,
     solo_activas: bool = Query(default=False),
-) -> list[FallaMasiva]:
+) -> list[FallaMasivaOut]:
     stmt = select(FallaMasiva).order_by(FallaMasiva.id_falla.desc())
     if estado:
         stmt = stmt.where(FallaMasiva.estado == estado)
@@ -58,7 +148,7 @@ def listar_fallas(
         stmt = stmt.where(FallaMasiva.id_central == id_central)
     if solo_activas:
         stmt = stmt.where(FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")))
-    return list(db.scalars(stmt).all())
+    return _salida(db, list(db.scalars(stmt).all()))
 
 
 @router.post("/fallas-masivas", response_model=FallaMasivaOut,
@@ -67,7 +157,7 @@ def reportar_falla(
     datos: FallaMasivaManual,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> FallaMasiva:
+) -> FallaMasivaOut:
     central = resolver_central(db, None, cargar_config(db))
     id_cuadrilla = datos.id_cuadrilla or svc_fallas.cuadrilla_cercana(
         db, central.id_central, datos.id_sector)
@@ -84,7 +174,7 @@ def reportar_falla(
     svc_fallas.alertar(db, falla)
     db.commit()
     db.refresh(falla)
-    return falla
+    return _salida1(db, falla)
 
 
 @router.post("/fallas-masivas/detectar", response_model=list[FallaMasivaOut],
@@ -92,29 +182,29 @@ def reportar_falla(
 def detectar_fallas(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> list[FallaMasiva]:
+) -> list[FallaMasivaOut]:
     central = resolver_central(db, None, cargar_config(db))
     creadas = svc_fallas.detectar(db, central.id_central)
     db.commit()
     for falla in creadas:
         db.refresh(falla)
-    return creadas
+    return _salida(db, creadas)
 
 
 @router.patch("/fallas-masivas/{id_falla}", response_model=FallaMasivaOut,
-              summary="Actualizar estado o cuadrilla de la falla")
+              summary="Actualizar estado, sector, cuadrilla o descripción de la falla (D-75)")
 def actualizar_falla(
     id_falla: int,
     datos: FallaMasivaUpdate,
     db: Session = Depends(get_db),
     _: Usuario = Depends(_escritura),
-) -> FallaMasiva:
+) -> FallaMasivaOut:
     falla = _o_404(db, id_falla)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(falla, campo, valor)
     db.commit()
     db.refresh(falla)
-    return falla
+    return _salida1(db, falla)
 
 
 @router.post("/fallas-masivas/{id_falla}/planificacion", response_model=FallaMasivaOut,
@@ -124,7 +214,7 @@ def planificar_falla(
     datos: PlanificacionRequest,
     db: Session = Depends(get_db),
     _: Usuario = Depends(_escritura),
-) -> FallaMasiva:
+) -> FallaMasivaOut:
     falla = _o_404(db, id_falla)
     falla.planificacion = datos.planificacion
     if datos.reporte_simple:
@@ -138,19 +228,49 @@ def planificar_falla(
     falla.planificada_en = datetime.now(UTC)
     db.commit()
     db.refresh(falla)
-    return falla
+    return _salida1(db, falla)
 
 
-@router.post("/fallas-masivas/{id_falla}/material", status_code=status.HTTP_201_CREATED,
-             summary="Solicitar material para la falla (RF-18)")
+@router.get("/fallas-masivas/{id_falla}", response_model=FallaMasivaOut,
+            summary="Ficha completa de una falla masiva (D-75)")
+def obtener_falla(
+    id_falla: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> FallaMasivaOut:
+    return _salida1(db, _o_404(db, id_falla))
+
+
+@router.get("/fallas-masivas/{id_falla}/ordenes", response_model=list[OrdenMaterialOut],
+            summary="Órdenes de material de una falla (D-75)")
+def listar_ordenes(
+    id_falla: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> list[OrdenMaterial]:
+    _o_404(db, id_falla)
+    # `id_falla` real (D-75) + compatibilidad con las solicitudes históricas
+    # que solo guardaban el marcador «[Falla N]» en la observación.
+    stmt = (
+        select(OrdenMaterial)
+        .where(or_(OrdenMaterial.id_falla == id_falla,
+                  OrdenMaterial.observacion.ilike(f"[Falla {id_falla}]%")))
+        .order_by(OrdenMaterial.id_orden.desc())
+    )
+    return list(db.scalars(stmt).unique().all())
+
+
+@router.post("/fallas-masivas/{id_falla}/material", response_model=OrdenMaterialOut,
+             status_code=status.HTTP_201_CREATED, summary="Solicitar material para la falla (RF-18)")
 def solicitar_material(
     id_falla: int,
     datos: MaterialRequest,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> dict:
+) -> OrdenMaterial:
     falla = _o_404(db, id_falla)
     orden = OrdenMaterial(
+        id_falla=falla.id_falla,  # D-75: vínculo real, ya no solo el texto
         id_cuadrilla=datos.id_cuadrilla or falla.id_cuadrilla,
         solicitante_usuario=usuario.p00,
         estado="SOLICITADA",
@@ -159,8 +279,7 @@ def solicitar_material(
     db.add(orden)
     db.commit()
     db.refresh(orden)
-    return {"id_orden": orden.id_orden, "estado": orden.estado,
-            "observacion": orden.observacion, "id_falla": falla.id_falla}
+    return orden
 
 
 # --------------------------------------------------------------------------- #

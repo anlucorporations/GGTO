@@ -294,3 +294,94 @@ def test_rbac_tecnico(client, entorno, admin_token):
 
 def test_sin_token(client):
     assert client.get(FALLAS).status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# Ficha flotante y enriquecimiento de la tabla (ciclo D-75)
+# --------------------------------------------------------------------------- #
+def test_ficha_y_ordenes_por_falla(client, entorno):
+    """La ficha GET devuelve la falla; sus órdenes se listan por `id_falla`."""
+    headers = entorno["headers"]
+    falla = client.post(FALLAS, json={"descripcion": "Falla para la ficha"},
+                        headers=headers).json()
+    id_falla = falla["id_falla"]
+
+    ficha = client.get(f"{FALLAS}/{id_falla}", headers=headers)
+    assert ficha.status_code == 200, ficha.text
+    cuerpo = ficha.json()
+    assert cuerpo["id_falla"] == id_falla
+    assert "ordenes_count" in cuerpo and "ruta" in cuerpo  # campos D-75
+
+    # Dos solicitudes de material quedan ligadas a la falla (D-75: id_falla real)
+    for n in ("100 m de fibra", "6 conectores SC/APC"):
+        assert client.post(f"{FALLAS}/{id_falla}/material",
+                           json={"descripcion": n}, headers=headers).status_code == 201
+    ordenes = client.get(f"{FALLAS}/{id_falla}/ordenes", headers=headers)
+    assert ordenes.status_code == 200, ordenes.text
+    lista = ordenes.json()
+    assert len(lista) == 2
+    assert {o["id_falla"] for o in lista} == {id_falla}
+    assert all(o["solicitante_usuario"] for o in lista)
+
+    # El contador de la tabla refleja las órdenes
+    assert client.get(f"{FALLAS}/{id_falla}", headers=headers).json()["ordenes_count"] == 2
+
+
+def test_404_en_ficha_y_ordenes(client, entorno):
+    assert client.get(f"{FALLAS}/999999", headers=entorno["headers"]).status_code == 404
+    assert client.get(f"{FALLAS}/999999/ordenes",
+                      headers=entorno["headers"]).status_code == 404
+
+
+def test_editar_descripcion_sector_y_cuadrilla(client, entorno, admin_token):
+    """La pestaña MASIVA de la ficha edita descripción/sector/cuadrilla (D-75)."""
+    headers = entorno["headers"]
+    falla = client.post(FALLAS, json={"descripcion": "Descripción original larga"},
+                        headers=headers).json()
+    cuad = client.post("/api/v1/cuadrillas",
+                       json={"id_central": admin_token["id_central"], "codigo": "TCF7",
+                             "nombre": "Cuadrilla ficha"}, headers=headers)
+    assert cuad.status_code == 201, cuad.text
+    id_cuadrilla = cuad.json()["id_cuadrilla"]
+
+    r = client.patch(f"{FALLAS}/{falla['id_falla']}",
+                     json={"descripcion": "Descripción corregida por la ficha",
+                           "id_cuadrilla": id_cuadrilla},
+                     headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["descripcion"] == "Descripción corregida por la ficha"
+    assert r.json()["cuadrilla_codigo"] == "TCF7"
+
+
+def test_enriquecimiento_ruta_sector_direccion(client, entorno, db_session):
+    """Sector+Dirección corta y RUTA (slot·puerto·fat) del caso representativo."""
+    headers = entorno["headers"]
+    id_central = db_session.scalar(
+        select(Caso.id_central).where(Caso.id_averia == "TSTA-0"))
+
+    sector = client.post("/api/v1/sectores",
+                         json={"id_central": id_central, "nombre": "Delta", "codigo": "TSD7",
+                               "direcciones": [{"patron": "AV LARGUISIMA DE DEL"}]},
+                         headers=headers)
+    assert sector.status_code == 201, sector.text
+    id_sector = sector.json()["id_sector"]
+
+    # Reasigna los 6 casos del entorno al sector y fija la ruta GPON (slot/puerto/fat)
+    for i, id_caso in enumerate(entorno["casos"]):
+        caso = db_session.get(Caso, id_caso)
+        caso.id_sector = id_sector
+        caso.direccion = "AV LARGUISIMA DE DEL 1234, SECTOR DELTA, CARACAS DISTRITO CAPITAL"
+        caso.slot, caso.puerto, caso.fat = "1", "7", "FAT-99"
+        if i == 0:
+            caso.olt = "pde-olt-99"
+    db_session.commit()
+
+    # Detecta: agrupa por olt → la falla hereda sector y ruta del caso más reciente
+    creadas = client.post(f"{FALLAS}/detectar", headers=headers).json()
+    assert len(creadas) == 1
+    falla = creadas[0]
+    assert falla["sector_nombre"] == "Delta"
+    assert falla["ruta"] == "1 · 7 · FAT-99"
+    assert falla["direccion_corta"] and falla["direccion_corta"].startswith("AV LARGUISIMA")
+    assert len(falla["direccion_corta"]) <= 41  # truncada a 40 + elipsis
+    assert falla["casos_afectos"] == 6

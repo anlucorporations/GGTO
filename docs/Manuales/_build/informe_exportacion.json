@@ -1,38 +1,186 @@
 [
   {
-    "manual": "00-General/01-aviso-legal.html",
-    "pdf": "pdf/00-General/01-aviso-legal.pdf",
-    "paginas": 8,
-    "hojasContenido": 6,
-    "entradasToc": 7,
+    "manual": "03-Implementacion/09-api-endpoints.html",
+    "pdf": "pdf/03-Implementacion/09-api-endpoints.pdf",
+    "paginas": 22,
+    "hojasContenido": 19,
+    "entradasToc": 44,
     "anclas": {
-      "1-naturaleza-del-producto": {
-        "pagina": 3,
-        "texto": "11. Naturaleza del producto"
+      "401": {
+        "pagina": 17,
+        "texto": "5.2401"
       },
-      "2-prohibicion-de-divulgacion-publicacion-y-distribucion": {
+      "403": {
+        "pagina": 17,
+        "texto": "5.3403"
+      },
+      "404": {
+        "pagina": 17,
+        "texto": "5.4404"
+      },
+      "409": {
+        "pagina": 17,
+        "texto": "5.5409"
+      },
+      "422": {
+        "pagina": 17,
+        "texto": "5.6422"
+      },
+      "423": {
+        "pagina": 18,
+        "texto": "5.7423"
+      },
+      "429": {
+        "pagina": 18,
+        "texto": "5.8429"
+      },
+      "empezar-en-5-minutos": {
         "pagina": 4,
-        "texto": "22. Prohibición de divulgación, publicación y distribución"
+        "texto": "1Empezar en 5 minutos"
       },
-      "3-ausencia-de-responsabilidad-empresarial": {
-        "pagina": 4,
-        "texto": "33. Ausencia de responsabilidad empresarial"
-      },
-      "4-informacion-sensible-y-confidencial": {
+      "vision-general": {
         "pagina": 5,
-        "texto": "44. Información sensible y confidencial"
+        "texto": "2Visión general"
       },
-      "5-exhortacion-al-uso-correcto-y-a-la-evaluacion-del-producto": {
+      "prefijo-api-v1": {
+        "pagina": 5,
+        "texto": "2.1Prefijo /api/v1"
+      },
+      "convencion-de-autenticacion-bearer": {
+        "pagina": 5,
+        "texto": "2.2Convención de autenticación Bearer"
+      },
+      "relacion-79-paths-109-operaciones": {
         "pagina": 6,
-        "texto": "55. Exhortación al uso correcto y a la evaluación del producto"
+        "texto": "2.3Relación 79 paths / 109 operaciones"
       },
-      "6-aceptacion-y-compromiso-etico": {
+      "documentacion-openapi-en-docs": {
         "pagina": 7,
-        "texto": "66. Aceptación y compromiso ético"
+        "texto": "2.4Documentación OpenAPI en /docs"
       },
-      "como-se-acepta": {
+      "inventario-por-modulo": {
+        "pagina": 7,
+        "texto": "3Inventario por módulo"
+      },
+      "salud-y-metadatos-app-api-routes-health-py": {
+        "pagina": 7,
+        "texto": "3.1Salud y metadatos (app/api/routes_health.py)"
+      },
+      "autenticacion-app-api-routes-auth-py": {
+        "pagina": 7,
+        "texto": "3.2Autenticación (app/api/routes_auth.py)"
+      },
+      "configuracion-y-catalogos-app-api-routes-config-py": {
         "pagina": 8,
-        "texto": "7¿Cómo se acepta?"
+        "texto": "3.3Configuración y catálogos (app/api/routes_config.py)"
+      },
+      "central": {
+        "pagina": 8,
+        "texto": "3.3.1Central"
+      },
+      "sectores": {
+        "pagina": 9,
+        "texto": "3.3.2Sectores"
+      },
+      "tecnicos": {
+        "pagina": 9,
+        "texto": "3.3.3Técnicos"
+      },
+      "flota": {
+        "pagina": 9,
+        "texto": "3.3.4Flota"
+      },
+      "cuadrillas": {
+        "pagina": 10,
+        "texto": "3.3.5Cuadrillas"
+      },
+      "catalogos-y-parametros": {
+        "pagina": 10,
+        "texto": "3.3.6Catálogos y parámetros"
+      },
+      "ingesta-app-api-routes-ingesta-py": {
+        "pagina": 10,
+        "texto": "3.4Ingesta (app/api/routes_ingesta.py)"
+      },
+      "casos-y-panel-app-api-routes-casos-py": {
+        "pagina": 11,
+        "texto": "3.5Casos y PANEL (app/api/routes_casos.py)"
+      },
+      "despacho-app-api-routes-despachos-py": {
+        "pagina": 11,
+        "texto": "3.6Despacho (app/api/routes_despachos.py)"
+      },
+      "especiales-agenda-y-seguimiento-app-api-routes-especiales-py": {
+        "pagina": 13,
+        "texto": "3.7Especiales, agenda y seguimiento (app/api/routes_especiales.py)"
+      },
+      "monitoreo-y-reportes-app-api-routes-monitoreo-py": {
+        "pagina": 13,
+        "texto": "3.8Monitoreo y reportes (app/api/routes_monitoreo.py)"
+      },
+      "alertas-telegram-y-mcp-app-api-routes-alertas-py": {
+        "pagina": 14,
+        "texto": "3.9Alertas, Telegram y MCP (app/api/routes_alertas.py)"
+      },
+      "sincronizacion-de-la-aplicacion-movil-apk": {
+        "pagina": 16,
+        "texto": "4Sincronización de la aplicación móvil (APK)"
+      },
+      "como-funciona-la-descarga": {
+        "pagina": 16,
+        "texto": "4.1Cómo funciona la DESCARGA"
+      },
+      "como-funciona-la-carga": {
+        "pagina": 16,
+        "texto": "4.2Cómo funciona la CARGA"
+      },
+      "codigos-de-respuesta": {
+        "pagina": 17,
+        "texto": "5Códigos de respuesta"
+      },
+      "200-201": {
+        "pagina": 17,
+        "texto": "5.1200/201"
+      },
+      "convenciones": {
+        "pagina": 19,
+        "texto": "6Convenciones"
+      },
+      "paginacion": {
+        "pagina": 19,
+        "texto": "6.1Paginación"
+      },
+      "filtros": {
+        "pagina": 19,
+        "texto": "6.2Filtros"
+      },
+      "rbac-por-endpoint": {
+        "pagina": 20,
+        "texto": "6.3RBAC por endpoint"
+      },
+      "request-id": {
+        "pagina": 20,
+        "texto": "6.4Request-id"
+      },
+      "endpoints-publicos-health-ready-api-v1-info-y-el-resto-auten": {
+        "pagina": 21,
+        "texto": "7Endpoints públicos (/health, /ready, /api/v1/info) y el resto autenticado"
+      },
+      "superficie-publica-por-diseno": {
+        "pagina": 21,
+        "texto": "7.1Superficie pública por diseño"
+      },
+      "rutas-sin-jwt-pero-con-secreto-propio": {
+        "pagina": 21,
+        "texto": "7.2Rutas sin JWT pero con secreto propio"
+      },
+      "resto-de-la-superficie": {
+        "pagina": 21,
+        "texto": "7.3Resto de la superficie"
+      },
+      "codigos-adicionales-de-infraestructura": {
+        "pagina": 21,
+        "texto": "7.4Códigos adicionales de infraestructura"
       }
     },
     "avisos": []
