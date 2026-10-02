@@ -136,13 +136,17 @@ def construir_descarga(
     if rol not in {"ADMIN", "SUPERVISOR", "SUPER"} and rol != "TECNICO":
         raise HTTPException(status_code=403, detail="Rol sin acceso a sincronización")
 
+    # Los catálogos se devuelven SIEMPRE (son independientes de la cuadrilla):
+    # la APK los necesita para operar offline aunque hoy no tenga casos asignados.
+    catalogos = _catalogos(db)
+
     c = _cuadrilla_activa(db, usuario)
     if c is None:
-        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": {"modelos": [], "causas": []}}
+        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": catalogos}
 
     ids_cuadrilla = _casos_ids_de_cuadrilla(db, c.id_cuadrilla)
     if not ids_cuadrilla:
-        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": {"modelos": [], "causas": []}}
+        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": catalogos}
 
     stmt = (
         select(Caso)
@@ -175,6 +179,15 @@ def construir_descarga(
         sector_nombre = sectores.get(caso.id_sector) if caso.id_sector else None
         salida.append(_caso_sync(caso, sector_nombre, dc_map.get(caso.id_caso)))
 
+    return {
+        "server_ts": datetime.now(UTC),
+        "casos": salida,
+        "catalogos": catalogos,
+    }
+
+
+def _catalogos(db: Session) -> dict[str, Any]:
+    """Catálogos de apoyo para operar offline (independientes de la cuadrilla)."""
     modelos = [
         {"id_metodo": m.id_metodo, "dominio": m.dominio, "codigo": m.codigo, "nombre": m.nombre}
         for m in db.scalars(select(CatalogoMetodo).where(CatalogoMetodo.activo.is_(True))).all()
@@ -187,12 +200,7 @@ def construir_descarga(
         }
         for ca in db.scalars(select(Causa).where(Causa.activo.is_(True))).all()
     ]
-
-    return {
-        "server_ts": datetime.now(UTC),
-        "casos": salida,
-        "catalogos": {"modelos": modelos, "causas": causas},
-    }
+    return {"modelos": modelos, "causas": causas}
 
 
 def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None, usuario_p00: str) -> None:
