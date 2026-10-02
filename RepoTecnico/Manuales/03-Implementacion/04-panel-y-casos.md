@@ -370,20 +370,38 @@ página y ofrece «Anterior»/«Siguiente» con los límites deshabilitados
 
 #### Ficha
 
-La ficha (`app/web/src/pages/Casos.tsx:633-716`) agrupa los campos en
-Identificación, Contacto, Fechas, Textos, Datos técnicos y Clasificación y
-geografía. Los campos vacíos se renderizan como «—» mediante el componente
-`Fila` (`app/web/src/pages/Casos.tsx:176-184`).
+La ficha es una ventana flotante que reparte los datos en pestañas
+(`app/web/src/components/FichaCaso.tsx:30-38`): **Resumen, Contacto, Datos
+técnicos, Clasificación, Textos, Resolución e Histórico**. Cada pestaña usa una
+rejilla de hasta tres datos por línea en escritorio que cae a una en móvil
+(`.datos-grid`), y los campos vacíos se renderizan como «—» mediante el
+componente `Dato` (`app/web/src/components/FichaCaso.tsx:54-62`). La pestaña
+**Gestión** se eliminó en D-76.
 
-#### Edición y cambio de estado
+#### Edición (Sector, cita e información)
 
-Solo se habilita si el usuario no está en modo solo lectura
-(`app/web/src/pages/Casos.tsx:718-720`). `construirPayload` compara cada campo
-con el original y envía únicamente los cambios
-(`app/web/src/pages/Casos.tsx:133-174`), de modo que el `PATCH` respeta la
-semántica de `exclude_unset`. El cambio de estado valida que el nuevo estado no
-sea igual al actual antes de llamar al API
-(`app/web/src/pages/Casos.tsx:411-418`).
+La edición ligera vive en la pestaña **Clasificación**
+(`app/web/src/components/FichaCaso.tsx:301-380`) y solo la obtienen ADMIN,
+SUPERVISOR y Super Usuario (`puedeEditar`). Se habilita con el botón **Editar**
+del título de la ficha (`app/web/src/pages/Casos.tsx:594-604`), que envía una
+señal con número de secuencia a la ficha; el efecto reacciona a esa secuencia
+—no a la pestaña— de modo que volver a pulsarlo reabre el formulario aunque ya
+se esté en Clasificación (`app/web/src/components/FichaCaso.tsx:118-131`). El
+formulario se limita a **Sector** (`#ficha-sector`, con opción «Sin sector»),
+**Fecha de cita** (`#ficha-fecha-cita`) e **Información** de 200 caracteres
+(`#ficha-informacion`) y se guarda con `PATCH /casos/{id}`, que valida el sector
+y, si se corrige la dirección sin enviar sector, lo recalcula
+(`app/api/routes_casos.py:350-372`). El **Supervisor** puede así asignar o
+cambiar el sector de un caso.
+
+#### Cambio de estado
+
+D-76 retiró de la web el formulario «Cambiar estado» junto con la pestaña
+Gestión: ningún rol mueve el estado desde la ficha. El endpoint
+`POST /casos/{id}/estado` (`app/api/routes_casos.py:376-398`) sigue disponible
+para los clientes que lo usan (APK). El movimiento queda registrado en la
+bitácora, que se muestra dentro de la misma ventana flotante bajo la ficha
+(`app/web/src/pages/Casos.tsx:621`).
 
 #### Historial
 

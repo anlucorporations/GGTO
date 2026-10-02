@@ -64,9 +64,11 @@ test.describe('Ficha del caso en pestañas', () => {
 
     await expect(ficha.getByRole('tab', { name: 'Resumen' })).toBeVisible();
     for (const nombre of ['Contacto', 'Datos técnicos', 'Clasificación', 'Textos',
-                          'Resolución', 'Histórico', 'Gestión']) {
+                          'Resolución', 'Histórico']) {
       await expect(ficha.getByRole('tab', { name: nombre })).toBeVisible();
     }
+    // D-76: la pestaña GESTIÓN ya no existe
+    await expect(ficha.getByRole('tab', { name: 'Gestión' })).toHaveCount(0);
 
     // Rejilla de 3 columnas en PC
     const columnas = await ficha
@@ -83,7 +85,7 @@ test.describe('Ficha del caso en pestañas', () => {
     await expect(ficha.getByText('OLT').first()).toBeVisible();
   });
 
-  test('la edición la activa el icono del título y solo cambia sector, cita e información', async ({ page }) => {
+  test('la edición la activa el icono del título y vive en Clasificación (D-76)', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.supervisor);
     const ficha = await abrirPrimeraFicha(page);
 
@@ -92,18 +94,48 @@ test.describe('Ficha del caso en pestañas', () => {
     ).toBeVisible();
     await ficha.getByRole('button', { name: 'Activar la edición de la ficha' }).click();
 
+    // D-76: el icono lleva a CLASIFICACIÓN, donde vive la edición ligera
+    await expect(ficha.getByRole('tab', { name: 'Clasificación' })).toHaveAttribute(
+      'aria-selected', 'true',
+    );
     await expect(ficha.locator('#ficha-sector')).toBeVisible({ timeout: 20_000 });
     await expect(ficha.locator('#ficha-fecha-cita')).toBeVisible();
     await expect(ficha.locator('#ficha-informacion')).toHaveAttribute('maxlength', '200');
     // No se exponen el resto de los campos editables
     await expect(ficha.locator('#edit-cliente')).toHaveCount(0);
 
-    await rellenar(ficha.locator('#ficha-informacion'), 'Gestionado desde la ficha en pestanas (D-70)');
+    await rellenar(ficha.locator('#ficha-informacion'), 'Gestionado desde la ficha en pestanas (D-76)');
     await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
     await expect(page.locator('.aviso-ok')).toContainText('Cambios guardados', { timeout: 40_000 });
 
     await ficha.getByRole('tab', { name: 'Textos' }).click();
-    await expect(ficha.getByText('Gestionado desde la ficha en pestanas (D-70)').first()).toBeVisible();
+    await expect(ficha.getByText('Gestionado desde la ficha en pestanas (D-76)').first()).toBeVisible();
+  });
+
+  test('el SUPERVISOR cambia el sector del caso desde la ficha (D-76)', async ({ page }) => {
+    await iniciarSesion(page, USUARIOS.supervisor);
+    const ficha = await abrirPrimeraFicha(page);
+    await ficha.getByRole('button', { name: 'Activar la edición de la ficha' }).click();
+
+    const selector = ficha.locator('#ficha-sector');
+    await expect(selector).toBeVisible({ timeout: 20_000 });
+    const original = await selector.inputValue();
+    // El seed trae dos sectores: el del caso y «SECTOR E2E 2» sin casos
+    const opciones = await selector.locator('option').allTextContents();
+    const destino = opciones.find((t) => t !== 'Sin sector' && t !== original);
+    expect(destino, 'debe existir un sector alternativo en el seed').toBeTruthy();
+
+    await selector.selectOption({ label: destino });
+    await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page.locator('.aviso-ok')).toContainText('Cambios guardados', { timeout: 40_000 });
+    await expect(ficha.getByText(destino).first()).toBeVisible();
+
+    // Se restituye el sector original para no alterar el resto de la corrida
+    // (al guardar se cierra el modo edición: hay que reactivarlo)
+    await ficha.getByRole('button', { name: 'Activar la edición de la ficha' }).click();
+    await ficha.locator('#ficha-sector').selectOption(original, { timeout: 20_000 });
+    await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page.locator('.aviso-ok')).toContainText('Cambios guardados', { timeout: 40_000 });
   });
 
   test('RESOLUCIÓN ofrece CERRAR, CITA y ENRRUTAR con sus formularios', async ({ page }) => {

@@ -77,27 +77,26 @@ test.describe('Sistemas y roles', () => {
     await expect(edicion.getByLabel('Rol de acceso')).toHaveCount(0);
   });
 
-  test('el TECNICO gestiona el estado de un caso desde su ficha', async ({ page }) => {
+  test('el TECNICO no tiene la pestaña Gestión ni cambia el estado desde la ficha (D-76)', async ({ page }) => {
     await iniciarSesion(page, USUARIOS.tecnico);
     await page.goto('/casos');
     await expect(page.getByText('Modo solo lectura').first()).toBeVisible();
 
-    // No puede editar el caso, pero sí cambiar su estado
     await page.locator('tbody tr').first().click();
     const ficha = page.getByRole('dialog');
     await expect(ficha).toBeVisible();
-    // D-70: la gestión vive en su pestaña; el TECNICO no obtiene edición de ficha
-    await ficha.getByRole('tab', { name: 'Gestión' }).click();
-    await expect(ficha.getByRole('button', { name: 'Guardar cambios' })).toHaveCount(0);
-    await expect(ficha.getByRole('heading', { name: 'Cambiar estado' })).toBeVisible();
 
-    await ficha.getByLabel('Nuevo estado').selectOption('EN_GESTION');
-    await rellenar(ficha.getByLabel('Motivo'), 'Atendido por cuadrilla E2E');
-    await ficha.getByRole('button', { name: 'Cambiar estado' }).click();
-    await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 40_000 });
+    // D-76: la pestaña GESTIÓN se eliminó, junto con «Cambiar estado»
+    await expect(ficha.getByRole('tab', { name: 'Gestión' })).toHaveCount(0);
+    await expect(ficha.getByRole('button', { name: 'Cambiar estado' })).toHaveCount(0);
+    // El TECNICO tampoco obtiene la edición ligera (sector, cita, información)
+    await expect(
+      ficha.getByRole('button', { name: 'Activar la edición de la ficha' }),
+    ).toHaveCount(0);
+    await ficha.getByRole('tab', { name: 'Clasificación' }).click();
+    await expect(ficha.locator('#ficha-sector')).toHaveCount(0);
 
-    // El movimiento quedó en la bitácora
+    // La bitácora de estados sigue visible para consulta
     await expect(ficha.getByRole('heading', { name: /Historial de estados/ })).toBeVisible();
-    await expect(ficha.locator('tfoot .tabla-pie')).toContainText(/Total: \d+ movimiento/);
   });
 });

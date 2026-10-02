@@ -1,12 +1,13 @@
 /**
- * Ficha de detalle del caso en pestañas (D-70).
+ * Ficha de detalle del caso en pestañas (D-70, reorganizada en D-76).
  *
- * - Los datos se reparten por naturaleza: RESUMEN, CONTACTO, TÉCNICOS,
- *   CLASIFICACIÓN, TEXTO y GESTIÓN, más RESOLUCIÓN e HISTÓRICO.
+ * - Los datos se reparten por naturaleza: RESUMEN, CONTACTO, DATOS TÉCNICOS,
+ *   CLASIFICACIÓN, TEXTOS, RESOLUCIÓN e HISTÓRICO.
  * - En PC cada pestaña muestra hasta **3 datos por línea**; en móvil cae a 1.
  * - La edición la activa el **icono de edición del título** y solo la ven
- *   ADMIN, SUPERVISOR y Super Usuario; se limita a Sector, Fecha de cita e
- *   Información (200 caracteres).
+ *   ADMIN, SUPERVISOR y Super Usuario; se limita a **Sector** (el Supervisor
+ *   puede asignarlo o cambiarlo), Fecha de cita e Información (200 caracteres).
+ *   El bloque vive ahora en CLASIFICACIÓN: la pestaña GESTIÓN se eliminó.
  * - RESOLUCIÓN permite elegir CERRAR / CITA / ENRUTAR con su formulario.
  * - HISTÓRICO lista los casos relacionados por el teléfono del caso.
  */
@@ -24,8 +25,7 @@ export type Pestana =
   | 'clasificacion'
   | 'texto'
   | 'resolucion'
-  | 'historico'
-  | 'gestion';
+  | 'historico';
 
 const PESTANAS: { id: Pestana; etiqueta: string }[] = [
   { id: 'resumen', etiqueta: 'Resumen' },
@@ -35,7 +35,6 @@ const PESTANAS: { id: Pestana; etiqueta: string }[] = [
   { id: 'texto', etiqueta: 'Textos' },
   { id: 'resolucion', etiqueta: 'Resolución' },
   { id: 'historico', etiqueta: 'Histórico' },
-  { id: 'gestion', etiqueta: 'Gestión' },
 ];
 
 const MODOS_CIERRE: { valor: ModoCierre; etiqueta: string }[] = [
@@ -69,10 +68,6 @@ export default function FichaCaso({
   onActualizar,
   solicitudPestana,
   alActivarEdicion,
-  puedeGestionarEstado,
-  estados,
-  estadoActual,
-  onCambiarEstado,
 }: {
   caso: CasoOut;
   sectores: Sector[];
@@ -82,11 +77,6 @@ export default function FichaCaso({
   /** Señal del padre para saltar a una pestaña (el icono de edición del título). */
   solicitudPestana?: { id: Pestana; secuencia: number } | null;
   alActivarEdicion?: (activa: boolean) => void;
-  /** El rol TECNICO puede mover el estado aunque no edite la ficha (D-68/D-70). */
-  puedeGestionarEstado?: boolean;
-  estados?: string[];
-  estadoActual?: string;
-  onCambiarEstado?: (estado: string, motivo: string | null) => Promise<void>;
 }) {
   const [pestana, setPestana] = useState<Pestana>('resumen');
   const [editando, setEditando] = useState(false);
@@ -111,10 +101,6 @@ export default function FichaCaso({
   const [motivoEnrutado, setMotivoEnrutado] = useState('');
   const [ejecutando, setEjecutando] = useState(false);
 
-  const [nuevoEstado, setNuevoEstado] = useState(estadoActual ?? '');
-  const [motivo, setMotivo] = useState('');
-  const [cambiando, setCambiando] = useState(false);
-
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
@@ -129,41 +115,20 @@ export default function FichaCaso({
     setEditando(false);
   }, [caso]);
 
+  // El icono «Editar» del título abre CLASIFICACIÓN y habilita la edición.
+  // Se reacciona a `secuencia` (no a la pestaña) para que pulsar de nuevo el
+  // icono reabra el formulario aunque ya se esté en esa pestaña: al guardar se
+  // cierra el modo edición y antes no había forma de reactivarlo sin cambiar
+  // de pestaña (D-76).
   useEffect(() => {
-    if (solicitudPestana) setPestana(solicitudPestana.id);
-  }, [solicitudPestana]);
-
-  useEffect(() => {
-    setNuevoEstado(estadoActual ?? '');
-  }, [estadoActual]);
-
-  async function moverEstado(evento: React.FormEvent) {
-    evento.preventDefault();
-    if (!onCambiarEstado) return;
-    if (!nuevoEstado || nuevoEstado === estadoActual) {
-      setError(nuevoEstado ? 'El nuevo estado debe ser distinto del actual.' : 'Seleccione el nuevo estado.');
-      return;
-    }
-    setCambiando(true);
-    setError('');
-    try {
-      await onCambiarEstado(nuevoEstado, nv(motivo));
-      setMotivo('');
-      setOk('Estado actualizado y registrado en la bitácora.');
-    } catch (e) {
-      setError(e instanceof api.ApiError ? e.message : 'No se pudo cambiar el estado.');
-    } finally {
-      setCambiando(false);
-    }
-  }
-
-  useEffect(() => {
-    if (pestana === 'gestion' && puedeEditar) {
+    if (!solicitudPestana) return;
+    setPestana(solicitudPestana.id);
+    if (solicitudPestana.id === 'clasificacion' && puedeEditar) {
       setEditando(true);
       alActivarEdicion?.(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pestana, puedeEditar]);
+  }, [solicitudPestana?.secuencia]);
 
   useEffect(() => {
     if (pestana !== 'historico' || relacionados !== null) return;
@@ -332,70 +297,22 @@ export default function FichaCaso({
 
       {/* --------------------------- CLASIFICACIÓN --------------------------- */}
       {pestana === 'clasificacion' && (
-        <div className="datos-grid">
-          <Dato etiqueta="Clase" valor={caso.categoria} />
-          <Dato etiqueta="Tipo" valor={caso.tipo_caso} />
-          <Dato etiqueta="Sector" valor={caso.sector_nombre ?? caso.id_sector} />
-          <Dato etiqueta="ID causa" valor={caso.id_causa} />
-          <Dato etiqueta="Región" valor={caso.region} />
-          <Dato etiqueta="Estado geográfico" valor={caso.estado_geografico} />
-          <Dato etiqueta="Municipio" valor={caso.municipio} />
-          <Dato etiqueta="Parroquia" valor={caso.parroquia} />
-          <Dato etiqueta="Área" valor={caso.area} />
-        </div>
-      )}
-
-      {/* ------------------------------- TEXTOS ------------------------------ */}
-      {pestana === 'texto' && (
-        <div className="datos-grid datos-grid-ancha">
-          <Dato etiqueta="Problema reportado" valor={caso.problema_reporte} />
-          <Dato etiqueta="Último comentario" valor={caso.ultimo_comentario} />
-          <Dato etiqueta="Results" valor={caso.results} />
-          <Dato etiqueta="Estatus de origen" valor={caso.estatus_origen} />
-          <Dato etiqueta="Información" valor={caso.informacion} />
-        </div>
-      )}
-
-      {/* ------------------------------ GESTIÓN ------------------------------ */}
-      {pestana === 'gestion' && (
         <div className="datos-columna">
-          {/* Movimiento de estado: también para el rol TECNICO (D-68) */}
-          {puedeGestionarEstado && onCambiarEstado && (
-            <form className="formulario modal-formulario" onSubmit={(e) => void moverEstado(e)}>
-              <h3 className="subtitulo-seccion">Cambiar estado</h3>
-              <div className="fila-campos fila-campos-medias">
-                <div className="campo">
-                  <label htmlFor="estado-nuevo">Nuevo estado</label>
-                  <select
-                    id="estado-nuevo"
-                    value={nuevoEstado}
-                    onChange={(e) => setNuevoEstado(e.target.value)}
-                  >
-                    {(estados ?? []).map((e) => (
-                      <option key={e} value={e}>
-                        {e}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="estado-motivo">Motivo</label>
-                  <input
-                    id="estado-motivo"
-                    value={motivo}
-                    maxLength={200}
-                    onChange={(e) => setMotivo(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="acciones-form">
-                <button className="btn" type="submit" disabled={cambiando}>
-                  {cambiando ? 'Cambiando…' : 'Cambiar estado'}
-                </button>
-              </div>
-            </form>
-          )}
+          <div className="datos-grid">
+            <Dato etiqueta="Clase" valor={caso.categoria} />
+            <Dato etiqueta="Tipo" valor={caso.tipo_caso} />
+            <Dato etiqueta="Sector" valor={caso.sector_nombre ?? caso.id_sector} />
+            <Dato etiqueta="ID causa" valor={caso.id_causa} />
+            <Dato etiqueta="Región" valor={caso.region} />
+            <Dato etiqueta="Estado geográfico" valor={caso.estado_geografico} />
+            <Dato etiqueta="Municipio" valor={caso.municipio} />
+            <Dato etiqueta="Parroquia" valor={caso.parroquia} />
+            <Dato etiqueta="Área" valor={caso.area} />
+          </div>
 
+          {/* Edición ligera (D-70, reubicada en D-76 al eliminar la pestaña
+              Gestión): la habilita el icono de edición del título y se limita a
+              Sector, Fecha de cita e Información. */}
           {!puedeEditar ? (
             <p className="vacio">Solo el Supervisor, el Administrador o el Super Usuario pueden editar la ficha.</p>
           ) : !editando ? (
@@ -455,6 +372,17 @@ export default function FichaCaso({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ------------------------------- TEXTOS ------------------------------ */}
+      {pestana === 'texto' && (
+        <div className="datos-grid datos-grid-ancha">
+          <Dato etiqueta="Problema reportado" valor={caso.problema_reporte} />
+          <Dato etiqueta="Último comentario" valor={caso.ultimo_comentario} />
+          <Dato etiqueta="Results" valor={caso.results} />
+          <Dato etiqueta="Estatus de origen" valor={caso.estatus_origen} />
+          <Dato etiqueta="Información" valor={caso.informacion} />
         </div>
       )}
 

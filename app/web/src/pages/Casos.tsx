@@ -230,9 +230,8 @@ function TablaCasos({ items, onVer }: { items: CasoOut[]; onVer: (idCaso: number
 }
 
 export default function Casos() {
-  const { soloLectura, usuario } = useAuth();
+  const { soloLectura } = useAuth();
   // El rol TECNICO no edita casos, pero sí gestiona el estado del que atiende (D-68).
-  const puedeGestionarEstado = !soloLectura || usuario?.rol === 'TECNICO';
   // Edición de la ficha: ADMIN, SUPERVISOR y Super Usuario (D-70).
   const puedeEditarCaso = !soloLectura;
   const [sectores, setSectores] = useState<Sector[]>([]);
@@ -596,7 +595,7 @@ export default function Casos() {
                 className="btn btn-mini btn-secundario"
                 title="Activar la edición de la ficha"
                 aria-label="Activar la edición de la ficha"
-                onClick={() => setSolicitud({ id: 'gestion', secuencia: secuencia + 1 })}
+                onClick={() => setSolicitud({ id: 'clasificacion', secuencia: secuencia + 1 })}
               >
                 <IconoEditar width={16} height={16} />
                 Editar
@@ -611,20 +610,6 @@ export default function Casos() {
             puedeEditar={puedeEditarCaso}
             puedeResolver={puedeEditarCaso}
             alActivarEdicion={() => undefined}
-            puedeGestionarEstado={puedeGestionarEstado}
-            estados={ESTADOS}
-            estadoActual={ficha.estado_actual}
-            onCambiarEstado={async (estado, motivo) => {
-              const actualizado = await api.cambiarEstadoCaso(ficha.id_caso, {
-                estado_actual: estado,
-                motivo_estado: motivo,
-              });
-              setFicha(actualizado);
-              setEdicion(aEdicion(actualizado));
-              setOk('Estado actualizado y registrado en la bitácora.');
-              await cargarHistorial(actualizado.id_caso);
-              await cargarLista();
-            }}
             onActualizar={(actualizado) => {
               setFicha(actualizado);
               setEdicion(aEdicion(actualizado));

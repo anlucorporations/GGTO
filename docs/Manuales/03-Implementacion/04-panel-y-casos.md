@@ -390,21 +390,31 @@ Cuando estás en el primer o el último límite, el botón correspondiente queda
 
 #### Ficha
 
-La ficha agrupa los campos en seis bloques: Identificación, Contacto, Fechas, Textos, Datos
-técnicos y Clasificación y geografía. Los campos vacíos se muestran como «—».
+La ficha se abre al seleccionar cualquier parte del renglón y reparte la información en
+pestañas: **Resumen, Contacto, Datos técnicos, Clasificación, Textos, Resolución e Histórico**.
+Los campos vacíos se muestran como «—». La antigua pestaña **Gestión** ya no existe.
 
-#### Edición y cambio de estado
+#### Editar el sector, la cita y la información
 
-- La edición solo se habilita si el usuario **no** está en modo solo lectura.
-- Al guardar, la pantalla compara cada campo con el valor original y envía **únicamente los
-  cambios**. Así se respeta la semántica de edición parcial del backend.
-- El cambio de estado valida que el estado nuevo sea distinto del actual antes de llamar a la
-  API. Si es el mismo, no hace la llamada.
+- En la pestaña **Clasificación**, el botón **Editar** del título habilita el formulario con el
+  **Sector** (incluye la opción «Sin sector»), la **Fecha de cita** y la **Información** (hasta
+  200 caracteres). El **Supervisor**, el Administrador y el Super Usuario pueden así **asignar o
+  cambiar el sector** de un caso.
+- Al guardar, el sistema envía únicamente esos campos; si se corrige la dirección sin enviar
+  sector, el sector se recalcula solo.
+- El botón **Editar** vuelve a abrir el formulario las veces que haga falta, incluso después de
+  guardar.
+
+#### Cambio de estado
+
+- Desde D-76 la ficha web **no** permite cambiar el estado: el formulario se retiró junto con la
+  pestaña Gestión.
+- El movimiento de estado sigue disponible en la operación del API para otros clientes (la APK).
 
 #### Historial
 
-Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y fecha y hora. Se
-carga con la operación de historial del cliente de API.
+Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y fecha y hora, bajo
+la ficha. Se carga con la operación de historial del cliente de API.
 
 ### PANEL (`app/web/src/pages/Panel.tsx`)
 
