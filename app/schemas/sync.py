@@ -15,8 +15,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-TipoActividad = Literal["CONTACTO", "CIERRE", "CITA", "ENRUTADO", "DIFERIDO"]
-ResultadoActividad = Literal["EXITOSO", "FALLIDO", "NO_ATIENDE", "PENDIENTE"]
+#: Tipos que la APK puede enviar. «ENRUTADO» se normaliza a «ENRUTE» al guardar
+#: (`actividad.tipo` solo admite los valores del CHECK del DDL).
+TipoActividad = Literal["CONTACTO", "CIERRE", "CITA", "ENRUTE", "ENRUTADO", "DIFERIDO"]
 
 
 class SyncCuadrillaOut(BaseModel):
@@ -70,9 +71,20 @@ class ActividadSyncIn(BaseModel):
     id_actividad_local: int | None = None
     id_caso: int
     tipo: TipoActividad
-    resultado: ResultadoActividad | None = None
+    resultado: str | None = Field(
+        default=None,
+        max_length=20,
+        description="Resultado de campo (EXITOSO, NO_ATIENDE…). El servidor lo "
+                    "normaliza al valor que admite el DDL de `actividad`.",
+    )
     reporte_corto: str | None = Field(default=None, max_length=2000)
     id_metodo: int | None = None
+    modo: str | None = Field(
+        default=None,
+        max_length=20,
+        description="Modo de cierre del catálogo (IVR/COS/SACAS). Si llega, el "
+                    "servidor resuelve `id_metodo`; la APK lo conserva offline.",
+    )
     id_causa: int | None = None
     fecha_hora: datetime
     latitud: float | None = None

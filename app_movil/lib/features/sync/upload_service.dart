@@ -105,6 +105,9 @@ class UploadService {
             'tipo': 'CIERRE',
             'resultado': 'EXITOSO',
             'reporte_corto': payload['descripcion'],
+            // El cierre de campo guarda el modo (IVR/COS/SACAS) sin conexión; el
+            // servidor lo traduce al catálogo para no perderlo.
+            'modo': payload['modo'],
             'id_metodo': payload['id_metodo'],
             'id_causa': payload['id_causa'],
             'fecha_hora': DateTime.now().toIso8601String(),
