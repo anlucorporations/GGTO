@@ -158,7 +158,6 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
         evidencias: lista,
       });
       onActualizada(actualizada, `Planificación de la falla #${falla.id_falla} guardada (RF-17).`);
-      setPestana('masiva');
     } catch (e) {
       setError(detalleDe(e, 'No se pudo guardar la planificación.'));
     } finally {
