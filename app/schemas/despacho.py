@@ -36,6 +36,8 @@ class GrupoCuadrillaOut(BaseModel):
     codigo: str
     nombre: str
     total: int
+    # D-77: la cuadrilla 0 (supervisor) recibe los casos en GESTIÓN
+    es_supervisor: bool = False
     casos: list[CasoAsignadoOut]
 
 
@@ -104,6 +106,7 @@ class CuadrillaProcesoOut(BaseModel):
     id_cuadrilla: int
     codigo: str
     nombre: str
+    es_supervisor: bool = False
     ids_sector: list[int] = Field(default_factory=list)
     total: int = 0
 
@@ -146,6 +149,34 @@ class ProcesarDespacho(BaseModel):
     id_central: int | None = None
     asignaciones: list[AsignacionBloque] = Field(default_factory=list)
     reemplazar: bool = True
+
+
+class AsignacionCasosRequest(BaseModel):
+    """D-77: asignar o quitar casos (comunes y especiales) a una cuadrilla."""
+
+    id_cuadrilla: int | None = Field(
+        default=None, description="Cuadrilla destino (obligatoria al asignar)"
+    )
+    ids_caso: list[int] = Field(default_factory=list, description="Casos comunes")
+    ids_caso_especial: list[int] = Field(
+        default_factory=list, description="Casos especiales (se resuelven a su caso asociado)"
+    )
+    fecha: date | None = Field(default=None, description="Por defecto, hoy")
+    id_central: int | None = None
+
+
+class AsignacionCasosOut(BaseModel):
+    """Resultado de asignar/quitar casos a una cuadrilla (D-77)."""
+
+    fecha: date
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    id_despacho: int | None = None
+    agregados: int = 0
+    movidos: int = 0
+    quitados: int = 0
+    omitidos: list[int] = Field(default_factory=list)
+    mensaje: str = ""
 
 
 class CasoAgregar(BaseModel):

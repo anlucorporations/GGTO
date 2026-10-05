@@ -83,7 +83,7 @@ flowchart TD
 |---|---|
 | **RF-08** | Distribuir el universo de averías entre las cuadrillas activas del día, agrupando por sector. |
 | **RF-24** | Proponer la distribución de casos antes de guardarla. |
-| **RF-25** | Excluir del despacho de calle los casos de la cuadrilla 0 (los que gestiona el supervisor), salvo los citados del día. |
+| **RF-25** | La cuadrilla 0 (gestión del supervisor) no compite por sectores: sus casos se despachan **a la propia cuadrilla 0** (D-77). |
 | **RF-27** | Generar el reporte de producción: asignados, cerrados, citados, referidos, etc. |
 | **RT-08** | Imprimir en tamaño carta la ficha de la cuadrilla. |
 | **RF-09** | Registrar y listar fallas masivas desde el módulo de despacho. |
@@ -214,8 +214,9 @@ este orden:
 1. Solo casos de la **central solicitada**.
 2. Se dejan **fuera** los estados `CERRADO`, `CANCELADO` y `ENRUTADO`: esos ya no son trabajo de
    calle.
-3. Se excluye la **cuadrilla 0** (los casos que gestiona el supervisor), **salvo** que el caso
-   tenga una **cita del día**: en ese caso sí entra.
+3. Los casos de la **cuadrilla 0** (los que gestiona el supervisor) **sí entran**: no se
+   reparten por sector, se agrupan y se despachan a la **cuadrilla 0** (la del supervisor).
+   Si la central no tiene cuadrilla 0, vuelven al reparto normal (D-77).
 4. En la **simulación** se excluyen los casos ya asignados a un despacho abierto. En el
    **proceso** del formulario flotante sí se incluyen los borradores del día, porque se van a
    reemplazar; solo se respetan los despachos `PUBLICADO` o `CERRADO`.
@@ -428,7 +429,15 @@ Estas tres operaciones son las que usa el formulario flotante «Procesar despach
 
 ### Casos del despacho
 
-- **`POST /{id_despacho}/casos`** rechaza con **409** los casos de la cuadrilla 0 (mensaje: «El
+- **`POST /{id_despacho}/casos`** rechaza con **409** los casos repetidos; el antiguo 409 que
+  bloqueaba los casos de la cuadrilla 0 se retiró en D-77 (la asignación del supervisor manda).
+
+- **`POST /despachos/asignar-casos`** y **`POST /despachos/quitar-casos`** (D-77): el
+  Supervisor o el Administrador asignan casos **comunes y especiales** a una cuadrilla, o los
+  sacan del despacho del día. Asignar mueve el caso si estaba en el borrador de otra
+  cuadrilla, respeta los despachos publicados o cerrados y, si el destino es la cuadrilla 0,
+  marca el caso como **gestión del supervisor**. En la web se hace seleccionando renglones en
+  **CASOS** o **ESPECIALES** y pulsando «Asignar a cuadrilla» o «Quitar del despacho».
   caso pertenece a la cuadrilla 0 (supervisor)») y los repetidos (mensaje: «El caso ya está en el
   despacho»). Si el caso no existe, responde **404**. El `orden_visita` es el indicado o, si no
   se indica, el máximo más uno. El sector se copia del propio caso.

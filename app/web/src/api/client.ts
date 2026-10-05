@@ -9,6 +9,8 @@
 
 import type {
   AsignacionBloque,
+  AsignacionCasosOut,
+  AsignacionCasosRequest,
   ResolucionOut,
   EnrutadoCaso,
   CasoRelacionado,
@@ -695,6 +697,20 @@ export function agregarCasoDespacho(
   data: CasoAgregar,
 ): Promise<DespachoDetalleOut> {
   return conCuerpo<DespachoDetalleOut>(`/despachos/${idDespacho}/casos`, 'POST', data);
+}
+
+/** D-77: asigna casos comunes y especiales a una cuadrilla (borrador del día). */
+export function asignarCasosCuadrilla(
+  data: AsignacionCasosRequest,
+): Promise<AsignacionCasosOut> {
+  return conCuerpo<AsignacionCasosOut>('/despachos/asignar-casos', 'POST', data);
+}
+
+/** D-77: quita los casos del despacho del día (desasigna). */
+export function quitarCasosCuadrilla(
+  data: AsignacionCasosRequest,
+): Promise<AsignacionCasosOut> {
+  return conCuerpo<AsignacionCasosOut>('/despachos/quitar-casos', 'POST', data);
 }
 
 export function quitarCasoDespacho(

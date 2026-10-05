@@ -51,6 +51,9 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
 
   const cuadrillas = proceso?.cuadrillas ?? [];
   const sectores = proceso?.sectores ?? [];
+  // D-77: la cuadrilla 0 (supervisor) no recibe sectores: solo los casos en
+  // GESTIÓN. Por eso no aparece en los selectores de sector.
+  const cuadrillasCalle = cuadrillas.filter((c) => !c.es_supervisor);
 
   const bloques: AsignacionBloque[] = useMemo(
     () =>
@@ -218,7 +221,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                           }
                         >
                           <option value="">— Sin asignar —</option>
-                          {cuadrillas.map((c) => (
+                          {cuadrillasCalle.map((c) => (
                             <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
                               {c.codigo} — {c.nombre}
                             </option>
@@ -240,16 +243,31 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
             <div className="ficha-tarjetas">
               {cuadrillas.map((c) => {
                 const suyos = sectores.filter((s) => asignacion[s.id_sector] === c.id_cuadrilla);
+                // La cuadrilla 0 no recibe sectores: sus casos vienen de GESTIÓN
+                const enPropuesta =
+                  proceso?.grupos.find((g) => g.id_cuadrilla === c.id_cuadrilla)?.total ?? 0;
                 return (
                   <div className="ficha-tarjeta" key={c.id_cuadrilla}>
                     <div className="etiqueta">
                       {c.codigo} — {c.nombre}
+                      {c.es_supervisor && (
+                        <span className="chip chip-estado-ok" style={{ marginLeft: 6 }}>
+                          Cuadrilla 0 · casos en gestión
+                        </span>
+                      )}
                     </div>
-                    <div className="valor">{totalPorCuadrilla[c.id_cuadrilla] ?? 0} caso(s)</div>
+                    <div className="valor">
+                      {c.es_supervisor
+                        ? enPropuesta
+                        : (totalPorCuadrilla[c.id_cuadrilla] ?? 0)}{' '}
+                      caso(s)
+                    </div>
                     <p className="texto-pequeno">
-                      {suyos.length === 0
-                        ? 'Sin sectores asignados'
-                        : suyos.map((s) => s.nombre ?? `#${s.id_sector}`).join(' · ')}
+                      {c.es_supervisor
+                        ? 'Recibe los casos en gestión (sin sectores)'
+                        : suyos.length === 0
+                          ? 'Sin sectores asignados'
+                          : suyos.map((s) => s.nombre ?? `#${s.id_sector}`).join(' · ')}
                     </p>
                   </div>
                 );

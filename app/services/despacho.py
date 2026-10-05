@@ -16,6 +16,11 @@ Reglas aplicadas (ciclo D-66):
 5. La **construcción** va completa a **una sola cuadrilla**.
 6. Se verifica que el despacho incluya **≥2 referidos** y **≥1 empresa** (si
    existen en el universo).
+7. **Cuadrilla 0 (D-77)**: los casos en GESTIÓN (`en_gestion_supervisor` o
+   estado `EN_GESTION`) ya no se descartan: se agrupan aparte y se despachan a
+   la cuadrilla del supervisor, que puede publicarlos y enviarlos como
+   cualquier otra. El supervisor también puede **asignar y quitar** casos
+   (comunes y especiales) a una cuadrilla a mano.
 """
 
 from __future__ import annotations
@@ -24,10 +29,19 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date
 
-from sqlalchemy import delete, func, or_, select
+from fastapi import HTTPException, status
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from ..models import Caso, Cuadrilla, CuadrillaSectorDia, Despacho, DespachoCasos, Sector
+from ..models import (
+    Caso,
+    CasoEspecial,
+    Cuadrilla,
+    CuadrillaSectorDia,
+    Despacho,
+    DespachoCasos,
+    Sector,
+)
 
 ESTADOS_FUERA = ("CERRADO", "CANCELADO", "ENRUTADO")
 CATEGORIAS_ESPECIALES = ("REFERIDO", "EMPRESA", "GOBIERNO")
@@ -63,6 +77,8 @@ class GrupoCuadrilla:
     codigo: str
     nombre: str
     casos: list[CasoAsignado] = field(default_factory=list)
+    # D-77: la cuadrilla 0 (supervisor) recibe los casos en GESTIÓN
+    es_supervisor: bool = False
 
     @property
     def total(self) -> int:
@@ -88,6 +104,7 @@ class Propuesta:
                     "codigo": g.codigo,
                     "nombre": g.nombre,
                     "total": g.total,
+                    "es_supervisor": g.es_supervisor,
                     "casos": [c.como_dict() for c in g.casos],
                 }
                 for g in self.grupos
@@ -110,6 +127,22 @@ def _tipo_asignacion(caso: Caso) -> str:
 
 def es_especial(caso: Caso) -> bool:
     return caso.categoria in CATEGORIAS_ESPECIALES
+
+
+def en_gestion(caso: Caso) -> bool:
+    """D-77: el caso pertenece a la gestión del supervisor (cuadrilla 0)."""
+    return bool(caso.en_gestion_supervisor) or caso.estado_actual == "EN_GESTION"
+
+
+def cuadrilla_supervisor(db: Session, id_central: int) -> Cuadrilla | None:
+    """Cuadrilla 0: la del supervisor (D-77)."""
+    return db.scalar(
+        select(Cuadrilla).where(
+            Cuadrilla.id_central == id_central,
+            Cuadrilla.activa.is_(True),
+            Cuadrilla.es_supervisor.is_(True),
+        ).order_by(Cuadrilla.codigo).limit(1)
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -136,11 +169,9 @@ def _filtro_universo(id_central: int, fecha: date, solo_libres: bool):
             .where(Despacho.estado.in_(("PUBLICADO", "CERRADO")))
             .scalar_subquery()
         )
-    citados_hoy = func.date(Caso.fecha_cita) == fecha
     return (
         Caso.id_central == id_central,
         Caso.estado_actual.notin_(ESTADOS_FUERA),
-        or_(Caso.en_gestion_supervisor.is_(False), citados_hoy),
         Caso.id_caso.notin_(ocupados),
     )
 
@@ -299,6 +330,7 @@ def construir_propuesta(
     proceso, que incluye los borradores del día).
     """
     cuadrillas = cuadrillas_activas(db, id_central)
+    supervisor = cuadrilla_supervisor(db, id_central)
     if casos is None:
         casos = seleccionar_casos(db, id_central, fecha)
     nombres = nombres_de_sector(db, id_central)
@@ -307,17 +339,40 @@ def construir_propuesta(
         if not asignacion and cuadrillas:
             asignacion = propuesta_asignacion(cuadrillas, casos)
 
+    # D-77: los casos en GESTIÓN no se reparten por sector — se agrupan en la
+    # cuadrilla 0 (la del supervisor). Si no hay cuadrilla 0 vuelven al reparto.
+    en_gestion_total = [c for c in casos if en_gestion(c)]
+    casos = [c for c in casos if not en_gestion(c)]
+    supervisor_grupo: GrupoCuadrilla | None = None
+    if supervisor is not None and en_gestion_total:
+        ordenados = sorted(en_gestion_total, key=lambda c: (c.id_sector or 0, c.id_caso))
+        supervisor_grupo = GrupoCuadrilla(
+            id_cuadrilla=supervisor.id_cuadrilla,
+            codigo=supervisor.codigo,
+            nombre=supervisor.nombre,
+            es_supervisor=True,
+            casos=[_envolver(c, _tipo_asignacion(c), i, nombres, fecha)
+                   for i, c in enumerate(ordenados, 1)],
+        )
+    else:
+        casos = casos + en_gestion_total
+
     comunes = sum(1 for c in casos if not es_especial(c))
     especiales = len(casos) - comunes
+    asignados_gestion = supervisor_grupo.total if supervisor_grupo else 0
 
     if not cuadrillas:
+        pendientes = [_envolver(c, _tipo_asignacion(c), i, nombres, fecha)
+                      for i, c in enumerate(casos, 1)]
         return Propuesta(
-            fecha=fecha, id_central=id_central, grupos=[],
-            sin_asignar=[_envolver(c, _tipo_asignacion(c), i, nombres, fecha)
-                         for i, c in enumerate(casos, 1)],
-            reglas={"cuadrillas_activas": 0, "motivo": "No hay cuadrillas activas de calle"},
-            resumen={"total_casos": len(casos), "comunes": comunes, "especiales": especiales,
-                     "asignados": 0, "sin_asignar": len(casos)},
+            fecha=fecha, id_central=id_central,
+            grupos=[supervisor_grupo] if supervisor_grupo else [],
+            sin_asignar=pendientes,
+            reglas={"cuadrillas_activas": 0, "motivo": "No hay cuadrillas activas de calle",
+                    "gestion_cuadrilla0": asignados_gestion},
+            resumen={"total_casos": len(casos) + asignados_gestion, "comunes": comunes,
+                     "especiales": especiales, "asignados": asignados_gestion,
+                     "sin_asignar": len(pendientes)},
         )
 
     # --- Reparto por sector según la asignación del día ---
@@ -382,7 +437,7 @@ def construir_propuesta(
     for i, c in enumerate(sin_asignar, start=1):
         c.orden_visita = i
 
-    resultado = [
+    resultado = ([supervisor_grupo] if supervisor_grupo else []) + [
         GrupoCuadrilla(id_cuadrilla=cu.id_cuadrilla, codigo=cu.codigo, nombre=cu.nombre,
                        casos=grupos[cu.id_cuadrilla])
         for cu in cuadrillas
@@ -422,9 +477,10 @@ def construir_propuesta(
             }) <= 1,
             "sectores_sin_cuadrilla": sectores_sin_cuadrilla,
             "cuadrillas_activas": len(cuadrillas),
+            "gestion_cuadrilla0": asignados_gestion,
         },
         resumen={
-            "total_casos": len(casos),
+            "total_casos": len(casos) + asignados_gestion,
             "comunes": comunes,
             "especiales": especiales,
             "asignados": total_asignados,
@@ -469,6 +525,7 @@ def guardar_propuesta(db: Session, propuesta: Propuesta, usuario: str | None) ->
 def proceso(db: Session, id_central: int, fecha: date) -> dict:
     """Universo + sectores + cuadrillas + asignación, para el formulario flotante."""
     cuadrillas = cuadrillas_activas(db, id_central)
+    supervisor = cuadrilla_supervisor(db, id_central)
     casos = universo_casos(db, id_central, fecha)
     nombres = nombres_de_sector(db, id_central)
     asignacion, origen = asignacion_efectiva(db, id_central, fecha)
@@ -513,16 +570,27 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             ],
         },
         "sectores": sorted(sectores.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])),
-        "cuadrillas": [
-            {
-                "id_cuadrilla": c.id_cuadrilla,
-                "codigo": c.codigo,
-                "nombre": c.nombre,
-                "ids_sector": sorted(ids_por_cuadrilla[c.id_cuadrilla]),
-                "total": por_cuadrilla.get(c.id_cuadrilla, 0),
-            }
-            for c in cuadrillas
-        ],
+        "cuadrillas": (
+            ([{
+                "id_cuadrilla": supervisor.id_cuadrilla,
+                "codigo": supervisor.codigo,
+                "nombre": supervisor.nombre,
+                "es_supervisor": True,
+                "ids_sector": [],
+                "total": por_cuadrilla.get(supervisor.id_cuadrilla, 0),
+            }] if supervisor else [])
+            + [
+                {
+                    "id_cuadrilla": c.id_cuadrilla,
+                    "codigo": c.codigo,
+                    "nombre": c.nombre,
+                    "es_supervisor": False,
+                    "ids_sector": sorted(ids_por_cuadrilla[c.id_cuadrilla]),
+                    "total": por_cuadrilla.get(c.id_cuadrilla, 0),
+                }
+                for c in cuadrillas
+            ]
+        ),
         "asignacion": [
             {"id_cuadrilla": c.id_cuadrilla, "ids_sector": sorted(ids_por_cuadrilla[c.id_cuadrilla])}
             for c in cuadrillas
@@ -533,3 +601,203 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         "resumen": propuesta.resumen,
     }
     return retorno
+
+
+# --------------------------------------------------------------------------- #
+# Asignación manual de casos a una cuadrilla (D-77)
+# --------------------------------------------------------------------------- #
+def _casos_de_especiales(db: Session, ids_caso_especial: list[int]) -> tuple[list[int], list[int]]:
+    """Resuelve los casos especiales a su `id_caso` asociado."""
+    if not ids_caso_especial:
+        return [], []
+    filas = db.scalars(
+        select(CasoEspecial).where(CasoEspecial.id_caso_especial.in_(ids_caso_especial))
+    ).all()
+    encontrados = {f.id_caso_especial: f.id_caso for f in filas}
+    ids: list[int] = []
+    omitidos: list[int] = []
+    for id_especial in ids_caso_especial:
+        id_caso = encontrados.get(id_especial)
+        if id_caso is None:
+            omitidos.append(id_especial)
+        else:
+            ids.append(id_caso)
+    return ids, omitidos
+
+
+def _borrador_de_cuadrilla(
+    db: Session, id_central: int, fecha: date, id_cuadrilla: int, usuario: str | None
+) -> Despacho:
+    """Despacho BORRADOR de esa cuadrilla y fecha (lo crea si no existe)."""
+    despacho = db.scalar(
+        select(Despacho).where(
+            Despacho.id_central == id_central,
+            Despacho.fecha == fecha,
+            Despacho.id_cuadrilla == id_cuadrilla,
+        ).order_by(Despacho.id_despacho.desc())
+    )
+    if despacho is None:
+        despacho = Despacho(
+            id_central=id_central, fecha=fecha, id_cuadrilla=id_cuadrilla,
+            estado="BORRADOR", generado_auto=False, usuario_crea=usuario,
+        )
+        db.add(despacho)
+        db.flush()
+    elif despacho.estado in ("PUBLICADO", "CERRADO"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El despacho de esa cuadrilla ya está publicado o cerrado para esa fecha",
+        )
+    return despacho
+
+
+def asignar_casos(
+    db: Session,
+    id_central: int,
+    fecha: date,
+    id_cuadrilla: int,
+    ids_caso: list[int],
+    ids_caso_especial: list[int] | None = None,
+    usuario: str | None = None,
+) -> dict:
+    """D-77: agrega casos (comunes y especiales) al despacho del día de la cuadrilla.
+
+    Si el caso estaba en el borrador de otra cuadrilla del mismo día, se **mueve**.
+    Un caso en un despacho ya publicado o cerrado no se toca (se informa en
+    `omitidos`). Al asignar a la cuadrilla 0 se marca `en_gestion_supervisor`;
+    al asignarlo a una cuadrilla de calle se desmarca.
+    """
+    cuadrilla = db.get(Cuadrilla, id_cuadrilla)
+    if cuadrilla is None or cuadrilla.id_central != id_central:
+        raise HTTPException(status_code=404, detail="Cuadrilla no encontrada")
+
+    de_especiales, omitidos_esp = _casos_de_especiales(db, list(ids_caso_especial or []))
+    solicitados = list(dict.fromkeys(list(ids_caso) + de_especiales))
+    if not solicitados:
+        raise HTTPException(status_code=400, detail="No se indicaron casos para asignar")
+
+    destino = _borrador_de_cuadrilla(db, id_central, fecha, id_cuadrilla, usuario)
+    en_destino = {
+        f.id_caso for f in db.scalars(
+            select(DespachoCasos).where(DespachoCasos.id_despacho == destino.id_despacho)
+        ).all()
+    }
+    orden = db.scalar(
+        select(func.coalesce(func.max(DespachoCasos.orden_visita), 0)).where(
+            DespachoCasos.id_despacho == destino.id_despacho
+        )
+    ) or 0
+
+    agregados = movidos = 0
+    omitidos = list(omitidos_esp)
+    for id_caso in solicitados:
+        caso = db.get(Caso, id_caso)
+        if caso is None or caso.id_central != id_central:
+            omitidos.append(id_caso)
+            continue
+        if id_caso in en_destino:
+            omitidos.append(id_caso)
+            continue
+        # ¿Está en el despacho de otra cuadrilla del mismo día?
+        fila_previa = db.scalar(
+            select(DespachoCasos)
+            .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+            .where(
+                Despacho.id_central == id_central,
+                Despacho.fecha == fecha,
+                Despacho.id_cuadrilla != id_cuadrilla,
+                DespachoCasos.id_caso == id_caso,
+            )
+        )
+        if fila_previa is not None:
+            previo = db.get(Despacho, fila_previa.id_despacho)
+            if previo is not None and previo.estado in ("PUBLICADO", "CERRADO"):
+                omitidos.append(id_caso)
+                continue
+            db.delete(fila_previa)
+            movidos += 1
+        else:
+            agregados += 1
+        orden += 1
+        db.add(
+            DespachoCasos(
+                id_despacho=destino.id_despacho,
+                id_caso=caso.id_caso,
+                id_sector=caso.id_sector,
+                orden_visita=orden,
+                tipo_asignacion=_tipo_asignacion(caso),
+                estado="ASIGNADO",
+            )
+        )
+        # La cuadrilla 0 marca el caso como gestión del supervisor (y lo desmarca
+        # si va a una cuadrilla de calle).
+        caso.en_gestion_supervisor = bool(cuadrilla.es_supervisor)
+        en_destino.add(id_caso)
+
+    db.commit()
+    return {
+        "fecha": fecha,
+        "id_cuadrilla": cuadrilla.id_cuadrilla,
+        "cuadrilla_codigo": cuadrilla.codigo,
+        "id_despacho": destino.id_despacho,
+        "agregados": agregados,
+        "movidos": movidos,
+        "omitidos": omitidos,
+    }
+
+
+def quitar_casos(
+    db: Session,
+    id_central: int,
+    fecha: date,
+    ids_caso: list[int],
+    ids_caso_especial: list[int] | None = None,
+) -> dict:
+    """D-77: saca los casos de los despachos BORRADOR del día (cualquier cuadrilla).
+
+    Los despachos publicados o cerrados se respetan y los borradores que quedan
+    vacíos se eliminan.
+    """
+    de_especiales, omitidos_esp = _casos_de_especiales(db, list(ids_caso_especial or []))
+    solicitados = list(dict.fromkeys(list(ids_caso) + de_especiales))
+    if not solicitados:
+        raise HTTPException(status_code=400, detail="No se indicaron casos para quitar")
+
+    filas = db.scalars(
+        select(DespachoCasos)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(
+            Despacho.id_central == id_central,
+            Despacho.fecha == fecha,
+            DespachoCasos.id_caso.in_(solicitados),
+        )
+    ).all()
+    quitados = 0
+    omitidos = list(omitidos_esp)
+    afectados: set[int] = set()
+    for fila in filas:
+        despacho = db.get(Despacho, fila.id_despacho)
+        if despacho is None or despacho.estado in ("PUBLICADO", "CERRADO"):
+            omitidos.append(fila.id_caso)
+            continue
+        db.delete(fila)
+        afectados.add(fila.id_despacho)
+        quitados += 1
+    presentes = {f.id_caso for f in filas}
+    omitidos += [c for c in solicitados if c not in presentes]
+
+    db.flush()
+    for id_despacho in afectados:
+        quedan = db.scalar(
+            select(func.count()).select_from(DespachoCasos).where(
+                DespachoCasos.id_despacho == id_despacho
+            )
+        )
+        if not quedan:
+            vacio = db.get(Despacho, id_despacho)
+            if vacio is not None and vacio.estado == "BORRADOR":
+                # En bloque: las filas hijas ya se borraron y el cascade del ORM
+                # intentaría eliminarlas otra vez (SAWarning).
+                db.execute(delete(Despacho).where(Despacho.id_despacho == id_despacho))
+    db.commit()
+    return {"fecha": fecha, "quitados": quitados, "omitidos": omitidos}

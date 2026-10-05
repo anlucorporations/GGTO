@@ -19,7 +19,7 @@ test.describe('Especiales', () => {
     await rellenar(page.getByLabel('Solicitante — nombre'), 'Solicitante E2E');
     await rellenar(page.getByLabel('Solicitante — contacto'), '04249998877');
     await page.getByRole('button', { name: 'Guardar caso' }).click();
-    await expect(page.getByText(/REF-2324X-/)).toBeVisible();
+    await expect(page.getByText(/REF-2324X-/).first()).toBeVisible();
 
     await page.goto('/especiales');
     await expect(page.getByRole('heading', { name: 'Especiales', level: 1 })).toBeVisible();

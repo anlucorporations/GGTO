@@ -3,9 +3,7 @@
     "argv": [
       "/usr/bin/node",
       "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/node_modules/.bin/playwright",
-      "test",
-      "tests/08-monitoreo.spec.js",
-      "tests/18-ficha-pestanas.spec.js"
+      "test"
     ],
     "configFile": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/playwright.config.js",
     "rootDir": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests",
@@ -74,6 +72,1429 @@
   },
   "suites": [
     {
+      "title": "01-login.spec.js",
+      "file": "01-login.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Login",
+          "file": "01-login.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "credenciales válidas entran al panel",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4576,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:19.522Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-b1175ae5aaed53de4fb4",
+              "file": "01-login.spec.js",
+              "line": 6,
+              "column": 3
+            },
+            {
+              "title": "clave incorrecta muestra error y no entra",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2830,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:24.294Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-0a30247a57b73f4f5199",
+              "file": "01-login.spec.js",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "P00 inexistente muestra error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1606,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:27.150Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-6e892eee02ad60f2a0a9",
+              "file": "01-login.spec.js",
+              "line": 28,
+              "column": 3
+            },
+            {
+              "title": "una ruta protegida sin sesión redirige a login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 525,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:28.775Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-9ecf7231f71fd03d2bed",
+              "file": "01-login.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "cerrar sesión vuelve al login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1760,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:29.325Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-359460872e2957c13967",
+              "file": "01-login.spec.js",
+              "line": 47,
+              "column": 3
+            },
+            {
+              "title": "el menú del usuario muestra P00 y rol",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5305,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:31.102Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-4adbbc7bd6758eb1f8b0",
+              "file": "01-login.spec.js",
+              "line": 53,
+              "column": 3
+            },
+            {
+              "title": "el login muestra dos pestañas y solo el formulario de la activa",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4478,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:36.434Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-c0fadfcada2691a54d32",
+              "file": "01-login.spec.js",
+              "line": 72,
+              "column": 3
+            },
+            {
+              "title": "Primer acceso informa sobre un P00 no registrado",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4561,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:40.945Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b4c23474a8d45fc46a9d-42f1492eca6e330dd156",
+              "file": "01-login.spec.js",
+              "line": 87,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "02-navegacion.spec.js",
+      "file": "02-navegacion.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Navegación",
+          "file": "02-navegacion.spec.js",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "las 5 secciones de la barra superior cargan",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6671,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:45.738Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-a06f0cae8564178cd605",
+              "file": "02-navegacion.spec.js",
+              "line": 24,
+              "column": 3
+            },
+            {
+              "title": "el menú CONFIGURACIÓN agrupa las subsecciones (ADMIN)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5297,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:52.451Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-ca0f20da3d51c811dc2e",
+              "file": "02-navegacion.spec.js",
+              "line": 44,
+              "column": 3
+            },
+            {
+              "title": "todas las subsecciones de CONFIGURACIÓN cargan (ADMIN)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16243,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:58:57.958Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-73968f47270a38a0d20b",
+              "file": "02-navegacion.spec.js",
+              "line": 52,
+              "column": 3
+            },
+            {
+              "title": "TECNICO no ve CONFIGURACIÓN ni DESPACHO (D-72)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9982,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:14.412Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-73d5fdf8f7d4f832640d",
+              "file": "02-navegacion.spec.js",
+              "line": 60,
+              "column": 3
+            },
+            {
+              "title": "SUPERVISOR sí ve CONFIGURACIÓN",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:24.437Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-706573f1eaac64591398",
+              "file": "02-navegacion.spec.js",
+              "line": 73,
+              "column": 3
+            },
+            {
+              "title": "en móvil la barra muestra las secciones como iconos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4731,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:28.659Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-934879fde436e9c101ed",
+              "file": "02-navegacion.spec.js",
+              "line": 78,
+              "column": 3
+            },
+            {
+              "title": "el buscador global y el alta de caso están en la barra",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6501,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:33.423Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "071474e67a95ffe7b0c2-09d0bbb43b6aaba6ac7b",
+              "file": "02-navegacion.spec.js",
+              "line": 88,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "03-casos.spec.js",
+      "file": "03-casos.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Casos",
+          "file": "03-casos.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el listado muestra los casos sembrados",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 10267,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0001' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0001' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-0001' })\n    2) <td class=\"mono\">E2E-0001</td> aka getByRole('cell', { name: 'E2E-0001', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0001' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0001' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0001' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0001' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-0001' })\n    2) <td class=\"mono\">E2E-0001</td> aka getByRole('cell', { name: 'E2E-0001', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0001' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0001' })\u001b[22m\n\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js:14:64",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                          "column": 64,
+                          "line": 14
+                        },
+                        "snippet": "  12 |   test('el listado muestra los casos sembrados', async ({ page }) => {\n  13 |     await expect(page.locator('tbody tr')).toHaveCount(8);\n> 14 |     await expect(page.getByRole('cell', { name: 'E2E-0001' })).toBeVisible();\n     |                                                                ^\n  15 |   });\n  16 |\n  17 |   test('el filtro por estado acota el listado', async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                            "column": 64,
+                            "line": 14
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0001' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0001' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-0001' })\n    2) <td class=\"mono\">E2E-0001</td> aka getByRole('cell', { name: 'E2E-0001', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0001' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0001' })\u001b[22m\n\n\n  12 |   test('el listado muestra los casos sembrados', async ({ page }) => {\n  13 |     await expect(page.locator('tbody tr')).toHaveCount(8);\n> 14 |     await expect(page.getByRole('cell', { name: 'E2E-0001' })).toBeVisible();\n     |                                                                ^\n  15 |   });\n  16 |\n  17 |   test('el filtro por estado acota el listado', async ({ page }) => {\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js:14:64"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:40.161Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-listado-muestra-los-casos-sembrados-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-listado-muestra-los-casos-sembrados-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-listado-muestra-los-casos-sembrados-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                        "column": 64,
+                        "line": 14
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-808640cb8deae2c9b5b8",
+              "file": "03-casos.spec.js",
+              "line": 12,
+              "column": 3
+            },
+            {
+              "title": "el filtro por estado acota el listado",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 15190,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0006' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0006' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0006</td> aka getByRole('cell', { name: 'E2E-0006', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0006' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0006' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0006' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0006' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0006</td> aka getByRole('cell', { name: 'E2E-0006', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0006' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0006' })\u001b[22m\n\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js:21:64",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                          "column": 64,
+                          "line": 21
+                        },
+                        "snippet": "  19 |     await page.getByRole('button', { name: 'Filtrar' }).click();\n  20 |     await expect(page.locator('tbody tr')).toHaveCount(1);\n> 21 |     await expect(page.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();\n     |                                                                ^\n  22 |   });\n  23 |\n  24 |   test('la búsqueda por ID de avería ofrece el caso y abre su ficha rápida', async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                            "column": 64,
+                            "line": 21
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0006' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0006' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0006</td> aka getByRole('cell', { name: 'E2E-0006', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0006' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0006' })\u001b[22m\n\n\n  19 |     await page.getByRole('button', { name: 'Filtrar' }).click();\n  20 |     await expect(page.locator('tbody tr')).toHaveCount(1);\n> 21 |     await expect(page.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();\n     |                                                                ^\n  22 |   });\n  23 |\n  24 |   test('la búsqueda por ID de avería ofrece el caso y abre su ficha rápida', async ({ page }) => {\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js:21:64"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T20:59:54.214Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-filtro-por-estado-acota-el-listado-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-filtro-por-estado-acota-el-listado-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/03-casos-Casos-el-filtro-por-estado-acota-el-listado-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/03-casos.spec.js",
+                        "column": 64,
+                        "line": 21
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-8b244cd9cc9bd28ce85b",
+              "file": "03-casos.spec.js",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "la búsqueda por ID de avería ofrece el caso y abre su ficha rápida",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10506,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:00:14.914Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-c4c6ba5f9686e8f1bf58",
+              "file": "03-casos.spec.js",
+              "line": 24,
+              "column": 3
+            },
+            {
+              "title": "la búsqueda por teléfono encuentra el caso",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7707,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:00:25.977Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-7503d187db8f897efc2d",
+              "file": "03-casos.spec.js",
+              "line": 37,
+              "column": 3
+            },
+            {
+              "title": "al seleccionar el renglón se abre la ficha del caso (D-72)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12483,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:00:33.712Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-7455c0092c5ccc560ed8",
+              "file": "03-casos.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "el alta manual genera un caso REF- y lo lista",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12508,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:00:46.213Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5768e9bcaf405500c6c8-8de835a8a9a366ca8a34",
+              "file": "03-casos.spec.js",
+              "line": 51,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "04-especiales.spec.js",
+      "file": "04-especiales.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Especiales",
+          "file": "04-especiales.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el alta de un caso especial REFERIDO aparece en ESPECIALES",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11464,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:00:58.754Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "93b974befa9b8a4ac877-34d4a5c09314a042847a",
+              "file": "04-especiales.spec.js",
+              "line": 6,
+              "column": 3
+            },
+            {
+              "title": "el filtro por clasificación funciona",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5730,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:10.234Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "93b974befa9b8a4ac877-3a6ebbc8fd09a852ad50",
+              "file": "04-especiales.spec.js",
+              "line": 29,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "05-agenda.spec.js",
+      "file": "05-agenda.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Agenda",
+          "file": "05-agenda.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "la vista Día se renderiza",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6983,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:16.003Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-5b77fbefe14b660d5bf3",
+              "file": "05-agenda.spec.js",
+              "line": 14,
+              "column": 5
+            },
+            {
+              "title": "la vista Semana se renderiza",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7492,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:23.207Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-328f1477c2c14e5e1829",
+              "file": "05-agenda.spec.js",
+              "line": 14,
+              "column": 5
+            },
+            {
+              "title": "la vista Mes se renderiza",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6235,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:30.731Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-80e40e5b4b94ce9fb8f7",
+              "file": "05-agenda.spec.js",
+              "line": 14,
+              "column": 5
+            },
+            {
+              "title": "navega al día de hoy",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5263,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:36.991Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-a15a5b0806602366dabd",
+              "file": "05-agenda.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "crea una cita localizando el caso por Id de Avería (D-72)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10980,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:42.483Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-1b09caa573cfea1eed90",
+              "file": "05-agenda.spec.js",
+              "line": 25,
+              "column": 3
+            },
+            {
+              "title": "el calendario se filtra por Cuadrilla, Tipo y Clase (D-72)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4268,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:53.480Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "56d8e8cce0d8901b1baf-bca59364803a432f989f",
+              "file": "05-agenda.spec.js",
+              "line": 42,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "06-despacho.spec.js",
+      "file": "06-despacho.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Despacho",
+          "file": "06-despacho.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "simula la propuesta de reparto por cuadrilla",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6263,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:01:57.781Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eb1a055caf0987d9b324-7eadd1efb1f5d826250a",
+              "file": "06-despacho.spec.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "procesa el despacho del día desde el formulario flotante",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13345,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:04.268Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eb1a055caf0987d9b324-ee5632073c91162d24f7",
+              "file": "06-despacho.spec.js",
+              "line": 19,
+              "column": 3
+            },
+            {
+              "title": "registra una falla masiva manual desde DESPACHO",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6391,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:17.634Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eb1a055caf0987d9b324-07ff19e2e7145b1d6c61",
+              "file": "06-despacho.spec.js",
+              "line": 28,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "07-ingesta.spec.js",
+      "file": "07-ingesta.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Ingesta (pestaña de OPERACIÓN)",
+          "file": "07-ingesta.spec.js",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "la muestra CSV se previsualiza sin errores",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13238,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:24.265Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eba444ee6edc7ca08870-4179b70bff43b4388e08",
+              "file": "07-ingesta.spec.js",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "la pestaña muestra Ingesta, Zona casos globales y Zona capacidad operativa (D-72)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8019,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:37.569Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eba444ee6edc7ca08870-7b18cd1b77d7270aa953",
+              "file": "07-ingesta.spec.js",
+              "line": 31,
+              "column": 3
+            },
+            {
+              "title": "el historial de lotes se recarga",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11733,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:45.804Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eba444ee6edc7ca08870-c1a6286a4df4b48455ef",
+              "file": "07-ingesta.spec.js",
+              "line": 39,
+              "column": 3
+            },
+            {
+              "title": "el TÉCNICO no ve la pestaña INGESTA (requisito 1.2)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21255,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:02:57.563Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "eba444ee6edc7ca08870-038496c931a3844305fd",
+              "file": "07-ingesta.spec.js",
+              "line": 44,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "08-monitoreo.spec.js",
       "file": "08-monitoreo.spec.js",
       "column": 0,
@@ -99,15 +1520,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 23266,
+                      "duration": 13230,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:31:32.782Z",
+                      "startTime": "2026-10-02T21:03:19.270Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -133,15 +1554,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10258,
+                      "duration": 9752,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:31:58.250Z",
+                      "startTime": "2026-10-02T21:03:32.538Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -175,15 +1596,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9297,
+                      "duration": 11468,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:32:08.550Z",
+                      "startTime": "2026-10-02T21:03:42.535Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -209,15 +1630,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10772,
+                      "duration": 9292,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:32:18.297Z",
+                      "startTime": "2026-10-02T21:03:54.025Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -251,15 +1672,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 13694,
+                      "duration": 10043,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:32:29.297Z",
+                      "startTime": "2026-10-02T21:04:03.762Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -285,15 +1706,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 2,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 30210,
+                      "duration": 24499,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:32:43.029Z",
+                      "startTime": "2026-10-02T21:04:14.047Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -304,6 +1725,1560 @@
               "id": "20617dfbf94e9ba9abef-ffb74b9df4fe30a5f3bb",
               "file": "08-monitoreo.spec.js",
               "line": 69,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "09-alertas.spec.js",
+      "file": "09-alertas.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Alertas",
+          "file": "09-alertas.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "muestra las métricas de alertas y canales",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11247,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:04:38.807Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cb7e27a295be1d8e75cb-c119f3c69af25eeff188",
+              "file": "09-alertas.spec.js",
+              "line": 12,
+              "column": 3
+            },
+            {
+              "title": "detecta fallas masivas por concentración (idempotente)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 22980,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:04:50.290Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cb7e27a295be1d8e75cb-b0538a38db2fdbee35e2",
+              "file": "09-alertas.spec.js",
+              "line": 18,
+              "column": 3
+            },
+            {
+              "title": "reporta, planifica y pide material desde la ficha con pestañas (D-75)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 24138,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:05:13.296Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cb7e27a295be1d8e75cb-fb0d53dc28a3a2b540ea",
+              "file": "09-alertas.spec.js",
+              "line": 27,
+              "column": 3
+            },
+            {
+              "title": "la tabla muestra Ruta e Indicadores y ya no la columna Acciones (D-75)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8855,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:05:37.465Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cb7e27a295be1d8e75cb-d3b8cb5394e9be4dd8c4",
+              "file": "09-alertas.spec.js",
+              "line": 69,
+              "column": 3
+            },
+            {
+              "title": "procesa la bandeja de notificaciones (outbox)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14774,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:05:46.532Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cb7e27a295be1d8e75cb-c5d66bc5735d01baf359",
+              "file": "09-alertas.spec.js",
+              "line": 80,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "10-configuracion.spec.js",
+      "file": "10-configuracion.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Configuración",
+          "file": "10-configuracion.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "crea un sector",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15240,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:06:01.549Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "69023cb7de9cc9de3ab2-ad7016badae4df1cb700",
+              "file": "10-configuracion.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "crea un técnico",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14942,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:06:16.834Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "69023cb7de9cc9de3ab2-cce3c9df023c9236b831",
+              "file": "10-configuracion.spec.js",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "crea una causa en catálogos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12008,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:06:31.809Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "69023cb7de9cc9de3ab2-182d6a2341d0410f5952",
+              "file": "10-configuracion.spec.js",
+              "line": 35,
+              "column": 3
+            },
+            {
+              "title": "los parámetros del sistema se listan y son editables",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13228,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:06:44.037Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "69023cb7de9cc9de3ab2-bc3cb8380de0aa106bf6",
+              "file": "10-configuracion.spec.js",
+              "line": 46,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "11-rbac.spec.js",
+      "file": "11-rbac.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "RBAC",
+          "file": "11-rbac.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el TECNICO ve el aviso de solo lectura y no puede crear casos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11317,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:06:57.536Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e9d1b5791cd82b6baee2-cd08ef22a32ad256a8cd",
+              "file": "11-rbac.spec.js",
+              "line": 6,
+              "column": 3
+            },
+            {
+              "title": "el TECNICO puede consultar el listado de casos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14768,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:07:09.287Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e9d1b5791cd82b6baee2-8f511943fccb81ba1d6e",
+              "file": "11-rbac.spec.js",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "el TECNICO no puede operar ALERTAS de escritura",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21713,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:07:24.089Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e9d1b5791cd82b6baee2-1758c4d3630123545fa3",
+              "file": "11-rbac.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "el ADMIN sí puede operar ALERTAS",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 94982,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 90000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/11-rbac.spec.js",
+                            "column": 73,
+                            "line": 30
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Detectar fallas' })\nExpected: enabled\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" getByRole('button', { name: 'Detectar fallas' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Detectar fallas' })\u001b[22m\n\u001b[2m  - Protocol error (Runtime.callFunctionOn): Internal server error, session closed.\u001b[22m\n\n\n  28 |     await iniciarSesion(page, USUARIOS.admin);\n  29 |     await page.goto('/alertas');\n> 30 |     await expect(page.getByRole('button', { name: 'Detectar fallas' })).toBeEnabled();\n     |                                                                         ^\n  31 |     await expect(page.getByRole('button', { name: 'Reportar falla' })).toBeEnabled();\n  32 |   });\n  33 | });\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/11-rbac.spec.js:30:73"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:07:46.063Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/11-rbac-RBAC-el-ADMIN-sí-puede-operar-ALERTAS-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/11-rbac-RBAC-el-ADMIN-sí-puede-operar-ALERTAS-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/11-rbac-RBAC-el-ADMIN-sí-puede-operar-ALERTAS-chromium/trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e9d1b5791cd82b6baee2-1b913af3e342d0a6693b",
+              "file": "11-rbac.spec.js",
+              "line": 27,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "12-ayuda.spec.js",
+      "file": "12-ayuda.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Ayuda",
+          "file": "12-ayuda.spec.js",
+          "line": 5,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el enlace AYUDA abre el manual navegable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9010,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:09:29.308Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "474585ae73467f06c652-a5c937192fd2dbd017af",
+              "file": "12-ayuda.spec.js",
+              "line": 6,
+              "column": 3
+            },
+            {
+              "title": "el índice agrupa temas, secciones y sub-secciones",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10773,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:09:40.337Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "474585ae73467f06c652-1e4fce33b06869b2eaca",
+              "file": "12-ayuda.spec.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "el buscador filtra las secciones",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:09:51.334Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "474585ae73467f06c652-f317493aa7d4f7ecb14d",
+              "file": "12-ayuda.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "el manual HTML y el PDF se sirven sin error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8789,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:00.087Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "474585ae73467f06c652-be4b21ac293130484094",
+              "file": "12-ayuda.spec.js",
+              "line": 36,
+              "column": 3
+            },
+            {
+              "title": "TECNICO también ve AYUDA",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7521,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:09.290Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "474585ae73467f06c652-b4a763ea51287be6c2cd",
+              "file": "12-ayuda.spec.js",
+              "line": 47,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "13-ui-requisitos.spec.js",
+      "file": "13-ui-requisitos.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Requisitos de UI",
+          "file": "13-ui-requisitos.spec.js",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "en PC la barra muestra solo los nombres de las secciones",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7532,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:17.037Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63382eee28f8459ef931-386b61b020645c5591a8",
+              "file": "13-ui-requisitos.spec.js",
+              "line": 12,
+              "column": 3
+            },
+            {
+              "title": "en móvil la barra muestra solo los iconos de las secciones",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9761,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:24.592Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63382eee28f8459ef931-de08061e809913c12b58",
+              "file": "13-ui-requisitos.spec.js",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "los formularios se abren en un modal del 90 % con título y cerrar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10742,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:34.582Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63382eee28f8459ef931-b91276f4373dc2d95c4f",
+              "file": "13-ui-requisitos.spec.js",
+              "line": 31,
+              "column": 3
+            },
+            {
+              "title": "las fichas de detalle también son modales",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19716,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:10:45.561Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63382eee28f8459ef931-27dcffd2f77cc049a47c",
+              "file": "13-ui-requisitos.spec.js",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "las tablas ocupan el 90 % y llevan el pie con el conteo total",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21991,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:11:05.573Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63382eee28f8459ef931-4704082dcb759aca6121",
+              "file": "13-ui-requisitos.spec.js",
+              "line": 67,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "14-operacion-filtros-ficha.spec.js",
+      "file": "14-operacion-filtros-ficha.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OPERACIÓN por pestañas (D-72)",
+          "file": "14-operacion-filtros-ficha.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "la barra tiene OPERACIÓN y ya no las secciones fusionadas",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14523,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:11:27.840Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3dc8a6f164ce17f89a96-c7977a89ba1bc74f8cd9",
+              "file": "14-operacion-filtros-ficha.spec.js",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "OPERACIÓN muestra pestañas y solo la información de la activa",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 103740,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('tab', { name: 'Widget' })\nExpected: visible\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('tab', { name: 'Widget' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('tab', { name: 'Widget' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('tab', { name: 'Widget' })\nExpected: visible\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('tab', { name: 'Widget' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('tab', { name: 'Widget' })\u001b[22m\n\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js:23:61",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js",
+                          "column": 61,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     await page.goto('/');\n  22 |     for (const nombre of ['Widget', 'Ingesta', 'Monitoreo', 'Alertas']) {\n> 23 |       await expect(page.getByRole('tab', { name: nombre })).toBeVisible();\n     |                                                             ^\n  24 |     }\n  25 |     // WIDGET activa por defecto: h1 'Widget' visible y las demás secciones NO.\n  26 |     await expect(page.getByRole('heading', { name: 'Widget', level: 1 })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js",
+                            "column": 61,
+                            "line": 23
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('tab', { name: 'Widget' })\nExpected: visible\nTimeout: 20000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('tab', { name: 'Widget' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('tab', { name: 'Widget' })\u001b[22m\n\n\n  21 |     await page.goto('/');\n  22 |     for (const nombre of ['Widget', 'Ingesta', 'Monitoreo', 'Alertas']) {\n> 23 |       await expect(page.getByRole('tab', { name: nombre })).toBeVisible();\n     |                                                             ^\n  24 |     }\n  25 |     // WIDGET activa por defecto: h1 'Widget' visible y las demás secciones NO.\n  26 |     await expect(page.getByRole('heading', { name: 'Widget', level: 1 })).toBeVisible();\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js:23:61"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:11:42.785Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/14-operacion-filtros-ficha-0cc3b-la-información-de-la-activa-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/14-operacion-filtros-ficha-0cc3b-la-información-de-la-activa-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/14-operacion-filtros-ficha.spec.js",
+                        "column": 61,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "3dc8a6f164ce17f89a96-eaefe55cbc8a61f4c345",
+              "file": "14-operacion-filtros-ficha.spec.js",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "las rutas antiguas redirigen a la pestaña correspondiente",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 28015,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:13:39.830Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3dc8a6f164ce17f89a96-43fca681a4bd9f13394d",
+              "file": "14-operacion-filtros-ficha.spec.js",
+              "line": 38,
+              "column": 3
+            },
+            {
+              "title": "la ficha rápida abre desde WIDGET con el buscador junto al título",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11077,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:14:12.793Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3dc8a6f164ce17f89a96-517daf16757612b01013",
+              "file": "14-operacion-filtros-ficha.spec.js",
+              "line": 50,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Filtros de CASOS (D-65/D-72)",
+          "file": "14-operacion-filtros-ficha.spec.js",
+          "line": 71,
+          "column": 6,
+          "specs": [
+            {
+              "title": "los filtros quedan en una sola fila con Clase, Sector, Tipo, Cuadrilla y Estado",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7010,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:14:24.088Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3dc8a6f164ce17f89a96-206ceee6337b75d3a995",
+              "file": "14-operacion-filtros-ficha.spec.js",
+              "line": 72,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "15-proceso-despacho.spec.js",
+      "file": "15-proceso-despacho.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Proceso de despacho",
+          "file": "15-proceso-despacho.spec.js",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "muestra el universo (comunes y especiales), los sectores y las cuadrillas",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11725,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:14:31.330Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3209ce192f8b129228df-ee42636ad7f6a647f3d5",
+              "file": "15-proceso-despacho.spec.js",
+              "line": 18,
+              "column": 3
+            },
+            {
+              "title": "permite cambiar la asignación de sector y procesar el despacho",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16715,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:14:43.078Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3209ce192f8b129228df-044eb0910b6c90e3ab9a",
+              "file": "15-proceso-despacho.spec.js",
+              "line": 50,
+              "column": 3
+            },
+            {
+              "title": "cancelar cierra el formulario sin procesar",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5922,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:14:59.816Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3209ce192f8b129228df-3151385234f896ec3a0e",
+              "file": "15-proceso-despacho.spec.js",
+              "line": 74,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "16-primer-acceso-tecnicos.spec.js",
+      "file": "16-primer-acceso-tecnicos.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Primer acceso de técnicos",
+          "file": "16-primer-acceso-tecnicos.spec.js",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el resumen de TÉCNICOS muestra el estado de la cuenta",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4028,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:15:05.789Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "14a6296048a77c02cf91-9bdae54563ac6a2b69a5",
+              "file": "16-primer-acceso-tecnicos.spec.js",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "un técnico nuevo completa su primer acceso y recibe 12 palabras",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 40763,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:15:09.835Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "14a6296048a77c02cf91-39fb7e37bdf85b792253",
+              "file": "16-primer-acceso-tecnicos.spec.js",
+              "line": 24,
+              "column": 3
+            },
+            {
+              "title": "solo el Super Usuario puede regenerar las palabras de seguridad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25604,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:15:50.804Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "14a6296048a77c02cf91-6ab9f60ee2bae8793eb9",
+              "file": "16-primer-acceso-tecnicos.spec.js",
+              "line": 77,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "17-sistemas-y-roles.spec.js",
+      "file": "17-sistemas-y-roles.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sistemas y roles",
+          "file": "17-sistemas-y-roles.spec.js",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el acceso a SISTEMAS solo aparece en el menú del Super Usuario",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7302,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:16:16.835Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b747715c664603cc69ce-4f97e21869b93513a789",
+              "file": "17-sistemas-y-roles.spec.js",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "el Super Usuario analiza la estructura e inspecciona una tabla",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 18276,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:16:24.361Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b747715c664603cc69ce-180ecd50ecb8dd066956",
+              "file": "17-sistemas-y-roles.spec.js",
+              "line": 19,
+              "column": 3
+            },
+            {
+              "title": "el Super Usuario cambia el rol de un técnico desde su ficha",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 31759,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:16:42.859Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b747715c664603cc69ce-17bf38300216e33c5c5c",
+              "file": "17-sistemas-y-roles.spec.js",
+              "line": 43,
+              "column": 3
+            },
+            {
+              "title": "el ADMIN no ve el selector de rol en la ficha del técnico",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10477,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:17:14.863Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b747715c664603cc69ce-f517ea7d756556b0c280",
+              "file": "17-sistemas-y-roles.spec.js",
+              "line": 71,
+              "column": 3
+            },
+            {
+              "title": "el TECNICO no tiene la pestaña Gestión ni cambia el estado desde la ficha (D-76)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16491,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:17:25.568Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b747715c664603cc69ce-0aafbe0edad2fa7a2263",
+              "file": "17-sistemas-y-roles.spec.js",
+              "line": 80,
               "column": 3
             }
           ]
@@ -336,15 +3311,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 18022,
+                      "duration": 17955,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:33:13.298Z",
+                      "startTime": "2026-10-02T21:17:42.104Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -370,15 +3345,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 28526,
+                      "duration": 27773,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:33:31.544Z",
+                      "startTime": "2026-10-02T21:18:00.089Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -404,15 +3379,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 28979,
+                      "duration": 29511,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:34:00.291Z",
+                      "startTime": "2026-10-02T21:18:28.066Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -438,15 +3413,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 18793,
+                      "duration": 20491,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:34:29.304Z",
+                      "startTime": "2026-10-02T21:18:57.839Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -461,7 +3436,7 @@
             },
             {
               "title": "cerrar un caso registra el modo, las evidencias y el estado CERRADO",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -472,20 +3447,60 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 4,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 46478,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 46250,
+                      "error": {
+                        "message": "Error: No se leyó el id de avería creado: \"\"",
+                        "stack": "Error: No se leyó el id de avería creado: \"\"\n    at crearCase (/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:32:38)\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:170:22",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                          "column": 38,
+                          "line": 32
+                        },
+                        "snippet": "  30 |   await fila.waitFor({ state: 'visible', timeout: 60_000 });\n  31 |   const idAveria = (await fila.locator('td').first().innerText()).trim();\n> 32 |   if (!/^REF-/.test(idAveria)) throw new Error(`No se leyó el id de avería creado: \"${idAveria}\"`);\n     |                                      ^\n  33 |   await page.keyboard.press('Escape');\n  34 |   await page.waitForTimeout(500);\n  35 |   return idAveria;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                            "column": 38,
+                            "line": 32
+                          },
+                          "message": "Error: No se leyó el id de avería creado: \"\"\n\n  30 |   await fila.waitFor({ state: 'visible', timeout: 60_000 });\n  31 |   const idAveria = (await fila.locator('td').first().innerText()).trim();\n> 32 |   if (!/^REF-/.test(idAveria)) throw new Error(`No se leyó el id de avería creado: \"${idAveria}\"`);\n     |                                      ^\n  33 |   await page.keyboard.press('Escape');\n  34 |   await page.waitForTimeout(500);\n  35 |   return idAveria;\n    at crearCase (/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:32:38)\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:170:22"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:34:48.503Z",
+                      "startTime": "2026-10-02T21:19:18.582Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-50ec1-dencias-y-el-estado-CERRADO-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-50ec1-dencias-y-el-estado-CERRADO-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-50ec1-dencias-y-el-estado-CERRADO-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                        "column": 38,
+                        "line": 32
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
               "id": "10a7ae2f7ed368d7f4f8-955a64c0554d747882c1",
@@ -495,7 +3510,7 @@
             },
             {
               "title": "HISTÓRICO muestra los antecedentes del mismo teléfono",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -506,20 +3521,60 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 5,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 62075,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 48487,
+                      "error": {
+                        "message": "Error: No se leyó el id de avería creado: \"\"",
+                        "stack": "Error: No se leyó el id de avería creado: \"\"\n    at crearCase (/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:32:38)\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:197:21",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                          "column": 38,
+                          "line": 32
+                        },
+                        "snippet": "  30 |   await fila.waitFor({ state: 'visible', timeout: 60_000 });\n  31 |   const idAveria = (await fila.locator('td').first().innerText()).trim();\n> 32 |   if (!/^REF-/.test(idAveria)) throw new Error(`No se leyó el id de avería creado: \"${idAveria}\"`);\n     |                                      ^\n  33 |   await page.keyboard.press('Escape');\n  34 |   await page.waitForTimeout(500);\n  35 |   return idAveria;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                            "column": 38,
+                            "line": 32
+                          },
+                          "message": "Error: No se leyó el id de avería creado: \"\"\n\n  30 |   await fila.waitFor({ state: 'visible', timeout: 60_000 });\n  31 |   const idAveria = (await fila.locator('td').first().innerText()).trim();\n> 32 |   if (!/^REF-/.test(idAveria)) throw new Error(`No se leyó el id de avería creado: \"${idAveria}\"`);\n     |                                      ^\n  33 |   await page.keyboard.press('Escape');\n  34 |   await page.waitForTimeout(500);\n  35 |   return idAveria;\n    at crearCase (/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:32:38)\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js:197:21"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:35:35.026Z",
+                      "startTime": "2026-10-02T21:20:21.857Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-e460a-cedentes-del-mismo-teléfono-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-e460a-cedentes-del-mismo-teléfono-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/18-ficha-pestanas-Ficha-de-e460a-cedentes-del-mismo-teléfono-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/18-ficha-pestanas.spec.js",
+                        "column": 38,
+                        "line": 32
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
               "id": "10a7ae2f7ed368d7f4f8-1216fadfe00a14ca0623",
@@ -540,15 +3595,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
+                      "workerIndex": 6,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14774,
+                      "duration": 17978,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-02T19:36:37.530Z",
+                      "startTime": "2026-10-02T21:21:26.844Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -564,15 +3619,774 @@
           ]
         }
       ]
+    },
+    {
+      "title": "19-aviso-legal.spec.js",
+      "file": "19-aviso-legal.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Aviso legal previo al acceso",
+          "file": "19-aviso-legal.spec.js",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el muro bloquea el formulario hasta aceptar y sus enlaces resuelven",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6989,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:21:46.580Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b68dac2646ee4ea21c8f-fe544d392aaf1da7c880",
+              "file": "19-aviso-legal.spec.js",
+              "line": 12,
+              "column": 3
+            },
+            {
+              "title": "la aceptación persiste y permite iniciar sesión",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10486,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:21:53.618Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b68dac2646ee4ea21c8f-27cb69f3cf6aaa7e4b3c",
+              "file": "19-aviso-legal.spec.js",
+              "line": 56,
+              "column": 3
+            },
+            {
+              "title": "la Ayuda publica el aviso como tema General",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16494,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:22:04.329Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b68dac2646ee4ea21c8f-c386e3cd335259bf8923",
+              "file": "19-aviso-legal.spec.js",
+              "line": 74,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "20-d72-tablas-perfil.spec.js",
+      "file": "20-d72-tablas-perfil.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "CASOS (D-72)",
+          "file": "20-d72-tablas-perfil.spec.js",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "la tabla muestra Dirección y Nombre y ya no tiene la columna Acción",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19228,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:22:21.332Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-4fb1fcedf7b6da740ce5",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "Tipo y Clase se muestran como iconos con etiqueta",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 18271,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:22:40.818Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-08745ba60bdc5f2004c7",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 28,
+              "column": 3
+            },
+            {
+              "title": "al seleccionar cualquier parte del renglón se abre la ficha del caso",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20020,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:22:59.577Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-d8feb6332a9b9652ed2e",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 35,
+              "column": 3
+            },
+            {
+              "title": "el filtro por texto busca en todos los renglones",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 23533,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0008' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0008' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0008</td> aka getByRole('cell', { name: 'E2E-0008', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0008' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0008' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0008' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0008' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0008</td> aka getByRole('cell', { name: 'E2E-0008', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0008' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0008' })\u001b[22m\n\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/20-d72-tablas-perfil.spec.js:48:64",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/20-d72-tablas-perfil.spec.js",
+                          "column": 64,
+                          "line": 48
+                        },
+                        "snippet": "  46 |     await page.locator('#filtro-q').fill('CONSTRUCCION');\n  47 |     await page.getByRole('button', { name: 'Filtrar' }).click();\n> 48 |     await expect(page.getByRole('cell', { name: 'E2E-0008', exact: true })).toBeVisible();\n     |                                                                ^\n  49 |     await expect(page.getByRole('cell', { name: 'E2E-0001', exact: true })).toHaveCount(0);\n  50 |     // Búsqueda por estado (columna visible, no texto libre de la avería).\n  51 |     await page.locator('#filtro-q').fill('CITADO');"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/20-d72-tablas-perfil.spec.js",
+                            "column": 64,
+                            "line": 48
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('cell', { name: 'E2E-0008' })\nExpected: visible\nError: strict mode violation: getByRole('cell', { name: 'E2E-0008' }) resolved to 2 elements:\n    1) <td class=\"col-seleccion\">…</td> aka getByRole('cell', { name: 'Seleccionar el caso E2E-' })\n    2) <td class=\"mono\">E2E-0008</td> aka getByRole('cell', { name: 'E2E-0008', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('cell', { name: 'E2E-0008' }) with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('cell', { name: 'E2E-0008' })\u001b[22m\n\n\n  46 |     await page.locator('#filtro-q').fill('CONSTRUCCION');\n  47 |     await page.getByRole('button', { name: 'Filtrar' }).click();\n> 48 |     await expect(page.getByRole('cell', { name: 'E2E-0008', exact: true })).toBeVisible();\n     |                                                                ^\n  49 |     await expect(page.getByRole('cell', { name: 'E2E-0001', exact: true })).toHaveCount(0);\n  50 |     // Búsqueda por estado (columna visible, no texto libre de la avería).\n  51 |     await page.locator('#filtro-q').fill('CITADO');\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/20-d72-tablas-perfil.spec.js:48:64"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:23:20.112Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/20-d72-tablas-perfil-CASOS-100fa-usca-en-todos-los-renglones-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/20-d72-tablas-perfil-CASOS-100fa-usca-en-todos-los-renglones-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/20-d72-tablas-perfil-CASOS-100fa-usca-en-todos-los-renglones-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/20-d72-tablas-perfil.spec.js",
+                        "column": 64,
+                        "line": 48
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-66dfb3208e8a0926f507",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 42,
+              "column": 3
+            },
+            {
+              "title": "los filtros incluyen Sector y Cuadrilla",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 27334,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:23:51.591Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-56a2e0948507bc45de93",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 56,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "ESPECIALES (D-72)",
+          "file": "20-d72-tablas-perfil.spec.js",
+          "line": 64,
+          "column": 6,
+          "specs": [
+            {
+              "title": "crear un especial y abrirlo desde el renglón",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 71776,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:24:20.573Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-617eecf93bae075dd538",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 65,
+              "column": 3
+            },
+            {
+              "title": "filtros y columnas nuevas",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16990,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:25:32.878Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-1a2e2e51517aeee02e35",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 95,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Perfil y Cuenta (D-72)",
+          "file": "20-d72-tablas-perfil.spec.js",
+          "line": 115,
+          "column": 6,
+          "specs": [
+            {
+              "title": "el menú de usuario lleva a Perfil y Cuenta",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11223,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:25:50.095Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-231dd9e9d0401b599d3a",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 127,
+              "column": 3
+            },
+            {
+              "title": "mi-seguridad muestra el estado sin los valores",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14048,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:26:01.359Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-8a11b2d831d59ffcfbbf",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 136,
+              "column": 3
+            },
+            {
+              "title": "el cambio de clave rechaza datos inválidos",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14753,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:26:15.832Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-d1f8e38c9440912c4ebf",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 146,
+              "column": 3
+            },
+            {
+              "title": "cambiar la clave y restaurarla",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21240,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:26:30.818Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "63ae9a686af192f70eaa-dc6ab5cd67346cf3883c",
+              "file": "20-d72-tablas-perfil.spec.js",
+              "line": 158,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "21-d77-asignacion-cuadrillas.spec.js",
+      "file": "21-d77-asignacion-cuadrillas.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Asignación de casos a cuadrillas (D-77)",
+          "file": "21-d77-asignacion-cuadrillas.spec.js",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "CASOS: selecciona, asigna a una cuadrilla y quita del despacho",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25954,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:26:52.357Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd6cc217880b0d7a8fda-e88cd00570c56b8a0b18",
+              "file": "21-d77-asignacion-cuadrillas.spec.js",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "CASOS: asignar a la cuadrilla 0 marca el caso como GESTIÓN",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 28301,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:27:18.357Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd6cc217880b0d7a8fda-91b1fbc6ae4971012bf3",
+              "file": "21-d77-asignacion-cuadrillas.spec.js",
+              "line": 48,
+              "column": 3
+            },
+            {
+              "title": "ESPECIALES: selecciona y asigna un caso especial a una cuadrilla",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 51462,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/REF-2324X-/)\nExpected: visible\nError: strict mode violation: getByText(/REF-2324X-/) resolved to 5 elements:\n    1) <td class=\"mono\">REF-2324X-000120</td> aka getByRole('cell', { name: 'REF-2324X-000120', exact: true })\n    2) <td class=\"mono\">REF-2324X-000119</td> aka getByRole('cell', { name: 'REF-2324X-000119', exact: true })\n    3) <td class=\"mono\">REF-2324X-000117</td> aka getByRole('cell', { name: 'REF-2324X-000117', exact: true })\n    4) <td class=\"mono\">REF-2324X-000121</td> aka getByRole('cell', { name: 'REF-2324X-000121', exact: true })\n    5) <td class=\"mono\">REF-2324X-000118</td> aka getByRole('cell', { name: 'REF-2324X-000118', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/REF-2324X-/) with timeout 40000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/REF-2324X-/)\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/REF-2324X-/)\nExpected: visible\nError: strict mode violation: getByText(/REF-2324X-/) resolved to 5 elements:\n    1) <td class=\"mono\">REF-2324X-000120</td> aka getByRole('cell', { name: 'REF-2324X-000120', exact: true })\n    2) <td class=\"mono\">REF-2324X-000119</td> aka getByRole('cell', { name: 'REF-2324X-000119', exact: true })\n    3) <td class=\"mono\">REF-2324X-000117</td> aka getByRole('cell', { name: 'REF-2324X-000117', exact: true })\n    4) <td class=\"mono\">REF-2324X-000121</td> aka getByRole('cell', { name: 'REF-2324X-000121', exact: true })\n    5) <td class=\"mono\">REF-2324X-000118</td> aka getByRole('cell', { name: 'REF-2324X-000118', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/REF-2324X-/) with timeout 40000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/REF-2324X-/)\u001b[22m\n\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/21-d77-asignacion-cuadrillas.spec.js:87:48",
+                        "location": {
+                          "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/21-d77-asignacion-cuadrillas.spec.js",
+                          "column": 48,
+                          "line": 87
+                        },
+                        "snippet": "  85 |     await rellenar(alta.getByLabel('Solicitante — contacto'), '04247778899');\n  86 |     await alta.getByRole('button', { name: 'Guardar caso' }).click();\n> 87 |     await expect(page.getByText(/REF-2324X-/)).toBeVisible({ timeout: 40_000 });\n     |                                                ^\n  88 |\n  89 |     await page.goto('/especiales');\n  90 |     await expect(page.getByRole('heading', { name: 'Especiales', level: 1 })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/21-d77-asignacion-cuadrillas.spec.js",
+                            "column": 48,
+                            "line": 87
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/REF-2324X-/)\nExpected: visible\nError: strict mode violation: getByText(/REF-2324X-/) resolved to 5 elements:\n    1) <td class=\"mono\">REF-2324X-000120</td> aka getByRole('cell', { name: 'REF-2324X-000120', exact: true })\n    2) <td class=\"mono\">REF-2324X-000119</td> aka getByRole('cell', { name: 'REF-2324X-000119', exact: true })\n    3) <td class=\"mono\">REF-2324X-000117</td> aka getByRole('cell', { name: 'REF-2324X-000117', exact: true })\n    4) <td class=\"mono\">REF-2324X-000121</td> aka getByRole('cell', { name: 'REF-2324X-000121', exact: true })\n    5) <td class=\"mono\">REF-2324X-000118</td> aka getByRole('cell', { name: 'REF-2324X-000118', exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/REF-2324X-/) with timeout 40000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/REF-2324X-/)\u001b[22m\n\n\n  85 |     await rellenar(alta.getByLabel('Solicitante — contacto'), '04247778899');\n  86 |     await alta.getByRole('button', { name: 'Guardar caso' }).click();\n> 87 |     await expect(page.getByText(/REF-2324X-/)).toBeVisible({ timeout: 40_000 });\n     |                                                ^\n  88 |\n  89 |     await page.goto('/especiales');\n  90 |     await expect(page.getByRole('heading', { name: 'Especiales', level: 1 })).toBeVisible();\n    at /home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/21-d77-asignacion-cuadrillas.spec.js:87:48"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:27:47.100Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/21-d77-asignacion-cuadrill-1a1fa-so-especial-a-una-cuadrilla-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/21-d77-asignacion-cuadrill-1a1fa-so-especial-a-una-cuadrilla-chromium/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/test-results/21-d77-asignacion-cuadrill-1a1fa-so-especial-a-una-cuadrilla-chromium/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/tests/21-d77-asignacion-cuadrillas.spec.js",
+                        "column": 48,
+                        "line": 87
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "dd6cc217880b0d7a8fda-52caafde54e413152f1a",
+              "file": "21-d77-asignacion-cuadrillas.spec.js",
+              "line": 68,
+              "column": 3
+            },
+            {
+              "title": "el TECNICO no ve la selección ni las acciones de cuadrilla",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 18794,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-02T21:28:57.071Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "dd6cc217880b0d7a8fda-a93c77e9f88a5bd382fb",
+              "file": "21-d77-asignacion-cuadrillas.spec.js",
+              "line": 111,
+              "column": 3
+            }
+          ]
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-02T19:31:26.021Z",
-    "duration": 327242.70599999995,
-    "expected": 13,
+    "startTime": "2026-10-02T20:58:18.732Z",
+    "duration": 1862381.74,
+    "expected": 98,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 8,
     "flaky": 0
   }
 }

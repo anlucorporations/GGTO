@@ -11,14 +11,14 @@ test.describe('Casos', () => {
 
   test('el listado muestra los casos sembrados', async ({ page }) => {
     await expect(page.locator('tbody tr')).toHaveCount(8);
-    await expect(page.getByRole('cell', { name: 'E2E-0001' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'E2E-0001', exact: true })).toBeVisible();
   });
 
   test('el filtro por estado acota el listado', async ({ page }) => {
     await page.locator('#filtro-estado').selectOption('CITADO');
     await page.getByRole('button', { name: 'Filtrar' }).click();
     await expect(page.locator('tbody tr')).toHaveCount(1);
-    await expect(page.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'E2E-0006', exact: true })).toBeVisible();
   });
 
   test('la búsqueda por ID de avería ofrece el caso y abre su ficha rápida', async ({ page }) => {
@@ -56,6 +56,6 @@ test.describe('Casos', () => {
     await rellenar(page.getByLabel('Dirección'), 'CALLE E2E, CASA 99');
     await rellenar(page.getByLabel('Problema reportado'), 'FALLA FIBRA reportada en campo');
     await page.getByRole('button', { name: 'Guardar caso' }).click();
-    await expect(page.getByText(/REF-2324X-/)).toBeVisible();
+    await expect(page.getByText(/REF-2324X-/).first()).toBeVisible();
   });
 });

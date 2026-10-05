@@ -102,15 +102,22 @@ def test_orden_de_visita_por_cuadrilla(client, entorno):
         assert [c["orden_visita"] for c in grupo["casos"]] == list(range(1, grupo["total"] + 1))
 
 
-def test_excluye_cuadrilla_0(client, entorno, db_session):
+def test_cuadrilla_0_recibe_los_casos_en_gestion(client, entorno, db_session):
+    """D-77: los casos en GESTIÓN ya no se descartan; van a la cuadrilla 0."""
     caso = db_session.scalar(select(Caso).where(Caso.id_averia == "TSTD-A0"))
     caso.en_gestion_supervisor = True
     db_session.commit()
 
     p = _propuesta(client, entorno)
-    ids = [c["id_averia"] for g in p["grupos"] for c in g["casos"]]
-    assert "TSTD-A0" not in ids
-    assert p["resumen"]["total_casos"] == 9
+    grupos = {g["codigo"]: g for g in p["grupos"]}
+    assert "C-00" in grupos, "debe existir el grupo de la cuadrilla 0"
+    assert grupos["C-00"]["es_supervisor"] is True
+    assert [c["id_averia"] for c in grupos["C-00"]["casos"]] == ["TSTD-A0"]
+    # No se cuela en las cuadrillas de calle y el universo no pierde casos
+    calle = [c["id_averia"] for cod, g in grupos.items() if cod != "C-00" for c in g["casos"]]
+    assert "TSTD-A0" not in calle
+    assert p["resumen"]["total_casos"] == 10
+    assert p["reglas"]["gestion_cuadrilla0"] == 1
 
 
 def test_excluye_casos_cerrados(client, entorno, db_session):
@@ -120,7 +127,8 @@ def test_excluye_casos_cerrados(client, entorno, db_session):
     assert _propuesta(client, entorno)["resumen"]["total_casos"] == 9
 
 
-def test_incluye_citados_del_dia_aunque_sean_cuadrilla_0(client, entorno, db_session):
+def test_citado_en_gestion_no_se_pierde_y_va_a_la_cuadrilla_0(client, entorno, db_session):
+    """D-77: un compromiso del día no se queda fuera; se despacha con la cuadrilla 0."""
     from datetime import datetime
 
     caso = db_session.scalar(select(Caso).where(Caso.id_averia == "TSTD-A1"))
@@ -129,9 +137,11 @@ def test_incluye_citados_del_dia_aunque_sean_cuadrilla_0(client, entorno, db_ses
     db_session.commit()
 
     p = _propuesta(client, entorno)
+    grupos = {g["codigo"]: g for g in p["grupos"]}
     asignados = {c["id_averia"]: c for g in p["grupos"] for c in g["casos"]}
     assert "TSTD-A1" in asignados
     assert asignados["TSTD-A1"]["es_cita"] is True
+    assert [c["id_averia"] for c in grupos["C-00"]["casos"]] == ["TSTD-A1"]
 
 
 def test_propuesta_sin_cuadrillas(client, admin_token, db_session):
@@ -188,8 +198,12 @@ def test_proceso_muestra_universo_sectores_y_cuadrillas(client, entorno):
     assert totales == {"Alfa": 6, "Beta": 4}
     assert sum(totales.values()) == 10
 
-    # Cuadrillas con los sectores asignados (propuesta automática la primera vez)
-    assert len(p["cuadrillas"]) == 2
+    # Cuadrillas con los sectores asignados (propuesta automática la primera vez).
+    # D-77: la cuadrilla 0 también viaja en el formulario, sin sectores.
+    calle = [c for c in p["cuadrillas"] if not c["es_supervisor"]]
+    assert len(calle) == 2
+    c0 = [c for c in p["cuadrillas"] if c["es_supervisor"]]
+    assert len(c0) == 1 and c0[0]["ids_sector"] == []
     assert p["asignacion_origen"] == "PROPUESTA"
 
     # Tras guardar, la asignación queda registrada
@@ -332,16 +346,30 @@ def test_publicar_despacho(client, entorno):
     assert r.json()["enviado_en"] is not None
 
 
-def test_no_agrega_caso_de_cuadrilla_0(client, entorno, db_session):
+def test_agrega_caso_de_cuadrilla_0_al_despacho_que_el_supervisor_elija(client, entorno, db_session):
+    """D-77: el antiguo 409 desaparece; la asignación explícita del supervisor manda."""
     despachos = client.post(BASE, params={"fecha": HOY}, headers=entorno["headers"]).json()
-    id_despacho = despachos[0]["id_despacho"]
     caso = db_session.scalar(select(Caso).where(Caso.id_averia == "TSTD-C0"))
+    id_caso = caso.id_caso
+
+    # El caso ya quedó repartido: se saca de su despacho para poder reasignarlo
+    dueno = next(
+        d for d in despachos
+        if id_caso in [c["id_caso"] for c in client.get(
+            f"{BASE}/{d['id_despacho']}", headers=entorno["headers"]).json()["casos"]]
+    )
+    assert client.delete(f"{BASE}/{dueno['id_despacho']}/casos/{id_caso}",
+                         headers=entorno["headers"]).status_code == 200
+
+    db_session.refresh(caso)
     caso.en_gestion_supervisor = True
     db_session.commit()
 
-    r = client.post(f"{BASE}/{id_despacho}/casos", json={"id_caso": caso.id_caso},
+    otro = next(d for d in despachos if d["id_despacho"] != dueno["id_despacho"])
+    r = client.post(f"{BASE}/{otro['id_despacho']}/casos", json={"id_caso": id_caso},
                     headers=entorno["headers"])
-    assert r.status_code == 409
+    assert r.status_code == 200, r.text
+    assert id_caso in [c["id_caso"] for c in r.json()["casos"]]
 
 
 # --------------------------------------------------------------------------- #
@@ -403,3 +431,217 @@ def test_fallas_masivas(client, entorno):
     assert listado.status_code == 200
     assert len(listado.json()) == 1
     assert listado.json()[0]["descripcion"].startswith("Corte de fibra")
+
+
+# --------------------------------------------------------------------------- #
+# Cuadrilla 0 en el proceso y asignación manual a cuadrillas (ciclo D-77)
+# --------------------------------------------------------------------------- #
+def _id_caso(db_session, id_averia: str) -> int:
+    return int(db_session.scalar(select(Caso.id_caso).where(Caso.id_averia == id_averia)))
+
+
+def _id_cuadrilla(db_session, codigo: str) -> int:
+    return int(db_session.scalar(select(Cuadrilla.id_cuadrilla).where(Cuadrilla.codigo == codigo)))
+
+
+def _grupo_de(db_session, id_caso: int) -> dict:
+    """Devuelve el despacho BORRADOR del día que contiene el caso (o {})."""
+    from app.models import Despacho, DespachoCasos
+
+    despacho = db_session.scalar(
+        select(Despacho)
+        .join(DespachoCasos, DespachoCasos.id_despacho == Despacho.id_despacho)
+        .where(DespachoCasos.id_caso == id_caso)
+    )
+    if despacho is None:
+        return {}
+    return {
+        "id_despacho": despacho.id_despacho,
+        "id_cuadrilla": despacho.id_cuadrilla,
+        "estado": despacho.estado,
+    }
+
+
+def test_procesar_crea_despacho_de_la_cuadrilla_0(client, entorno, db_session):
+    """D-77 (punto 3): al procesar, los casos en GESTIÓN se despachan a la cuadrilla 0."""
+    from app.models import Despacho
+
+    caso = db_session.scalar(select(Caso).where(Caso.id_averia == "TSTD-A0"))
+    caso.en_gestion_supervisor = True
+    db_session.commit()
+
+    r = client.post(
+        f"{BASE}/procesar",
+        json={"fecha": HOY, "asignaciones": [], "reemplazar": True},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 201, r.text
+    despachos = r.json()
+    assert len(despachos) == 3, "dos cuadrillas de calle + la cuadrilla 0"
+
+    supervisor = db_session.scalar(
+        select(Despacho).where(
+            Despacho.fecha == date.fromisoformat(HOY),
+            Despacho.id_cuadrilla == _id_cuadrilla(db_session, "C-00"),
+        )
+    )
+    assert supervisor is not None and supervisor.estado == "BORRADOR"
+    detalle = client.get(f"{BASE}/{supervisor.id_despacho}", headers=entorno["headers"]).json()
+    assert [c["id_caso"] for c in detalle["casos"]] == [_id_caso(db_session, "TSTD-A0")]
+    assert detalle["cuadrilla_codigo"] == "C-00"
+
+
+def test_proceso_muestra_la_cuadrilla_0_sin_sectores(client, entorno):
+    """El formulario de proceso incluye la cuadrilla 0 (sin sectores) para poder asignarle."""
+    proceso = client.get(f"{BASE}/proceso", params={"fecha": HOY}, headers=entorno["headers"]).json()
+    por_codigo = {c["codigo"]: c for c in proceso["cuadrillas"]}
+    assert "C-00" in por_codigo
+    assert por_codigo["C-00"]["es_supervisor"] is True
+    assert por_codigo["C-00"]["ids_sector"] == []
+
+
+def test_asignar_casos_a_una_cuadrilla(client, entorno, db_session):
+    """D-77 (punto 4): el supervisor asigna casos comunes a una cuadrilla."""
+    id_caso = _id_caso(db_session, "TSTD-A0")
+    id_cuadrilla = _id_cuadrilla(db_session, "TCD1")
+
+    r = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": id_cuadrilla, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["agregados"] == 1
+    assert cuerpo["cuadrilla_codigo"] == "TCD1"
+    assert cuerpo["id_despacho"]
+
+    grupo = _grupo_de(db_session, id_caso)
+    assert grupo["id_cuadrilla"] == id_cuadrilla
+    assert grupo["estado"] == "BORRADOR"
+    detalle = client.get(f"{BASE}/{grupo['id_despacho']}", headers=entorno["headers"]).json()
+    assert [c["id_caso"] for c in detalle["casos"]] == [id_caso]
+    assert detalle["casos"][0]["orden_visita"] == 1
+
+
+def test_asignar_caso_en_gestion_marca_y_desmarca(client, entorno, db_session):
+    """Asignar a la cuadrilla 0 marca el caso; pasarlo a una de calle lo desmarca."""
+    id_caso = _id_caso(db_session, "TSTD-A1")
+    c0 = _id_cuadrilla(db_session, "C-00")
+    c1 = _id_cuadrilla(db_session, "TCD1")
+
+    assert client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": c0, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    ).status_code == 200
+    caso = db_session.get(Caso, id_caso)
+    db_session.refresh(caso)
+    assert caso.en_gestion_supervisor is True
+
+    # Mover a una cuadrilla de calle: se mueve de despacho y se desmarca
+    r = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": c1, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["movidos"] == 1 and r.json()["agregados"] == 0
+    db_session.refresh(caso)
+    assert caso.en_gestion_supervisor is False
+    assert _grupo_de(db_session, id_caso)["id_cuadrilla"] == c1
+
+
+def test_asignar_caso_especial_a_una_cuadrilla(client, entorno, db_session):
+    """D-77 (punto 4): también los casos especiales se asignan a una cuadrilla."""
+    especial = client.post(
+        "/api/v1/casos-especiales",
+        json={"descripcion": "Poste caído frente a la escuela",
+              "clasificacion": "GOBIERNO", "prioridad": "ALTA",
+              "tipo_actividad": "REPARACION",
+              "direccion": "SECTOR ALFA CALLE 9"},
+        headers=entorno["headers"],
+    )
+    assert especial.status_code == 201, especial.text
+    id_especial = especial.json()["id_caso_especial"]
+    id_caso = especial.json()["id_caso"]
+    assert id_caso, "el especial debe tener un caso asociado"
+
+    id_cuadrilla = _id_cuadrilla(db_session, "TCD2")
+    r = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": id_cuadrilla, "ids_caso_especial": [id_especial], "fecha": HOY},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["agregados"] == 1
+    assert _grupo_de(db_session, id_caso)["id_cuadrilla"] == id_cuadrilla
+
+
+def test_quitar_casos_del_despacho(client, entorno, db_session):
+    """D-77: quitar saca el caso del borrador y borra el despacho que queda vacío."""
+    from app.models import Despacho
+
+    id_caso = _id_caso(db_session, "TSTD-B0")
+    id_cuadrilla = _id_cuadrilla(db_session, "TCD1")
+    alta = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": id_cuadrilla, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    ).json()
+    id_despacho = alta["id_despacho"]
+
+    r = client.post(
+        f"{BASE}/quitar-casos",
+        json={"ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["quitados"] == 1
+    assert _grupo_de(db_session, id_caso) == {}
+    assert db_session.get(Despacho, id_despacho) is None, "el borrador vacío se elimina"
+
+
+def test_no_se_puede_asignar_en_despacho_publicado(client, entorno, db_session):
+    """Un despacho publicado no se modifica: el caso queda en `omitidos`."""
+    id_caso = _id_caso(db_session, "TSTD-B1")
+    c1 = _id_cuadrilla(db_session, "TCD1")
+    alta = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": c1, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    ).json()
+    assert client.patch(f"{BASE}/{alta['id_despacho']}", json={"estado": "PUBLICADO"},
+                        headers=entorno["headers"]).status_code == 200
+
+    c2 = _id_cuadrilla(db_session, "TCD2")
+    r = client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": c2, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    assert id_caso in r.json()["omitidos"]
+    assert _grupo_de(db_session, id_caso)["id_cuadrilla"] == c1
+
+    # Quitar tampoco lo toca
+    q = client.post(f"{BASE}/quitar-casos", json={"ids_caso": [id_caso], "fecha": HOY},
+                    headers=entorno["headers"]).json()
+    assert q["quitados"] == 0 and id_caso in q["omitidos"]
+
+
+def test_asignar_sin_cuadrilla_es_400(client, entorno, db_session):
+    r = client.post(f"{BASE}/asignar-casos",
+                    json={"ids_caso": [_id_caso(db_session, "TSTD-A0")], "fecha": HOY},
+                    headers=entorno["headers"])
+    assert r.status_code == 400
+    assert client.post(f"{BASE}/quitar-casos", json={"fecha": HOY},
+                       headers=entorno["headers"]).status_code == 400
+
+
+def test_tecnico_no_asigna_casos(client, entorno, admin_token, db_session):
+    r = client.post(f"{BASE}/asignar-casos",
+                    json={"id_cuadrilla": _id_cuadrilla(db_session, "TCD1"),
+                          "ids_caso": [_id_caso(db_session, "TSTD-A0")], "fecha": HOY},
+                    headers=admin_token["tecnico"])
+    assert r.status_code == 403

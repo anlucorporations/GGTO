@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
 import type {
   CasoEspecialOut,
+  Cuadrilla,
   CasoEspecialUpdate,
   CasosEspecialesFiltros,
   ClasificacionEspecial,
@@ -83,6 +84,12 @@ export default function Especiales() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
+  // D-77: selección múltiple para asignar los especiales a una cuadrilla.
+  const [marcados, setMarcados] = useState<Set<number>>(new Set());
+  const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
+  const [cuadrillaDestino, setCuadrillaDestino] = useState('');
+  const [asignando, setAsignando] = useState(false);
+
   // Filtros + listado.
   const [borrador, setBorrador] = useState<Filtros>(FILTROS_VACIOS);
   const [aplicados, setAplicados] = useState<Filtros>(FILTROS_VACIOS);
@@ -100,6 +107,73 @@ export default function Especiales() {
     requiere_informe: true,
   });
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (soloLectura) return;
+    api
+      .listarCuadrillas({ solo_activas: true })
+      .then(setCuadrillas)
+      .catch(() => setCuadrillas([]));
+  }, [soloLectura]);
+
+  /** D-77: alterna la selección de un caso especial. */
+  function alternarSeleccion(idCasoEspecial: number) {
+    setMarcados((actual) => {
+      const copia = new Set(actual);
+      if (copia.has(idCasoEspecial)) copia.delete(idCasoEspecial);
+      else copia.add(idCasoEspecial);
+      return copia;
+    });
+  }
+
+  /** D-77: marca o desmarca todos los especiales de la página. */
+  function alternarTodos(ids: number[]) {
+    setMarcados((actual) => {
+      const copia = new Set(actual);
+      const todos = ids.every((id) => copia.has(id));
+      ids.forEach((id) => (todos ? copia.delete(id) : copia.add(id)));
+      return copia;
+    });
+  }
+
+  /** D-77: asigna los especiales seleccionados a la cuadrilla elegida. */
+  async function asignarSeleccion() {
+    if (marcados.size === 0 || !cuadrillaDestino) return;
+    setAsignando(true);
+    setError('');
+    setOk('');
+    try {
+      const r = await api.asignarCasosCuadrilla({
+        id_cuadrilla: Number(cuadrillaDestino),
+        ids_caso_especial: [...marcados],
+      });
+      setOk(r.mensaje);
+      setMarcados(new Set());
+      await cargarLista();
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudieron asignar los especiales.');
+    } finally {
+      setAsignando(false);
+    }
+  }
+
+  /** D-77: saca los especiales seleccionados del despacho del día. */
+  async function quitarSeleccion() {
+    if (marcados.size === 0) return;
+    setAsignando(true);
+    setError('');
+    setOk('');
+    try {
+      const r = await api.quitarCasosCuadrilla({ ids_caso_especial: [...marcados] });
+      setOk(r.mensaje);
+      setMarcados(new Set());
+      await cargarLista();
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudieron quitar los especiales.');
+    } finally {
+      setAsignando(false);
+    }
+  }
 
   const cargarLista = useCallback(async () => {
     setCargando(true);
@@ -331,6 +405,57 @@ export default function Especiales() {
           </span>
         </div>
 
+        {!soloLectura && items.length > 0 && (
+          <div className="barra-asignacion">
+            <span className="texto-pequeno">
+              {marcados.size === 0
+                ? 'Seleccione especiales para asignarlos a una cuadrilla'
+                : `${marcados.size} especial(es) seleccionado(s)`}
+            </span>
+            <label className="texto-pequeno" htmlFor="cuadrilla-destino-esp">
+              Cuadrilla
+            </label>
+            <select
+              id="cuadrilla-destino-esp"
+              value={cuadrillaDestino}
+              onChange={(e) => setCuadrillaDestino(e.target.value)}
+            >
+              <option value="">— Seleccione —</option>
+              {cuadrillas.map((c) => (
+                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                  {c.codigo}
+                  {c.es_supervisor ? ' (supervisor)' : ''} — {c.nombre}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn btn-mini"
+              disabled={asignando || marcados.size === 0 || !cuadrillaDestino}
+              onClick={() => void asignarSeleccion()}
+            >
+              {asignando ? 'Procesando…' : 'Asignar a cuadrilla'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-mini btn-secundario"
+              disabled={asignando || marcados.size === 0}
+              onClick={() => void quitarSeleccion()}
+            >
+              Quitar del despacho
+            </button>
+            {marcados.size > 0 && (
+              <button
+                type="button"
+                className="btn btn-mini btn-secundario"
+                onClick={() => setMarcados(new Set())}
+              >
+                Limpiar selección
+              </button>
+            )}
+          </div>
+        )}
+
         {cargando ? (
           <p className="vacio">Cargando…</p>
         ) : items.length === 0 ? (
@@ -340,6 +465,16 @@ export default function Especiales() {
             <table className="tabla-resumen">
               <thead>
                 <tr>
+                  {!soloLectura && (
+                    <th className="col-seleccion">
+                      <input
+                        type="checkbox"
+                        checked={items.length > 0 && items.every((c) => marcados.has(c.id_caso_especial))}
+                        aria-label="Seleccionar todos los especiales de la página"
+                        onChange={() => alternarTodos(items.map((c) => c.id_caso_especial))}
+                      />
+                    </th>
+                  )}
                   <th>Tipo</th>
                   <th>Actividad</th>
                   <th>Prioridad</th>
@@ -354,7 +489,7 @@ export default function Especiales() {
                 {items.map((c) => (
                   <tr
                     key={c.id_caso_especial}
-                    className="fila-clicable"
+                    className={`fila-clicable${marcados.has(c.id_caso_especial) ? ' fila-seleccionada' : ''}`}
                     tabIndex={0}
                     onClick={() => abrirRegistro(c)}
                     onKeyDown={(e) => {
@@ -364,6 +499,17 @@ export default function Especiales() {
                       }
                     }}
                   >
+                    {!soloLectura && (
+                      <td className="col-seleccion">
+                        <input
+                          type="checkbox"
+                          checked={marcados.has(c.id_caso_especial)}
+                          aria-label={`Seleccionar el especial ${c.id_caso_especial}`}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => alternarSeleccion(c.id_caso_especial)}
+                        />
+                      </td>
+                    )}
                     <td>
                       <CeldaClase valor={c.clasificacion} />
                     </td>
@@ -394,7 +540,7 @@ export default function Especiales() {
                 ))}
               </tbody>
               <PieTabla
-                colSpan={8}
+                colSpan={soloLectura ? 8 : 9}
                 total={items.length}
                 singular="caso"
                 plural="casos"

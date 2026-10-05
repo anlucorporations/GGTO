@@ -65,7 +65,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | 4 | **EMPRESAS** | Resumen de reparación/construcción tipo Empresa + registro de cita. | RF-35 |
 | 5 | **REFERIDOS** | Resumen de reparación/construcción tipo Referido sin `id_averia`, priorizados + cita. | RF-36 |
 | 6 | **CONFIGURACIÓN** | CENTRAL · TÉCNICOS · FLOTA · CUADRILLA. | RF-02, RF-03, RF-04, RF-38 |
-| 7 | **GESTIÓN** | Casos de la "cuadrilla 0" (supervisor) que no se despachan a calle. | RF-25, RF-37 |
+| 7 | **GESTIÓN** | Casos de la "cuadrilla 0" (supervisor): no se reparten a calle, se despachan a la propia cuadrilla 0 (D-77). | RF-25, RF-37 |
 
 ### 3.2 Módulos funcionales transversales (7)
 

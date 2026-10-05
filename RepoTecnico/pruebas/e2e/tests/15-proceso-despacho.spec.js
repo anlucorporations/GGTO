@@ -35,6 +35,10 @@ test.describe('Proceso de despacho', () => {
     // Las dos cuadrillas de calle están disponibles (tarjetas, no los <option>)
     await expect(modal.locator('.ficha-tarjeta', { hasText: 'E2E-C1' })).toBeVisible();
     await expect(modal.locator('.ficha-tarjeta', { hasText: 'E2E-C2' })).toBeVisible();
+    // D-77: la cuadrilla 0 (supervisor) también aparece, sin sectores
+    const tarjetaC0 = modal.locator('.ficha-tarjeta', { hasText: 'C-00' });
+    await expect(tarjetaC0).toBeVisible();
+    await expect(tarjetaC0).toContainText('Cuadrilla 0');
 
     // Filtro del universo: los especiales son REFERIDO/EMPRESA/GOBIERNO
     await modal.getByRole('button', { name: 'Especiales' }).click();

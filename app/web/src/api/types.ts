@@ -602,6 +602,8 @@ export interface CuadrillaProcesoOut {
   id_cuadrilla: number;
   codigo: string;
   nombre: string;
+  /** D-77: cuadrilla 0 (supervisor), sin sectores asignados. */
+  es_supervisor?: boolean;
   ids_sector: number[];
   total: number;
 }
@@ -638,7 +640,30 @@ export interface GrupoCuadrillaOut {
   codigo: string;
   nombre: string;
   total: number;
+  /** D-77: la cuadrilla 0 (supervisor) recibe los casos en GESTIÓN. */
+  es_supervisor?: boolean;
   casos: CasoAsignadoOut[];
+}
+
+/** D-77: asignar o quitar casos (comunes y especiales) a una cuadrilla. */
+export interface AsignacionCasosRequest {
+  id_cuadrilla?: number | null;
+  ids_caso?: number[];
+  ids_caso_especial?: number[];
+  fecha?: string | null;
+  id_central?: number | null;
+}
+
+export interface AsignacionCasosOut {
+  fecha: string;
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  id_despacho: number | null;
+  agregados: number;
+  movidos: number;
+  quitados: number;
+  omitidos: number[];
+  mensaje: string;
 }
 
 export interface PropuestaOut {

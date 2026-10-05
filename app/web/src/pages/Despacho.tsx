@@ -674,6 +674,12 @@ export default function Despacho() {
                 <h3>
                   {grupo.codigo} — {grupo.nombre}{' '}
                   <span className="chip">{grupo.total} caso(s)</span>
+                  {/* D-77: la cuadrilla 0 concentra los casos en GESTIÓN */}
+                  {grupo.es_supervisor && (
+                    <span className="chip chip-estado-ok" style={{ marginLeft: 8 }}>
+                      Cuadrilla 0 · casos en gestión
+                    </span>
+                  )}
                 </h3>
                 <TablaCasosAsignados casos={grupo.casos} />
               </div>

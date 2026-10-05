@@ -21,7 +21,7 @@ en `sin_asignar`. El ciclo se documenta en `RepoTecnico/estado_proyecto.md:133`.
 |---|---|---|
 | **RF-08** | Distribuir el universo de averías entre las cuadrillas activas por día, agrupando por sector. | `app/api/routes_despachos.py:79-117`; `app/services/despacho.py:323-348` |
 | **RF-24** | Proponer la distribución de casos antes de guardarla. | `app/api/routes_despachos.py:66-76`; `app/services/despacho.py:289-434` |
-| **RF-25** | Excluir del despacho de calle los casos de la cuadrilla 0 (gestión del supervisor), salvo los citados del día. | `app/services/despacho.py:5-7,139-144` |
+| **RF-25** | La cuadrilla 0 (gestión del supervisor) no compite por sectores: sus casos se despachan **a la propia cuadrilla 0** (D-77). | `app/services/despacho.py:132-149,342-366` |
 | **RF-27** | Generar el reporte de producción (asignados, cerrados, citados, referidos, etc.). | `app/api/routes_despachos.py:450-493` |
 | **RT-08** | Impresión tamaño carta de la ficha de la cuadrilla. | `app/api/routes_despachos.py:388-444` |
 | **RF-09** | Registrar y listar fallas masivas desde el módulo de despacho. | `app/api/routes_despachos.py:138-174` |
@@ -157,9 +157,11 @@ cualquier despacho no cerrado— (`:148-156`) comparten el filtro `_filtro_unive
 1. Casos de la central solicitada (`Caso.id_central == id_central`).
 2. Estados **fuera** de `CERRADO`, `CANCELADO` y `ENRUTADO`
    (`ESTADOS_FUERA`, `app/services/despacho.py:32,142`).
-3. Exclusión de la **cuadrilla 0** (`Caso.en_gestion_supervisor` falso), **salvo** que el
-   caso tenga **cita del día** (`or_(Caso.en_gestion_supervisor.is_(False), citados_hoy)`,
-   `app/services/despacho.py:139,143`).
+3. **Cuadrilla 0 (D-77)**: los casos en gestión (`en_gestion_supervisor` o estado
+   `EN_GESTION`, `app/services/despacho.py:132-135`) **entran** al universo y se separan del
+   reparto por sector para despacharse a la **cuadrilla del supervisor**
+   (`cuadrilla_supervisor`, `:137-149`; agrupación en `construir_propuesta`, `:342-366`). Si
+   la central no tiene cuadrilla 0 vuelven al reparto normal.
 4. Exclusión de los casos ya asignados: cualquier despacho no cerrado en la simulación
    (`:125-131`) o solo los `PUBLICADO`/`CERRADO` en modo proceso (`:132-138`).
 5. Orden estable por `id_sector`, después por `fecha_reporte` (simulación) o `fecha_cita`
@@ -341,13 +343,36 @@ con `_escritura` = `ADMIN`/`SUPERVISOR` (`app/api/routes_despachos.py:42`).
   (`app/api/routes_despachos.py:278-280`). Si el nuevo estado es `PUBLICADO` y aún no había
   `enviado_en`, lo sella con `datetime.now(UTC)` (`app/api/routes_despachos.py:283-284`).
 
+El formulario de proceso lista también la **cuadrilla 0** (tarjeta «Cuadrilla 0 · casos en
+gestión», sin sectores ni selector de sector), para que el supervisor vea cuántos casos en
+gestión se van a despachar consigo (`app/web/src/components/ProcesarDespacho.tsx`).
+
+### Asignación manual de casos a una cuadrilla (D-77)
+
+Además del reparto automático por sector, el Supervisor y el Administrador pueden
+**asignar y quitar** casos **comunes y especiales** a una cuadrilla concreta:
+
+- `POST /despachos/asignar-casos` (`app/api/routes_despachos.py:388-417`) recibe
+  `id_cuadrilla`, `ids_caso`, `ids_caso_especial` y `fecha` (por defecto hoy). Usa o crea el
+  despacho **BORRADOR** de esa cuadrilla y fecha (`app/services/despacho.py:654-747`) y
+  agrega cada caso con su `orden_visita` y `tipo_asignacion`.
+- **Mueve** el caso si estaba en el borrador de otra cuadrilla del mismo día; si el caso
+  está en un despacho `PUBLICADO` o `CERRADO` lo deja intacto y lo informa en `omitidos`.
+- Asignar a la **cuadrilla 0** marca `caso.en_gestion_supervisor = true`; asignar a una
+  cuadrilla de calle lo desmarca.
+- `POST /despachos/quitar-casos` (`app/api/routes_despachos.py:419-438`,
+  `app/services/despacho.py:749-806`) saca los casos de los borradores del día y elimina
+  los borradores que quedan vacíos.
+- En la web, el Supervisor selecciona renglones en **CASOS** o **ESPECIALES** y usa
+  «Asignar a cuadrilla» o «Quitar del despacho»; el rol TECNICO no ve la selección.
+
 ### Casos del despacho
 
-- `POST /{id_despacho}/casos` rechaza con **409** los casos de la cuadrilla 0
-  (`"El caso pertenece a la cuadrilla 0 (supervisor)"`) y los repetidos
+- `POST /{id_despacho}/casos` rechaza con **409** los repetidos
   (`"El caso ya está en el despacho"`); si no existe el caso, responde **404**
-  (`app/api/routes_despachos.py:303-313`). El `orden_visita` es el indicado o el máximo + 1
-  (`app/api/routes_despachos.py:314-321`). El `id_sector` se copia del caso
+  (`app/api/routes_despachos.py:303-313`). D-77 retiró el 409 que bloqueaba los casos de la
+  cuadrilla 0: la asignación explícita del supervisor manda. El `orden_visita` es el indicado
+  o el máximo + 1 (`app/api/routes_despachos.py:314-321`). El `id_sector` se copia del caso
   (`app/api/routes_despachos.py:326`).
 - `DELETE /{id_despacho}/casos/{id_caso}` responde **404** si el caso no está en el
   despacho y, si lo está, elimina la fila (`app/api/routes_despachos.py:352-354`).

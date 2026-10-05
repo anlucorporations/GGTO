@@ -28,7 +28,8 @@ async function crearCase(page, { cliente, telefono, direccion }) {
   await page.locator('#filtro-q').press('Enter');
   const fila = page.locator('tbody tr', { hasText: 'REF-' }).first();
   await fila.waitFor({ state: 'visible', timeout: 60_000 });
-  const idAveria = (await fila.locator('td').first().innerText()).trim();
+  // D-77: la primera celda es la casilla de selección; el ID vive en la celda .mono
+  const idAveria = (await fila.locator('td.mono').first().innerText()).trim();
   if (!/^REF-/.test(idAveria)) throw new Error(`No se leyó el id de avería creado: "${idAveria}"`);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);

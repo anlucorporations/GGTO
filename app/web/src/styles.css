@@ -2093,6 +2093,33 @@ input[type='file'] {
   overflow: auto;
 }
 
+/* ----- Asignación de casos a cuadrillas (D-77) ---------------------- */
+
+.barra-asignacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 10px;
+  background: var(--azul-claro);
+}
+
+.barra-asignacion select {
+  min-width: 200px;
+}
+
+.col-seleccion {
+  width: 38px;
+  text-align: center;
+}
+
+.fila-seleccionada {
+  background: var(--azul-claro);
+}
+
 /* ----- Ficha de Falla Masiva en pestañas (D-75) --------------------- */
 
 .falla-pestanas {

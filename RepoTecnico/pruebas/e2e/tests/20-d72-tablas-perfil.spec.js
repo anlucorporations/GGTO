@@ -45,12 +45,12 @@ test.describe('CASOS (D-72)', () => {
     // pueden existir por altas de otras specs: se comprueba inclusión/exclusión.)
     await page.locator('#filtro-q').fill('CONSTRUCCION');
     await page.getByRole('button', { name: 'Filtrar' }).click();
-    await expect(page.getByRole('cell', { name: 'E2E-0008' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'E2E-0001' })).toHaveCount(0);
+    await expect(page.getByRole('cell', { name: 'E2E-0008', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'E2E-0001', exact: true })).toHaveCount(0);
     // Búsqueda por estado (columna visible, no texto libre de la avería).
     await page.locator('#filtro-q').fill('CITADO');
     await page.getByRole('button', { name: 'Filtrar' }).click();
-    await expect(page.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'E2E-0006', exact: true })).toBeVisible();
   });
 
   test('los filtros incluyen Sector y Cuadrilla', async ({ page }) => {
@@ -77,7 +77,7 @@ test.describe('ESPECIALES (D-72)', () => {
     await rellenar(modal.getByLabel('Solicitante — nombre'), 'Solicitante D72');
     await rellenar(modal.getByLabel('Solicitante — contacto'), '04241231231');
     await modal.getByRole('button', { name: 'Guardar caso' }).click();
-    await expect(page.getByText(/REF-2324X-/)).toBeVisible();
+    await expect(page.getByText(/REF-2324X-/).first()).toBeVisible();
     await page.keyboard.press('Escape');
 
     await page.goto('/especiales');

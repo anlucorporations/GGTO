@@ -21,6 +21,8 @@ from ..models import (
     Usuario,
 )
 from ..schemas.despacho import (
+    AsignacionCasosOut,
+    AsignacionCasosRequest,
     AsignacionUpdate,
     CasoAgregar,
     CasoEstadoUpdate,
@@ -302,8 +304,6 @@ def agregar_caso(
     caso = db.get(Caso, datos.id_caso)
     if caso is None:
         raise HTTPException(status_code=404, detail="Caso no encontrado")
-    if caso.en_gestion_supervisor:
-        raise HTTPException(status_code=409, detail="El caso pertenece a la cuadrilla 0 (supervisor)")
     repetido = db.scalar(
         select(DespachoCasos).where(
             DespachoCasos.id_despacho == id_despacho, DespachoCasos.id_caso == datos.id_caso
@@ -380,6 +380,59 @@ def estado_caso(
     db.commit()
     db.refresh(despacho)
     return _detalle(db, despacho)
+
+
+# --------------------------------------------------------------------------- #
+# Asignación manual de casos a una cuadrilla (D-77)
+# --------------------------------------------------------------------------- #
+@router.post("/asignar-casos", response_model=AsignacionCasosOut,
+             summary="Asignar casos (comunes y especiales) a una cuadrilla")
+def asignar_casos(
+    datos: AsignacionCasosRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> AsignacionCasosOut:
+    """Crea o reutiliza el BORRADOR del día de esa cuadrilla y agrega los casos.
+
+    Los casos que estaban en el borrador de otra cuadrilla se mueven; un caso en
+    un despacho publicado o cerrado se omite.
+    """
+    if datos.id_cuadrilla is None:
+        raise HTTPException(status_code=400, detail="Indique la cuadrilla destino")
+    config = cargar_config(db)
+    central = resolver_central(db, datos.id_central, config)
+    resultado = svc.asignar_casos(
+        db, central.id_central, datos.fecha or date.today(), datos.id_cuadrilla,
+        datos.ids_caso, datos.ids_caso_especial, usuario.p00,
+    )
+    partes = [f"{resultado['agregados']} agregado(s)"]
+    if resultado["movidos"]:
+        partes.append(f"{resultado['movidos']} movido(s) de otra cuadrilla")
+    if resultado["omitidos"]:
+        partes.append(f"{len(resultado['omitidos'])} omitido(s)")
+    return AsignacionCasosOut(
+        **resultado,
+        mensaje=(f"Cuadrilla {resultado['cuadrilla_codigo']}: " + ", ".join(partes) + "."),
+    )
+
+
+@router.post("/quitar-casos", response_model=AsignacionCasosOut,
+             summary="Quitar casos del despacho del día (desasignar)")
+def quitar_casos(
+    datos: AsignacionCasosRequest,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> AsignacionCasosOut:
+    config = cargar_config(db)
+    central = resolver_central(db, datos.id_central, config)
+    resultado = svc.quitar_casos(
+        db, central.id_central, datos.fecha or date.today(),
+        datos.ids_caso, datos.ids_caso_especial,
+    )
+    detalle = f"{resultado['quitados']} caso(s) fuera del despacho del día"
+    if resultado["omitidos"]:
+        detalle += f" · {len(resultado['omitidos'])} sin cambios (publicados o no asignados)"
+    return AsignacionCasosOut(**resultado, mensaje=detalle + ".")
 
 
 # --------------------------------------------------------------------------- #
