@@ -7,8 +7,12 @@ class AppConstants {
     defaultValue: 'https://ggto-web-593453426217.europe-west1.run.app/api/v1',
   );
 
-  /// Versión visible de la app (debe coincidir con `pubspec.yaml`).
-  static const String version = '1.0.0+1';
+  /// Versión visible de la app, tal como se muestra en la pantalla de acceso.
+  ///
+  /// Debe coincidir **exactamente** con `version:` de `pubspec.yaml` (nombre y
+  /// versionCode). Hay una prueba que lo verifica (`test/version_visible_test.dart`):
+  /// al subir el versionCode de cada entrega a CANTV hay que actualizar ambos.
+  static const String version = '1.0.0+2';
 
   /// Máximo de intentos de login antes del bloqueo (RF-20).
   static const int maxIntentos = 3;
