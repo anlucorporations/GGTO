@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/api_client.dart';
 import '../../core/database.dart';
+import 'sync_sesion.dart';
 
 /// Resultado de una operación CARGA (D-73).
 class ResultadoCarga {
@@ -37,6 +38,7 @@ class UploadService {
   /// acciones mediante `POST /sync/carga`. Las acciones que el batch no cubre
   /// (fallas masivas, citas) quedan para `SyncProvider.sincronizar()`.
   static Future<ResultadoCarga> cargar() async {
+    final sesion = await SyncSesionService.abrir('CARGA');
     var fotosSubidas = 0;
     final errores = <String>[];
 
@@ -160,7 +162,8 @@ class UploadService {
     if (actividades.isNotEmpty || estados.isNotEmpty) {
       try {
         final respuesta = await ApiClient.post('/sync/carga', data: {
-          'dispositivo_id': 'apk-local',
+          'id_sync_log': sesion.idSesion,
+          'dispositivo_id': await DatabaseHelper.instance.dispositivoId(),
           'version_app': '1.0.0',
           'actividades': actividades,
           'estados': estados,
@@ -192,6 +195,22 @@ class UploadService {
       } catch (e) {
         errores.add('Error en /sync/carga: $e');
       }
+    }
+
+    final procesados = fotosSubidas + actividadesEnviadas;
+    final nErrores = errores.length;
+    final estado = nErrores == 0 ? 'OK' : (procesados > 0 ? 'PARCIAL' : 'ERROR');
+    if (sesion.idSesion != null) {
+      await SyncSesionService.cerrar(
+        sesion,
+        tipo: 'CARGA',
+        recibidos: procesados + nErrores,
+        procesados: procesados,
+        errores: nErrores,
+        estado: estado,
+        pasoEstado: nErrores == 0 ? 'OK' : (procesados > 0 ? 'OK' : 'ERROR'),
+        detalleError: nErrores > 0 ? errores.first : null,
+      );
     }
 
     return ResultadoCarga(

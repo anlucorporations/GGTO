@@ -100,6 +100,11 @@ class CasoOut(BaseModel):
     citado: bool = False
     gestion: bool = False
 
+    # D-78: cuadrilla del último despacho que incluyó el caso (se calcula en el endpoint).
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
+
 
 class PaginaCasos(BaseModel):
     items: list[CasoOut]

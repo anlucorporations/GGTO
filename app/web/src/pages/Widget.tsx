@@ -8,6 +8,7 @@
 import { useState, type FormEvent } from 'react';
 import Mensaje from '../components/Mensaje';
 import FichaRapida from '../components/FichaRapida';
+import PanelGestionDiaria from '../components/PanelGestionDiaria';
 import { useAuth } from '../auth/AuthContext';
 import { BloqueGestionDiaria, BloqueReportes, hoyISO } from './Monitoreo';
 
@@ -18,6 +19,8 @@ export default function Widget() {
   const [fichaTermino, setFichaTermino] = useState<string | null>(null);
 
   const nombreCompleto = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ');
+  // El panel de gestión diaria es para SUPER/ADMIN/SUPERVISOR (D-81 · RF-43).
+  const puedePanel = ['SUPER', 'ADMIN', 'SUPERVISOR'].includes(usuario?.rol ?? '');
 
   function buscarRapido(evento: FormEvent) {
     evento.preventDefault();
@@ -70,6 +73,8 @@ export default function Widget() {
       {fichaTermino !== null && (
         <FichaRapida terminoInicial={fichaTermino} onCerrar={() => setFichaTermino(null)} />
       )}
+
+      {puedePanel && <PanelGestionDiaria />}
 
       <BloqueReportes />
 

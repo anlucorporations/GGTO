@@ -19,13 +19,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-const require = createRequire('/home/dsh/workspace/CANTV_PDE/RepoTecnico/pruebas/e2e/package.json')
-const { chromium } = require('playwright')
-
-const BASE = path.resolve('/home/dsh/workspace/CANTV_PDE/docs/Manuales')
+const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname).replace(/^\//, '')
+const BASE = path.resolve(SCRIPT_DIR, '..')
 const HTML_DIR = path.join(BASE, 'html')
 const PDF_DIR = path.join(BASE, 'pdf')
 const BUILD_DIR = path.join(BASE, '_build')
+
+// Resolve playwright from the e2e test directory relative to project root
+const PROJECT_ROOT = path.resolve(BASE, '..', '..')
+const require = createRequire(path.join(PROJECT_ROOT, 'RepoTecnico', 'pruebas', 'e2e', 'package.json'))
+const { chromium } = require('playwright')
 
 /* ------------------------------------------------------------ argumentos */
 

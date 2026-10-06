@@ -191,10 +191,12 @@ por duplicado (`app/tests/test_casos_api.py:64-72`).
 ### `GET /api/v1/casos/{id_caso}`
 
 Referencia: `app/api/routes_casos.py:278`. Devuelve la ficha completa como
-`CasoOut`, incluidos el nombre del sector y los cuatro iconos de estado
-(`app/api/routes_casos.py:281`). Si el caso no existe, `_o_404` responde `404`
-con «Caso no encontrado» (`app/api/routes_casos.py:29-33`), verificado por
-`test_ficha_y_404` (`app/tests/test_casos_api.py:117-123`).
+`CasoOut`, incluidos el nombre del sector, los cuatro iconos de estado
+(`app/api/routes_casos.py:281`) y —desde D-78— la **cuadrilla del último
+despacho** (`id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre`). Si el caso
+no existe, `_o_404` responde `404` con «Caso no encontrado»
+(`app/api/routes_casos.py:29-33`), verificado por `test_ficha_y_404`
+(`app/tests/test_casos_api.py:117-123`).
 
 ### `PATCH /api/v1/casos/{id_caso}` (historial de estado)
 
@@ -372,11 +374,11 @@ página y ofrece «Anterior»/«Siguiente» con los límites deshabilitados
 
 La ficha es una ventana flotante que reparte los datos en pestañas
 (`app/web/src/components/FichaCaso.tsx:30-38`): **Resumen, Contacto, Datos
-técnicos, Clasificación, Textos, Resolución e Histórico**. Cada pestaña usa una
-rejilla de hasta tres datos por línea en escritorio que cae a una en móvil
-(`.datos-grid`), y los campos vacíos se renderizan como «—» mediante el
+técnicos, Clasificación, Despacho, Textos, Resolución e Histórico**. Cada pestaña
+usa una rejilla de hasta tres datos por línea en escritorio que cae a una en
+móvil (`.datos-grid`), y los campos vacíos se renderizan como «—» mediante el
 componente `Dato` (`app/web/src/components/FichaCaso.tsx:54-62`). La pestaña
-**Gestión** se eliminó en D-76.
+**Gestión** se eliminó en D-76 y la pestaña **Despacho** se añadió en D-78.
 
 #### Edición (Sector, cita e información)
 
@@ -393,6 +395,114 @@ formulario se limita a **Sector** (`#ficha-sector`, con opción «Sin sector»),
 y, si se corrige la dirección sin enviar sector, lo recalcula
 (`app/api/routes_casos.py:350-372`). El **Supervisor** puede así asignar o
 cambiar el sector de un caso.
+
+#### Despacho: asignación del caso a una cuadrilla (D-78)
+
+La pestaña **Despacho** (`app/web/src/components/FichaCaso.tsx`) concentra la
+asignación manual del caso abierto y sustituye a la selección múltiple que D-77
+había puesto en el listado:
+
+- Muestra tres datos: **Estado del caso**, **Cuadrilla actual** (la del último
+  despacho, o «Sin despacho») y **Cuadrilla 0 (supervisor)**.
+- Ofrece el selector `#ficha-cuadrilla-destino` con el catálogo de cuadrillas
+  activas (incluida la 0, marcada «(supervisor)») y los botones **Asignar a
+  cuadrilla** (`POST /despachos/asignar-casos`) y **Quitar del despacho**
+  (`POST /despachos/quitar-casos`), ambos con `ids_caso: [id_caso]`.
+- Solo la ven ADMIN, SUPERVISOR y Super Usuario (`puedeAsignar`); el rol TECNICO
+  ve la pestaña con el aviso de solo lectura, sin selector.
+
+El listado ya no tiene casillas de selección: `TablaCasos`
+(`app/web/src/pages/Casos.tsx`) volvió a sus **7 columnas** (ID avería, Tipo,
+Clase, Sector, Dirección, Nombre y Estado).
+
+##### ESPECIALES: la asignación también vive en la ficha (D-79)
+
+> ⚠️ **CORRECCIÓN (2026-10-05): este apartado describe el diseño del ciclo D-79, que NO está
+> aplicado en el árbol de trabajo.** `app/web/src/pages/Especiales.tsx` conserva todavía la barra
+> `barra-asignacion` y la columna `col-seleccion`, y el bundle desplegado no contiene
+> `esp-cuadrilla-destino`. Lo mismo vale para el chip de cuadrilla de **D-80** descrito más abajo:
+> `app/web/src/components/EstadoChips.tsx` tiene **44 líneas** y ninguna marca `data-cuadrilla` ni
+> `tono-`, e `Iconos.tsx` y `styles.css` no traen el icono ni los tonos. Sí están aplicados el
+> **backend** de D-80 (`CasoEspecialOut`) y el ciclo **D-78**. Ver
+> `RepoTecnico/estado_proyecto.md` (corrección de estado del 2026-10-05).
+
+La sección **ESPECIALES** siguió el mismo patrón en D-79
+(`app/web/src/pages/Especiales.tsx`):
+
+- El **cuadro principal** perdió la asignación masiva: se retiraron la barra
+  `barra-asignacion` (`#cuadrilla-destino-esp`, «Asignar a cuadrilla», «Quitar
+  del despacho», «Limpiar selección»), la columna de casillas `col-seleccion`
+  —con su «Seleccionar todos los especiales de la página»— y el resaltado
+  `fila-seleccionada`. La tabla queda en **8 columnas**.
+- La asignación está en la **ficha del especial**, con un bloque **Despacho**:
+  selector `#esp-cuadrilla-destino`, **Asignar a cuadrilla** y **Quitar del
+  despacho**, que envían `ids_caso_especial: [id_caso_especial]`.
+- La **fila abre la ficha del especial** en lugar de saltar al caso asociado.
+  Esto corrige un defecto real: `POST /casos-especiales` **siempre** crea un caso
+  asociado (`id_caso` nunca es nulo), así que la condición anterior
+  (`id_caso !== null`) hacía que el modal —con la edición del especial— **nunca
+  se abriera**. Para llegar al caso, la ficha incluye el enlace **«Abrir en
+  CASOS»** junto al `ID caso asociado`.
+
+La **cuadrilla actual** la calcula la API en `_resumen`
+(`app/api/routes_casos.py`), que rellena `id_cuadrilla`, `cuadrilla_codigo` y
+`cuadrilla_nombre` de `CasoOut` con el **último despacho** que incluyó el caso
+(`fecha` e `id_despacho` descendentes), la misma regla del filtro «Cuadrilla» de
+D-72. El cálculo aplica a `GET /casos` y a `GET /casos/{id_caso}`. En
+**ESPECIALES** el equivalente lo hace `_resumen_especiales`
+(`app/api/routes_especiales.py`) sobre el caso asociado y lo publica en
+`CasoEspecialOut` (D-80).
+
+##### Columnas y chips de estado (D-80)
+
+> ⚠️ **El chip de cuadrilla con color de D-80 NO está aplicado** (ver la corrección al inicio del
+> apartado «ESPECIALES»): el listado sigue mostrando el icono genérico de «Asignado».
+
+Las dos tablas cierran con la columna **Estado**, que pinta cuatro indicadores con
+`EstadoChips` (`app/web/src/components/EstadoChips.tsx`). Desde D-80 el segundo
+indicador **no** es el icono genérico de «Asignado», sino el **icono de la
+cuadrilla** a la que el caso fue asignado, con el color de esa cuadrilla y su
+etiqueta corta.
+
+Como la paleta de cuadrillas tiene diez tonos, cualquier color de estado acabaría
+coincidiendo con el de alguna cuadrilla (de hecho ocurría en tres pares: el verde
+de Gestión con **C0**, el ámbar de Pendiente con **C1** y el morado de Citado con
+**C3**). Por eso los cuatro chips se reparten en **dos familias que se distinguen
+por su forma**, no solo por el tono:
+
+| Familia | Chips | Forma | Contenido |
+|---|---|---|---|
+| **Asignación** | Cuadrilla (o Asignado si aún no tiene cuadrilla) | **Píldora** con relleno sólido | Icono blanco + código de la cuadrilla |
+| **Estado** | Pendiente · Citado · Gestión | Cuadrado redondeado con **contorno tintado**, sin relleno | Solo icono, en el color del estado |
+
+Con esto, un chip verde sólido con el texto `C0` (píldora) nunca se confunde con
+el chip verde de contorno de **Gestión** (cuadrado), y lo mismo en los pares
+ámbar/Pendiente y morado/Citado. Una captura de los cuatro chips, de la fila
+completa y de los tres pares que coincidían está en
+`docs/imagenes/chips-estado-d80.png`.
+
+Los tonos de la familia de asignación, en orden:
+
+| Cuadrilla | Color del chip | Etiqueta |
+|---|---|---|
+| C0 | verde `#1f7a4d` | `C0` |
+| C1 | ámbar `#8a6100` | `C1` |
+| C2 | azul `#0b4f9c` | `C2` |
+| C3 | morado `#6b46c1` | `C3` |
+| C4…C9 | naranja · cian · rosa · pizarra · marrón · índigo | `C4`…`C9` |
+| sin número ni id | pizarra `#64748b` (respaldo) | el propio código |
+
+El color y la etiqueta se derivan del **código** de la cuadrilla en
+`app/web/src/cuadrillas.ts`: se toma el **último** grupo de dígitos (`C-00` → 0,
+`C-01` → 1, `E2E-C1` → 1, `TCD12` → 12) para que un número en el prefijo no
+desplace la cuadrilla, y si el código no trae dígitos se usa `id_cuadrilla` como
+respaldo. La paleta tiene **10 tonos y cicla**: C0 y C10 comparten color, aunque
+el chip muestre siempre el código. Si el caso está asignado pero aún no tiene
+cuadrilla (por ejemplo `estado_actual = ASIGNADO` sin despacho) se conserva el
+icono azul de **Asignado**, también en forma de píldora; si no hay ninguna de las
+dos cosas, el chip de cuadrilla no se pinta. El color nunca es el único
+indicador: el chip incluye el código y un `title`/`aria-label` con «Cuadrilla
+C-00 — nombre».
 
 #### Cambio de estado
 

@@ -15,6 +15,7 @@ import type { EstructuraBD, FichaTabla, ContenidoTabla } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
+import Sincronizacion from './Sincronizacion';
 
 const TAMANO_PAGINA = 50;
 
@@ -35,6 +36,8 @@ export default function Sistemas() {
   const [error, setError] = useState('');
 
   const esSuper = usuario?.rol === 'SUPER';
+  const puedeVer = ['SUPER', 'ADMIN', 'SUPERVISOR'].includes(usuario?.rol ?? '');
+  const [tab, setTab] = useState<'bd' | 'sync'>(esSuper ? 'bd' : 'sync');
 
   const cargarEstructura = useCallback(async () => {
     setCargandoLista(true);
@@ -92,7 +95,7 @@ export default function Sistemas() {
     return contenido.columnas.filter((c) => c.toLowerCase().includes(filtro));
   }, [contenido, filtroColumna]);
 
-  if (!esSuper) {
+  if (!puedeVer) {
     return (
       <>
         <div className="pagina-cabecera">
@@ -100,7 +103,7 @@ export default function Sistemas() {
             <h1>Sistemas</h1>
           </div>
         </div>
-        <Mensaje tipo="error" texto="Esta sección es exclusiva del Super Usuario." />
+        <Mensaje tipo="error" texto="Esta sección es exclusiva del Supervisor y del Super Usuario." />
       </>
     );
   }
@@ -110,12 +113,46 @@ export default function Sistemas() {
       <div className="pagina-cabecera">
         <div>
           <h1>Sistemas</h1>
-          <p>Estructura y contenido de la base de datos. Acceso exclusivo del Super Usuario.</p>
+          <p>
+            {tab === 'bd'
+              ? 'Estructura y contenido de la base de datos. Acceso exclusivo del Super Usuario.'
+              : 'Log de sincronizaciones de la APK (Descarga/Carga) y su checklist.'}
+          </p>
         </div>
-        <button className="btn btn-secundario" type="button" onClick={() => void cargarEstructura()}>
-          {cargandoLista ? 'Analizando…' : 'Reanalizar'}
-        </button>
+        {tab === 'bd' && esSuper && (
+          <button className="btn btn-secundario" type="button" onClick={() => void cargarEstructura()}>
+            {cargandoLista ? 'Analizando…' : 'Reanalizar'}
+          </button>
+        )}
       </div>
+
+      <nav className="operacion-pestanas" role="tablist" aria-label="Secciones de Sistemas">
+        {esSuper && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'bd'}
+            className={`operacion-pestana${tab === 'bd' ? ' activa' : ''}`}
+            onClick={() => setTab('bd')}
+          >
+            Base de datos
+          </button>
+        )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'sync'}
+          className={`operacion-pestana${tab === 'sync' ? ' activa' : ''}`}
+          onClick={() => setTab('sync')}
+        >
+          Sincronización
+        </button>
+      </nav>
+
+      {tab === 'sync' ? (
+        <Sincronizacion />
+      ) : (
+        <>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
 
@@ -402,6 +439,8 @@ export default function Sistemas() {
           <p className="vacio">No se pudo leer la tabla.</p>
         )}
       </div>
+        </>
+      )}
     </>
   );
 }

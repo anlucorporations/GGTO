@@ -1,19 +1,21 @@
 /**
- * Ficha de detalle del caso en pestañas (D-70, reorganizada en D-76).
+ * Ficha de detalle del caso en pestañas (D-70, reorganizada en D-76 y D-78).
  *
  * - Los datos se reparten por naturaleza: RESUMEN, CONTACTO, DATOS TÉCNICOS,
- *   CLASIFICACIÓN, TEXTOS, RESOLUCIÓN e HISTÓRICO.
+ *   CLASIFICACIÓN, DESPACHO, TEXTOS, RESOLUCIÓN e HISTÓRICO.
  * - En PC cada pestaña muestra hasta **3 datos por línea**; en móvil cae a 1.
  * - La edición la activa el **icono de edición del título** y solo la ven
  *   ADMIN, SUPERVISOR y Super Usuario; se limita a **Sector** (el Supervisor
  *   puede asignarlo o cambiarlo), Fecha de cita e Información (200 caracteres).
- *   El bloque vive ahora en CLASIFICACIÓN: la pestaña GESTIÓN se eliminó.
+ *   El bloque vive en CLASIFICACIÓN: la pestaña GESTIÓN se eliminó.
+ * - DESPACHO (D-78) concentra la **asignación manual del caso a una cuadrilla**
+ *   y su retirada del despacho; sustituye a la selección múltiple del listado.
  * - RESOLUCIÓN permite elegir CERRAR / CITA / ENRUTAR con su formulario.
  * - HISTÓRICO lista los casos relacionados por el teléfono del caso.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as api from '../api/client';
-import type { CasoOut, CasoRelacionado, ModoCierre, Sector } from '../api/types';
+import type { CasoOut, CasoRelacionado, Cuadrilla, ModoCierre, Sector } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import PieTabla from '../components/PieTabla';
 import { fechaHora, nv } from '../utils';
@@ -23,6 +25,7 @@ export type Pestana =
   | 'contacto'
   | 'tecnico'
   | 'clasificacion'
+  | 'despacho'
   | 'texto'
   | 'resolucion'
   | 'historico';
@@ -32,6 +35,7 @@ const PESTANAS: { id: Pestana; etiqueta: string }[] = [
   { id: 'contacto', etiqueta: 'Contacto' },
   { id: 'tecnico', etiqueta: 'Datos técnicos' },
   { id: 'clasificacion', etiqueta: 'Clasificación' },
+  { id: 'despacho', etiqueta: 'Despacho' },
   { id: 'texto', etiqueta: 'Textos' },
   { id: 'resolucion', etiqueta: 'Resolución' },
   { id: 'historico', etiqueta: 'Histórico' },
@@ -63,16 +67,22 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: ReactNode }) {
 export default function FichaCaso({
   caso,
   sectores,
+  cuadrillas = [],
   puedeEditar,
   puedeResolver,
+  puedeAsignar = false,
   onActualizar,
   solicitudPestana,
   alActivarEdicion,
 }: {
   caso: CasoOut;
   sectores: Sector[];
+  /** Catálogo de cuadrillas activas para el despacho (D-78). */
+  cuadrillas?: Cuadrilla[];
   puedeEditar: boolean;
   puedeResolver: boolean;
+  /** Asignar a cuadrilla o quitar del despacho: ADMIN, SUPERVISOR y Super Usuario. */
+  puedeAsignar?: boolean;
   onActualizar: (actualizado: CasoOut) => void;
   /** Señal del padre para saltar a una pestaña (el icono de edición del título). */
   solicitudPestana?: { id: Pestana; secuencia: number } | null;
@@ -88,6 +98,10 @@ export default function FichaCaso({
   );
   const [informacion, setInformacion] = useState<string>((caso.informacion ?? '').slice(0, 200));
   const [guardando, setGuardando] = useState(false);
+
+  // Despacho: asignación manual del caso a una cuadrilla (D-78)
+  const [cuadrillaDestino, setCuadrillaDestino] = useState('');
+  const [asignando, setAsignando] = useState(false);
 
   // Resolución
   const [accion, setAccion] = useState('');
@@ -112,6 +126,7 @@ export default function FichaCaso({
     setSector(caso.id_sector ? String(caso.id_sector) : '');
     setFechaCita(caso.fecha_cita ? caso.fecha_cita.slice(0, 16) : '');
     setInformacion((caso.informacion ?? '').slice(0, 200));
+    setCuadrillaDestino('');
     setEditando(false);
   }, [caso]);
 
@@ -164,6 +179,43 @@ export default function FichaCaso({
       setError(e instanceof api.ApiError ? e.message : 'Error al guardar los cambios.');
     } finally {
       setGuardando(false);
+    }
+  }
+
+  /** D-78: asigna el caso abierto a la cuadrilla elegida (despacho de hoy). */
+  async function asignarCuadrilla() {
+    if (!cuadrillaDestino) return;
+    setError('');
+    setOk('');
+    setAsignando(true);
+    try {
+      const r = await api.asignarCasosCuadrilla({
+        id_cuadrilla: Number(cuadrillaDestino),
+        ids_caso: [caso.id_caso],
+      });
+      setOk(r.mensaje);
+      setCuadrillaDestino('');
+      onActualizar(await api.obtenerCaso(caso.id_caso));
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo asignar el caso.');
+    } finally {
+      setAsignando(false);
+    }
+  }
+
+  /** D-78: retira el caso abierto del despacho del día. */
+  async function quitarCuadrilla() {
+    setError('');
+    setOk('');
+    setAsignando(true);
+    try {
+      const r = await api.quitarCasosCuadrilla({ ids_caso: [caso.id_caso] });
+      setOk(r.mensaje);
+      onActualizar(await api.obtenerCaso(caso.id_caso));
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo quitar el caso del despacho.');
+    } finally {
+      setAsignando(false);
     }
   }
 
@@ -370,6 +422,79 @@ export default function FichaCaso({
                   Cancelar
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------ DESPACHO ----------------------------- */}
+      {pestana === 'despacho' && (
+        <div className="datos-columna">
+          <div className="datos-grid">
+            <Dato etiqueta="Estado del caso" valor={caso.estado_actual} />
+            <Dato
+              etiqueta="Cuadrilla actual"
+              valor={
+                caso.cuadrilla_codigo
+                  ? `${caso.cuadrilla_codigo}${caso.cuadrilla_nombre ? ` — ${caso.cuadrilla_nombre}` : ''}`
+                  : 'Sin despacho'
+              }
+            />
+            <Dato
+              etiqueta="Cuadrilla 0 (supervisor)"
+              valor={caso.en_gestion_supervisor ? 'Sí' : 'No'}
+            />
+          </div>
+
+          {/* Asignación manual del caso (D-78): sustituye a la selección múltiple
+              del listado. Se aplica al despacho del día. */}
+          {!puedeAsignar ? (
+            <p className="vacio">
+              Solo el Supervisor, el Administrador o el Super Usuario pueden asignar el caso a una
+              cuadrilla.
+            </p>
+          ) : (
+            <div className="formulario modal-formulario">
+              <div className="fila-campos">
+                <div className="campo">
+                  <label htmlFor="ficha-cuadrilla-destino">Cuadrilla destino</label>
+                  <select
+                    id="ficha-cuadrilla-destino"
+                    value={cuadrillaDestino}
+                    onChange={(e) => setCuadrillaDestino(e.target.value)}
+                  >
+                    <option value="">— Seleccione —</option>
+                    {cuadrillas.map((c) => (
+                      <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                        {c.codigo}
+                        {c.es_supervisor ? ' (supervisor)' : ''} — {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="acciones-form">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={asignando || !cuadrillaDestino}
+                  onClick={() => void asignarCuadrilla()}
+                >
+                  {asignando ? 'Procesando…' : 'Asignar a cuadrilla'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secundario"
+                  disabled={asignando}
+                  onClick={() => void quitarCuadrilla()}
+                >
+                  Quitar del despacho
+                </button>
+              </div>
+              <span className="texto-pequeno">
+                La asignación se aplica al despacho de hoy. Asignar a la cuadrilla 0 deja el caso
+                como gestión del supervisor.
+              </span>
             </div>
           )}
         </div>

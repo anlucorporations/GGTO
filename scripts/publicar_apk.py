@@ -98,19 +98,33 @@ def _primero_existente(candidatos: list[Path]) -> Path | None:
 
 
 def localizar_flutter() -> Path | None:
+    def _ejecutable(base: Path) -> Path | None:
+        """Acepta el ejecutable o su carpeta `bin` (H-WIN-02).
+
+        En Windows `FLUTTER_BIN` suele apuntar a `...\\flutter\\bin` (lo que
+        necesita el PATH), que es un directorio: pasarlo a `subprocess` da
+        `WinError 5 (Acceso denegado)` en vez de un error claro.
+        """
+        if base.is_file():
+            return base
+        if base.is_dir():
+            return _primero_existente([base / "flutter.bat", base / "flutter"])
+        return None
+
     env_bin = os.environ.get("FLUTTER_BIN")
-    if env_bin and Path(env_bin).exists():
-        return Path(env_bin)
+    if env_bin:
+        cand = _ejecutable(Path(env_bin))
+        if cand:
+            return cand
     en_path = shutil.which("flutter")
     if en_path:
         return Path(en_path)
     casa = Path.home()
     for base in (casa / "tools" / "flutter", casa / "flutter", Path("/opt/flutter"),
                  Path("/usr/local/flutter"), Path("C:/flutter"), Path("C:/src/flutter")):
-        for nombre in ("bin/flutter", "bin/flutter.bat"):
-            cand = base / nombre
-            if cand.exists():
-                return cand
+        cand = _ejecutable(base / "bin")
+        if cand:
+            return cand
     return None
 
 
@@ -323,10 +337,16 @@ def asegurar_key_properties(jks: Path, props: dict[str, str], aplicar: bool) -> 
         shutil.copy2(KEY_PROPS, respaldo)
         ok(f"Respaldo creado: {respaldo.name}")
     texto = KEY_PROPS.read_text(encoding="utf-8")
+    # La ruta se escribe con barras normales (`as_posix`), que Windows acepta:
+    # `Properties.load` trata la barra invertida como carácter de escape, así que
+    # un `C:\GGTO\...` literal llegaría al build como `C:GGTO...` (H-WIN-01).
+    # Además se sustituye con una función: pasar la ruta como plantilla de
+    # `re.sub` rompe con secuencias como `\G` («bad escape»).
+    valor = jks.as_posix()
     if re.search(r"(?m)^\s*storeFile\s*=", texto):
-        texto = re.sub(r"(?m)^\s*storeFile\s*=.*$", f"storeFile={jks}", texto)
+        texto = re.sub(r"(?m)^\s*storeFile\s*=.*$", lambda _m: f"storeFile={valor}", texto)
     else:
-        texto = texto.rstrip("\n") + f"\nstoreFile={jks}\n"
+        texto = texto.rstrip("\n") + f"\nstoreFile={valor}\n"
     KEY_PROPS.write_text(texto, encoding="utf-8")
     ok(f"key.properties corregido → storeFile={jks}")
     return True

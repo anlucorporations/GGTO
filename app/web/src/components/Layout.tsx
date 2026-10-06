@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import * as api from '../api/client';
 import type { CasoOut } from '../api/types';
 import BuscadorGlobal from './BuscadorGlobal';
 import FichaRapida from './FichaRapida';
@@ -107,6 +108,27 @@ function MenuUsuario() {
   const cerrar = useCallback(() => setAbierto(false), []);
   useCerrarDesplegable(ref, abierto, cerrar);
 
+  // Badge de mensajes no leídos (D-81 · RF-41). Sondeo cada 20 s.
+  const [noLeidos, setNoLeidos] = useState(0);
+  useEffect(() => {
+    if (!usuario) return;
+    let vivo = true;
+    const consultar = () => {
+      void api
+        .mensajesNoLeidos()
+        .then((r) => {
+          if (vivo) setNoLeidos(r.total);
+        })
+        .catch(() => {});
+    };
+    consultar();
+    const t = window.setInterval(consultar, 20_000);
+    return () => {
+      vivo = false;
+      window.clearInterval(t);
+    };
+  }, [usuario]);
+
   const nombreCompleto = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(' ');
   const visible = usuario?.nombre ?? usuario?.p00 ?? 'Usuario';
   const inicial = visible.charAt(0).toUpperCase();
@@ -158,8 +180,14 @@ function MenuUsuario() {
             <IconoPerfil width={17} height={17} />
             Perfil y Cuenta
           </Link>
-          {/* SISTEMAS: el acceso solo se muestra al Super Usuario (D-69). */}
-          {usuario?.rol === 'SUPER' && (
+          <Link to="/mensajes" role="menuitem" className="usuario-menu-item" onClick={cerrar}>
+            <IconoAyuda width={17} height={17} />
+            Mensajes
+            {noLeidos > 0 && <span className="insignia-noleidos">{noLeidos}</span>}
+          </Link>
+          {/* SISTEMAS: la pestaña de Sincronización se muestra a SUPER/ADMIN/SUPERVISOR
+              (la inspección de BD de la página sigue siendo solo del Super Usuario). */}
+          {['SUPER', 'ADMIN', 'SUPERVISOR'].includes(usuario?.rol ?? '') && (
             <Link
               to="/sistemas"
               role="menuitem"

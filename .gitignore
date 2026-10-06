@@ -1,74 +1,52 @@
-# --- Entornos y secretos ---
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-credentials*.json
-*-sa.json
-
-# --- Python ---
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-.coverage
-htmlcov/
-
-# --- Node / frontend ---
-node_modules/
-dist/
-build/
-.vite/
-npm-debug.log*
-yarn-error.log*
-
-# --- Flutter / Android ---
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-build/
-*.apk
-*.aab
+# ---------------------------------------------------------------------------
+# Secretos y credenciales — NUNCA versionar
+# ---------------------------------------------------------------------------
+# El archivo RepoTecnico/credenciales/CREDENCIALES-GGTO.md declara que está
+# excluido por .gitignore, pero el .gitignore no existía: este archivo lo crea.
+RepoTecnico/credenciales/
+*credenciales*.md
 *.jks
 *.keystore
-local.properties
+key.properties
 
-# --- Datos de ingesta reales (PII de clientes CANTV): NUNCA versionar ---
+# ---------------------------------------------------------------------------
+# Datos de entrada con PII de suscriptores (H-01)
+# ---------------------------------------------------------------------------
 detalle_averias_gpon*.csv
-RepoTecnico/detalle_averias_gpon*.csv
 RepoTecnico/entrada/
 RepoTecnico/salida/
 RepoTecnico/evidencias/
+
+# ---------------------------------------------------------------------------
+# Artefactos de construcción y binarios publicados
+# ---------------------------------------------------------------------------
+app_movil/build/
+app_movil/.dart_tool/
+app_movil/android/.gradle/
+app_movil/android/local.properties
+app_movil/.flutter-plugins
+app_movil/.flutter-plugins-dependencies
+app/web/dist/
+app/web/node_modules/
+
+# APK (se publican con scripts/publicar_apk.py; no se versionan)
+app_movil/GGTOv2.apk
+app_movil/app-release.apk
+app/web/public/apk/ggto-tecnico.apk
+app/web/public/apk/apk.json
+app/web/public/apk/*.apk
+
+# ---------------------------------------------------------------------------
+# Cachés y temporales
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 *.zip
 
-# --- Muestras pseudonimizadas (SÍ se versionan con fines de prueba) ---
-!RepoTecnico/muestras/*.csv
-
-# --- Credenciales locales: NUNCA versionar ---
-RepoTecnico/credenciales/
-*credenciales*.md
-*CREDENCIALES*.md
-
-# --- Sistema ---
-.DS_Store
-Thumbs.db
-*.log
-
-# --- Python (backend) ---
-.venv/
-*.egg-info/
-.ruff_cache/
-.mypy_cache/
-
-# --- Logs de operaciones de datos ---
-RepoTecnico/BaseOperaciones/*.log
-
-# --- Pruebas E2E (Fase 4): se versionan los informes JSON, no los artefactos ---
+# Artefactos de las pruebas E2E
 RepoTecnico/pruebas/e2e/test-results/
-RepoTecnico/pruebas/e2e/playwright-report/
 RepoTecnico/pruebas/logs/e2e-reporte/
 RepoTecnico/pruebas/logs/*.log

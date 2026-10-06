@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # --- CORS ---
     cors_origins: str = "*"
 
+    # --- Operación / mantenimiento (D-81) ---
+    # Token del header `X-Mantenimiento-Token` para los jobs de Cloud Scheduler.
+    # Si queda vacío, `/mantenimiento/*` responde 503 (fail-closed, nunca abierto).
+    mantenimiento_token: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

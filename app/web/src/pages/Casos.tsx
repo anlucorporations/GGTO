@@ -172,40 +172,19 @@ function construirPayload(original: CasoOut, form: EdicionForm): CasoUpdate {
   return p;
 }
 
-/** Listado resumido: selección, ID, iconos de Tipo/Clase, Sector, Dirección, Nombre y estado. */
+/** Listado resumido: ID, iconos de Tipo/Clase, Sector, Dirección, Nombre y estado. */
 function TablaCasos({
   items,
   onVer,
-  seleccion,
-  onToggle,
-  onToggleTodos,
-  puedeAsignar,
 }: {
   items: CasoOut[];
   onVer: (idCaso: number) => void;
-  /** D-77: selección múltiple para asignar a una cuadrilla. */
-  seleccion?: Set<number>;
-  onToggle?: (idCaso: number) => void;
-  onToggleTodos?: (ids: number[]) => void;
-  puedeAsignar?: boolean;
 }) {
-  const seleccionados = seleccion ?? new Set<number>();
-  const todosMarcados = items.length > 0 && items.every((c) => seleccionados.has(c.id_caso));
   return (
     <div className="tabla-envoltura">
       <table className="tabla-resumen">
         <thead>
           <tr>
-            {puedeAsignar && (
-              <th className="col-seleccion">
-                <input
-                  type="checkbox"
-                  checked={todosMarcados}
-                  aria-label="Seleccionar todos los casos de la página"
-                  onChange={() => onToggleTodos?.(items.map((c) => c.id_caso))}
-                />
-              </th>
-            )}
             <th>ID avería</th>
             <th>Tipo</th>
             <th>Clase</th>
@@ -219,7 +198,7 @@ function TablaCasos({
           {items.map((c) => (
             <tr
               key={c.id_caso}
-              className={`fila-clicable${seleccionados.has(c.id_caso) ? ' fila-seleccionada' : ''}`}
+              className="fila-clicable"
               onClick={() => onVer(c.id_caso)}
               tabIndex={0}
               onKeyDown={(e) => {
@@ -229,17 +208,6 @@ function TablaCasos({
                 }
               }}
             >
-              {puedeAsignar && (
-                <td className="col-seleccion">
-                  <input
-                    type="checkbox"
-                    checked={seleccionados.has(c.id_caso)}
-                    aria-label={`Seleccionar el caso ${c.id_averia}`}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => onToggle?.(c.id_caso)}
-                  />
-                </td>
-              )}
               <td className="mono">{c.id_averia}</td>
               <td>
                 <CeldaTipoCaso valor={c.tipo_caso} />
@@ -261,12 +229,7 @@ function TablaCasos({
             </tr>
           ))}
         </tbody>
-        <PieTabla
-          colSpan={puedeAsignar ? 8 : 7}
-          total={items.length}
-          singular="caso"
-          plural="casos"
-        />
+        <PieTabla colSpan={7} total={items.length} singular="caso" plural="casos" />
       </table>
     </div>
   );
@@ -301,12 +264,6 @@ export default function Casos() {
 
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
-
-  // D-77: selección múltiple para asignar casos a una cuadrilla (reutiliza el
-  // catálogo `cuadrillas` que ya alimenta el filtro).
-  const [seleccion, setSeleccion] = useState<Set<number>>(new Set());
-  const [cuadrillaDestino, setCuadrillaDestino] = useState('');
-  const [asignando, setAsignando] = useState(false);
 
   // Filtros + listado (RF-33).
   const [borrador, setBorrador] = useState<Filtros>(() => ({
@@ -406,65 +363,6 @@ export default function Casos() {
     },
     [cargarHistorial],
   );
-
-  /** D-77: alterna la selección de un caso. */
-  function alternarSeleccion(idCaso: number) {
-    setSeleccion((actual) => {
-      const copia = new Set(actual);
-      if (copia.has(idCaso)) copia.delete(idCaso);
-      else copia.add(idCaso);
-      return copia;
-    });
-  }
-
-  /** D-77: marca o desmarca todos los casos de la página. */
-  function alternarTodos(ids: number[]) {
-    setSeleccion((actual) => {
-      const copia = new Set(actual);
-      const todos = ids.every((id) => copia.has(id));
-      ids.forEach((id) => (todos ? copia.delete(id) : copia.add(id)));
-      return copia;
-    });
-  }
-
-  /** D-77: asigna los casos seleccionados a la cuadrilla elegida. */
-  async function asignarSeleccion() {
-    if (seleccion.size === 0 || !cuadrillaDestino) return;
-    setAsignando(true);
-    setError('');
-    setOk('');
-    try {
-      const r = await api.asignarCasosCuadrilla({
-        id_cuadrilla: Number(cuadrillaDestino),
-        ids_caso: [...seleccion],
-      });
-      setOk(r.mensaje);
-      setSeleccion(new Set());
-      await cargarLista();
-    } catch (e) {
-      setError(detalleDe(e, 'No se pudieron asignar los casos.'));
-    } finally {
-      setAsignando(false);
-    }
-  }
-
-  /** D-77: saca los casos seleccionados del despacho del día. */
-  async function quitarSeleccion() {
-    if (seleccion.size === 0) return;
-    setAsignando(true);
-    setError('');
-    setOk('');
-    try {
-      const r = await api.quitarCasosCuadrilla({ ids_caso: [...seleccion] });
-      setOk(r.mensaje);
-      setSeleccion(new Set());
-      await cargarLista();
-    } catch (e) {
-      setError(detalleDe(e, 'No se pudieron quitar los casos del despacho.'));
-    } finally {
-      setAsignando(false);
-    }
-  }
 
   // Abre la ficha cuando se llega desde el buscador global o el PANEL.
   useEffect(() => {
@@ -681,70 +579,12 @@ export default function Casos() {
 
         {cargandoFicha && <p className="texto-pequeno">Cargando ficha…</p>}
 
-        {puedeEditarCaso && (
-          <div className="barra-asignacion">
-            <span className="texto-pequeno">
-              {seleccion.size === 0
-                ? 'Seleccione casos para asignarlos a una cuadrilla'
-                : `${seleccion.size} caso(s) seleccionado(s)`}
-            </span>
-            <label className="texto-pequeno" htmlFor="cuadrilla-destino">
-              Cuadrilla destino
-            </label>
-            <select
-              id="cuadrilla-destino"
-              value={cuadrillaDestino}
-              onChange={(e) => setCuadrillaDestino(e.target.value)}
-            >
-              <option value="">— Seleccione —</option>
-              {cuadrillas.map((c) => (
-                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
-                  {c.codigo}
-                  {c.es_supervisor ? ' (supervisor)' : ''} — {c.nombre}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn btn-mini"
-              disabled={asignando || seleccion.size === 0 || !cuadrillaDestino}
-              onClick={() => void asignarSeleccion()}
-            >
-              {asignando ? 'Procesando…' : 'Asignar a cuadrilla'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-mini btn-secundario"
-              disabled={asignando || seleccion.size === 0}
-              onClick={() => void quitarSeleccion()}
-            >
-              Quitar del despacho
-            </button>
-            {seleccion.size > 0 && (
-              <button
-                type="button"
-                className="btn btn-mini btn-secundario"
-                onClick={() => setSeleccion(new Set())}
-              >
-                Limpiar selección
-              </button>
-            )}
-          </div>
-        )}
-
         {cargandoLista ? (
           <p className="vacio">Cargando…</p>
         ) : items.length === 0 ? (
           <p className="vacio">No hay casos que coincidan con los filtros.</p>
         ) : (
-          <TablaCasos
-            items={items}
-            onVer={(id) => void abrirFicha(id)}
-            seleccion={seleccion}
-            onToggle={alternarSeleccion}
-            onToggleTodos={alternarTodos}
-            puedeAsignar={puedeEditarCaso}
-          />
+          <TablaCasos items={items} onVer={(id) => void abrirFicha(id)} />
         )}
       </div>
 
@@ -772,8 +612,10 @@ export default function Casos() {
             caso={ficha}
             solicitudPestana={solicitud}
             sectores={sectores}
+            cuadrillas={cuadrillas}
             puedeEditar={puedeEditarCaso}
             puedeResolver={puedeEditarCaso}
+            puedeAsignar={puedeEditarCaso}
             alActivarEdicion={() => undefined}
             onActualizar={(actualizado) => {
               setFicha(actualizado);

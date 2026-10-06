@@ -7,13 +7,22 @@ const { test, expect } = require('@playwright/test');
 const { USUARIOS, rellenar, iniciarSesion } = require('../helpers');
 
 test.describe('Sistemas y roles', () => {
-  test('el acceso a SISTEMAS solo aparece en el menú del Super Usuario', async ({ page }) => {
+  test('SISTEMAS (D-81): el ADMIN ve la pestaña Sincronización y no la inspección de BD', async ({
+    page,
+  }) => {
     await iniciarSesion(page, USUARIOS.admin);
     await page.getByTitle('Menú del usuario').click();
-    await expect(page.getByRole('menuitem', { name: 'Sistemas' })).toHaveCount(0);
+    await page.getByRole('menuitem', { name: 'Sistemas' }).click();
+    await expect(page).toHaveURL(/\/sistemas$/);
+    await expect(page.getByRole('tab', { name: 'Sincronización' })).toBeVisible({ timeout: 30_000 });
+    // La inspección de base de datos sigue siendo exclusiva del Super Usuario (D-69)
+    await expect(page.getByRole('tab', { name: 'Base de datos' })).toHaveCount(0);
+  });
 
-    await page.goto('/sistemas');
-    await expect(page.getByText('exclusiva del Super Usuario')).toBeVisible({ timeout: 30_000 });
+  test('SISTEMAS (D-81): el TECNICO no ve el menú de Sistemas', async ({ page }) => {
+    await iniciarSesion(page, USUARIOS.tecnico);
+    await page.getByTitle('Menú del usuario').click();
+    await expect(page.getByRole('menuitem', { name: 'Sistemas' })).toHaveCount(0);
   });
 
   test('el Super Usuario analiza la estructura e inspecciona una tabla', async ({ page }) => {

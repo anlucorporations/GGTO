@@ -18,6 +18,7 @@ import Parametros from './pages/Parametros';
 import Ayuda from './pages/Ayuda';
 import Sistemas from './pages/Sistemas';
 import Perfil from './pages/Perfil';
+import Mensajes from './pages/Mensajes';
 
 export default function App() {
   return (
@@ -39,6 +40,8 @@ export default function App() {
           <Route path="ayuda" element={<Ayuda />} />
           {/* Perfil y Cuenta para todos los roles (D-72). */}
           <Route path="perfil" element={<Perfil />} />
+          {/* Mensajería interna (D-81 · RF-41): todos los roles. */}
+          <Route path="mensajes" element={<Mensajes />} />
           {/* SISTEMAS: solo Super Usuario (se filtra en el menú y en la página). */}
           <Route path="sistemas" element={<Sistemas />} />
           {/* DESPACHO y CONFIGURACIÓN: no disponibles para el rol TÉCNICO (D-72). */}

@@ -197,8 +197,9 @@ El directorio `app/web/src/components/` aloja los componentes reutilizables:
 | `Modal` | `app/web/src/components/Modal.tsx` | 63 | Modal genérico de formularios y fichas (90 % de la ventana) |
 | `PieTabla` | `app/web/src/components/PieTabla.tsx` | 37 | Pie `<tfoot>` con el total de registros |
 | `graficos` | `app/web/src/components/graficos.tsx` | 349 | Gráficos SVG propios |
-| `Iconos` | `app/web/src/components/Iconos.tsx` | 251 | Conjunto de iconos SVG |
-| `EstadoChips` | `app/web/src/components/EstadoChips.tsx` | 47 | Indicadores de estado |
+| `Iconos` | `app/web/src/components/Iconos.tsx` | 404 | Conjunto de iconos SVG |
+| `EstadoChips` | `app/web/src/components/EstadoChips.tsx` | 44 | Indicadores de estado. ⚠️ **El chip de cuadrilla con color (D-80) NO está aplicado**: las 87 líneas que describía esta tabla corresponden a una versión que no existe en el árbol actual |
+| `cuadrillas` | `app/web/src/cuadrillas.ts` | 77 | ⚠️ **D-80 no aplicado**: el módulo existe, pero **ningún componente lo importa** (huérfano) |
 | `Mensaje` | `app/web/src/components/Mensaje.tsx` | 20 | Aviso de error o información |
 | `useCerrarDesplegable` | `app/web/src/components/useCerrarDesplegable.ts` | 28 | Hook de cierre de menús |
 

@@ -347,7 +347,7 @@ El formulario de proceso lista también la **cuadrilla 0** (tarjeta «Cuadrilla 
 gestión», sin sectores ni selector de sector), para que el supervisor vea cuántos casos en
 gestión se van a despachar consigo (`app/web/src/components/ProcesarDespacho.tsx`).
 
-### Asignación manual de casos a una cuadrilla (D-77)
+### Asignación manual de casos a una cuadrilla (D-77, D-78)
 
 Además del reparto automático por sector, el Supervisor y el Administrador pueden
 **asignar y quitar** casos **comunes y especiales** a una cuadrilla concreta:
@@ -363,8 +363,13 @@ Además del reparto automático por sector, el Supervisor y el Administrador pue
 - `POST /despachos/quitar-casos` (`app/api/routes_despachos.py:419-438`,
   `app/services/despacho.py:749-806`) saca los casos de los borradores del día y elimina
   los borradores que quedan vacíos.
-- En la web, el Supervisor selecciona renglones en **CASOS** o **ESPECIALES** y usa
-  «Asignar a cuadrilla» o «Quitar del despacho»; el rol TECNICO no ve la selección.
+- **En la web (D-78):** en **CASOS** la asignación vive en la **ficha de cada caso**, pestaña
+  **Despacho** (`app/web/src/components/FichaCaso.tsx`), con la **cuadrilla actual**, el
+  selector de cuadrilla destino y los botones «Asignar a cuadrilla» / «Quitar del despacho».
+  La ficha informa la cuadrilla del **último despacho** mediante los campos
+  `id_cuadrilla`/`cuadrilla_codigo`/`cuadrilla_nombre` de `CasoOut`, calculados en
+  `_resumen` (`app/api/routes_casos.py:77-155`). En **ESPECIALES** se conserva la selección
+  de renglones con su barra. El rol TECNICO no ve ninguna de las dos acciones.
 
 ### Casos del despacho
 

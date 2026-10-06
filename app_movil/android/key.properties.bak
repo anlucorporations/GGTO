@@ -1,0 +1,10 @@
+# ---------------------------------------------------------------------------
+# Firma de la APK de release — GGTO Técnico
+# ---------------------------------------------------------------------------
+# ARCHIVO SENSIBLE: no se versiona (ver el .gitignore de app_movil). Generado
+# el 2026-10-01 con keytool. La ruta puede ser absoluta o relativa a la carpeta
+# app_movil/android/app.
+storeFile=../../RepoTecnico/credenciales/ggto-tecnico-release.jks
+storePassword=8f4pM3k1TQGfKI0iKLHoIKqRXiVnVJRT
+keyAlias=ggto-tecnico
+keyPassword=8f4pM3k1TQGfKI0iKLHoIKqRXiVnVJRT

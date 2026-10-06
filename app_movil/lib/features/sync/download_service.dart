@@ -1,5 +1,6 @@
 import '../../core/api_client.dart';
 import '../../core/database.dart';
+import 'sync_sesion.dart';
 
 /// Resultado de una operación DESCARGA (D-73).
 class ResultadoDescarga {
@@ -27,35 +28,63 @@ class DownloadService {
   const DownloadService._();
 
   /// Llama `GET /sync/descarga` y aplica el resultado a la caché local.
+  ///
+  /// D-81: abre una sesión de sincronización, ejecuta el checklist y la cierra
+  /// con el resultado (RF-39/RF-40).
   static Future<ResultadoDescarga> descargar() async {
-    final idsConocidos = await DatabaseHelper.instance.idsCasosConocidos();
-    final ultima = await DatabaseHelper.instance.ultimaDescarga();
+    final sesion = await SyncSesionService.abrir('DESCARGA');
+    try {
+      final idsConocidos = await DatabaseHelper.instance.idsCasosConocidos();
+      final ultima = await DatabaseHelper.instance.ultimaDescarga();
 
-    final query = <String, dynamic>{
-      if (idsConocidos.isNotEmpty) 'ids_conocidos': idsConocidos,
-      if (ultima != null) 'desde': ultima.toIso8601String(),
-    };
+      final query = <String, dynamic>{
+        if (idsConocidos.isNotEmpty) 'ids_conocidos': idsConocidos,
+        if (ultima != null) 'desde': ultima.toIso8601String(),
+      };
 
-    final datos = await ApiClient.get('/sync/descarga', query: query);
-    if (datos is! Map) {
-      return const ResultadoDescarga(nuevos: 0, actualizados: 0, serverTs: null);
+      final datos = await ApiClient.get('/sync/descarga', query: query);
+      if (datos is! Map) {
+        return const ResultadoDescarga(nuevos: 0, actualizados: 0, serverTs: null);
+      }
+
+      final lista = datos['casos'];
+      var nuevos = 0;
+      var actualizados = 0;
+      if (lista is List && lista.isNotEmpty) {
+        final r = await DatabaseHelper.instance.mergearCasos(lista);
+        nuevos = r.$1;
+        actualizados = r.$2;
+      }
+
+      DateTime? serverTs;
+      final ts = datos['server_ts'];
+      if (ts is String) {
+        serverTs = DateTime.tryParse(ts);
+      }
+
+      if (sesion.idSesion != null) {
+        await SyncSesionService.cerrar(
+          sesion,
+          tipo: 'DESCARGA',
+          recibidos: nuevos + actualizados,
+          procesados: nuevos + actualizados,
+          estado: 'OK',
+          pasoEstado: 'OK',
+        );
+      }
+      return ResultadoDescarga(nuevos: nuevos, actualizados: actualizados, serverTs: serverTs);
+    } catch (e) {
+      if (sesion.idSesion != null) {
+        await SyncSesionService.cerrar(
+          sesion,
+          tipo: 'DESCARGA',
+          errores: 1,
+          estado: 'ERROR',
+          pasoEstado: 'ERROR',
+          detalleError: '$e',
+        );
+      }
+      rethrow;
     }
-
-    final lista = datos['casos'];
-    var nuevos = 0;
-    var actualizados = 0;
-    if (lista is List && lista.isNotEmpty) {
-      final r = await DatabaseHelper.instance.mergearCasos(lista);
-      nuevos = r.$1;
-      actualizados = r.$2;
-    }
-
-    DateTime? serverTs;
-    final ts = datos['server_ts'];
-    if (ts is String) {
-      serverTs = DateTime.tryParse(ts);
-    }
-
-    return ResultadoDescarga(nuevos: nuevos, actualizados: actualizados, serverTs: serverTs);
   }
 }

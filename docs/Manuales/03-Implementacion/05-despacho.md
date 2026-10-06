@@ -436,11 +436,11 @@ Estas tres operaciones son las que usa el formulario flotante «Procesar despach
   Supervisor o el Administrador asignan casos **comunes y especiales** a una cuadrilla, o los
   sacan del despacho del día. Asignar mueve el caso si estaba en el borrador de otra
   cuadrilla, respeta los despachos publicados o cerrados y, si el destino es la cuadrilla 0,
-  marca el caso como **gestión del supervisor**. En la web se hace seleccionando renglones en
-  **CASOS** o **ESPECIALES** y pulsando «Asignar a cuadrilla» o «Quitar del despacho».
-  caso pertenece a la cuadrilla 0 (supervisor)») y los repetidos (mensaje: «El caso ya está en el
-  despacho»). Si el caso no existe, responde **404**. El `orden_visita` es el indicado o, si no
-  se indica, el máximo más uno. El sector se copia del propio caso.
+  marca el caso como **gestión del supervisor**. Desde **D-78**, en **CASOS** se hace en la
+  **ficha de cada caso**, pestaña **Despacho**, que muestra la cuadrilla actual y el selector
+  de destino; en **ESPECIALES** se mantiene la selección de renglones.
+- Si el caso no existe, responde **404**. El `orden_visita` es el indicado o, si no se indica,
+  el máximo más uno. El sector se copia del propio caso.
 - **`DELETE /{id_despacho}/casos/{id_caso}`** responde **404** si el caso no está en el
   despacho; si está, elimina la fila.
 - **`PATCH /{id_despacho}/casos/{id_caso}`** cambia el estado y, si se envía, la observación.

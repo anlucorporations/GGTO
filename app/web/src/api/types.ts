@@ -420,6 +420,11 @@ export interface CasoOut {
   citado: boolean;
   gestion: boolean;
 
+  /* D-78: cuadrilla del último despacho que incluyó el caso (la calcula la API). */
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
+
   region: string | null;
   estado_geografico: string | null;
   municipio: string | null;
@@ -1269,4 +1274,133 @@ export interface CasoRelacionado {
   justificacion_cierre: string | null;
   direccion: string | null;
   nombre_cliente: string | null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sincronización — log de la APK (D-81 · RF-39 / RF-40)               */
+/* ------------------------------------------------------------------ */
+
+export interface SincronizacionItem {
+  id_sync_log: number;
+  p00: string;
+  id_cuadrilla: number | null;
+  tipo: string;
+  dispositivo_id: string | null;
+  version_app: string | null;
+  plataforma: string;
+  iniciado_en: string;
+  finalizado_en: string | null;
+  duracion_ms: number | null;
+  recibidos: number;
+  procesados: number;
+  errores: number;
+  estado: string;
+  detalle: Record<string, unknown> | null;
+}
+
+export interface ChecklistPaso {
+  paso: string;
+  estado: string;
+  fecha_hora: string | null;
+  detalle: Record<string, unknown> | null;
+}
+
+export interface SincronizacionDetalle extends SincronizacionItem {
+  checklist: ChecklistPaso[];
+}
+
+export interface PaginaSincronizaciones {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  items: SincronizacionItem[];
+}
+
+export interface ResumenSincronizaciones {
+  fecha: string;
+  total: number;
+  ok: number;
+  parcial: number;
+  error: number;
+  en_proceso: number;
+  por_estado: Record<string, number>;
+  por_cuadrilla: Record<string, number>;
+}
+
+export interface ChecklistDispositivo {
+  dispositivo_id: string | null;
+  p00: string;
+  id_sync_log: number;
+  iniciado_en: string | null;
+  checklist: ChecklistPaso[];
+}
+
+export type SincronizacionesFiltros = {
+  p00?: string;
+  id_cuadrilla?: number;
+  dispositivo_id?: string;
+  tipo?: string;
+  estado?: string;
+  desde?: string;
+  hasta?: string;
+  orden?: string;
+  page?: number;
+  page_size?: number;
+};
+
+/* ------------------------------------------------------------------ */
+/* Mensajería interna (D-81 · RF-41)                                   */
+/* ------------------------------------------------------------------ */
+
+export interface Mensaje {
+  id_mensaje: number;
+  id_central: number;
+  origen_p00: string | null;
+  destino_tipo: string;
+  id_cuadrilla: number | null;
+  id_tecnico: number | null;
+  tipo: string;
+  cuerpo: string;
+  id_caso: number | null;
+  creado_en: string;
+  expira_en: string;
+}
+
+export interface MensajeRecibido extends Mensaje {
+  leido: boolean;
+}
+
+export interface BandejaMensajes {
+  total: number;
+  items: Mensaje[];
+}
+
+export interface MensajeCreate {
+  destino_tipo: 'TODOS' | 'CUADRILLA' | 'TECNICO';
+  id_cuadrilla?: number | null;
+  id_tecnico?: number | null;
+  cuerpo: string;
+  id_caso?: number | null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Panel de gestión diaria (D-81 · RF-43)                              */
+/* ------------------------------------------------------------------ */
+
+export interface CuadrillaGestion {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  es_supervisor: boolean;
+  asignadas: number;
+  cerradas: number;
+  porcentaje: number;
+}
+
+export interface GestionDiaria {
+  fecha: string;
+  modo: 'COMUN' | 'REFERIDOS';
+  cuadrillas: CuadrillaGestion[];
+  totales: { asignadas: number; cerradas: number; porcentaje: number };
 }

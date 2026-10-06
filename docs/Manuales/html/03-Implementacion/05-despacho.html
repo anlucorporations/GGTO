@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/05-despacho.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>05/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 01/10/2026</span>
+          <span>Edición HTML y PDF generada el 06/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -888,7 +888,7 @@ un punto en el tiempo (PITR)</strong> hasta que se migre de instancia.</p>
 </tr>
 <tr>
 <td><strong>RF-25</strong></td>
-<td>Excluir del despacho de calle los casos de la cuadrilla 0 (los que gestiona el supervisor), salvo los citados del día.</td>
+<td>La cuadrilla 0 (gestión del supervisor) no compite por sectores: sus casos se despachan <strong>a la propia cuadrilla 0</strong> (D-77).</td>
 </tr>
 <tr>
 <td><strong>RF-27</strong></td>
@@ -1193,8 +1193,9 @@ este orden:</p>
 <li>Solo casos de la <strong>central solicitada</strong>.</li>
 <li>Se dejan <strong>fuera</strong> los estados <code>CERRADO</code>, <code>CANCELADO</code> y <code>ENRUTADO</code>: esos ya no son trabajo de
 calle.</li>
-<li>Se excluye la <strong>cuadrilla 0</strong> (los casos que gestiona el supervisor), <strong>salvo</strong> que el caso
-tenga una <strong>cita del día</strong>: en ese caso sí entra.</li>
+<li>Los casos de la <strong>cuadrilla 0</strong> (los que gestiona el supervisor) <strong>sí entran</strong>: no se
+reparten por sector, se agrupan y se despachan a la <strong>cuadrilla 0</strong> (la del supervisor).
+Si la central no tiene cuadrilla 0, vuelven al reparto normal (D-77).</li>
 <li>En la <strong>simulación</strong> se excluyen los casos ya asignados a un despacho abierto. En el
 <strong>proceso</strong> del formulario flotante sí se incluyen los borradores del día, porque se van a
 reemplazar; solo se respetan los despachos <code>PUBLICADO</code> o <code>CERRADO</code>.</li>
@@ -1526,13 +1527,30 @@ todavía no había marca de envío, la sella con la hora actual.</li>
 </ul>
 <h3 id="casos-del-despacho"><span class="sec-num">5.4</span>Casos del despacho</h3>
 <ul>
-<li><strong><code>POST /{id_despacho}/casos</code></strong> rechaza con <strong>409</strong> los casos de la cuadrilla 0 (mensaje: «El
-caso pertenece a la cuadrilla 0 (supervisor)») y los repetidos (mensaje: «El caso ya está en el
-despacho»). Si el caso no existe, responde <strong>404</strong>. El <code>orden_visita</code> es el indicado o, si no
-se indica, el máximo más uno. El sector se copia del propio caso.</li>
-<li><strong><code>DELETE /{id_despacho}/casos/{id_caso}</code></strong> responde <strong>404</strong> si el caso no está en el
-despacho; si está, elimina la fila.</li>
-<li><strong><code>PATCH /{id_despacho}/casos/{id_caso}</code></strong> cambia el estado y, si se envía, la observación.</li>
+<li>
+<p><strong><code>POST /{id_despacho}/casos</code></strong> rechaza con <strong>409</strong> los casos repetidos; el antiguo 409 que
+bloqueaba los casos de la cuadrilla 0 se retiró en D-77 (la asignación del supervisor manda).</p>
+</li>
+<li>
+<p><strong><code>POST /despachos/asignar-casos</code></strong> y <strong><code>POST /despachos/quitar-casos</code></strong> (D-77): el
+Supervisor o el Administrador asignan casos <strong>comunes y especiales</strong> a una cuadrilla, o los
+sacan del despacho del día. Asignar mueve el caso si estaba en el borrador de otra
+cuadrilla, respeta los despachos publicados o cerrados y, si el destino es la cuadrilla 0,
+marca el caso como <strong>gestión del supervisor</strong>. Desde <strong>D-78</strong>, en <strong>CASOS</strong> se hace en la
+<strong>ficha de cada caso</strong>, pestaña <strong>Despacho</strong>, que muestra la cuadrilla actual y el selector
+de destino; en <strong>ESPECIALES</strong> se mantiene la selección de renglones.</p>
+</li>
+<li>
+<p>Si el caso no existe, responde <strong>404</strong>. El <code>orden_visita</code> es el indicado o, si no se indica,
+el máximo más uno. El sector se copia del propio caso.</p>
+</li>
+<li>
+<p><strong><code>DELETE /{id_despacho}/casos/{id_caso}</code></strong> responde <strong>404</strong> si el caso no está en el
+despacho; si está, elimina la fila.</p>
+</li>
+<li>
+<p><strong><code>PATCH /{id_despacho}/casos/{id_caso}</code></strong> cambia el estado y, si se envía, la observación.</p>
+</li>
 </ul>
 <h3 id="impresion-reportes-envio-y-notificaciones"><span class="sec-num">5.5</span>Impresión, reportes, envío y notificaciones</h3>
 <p>Estas rutas se explican más abajo, en las secciones «Impresión tamaño carta», «Publicación y
@@ -2053,7 +2071,7 @@ mypy y tsc en modo estricto) no arrojaron hallazgos.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 01/10/2026</span>
+    <span>Generado el 06/10/2026</span>
   </div>
 </footer>
 

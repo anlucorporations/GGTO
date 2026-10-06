@@ -845,8 +845,78 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('telegram.webhook_secret',     '""'::jsonb,               'Secreto del webhook del bot (X-Telegram-Bot-Api-Secret-Token)'),
     ('mcp.api_key',                 '""'::jsonb,               'Clave del servidor MCP (si está vacía no se exige)'),
     ('seguridad.max_intentos',      '3'::jsonb,                 'Intentos de login antes del bloqueo'),
-    ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación')
+    ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación'),
+    -- Incremento D-81 (mensajería/panel/sincronización)
+    ('mensajeria.poll_segundos',       '20'::jsonb, 'Periodo del sondeo de mensajes (única pieza del sistema con 20 s)'),
+    ('panel.sync_segundos',            '30'::jsonb, 'Periodo del auto-refresco del panel (Admin/Supervisor)'),
+    ('mensajeria.retencion_dias',      '5'::jsonb,  'Retención de mensajes internos (luego se borran)'),
+    ('mensajeria.retencion_max_dias',  '30'::jsonb, 'Tope de seguridad: mensajes no leídos se borran a los N días'),
+    ('sync_log.retencion_dias',        '90'::jsonb, 'Retención del log de sincronización'),
+    ('mensajeria.recordatorio_cita_min','60'::jsonb, 'Antelación del recordatorio de cita'),
+    ('sync.timeout_min',               '10'::jsonb, 'Cierre de sesiones de sincronización colgadas')
 ON CONFLICT (clave) DO NOTHING;
+
+-- =============================================================================
+-- 12. Incremento D-81 — log de sincronización, mensajería interna y panel
+--     (RF-39…RF-44 · RNF-26…RNF-28 · RT-15/RT-16). Idempotente.
+-- =============================================================================
+
+-- 12.1 Ampliación de sync_log (dispositivo real, duración y central — RNF-21/C-04)
+ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS plataforma  varchar(20) NOT NULL DEFAULT 'APK';
+ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS duracion_ms integer;
+ALTER TABLE sync_log ADD COLUMN IF NOT EXISTS id_central  integer REFERENCES central(id_central);
+CREATE INDEX IF NOT EXISTS ix_sync_log_iniciado    ON sync_log (iniciado_en DESC);
+CREATE INDEX IF NOT EXISTS ix_sync_log_estado      ON sync_log (estado, iniciado_en DESC);
+CREATE INDEX IF NOT EXISTS ix_sync_log_dispositivo ON sync_log (dispositivo_id);
+
+-- 12.2 Checklist de sincronización POR PASO (RF-40 / C-02)
+CREATE TABLE IF NOT EXISTS sync_check (
+    id_sync_check  bigserial   PRIMARY KEY,
+    id_sync_log    bigint      NOT NULL REFERENCES sync_log(id_sync_log) ON DELETE CASCADE,
+    paso           varchar(12) NOT NULL CHECK (paso IN ('CONEXION','LOGIN','DESCARGA','CARGA')),
+    estado         varchar(12) NOT NULL CHECK (estado IN ('PENDIENTE','EN_CURSO','OK','ERROR','OMITIDO')),
+    fecha_hora     timestamptz,
+    detalle        jsonb,
+    UNIQUE (id_sync_log, paso)
+);
+
+-- 12.3 Mensajería interna (RF-41 / RT-16)
+CREATE TABLE IF NOT EXISTS mensaje (
+    id_mensaje     bigserial    PRIMARY KEY,
+    id_central     integer      NOT NULL REFERENCES central(id_central),
+    origen_p00     varchar(20)  REFERENCES usuario(p00),   -- NULL en los automáticos del sistema
+    destino_tipo   varchar(12)  NOT NULL CHECK (destino_tipo IN ('TODOS','CUADRILLA','TECNICO')),
+    id_cuadrilla   integer      REFERENCES cuadrilla(id_cuadrilla) ON DELETE SET NULL,
+    id_tecnico     integer      REFERENCES tecnico(id_tecnico)     ON DELETE SET NULL,
+    tipo           varchar(20)  NOT NULL
+                   CHECK (tipo IN ('RECORDATORIO_CITA','ESTADO_SYNC','ALARMA_DESPACHO','TEXTO')),
+    cuerpo         varchar(500) NOT NULL,
+    id_caso        bigint       REFERENCES caso(id_caso) ON DELETE SET NULL,
+    dedupe_key     varchar(80)  UNIQUE,          -- idempotencia de los automáticos (NULL en manuales)
+    creado_en      timestamptz  NOT NULL DEFAULT now(),
+    expira_en      timestamptz  NOT NULL DEFAULT (now() + interval '5 days'),
+    CHECK (expira_en > creado_en),
+    CHECK (
+        (destino_tipo = 'TODOS'     AND id_cuadrilla IS NULL     AND id_tecnico IS NULL) OR
+        (destino_tipo = 'CUADRILLA' AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL) OR
+        (destino_tipo = 'TECNICO'   AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL)
+    )
+);
+CREATE INDEX IF NOT EXISTS ix_mensaje_creado ON mensaje (creado_en DESC);
+CREATE INDEX IF NOT EXISTS ix_mensaje_expira ON mensaje (expira_en);
+CREATE INDEX IF NOT EXISTS ix_mensaje_central ON mensaje (id_central);
+
+-- 12.4 Fan-out de destinatarios + lectura por técnico (A-03/A-06)
+CREATE TABLE IF NOT EXISTS mensaje_destino (
+    id_mensaje   bigint      NOT NULL REFERENCES mensaje(id_mensaje) ON DELETE CASCADE,
+    id_tecnico   integer     NOT NULL REFERENCES tecnico(id_tecnico) ON DELETE CASCADE,
+    leido_en     timestamptz,
+    PRIMARY KEY (id_mensaje, id_tecnico)
+);
+CREATE INDEX IF NOT EXISTS ix_mensaje_destino_tecnico ON mensaje_destino (id_tecnico, id_mensaje);
+
+-- 12.5 Idempotencia de recordatorios ante reprogramación (M-06)
+ALTER TABLE cita ADD COLUMN IF NOT EXISTS recordatorio_para timestamptz;
 
 COMMIT;
 

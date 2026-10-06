@@ -7,6 +7,7 @@ de `routes_casos` para no duplicar reglas de estado ni bitácora.
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -26,8 +27,12 @@ from ..models import (
     DespachoCasos,
     Evidencia,
     Sector,
+    SyncCheck,
+    SyncLog,
     Usuario,
 )
+
+logger = logging.getLogger(__name__)
 
 #: Estados que ya **no** son trabajo de la cuadrilla: cerrado, cancelado o
 #: enrutado a otra instancia. Un caso recién despachado nace `NUEVO` (el despacho
@@ -453,3 +458,131 @@ def _resolver_metodo(db: Session, tipo_db: str, act: dict[str, Any]) -> int | No
             CatalogoMetodo.dominio == "CIERRE", CatalogoMetodo.codigo == modo
         )
     )
+
+
+# --------------------------------------------------------------------------- #
+# Sesiones de sincronización y checklist (D-81 · RF-39 / RF-40)
+# --------------------------------------------------------------------------- #
+PASOS_CHECKLIST = ("CONEXION", "LOGIN", "DESCARGA", "CARGA")
+
+
+def _derivar_estado(recibidos: int, procesados: int, errores: int) -> str:
+    """Estado de la sesión a partir de sus contadores."""
+    if errores == 0:
+        return "OK"
+    if procesados > 0:
+        return "PARCIAL"
+    return "ERROR"
+
+
+def abrir_sesion(
+    db: Session,
+    usuario: Usuario,
+    *,
+    tipo: str,
+    dispositivo_id: str | None = None,
+    version_app: str | None = None,
+) -> SyncLog:
+    """Crea una sesión de sincronización `EN_PROCESO` (CU-D81-01)."""
+    if tipo not in ("DESCARGA", "CARGA"):
+        raise HTTPException(status_code=422, detail="Tipo de sesión inválido: use DESCARGA o CARGA")
+    c = _cuadrilla_activa(db, usuario)
+    sesion = SyncLog(
+        p00=usuario.p00,
+        id_cuadrilla=c.id_cuadrilla if c else None,
+        id_central=usuario.id_central,
+        tipo=tipo,
+        dispositivo_id=dispositivo_id,
+        version_app=version_app,
+        plataforma="APK",
+        estado="EN_PROCESO",
+        recibidos=0,
+        procesados=0,
+        errores=0,
+    )
+    db.add(sesion)
+    db.commit()
+    db.refresh(sesion)
+    return sesion
+
+
+def guardar_checklist(db: Session, id_sync_log: int, pasos: list[Any]) -> None:
+    """Inserta/actualiza el checklist por paso (idempotente por `(log, paso)`)."""
+    for p in pasos:
+        if isinstance(p, dict):
+            paso, estado = p.get("paso"), p.get("estado")
+            fh, det = p.get("fecha_hora"), p.get("detalle")
+        else:
+            paso, estado, fh, det = p.paso, p.estado, p.fecha_hora, p.detalle
+        if paso not in PASOS_CHECKLIST or estado is None:
+            continue
+        fila = db.scalar(
+            select(SyncCheck).where(
+                SyncCheck.id_sync_log == id_sync_log, SyncCheck.paso == paso
+            )
+        )
+        if fila is None:
+            db.add(
+                SyncCheck(
+                    id_sync_log=id_sync_log, paso=paso, estado=estado,
+                    fecha_hora=fh, detalle=det,
+                )
+            )
+        else:
+            fila.estado = estado
+            if fh is not None:
+                fila.fecha_hora = fh
+            if det is not None:
+                fila.detalle = det
+
+
+def cerrar_sesion(db: Session, usuario: Usuario, id_sync_log: int, datos: dict[str, Any]) -> dict[str, Any]:
+    """Cierra la sesión con contadores, estado y checklist (CU-D81-01)."""
+    sesion = db.get(SyncLog, id_sync_log)
+    if sesion is None:
+        raise HTTPException(status_code=404, detail="Sesión de sincronización no encontrada")
+    if sesion.estado != "EN_PROCESO" or sesion.finalizado_en is not None:
+        raise HTTPException(status_code=409, detail="La sesión ya está cerrada")
+
+    ahora = datetime.now(UTC)
+    recibidos = int(datos.get("recibidos") or 0)
+    procesados = int(datos.get("procesados") or 0)
+    errores = int(datos.get("errores") or 0)
+    estado = datos.get("estado") or _derivar_estado(recibidos, procesados, errores)
+
+    detalle = dict(sesion.detalle or {})
+    if datos.get("detalle"):
+        detalle.update(datos["detalle"])
+    if sesion.id_cuadrilla is None:
+        estado = "ERROR"
+        detalle["motivo"] = "sin_cuadrilla"
+
+    sesion.recibidos, sesion.procesados, sesion.errores = recibidos, procesados, errores
+    sesion.estado = estado
+    sesion.finalizado_en = ahora
+    if sesion.iniciado_en is not None:
+        sesion.duracion_ms = int((ahora - sesion.iniciado_en).total_seconds() * 1000)
+    sesion.detalle = detalle or None
+
+    guardar_checklist(db, id_sync_log, datos.get("checklist") or [])
+    db.commit()
+    db.refresh(sesion)
+
+    # Mensaje automático de estado al técnico (CU-D81-06). Best-effort:
+    # no debe impedir el cierre de la sesión si falla.
+    try:
+        from .mensajes import emitir_estado_sync
+
+        emitir_estado_sync(db, sesion)
+    except Exception:
+        db.rollback()
+        logger.exception("No se pudo emitir ESTADO_SYNC de la sesión %s", id_sync_log)
+
+    return {
+        "id_sync_log": sesion.id_sync_log,
+        "estado": sesion.estado,
+        "recibidos": sesion.recibidos,
+        "procesados": sesion.procesados,
+        "errores": sesion.errores,
+        "duracion_ms": sesion.duracion_ms,
+    }

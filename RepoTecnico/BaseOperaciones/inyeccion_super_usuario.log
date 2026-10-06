@@ -1,0 +1,37 @@
+[2026-09-27T14:58:12+00:00] ==============================================================================
+[2026-09-27T14:58:12+00:00] INYECCIÓN DE SUPER USUARIO · P00=123456 · rol=SUPER · dry_run=True
+[2026-09-27T14:58:12+00:00] hash con la app: True
+[2026-09-27T14:58:14+00:00] Rol SUPER (id=4) · central 2324X (id=1)
+[2026-09-27T14:58:14+00:00] Técnico 123456 creado (id=6).
+[2026-09-27T14:58:15+00:00] Usuario 123456 creado (id=5): clave y acceso total.
+[2026-09-27T14:58:15+00:00] SIMULACIÓN: no se escribió nada (rollback).
+[2026-09-27T14:58:15+00:00] Listo. El Super Usuario tiene acceso total (rol SUPER) a todas las secciones.
+[2026-09-27T14:58:20+00:00] ==============================================================================
+[2026-09-27T14:58:20+00:00] INYECCIÓN DE SUPER USUARIO · P00=123456 · rol=SUPER · dry_run=False
+[2026-09-27T14:58:20+00:00] hash con la app: True
+[2026-09-27T14:58:22+00:00] Rol SUPER (id=4) · central 2324X (id=1)
+[2026-09-27T14:58:22+00:00] Técnico 123456 creado (id=7).
+[2026-09-27T14:58:22+00:00] Usuario 123456 creado (id=6): clave y acceso total.
+[2026-09-27T14:58:22+00:00] COMMIT realizado.
+[2026-09-27T14:58:23+00:00] VERIFICADO → P00=123456 correo=anlucorporations@gmail.com rol=SUPER activo=True bloqueado=False central=1 nombre=ANLUcorporations Super Usuario
+[2026-09-27T14:58:23+00:00] Listo. El Super Usuario tiene acceso total (rol SUPER) a todas las secciones.
+[2026-09-27T14:58:23+00:00] ==============================================================================
+[2026-09-27T14:58:23+00:00] INYECCIÓN DE SUPER USUARIO · P00=123456 · rol=SUPER · dry_run=False
+[2026-09-27T14:58:23+00:00] hash con la app: True
+[2026-09-27T14:58:24+00:00] Rol SUPER (id=4) · central 2324X (id=1)
+[2026-09-27T14:58:25+00:00] Técnico 123456 actualizado (id=7).
+[2026-09-27T14:58:25+00:00] Usuario 123456 actualizado (id=6): clave y acceso total.
+[2026-09-27T14:58:25+00:00] COMMIT realizado.
+[2026-09-27T14:58:26+00:00] VERIFICADO → P00=123456 correo=anlucorporations@gmail.com rol=SUPER activo=True bloqueado=False central=1 nombre=ANLUcorporations Super Usuario
+[2026-09-27T14:58:26+00:00] Listo. El Super Usuario tiene acceso total (rol SUPER) a todas las secciones.
+[2026-09-27T15:22:13+00:00] ==============================================================================
+[2026-09-27T15:22:13+00:00] INYECCIÓN DE SUPER USUARIO · P00=123456 · rol=SUPER · dry_run=False
+[2026-09-27T15:22:13+00:00] hash con la app: True
+[2026-09-27T15:22:15+00:00] Rol SUPER (id=4) · central 2324X (id=1)
+[2026-09-27T15:22:15+00:00] Técnico 123456 actualizado (id=7).
+[2026-09-27T15:22:16+00:00] Usuario 123456 actualizado (id=6): clave y acceso total.
+[2026-09-27T15:22:18+00:00] 12 palabras de seguridad guardadas (hashes).
+[2026-09-27T15:22:18+00:00] COMMIT realizado.
+[2026-09-27T15:22:18+00:00] VERIFICADO → P00=123456 correo=anlucorporations@gmail.com rol=SUPER activo=True bloqueado=False central=1 nombre=ANLUcorporations Super Usuario
+[2026-09-27T15:22:18+00:00] PALABRAS DE SEGURIDAD (se muestran una sola vez, guárdelas):
+[2026-09-27T15:22:18+00:00] Listo. El Super Usuario tiene acceso total (rol SUPER) a todas las secciones.

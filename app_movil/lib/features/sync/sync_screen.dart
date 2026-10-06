@@ -116,6 +116,25 @@ class _SyncScreenState extends State<SyncScreen> {
               ),
             ),
           ),
+          if (sync.ultimoChecklist.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Checklist de sincronización (GCP · login · descarga · carga)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    for (final paso in sync.ultimoChecklist) _PasoChecklist(paso: paso),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
@@ -240,6 +259,46 @@ class _AccionTile extends StatelessWidget {
             PopupMenuItem(value: 'descartar', child: Text('Descartar')),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Fila del checklist de sincronización (D-81 · RF-40).
+class _PasoChecklist extends StatelessWidget {
+  const _PasoChecklist({required this.paso});
+
+  final Map<String, dynamic> paso;
+
+  @override
+  Widget build(BuildContext context) {
+    final estado = '${paso['estado'] ?? ''}';
+    final color = switch (estado) {
+      'OK' => Colors.green,
+      'ERROR' => Colors.red,
+      'EN_CURSO' => Colors.orange,
+      'OMITIDO' => Colors.grey,
+      _ => Colors.blueGrey,
+    };
+    final icono = switch (estado) {
+      'OK' => Icons.check_circle,
+      'ERROR' => Icons.error,
+      'EN_CURSO' => Icons.sync,
+      'OMITIDO' => Icons.remove_circle_outline,
+      _ => Icons.radio_button_unchecked,
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(icono, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(child: Text('${paso['paso']}', style: const TextStyle(fontSize: 13))),
+          Text(
+            estado,
+            style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

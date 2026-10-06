@@ -89,6 +89,11 @@ class CasoEspecialOut(BaseModel):
     asignado: bool = False
     citado: bool = False
     gestion: bool = False
+    # D-80: cuadrilla del último despacho del caso asociado, para pintar el
+    # icono de cuadrilla con su color en el listado (la calcula el endpoint).
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
 
 
 # --------------------------------------------------------------------------- #

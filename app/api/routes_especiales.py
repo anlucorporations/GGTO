@@ -13,6 +13,7 @@ from ..models import (
     Caso,
     Cita,
     Cuadrilla,
+    Despacho,
     DespachoCasos,
     Sector,
     Seguimiento,
@@ -268,10 +269,42 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
         citados |= set(db.scalars(select(Cita.id_caso).where(
             Cita.id_caso.in_(ids_caso), Cita.estado.in_(("PROPUESTA", "CONFIRMADA")))))
 
+    # D-80: cuadrilla del último despacho del caso asociado, con la misma regla
+    # que el listado de CASOS (D-78): `fecha` e `id_despacho` descendentes.
+    ultima_cuadrilla: dict[int, int] = {}
+    if ids_caso:
+        rn = (
+            func.row_number()
+            .over(
+                partition_by=DespachoCasos.id_caso,
+                order_by=(Despacho.fecha.desc(), Despacho.id_despacho.desc()),
+            )
+            .label("rn")
+        )
+        por_caso = (
+            select(
+                DespachoCasos.id_caso.label("id_caso"),
+                Despacho.id_cuadrilla.label("id_cuadrilla"),
+                rn,
+            )
+            .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+            .where(DespachoCasos.id_caso.in_(ids_caso))
+            .subquery()
+        )
+        ultima_cuadrilla = {
+            fila.id_caso: fila.id_cuadrilla
+            for fila in db.execute(
+                select(por_caso.c.id_caso, por_caso.c.id_cuadrilla).where(por_caso.c.rn == 1)
+            ).all()
+        }
+    cuadrillas = {c.id_cuadrilla: c for c in db.scalars(select(Cuadrilla)).all()}
+
     salida: list[CasoEspecialOut] = []
     for esp in lista:
         caso = casos.get(esp.id_caso) if esp.id_caso else None
         sol = solicitantes.get(esp.id_solicitante) if esp.id_solicitante else None
+        id_cuadrilla = ultima_cuadrilla.get(esp.id_caso) if esp.id_caso else None
+        cuadrilla = cuadrillas.get(id_cuadrilla) if id_cuadrilla else None
         datos = CasoEspecialOut.model_validate(esp).model_dump()
         datos.update(
             sector_nombre=(sectores.get(caso.id_sector) if caso and caso.id_sector else None),
@@ -285,6 +318,10 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             citado=esp.id_caso_especial in citados
             or (esp.id_caso is not None and esp.id_caso in citados),
             gestion=(esp.id_caso in gestion) if esp.id_caso else False,
+            # D-80: cuadrilla del último despacho (icono con color en el listado).
+            id_cuadrilla=id_cuadrilla,
+            cuadrilla_codigo=(cuadrilla.codigo if cuadrilla else None),
+            cuadrilla_nombre=(cuadrilla.nombre if cuadrilla else None),
         )
         salida.append(CasoEspecialOut(**datos))
     return salida

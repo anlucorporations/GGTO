@@ -32,6 +32,10 @@ CLAVE_TEST = "config12345"
 
 # Orden respetando las claves foráneas.
 SQL_LIMPIEZA = """
+DELETE FROM mensaje_destino;
+DELETE FROM mensaje;
+DELETE FROM sync_check;
+DELETE FROM sync_log;
 DELETE FROM cita;
 DELETE FROM seguimiento;
 DELETE FROM caso_especial;

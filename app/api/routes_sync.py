@@ -16,13 +16,18 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Evidencia, Usuario
+from ..models import Evidencia, SyncLog, Usuario
 from ..schemas.sync import (
+    ChecklistIn,
     EvidenciaUploadOut,
     SyncCargaIn,
     SyncCargaOut,
     SyncCuadrillaOut,
     SyncDescargaOut,
+    SyncSesionCierreIn,
+    SyncSesionCierreOut,
+    SyncSesionIn,
+    SyncSesionOut,
 )
 from ..services import sync as svc
 from ..services.storage import serial_desde_nombre, subir_evidencia
@@ -143,3 +148,61 @@ def sync_carga(
     payload = datos.model_dump(mode="python")
     resultado = svc.aplicar_carga(db, usuario, payload)
     return SyncCargaOut(**resultado)
+
+
+# --------------------------------------------------------------------------- #
+# Sesión de sincronización y checklist (D-81 · RF-39 / RF-40)
+# --------------------------------------------------------------------------- #
+@router.post(
+    "/sync/sesion",
+    response_model=SyncSesionOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Abrir una sesión de sincronización",
+)
+def sync_abrir_sesion(
+    datos: SyncSesionIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> SyncSesionOut:
+    sesion = svc.abrir_sesion(
+        db,
+        usuario,
+        tipo=datos.tipo,
+        dispositivo_id=datos.dispositivo_id,
+        version_app=datos.version_app,
+    )
+    return SyncSesionOut(id_sync_log=sesion.id_sync_log)
+
+
+@router.patch(
+    "/sync/sesion/{id_sync_log}",
+    response_model=SyncSesionCierreOut,
+    summary="Cerrar una sesión de sincronización",
+)
+def sync_cerrar_sesion(
+    id_sync_log: int,
+    datos: SyncSesionCierreIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> SyncSesionCierreOut:
+    resultado = svc.cerrar_sesion(db, usuario, id_sync_log, datos.model_dump(mode="python"))
+    return SyncSesionCierreOut(**resultado)
+
+
+@router.patch(
+    "/sync/checklist",
+    response_model=SyncSesionOut,
+    summary="Subir el checklist por paso (idempotente)",
+)
+def sync_checklist(
+    id_sync_log: Annotated[int, Query(description="Sesión a la que pertenece el checklist")],
+    datos: ChecklistIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> SyncSesionOut:
+    sesion = db.get(SyncLog, id_sync_log)
+    if sesion is None or sesion.p00 != usuario.p00:
+        raise HTTPException(status_code=404, detail="Sesión de sincronización no encontrada")
+    svc.guardar_checklist(db, id_sync_log, [p.model_dump(mode="python") for p in datos.pasos])
+    db.commit()
+    return SyncSesionOut(id_sync_log=id_sync_log)

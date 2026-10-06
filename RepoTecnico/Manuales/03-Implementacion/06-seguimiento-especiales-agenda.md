@@ -160,9 +160,12 @@ campos de contexto que consume la SPA:
 | `citado` | Tiene cita en estado `PROPUESTA`/`CONFIRMADA` (por caso o por caso especial). |
 | `gestion` | `en_gestion_supervisor`, `estado_actual == "EN_GESTION"` o fila de despacho `GESTIONADO`. |
 
-Estas marcas se calculan con consultas agregadas (`app/api/routes_especiales.py:214-227`) y
-se vuelcan sobre `CasoEspecialOut` (`app/api/routes_especiales.py:229-244`). En la SPA se
-pintan con el componente `EstadoChips` (`app/web/src/pages/Especiales.tsx:320-327`).
+Estas marcas se calculan con consultas agregadas (`app/api/routes_especiales.py:257-272`) y
+se vuelcan sobre `CasoEspecialOut` (`app/schemas/especiales.py:65-96`) en
+`_resumen_especiales` (`app/api/routes_especiales.py:243-333`), que desde **D-80** añade además la
+**cuadrilla del último despacho** del caso asociado. En la SPA se pintan con el componente
+`EstadoChips` (`app/web/src/pages/Especiales.tsx:450-458`), donde el segundo indicador es el
+icono de la cuadrilla con su color.
 
 ---
 

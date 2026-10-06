@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ class SyncProvider extends ChangeNotifier {
   ResultadoSync? _ultimoResultado;
   DateTime? _ultimaSync;
   int _evidencias = 0;
+  List<Map<String, dynamic>> _ultimoChecklist = [];
 
   Map<String, int> get resumen => _resumen;
   int get pendientes => _resumen['TOTAL'] ?? 0;
@@ -64,6 +66,7 @@ class SyncProvider extends ChangeNotifier {
   ResultadoSync? get ultimoResultado => _ultimoResultado;
   DateTime? get ultimaSync => _ultimaSync;
   int get evidencias => _evidencias;
+  List<Map<String, dynamic>> get ultimoChecklist => _ultimoChecklist;
 
   /// Arranca la vigilancia de conectividad y vacía la cola al recuperar la red.
   void iniciar() {
@@ -97,7 +100,25 @@ class SyncProvider extends ChangeNotifier {
     _resumen = await DatabaseHelper.instance.resumenCola();
     _acciones = await DatabaseHelper.instance.todasLasAcciones();
     _evidencias = await DatabaseHelper.instance.contarEvidencias();
+    _ultimoChecklist = _decodificarChecklist(await DatabaseHelper.instance.leerChecklist());
     notifyListeners();
+  }
+
+  /// Lee el último checklist guardado (RF-40). Tolerante a datos corruptos.
+  List<Map<String, dynamic>> _decodificarChecklist(String? json) {
+    if (json == null || json.isEmpty) return [];
+    try {
+      final datos = jsonDecode(json);
+      if (datos is List) {
+        return datos
+            .whereType<Map<String, dynamic>>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    } catch (_) {
+      // Se ignora un checklist ilegible.
+    }
+    return [];
   }
 
   /// Compatibilidad con la pantalla anterior.

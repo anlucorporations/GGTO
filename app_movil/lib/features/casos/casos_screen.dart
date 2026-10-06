@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../widgets/caso_card.dart';
 import '../../widgets/offline_banner.dart';
 import '../auth/auth_provider.dart';
+import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
 import 'caso_detalle_screen.dart';
 import 'casos_provider.dart';
@@ -64,6 +65,7 @@ class _CasosScreenState extends State<CasosScreen> {
     final casosProv = Provider.of<CasosProvider>(context);
     final sync = Provider.of<SyncProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
+    final mensajes = Provider.of<MensajesProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -82,6 +84,15 @@ class _CasosScreenState extends State<CasosScreen> {
             tooltip: 'Alertas',
             icon: const Icon(Icons.warning_amber),
             onPressed: () => Navigator.pushNamed(context, '/alertas'),
+          ),
+          IconButton(
+            tooltip: 'Mensajes',
+            icon: Badge(
+              isLabelVisible: mensajes.noLeidos > 0,
+              label: Text('${mensajes.noLeidos}'),
+              child: const Icon(Icons.forum_outlined),
+            ),
+            onPressed: () => Navigator.pushNamed(context, '/mensajes'),
           ),
           IconButton(
             tooltip: 'Cerrar sesión',

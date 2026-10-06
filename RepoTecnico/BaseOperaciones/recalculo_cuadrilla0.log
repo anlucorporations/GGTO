@@ -1,0 +1,57 @@
+[2026-09-27T19:12:58+00:00] ==============================================================================
+[2026-09-27T19:12:58+00:00] RECÁLCULO DE CUADRILLA 0 · aplicar=False · central=todas
+[2026-09-27T19:12:59+00:00] Criterio vigente: SUPERVISOR · columnas: problema_reporte, ultimo_comentario, informacion
+[2026-09-27T19:12:59+00:00] Frases campo: ['LOSS ROJO', 'FALLA FIBRA', 'Fibra Dañada']
+[2026-09-27T19:12:59+00:00] Frases supervisor: ['NAVEGACION LENTA', 'PON INTERMITENTE', 'SIN TONO']
+[2026-09-27T19:12:59+00:00] Casos evaluados: 42 · cambios: 36
+[2026-09-27T19:12:59+00:00]   caso 125 (28567101): True -> False
+[2026-09-27T19:12:59+00:00]   caso 126 (28567588): True -> False
+[2026-09-27T19:12:59+00:00]   caso 127 (28572582): True -> False
+[2026-09-27T19:12:59+00:00]   caso 128 (28574267): True -> False
+[2026-09-27T19:12:59+00:00]   caso 129 (28575348): True -> False
+[2026-09-27T19:12:59+00:00]   caso 131 (28584181): True -> False
+[2026-09-27T19:12:59+00:00]   caso 132 (28585308): True -> False
+[2026-09-27T19:12:59+00:00]   caso 133 (28586650): True -> False
+[2026-09-27T19:12:59+00:00]   caso 135 (28587074): True -> False
+[2026-09-27T19:12:59+00:00]   caso 137 (28588116): True -> False
+[2026-09-27T19:12:59+00:00]   caso 138 (28589484): True -> False
+[2026-09-27T19:12:59+00:00]   caso 139 (28589573): True -> False
+[2026-09-27T19:12:59+00:00]   caso 140 (28589588): True -> False
+[2026-09-27T19:12:59+00:00]   caso 141 (28589929): True -> False
+[2026-09-27T19:12:59+00:00]   caso 153 (28599343): True -> False
+[2026-09-27T19:12:59+00:00]   caso 142 (28591219): True -> False
+[2026-09-27T19:12:59+00:00]   caso 143 (28591346): True -> False
+[2026-09-27T19:12:59+00:00]   caso 145 (28592152): True -> False
+[2026-09-27T19:12:59+00:00]   caso 147 (28594993): True -> False
+[2026-09-27T19:12:59+00:00]   caso 148 (28595420): True -> False
+[2026-09-27T19:12:59+00:00]   … y 16 más
+[2026-09-27T19:12:59+00:00] SIMULACIÓN: no se escribió nada (use --aplicar para guardar).
+[2026-09-27T19:13:07+00:00] ==============================================================================
+[2026-09-27T19:13:07+00:00] RECÁLCULO DE CUADRILLA 0 · aplicar=True · central=todas
+[2026-09-27T19:13:07+00:00] Criterio vigente: SUPERVISOR · columnas: problema_reporte, ultimo_comentario, informacion
+[2026-09-27T19:13:07+00:00] Frases campo: ['LOSS ROJO', 'FALLA FIBRA', 'Fibra Dañada']
+[2026-09-27T19:13:07+00:00] Frases supervisor: ['NAVEGACION LENTA', 'PON INTERMITENTE', 'SIN TONO']
+[2026-09-27T19:13:07+00:00] Casos evaluados: 42 · cambios: 36
+[2026-09-27T19:13:07+00:00]   caso 125 (28567101): True -> False
+[2026-09-27T19:13:07+00:00]   caso 126 (28567588): True -> False
+[2026-09-27T19:13:07+00:00]   caso 127 (28572582): True -> False
+[2026-09-27T19:13:07+00:00]   caso 128 (28574267): True -> False
+[2026-09-27T19:13:07+00:00]   caso 129 (28575348): True -> False
+[2026-09-27T19:13:07+00:00]   caso 131 (28584181): True -> False
+[2026-09-27T19:13:07+00:00]   caso 132 (28585308): True -> False
+[2026-09-27T19:13:07+00:00]   caso 133 (28586650): True -> False
+[2026-09-27T19:13:07+00:00]   caso 135 (28587074): True -> False
+[2026-09-27T19:13:07+00:00]   caso 137 (28588116): True -> False
+[2026-09-27T19:13:07+00:00]   caso 138 (28589484): True -> False
+[2026-09-27T19:13:07+00:00]   caso 139 (28589573): True -> False
+[2026-09-27T19:13:07+00:00]   caso 140 (28589588): True -> False
+[2026-09-27T19:13:07+00:00]   caso 141 (28589929): True -> False
+[2026-09-27T19:13:07+00:00]   caso 153 (28599343): True -> False
+[2026-09-27T19:13:07+00:00]   caso 142 (28591219): True -> False
+[2026-09-27T19:13:07+00:00]   caso 143 (28591346): True -> False
+[2026-09-27T19:13:07+00:00]   caso 145 (28592152): True -> False
+[2026-09-27T19:13:07+00:00]   caso 147 (28594993): True -> False
+[2026-09-27T19:13:07+00:00]   caso 148 (28595420): True -> False
+[2026-09-27T19:13:07+00:00]   … y 16 más
+[2026-09-27T19:13:12+00:00] COMMIT: 36 casos actualizados.
+[2026-09-27T19:13:12+00:00] Distribución final (cuadrilla 0): {False: 36, True: 6}

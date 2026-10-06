@@ -1,0 +1,181 @@
+# AVISO DE USO RESTRINGIDO Y DESCARGO DE RESPONSABILIDAD
+
+> **LEA ESTE DOCUMENTO COMPLETO ANTES DE INSTALAR, EJECUTAR O UTILIZAR LA APLICACIÓN.**
+> El acceso a este producto implica la **aceptación plena** de todas las condiciones aquí expuestas.
+
+| Campo | Valor |
+|---|---|
+| Producto | Plataforma **GGTO** y su aplicación móvil **GGTO Técnico** (APK) |
+| Autor y titular del desarrollo | **Ing. Angel H. Lucci** |
+| Naturaleza | **Proyecto de experimentación con fines académicos** |
+| Clasificación de la información | **Confidencial — uso interno restringido** |
+| Estado | Versión de evaluación / laboratorio — **no es una versión de producción** |
+| Autorización de divulgación | **NO autorizada** |
+
+---
+
+## 1. Naturaleza del proyecto
+
+Esta aplicación —en sus componentes web, servidor (API) y móvil (APK)— es un **proyecto de experimento, prototipo y aprendizaje**, desarrollado por el **Ing. Angel H. Lucci** en el marco de una **actividad académica** y de investigación tecnológica.
+
+En consecuencia, el usuario debe entender y aceptar que:
+
+1. **No es un producto comercial terminado.** Puede contener errores, funciones incompletas, comportamientos no previstos o datos inconsistentes.
+2. **Su finalidad es experimental y formativa**, orientada a la investigación, la validación de conceptos y la mejora continua del propio desarrollo.
+3. **No cuenta con garantías** de disponibilidad, continuidad, integridad, exactitud ni idoneidad para un propósito determinado.
+4. **No sustituye** a los sistemas oficiales, procedimientos formales ni registros institucionales de ninguna organización.
+
+## 2. Prohibición de divulgación
+
+Este proyecto, su código fuente, su documentación técnica, sus manuales, sus diagramas, sus datos de prueba y cualquier material asociado son **estrictamente confidenciales**.
+
+El usuario se compromete a **NO divulgar**, publicar, exponer, presentar, ceder, transferir ni comunicar —total o parcialmente— este material a terceros, por ningún medio, sin la **autorización previa y por escrito del autor**.
+
+## 3. Prohibición de publicación y distribución
+
+Queda **expresamente prohibido**:
+
+1. **Publicar** la aplicación, el APK, el código fuente, la documentación o cualquier derivado en repositorios públicos, tiendas de aplicaciones, sitios web, redes sociales, foros o cualquier medio de acceso abierto.
+2. **Distribuir** copias a personas no autorizadas, ya sea de forma gratuita u onerosa.
+3. **Comercializar**, sublicenciar, arrendar o explotar económicamente el producto o cualquiera de sus partes.
+4. **Modificar, descompilar, reempaquetar o crear obras derivadas** y ponerlas a disposición de terceros.
+5. **Retirar, ocultar o alterar** los avisos de autoría, de confidencialidad o este mismo descargo de responsabilidad.
+
+La entrega de una copia a un usuario autorizado **no constituye** cesión de derechos, licencia de explotación ni autorización de divulgación; es un préstamo de uso para evaluación.
+
+## 4. Exención de responsabilidad de la Empresa y de terceros
+
+El uso de esta aplicación **NO debe acarrear responsabilidad alguna** para:
+
+- la **empresa** o institución donde se realice la actividad académica o profesional,
+- la **empresa operadora** o cualquier organización cuyos datos o procesos se usen como referencia,
+- el **autor**, sus colaboradores, tutores o asesores académicos.
+
+En particular, ni la empresa ni ninguno de los actores antes mencionados serán responsables por daños directos, indirectos, incidentales, especiales o consecuenciales —incluyendo pérdida de datos, lucro cesante, interrupción de operaciones o daños a equipos— derivados del uso, la imposibilidad de uso o el mal uso de esta aplicación.
+
+**El uso de la aplicación es bajo exclusiva cuenta y riesgo del usuario.** Toda decisión operativa, técnica o administrativa que se adopte a partir de la información que la aplicación muestre es **responsabilidad exclusiva de quien la adopta**.
+
+## 5. Confidencialidad de la información sensible
+
+Esta aplicación manipula **información sensible y confidencial** de usuarios, suscriptores, clientes, trabajadores y del sistema (entre otros: nombres, cédulas, teléfonos, correos, direcciones, datos de servicio, seriales de equipos, coordenadas GPS, imágenes y evidencias fotográficas, credenciales de acceso y registros de actividad).
+
+El usuario se obliga a:
+
+1. **No compartir, difundir, copiar, exportar ni publicar** dicha información con terceros no autorizados, por ningún medio ni con ningún propósito.
+2. **No capturar ni reproducir** pantallas, reportes, fichas de caso o listados que contengan datos personales o confidenciales.
+3. **Mantener la reserva** sobre la información a la que acceda por su condición de usuario autorizado, incluso después de finalizar su participación en la evaluación.
+4. **No utilizarla** para fines distintos a la evaluación del producto, y **no cruzarla** con otras fuentes ni emplearla en beneficio propio o de terceros.
+5. **Reportar de inmediato** al autor cualquier pérdida, robo, filtración, acceso indebido o divulgación accidental que detecte.
+6. **Custodiar** sus credenciales de acceso y **no cederlas** a ninguna otra persona; toda actividad registrada bajo una cuenta se presume realizada por su titular.
+7. **Cumplir** la normativa aplicable de protección de datos personales y las políticas internas de la organización donde se desarrolle la actividad.
+
+El incumplimiento de estas obligaciones constituye una falta grave y habilita al autor a **revocar de inmediato el acceso** del usuario.
+
+## 6. Exhortación al uso correcto
+
+Se exhorta al usuario a:
+
+1. **Hacer un uso correcto, responsable, ético y lícito** de la aplicación, conforme a su finalidad experimental y académica.
+2. **Respetar** la confidencialidad, la privacidad, la dignidad y los derechos de las personas cuyos datos aparezcan en el sistema.
+3. **No emplear** la aplicación para actividades ilícitas, engañosas, discriminatorias, de vigilancia no consentida o que perjudiquen a terceros.
+4. **No forzar, eludir ni manipular** los controles de seguridad, los roles, los permisos ni los mecanismos de auditoría.
+5. **Verificar** la información crítica antes de tomar decisiones basadas en ella, dado el carácter no productivo del prototipo.
+6. **Utilizar entornos, datos de prueba o datos debidamente autorizados** siempre que sea posible.
+
+## 7. Compromiso de evaluación para la mejora del producto
+
+Este proyecto existe para **aprender y mejorar**. Por ello, se solicita al usuario que:
+
+1. **Evalúe el producto de forma activa y honesta**, en uso real o guiado.
+2. **Registre y reporte** errores, fallos, comportamientos inesperados, vulnerabilidades y limitaciones que detecte.
+3. **Proponga mejoras** de usabilidad, rendimiento, accesibilidad, seguridad y cobertura funcional.
+4. **Documente** sus observaciones de manera concreta: qué hizo, qué esperaba, qué ocurrió y en qué entorno.
+5. **Comparta su retroalimentación** directamente con el autor, por los canales que este indique.
+6. **Canalice sus comentarios por la vía privada**, sin publicarlos ni difundirlos por medios abiertos.
+
+La retroalimentación recibida se utilizará **exclusivamente** para la mejora del producto y con fines académicos.
+
+## 8. Compromiso de comportamiento ético y profesional
+
+Al aceptar este aviso, el usuario **se compromete a cumplir** los siguientes supuestos de comportamiento, de acuerdo con la **ética profesional**:
+
+1. **Integridad**: actuar con honestidad, veracidad y transparencia; no falsear datos, resultados, mediciones ni reportes de evaluación.
+2. **Responsabilidad**: asumir las consecuencias de sus actos y de las decisiones que adopte con base en la aplicación.
+3. **Confidencialidad**: proteger la información privilegiada a la que acceda, incluso después de concluida su participación.
+4. **Respeto**: tratar con dignidad a las personas y a los datos que las representan; no dañar la reputación de personas, empresas o instituciones.
+5. **Competencia**: usar la aplicación solo dentro del alcance de sus conocimientos y atribuciones; no realizar afirmaciones técnicas que no pueda sustentar.
+6. **Objetividad**: emitir juicios y evaluaciones imparciales, libres de conflictos de interés.
+7. **Legalidad**: cumplir las leyes, la normativa vigente y las políticas de la organización.
+8. **Conflicto de intereses**: declarar y abstenerse de cualquier situación que comprometa su imparcialidad.
+9. **Uso adecuado de los recursos**: emplear los equipos, accesos y datos solo para los fines autorizados.
+10. **Bien público**: contribuir a que el resultado del proyecto genere valor, aprendizaje y mejora para todos los involucrados.
+
+## 9. Aceptación de los términos
+
+Al **instalar, acceder, ejecutar o utilizar** esta aplicación —en cualquiera de sus componentes—, o al **recibir una copia** de ella, el usuario:
+
+- declara haber **leído y comprendido** este aviso en su totalidad;
+- **acepta** todas las condiciones de uso, confidencialidad, no divulgación, no publicación y no distribución aquí establecidas;
+- **acepta** el compromiso de evaluación y los supuestos de comportamiento ético y profesional de las secciones 7 y 8;
+- **reconoce** que el uso de la aplicación es bajo su **exclusiva cuenta y riesgo** y que **no genera responsabilidad alguna** para la empresa, la institución, el autor ni sus colaboradores;
+- **reconoce** que el incumplimiento de estas condiciones faculta al autor a **revocar su acceso** y a exigir las responsabilidades que correspondan.
+
+**Si el usuario NO acepta estas condiciones, debe abstenerse de usar la aplicación y eliminar cualquier copia en su poder.**
+
+---
+
+## 10. Enlaces y versiones de este aviso
+
+El presente aviso se publica en varios formatos. **Todas las versiones contienen el mismo texto.**
+
+| # | Formato | Ubicación | Uso |
+|---|---|---|---|
+| 1 | Markdown (canónico) | `disclaimer.md` (raíz del repositorio) | Documento fuente; versión firmable |
+| 2 | Markdown (web / público) | `/disclaimer.md` | Descarga directa del texto íntegro |
+| 3 | Texto plano (APK) | `/disclaimer.txt` | Copia descargable y compartible desde la APK |
+| 4 | Página de la SPA | `/disclaimer` | Lectura cómoda en el navegador, con índice navegable |
+| 5 | Aceptación en el acceso web | `/login` | Aceptación obligatoria antes de iniciar sesión |
+| 6 | Aceptación en la APK | Primer arranque de *GGTO Técnico* | Pantalla de aceptación obligatoria, con opciones de compartir y copiar |
+| 7 | Aviso en la interfaz | Pie de la SPA | Enlace permanente a la página del aviso |
+| 8 | Manual de operación | `/manual/` | Referenciado desde la sección AYUDA de la plataforma |
+
+### Descarga de la APK
+
+| Recurso | Ubicación | Notas |
+|---|---|---|
+| Página de descarga | `/apk/` | Instrucciones de instalación y hash de verificación |
+| Archivo APK | `/apk/ggto-tecnico.apk` | Se enlaza desde el acceso (`/login`) y desde la página de descarga |
+| Metadatos | `/apk/apk.json` | Versión, tamaño y `sha256` del binario publicado |
+
+> La **aceptación del aviso en el primer arranque** de la APK es obligatoria: sin ella la
+> aplicación no muestra la pantalla de acceso. El binario se publica con
+> `scripts/publicar_apk.py` y **no debe distribuirse** por canales ajenos al servicio.
+
+> Sustituya la ruta relativa por la URL absoluta del servicio desplegado (por ejemplo,
+> `https://ggto-web-593453426217.europe-west1.run.app/disclaimer`).
+
+### Enlaces oficiales del proyecto
+
+| Recurso | Enlace |
+|---|---|
+| Repositorio GitHub | <https://github.com/anlucorporations/GGTO> |
+| Repositorio GitLab | <https://gitlab.com/anlucorporations/ggto> |
+| Rama de trabajo | `GGTOv2-DSH-GCP` |
+
+> ⚠️ **Recordatorio:** los repositorios y el servicio son de **acceso restringido**. Si en algún
+> momento estuvieran publicados, ello **no autoriza** su divulgación, copia ni distribución: las
+> prohibiciones de las secciones 2 y 3 prevalecen sobre la accesibilidad técnica.
+
+---
+
+### Registro de aceptación
+
+| Rol | Nombre y apellido | Cédula / P00 | Fecha | Firma |
+|---|---|---|---|---|
+| Usuario evaluador | | | | |
+| Usuario evaluador | | | | |
+| Autor del proyecto | Ing. Angel H. Lucci | | | |
+
+---
+
+*Documento de uso restringido — Proyecto **GGTO** (experimento académico). Prohibida su divulgación, publicación o distribución sin autorización previa y por escrito del autor.*

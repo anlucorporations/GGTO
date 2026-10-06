@@ -218,6 +218,8 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | `evidencia` | Sí (imagen + GPS + hora) | 2 años | Eliminar imagen y metadatos |
 | `auditoria` | Sí (datos_antes/después) | 3 años | Archivar sin PII |
 | `notificacion` | Sí (destinatario, cuerpo) | 1 año | Eliminar |
+| `mensaje` / `mensaje_destino` (D-81) | Sí (origen `p00`, cuerpo) | **5 días** | Eliminar (job de purga) |
+| `sync_log` / `sync_check` (D-81) | Sí (`p00`, dispositivo, `detalle` jsonb) | **90 días** | Eliminar (job de purga, por lotes) |
 | `solicitante` | Sí (nombre, contacto) | 5 años | Anonimizar |
 | `dispositivo_seguridad` | No (hashes) | Mientras la cuenta esté activa | Eliminar con la cuenta |
 | `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
@@ -248,6 +250,11 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 | INSUMOS (v2) | **CRUD** | CRUD | CRUD | Solicitud |
 | AUDITORÍA | **Lectura** | Lectura | — | — |
 | USUARIOS y accesos | **CRUD** | CRUD | Alta/baja de técnicos | — |
+| SISTEMAS → Sincronización (ver log + checklist) *(D-81)* | **Lectura** | Lectura | Lectura | — |
+| SISTEMAS → Base de datos (inspección) *(D-69/D-81)* | **Lectura** | — | — | — |
+| MENSAJERÍA — enviar / bandeja de enviados *(D-81)* | **CRUD** | CRUD | CRUD | — |
+| MENSAJERÍA — recibir/leer propios *(D-81)* | — | — | — | Recepción |
+| PANEL gestión diaria (auto-refresco 30 s) *(D-81)* | **Lectura** | Lectura | Lectura | — |
 
 > **El rol `SUPER` no se enumera en los endpoints**: el bypass en `require_roles` le concede
 > cualquier operación, por lo que la columna **SUPER** es siempre acceso total.

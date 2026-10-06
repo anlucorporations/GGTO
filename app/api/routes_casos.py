@@ -15,6 +15,7 @@ from ..models import (
     CasoEstadoHist,
     CatalogoMetodo,
     Cita,
+    Cuadrilla,
     Despacho,
     DespachoCasos,
     Evidencia,
@@ -90,8 +91,39 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
     gestion = {c.id_caso for c in casos if c.en_gestion_supervisor or c.estado_actual == 'EN_GESTION'}
     gestion |= set(db.scalars(select(DespachoCasos.id_caso).where(
         DespachoCasos.id_caso.in_(ids), DespachoCasos.estado == 'GESTIONADO')))
+
+    # D-78: cuadrilla del último despacho que incluyó el caso (misma regla que el
+    # filtro «Cuadrilla» de D-72: `fecha` e `id_despacho` descendentes).
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=DespachoCasos.id_caso,
+            order_by=(Despacho.fecha.desc(), Despacho.id_despacho.desc()),
+        )
+        .label("rn")
+    )
+    por_caso = (
+        select(
+            DespachoCasos.id_caso.label("id_caso"),
+            Despacho.id_cuadrilla.label("id_cuadrilla"),
+            rn,
+        )
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(DespachoCasos.id_caso.in_(ids))
+        .subquery()
+    )
+    ultima = {
+        fila.id_caso: fila.id_cuadrilla
+        for fila in db.execute(
+            select(por_caso.c.id_caso, por_caso.c.id_cuadrilla).where(por_caso.c.rn == 1)
+        ).all()
+    }
+    cuadrillas = {c.id_cuadrilla: c for c in db.scalars(select(Cuadrilla)).all()}
+
     salida: list[CasoOut] = []
     for caso in casos:
+        id_cuadrilla = ultima.get(caso.id_caso)
+        cuadrilla = cuadrillas.get(id_cuadrilla) if id_cuadrilla else None
         datos = CasoOut.model_validate(caso).model_dump()
         datos.update(
             sector_nombre=(sectores.get(caso.id_sector) if caso.id_sector else None),
@@ -99,6 +131,9 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
             asignado=caso.id_caso in asignados,
             citado=caso.id_caso in citados,
             gestion=caso.id_caso in gestion,
+            id_cuadrilla=id_cuadrilla,
+            cuadrilla_codigo=(cuadrilla.codigo if cuadrilla else None),
+            cuadrilla_nombre=(cuadrilla.nombre if cuadrilla else None),
         )
         salida.append(CasoOut(**datos))
     return salida

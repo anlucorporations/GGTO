@@ -1,0 +1,57 @@
+[2026-10-01T21:35:21+00:00] ==============================================================================
+[2026-10-01T21:35:21+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-01T21:35:21+00:00] modo=SIMULACIÓN
+[2026-10-01T21:35:21+00:00] estado actual: {'sync_log_tabla': 1, 'sync_log_columnas': 13, 'indice_p00_fecha': 1, 'evidencia_idact_null': 'YES'}
+[2026-10-01T21:35:21+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-10-01T21:35:30+00:00] ==============================================================================
+[2026-10-01T21:35:30+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-01T21:35:30+00:00] modo=SIMULACIÓN
+[2026-10-01T21:35:30+00:00] estado actual: {'sync_log_tabla': 0, 'sync_log_columnas': 0, 'indice_p00_fecha': 0, 'evidencia_idact_null': 'NO'}
+[2026-10-01T21:35:30+00:00] Cambios pendientes:
+[2026-10-01T21:35:30+00:00]   · CREATE TABLE sync_log (13 columnas, 2 CHECK, FK a cuadrilla)
+[2026-10-01T21:35:30+00:00]   · CREATE INDEX ix_sync_log_p00_fecha
+[2026-10-01T21:35:30+00:00]   · ALTER TABLE evidencia ALTER COLUMN id_actividad DROP NOT NULL
+[2026-10-01T21:35:30+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-01T21:35:40+00:00] ==============================================================================
+[2026-10-01T21:35:40+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-01T21:35:40+00:00] modo=APLICAR
+[2026-10-01T21:35:40+00:00] estado actual: {'sync_log_tabla': 0, 'sync_log_columnas': 0, 'indice_p00_fecha': 0, 'evidencia_idact_null': 'NO'}
+[2026-10-01T21:35:40+00:00] Cambios pendientes:
+[2026-10-01T21:35:40+00:00]   · CREATE TABLE sync_log (13 columnas, 2 CHECK, FK a cuadrilla)
+[2026-10-01T21:35:40+00:00]   · CREATE INDEX ix_sync_log_p00_fecha
+[2026-10-01T21:35:40+00:00]   · ALTER TABLE evidencia ALTER COLUMN id_actividad DROP NOT NULL
+[2026-10-01T21:35:40+00:00]   ✓ sync_log creada
+[2026-10-01T21:35:40+00:00]   ✓ índice ix_sync_log_p00_fecha creado
+[2026-10-01T21:35:40+00:00]   ✓ evidencia.id_actividad relajado (o ya estaba)
+[2026-10-01T21:35:40+00:00] verificación post-migración: {'sync_log_tabla': 0, 'sync_log_columnas': 0, 'indice_p00_fecha': 0, 'evidencia_idact_null': 'NO'}
+[2026-10-01T21:35:40+00:00] ⚠ VERIFICACIÓN FALLÓ: revisar manualmente
+[2026-10-01T21:35:48+00:00] ==============================================================================
+[2026-10-01T21:35:48+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-01T21:35:48+00:00] modo=APLICAR
+[2026-10-01T21:35:48+00:00] estado actual: {'sync_log_tabla': 0, 'sync_log_columnas': 0, 'indice_p00_fecha': 0, 'evidencia_idact_null': 'NO'}
+[2026-10-01T21:35:48+00:00] Cambios pendientes:
+[2026-10-01T21:35:48+00:00]   · CREATE TABLE sync_log (13 columnas, 2 CHECK, FK a cuadrilla)
+[2026-10-01T21:35:48+00:00]   · CREATE INDEX ix_sync_log_p00_fecha
+[2026-10-01T21:35:48+00:00]   · ALTER TABLE evidencia ALTER COLUMN id_actividad DROP NOT NULL
+[2026-10-01T21:35:48+00:00]   ✓ sync_log creada
+[2026-10-01T21:35:48+00:00]   ✓ índice ix_sync_log_p00_fecha creado
+[2026-10-01T21:35:48+00:00]   ✓ evidencia.id_actividad relajado (o ya estaba)
+[2026-10-01T21:35:48+00:00] verificación post-migración: {'sync_log_tabla': 1, 'sync_log_columnas': 13, 'indice_p00_fecha': 1, 'evidencia_idact_null': 'YES'}
+[2026-10-01T21:35:48+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-02T16:00:22+00:00] ==============================================================================
+[2026-10-02T16:00:22+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-02T16:00:22+00:00] modo=SIMULACIÓN
+[2026-10-02T16:00:22+00:00] estado actual: {'sync_log_tabla': 1, 'sync_log_columnas': 13, 'indice_p00_fecha': 1, 'evidencia_idact_null': 'NO'}
+[2026-10-02T16:00:22+00:00] Cambios pendientes:
+[2026-10-02T16:00:22+00:00]   · ALTER TABLE evidencia ALTER COLUMN id_actividad DROP NOT NULL
+[2026-10-02T16:00:22+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-02T16:00:38+00:00] ==============================================================================
+[2026-10-02T16:00:38+00:00] MIGRACIÓN D-73 (sync_log + evidencia.id_actividad NULL)
+[2026-10-02T16:00:38+00:00] modo=APLICAR
+[2026-10-02T16:00:38+00:00] estado actual: {'sync_log_tabla': 1, 'sync_log_columnas': 13, 'indice_p00_fecha': 1, 'evidencia_idact_null': 'NO'}
+[2026-10-02T16:00:38+00:00] Cambios pendientes:
+[2026-10-02T16:00:38+00:00]   · ALTER TABLE evidencia ALTER COLUMN id_actividad DROP NOT NULL
+[2026-10-02T16:00:38+00:00]     · NOTICE:  evidencia.id_actividad ahora admite NULL
+[2026-10-02T16:00:38+00:00]   ✓ evidencia.id_actividad relajado (o ya estaba)
+[2026-10-02T16:00:39+00:00] verificación post-migración: {'sync_log_tabla': 1, 'sync_log_columnas': 13, 'indice_p00_fecha': 1, 'evidencia_idact_null': 'YES'}
+[2026-10-02T16:00:39+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA

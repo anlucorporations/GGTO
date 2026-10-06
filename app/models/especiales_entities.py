@@ -68,6 +68,9 @@ class Cita(Base):
     observacion: Mapped[str | None] = mapped_column(Text)
     creado_por: Mapped[str | None] = mapped_column(String(20))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    #: D-81: `fecha_hora` para la que ya se emitió el recordatorio (idempotencia
+    #: y reenvío si la cita se reprograma).
+    recordatorio_para: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Seguimiento(Base):

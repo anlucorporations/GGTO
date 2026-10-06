@@ -99,6 +99,7 @@ class EstadoSyncIn(BaseModel):
 
 
 class SyncCargaIn(BaseModel):
+    id_sync_log: int | None = None  # D-81: sesión asociada (opcional, retrocompatible)
     dispositivo_id: str | None = Field(default=None, max_length=80)
     version_app: str | None = Field(default=None, max_length=20)
     actividades: list[ActividadSyncIn] = Field(default_factory=list, max_length=200)
@@ -116,3 +117,60 @@ class SyncCargaOut(BaseModel):
     rechazadas: int = 0
     errores: list[ErrorSyncItem] = Field(default_factory=list)
     server_ts: datetime
+
+
+# --------------------------------------------------------------------------- #
+# Sesiones de sincronización y checklist (D-81 · RF-39 / RF-40)
+# --------------------------------------------------------------------------- #
+TipoSesion = Literal["DESCARGA", "CARGA"]
+PasoChecklist = Literal["CONEXION", "LOGIN", "DESCARGA", "CARGA"]
+EstadoChecklist = Literal["PENDIENTE", "EN_CURSO", "OK", "ERROR", "OMITIDO"]
+EstadoSesion = Literal["OK", "PARCIAL", "ERROR"]
+
+
+class SyncSesionIn(BaseModel):
+    tipo: TipoSesion
+    dispositivo_id: str | None = Field(default=None, max_length=80)
+    version_app: str | None = Field(default=None, max_length=20)
+
+
+class SyncSesionOut(BaseModel):
+    id_sync_log: int
+
+
+class ChecklistPasoIn(BaseModel):
+    paso: PasoChecklist
+    estado: EstadoChecklist
+    fecha_hora: datetime | None = None
+    detalle: dict | None = None
+
+
+class ChecklistIn(BaseModel):
+    pasos: list[ChecklistPasoIn] = Field(default_factory=list, max_length=4)
+
+
+class SyncSesionCierreIn(BaseModel):
+    recibidos: int = Field(default=0, ge=0)
+    procesados: int = Field(default=0, ge=0)
+    errores: int = Field(default=0, ge=0)
+    estado: EstadoSesion | None = None
+    detalle: dict | None = None
+    checklist: list[ChecklistPasoIn] = Field(default_factory=list, max_length=4)
+
+
+class SyncSesionCierreOut(BaseModel):
+    id_sync_log: int
+    estado: str
+    recibidos: int
+    procesados: int
+    errores: int
+    duracion_ms: int | None = None
+
+
+class ChecklistPasoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    paso: str
+    estado: str
+    fecha_hora: datetime | None = None
+    detalle: dict | None = None

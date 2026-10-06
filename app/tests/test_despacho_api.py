@@ -524,6 +524,47 @@ def test_asignar_casos_a_una_cuadrilla(client, entorno, db_session):
     assert detalle["casos"][0]["orden_visita"] == 1
 
 
+def test_ficha_del_caso_expone_la_cuadrilla_del_ultimo_despacho(client, entorno, db_session):
+    """D-78: la ficha del caso informa la cuadrilla asignada (y la pierde al quitarla).
+
+    La asignación manual se hizo desde la ficha, así que `GET /casos/{id}` debe
+    devolver la cuadrilla del último despacho que incluyó el caso.
+    """
+    id_caso = _id_caso(db_session, "TSTD-A2")
+    id_cuadrilla = _id_cuadrilla(db_session, "TCD1")
+
+    # Sin despacho: la ficha no atribuye cuadrilla
+    ficha = client.get(f"/api/v1/casos/{id_caso}", headers=entorno["headers"]).json()
+    assert ficha["id_cuadrilla"] is None
+    assert ficha["cuadrilla_codigo"] is None
+
+    assert client.post(
+        f"{BASE}/asignar-casos",
+        json={"id_cuadrilla": id_cuadrilla, "ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    ).status_code == 200
+
+    ficha = client.get(f"/api/v1/casos/{id_caso}", headers=entorno["headers"]).json()
+    assert ficha["id_cuadrilla"] == id_cuadrilla
+    assert ficha["cuadrilla_codigo"] == "TCD1"
+
+    # El listado también lo informa (D-72 ya filtraba por esa cuadrilla)
+    listado = client.get(
+        "/api/v1/casos", params={"id_averia": "TSTD-A2"}, headers=entorno["headers"]
+    ).json()
+    assert listado["items"][0]["id_cuadrilla"] == id_cuadrilla
+
+    # Al quitarlo del despacho del día vuelve a quedar sin cuadrilla
+    assert client.post(
+        f"{BASE}/quitar-casos",
+        json={"ids_caso": [id_caso], "fecha": HOY},
+        headers=entorno["headers"],
+    ).status_code == 200
+    ficha = client.get(f"/api/v1/casos/{id_caso}", headers=entorno["headers"]).json()
+    assert ficha["id_cuadrilla"] is None
+    assert ficha["cuadrilla_codigo"] is None
+
+
 def test_asignar_caso_en_gestion_marca_y_desmarca(client, entorno, db_session):
     """Asignar a la cuadrilla 0 marca el caso; pasarlo a una de calle lo desmarca."""
     id_caso = _id_caso(db_session, "TSTD-A1")

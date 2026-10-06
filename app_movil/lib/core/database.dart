@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,7 +13,7 @@ class DatabaseHelper {
   static Database? _database;
 
   /// Versión del esquema local. Al cambiarla hay que ampliar `_upgradeDB`.
-  static const int version = 2;
+  static const int version = 3;
 
   DatabaseHelper._init();
 
@@ -76,6 +77,13 @@ class DatabaseHelper {
       'CREATE INDEX ix_accion_pendiente_estado ON accion_pendiente (estado, proximo_intento)',
     );
     await db.execute('CREATE INDEX ix_evidencia_caso ON evidencia_local (id_caso)');
+    // D-81: metadatos de la app (identificador de dispositivo, último checklist).
+    await db.execute('''
+      CREATE TABLE app_meta (
+        clave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL
+      )
+    ''');
   }
 
   /// Migración no destructiva: **no** borra evidencias ni la cola pendiente.
@@ -97,6 +105,15 @@ class DatabaseHelper {
         'CREATE INDEX IF NOT EXISTS ix_accion_pendiente_estado ON accion_pendiente (estado, proximo_intento)',
       );
       await db.execute('CREATE INDEX IF NOT EXISTS ix_evidencia_caso ON evidencia_local (id_caso)');
+    }
+    if (anterior < 3) {
+      // D-81: tabla de metadatos (identificador de dispositivo, último checklist).
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS app_meta (
+          clave TEXT PRIMARY KEY,
+          valor TEXT NOT NULL
+        )
+      ''');
     }
   }
 
@@ -403,6 +420,50 @@ class DatabaseHelper {
   Future<void> marcarEvidenciaSubida(int id) async {
     final db = await database;
     await db.update('evidencia_local', {'subida': 1}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ------------------------------------------------------------------------- #
+  // Metadatos (D-81): identificador de dispositivo y último checklist
+  // ------------------------------------------------------------------------- #
+
+  Future<String?> leerMeta(String clave) async {
+    final db = await database;
+    final filas = await db.query('app_meta', where: 'clave = ?', whereArgs: [clave], limit: 1);
+    if (filas.isEmpty) return null;
+    return '${filas.first['valor']}';
+  }
+
+  Future<void> guardarMeta(String clave, String valor) async {
+    final db = await database;
+    await db.insert(
+      'app_meta',
+      {'clave': clave, 'valor': valor},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Identificador **real** del dispositivo (UUID generado una vez y persistido).
+  /// Sustituye al antiguo `'apk-local'` fijo (A-04).
+  Future<String> dispositivoId() async {
+    final existente = await leerMeta('dispositivo_id');
+    if (existente != null && existente.isNotEmpty) return existente;
+    final generado = _nuevoId();
+    await guardarMeta('dispositivo_id', generado);
+    return generado;
+  }
+
+  /// Guarda el checklist de la última sincronización (para mostrarlo en la pantalla).
+  Future<void> guardarChecklist(String json) => guardarMeta('ultimo_checklist', json);
+
+  Future<String?> leerChecklist() => leerMeta('ultimo_checklist');
+
+  static String _nuevoId() {
+    final r = Random();
+    final hex = List<String>.generate(
+      16,
+      (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+    return 'DEV-$hex';
   }
 
   static int _ahora() => DateTime.now().millisecondsSinceEpoch;

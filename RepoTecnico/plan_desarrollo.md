@@ -417,3 +417,110 @@ técnico, flota y cuadrilla** → todos `201`. Datos temporales eliminados tras 
 | Despliegue | Imagen `ggto-web:v2` → Cloud Run `ggto-web-00002-rbl`, secreto `ggto-secret-key` en Secret Manager |
 | Verificación en vivo | `setup` (12 palabras) → `login` (JWT) → `/me` ✅ → 3 fallos (401/401/**423**) → `unlock` con 3 palabras ✅ → login ✅ |
 | Limpieza | Usuario temporal `DEMO001` eliminado; la base queda sin usuarios (los creará RF-02 en el Ciclo 2) |
+
+---
+
+## 6. Incremento D-81 — plan de desarrollo vertical (ciclos)
+
+> Ramas de trabajo del incremento (RF-39…RF-44 · RNF-26…RNF-28 · RT-15/RT-16). Diseño aprobado en
+> [`documento_tecnico_D81.md`](documento_tecnico_D81.md) v0.2 y [`casos_uso_D81.md`](casos_uso/casos_uso_D81.md) v0.2.
+> Cada ciclo es una entrega operativa; al cerrar se actualiza el despliegue y se espera al usuario.
+
+### Ciclo D81-1 — Núcleo de datos y mantenimiento
+**Objetivo:** esquema del incremento aplicado (idempotente), modelos ORM y la infraestructura de mantenimiento.
+
+| Tarea | RF/RNF |
+|---|---|
+| Migración idempotente (`scripts/migrar_d81_sync_mensajeria.py`): `sync_log`+cols, `sync_check`, `mensaje`, `mensaje_destino`, `cita.recordatorio_para`, índices y 7 parámetros | RT-16, RNF-21 |
+| Modelos SQLAlchemy (`sync_entities.SyncCheck`, `mensaje_entities.Mensaje/MensajeDestino`) | RT-16 |
+| Router `/mantenimiento/*` con token fail-closed + `cerrar-sesiones` + `purgar` (por lotes) | C-01, M-09 |
+| `schema.sql` (ya en §12) y diccionario sincronizados | — |
+| Pruebas unitarias + `ruff`/`mypy` | RNF-24 |
+
+**Entrega:** base con las tablas nuevas y los jobs de mantenimiento listos.
+
+### Ciclo D81-2 — Sincronización: sesión, checklist y log (web + APK)
+**Objetivo:** registrar y consultar las sincronizaciones.
+
+| Tarea | RF/RNF |
+|---|---|
+| `POST /sync/sesion`, `PATCH /sync/sesion/{id}`, `PATCH /sync/checklist`; `id_sync_log` opcional en `/sync/carga` y `/sync/descarga` | RF-39, RF-40 |
+| `GET /sincronizaciones` (+`{id}`, `/resumen`, `/checklist`) con filtros/orden y **aislamiento por central** | RF-39, RNF-21 |
+| Instrumentación en `services/sync.py` (punto único de escritura) | RF-39 |
+| Web: pestañas en **SISTEMAS** + `Sincronizacion.tsx`; gating menú/página + E2E 17 | RF-39,E-01 |
+| APK: `sync_screen.dart` con checklist por paso + `dispositivo_id` real | RF-40, A-04 |
+| Pruebas (integración + unitarias) | RNF-24 |
+
+**Entrega:** log y checklist operativos en web y APK.
+
+### Ciclo D81-3 — Mensajería interna (RF-41)
+**Objetivo:** mensajería unidireccional supervisor→técnicos con sondeo 20 s.
+
+| Tarea | RF/RNF |
+|---|---|
+| `routes_mensajes.py` + `services/mensajes.py` (fan-out a `mensaje_destino`) | RF-41 |
+| Endpoints (list incremental, POST, leído, leidos masivo, no-leidos, bandeja) | RF-41, M-03 |
+| Automáticos: `recordatorios-citas`, `alarmas-despacho`, `ESTADO_SYNC` al cerrar sesión | RF-41, E-06 |
+| Web: `Mensajes.tsx` + `useMensajes` (20 s); APK: pantalla + provider (20 s) | RNF-26, RT-15 |
+| Pruebas | RNF-24 |
+
+**Entrega:** mensajería operativa en web y APK.
+
+### Ciclo D81-4 — Panel de gestión diaria y casos especiales (RF-42/43/44)
+**Objetivo:** pantalla principal del panel con Asignadas vs. Cerradas y alta de especiales.
+
+| Tarea | RF/RNF |
+|---|---|
+| `GET /panel/gestion-diaria` + `services/panel.py` (modos Común=RESIDENCIAL / Referidos) | RF-43 |
+| Web: `Widget/Panel` como pantalla principal + toggle + `useAutoRefresh` (30 s, pausa en 2.º plano) | RF-42 |
+| Botón **«Agregar caso especial»** (reutiliza el formulario) | RF-44 |
+| Pruebas | RNF-24 |
+
+**Entrega:** panel diario con auto-refresco y alta de especiales.
+
+### Ciclo D81-5 — Pruebas, manuales y despliegue
+**Objetivo:** cierre del incremento.
+
+| Tarea | RF/RNF |
+|---|---|
+| E2E nuevos (mensajería, panel) y actualización de `17-sistemas-y-roles` | RNF-24 |
+| Manuales (mensajería, sincronización/checklist) y AYUDA | Fase 5 |
+| Migración sobre `ggtov2` (con confirmación) y despliegue de `ggto-web` | D-81 |
+
+**Entrega:** incremento probado, documentado y desplegado.
+
+### Secuencia
+
+```
+D81-1 (datos + mantenimiento) ─► D81-2 (sincronización+checklist)
+        │                        │
+        ├─► D81-3 (mensajería) ◄─┘
+        │
+        └─► D81-4 (panel/especiales)
+                    │
+                    └─► D81-5 (pruebas, manuales, despliegue)
+```
+
+### Bitácora del incremento
+
+| Ciclo | Estado | Pruebas | Notas |
+|---|---|---|---|
+| D81-1 — Núcleo de datos y mantenimiento | ✅ **completado** | 7/7 unitarias D-81 · `ruff`/`mypy` ✅ (73 archivos) | `scripts/migrar_d81_sync_mensajeria.py` (idempotente, dry-run); modelos `SyncCheck`/`Mensaje`/`MensajeDestino` + `sync_log` ampliado; `routes_mantenimiento` (`/cerrar-sesiones`, `/purgar`) con token **fail-closed** |
+| D81-2 — Sincronización (sesión/checklist/log) | ✅ **completado** | **8/8 integración D-81** · **266/266 suite** (clúster temporal) · `flutter analyze` ✅ · `ruff`/`mypy` ✅ · `tsc`+`vite build` ✅ | `POST/PATCH /sync/sesion`, `PATCH /sync/checklist`, `GET /sincronizaciones{/id,/resumen,/checklist}` (ADMIN/SUPERVISOR, acotado a central); web **SISTEMAS → Sincronización**; APK checklist por paso + `dispositivo_id` real |
+| D81-3 — Mensajería interna | ✅ **completado** | **9/9 integración D-81 mensajería** · **275/275 suite** · `flutter analyze` ✅ · `tsc`+`vite build` ✅ | Unidireccional supervisor→técnicos; **fan-out** `mensaje_destino`; sondeo incremental 20 s; automáticos (ESTADO_SYNC al cerrar sesión, recordatorios de cita y alarmas de despacho, idempotentes por `dedupe_key`); web **Mensajes** + badge; APK pantalla + sondeo 20 s |
+| D81-4 — Panel de gestión diaria y especiales | ✅ **completado** | **4/4 integración panel** · **279/279 suite** · `tsc`+`vite build` ✅ | `GET /panel/gestion-diaria` (Asignadas vs. Cerradas por cuadrilla; modos Común=RESIDENCIAL / Referidos); web pantalla principal del panel con **auto-refresco 30 s** (`useAutoRefresh`) y botón **«Agregar caso especial»** |
+| D81-5 — Pruebas, manuales y despliegue | ⏳ pendiente | — | — |
+
+> **D81-1 — detalle técnico:**
+> - **Modelos** (`app/models/`): `SyncLog` gana `plataforma`, `duracion_ms`, `id_central`; `SyncCheck` (una fila por paso, con `OMITIDO`); `Mensaje` (con `CHECK` XOR de destinatario y `expira_en > creado_en`) y `MensajeDestino` (PK compuesta + `leido_en`).
+> - **Migración** (`scripts/migrar_d81_sync_mensajeria.py`): idempotente, **simulación por defecto**, `--aplicar`/`--si`/`--dsn`, una transacción, verificación post-migración y log en `RepoTecnico/BaseOperaciones/migracion_d81.log`.
+> - **Mantenimiento** (`app/services/purga.py`, `app/api/routes_mantenimiento.py`): cierre por timeout (`sync.timeout_min`=10) y purga por lotes (respeta los no leídos hasta `mensajeria.retencion_max_dias`=30, E-14); registra en `auditoria`.
+> - **Entorno de pruebas:** se instalaron `PyJWT`, `httpx` y `python-multipart` (faltaban localmente); las pruebas de integración requieren `GGTO_TEST_DB_URL`.
+
+> **Validación de la integración (D81-1 + D81-2) — hecha con un clúster temporal:**
+> como no había credenciales del PostgreSQL local ni de GCP, se levantó un **clúster PostgreSQL 18 temporal**
+> (`initdb -A trust` en `.tmp_pg`, puerto `55499`, eliminado al terminar) y se aplicó `RepoTecnico/db/schema.sql`.
+> Resultado: **`pytest` 266/266 en verde** (incluye las **8 nuevas** pruebas de integración D-81 y toda la suite
+> preexistente, sin regresiones) y **`flutter analyze` sin hallazgos**. Para ello se corrigió `app/tests/conftest.py`
+> (la limpieza ahora borra `mensaje_destino/mensaje/sync_check/sync_log`) y `app/services/sincronizacion.py`
+> (la zona horaria degrada a **UTC** si falta `tzdata`, sin romper en Windows).

@@ -13,6 +13,8 @@ import 'features/auth/primer_acceso_screen.dart';
 import 'features/auth/unlock_screen.dart';
 import 'features/casos/casos_provider.dart';
 import 'features/casos/casos_screen.dart';
+import 'features/mensajes/mensajes_provider.dart';
+import 'features/mensajes/mensajes_screen.dart';
 import 'features/sync/sync_provider.dart';
 import 'features/sync/sync_screen.dart';
 
@@ -41,6 +43,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()..restaurarSesion()),
         ChangeNotifierProvider(create: (_) => CasosProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()..iniciar()),
+        ChangeNotifierProvider(create: (_) => MensajesProvider()..iniciar()),
       ],
       child: const GGTOApp(),
     ),
@@ -111,6 +114,7 @@ class _GGTOAppState extends State<GGTOApp> {
         '/casos': (context) => const _RutaProtegida(child: CasosScreen()),
         '/sync': (context) => const _RutaProtegida(child: SyncScreen()),
         '/alertas': (context) => const _RutaProtegida(child: AlertasScreen()),
+        '/mensajes': (context) => const _RutaProtegida(child: MensajesScreen()),
       },
     );
   }

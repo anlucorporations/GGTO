@@ -25,7 +25,11 @@ from .api import (
     routes_especiales,
     routes_health,
     routes_ingesta,
+    routes_mantenimiento,
+    routes_mensajes,
     routes_monitoreo,
+    routes_panel,
+    routes_sincronizacion,
     routes_sistemas,
     routes_sync,
 )
@@ -87,6 +91,10 @@ app.include_router(routes_monitoreo.router)
 app.include_router(routes_alertas.router)
 app.include_router(routes_sistemas.router)
 app.include_router(routes_sync.router)
+app.include_router(routes_sincronizacion.router)
+app.include_router(routes_mensajes.router)
+app.include_router(routes_panel.router)
+app.include_router(routes_mantenimiento.router)
 
 
 # --------------------------------------------------------------------------- #

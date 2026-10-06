@@ -16,6 +16,7 @@ import type {
   CasoRelacionado,
   CitaRapida,
   CierreCaso,
+  ChecklistDispositivo,
   ContenidoTabla,
   EstructuraBD,
   FichaTabla,
@@ -49,6 +50,7 @@ import type {
   DespachoUpdate,
   DominioMetodo,
   EnvioOut,
+  GestionDiaria,
   FallaMasivaCreate,
   FallaMasivaManual,
   FallaMasivaOut,
@@ -69,6 +71,10 @@ import type {
   FlotaCreate,
   FlotaUpdate,
   IngestaLoteOut,
+  Mensaje,
+  MensajeCreate,
+  MensajeRecibido,
+  BandejaMensajes,
   Metodo,
   MetodoCreate,
   MonitoreoCapacidad,
@@ -79,12 +85,14 @@ import type {
   MonitoreoReparacion,
   MonitoreoSemanal,
   PaginaCasos,
+  PaginaSincronizaciones,
   PalabraPosicion,
   Parametro,
   ParametroUpdate,
   PeriodoReporte,
   Resumen,
   ResumenIngesta,
+  ResumenSincronizaciones,
   RolAsignable,
   ReporteTrabajo,
   Sector,
@@ -98,6 +106,8 @@ import type {
   SeguimientoFiltros,
   SeguimientoOut,
   SeguimientoUpdate,
+  SincronizacionDetalle,
+  SincronizacionesFiltros,
   Solicitante,
   SolicitanteCreate,
   Tecnico,
@@ -1069,4 +1079,68 @@ export function enrutarCaso(idCaso: number, datos: EnrutadoCaso): Promise<Resolu
 
 export function casosRelacionados(idCaso: number): Promise<CasoRelacionado[]> {
   return request<CasoRelacionado[]>(`/casos/${idCaso}/relacionados`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sincronización — log de la APK (D-81 · RF-39 / RF-40)               */
+/* ------------------------------------------------------------------ */
+
+export function listarSincronizaciones(
+  filtros: SincronizacionesFiltros = {},
+): Promise<PaginaSincronizaciones> {
+  return request<PaginaSincronizaciones>(`/sincronizaciones${construirQuery(filtros)}`);
+}
+
+export function resumenSincronizaciones(fecha?: string): Promise<ResumenSincronizaciones> {
+  return request<ResumenSincronizaciones>(
+    `/sincronizaciones/resumen${construirQuery({ fecha })}`,
+  );
+}
+
+export function checklistSincronizaciones(): Promise<{ items: ChecklistDispositivo[] }> {
+  return request<{ items: ChecklistDispositivo[] }>('/sincronizaciones/checklist');
+}
+
+export function obtenerSincronizacion(idSyncLog: number): Promise<SincronizacionDetalle> {
+  return request<SincronizacionDetalle>(`/sincronizaciones/${idSyncLog}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Mensajería interna (D-81 · RF-41)                                   */
+/* ------------------------------------------------------------------ */
+
+/** Sondeo incremental de mensajes (cada 20 s; `desde` = último id visto). */
+export function listarMensajes(desde?: number, limit = 50): Promise<MensajeRecibido[]> {
+  return request<MensajeRecibido[]>(`/mensajes${construirQuery({ desde, limit })}`);
+}
+
+export function mensajesNoLeidos(): Promise<{ total: number }> {
+  return request<{ total: number }>('/mensajes/no-leidos');
+}
+
+export function enviarMensaje(data: MensajeCreate): Promise<Mensaje> {
+  return conCuerpo<Mensaje>('/mensajes', 'POST', data);
+}
+
+export function marcarMensajeLeido(idMensaje: number): Promise<void> {
+  return request<void>(`/mensajes/${idMensaje}/leido`, { method: 'POST' });
+}
+
+export function marcarMensajesLeidos(ids: number[]): Promise<{ actualizados: number }> {
+  return conCuerpo<{ actualizados: number }>('/mensajes/leidos', 'POST', { ids });
+}
+
+export function bandejaMensajes(): Promise<BandejaMensajes> {
+  return request<BandejaMensajes>('/mensajes/bandeja');
+}
+
+/* ------------------------------------------------------------------ */
+/* Panel de gestión diaria (D-81 · RF-43)                              */
+/* ------------------------------------------------------------------ */
+
+export function gestionDiaria(
+  fecha?: string,
+  modo: 'COMUN' | 'REFERIDOS' = 'COMUN',
+): Promise<GestionDiaria> {
+  return request<GestionDiaria>(`/panel/gestion-diaria${construirQuery({ fecha, modo })}`);
 }

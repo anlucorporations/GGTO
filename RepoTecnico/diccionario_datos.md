@@ -68,6 +68,10 @@
 | 31 | Método | `catalogo_metodo` | Métodos de cierre (IVR/COS/SACAS) y de enrutado. |
 | 32 | Auditoría | `auditoria` | Bitácora de acciones (RNF-12). |
 | 33 | Configuración | `configuracion` | Parámetros del sistema (frases de exclusión, reglas). |
+| 34 | Log de sincronización | `sync_log` | Sesión DESCARGA/CARGA de la APK (RF-39, D-81). |
+| 35 | Checklist de sincronización | `sync_check` | Estado, hora y detalle **por paso** (RF-40, D-81). |
+| 36 | Mensaje interno | `mensaje` | Mensajería interna supervisor→técnicos (RF-41, D-81). |
+| 37 | Destino de mensaje | `mensaje_destino` | Fan-out de destinatarios y lectura por técnico (RF-41, D-81). |
 
 ---
 
@@ -476,6 +480,63 @@ unicidad cuando un caso se reabre y vuelve a cerrarse.
 - **`inventario_movimiento`**: `id_mov` · `id_insumo` · `tipo` (`INGRESO`/`EGRESO`/`AJUSTE`) · `cantidad` · `id_orden` · `id_tecnico` · `fecha` · `usuario`.
 - **`orden_material`**: `id_orden` · `id_caso` · `id_cuadrilla` · `solicitante` · `estado` · `fecha` · `observacion`.
 - **`orden_material_detalle`**: `id_orden` · `id_insumo` · `cantidad_solicitada` · `cantidad_entregada`.
+
+---
+
+## 8bis. Entidades del incremento D-81 (log de sincronización y mensajería)
+
+### `sync_log` — log de sincronización de la APK (RF-39)
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_sync_log | bigserial | PK | Identificador de la sesión. |
+| p00 | varchar(20) | NN | Usuario que sincroniza. |
+| id_cuadrilla | integer | FK cuadrilla | Cuadrilla activa al sincronizar (NULL si no tiene). |
+| **id_central** | integer | FK central | **Nuevo (D-81):** alcance multi-central (RNF-21). |
+| tipo | varchar(20) | NN, CHECK | `DESCARGA` \| `CARGA` (sin `SYNC_WEB`, ver H-04/A-02). |
+| dispositivo_id | varchar(80) | | Identificador real del dispositivo (A-04). |
+| version_app | varchar(20) | | Versión de la APK. |
+| **plataforma** | varchar(20) | NN, defecto `APK` | **Nuevo (D-81).** |
+| iniciado_en | timestamptz | NN, defecto now() | Inicio de la sesión. |
+| finalizado_en | timestamptz | | Cierre de la sesión. |
+| **duracion_ms** | integer | | **Nuevo (D-81):** duración en milisegundos. |
+| recibidos / procesados / errores | integer | NN, defecto 0 | Contadores. |
+| estado | varchar(20) | NN, CHECK | `EN_PROCESO` \| `OK` \| `PARCIAL` \| `ERROR`. |
+| detalle | jsonb | | Detalle (lista blanca al exponerse — A-07). |
+
+### `sync_check` — checklist por paso (RF-40 / C-02)
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_sync_check | bigserial | PK | Identificador. |
+| id_sync_log | bigint | NN, FK sync_log (cascade) | Sesión a la que pertenece. |
+| paso | varchar(12) | NN, CHECK | `CONEXION` \| `LOGIN` \| `DESCARGA` \| `CARGA`. |
+| estado | varchar(12) | NN, CHECK | `PENDIENTE` \| `EN_CURSO` \| `OK` \| `ERROR` \| `OMITIDO`. |
+| fecha_hora | timestamptz | | Hora del paso. |
+| detalle | jsonb | | Detalle/código de error del paso. |
+| | | **UNIQUE (id_sync_log, paso)** | Un registro por paso y sesión. |
+
+### `mensaje` — mensajería interna (RF-41)
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_mensaje | bigserial | PK | Identificador. |
+| id_central | integer | NN, FK central | Alcance (RNF-21). |
+| origen_p00 | varchar(20) | NN, FK usuario | Autor (supervisor/gestor). |
+| destino_tipo | varchar(12) | NN, CHECK | `TODOS` \| `CUADRILLA` \| `TECNICO` (XOR de ids). |
+| id_cuadrilla / id_tecnico | integer | FK (ON DELETE SET NULL) | Destino según el tipo. |
+| tipo | varchar(20) | NN, CHECK | `RECORDATORIO_CITA` \| `ESTADO_SYNC` \| `ALARMA_DESPACHO` \| `TEXTO`. |
+| cuerpo | varchar(500) | NN | Texto corto tipo chat. |
+| id_caso | bigint | FK caso (SET NULL) | Referencia opcional. |
+| creado_en | timestamptz | NN, defecto now() | Emisión. |
+| expira_en | timestamptz | NN, defecto now()+5 días, CHECK > creado_en | Caducidad (E-07). |
+
+### `mensaje_destino` — fan-out y lectura (RF-41 / A-03, A-06)
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_mensaje | bigint | PK (compuesta), FK mensaje (cascade) | Mensaje. |
+| id_tecnico | integer | PK (compuesta), FK tecnico (cascade) | Destinatario efectivo. |
+| leido_en | timestamptz | | NULL = no leído; fecha de lectura. |
+
+> **`cita.recordatorio_para`** (nueva columna, D-81): `timestamptz` — la `fecha_hora` para la que se emitió
+> el recordatorio; permite reemitir si la cita se reprograma (M-06).
 
 ---
 
