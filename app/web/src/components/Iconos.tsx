@@ -408,6 +408,20 @@ export function IconoActividad(props: Props) {
   );
 }
 
+/* --- Icono de cuadrilla (D-80) --- */
+
+export function IconoCuadrilla(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="8" width="11" height="7" rx="1.5" />
+      <path d="M14 11.5h4l2.5 2.5v1.5h-6.5z" />
+      <circle cx="7" cy="17" r="1.5" />
+      <circle cx="17.5" cy="17" r="1.5" />
+      <path d="M5.5 11.5h6M5.5 14h6" />
+    </svg>
+  );
+}
+
 /* --- Indicadores de falla masiva (D-75): Planificado · Materiales · Cerrado --- */
 
 /** Planificado: calendario con marca. */

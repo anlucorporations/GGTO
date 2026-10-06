@@ -1218,6 +1218,25 @@ input[type='file'] {
   background: var(--verde);
 }
 
+/* D-80: tonos de cuadrilla para el chip de asignación */
+.chip-icono.tono-verde   { background: #1f7a4d; }
+.chip-icono.tono-ambar   { background: #b8860b; }
+.chip-icono.tono-azul    { background: #2563eb; }
+.chip-icono.tono-morado  { background: #7c3aed; }
+.chip-icono.tono-naranja { background: #ea580c; }
+.chip-icono.tono-cian    { background: #0891b2; }
+.chip-icono.tono-rosa    { background: #db2777; }
+.chip-icono.tono-pizarra { background: #475569; }
+.chip-icono.tono-marron  { background: #92400e; }
+.chip-icono.tono-indigo  { background: #4338ca; }
+
+.chip-icono .chip-etiqueta {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 2px;
+  letter-spacing: -0.3px;
+}
+
 /* ------------------------------ Calendario ------------------------ */
 
 .cal-barra {

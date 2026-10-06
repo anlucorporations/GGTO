@@ -224,6 +224,9 @@ function TablaCasos({
                   asignado={c.asignado}
                   citado={c.citado}
                   gestion={c.gestion}
+                  id_cuadrilla={c.id_cuadrilla}
+                  cuadrilla_codigo={c.cuadrilla_codigo}
+                  cuadrilla_nombre={c.cuadrilla_nombre}
                 />
               </td>
             </tr>

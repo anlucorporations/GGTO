@@ -864,6 +864,11 @@ export interface CasoEspecialOut {
   asignado: boolean;
   citado: boolean;
   gestion: boolean;
+
+  /* D-80: cuadrilla del último despacho del caso asociado. */
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
 }
 
 /** Filtros del listado de casos especiales (RF-06/RF-35). */
