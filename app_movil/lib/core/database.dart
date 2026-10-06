@@ -422,6 +422,12 @@ class DatabaseHelper {
     await db.update('evidencia_local', {'subida': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Borra una evidencia local (foto descartada antes de enviarla).
+  Future<void> borrarEvidencia(int id) async {
+    final db = await database;
+    await db.delete('evidencia_local', where: 'id = ?', whereArgs: [id]);
+  }
+
   // ------------------------------------------------------------------------- #
   // Metadatos (D-81): identificador de dispositivo y último checklist
   // ------------------------------------------------------------------------- #

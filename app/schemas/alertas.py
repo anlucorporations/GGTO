@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class FallaMasivaOut(BaseModel):
@@ -20,6 +20,11 @@ class FallaMasivaOut(BaseModel):
     id_sector: int | None = None
     id_cuadrilla: int | None = None
     estado: str
+    # D-82: reporte de campo desde la APK (ODN, dirección, FAT y evidencias).
+    odn: str | None = None
+    direccion: str | None = None
+    fat: str | None = None
+    evidencias: list[str] = Field(default_factory=list)
     planificacion: str | None = None
     reporte_simple: str | None = None
     planificada_en: datetime | None = None
@@ -38,12 +43,42 @@ class FallaMasivaOut(BaseModel):
     ordenes_count: int = 0
     casos_afectos: int | None = None
 
+    @field_validator("evidencias", mode="before")
+    @classmethod
+    def _evidencias_sin_nulos(cls, valor: object) -> object:
+        """La columna guarda los seriales como texto separado por comas; el ORM
+        entrega `None` cuando el reporte no llevó fotos."""
+        if valor is None:
+            return []
+        if isinstance(valor, str):
+            return [p.strip() for p in valor.split(",") if p.strip()]
+        return valor
+
 
 class FallaMasivaManual(BaseModel):
     descripcion: str = Field(min_length=5, max_length=500)
+    # D-82: datos del reporte de campo (opcionales en el alta administrativa).
+    odn: str | None = Field(default=None, max_length=60)
+    direccion: str | None = Field(default=None, max_length=200)
+    fat: str | None = Field(default=None, max_length=60)
+    evidencias: list[str] = Field(default_factory=list, max_length=2)
     id_sector: int | None = None
     id_cuadrilla: int | None = None
     origen: str = "REPORTE_TECNICO"
+
+
+class FallaMasivaCampo(FallaMasivaManual):
+    """D-82 · reporte de falla masiva desde la APK (RF-16).
+
+    Exige la **ODN**, la **dirección**, la **FAT** y la **descripción** del
+    incidente, y admite **como máximo 2 fotos** de evidencia (seriales ya
+    subidos con `POST /evidencias/upload`).
+    """
+
+    odn: str = Field(min_length=3, max_length=60)
+    direccion: str = Field(min_length=5, max_length=200)
+    fat: str = Field(min_length=1, max_length=60)
+    descripcion: str = Field(min_length=5, max_length=500)
 
 
 class FallaMasivaUpdate(BaseModel):

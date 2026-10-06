@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/barra_progreso_sync.dart';
+import '../../widgets/boton_usuario.dart';
 import 'download_service.dart';
 import 'sync_provider.dart';
 import 'upload_service.dart';
 
 /// Pantalla DISPOSITIVO (§4.3 / D-73): estado de la cola, **DESCARGA** y **CARGA**
 /// directas contra el backend. Ya no se exporta un ZIP manual.
+///
+/// D-82: la barra superior muestra el **progreso** de la sincronización de los
+/// datos (requisito 2).
 class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key});
 
@@ -27,8 +32,11 @@ class _SyncScreenState extends State<SyncScreen> {
 
   Future<void> _descargar() async {
     setState(() => _procesando = true);
+    final sync = context.read<SyncProvider>();
     try {
-      final resultado = await DownloadService.descargar();
+      final resultado = await DownloadService.descargar(
+        onProgreso: (fase, valor) => sync.actualizarProgreso(valor, fase: fase),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('DESCARGA: ${resultado.resumen}')),
@@ -39,21 +47,31 @@ class _SyncScreenState extends State<SyncScreen> {
         SnackBar(content: Text('Error en DESCARGA: $e'), backgroundColor: Colors.red),
       );
     } finally {
+      sync.terminarProgreso();
       if (mounted) setState(() => _procesando = false);
     }
   }
 
   Future<void> _cargar() async {
     setState(() => _procesando = true);
+    final sync = context.read<SyncProvider>();
     try {
-      final resultado = await UploadService.cargar();
+      final resultado = await UploadService.cargar(
+        onProgreso: (fase, valor) => sync.actualizarProgreso(valor, fase: fase),
+      );
       if (!mounted) return;
-      final sync = Provider.of<SyncProvider>(context, listen: false);
       await sync.refrescar();
+      // D-82: el lote de `/sync/carga` no cubre la falla masiva ni las citas, así
+      // que tras la CARGA se vacía la cola clásica (con su barra de progreso).
+      var extra = '';
+      if (sync.pendientesSinError > 0 && sync.enLinea) {
+        final cola = await sync.sincronizar(silencioso: true);
+        if (cola.enviadas > 0) extra = ' · ${cola.enviadas} en cola enviadas';
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('CARGA: ${resultado.resumen}'),
+          content: Text('CARGA: ${resultado.resumen}$extra'),
           backgroundColor: resultado.tuvoErrores ? Colors.orange.shade800 : null,
         ),
       );
@@ -63,6 +81,7 @@ class _SyncScreenState extends State<SyncScreen> {
         SnackBar(content: Text('Error en CARGA: $e'), backgroundColor: Colors.red),
       );
     } finally {
+      sync.terminarProgreso();
       if (mounted) setState(() => _procesando = false);
     }
   }
@@ -81,11 +100,14 @@ class _SyncScreenState extends State<SyncScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () => sync.refrescar(),
           ),
+          const BotonUsuario(),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
+          const BarraProgresoSync(compacta: false),
+          const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(14),

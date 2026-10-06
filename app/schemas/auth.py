@@ -43,6 +43,17 @@ class ResetPasswordRequest(BaseModel):
     nueva_clave: str = Field(min_length=8, max_length=128)
 
 
+class MostrarPalabrasRequest(BaseModel):
+    """Ver palabras de seguridad: requiere la contraseña actual."""
+    clave: str = Field(min_length=4, max_length=128)
+
+
+class MostrarPalabrasResponse(BaseModel):
+    p00: str
+    palabras: list[str]
+    mensaje: str = "Palabras regeneradas. Guárdelas en un lugar seguro."
+
+
 class SetupRequest(BaseModel):
     """Primer inicio de la app: fija la clave del P00 y genera las 12 palabras."""
 

@@ -524,3 +524,43 @@ D81-1 (datos + mantenimiento) ─► D81-2 (sincronización+checklist)
 > preexistente, sin regresiones) y **`flutter analyze` sin hallazgos**. Para ello se corrigió `app/tests/conftest.py`
 > (la limpieza ahora borra `mensaje_destino/mensaje/sync_check/sync_log`) y `app/services/sincronizacion.py`
 > (la zona horaria degrada a **UTC** si falta `tzdata`, sin romper en Windows).
+
+---
+
+## 7. Incremento D-82 — APK: contenido local, progreso de sincronización, sección Usuario y falla masiva de campo
+
+**Petición del usuario (5 puntos):** la APK debe (1) mostrar el contenido local, (2) mostrar una
+barra con el progreso de la sincronización de los datos, (3) tener un menú de usuario (icono de
+Usuario) para gestionar el perfil, (4) permitir desde la sección Usuario cambiar la contraseña,
+ver las palabras de seguridad (se muestran con la contraseña actual), los datos personales y los
+datos administrativos (P00, Cuadrilla, etc.), y (5) reportar la falla masiva con **ODN · Dirección ·
+FAT · Descripción** y **máximo 2 fotos** de evidencia.
+
+**Documento del incremento:** [`incremento_D82_apk_campo.md`](incremento_D82_apk_campo.md).
+
+### Ciclos
+
+| Ciclo | Objetivo | Entregable |
+|---|---|---|
+| D82-1 — Contenido local | Que la APK pinte siempre lo que tiene en el dispositivo | `CasosProvider` lee SQLite tras cada intento de descarga; franja «Contenido local · N casos · actualizado el …»; perfil y cuadrilla cacheados en `app_meta` |
+| D82-2 — Progreso de sincronización | Barra con el avance real | `SyncProvider` con `progreso`/`fase`; `onProgreso` en `DownloadService`/`UploadService`; widget `BarraProgresoSync` en las cuatro pantallas |
+| D82-3 — Menú y sección Usuario | Icono de usuario + perfil y cuenta | `BotonUsuario`, ruta `/usuario`, `UsuarioScreen`/`UsuarioService` (datos personales, administrativos, cambio de contraseña y palabras de seguridad con la contraseña actual) |
+| D82-4 — Falla masiva de campo | Reporte con ODN · dirección · FAT · descripción · 2 fotos | Formulario nuevo en Alertas + `POST /api/v1/fallas-masivas/reporte-campo` + columnas `odn`/`direccion`/`fat`/`evidencias` (`scripts/migrar_d82_falla_campo.py`) + ficha web |
+| D82-5 — Pruebas, APK y documentación | Cierre del incremento | `flutter analyze`/`flutter test` 20/20 · `pytest` (integración con clúster temporal PostgreSQL 18) · `ruff`/`mypy` · `tsc`/`vite build` · APK `1.0.0+3` |
+
+### Bitácora del incremento
+
+| Ciclo | Estado | Pruebas | Notas |
+|---|---|---|---|
+| D82-1 — Contenido local | ✅ **completado** | `flutter analyze` ✅ · `flutter test` ✅ | Defecto corregido: la DESCARGA escribía la caché pero la lista no se releía (pantalla «No tiene casos» con casos en el dispositivo) |
+| D82-2 — Progreso de sincronización | ✅ **completado** | 12 pruebas nuevas en `app_movil/test/d82_apk_test.dart` | Progreso determinista por acción/foto; en reposo resume la cola (verde/ámbar/rojo) |
+| D82-3 — Menú y sección Usuario | ✅ **completado** | ídem | `POST /auth/cambio-clave`, `GET /auth/mi-seguridad`, `POST /auth/palabras/mostrar` (exige la clave actual y regenera las 12 palabras) |
+| D82-4 — Falla masiva de campo | ✅ **completado** (migración pendiente en producción) | 6 pruebas nuevas en `app/tests/test_d82_falla_campo.py` | El TECNICO puede reportar; `POST /fallas-masivas` conserva su RBAC |
+| D82-5 — Pruebas, APK y documentación | ✅ **completado y desplegado** | **`pytest` 290/290** (4:27) · `ruff`/`mypy` (84 archivos) · `tsc`+`vite build` · APK `1.0.0+3` **firmada con el keystore oficial** · imágenes `v18`→`v19` → revisión final **`ggto-web-00034-7h2`** (100 %) | Se corrigió un defecto de la entrega previa: `mostrar_palabras` usaba `datetime`/`UTC` sin importar y un `_auditar` inexistente (500); +3 pruebas en `test_auth.py`. **Producción:** migración D-82 aplicada (18 columnas) **y CHECK `evidencia.tipo` con `FALLA_MASIVA`**; **prueba de escritura en vivo** que destapó 2 defectos: (A) la subida de la foto del reporte daba 500 por el CHECK → corregido + validación 422; (B) la migración de **D-81 no estaba aplicada en `public`** (mensajería/panel con 500) → aplicada (40 tablas, endpoints 200). `conftest.py` recrea el esquema de pruebas; manual **11** (técnico + literal + HTML + PDF) y entradas de AYUDA 10 y 11; `app/.gcloudignore` y `sincronizar_manual.py` (Windows) añadidos |
+
+> **Entorno de pruebas (D-82):** ante la falta de credenciales del PostgreSQL local se levantó un
+> **clúster PostgreSQL 18 temporal** con `initdb -A trust` (`C:\GGTO\pgtmp`, puerto `5599`) mediante
+> `scripts/tmp_pg_pytest.ps1`, que lo arranca con `Start-Process` (para que el postmaster no herede la
+> tubería del shell en Windows), crea `ggto_test` con `pgcrypto`/`pg_trgm` y ejecuta `pytest` con
+> `GGTO_TEST_DB_URL`/`GGTO_TEST_SCHEMA`.
+

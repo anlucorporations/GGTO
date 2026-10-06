@@ -123,6 +123,12 @@ class FallaMasiva(Base):
     id_sector: Mapped[int | None] = mapped_column(ForeignKey("sector.id_sector"))
     id_cuadrilla: Mapped[int | None] = mapped_column(ForeignKey("cuadrilla.id_cuadrilla"))
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="DETECTADA")
+    # D-82: datos del reporte de campo (APK) — ODN, dirección, FAT y las
+    # evidencias fotográficas (seriales separados por coma, máximo 2).
+    odn: Mapped[str | None] = mapped_column(String(60))
+    direccion: Mapped[str | None] = mapped_column(String(200))
+    fat: Mapped[str | None] = mapped_column(String(60))
+    evidencias: Mapped[str | None] = mapped_column(Text)
     planificacion: Mapped[str | None] = mapped_column(Text)
     reporte_simple: Mapped[str | None] = mapped_column(Text)
     planificada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

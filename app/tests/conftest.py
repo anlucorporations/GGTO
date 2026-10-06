@@ -86,6 +86,11 @@ def engine():
     try:
         cur = raw.cursor()
         if TEST_SCHEMA != "public":
+            # El esquema de pruebas se **recrea** en cada corrida: `schema.sql`
+            # usa CREATE TABLE IF NOT EXISTS, así que sin el DROP los cambios de
+            # esquema (columnas, CHECK…) no llegarían al esquema aislado y las
+            # pruebas fallarían por una base obsoleta (defecto detectado en D-82).
+            cur.execute(f'DROP SCHEMA IF EXISTS "{TEST_SCHEMA}" CASCADE')
             cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{TEST_SCHEMA}"')
         cur.execute(SCHEMA_SQL.read_text(encoding="utf-8"))
         raw.commit()

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/barra_progreso_sync.dart';
+import '../../widgets/boton_usuario.dart';
 import 'mensajes_provider.dart';
 
 /// Bandeja de mensajes internos (D-81 · RF-41). Unidireccional: el técnico solo
@@ -22,12 +24,17 @@ class MensajesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mensajes'),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(30),
+          child: BarraProgresoSync(),
+        ),
         actions: [
           IconButton(
             tooltip: 'Actualizar',
             icon: const Icon(Icons.refresh),
             onPressed: () => prov.sondear(),
           ),
+          const BotonUsuario(),
         ],
       ),
       body: prov.mensajes.isEmpty

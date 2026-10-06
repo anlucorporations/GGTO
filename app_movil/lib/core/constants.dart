@@ -12,13 +12,19 @@ class AppConstants {
   /// Debe coincidir **exactamente** con `version:` de `pubspec.yaml` (nombre y
   /// versionCode). Hay una prueba que lo verifica (`test/version_visible_test.dart`):
   /// al subir el versionCode de cada entrega a CANTV hay que actualizar ambos.
-  static const String version = '1.0.0+2';
+  static const String version = '1.0.0+3';
 
   /// Máximo de intentos de login antes del bloqueo (RF-20).
   static const int maxIntentos = 3;
 
   /// Intentos de sincronización antes de marcar una acción como fallida.
   static const int maxIntentosSync = 5;
+
+  /// Evidencias fotográficas admitidas en un reporte de falla masiva (D-82).
+  static const int maxEvidenciasFallaMasiva = 2;
+
+  /// Tamaño máximo de una evidencia (decisión del usuario: 3 MB por foto).
+  static const int maxFotoBytes = 3 * 1024 * 1024;
 
   /// Tamaño máximo (lado mayor) de las evidencias: el brief pide baja calidad.
   static const double evidenciaLadoMaximo = 1280;

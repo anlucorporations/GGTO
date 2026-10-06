@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.security import hash_password
 from app.models import DispositivoSeguridad, Rol, Tecnico, Usuario
@@ -423,3 +423,129 @@ def test_setup_rechaza_correo_duplicado(client, admin_token):
     )
     assert tercero.status_code == 200, tercero.text
     assert len(tercero.json()["palabras"]) == 12
+
+
+# --------------------------------------------------------------------------- #
+# Sección Usuario de la APK (D-82): perfil, cambio de clave y palabras
+# --------------------------------------------------------------------------- #
+def _token(client, p00: str, clave: str) -> dict:
+    r = client.post("/api/v1/auth/login", json={"p00": p00, "clave": clave})
+    assert r.status_code == 200, r.text
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+def test_ver_palabras_de_seguridad_exige_la_clave_actual(client, usuario_creado, db_session):
+    """`POST /auth/palabras/mostrar` (sección Usuario de la APK): solo con la
+    contraseña actual, regenera las 12 palabras, se audita y las anteriores
+    quedan invalidadas."""
+    clave = "nueva123456"
+    setup = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": P00, "correo": "tecnico@cantv.com.ve",
+              "clave": clave, "confirmacion": clave},
+    )
+    assert setup.status_code == 200, setup.text
+    viejas = setup.json()["palabras"]
+    assert len(viejas) == 12
+
+    cabeceras = _token(client, P00, clave)
+
+    # Sin la clave correcta no se muestran (403).
+    malo = client.post("/api/v1/auth/palabras/mostrar", json={"clave": "incorrecta"},
+                       headers=cabeceras)
+    assert malo.status_code == 403, malo.text
+
+    estado = client.get("/api/v1/auth/mi-seguridad", headers=cabeceras)
+    assert estado.status_code == 200, estado.text
+    assert estado.json()["tiene_palabras"] is True
+    assert estado.json()["cantidad"] == 12
+    version_antes = estado.json()["version"]
+
+    # Se audita solo el movimiento de esta llamada (la tabla no se limpia entre
+    # corridas y puede conservar filas de ejecuciones anteriores).
+    from app.models import Auditoria
+
+    ultimo_id = db_session.scalar(select(func.max(Auditoria.id_auditoria))) or 0
+
+    # Con la clave actual se devuelven las 12 palabras (regeneradas).
+    r = client.post("/api/v1/auth/palabras/mostrar", json={"clave": clave},
+                    headers=cabeceras)
+    assert r.status_code == 200, r.text
+    nuevas = r.json()["palabras"]
+    assert len(nuevas) == 12
+    assert nuevas != viejas
+    assert r.json()["p00"] == P00
+
+    # Queda registrado en la auditoría, sin guardar los valores.
+    movimientos = db_session.scalars(
+        select(Auditoria).where(
+            Auditoria.id_auditoria > ultimo_id,
+            Auditoria.accion == "REGENERAR_PALABRAS_PROPIO",
+        )
+    ).all()
+    assert len(movimientos) == 1
+    assert movimientos[0].usuario == P00
+    # La auditoría guarda solo el contador de versión, nunca los valores.
+    assert set(movimientos[0].datos_despues) == {"version_palabras"}
+    assert set(movimientos[0].datos_antes or {}) == {"version_palabras"}
+
+    # La versión sube y las palabras nuevas desbloquean la cuenta.
+    despues = client.get("/api/v1/auth/mi-seguridad", headers=cabeceras).json()
+    assert despues["version"] == (version_antes or 0) + 1
+
+    def tres(lista):
+        return [{"pos": 1, "valor": lista[0]},
+                {"pos": 5, "valor": lista[4]},
+                {"pos": 9, "valor": lista[8]}]
+
+    assert client.post("/api/v1/auth/unlock",
+                       json={"p00": P00, "palabras": tres(nuevas)}).status_code == 200
+    # Las anteriores ya no sirven.
+    assert client.post("/api/v1/auth/unlock",
+                       json={"p00": P00, "palabras": tres(viejas)}).status_code == 401
+
+
+def test_cambio_de_clave_desde_la_seccion_usuario(client, usuario_creado):
+    """`POST /auth/cambio-clave` exige la clave actual y deja entrar con la nueva."""
+    cabeceras = _token(client, P00, CLAVE_INICIAL)
+
+    assert client.post("/api/v1/auth/cambio-clave", json={
+        "clave_actual": "incorrecta",
+        "clave_nueva": "nueva123456",
+        "confirmacion": "nueva123456",
+    }, headers=cabeceras).status_code == 401
+
+    assert client.post("/api/v1/auth/cambio-clave", json={
+        "clave_actual": CLAVE_INICIAL,
+        "clave_nueva": "nueva123456",
+        "confirmacion": "otra123456",
+    }, headers=cabeceras).status_code == 422
+
+    r = client.post("/api/v1/auth/cambio-clave", json={
+        "clave_actual": CLAVE_INICIAL,
+        "clave_nueva": "nueva123456",
+        "confirmacion": "nueva123456",
+    }, headers=cabeceras)
+    assert r.status_code == 200, r.text
+
+    assert client.post("/api/v1/auth/login",
+                       json={"p00": P00, "clave": CLAVE_INICIAL}).status_code == 401
+    assert client.post("/api/v1/auth/login",
+                       json={"p00": P00, "clave": "nueva123456"}).status_code == 200
+
+
+def test_perfil_propio_muestra_datos_personales_y_permite_el_correo(client, usuario_creado):
+    """`GET /auth/me` (datos personales) y `PATCH /auth/me` (correo)."""
+    cabeceras = _token(client, P00, CLAVE_INICIAL)
+
+    perfil = client.get("/api/v1/auth/me", headers=cabeceras)
+    assert perfil.status_code == 200, perfil.text
+    assert perfil.json()["p00"] == P00
+    assert perfil.json()["rol"] == "TECNICO"
+    assert perfil.json()["id_central"] == 1
+
+    actualizado = client.patch("/api/v1/auth/me", json={"correo": "nuevo@cantv.com.ve"},
+                               headers=cabeceras)
+    assert actualizado.status_code == 200, actualizado.text
+    assert actualizado.json()["correo"] == "nuevo@cantv.com.ve"
+

@@ -31,7 +31,14 @@ class DownloadService {
   ///
   /// D-81: abre una sesión de sincronización, ejecuta el checklist y la cierra
   /// con el resultado (RF-39/RF-40).
-  static Future<ResultadoDescarga> descargar() async {
+  ///
+  /// D-82: informa el avance por `onProgreso` para la barra de sincronización.
+  static Future<ResultadoDescarga> descargar({
+    void Function(String fase, double valor)? onProgreso,
+  }) async {
+    void avisar(double valor, String fase) => onProgreso?.call(fase, valor);
+
+    avisar(0.05, 'Conectando con el servidor…');
     final sesion = await SyncSesionService.abrir('DESCARGA');
     try {
       final idsConocidos = await DatabaseHelper.instance.idsCasosConocidos();
@@ -42,8 +49,10 @@ class DownloadService {
         if (ultima != null) 'desde': ultima.toIso8601String(),
       };
 
+      avisar(0.35, 'Descargando los casos de mi cuadrilla…');
       final datos = await ApiClient.get('/sync/descarga', query: query);
       if (datos is! Map) {
+        avisar(1, 'Descarga completada');
         return const ResultadoDescarga(nuevos: 0, actualizados: 0, serverTs: null);
       }
 
@@ -51,6 +60,7 @@ class DownloadService {
       var nuevos = 0;
       var actualizados = 0;
       if (lista is List && lista.isNotEmpty) {
+        avisar(0.7, 'Guardando el contenido en el dispositivo…');
         final r = await DatabaseHelper.instance.mergearCasos(lista);
         nuevos = r.$1;
         actualizados = r.$2;
@@ -72,6 +82,7 @@ class DownloadService {
           pasoEstado: 'OK',
         );
       }
+      avisar(1, 'Descarga completada');
       return ResultadoDescarga(nuevos: nuevos, actualizados: actualizados, serverTs: serverTs);
     } catch (e) {
       if (sesion.idSesion != null) {

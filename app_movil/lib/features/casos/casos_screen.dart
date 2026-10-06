@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/barra_progreso_sync.dart';
+import '../../widgets/boton_usuario.dart';
 import '../../widgets/caso_card.dart';
 import '../../widgets/offline_banner.dart';
 import '../auth/auth_provider.dart';
@@ -13,6 +15,10 @@ import 'casos_provider.dart';
 
 /// Lista de trabajo del técnico (RF-11): sus casos, con búsqueda, refresco y
 /// lectura desde la caché local cuando no hay conexión.
+///
+/// D-82: la lista se pinta siempre desde el **contenido local** del dispositivo
+/// (requisito 1) y bajo la barra de título se muestra el **progreso de la
+/// sincronización** (requisito 2).
 class CasosScreen extends StatefulWidget {
   const CasosScreen({super.key});
 
@@ -30,11 +36,10 @@ class _CasosScreenState extends State<CasosScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final casos = Provider.of<CasosProvider>(context, listen: false);
       final sync = Provider.of<SyncProvider>(context, listen: false);
-      await casos.cargar();
-      if (casos.casos.isEmpty) {
-        // Sin red y sin caché: se intenta al menos mostrar lo último guardado.
-        await casos.cargarDesdeCache();
-      }
+      // 1.º el contenido local (instantáneo, funciona sin conexión)…
+      await casos.cargarDesdeCache();
+      // 2.º y después se intenta actualizar contra el servidor.
+      await casos.cargar(silencioso: true);
       await sync.refrescar();
     });
   }
@@ -54,12 +59,6 @@ class _CasosScreenState extends State<CasosScreen> {
     });
   }
 
-  Future<void> _cerrarSesion(AuthProvider auth) async {
-    await auth.cerrarSesion();
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
-  }
-
   @override
   Widget build(BuildContext context) {
     final casosProv = Provider.of<CasosProvider>(context);
@@ -70,6 +69,10 @@ class _CasosScreenState extends State<CasosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(auth.nombre.isEmpty ? 'Mis casos' : auth.nombre),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(30),
+          child: BarraProgresoSync(),
+        ),
         actions: [
           IconButton(
             tooltip: 'Sincronizar',
@@ -94,41 +97,14 @@ class _CasosScreenState extends State<CasosScreen> {
             ),
             onPressed: () => Navigator.pushNamed(context, '/mensajes'),
           ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.lock_outline),
-            onPressed: () => _cerrarSesion(auth),
-          ),
+          // Menú de usuario (D-82 · requisito 3): perfil, cuenta y cierre de sesión.
+          const BotonUsuario(),
         ],
       ),
       body: Column(
         children: [
           const OfflineBanner(),
-          if (casosProv.desdeCache)
-            Container(
-              width: double.infinity,
-              color: Colors.amber.shade100,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.cloud_off, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      casosProv.actualizadoEn == null
-                          ? 'Mostrando la copia local (sin conexión).'
-                          : 'Mostrando la copia local del '
-                              '${_fecha(casosProv.actualizadoEn!)}.',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => casosProv.cargar(),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              ),
-            ),
+          _BannerContenidoLocal(casos: casosProv),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
             child: TextField(
@@ -209,7 +185,7 @@ class _CasosScreenState extends State<CasosScreen> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 '${casosProv.casos.length} de ${casosProv.total} casos'
-                '${casosProv.desdeCache ? ' (copia local)' : ''}',
+                ' · contenido local del dispositivo',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
@@ -230,6 +206,48 @@ class _CasosScreenState extends State<CasosScreen> {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Franja que informa que la lista es el **contenido local** del dispositivo
+/// (D-82 · requisito 1) y avisa cuando la descarga no pudo actualizarla.
+class _BannerContenidoLocal extends StatelessWidget {
+  const _BannerContenidoLocal({required this.casos});
+
+  final CasosProvider casos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sinRed = casos.desdeCache;
+    final color = sinRed ? Colors.amber.shade100 : Colors.blueGrey.shade50;
+    final icono = sinRed ? Icons.cloud_off : Icons.smartphone;
+    final fecha = casos.actualizadoEn;
+    final texto = sinRed
+        ? (fecha == null
+            ? 'Sin conexión: mostrando el contenido local del dispositivo.'
+            : 'Sin conexión: contenido local del ${_fecha(fecha)}.')
+        : (fecha == null
+            ? 'Contenido local · ${casos.locales} casos en el dispositivo.'
+            : 'Contenido local · ${casos.locales} casos · actualizado el ${_fecha(fecha)}.');
+
+    return Container(
+      width: double.infinity,
+      color: color,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      child: Row(
+        children: [
+          Icon(icono, size: 17),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(texto, style: const TextStyle(fontSize: 12)),
+          ),
+          TextButton(
+            onPressed: casos.cargando ? null : () => casos.cargar(),
+            child: Text(sinRed ? 'Reintentar' : 'Actualizar'),
+          ),
+        ],
       ),
     );
   }

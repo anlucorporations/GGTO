@@ -1,5 +1,6 @@
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/constants.dart';
 import '../../core/database.dart';
 
 /// Resultado de una operación de campo.
@@ -8,6 +9,7 @@ class ResultadoOperacion {
     required this.mensaje,
     required this.enviada,
     this.caso,
+    this.valida = true,
   });
 
   /// Mensaje para mostrar al técnico.
@@ -19,7 +21,11 @@ class ResultadoOperacion {
   /// Caso actualizado devuelto por el servidor (si lo hubo).
   final Map<String, dynamic>? caso;
 
-  bool get encolada => !enviada;
+  /// `false` cuando el mensaje es una **validación local** (faltan datos): no se
+  /// envió nada ni se encoló.
+  final bool valida;
+
+  bool get encolada => !enviada && valida;
 }
 
 /// Operaciones de campo del técnico contra el contrato real de la API.
@@ -237,31 +243,73 @@ class OperacionesService {
     }
   }
 
-  /// Reporta una falla masiva desde el campo (RF-16).
+  /// Reporta una falla masiva desde el campo (RF-16 · D-82).
   ///
-  /// El contrato real (`FallaMasivaManual`) acepta `descripcion`, `id_sector`,
-  /// `id_cuadrilla` y `origen`; el tipo OLT/FAT/SECTOR viaja dentro de la
-  /// descripción porque el modelo no tiene ese campo (H-09).
+  /// El reporte indica la **ODN**, la **dirección**, la **FAT** y la
+  /// **descripción**, con **hasta 2 fotos** de evidencia. Las fotos se suben con
+  /// `POST /evidencias/upload` y sus seriales viajan en el reporte; si no hay
+  /// conexión, la acción queda en la cola con los seriales locales (el servidor
+  /// acepta el mismo serial al subir el archivo, así que no se duplica).
   static Future<ResultadoOperacion> reportarFallaMasiva({
-    required String tipo,
+    required String odn,
+    required String direccion,
+    required String fat,
     required String descripcion,
+    List<String> evidencias = const [],
     int? idSector,
     int? idCuadrilla,
   }) async {
-    final texto = _recortar('[$tipo] ${descripcion.trim()}', 500);
-    if (texto.trim().length < 5) {
+    final odnLimpia = odn.trim();
+    final direccionLimpia = direccion.trim();
+    final fatLimpia = fat.trim();
+    final texto = _recortar(descripcion.trim(), 500);
+    if (odnLimpia.length < 3) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique la ODN del reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
+    if (direccionLimpia.length < 5) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique la dirección del reporte (mínimo 5 caracteres).',
+        enviada: true,
+        valida: false,
+      );
+    }
+    if (fatLimpia.isEmpty) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique la FAT del reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
+    if (texto.length < 5) {
       return const ResultadoOperacion(
         mensaje: 'Describa la falla con al menos 5 caracteres.',
         enviada: true,
+        valida: false,
       );
     }
-    final payload = {
+    if (evidencias.length > AppConstants.maxEvidenciasFallaMasiva) {
+      return const ResultadoOperacion(
+        mensaje: 'Solo se admiten 2 fotos de evidencia por reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
+
+    final payload = <String, dynamic>{
+      'odn': _recortar(odnLimpia, 60),
+      'direccion': _recortar(direccionLimpia, 200),
+      'fat': _recortar(fatLimpia, 60),
       'descripcion': texto,
+      'evidencias': evidencias,
       'origen': 'REPORTE_TECNICO',
       if (idSector != null) 'id_sector': idSector,
       if (idCuadrilla != null) 'id_cuadrilla': idCuadrilla,
     };
-    const endpoint = '/fallas-masivas';
+    const endpoint = '/fallas-masivas/reporte-campo';
 
     try {
       await ApiClient.post(endpoint, data: payload);

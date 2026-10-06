@@ -489,8 +489,34 @@ herramienta se devuelven como `-32602` y un método desconocido como `-32601`
 El modo de prueba de contrato confirma que ambos webhooks son públicos y no exigen
 token JWT (`app/tests/test_contratos.py:139-143`).
 
-## Sincronización móvil — APK (D-73)
+## Reporte de falla masiva desde la APK (D-82)
 
+El técnico reporta la concentración **desde el campo** con un endpoint propio, porque el alta
+administrativa (`POST /api/v1/fallas-masivas`, `app/api/routes_alertas.py:172`) exige
+ADMIN/SUPERVISOR:
+
+| Método | Ruta | Resumen | Línea |
+|---|---|---|---|
+| POST | `/api/v1/fallas-masivas/reporte-campo` | Reporte de campo (RF-16): ODN · dirección · FAT · descripción y máximo 2 fotos | `app/api/routes_alertas.py:203` |
+
+- **Cuerpo** (`FallaMasivaCampo`, `app/schemas/alertas.py:59`): `odn` (3-60), `direccion` (5-200),
+  `fat` (1-60), `descripcion` (5-500), `id_sector` y `id_cuadrilla` opcionales, y `evidencias`
+  (lista de seriales, **máximo 2**; una tercera da `422`). El `origen` se fija a
+  `REPORTE_TECNICO` en el servidor.
+- **Rol:** cualquier usuario autenticado (`Depends(get_current_user)`) —el TECNICO es quien
+  detecta la concentración—; el endpoint **no** relaja el RBAC de `POST /fallas-masivas`.
+- **Cuadrilla:** la activa del reportante (`GET /sync/cuadrilla`) y, si no tiene, la más cercana
+  al sector (`app/services/fallas.py:26`).
+- **Evidencias:** las fotos se suben antes con `POST /evidencias/upload`
+  (`app/api/routes_sync.py:70`) y sus seriales viajan en el reporte; el servidor los guarda en
+  `falla_masiva.evidencias` (texto separado por comas) y los devuelve como lista.
+- **Columnas nuevas** (D-82): `odn`, `direccion`, `fat`, `evidencias`
+  (`RepoTecnico/db/schema.sql:490`); la migración idempotente es
+  `scripts/migrar_d82_falla_campo.py` (simulación por defecto, `--aplicar`, `--si`, `--dsn`,
+  verificación post-migración y log en `RepoTecnico/BaseOperaciones/migracion_d82.log`).
+- **Prueba:** `app/tests/test_d82_falla_campo.py` (6 casos, requiere `GGTO_TEST_DB_URL`).
+
+## Sincronización móvil — APK (D-73)
 El módulo `app/api/routes_sync.py` (prefijo `/api/v1`, tag *sincronización móvil*,
 `app/api/routes_sync.py:31`) da servicio a la aplicación Flutter de técnicos. Se
 registra el último en `app/main.py:89`. Son **cuatro operaciones nuevas**:

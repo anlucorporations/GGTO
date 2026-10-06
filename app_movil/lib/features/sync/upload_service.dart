@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../../core/api_client.dart';
+import '../../core/constants.dart';
 import '../../core/database.dart';
 import 'sync_sesion.dart';
 
@@ -34,15 +35,95 @@ class ResultadoCarga {
 class UploadService {
   const UploadService._();
 
+  /// Sube **una** evidencia local por su identificador.
+  ///
+  /// Devuelve el serial confirmado por el servidor. Se usa tanto en la CARGA
+  /// como en el reporte de falla masiva (D-82), que necesita el serial antes de
+  /// registrar la falla.
+  static Future<String> subirEvidencia(Map<String, dynamic> evidencia) async {
+    final ruta = '${evidencia['ruta_archivo']}';
+    final serialReal = '${evidencia['serial_imagen'] ?? ''}';
+    final file = File(ruta);
+    if (!await file.exists()) {
+      throw StateError('Archivo no encontrado: $ruta');
+    }
+    final bytes = await file.readAsBytes();
+    if (bytes.lengthInBytes > AppConstants.maxFotoBytes) {
+      throw StateError('La foto supera 3 MB: $serialReal');
+    }
+
+    final form = FormData.fromMap({
+      'file': MultipartFile.fromBytes(
+        bytes,
+        filename: '${serialReal.isEmpty ? 'evidencia-${evidencia['id']}' : serialReal}.jpg',
+      ),
+      'id_caso': _intentoInt(evidencia['id_caso']) ?? 0,
+      'tipo': evidencia['tipo'],
+      'serial_local': serialReal.isEmpty ? null : serialReal,
+      'latitud': evidencia['latitud'],
+      'longitud': evidencia['longitud'],
+      'fecha_hora': evidencia['timestamp'],
+    });
+    final respuesta = await ApiClient.post('/evidencias/upload', data: form);
+    await DatabaseHelper.instance.marcarEvidenciaSubida(evidencia['id'] as int);
+    if (respuesta is Map && respuesta['serial_imagen'] != null) {
+      return '${respuesta['serial_imagen']}';
+    }
+    return serialReal;
+  }
+
+  /// Sube todas las evidencias locales no subidas.
+  ///
+  /// Devuelve `(subidas, errores, seriales)`; `seriales` son los confirmados por
+  /// el servidor, en el mismo orden en que se subieron. Con `idCaso` se limita a
+  /// las evidencias de un reporte concreto (lo usa la falla masiva, D-82).
+  static Future<(int, List<String>, List<String>)> subirPendientes({
+    void Function(String fase, double valor)? onProgreso,
+    String? idCaso,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    final pendientes = await db.query(
+      'evidencia_local',
+      where: idCaso == null ? 'subida = 0' : 'subida = 0 AND id_caso = ?',
+      whereArgs: idCaso == null ? null : [idCaso],
+      orderBy: 'id ASC',
+    );
+
+    var subidas = 0;
+    final errores = <String>[];
+    final seriales = <String>[];
+    var indice = 0;
+    for (final evidencia in pendientes) {
+      indice++;
+      onProgreso?.call(
+        'Subiendo fotos… ($indice de ${pendientes.length})',
+        pendientes.isEmpty ? 1 : indice / pendientes.length,
+      );
+      try {
+        seriales.add(await subirEvidencia(evidencia));
+        subidas++;
+      } catch (e) {
+        errores.add('Error al subir ${evidencia['serial_imagen']}: $e');
+      }
+    }
+    return (subidas, errores, seriales);
+  }
+
   /// Sube todas las evidencias locales no subidas y después envía la cola de
   /// acciones mediante `POST /sync/carga`. Las acciones que el batch no cubre
   /// (fallas masivas, citas) quedan para `SyncProvider.sincronizar()`.
-  static Future<ResultadoCarga> cargar() async {
+  static Future<ResultadoCarga> cargar({
+    void Function(String fase, double valor)? onProgreso,
+  }) async {
+    void avisar(double valor, String fase) => onProgreso?.call(fase, valor);
+
+    avisar(0.05, 'Abriendo la jornada de sincronización…');
     final sesion = await SyncSesionService.abrir('CARGA');
     var fotosSubidas = 0;
     final errores = <String>[];
 
     // 1. Subir fotos pendientes (máx. 5 por caso, ≤ 3 MB — decisión del usuario).
+    avisar(0.1, 'Buscando las fotos pendientes…');
     final db = await DatabaseHelper.instance.database;
     final pendientes = await db.query(
       'evidencia_local',
@@ -50,35 +131,16 @@ class UploadService {
       orderBy: 'id ASC',
     );
 
+    var indice = 0;
     for (final evidencia in pendientes) {
-      final ruta = '${evidencia['ruta_archivo']}';
-      final serialReal = '${evidencia['serial_imagen'] ?? ''}';
-      final file = File(ruta);
-      if (!await file.exists()) {
-        errores.add('Archivo no encontrado: $ruta');
-        continue;
-      }
-      final bytes = await file.readAsBytes();
-      if (bytes.lengthInBytes > 3 * 1024 * 1024) {
-        errores.add('Foto supera 3 MB: ${evidencia['serial_imagen']}');
-        continue;
-      }
-
+      indice++;
+      // La barra dedica el 10 %-60 % a las fotos.
+      avisar(
+        pendientes.isEmpty ? 0.6 : 0.1 + 0.5 * (indice / pendientes.length),
+        'Subiendo fotos… ($indice de ${pendientes.length})',
+      );
       try {
-        final form = FormData.fromMap({
-          'file': MultipartFile.fromBytes(
-            bytes,
-            filename: '${serialReal.isEmpty ? 'evidencia-${evidencia['id']}' : serialReal}.jpg',
-          ),
-          'id_caso': _intentoInt(evidencia['id_caso']) ?? 0,
-          'tipo': evidencia['tipo'],
-          'serial_local': serialReal.isEmpty ? null : serialReal,
-          'latitud': evidencia['latitud'],
-          'longitud': evidencia['longitud'],
-          'fecha_hora': evidencia['timestamp'],
-        });
-        await ApiClient.post('/evidencias/upload', data: form);
-        await DatabaseHelper.instance.marcarEvidenciaSubida(evidencia['id'] as int);
+        await subirEvidencia(evidencia);
         fotosSubidas++;
       } catch (e) {
         errores.add('Error al subir ${evidencia['serial_imagen']}: $e');
@@ -86,6 +148,7 @@ class UploadService {
     }
 
     // 2. Vaciar vía `/sync/carga` las acciones de estado/cierre/enrutado.
+    avisar(0.65, 'Preparando las actividades del día…');
     final acciones = await DatabaseHelper.instance.accionesPendientes(limite: 200);
     var actividadesEnviadas = 0;
     final actividades = <Map<String, dynamic>>[];
@@ -200,6 +263,7 @@ class UploadService {
     final procesados = fotosSubidas + actividadesEnviadas;
     final nErrores = errores.length;
     final estado = nErrores == 0 ? 'OK' : (procesados > 0 ? 'PARCIAL' : 'ERROR');
+    avisar(0.9, 'Cerrando la jornada de sincronización…');
     if (sesion.idSesion != null) {
       await SyncSesionService.cerrar(
         sesion,
@@ -212,6 +276,7 @@ class UploadService {
         detalleError: nErrores > 0 ? errores.first : null,
       );
     }
+    avisar(1, nErrores == 0 ? 'Carga completada' : 'Carga completada con avisos');
 
     return ResultadoCarga(
       fotosSubidas: fotosSubidas,

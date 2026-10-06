@@ -1,0 +1,90 @@
+[2026-10-06T17:09:51+00:00] ==============================================================================
+[2026-10-06T17:09:51+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:09:51+00:00] modo=SIMULACIÓN
+[2026-10-06T17:09:51+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:09:51+00:00] Cambios pendientes:
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:09:51+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-06T17:09:51+00:00] ==============================================================================
+[2026-10-06T17:09:51+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:09:51+00:00] modo=APLICAR
+[2026-10-06T17:09:51+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:09:51+00:00] Cambios pendientes:
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:09:51+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:09:51+00:00] verificación post-migración: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1}
+[2026-10-06T17:09:51+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-06T17:09:51+00:00] ERROR (transacción revertida): 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+[2026-10-06T17:09:52+00:00] ==============================================================================
+[2026-10-06T17:09:52+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:09:52+00:00] modo=APLICAR
+[2026-10-06T17:09:52+00:00] estado actual: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1}
+[2026-10-06T17:09:52+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-10-06T17:09:52+00:00] ERROR (transacción revertida): 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+[2026-10-06T17:10:07+00:00] ==============================================================================
+[2026-10-06T17:10:07+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:10:07+00:00] modo=SIMULACIÓN
+[2026-10-06T17:10:07+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:10:07+00:00] Cambios pendientes:
+[2026-10-06T17:10:07+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:10:07+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:10:07+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:10:07+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:10:07+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-06T17:10:08+00:00] ==============================================================================
+[2026-10-06T17:10:08+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:10:08+00:00] modo=APLICAR
+[2026-10-06T17:10:08+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:10:08+00:00] Cambios pendientes:
+[2026-10-06T17:10:08+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:10:08+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:10:08+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:10:08+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:10:08+00:00] verificación post-migración: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1}
+[2026-10-06T17:10:08+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-06T17:10:08+00:00] ==============================================================================
+[2026-10-06T17:10:08+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:10:08+00:00] modo=APLICAR
+[2026-10-06T17:10:08+00:00] estado actual: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1}
+[2026-10-06T17:10:08+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-10-06T17:46:40+00:00] ==============================================================================
+[2026-10-06T17:46:40+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:46:40+00:00] modo=SIMULACIÓN
+[2026-10-06T17:46:40+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:46:40+00:00] Cambios pendientes:
+[2026-10-06T17:46:40+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:46:40+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:46:40+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:46:40+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:46:40+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-06T17:46:50+00:00] ==============================================================================
+[2026-10-06T17:46:50+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias)
+[2026-10-06T17:46:50+00:00] modo=APLICAR
+[2026-10-06T17:46:50+00:00] estado actual: {'odn': 0, 'direccion': 0, 'fat': 0, 'evidencias': 0}
+[2026-10-06T17:46:50+00:00] Cambios pendientes:
+[2026-10-06T17:46:50+00:00]   · ALTER TABLE falla_masiva ADD COLUMN odn
+[2026-10-06T17:46:50+00:00]   · ALTER TABLE falla_masiva ADD COLUMN direccion
+[2026-10-06T17:46:50+00:00]   · ALTER TABLE falla_masiva ADD COLUMN fat
+[2026-10-06T17:46:50+00:00]   · ALTER TABLE falla_masiva ADD COLUMN evidencias
+[2026-10-06T17:46:51+00:00] verificación post-migración: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1}
+[2026-10-06T17:46:51+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-06T18:18:25+00:00] ==============================================================================
+[2026-10-06T18:18:25+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias + CHECK de evidencia.tipo)
+[2026-10-06T18:18:25+00:00] modo=SIMULACIÓN
+[2026-10-06T18:18:25+00:00] estado actual: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1, 'evidencia_falla_masiva': 0}
+[2026-10-06T18:18:25+00:00] Cambios pendientes:
+[2026-10-06T18:18:25+00:00]   · ALTER TABLE evidencia: CHECK evidencia_tipo_check con 'FALLA_MASIVA'
+[2026-10-06T18:18:25+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-06T18:18:26+00:00] ==============================================================================
+[2026-10-06T18:18:26+00:00] MIGRACIÓN D-82 (falla_masiva: odn, direccion, fat, evidencias + CHECK de evidencia.tipo)
+[2026-10-06T18:18:26+00:00] modo=APLICAR
+[2026-10-06T18:18:26+00:00] estado actual: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1, 'evidencia_falla_masiva': 0}
+[2026-10-06T18:18:26+00:00] Cambios pendientes:
+[2026-10-06T18:18:26+00:00]   · ALTER TABLE evidencia: CHECK evidencia_tipo_check con 'FALLA_MASIVA'
+[2026-10-06T18:18:27+00:00] verificación post-migración: {'odn': 1, 'direccion': 1, 'fat': 1, 'evidencias': 1, 'evidencia_falla_masiva': 1}
+[2026-10-06T18:18:27+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA

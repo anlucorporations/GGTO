@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
@@ -25,6 +26,8 @@ from ..schemas.auth import (
     LoginRequest,
     MeUpdate,
     MiSeguridadOut,
+    MostrarPalabrasRequest,
+    MostrarPalabrasResponse,
     PrimerAccesoOut,
     RegenerarPalabrasResponse,
     ResetPasswordRequest,
@@ -461,7 +464,9 @@ def mi_seguridad(
     usuario: Usuario = Depends(get_current_user),
 ) -> MiSeguridadOut:
     """Devuelve el estado de las 12 palabras; los valores están hasheados y no
-    se pueden consultar (D-67). Solo el Super Usuario puede regenerarlas."""
+    se pueden consultar (D-67). Puede regenerarlas el Super Usuario
+    (`/palabras/{p00}/regenerar`) y el propio usuario con su clave actual
+    (`POST /auth/palabras/mostrar`, D-82)."""
     dispositivo = db.scalar(
         select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == usuario.p00)
     )
@@ -479,3 +484,47 @@ def mi_seguridad(
         requiere_cambio_clave=usuario.requiere_cambio_clave,
         bloqueado=usuario.bloqueado,
     )
+
+
+@router.post("/palabras/mostrar", response_model=MostrarPalabrasResponse,
+             summary="Ver palabras de seguridad (regenera tras verificar clave)")
+def mostrar_palabras(
+    datos: MostrarPalabrasRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> MostrarPalabrasResponse:
+    """Verifica la clave actual y regenera las 12 palabras de seguridad.
+
+    Las palabras anteriores quedan invalidadas; el usuario debe guardar las
+    nuevas. Esta operación se audita.
+    """
+    if not verify_password(usuario.clave_hash, datos.clave):
+        raise HTTPException(status_code=403, detail="Clave incorrecta.")
+
+    s = get_settings()
+    dispositivo = db.scalar(
+        select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == usuario.p00)
+    )
+    if dispositivo is None:
+        raise HTTPException(status_code=404, detail="No se encontró el dispositivo de seguridad.")
+
+    version_antes = dispositivo.version
+    palabras = generar_palabras(s.palabras_seguridad)
+    hashes = [hash_password(normalizar_palabra(p)) for p in palabras]
+
+    dispositivo.palabras_hash = hashes
+    dispositivo.version = (dispositivo.version or 0) + 1
+    dispositivo.actualizado_en = datetime.now(UTC)
+    # La regeneración de las propias palabras queda auditada (nunca los valores).
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="REGENERAR_PALABRAS_PROPIO",
+            entidad="dispositivo_seguridad",
+            id_entidad=str(dispositivo.id_dispositivo),
+            datos_antes={"version_palabras": version_antes},
+            datos_despues={"version_palabras": dispositivo.version},
+        )
+    )
+    db.commit()
+    return MostrarPalabrasResponse(p00=usuario.p00, palabras=palabras)

@@ -55,6 +55,9 @@ class SyncProvider extends ChangeNotifier {
   DateTime? _ultimaSync;
   int _evidencias = 0;
   List<Map<String, dynamic>> _ultimoChecklist = [];
+  double _progreso = 1;
+  String _fase = 'Datos sincronizados';
+  bool _progresoActivo = false;
 
   Map<String, int> get resumen => _resumen;
   int get pendientes => _resumen['TOTAL'] ?? 0;
@@ -67,6 +70,61 @@ class SyncProvider extends ChangeNotifier {
   DateTime? get ultimaSync => _ultimaSync;
   int get evidencias => _evidencias;
   List<Map<String, dynamic>> get ultimoChecklist => _ultimoChecklist;
+
+  // ------------------------------------------------------------------------- #
+  // Barra de progreso de la sincronización (D-82 · requisito 2)
+  // ------------------------------------------------------------------------- #
+
+  /// Avance de la sincronización en curso, entre 0 y 1.
+  double get progreso => _progreso;
+
+  /// Texto del paso que se está ejecutando (p. ej. «Enviando acciones…»).
+  String get fase => _fase;
+
+  /// `true` mientras hay una sincronización u operación en curso.
+  bool get progresoActivo => _progresoActivo;
+
+  /// Porcentaje entero para mostrar en pantalla.
+  int get progresoPorcentaje => (_progreso.clamp(0, 1) * 100).round();
+
+  /// Progreso que debe pintar la barra cuando **no** hay nada en curso: la cola
+  /// al día se muestra completa (verde) y con pendientes se muestra vacía.
+  double get progresoEnReposo => pendientesSinError == 0 && conError == 0 ? 1 : 0;
+
+  /// Texto del estado en reposo.
+  String get resumenBarra {
+    if (_progresoActivo) return '$progresoPorcentaje % · $_fase';
+    if (conError > 0) return '$conError acciones con error · revíselas en Dispositivo';
+    if (pendientesSinError > 0) {
+      return '$pendientesSinError acciones pendientes de envío';
+    }
+    return _ultimaSync == null ? 'Sin sincronizar todavía' : 'Datos sincronizados';
+  }
+
+  /// Marca el inicio de una operación con progreso visible.
+  void iniciarProgreso(String fase, {double valor = 0}) {
+    _progresoActivo = true;
+    _fase = fase;
+    _progreso = valor.clamp(0, 1);
+    notifyListeners();
+  }
+
+  /// Actualiza el avance de la operación en curso.
+  void actualizarProgreso(double valor, {String? fase}) {
+    _progresoActivo = true;
+    _progreso = valor.clamp(0, 1);
+    if (fase != null && fase.isNotEmpty) _fase = fase;
+    notifyListeners();
+  }
+
+  /// Cierra la operación dejando la barra en reposo.
+  void terminarProgreso({String? fase, bool completo = true}) {
+    _progresoActivo = false;
+    _progreso = completo ? 1 : 0;
+    _fase = fase ?? 'Datos sincronizados';
+    notifyListeners();
+  }
+
 
   /// Arranca la vigilancia de conectividad y vacía la cola al recuperar la red.
   void iniciar() {
@@ -142,6 +200,14 @@ class SyncProvider extends ChangeNotifier {
 
     try {
       final acciones = await DatabaseHelper.instance.accionesPendientes();
+      final total = acciones.length;
+      // D-82: la barra avanza acción por acción (progreso determinista).
+      _progresoActivo = true;
+      _progreso = total == 0 ? 1 : 0;
+      _fase = total == 0 ? 'No había acciones por sincronizar' : 'Enviando acciones…';
+      notifyListeners();
+
+      var procesadas = 0;
       for (final accion in acciones) {
         final id = accion['id'] as int;
         final intentos = ((accion['intentos'] as int?) ?? 0) + 1;
@@ -182,6 +248,10 @@ class SyncProvider extends ChangeNotifier {
           );
           fallidas++;
         }
+        procesadas++;
+        _progreso = total == 0 ? 1 : procesadas / total;
+        _fase = 'Enviando acciones… ($procesadas de $total)';
+        notifyListeners();
       }
     } finally {
       _sincronizando = false;
@@ -194,6 +264,9 @@ class SyncProvider extends ChangeNotifier {
         pendientes: _resumen['TOTAL'] ?? 0,
       );
       _ultimoResultado = resultado;
+      _progresoActivo = false;
+      _progreso = 1;
+      _fase = 'Datos sincronizados';
       notifyListeners();
     }
 

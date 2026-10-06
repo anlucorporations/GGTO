@@ -22,6 +22,7 @@ from ..models import (
     Usuario,
 )
 from ..schemas.alertas import (
+    FallaMasivaCampo,
     FallaMasivaManual,
     FallaMasivaOut,
     FallaMasivaUpdate,
@@ -34,6 +35,7 @@ from ..schemas.alertas import (
 )
 from ..services import fallas as svc_fallas
 from ..services import outbox
+from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, resolver_central
 from .deps import get_current_user, require_roles
 
@@ -47,6 +49,21 @@ def _o_404(db: Session, id_falla: int) -> FallaMasiva:
     if falla is None:
         raise HTTPException(status_code=404, detail="Falla masiva no encontrada")
     return falla
+
+
+MAX_EVIDENCIAS_CAMPO = 2
+
+
+def _evidencias_de(texto: str | None) -> list[str]:
+    """Seriales de evidencia guardados en la columna (separados por coma)."""
+    if not texto:
+        return []
+    return [parte.strip() for parte in texto.split(",") if parte.strip()]
+
+
+def _texto_evidencias(seriales: list[str]) -> str | None:
+    limpios = [s.strip()[:120] for s in seriales if s and s.strip()]
+    return ", ".join(limpios[:MAX_EVIDENCIAS_CAMPO]) or None
 
 
 def _ruta_desde_caso(caso: Caso | None) -> tuple[str | None, str | None]:
@@ -120,6 +137,7 @@ def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
             direccion_corta=dir_corta,
             ordenes_count=ordenes.get(f.id_falla, 0),
             casos_afectos=casos_afectos,
+            evidencias=_evidencias_de(f.evidencias),
         )
         salida.append(FallaMasivaOut(**datos))
     return salida
@@ -167,6 +185,55 @@ def reportar_falla(
         origen=datos.origen,
         id_sector=datos.id_sector,
         id_cuadrilla=id_cuadrilla,
+        # D-82: ODN/dirección/FAT/evidencias (opcionales en el alta administrativa).
+        odn=(datos.odn or None),
+        direccion=(datos.direccion or None),
+        fat=(datos.fat or None),
+        evidencias=_texto_evidencias(datos.evidencias),
+        estado="DETECTADA",
+    )
+    db.add(falla)
+    db.flush()
+    svc_fallas.alertar(db, falla)
+    db.commit()
+    db.refresh(falla)
+    return _salida1(db, falla)
+
+
+@router.post("/fallas-masivas/reporte-campo", response_model=FallaMasivaOut,
+             status_code=status.HTTP_201_CREATED,
+             summary="Reporte de falla masiva desde la APK (RF-16 · D-82)")
+def reportar_falla_campo(
+    datos: FallaMasivaCampo,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> FallaMasivaOut:
+    """Reporte del **técnico en campo**: ODN, dirección, FAT, descripción y
+    hasta 2 fotos.
+
+    A diferencia de `POST /fallas-masivas` (reservado a ADMIN/SUPERVISOR), este
+    endpoint lo puede usar cualquier usuario autenticado —el TECNICO es quien
+    detecta la concentración— y siempre registra el origen `REPORTE_TECNICO`.
+    La cuadrilla se toma de la del propio reportante (la activa del día) y, si
+    no tiene, la más cercana al sector indicado.
+    """
+    central = resolver_central(db, None, cargar_config(db))
+    propia = svc_sync.resolver_cuadrilla(db, usuario).get("id_cuadrilla")
+    id_cuadrilla = (
+        datos.id_cuadrilla
+        or (int(propia) if propia is not None else None)
+        or svc_fallas.cuadrilla_cercana(db, central.id_central, datos.id_sector)
+    )
+    falla = FallaMasiva(
+        id_central=central.id_central,
+        descripcion=datos.descripcion.strip(),
+        origen="REPORTE_TECNICO",
+        id_sector=datos.id_sector,
+        id_cuadrilla=id_cuadrilla,
+        odn=datos.odn.strip(),
+        direccion=datos.direccion.strip(),
+        fat=datos.fat.strip(),
+        evidencias=_texto_evidencias(datos.evidencias),
         estado="DETECTADA",
     )
     db.add(falla)

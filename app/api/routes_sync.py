@@ -37,6 +37,10 @@ router = APIRouter(prefix="/api/v1", tags=["sincronización móvil"])
 
 MAX_FOTO_BYTES = 3 * 1024 * 1024  # 3 MB por evidencia (decisión del usuario)
 
+#: Tipos admitidos por el CHECK `evidencia_tipo_check` (ver `db/schema.sql`).
+#: `FALLA_MASIVA` es la evidencia del reporte de campo de la APK (D-82).
+TIPOS_EVIDENCIA = ("POTENCIA", "NAVEGACION", "DEMO", "FALLA_MASIVA")
+
 
 def _parsear_datetime(valor: str | None) -> datetime | None:
     if not valor:
@@ -91,6 +95,14 @@ async def upload_evidencia(
     # Validar tipo de archivo (solo JPEG/PNG/WebP — evidencia fotográfica).
     if (file.content_type or "") not in {"image/jpeg", "image/jpg", "image/png", "image/webp"}:
         raise HTTPException(status_code=422, detail="Formato no permitido: use JPEG/PNG/WebP")
+
+    # Validar el tipo de evidencia ANTES de tocar la base: un valor fuera del
+    # CHECK devolvía un 500 en lugar de un 422 (D-82).
+    if tipo not in TIPOS_EVIDENCIA:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Tipo de evidencia no válido: use uno de {', '.join(TIPOS_EVIDENCIA)}",
+        )
 
     nombre = file.filename or "foto.jpg"
     serial = serial_local or serial_desde_nombre(nombre)

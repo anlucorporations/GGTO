@@ -290,6 +290,31 @@ const TEMAS: Tema[] = [
           { num: '6', titulo: 'Endpoints públicos (/health, /ready, /api/v1/info) y el resto autenticado', ancla: 'endpoints-publicos-health-ready-api-v1-info-y-el-resto-auten' },
         ],
       },
+      {
+        titulo: 'Sincronización, mensajería interna y panel de gestión diaria (D-81)',
+        archivo: '/manual/03-Implementacion/10-sincronizacion-mensajeria-panel.html',
+        pdf: '/manual/pdf/03-Implementacion/10-sincronizacion-mensajeria-panel.pdf',
+        subsecciones: [
+          { num: '1', titulo: '¿Qué es el log de sincronización?', ancla: '1-que-es-el-log-de-sincronizacion' },
+          { num: '2', titulo: '¿Qué es la mensajería interna?', ancla: '2-que-es-la-mensajeria-interna' },
+          { num: '3', titulo: '¿Qué es el panel de gestión diaria?', ancla: '3-que-es-el-panel-de-gestion-diaria' },
+          { num: '4', titulo: 'Parámetros que el supervisor puede ajustar', ancla: '4-parametros-que-el-supervisor-puede-ajustar' },
+          { num: '5', titulo: 'Resumen rápido', ancla: '5-resumen-rapido' },
+        ],
+      },
+      {
+        titulo: 'La app del técnico: lo que cambió (D-82)',
+        archivo: '/manual/03-Implementacion/11-apk-tecnico-campo.html',
+        pdf: '/manual/pdf/03-Implementacion/11-apk-tecnico-campo.pdf',
+        subsecciones: [
+          { num: '1', titulo: 'La app ya muestra lo que tiene guardado en el teléfono', ancla: 'la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono' },
+          { num: '2', titulo: 'Una barra que muestra el avance de la sincronización', ancla: 'una-barra-que-muestra-el-avance-de-la-sincronizacion' },
+          { num: '3', titulo: 'El menú de usuario (icono de persona)', ancla: 'el-menu-de-usuario-icono-de-persona' },
+          { num: '4', titulo: 'Qué se puede hacer en la sección Usuario', ancla: 'que-se-puede-hacer-en-la-seccion-usuario' },
+          { num: '5', titulo: 'Reportar una falla masiva', ancla: 'reportar-una-falla-masiva' },
+          { num: '6', titulo: 'Resumen rápido', ancla: 'resumen-rapido' },
+        ],
+      },
     ],
   },
   {

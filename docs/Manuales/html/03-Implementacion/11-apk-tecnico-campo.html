@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>10 — Sincronización, mensajería interna y panel de gestión diaria (Incremento D-81) — Manual GGTO (CANTV)</title>
+<title>11 — La app del técnico: lo que cambió (Incremento D-82) — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Este manual explica tres mejoras nuevas del sistema: cómo se registra cada sincronización de la app móvil, cómo los supervisores envían mensajes a los técnicos, y cómo se ve el resumen diario de traba">
+<meta name="description" content="Este manual explica, en lenguaje sencillo, cinco mejoras de la app del técnico (la APK «GGTO Técnico»): que siempre muestre lo que tiene guardado en el teléfono, que muestre una barra con el avance de">
 
 <style>
 /* ==================================================================
@@ -765,14 +765,14 @@ a { color: var(--azul); }
   <a class="marca" href="../index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
   <span class="chip">Implementación</span>
   <span class="topbar-sep"></span>
-  <a class="boton" href="../../pdf/03-Implementacion/10-sincronizacion-mensajeria-panel.pdf">Descargar PDF</a>
+  <a class="boton" href="../../pdf/03-Implementacion/11-apk-tecnico-campo.pdf">Descargar PDF</a>
   <a class="boton" href="../index.html">Índice general</a>
 </header>
 
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#1-que-es-el-log-de-sincronizacion" data-target="1-que-es-el-log-de-sincronizacion"><span class="tn">1</span> 1. ¿Qué es el log de sincronización?</a><span class="pag"></span><ul><li class="n3"><a href="#quien-puede-verlo" data-target="quien-puede-verlo"><span class="tn">1.1</span> ¿Quién puede verlo?</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#2-que-es-la-mensajeria-interna" data-target="2-que-es-la-mensajeria-interna"><span class="tn">2</span> 2. ¿Qué es la mensajería interna?</a><span class="pag"></span><ul><li class="n3"><a href="#que-mensajes-se-envian" data-target="que-mensajes-se-envian"><span class="tn">2.1</span> ¿Qué mensajes se envían?</a><span class="pag"></span></li><li class="n3"><a href="#como-llegan-los-mensajes" data-target="como-llegan-los-mensajes"><span class="tn">2.2</span> ¿Cómo llegan los mensajes?</a><span class="pag"></span></li><li class="n3"><a href="#quien-puede-enviar" data-target="quien-puede-enviar"><span class="tn">2.3</span> ¿Quién puede enviar?</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#3-que-es-el-panel-de-gestion-diaria" data-target="3-que-es-el-panel-de-gestion-diaria"><span class="tn">3</span> 3. ¿Qué es el panel de gestión diaria?</a><span class="pag"></span><ul><li class="n3"><a href="#alta-rapida-de-casos-especiales" data-target="alta-rapida-de-casos-especiales"><span class="tn">3.1</span> Alta rápida de casos especiales</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#4-parametros-que-el-supervisor-puede-ajustar" data-target="4-parametros-que-el-supervisor-puede-ajustar"><span class="tn">4</span> 4. Parámetros que el supervisor puede ajustar</a><span class="pag"></span></li><li class="n2"><a href="#5-resumen-rapido" data-target="5-resumen-rapido"><span class="tn">5</span> 5. Resumen rápido</a><span class="pag"></span></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono" data-target="la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono"><span class="tn">1</span> La app ya muestra lo que tiene guardado en el teléfono</a><span class="pag"></span></li><li class="n2"><a href="#una-barra-que-muestra-el-avance-de-la-sincronizacion" data-target="una-barra-que-muestra-el-avance-de-la-sincronizacion"><span class="tn">2</span> Una barra que muestra el avance de la sincronización</a><span class="pag"></span></li><li class="n2"><a href="#el-menu-de-usuario-icono-de-persona" data-target="el-menu-de-usuario-icono-de-persona"><span class="tn">3</span> El menú de usuario (icono de persona)</a><span class="pag"></span></li><li class="n2"><a href="#que-se-puede-hacer-en-la-seccion-usuario" data-target="que-se-puede-hacer-en-la-seccion-usuario"><span class="tn">4</span> Qué se puede hacer en la sección Usuario</a><span class="pag"></span><ul><li class="n3"><a href="#datos-personales" data-target="datos-personales"><span class="tn">4.1</span> Datos personales</a><span class="pag"></span></li><li class="n3"><a href="#datos-administrativos" data-target="datos-administrativos"><span class="tn">4.2</span> Datos administrativos</a><span class="pag"></span></li><li class="n3"><a href="#cambiar-la-contrasena" data-target="cambiar-la-contrasena"><span class="tn">4.3</span> Cambiar la contraseña</a><span class="pag"></span></li><li class="n3"><a href="#ver-las-palabras-de-seguridad" data-target="ver-las-palabras-de-seguridad"><span class="tn">4.4</span> Ver las palabras de seguridad</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#reportar-una-falla-masiva" data-target="reportar-una-falla-masiva"><span class="tn">5</span> Reportar una falla masiva</a><span class="pag"></span><ul><li class="n3"><a href="#y-si-no-hay-senal" data-target="y-si-no-hay-senal"><span class="tn">5.1</span> ¿Y si no hay señal?</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#resumen-rapido" data-target="resumen-rapido"><span class="tn">6</span> Resumen rápido</a><span class="pag"></span></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -782,13 +782,13 @@ a { color: var(--azul); }
           <div class="portada-marca">GGTO <span>· CANTV</span></div>
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Implementación</span>
-          <h1 class="portada-titulo">10 — Sincronización, mensajería interna y panel de gestión diaria (Incremento D-81)</h1>
-          <p class="portada-resumen">Este manual explica tres mejoras nuevas del sistema: cómo se registra cada sincronización de la app móvil, cómo los supervisores envían mensajes a los técnicos, y cómo se ve el resumen diario de trabajo en el panel principal.</p>
+          <h1 class="portada-titulo">11 — La app del técnico: lo que cambió (Incremento D-82)</h1>
+          <p class="portada-resumen">Este manual explica, en lenguaje sencillo, cinco mejoras de la app del técnico (la APK «GGTO Técnico»): que siempre muestre lo que tiene guardado en el teléfono, que muestre una barra con el avance de la sincronización, que tenga un menú de usuario con la sección Usuario, y que el reporte de falla masiva pida la ODN, la dirección, la FAT y la descripción, con hasta 2 fotos.</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
-            <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/10-sincronizacion-mensajeria-panel.md</dd></div>
+            <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/11-apk-tecnico-campo.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
             <div><dt>Actualización de la fuente</dt><dd>06/10/2026</dd></div>
           </dl>
@@ -799,163 +799,222 @@ a { color: var(--azul); }
         </div>
       </section>
 <blockquote>
-<p>Este manual explica tres mejoras nuevas del sistema: cómo se registra cada sincronización de la app móvil, cómo los supervisores envían mensajes a los técnicos, y cómo se ve el resumen diario de trabajo en el panel principal.</p>
+<p>Este manual explica, en lenguaje sencillo, cinco mejoras de la <strong>app del técnico</strong>
+(la APK «GGTO Técnico»): que siempre muestre lo que tiene guardado en el teléfono,
+que muestre una barra con el avance de la sincronización, que tenga un <strong>menú de
+usuario</strong> con la sección <strong>Usuario</strong>, y que el <strong>reporte de falla masiva</strong> pida la
+ODN, la dirección, la FAT y la descripción, con <strong>hasta 2 fotos</strong>.</p>
 </blockquote>
 <hr />
-<h2 id="1-que-es-el-log-de-sincronizacion"><span class="sec-num">1</span>1. ¿Qué es el log de sincronización?</h2>
-<p>Cada vez que un técnico usa la app móvil para <strong>descargar</strong> sus casos del día o para <strong>subir</strong> (cargar) los resultados de su trabajo, el sistema guarda un <strong>registro</strong> con:</p>
+<h2 id="la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono"><span class="sec-num">1</span>La app ya muestra lo que tiene guardado en el teléfono</h2>
+<p>El técnico trabaja muchas veces sin señal. Por eso la app <strong>guarda en el teléfono</strong>
+todos los casos que descarga.</p>
+<p>Antes había un problema: la app descargaba los casos y los guardaba, pero la
+pantalla seguía diciendo <em>«No tiene casos asignados»</em>. Ya está corregido:</p>
 <ul>
-<li>Quién sincronizó (P00 del técnico).</li>
-<li>Qué cuadrilla tenía asignada.</li>
-<li>Qué dispositivo usó.</li>
-<li>Cuándo empezó y cuándo terminó.</li>
-<li>Cuántos casos recibió, procesó o fallaron.</li>
-<li>Si la sincronización fue <strong>OK</strong>, <strong>parcial</strong> o con <strong>error</strong>.</li>
+<li>Al abrir la app, la lista muestra <strong>primero lo que hay guardado</strong> en el teléfono
+(aparece al instante, aunque no haya señal).</li>
+<li>Después, si hay internet, se <strong>actualiza sola</strong> con lo último del servidor.</li>
+<li>Arriba de la lista hay una franja que dice: <strong>«Contenido local · N casos ·
+actualizado el …»</strong>.</li>
+<li>Si no hay conexión, la franja se pone <strong>amarilla</strong> y ofrece el botón
+<strong>Reintentar</strong>.</li>
+<li>Los <strong>datos del usuario</strong> (nombre, correo y cuadrilla) también se guardan en el
+teléfono: la sección Usuario abre aunque no haya señal.</li>
 </ul>
-<p>Además, se guarda un <strong>checklist paso a paso</strong>:</p>
-<ol>
-<li>¿Hubo conexión con el servidor?</li>
-<li>¿El login fue correcto?</li>
-<li>¿La descarga funcionó?</li>
-<li>¿La carga funcionó?</li>
-</ol>
-<p>Cada paso queda marcado como OK, error u omitido (si un paso anterior falló).</p>
-<h3 id="quien-puede-verlo"><span class="sec-num">1.1</span>¿Quién puede verlo?</h3>
-<ul>
-<li><strong>Supervisor, Administrador y Super Usuario</strong> pueden abrir <strong>Sistemas → Sincronización</strong> en la web para consultar el historial.</li>
-<li>El técnico ve el resultado del último checklist en la pantalla <strong>Dispositivo</strong> de la app.</li>
-</ul>
+<blockquote>
+<p>En resumen: lo que se ve en pantalla es siempre lo que el teléfono tiene guardado;
+internet solo lo pone al día.</p>
+</blockquote>
 <hr />
-<h2 id="2-que-es-la-mensajeria-interna"><span class="sec-num">2</span>2. ¿Qué es la mensajería interna?</h2>
-<p>Es un <strong>chat corto de solo ida</strong>: el supervisor envía mensajes y los técnicos los reciben. Los técnicos <strong>no pueden responder</strong>.</p>
-<h3 id="que-mensajes-se-envian"><span class="sec-num">2.1</span>¿Qué mensajes se envían?</h3>
-<ol>
-<li><strong>Texto libre</strong> escrito por el supervisor (máximo 500 caracteres).</li>
-<li><strong>Recordatorios automáticos</strong> de citas del día (una hora antes).</li>
-<li><strong>Resumen automático</strong> después de cada sincronización del técnico.</li>
-<li><strong>Alarmas automáticas</strong> cuando hay una falla masiva en el sector de su despacho.</li>
-</ol>
-<h3 id="como-llegan-los-mensajes"><span class="sec-num">2.2</span>¿Cómo llegan los mensajes?</h3>
-<ul>
-<li>La app del técnico <strong>revisa cada 20 segundos</strong> si hay mensajes nuevos.</li>
-<li>El técnico puede marcarlos como leídos.</li>
-<li>Los mensajes se guardan durante <strong>5 días</strong>; los que no se leyeron se conservan hasta que el técnico los abra (con un tope máximo de 30 días).</li>
-</ul>
-<h3 id="quien-puede-enviar"><span class="sec-num">2.3</span>¿Quién puede enviar?</h3>
-<ul>
-<li><strong>Supervisor, Administrador y Super Usuario</strong> pueden escribir mensajes.</li>
-<li>Pueden enviarlos a <strong>todos los técnicos</strong>, a una <strong>cuadrilla</strong> entera o a un <strong>técnico</strong> específico.</li>
-</ul>
-<hr />
-<h2 id="3-que-es-el-panel-de-gestion-diaria"><span class="sec-num">3</span>3. ¿Qué es el panel de gestión diaria?</h2>
-<p>Es la <strong>pantalla principal</strong> que ve el supervisor al entrar al sistema. Muestra, para cada cuadrilla:</p>
-<ul>
-<li><strong>Asignadas</strong>: cuántos casos tiene esa cuadrilla en el despacho de hoy.</li>
-<li><strong>Cerradas</strong>: de esos, cuántos ya están resueltos (estado Cerrado).</li>
-<li>El porcentaje de avance.</li>
-</ul>
-<p>Se pueden ver dos modos:</p>
-<ul>
-<li><strong>Común</strong>: solo los casos residenciales normales.</li>
-<li><strong>Referidos</strong>: solo los casos especiales clasificados como referidos.</li>
-</ul>
-<p>La pantalla se <strong>actualiza sola cada 30 segundos</strong> mientras esté visible. Si cambias a otra pestaña del navegador, se pausa para no gastar recursos.</p>
-<h3 id="alta-rapida-de-casos-especiales"><span class="sec-num">3.1</span>Alta rápida de casos especiales</h3>
-<p>Desde el mismo panel, el supervisor puede pulsar <strong>«Agregar caso especial»</strong> para crear un nuevo caso (empresa, gobierno o referido) sin salir de la pantalla.</p>
-<hr />
-<h2 id="4-parametros-que-el-supervisor-puede-ajustar"><span class="sec-num">4</span>4. Parámetros que el supervisor puede ajustar</h2>
-<p>En <strong>Configuración</strong> se pueden cambiar estos valores:</p>
+<h2 id="una-barra-que-muestra-el-avance-de-la-sincronizacion"><span class="sec-num">2</span>Una barra que muestra el avance de la sincronización</h2>
+<p>Debajo del título de la pantalla hay una <strong>barra de progreso</strong> con un texto:</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
-<th>Parámetro</th>
-<th>Valor por defecto</th>
-<th>Para qué sirve</th>
+<th>Lo que se ve</th>
+<th>Qué significa</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Segundos de sondeo de mensajes</td>
-<td>20</td>
-<td>Cada cuánto la app pregunta si hay mensajes nuevos.</td>
+<td>Barra <strong>verde</strong> «Datos sincronizados»</td>
+<td>Todo el trabajo del día ya se envió.</td>
 </tr>
 <tr>
-<td>Segundos de auto-refresco del panel</td>
-<td>30</td>
-<td>Cada cuánto se actualiza la pantalla de gestión diaria.</td>
+<td>Barra <strong>amarilla</strong> «N acciones pendientes de envío»</td>
+<td>Hay trabajo guardado esperando internet.</td>
 </tr>
 <tr>
-<td>Días de retención de mensajes</td>
-<td>5</td>
-<td>Cuánto duran los mensajes leídos.</td>
+<td>Barra <strong>roja</strong> «N acciones con error»</td>
+<td>Algo no se pudo enviar; hay que revisarlo en <strong>Dispositivo</strong>.</td>
 </tr>
 <tr>
-<td>Días máximos de retención (no leídos)</td>
-<td>30</td>
-<td>Tope de seguridad para mensajes sin leer.</td>
-</tr>
-<tr>
-<td>Días de retención del log de sincronización</td>
-<td>90</td>
-<td>Cuánto se conserva el historial de descargas/cargas.</td>
-</tr>
-<tr>
-<td>Minutos de antelación del recordatorio de cita</td>
-<td>60</td>
-<td>Con cuánta anticipación avisa una cita.</td>
-</tr>
-<tr>
-<td>Minutos de timeout de sesión de sync</td>
-<td>10</td>
-<td>Si una sincronización se queda colgada, después de cuántos minutos se cierra sola.</td>
+<td>Barra avanzando con «42 % · Enviando acciones… (21 de 50)»</td>
+<td>Se está sincronizando ahora mismo.</td>
 </tr>
 </tbody>
 </table></div>
+<p>Durante una sincronización la barra avanza de verdad:</p>
+<ul>
+<li><strong>Descarga</strong>: conectando → descargando los casos → guardando en el teléfono.</li>
+<li><strong>Carga</strong>: subiendo fotos (una por una) → enviando las actividades → cerrando la
+jornada.</li>
+</ul>
+<p>La misma barra aparece en <strong>Casos</strong>, <strong>Alertas</strong>, <strong>Mensajes</strong> y <strong>Dispositivo</strong>
+(en Dispositivo se ve más grande, con el porcentaje).</p>
 <hr />
-<h2 id="5-resumen-rapido"><span class="sec-num">5</span>5. Resumen rápido</h2>
+<h2 id="el-menu-de-usuario-icono-de-persona"><span class="sec-num">3</span>El menú de usuario (icono de persona)</h2>
+<p>En la esquina superior derecha, en todas las pantallas, hay un <strong>icono de persona</strong>.
+Al tocarlo se abre la sección <strong>Usuario</strong>, que reúne el perfil y la cuenta. El botón
+de <strong>cerrar sesión</strong> también está ahí dentro.</p>
+<hr />
+<h2 id="que-se-puede-hacer-en-la-seccion-usuario"><span class="sec-num">4</span>Qué se puede hacer en la sección Usuario</h2>
+<h3 id="datos-personales"><span class="sec-num">4.1</span>Datos personales</h3>
+<ul>
+<li>Se ven el <strong>nombre</strong>, el <strong>apellido</strong>, el <strong>P00</strong> y el <strong>correo</strong>.</li>
+<li>El correo se puede <strong>corregir</strong> y guardar con el botón «Guardar correo».</li>
+</ul>
+<h3 id="datos-administrativos"><span class="sec-num">4.2</span>Datos administrativos</h3>
+<ul>
+<li><strong>P00</strong>, <strong>rol</strong>, <strong>cuadrilla</strong> (código y nombre), desde cuándo está en esa
+cuadrilla, la <strong>central</strong>, el <strong>identificador del teléfono</strong> y la <strong>versión de la
+app</strong> que tiene instalada.</li>
+</ul>
+<h3 id="cambiar-la-contrasena"><span class="sec-num">4.3</span>Cambiar la contraseña</h3>
+<ol>
+<li>Escriba su <strong>contraseña actual</strong>.</li>
+<li>Escriba la <strong>nueva</strong> (mínimo 8 caracteres).</li>
+<li>Repítala para confirmar.</li>
+<li>Pulse <strong>«Cambiar contraseña»</strong>.</li>
+</ol>
+<p>Si la contraseña actual no es la correcta, el sistema lo avisa y no cambia nada.</p>
+<h3 id="ver-las-palabras-de-seguridad"><span class="sec-num">4.4</span>Ver las palabras de seguridad</h3>
+<p>Las 12 palabras de seguridad <strong>no se guardan escritas</strong> en el servidor (solo una
+marca que no se puede leer). Por eso, para <strong>verlas</strong> hay que <strong>generarlas de
+nuevo</strong>:</p>
+<ol>
+<li>Escriba su <strong>contraseña actual</strong> (es obligatorio: así nadie más puede verlas).</li>
+<li>Pulse <strong>«Ver palabras de seguridad»</strong>.</li>
+<li>La app muestra las <strong>12 palabras numeradas</strong>, y se pueden <strong>copiar</strong> con un botón.</li>
+</ol>
+<blockquote>
+<p><strong>Importante:</strong> las palabras anteriores <strong>dejan de funcionar</strong> en cuanto se
+generan las nuevas. Guárdelas en un lugar seguro. El sistema deja registrado
+(auditoría) que usted las regeneró, pero <strong>no</strong> guarda las palabras.</p>
+</blockquote>
+<hr />
+<h2 id="reportar-una-falla-masiva"><span class="sec-num">5</span>Reportar una falla masiva</h2>
+<p>En la pantalla <strong>Alertas</strong> está el formulario de <strong>Falla masiva</strong>. Ahora pide
+exactamente estos datos:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>¿Obligatorio?</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ODN</strong></td>
+<td>Sí</td>
+<td><code>ODN-2324X-0451</code></td>
+</tr>
+<tr>
+<td><strong>Dirección</strong></td>
+<td>Sí</td>
+<td><code>Calle 4 con Av. Principal, casa 12</code></td>
+</tr>
+<tr>
+<td><strong>FAT</strong></td>
+<td>Sí</td>
+<td><code>FAT-04</code></td>
+</tr>
+<tr>
+<td><strong>Descripción</strong></td>
+<td>Sí</td>
+<td><code>6 clientes sin servicio en la FAT 4 del sector Norte 2</code></td>
+</tr>
+<tr>
+<td>Sector</td>
+<td>No</td>
+<td><code>12</code></td>
+</tr>
+<tr>
+<td><strong>Fotos de evidencia</strong></td>
+<td>No, <strong>máximo 2</strong></td>
+<td>foto de la FAT, foto del equipo</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cómo se usan las fotos:</p>
+<ul>
+<li>Pulse <strong>«Añadir foto de evidencia»</strong>: se abre la <strong>cámara</strong> y la foto queda
+guardada con su ubicación y su hora.</li>
+<li>Se ve una <strong>miniatura</strong> de cada foto, con una <strong>X</strong> para quitarla si salió mal.</li>
+<li>El contador indica <strong>«1 de 2»</strong>; al llegar a 2, el botón se desactiva.</li>
+</ul>
+<p>Al pulsar <strong>«Reportar falla masiva»</strong>:</p>
+<ol>
+<li>La app <strong>revisa los datos</strong> (si falta algo, avisa y no envía nada).</li>
+<li><strong>Sube las fotos</strong> (si hay internet).</li>
+<li><strong>Registra la falla</strong> para que el supervisor la vea en la web.</li>
+</ol>
+<h3 id="y-si-no-hay-senal"><span class="sec-num">5.1</span>¿Y si no hay señal?</h3>
+<p>No se pierde nada: el reporte y sus fotos <strong>quedan guardados</strong> en el teléfono. La
+app lo avisa con un mensaje naranja. Cuando haya internet (o al pulsar <strong>Cargar</strong>
+en la pantalla Dispositivo), se suben las fotos y se envía el reporte.</p>
+<hr />
+<h2 id="resumen-rapido"><span class="sec-num">6</span>Resumen rápido</h2>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
 <th>Función</th>
-<th>¿Dónde se ve?</th>
-<th>¿Quién lo usa?</th>
+<th>¿Dónde está?</th>
+<th>¿Quién la usa?</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Log de sincronizaciones</td>
-<td>Web: Sistemas → Sincronización / App: Dispositivo</td>
-<td>Supervisor, Admin, Super Usuario (web); técnico (app)</td>
-</tr>
-<tr>
-<td>Checklist de sync</td>
-<td>App: pantalla Dispositivo</td>
+<td>Ver los casos guardados</td>
+<td>App: pantalla <strong>Mis casos</strong> (franja «Contenido local»)</td>
 <td>Técnico</td>
 </tr>
 <tr>
-<td>Enviar mensaje</td>
-<td>Web: Menú de usuario → Mensajes</td>
-<td>Supervisor, Admin, Super Usuario</td>
-</tr>
-<tr>
-<td>Recibir mensajes</td>
-<td>Web: Menú de usuario → Mensajes / App: pantalla Mensajes</td>
+<td>Ver el avance de la sincronización</td>
+<td>App: barra bajo el título (todas las pantallas)</td>
 <td>Técnico</td>
 </tr>
 <tr>
-<td>Panel gestión diaria</td>
-<td>Web: pantalla principal (OPERACIÓN)</td>
-<td>Supervisor, Admin, Super Usuario</td>
+<td>Abrir el perfil y la cuenta</td>
+<td>App: <strong>icono de persona</strong> (arriba a la derecha)</td>
+<td>Técnico</td>
 </tr>
 <tr>
-<td>Alta de caso especial</td>
-<td>Web: botón en el panel</td>
+<td>Cambiar la contraseña</td>
+<td>App: Usuario → <strong>Cambiar la contraseña</strong></td>
+<td>Técnico</td>
+</tr>
+<tr>
+<td>Ver las 12 palabras</td>
+<td>App: Usuario → <strong>Palabras de seguridad</strong> (pide la contraseña)</td>
+<td>Técnico</td>
+</tr>
+<tr>
+<td>Reportar falla masiva</td>
+<td>App: <strong>Alertas</strong> → Falla masiva</td>
+<td>Técnico</td>
+</tr>
+<tr>
+<td>Ver la falla reportada</td>
+<td>Web: <strong>Alertas</strong> → ficha de la falla (ODN, FAT, dirección, fotos)</td>
 <td>Supervisor, Admin, Super Usuario</td>
 </tr>
 </tbody>
 </table></div>
 
-<nav class="pie-nav"><a class="izq" href="../03-Implementacion/09-api-endpoints.html">← Manual anterior: API de GGTO — Inventario de Endpoints</a><a href="../index.html">Índice general</a><a class="der" href="../03-Implementacion/11-apk-tecnico-campo.html">Manual siguiente →: 11 — La app del técnico: lo que cambió (Incremento D-82)</a></nav>
+<nav class="pie-nav"><a class="izq" href="../03-Implementacion/10-sincronizacion-mensajeria-panel.html">← Manual anterior: 10 — Sincronización, mensajería interna y panel de gestión diaria…</a><a href="../index.html">Índice general</a><a class="der" href="../04-Despliegue/01-entornos-y-variables.html">Manual siguiente →: Manual de Entornos y Variables — GGTO (CANTV, Central Francisco S…</a></nav>
     </article>
   </main>
 </div>
@@ -970,7 +1029,7 @@ a { color: var(--azul); }
 </footer>
 
 <script>
-window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Implementación · 10-sincronizacion-mensajeria-panel", "pieIzq": "10 — Sincronización, mensajería interna y panel de gestión diaria…", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "10 — Sincronización, mensajería interna y panel de gestión diaria (Incremento D-81)"};
+window.GGTO_MANUAL = {"cabeceraIzq": "GGTO · CANTV — Manual literal", "cabeceraDer": "Implementación · 11-apk-tecnico-campo", "pieIzq": "11 — La app del técnico: lo que cambió (Incremento D-82)", "pieCentro": "CANTV C.A. · Central Francisco Salias (Área 4)", "titulo": "11 — La app del técnico: lo que cambió (Incremento D-82)"};
 </script>
 <script>
 /* ==================================================================

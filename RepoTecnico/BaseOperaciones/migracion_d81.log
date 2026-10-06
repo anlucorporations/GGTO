@@ -1,0 +1,28 @@
+[2026-10-06T18:18:36+00:00] ==============================================================================
+[2026-10-06T18:18:36+00:00] MIGRACIÓN D-81 (log de sincronización + mensajería interna + panel)
+[2026-10-06T18:18:36+00:00] modo=SIMULACIÓN
+[2026-10-06T18:18:36+00:00] estado actual: {'sync_log_cols': 0, 'tablas_nuevas': 0, 'cita_col': 0, 'params': 0}
+[2026-10-06T18:18:36+00:00] Cambios pendientes:
+[2026-10-06T18:18:36+00:00]   · sync_log: plataforma/duracion_ms/id_central
+[2026-10-06T18:18:36+00:00]   · tabla sync_check (checklist por paso)
+[2026-10-06T18:18:36+00:00]   · tablas mensaje + mensaje_destino
+[2026-10-06T18:18:36+00:00]   · cita.recordatorio_para
+[2026-10-06T18:18:36+00:00]   · parámetros de configuración
+[2026-10-06T18:18:36+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-06T18:18:56+00:00] ==============================================================================
+[2026-10-06T18:18:56+00:00] MIGRACIÓN D-81 (log de sincronización + mensajería interna + panel)
+[2026-10-06T18:18:56+00:00] modo=APLICAR
+[2026-10-06T18:18:56+00:00] estado actual: {'sync_log_cols': 0, 'tablas_nuevas': 0, 'cita_col': 0, 'params': 0}
+[2026-10-06T18:18:56+00:00] Cambios pendientes:
+[2026-10-06T18:18:56+00:00]   · sync_log: plataforma/duracion_ms/id_central
+[2026-10-06T18:18:56+00:00]   · tabla sync_check (checklist por paso)
+[2026-10-06T18:18:56+00:00]   · tablas mensaje + mensaje_destino
+[2026-10-06T18:18:56+00:00]   · cita.recordatorio_para
+[2026-10-06T18:18:56+00:00]   · parámetros de configuración
+[2026-10-06T18:18:56+00:00]   ✓ sync_log: plataforma/duracion_ms/id_central
+[2026-10-06T18:18:56+00:00]   ✓ tabla sync_check (checklist por paso)
+[2026-10-06T18:18:57+00:00]   ✓ tablas mensaje + mensaje_destino
+[2026-10-06T18:18:57+00:00]   ✓ cita.recordatorio_para
+[2026-10-06T18:18:57+00:00]   ✓ parámetros de configuración
+[2026-10-06T18:18:58+00:00] verificación post-migración: {'sync_log_cols': 3, 'tablas_nuevas': 3, 'cita_col': 1, 'params': 7}
+[2026-10-06T18:18:58+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA

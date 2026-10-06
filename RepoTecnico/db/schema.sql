@@ -499,6 +499,11 @@ CREATE TABLE IF NOT EXISTS falla_masiva (
     id_cuadrilla        integer      REFERENCES cuadrilla(id_cuadrilla),
     estado              varchar(20)  NOT NULL DEFAULT 'DETECTADA'
                         CHECK (estado IN ('DETECTADA','PLANIFICADA','ATENDIDA','CERRADA')),
+    -- D-82: reporte de campo desde la APK (ODN · dirección · FAT · evidencias)
+    odn                 varchar(60),
+    direccion           varchar(200),
+    fat                 varchar(60),
+    evidencias          text,          -- seriales de hasta 2 fotos, separados por coma
     planificacion       text,
     reporte_simple      text,
     planificada_en      timestamptz,   -- RF-17: cuándo se documentó la planificación
@@ -533,7 +538,8 @@ CREATE TABLE IF NOT EXISTS evidencia (
     id_evidencia    bigserial    PRIMARY KEY,
     id_actividad    bigint       REFERENCES actividad(id_actividad) ON DELETE CASCADE,
     tipo            varchar(20)  NOT NULL
-                    CHECK (tipo IN ('POTENCIA','NAVEGACION','DEMO')),
+                    -- D-82: 'FALLA_MASIVA' es la evidencia del reporte de campo de la APK.
+                    CHECK (tipo IN ('POTENCIA','NAVEGACION','DEMO','FALLA_MASIVA')),
     serial_imagen   varchar(160) NOT NULL UNIQUE,   -- caso + id_averia + tipo + fecha/hora
     ruta_local      varchar(255),
     ruta_remota     varchar(255),

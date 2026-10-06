@@ -1,50 +1,54 @@
 [
   {
-    "manual": "03-Implementacion\\10-sincronizacion-mensajeria-panel.html",
-    "pdf": "pdf\\03-Implementacion\\10-sincronizacion-mensajeria-panel.pdf",
+    "manual": "03-Implementacion\\11-apk-tecnico-campo.html",
+    "pdf": "pdf\\03-Implementacion\\11-apk-tecnico-campo.pdf",
     "paginas": 7,
     "hojasContenido": 5,
-    "entradasToc": 10,
+    "entradasToc": 11,
     "anclas": {
-      "1-que-es-el-log-de-sincronizacion": {
+      "la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono": {
         "pagina": 3,
-        "texto": "11. ¿Qué es el log de sincronización?"
+        "texto": "1La app ya muestra lo que tiene guardado en el teléfono"
       },
-      "quien-puede-verlo": {
-        "pagina": 3,
-        "texto": "1.1¿Quién puede verlo?"
-      },
-      "2-que-es-la-mensajeria-interna": {
+      "una-barra-que-muestra-el-avance-de-la-sincronizacion": {
         "pagina": 4,
-        "texto": "22. ¿Qué es la mensajería interna?"
+        "texto": "2Una barra que muestra el avance de la sincronización"
       },
-      "que-mensajes-se-envian": {
-        "pagina": 4,
-        "texto": "2.1¿Qué mensajes se envían?"
-      },
-      "como-llegan-los-mensajes": {
-        "pagina": 4,
-        "texto": "2.2¿Cómo llegan los mensajes?"
-      },
-      "quien-puede-enviar": {
-        "pagina": 4,
-        "texto": "2.3¿Quién puede enviar?"
-      },
-      "3-que-es-el-panel-de-gestion-diaria": {
+      "el-menu-de-usuario-icono-de-persona": {
         "pagina": 5,
-        "texto": "33. ¿Qué es el panel de gestión diaria?"
+        "texto": "3El menú de usuario (icono de persona)"
       },
-      "alta-rapida-de-casos-especiales": {
+      "que-se-puede-hacer-en-la-seccion-usuario": {
         "pagina": 5,
-        "texto": "3.1Alta rápida de casos especiales"
+        "texto": "4Qué se puede hacer en la sección Usuario"
       },
-      "4-parametros-que-el-supervisor-puede-ajustar": {
+      "datos-personales": {
+        "pagina": 5,
+        "texto": "4.1Datos personales"
+      },
+      "datos-administrativos": {
+        "pagina": 5,
+        "texto": "4.2Datos administrativos"
+      },
+      "cambiar-la-contrasena": {
+        "pagina": 5,
+        "texto": "4.3Cambiar la contraseña"
+      },
+      "ver-las-palabras-de-seguridad": {
+        "pagina": 5,
+        "texto": "4.4Ver las palabras de seguridad"
+      },
+      "reportar-una-falla-masiva": {
         "pagina": 6,
-        "texto": "44. Parámetros que el supervisor puede ajustar"
+        "texto": "5Reportar una falla masiva"
       },
-      "5-resumen-rapido": {
+      "y-si-no-hay-senal": {
+        "pagina": 6,
+        "texto": "5.1¿Y si no hay señal?"
+      },
+      "resumen-rapido": {
         "pagina": 7,
-        "texto": "55. Resumen rápido"
+        "texto": "6Resumen rápido"
       }
     },
     "avisos": []

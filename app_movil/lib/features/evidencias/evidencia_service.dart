@@ -8,11 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
 
-/// Tipos de evidencia que pide el brief (§4.3).
+/// Tipos de evidencia que pide el brief (§4.3) más el de la falla masiva (D-82).
 enum TipoEvidencia {
   potencia('POTENCIA', 'Potencia del equipo'),
   navegacion('NAVEGACION', 'Prueba de navegación'),
-  demo('DEMO', 'Demostrativa');
+  demo('DEMO', 'Demostrativa'),
+  fallaMasiva('FALLA_MASIVA', 'Evidencia de falla masiva');
 
   const TipoEvidencia(this.codigo, this.etiqueta);
 

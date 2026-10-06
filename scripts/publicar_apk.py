@@ -57,20 +57,33 @@ NOMBRE_JKS = "ggto-tecnico-release.jks"
 # --------------------------------------------------------------------------- #
 # Utilidades de consola
 # --------------------------------------------------------------------------- #
+def _imprimir(texto: str, destino=None) -> None:
+    """Imprime sin romper en consolas que no son UTF-8 (Windows cp1252).
+
+    Los símbolos ✓/⚠/✗ no existen en cp1252: sin este respaldo, el script
+    terminaba con `UnicodeEncodeError` en Windows.
+    """
+    flujo = destino if destino is not None else sys.stdout
+    try:
+        print(texto, file=flujo)
+    except UnicodeEncodeError:
+        print(texto.encode("ascii", "replace").decode("ascii"), file=flujo)
+
+
 def paso(msg: str) -> None:
-    print(f"\n== {msg} ==")
+    _imprimir(f"\n== {msg} ==")
 
 
 def ok(msg: str) -> None:
-    print(f"  ✓ {msg}")
+    _imprimir(f"  ✓ {msg}")
 
 
 def aviso(msg: str) -> None:
-    print(f"  ⚠ {msg}")
+    _imprimir(f"  ⚠ {msg}")
 
 
 def error(msg: str) -> None:
-    print(f"  ✗ {msg}", file=sys.stderr)
+    _imprimir(f"  ✗ {msg}", file=sys.stderr)
 
 
 def correr(cmd: Sequence[str | Path], cwd: Path | None = None, env: dict | None = None,

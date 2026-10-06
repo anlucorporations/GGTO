@@ -32,6 +32,7 @@ Documentación completa del sistema GGTO (CANTV C.A., Central Francisco Salias).
 | `03-Implementacion` | `08-alertas-telegram-mcp.md` | Manual técnico — Alertas, Telegram y MCP (GGTO, Ciclo 9) |
 | `03-Implementacion` | `09-api-endpoints.md` | API de GGTO — Inventario de Endpoints |
 | `03-Implementacion` | `10-sincronizacion-mensajeria-panel.md` | Sincronización, mensajería interna y panel de gestión diaria (D-81) |
+| `03-Implementacion` | `11-apk-tecnico-campo.md` | La APK del técnico: contenido local, progreso de sincronización, sección Usuario y falla masiva de campo (D-82) |
 | `04-Despliegue` | `01-entornos-y-variables.md` | Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4) |
 | `04-Despliegue` | `02-cloud-run-y-cloud-sql.md` | Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco Salias / Área 4) |
 | `04-Despliegue` | `03-scripts-gcp.md` | Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4) |
@@ -63,6 +64,7 @@ Documentación completa del sistema GGTO (CANTV C.A., Central Francisco Salias).
 | `03-Implementacion` | `08-alertas-telegram-mcp.md` | Manual técnico — Alertas, Telegram y MCP (GGTO, Ciclo 9) |
 | `03-Implementacion` | `09-api-endpoints.md` | API de GGTO — Inventario de Endpoints |
 | `03-Implementacion` | `10-sincronizacion-mensajeria-panel.md` | Sincronización, mensajería interna y panel de gestión diaria (D-81) |
+| `03-Implementacion` | `11-apk-tecnico-campo.md` | La app del técnico: lo que cambió (D-82) |
 | `04-Despliegue` | `01-entornos-y-variables.md` | Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4) |
 | `04-Despliegue` | `02-cloud-run-y-cloud-sql.md` | Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco Salias / Área 4) |
 | `04-Despliegue` | `03-scripts-gcp.md` | Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4) |

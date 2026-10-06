@@ -17,6 +17,7 @@ import 'features/mensajes/mensajes_provider.dart';
 import 'features/mensajes/mensajes_screen.dart';
 import 'features/sync/sync_provider.dart';
 import 'features/sync/sync_screen.dart';
+import 'features/usuario/usuario_screen.dart';
 
 /// Clave global de navegación: permite volver al acceso cuando la sesión expira.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -115,6 +116,7 @@ class _GGTOAppState extends State<GGTOApp> {
         '/sync': (context) => const _RutaProtegida(child: SyncScreen()),
         '/alertas': (context) => const _RutaProtegida(child: AlertasScreen()),
         '/mensajes': (context) => const _RutaProtegida(child: MensajesScreen()),
+        '/usuario': (context) => const _RutaProtegida(child: UsuarioScreen()),
       },
     );
   }

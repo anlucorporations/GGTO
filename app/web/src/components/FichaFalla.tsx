@@ -234,10 +234,29 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
                   <span className="dato-etiqueta">Sector</span>
                   <span className="dato-valor">{txt(falla.sector_nombre)}</span>
                 </div>
+                {/* D-82: datos del reporte de campo enviado desde la APK. */}
+                <div className="dato">
+                  <span className="dato-etiqueta">ODN</span>
+                  <span className="dato-valor mono">{txt(falla.odn)}</span>
+                </div>
+                <div className="dato">
+                  <span className="dato-etiqueta">FAT</span>
+                  <span className="dato-valor mono">{txt(falla.fat)}</span>
+                </div>
+                <div className="dato">
+                  <span className="dato-etiqueta">Dirección (reporte)</span>
+                  <span className="dato-valor">{txt(falla.direccion)}</span>
+                </div>
                 <div className="dato">
                   <span className="dato-etiqueta">Dirección (corta)</span>
                   <span className="dato-valor">{txt(falla.direccion_corta)}</span>
                 </div>
+                {(falla.evidencias?.length ?? 0) > 0 && (
+                  <div className="dato dato-ancha">
+                    <span className="dato-etiqueta">Evidencias</span>
+                    <span className="dato-valor mono">{falla.evidencias?.join(' · ')}</span>
+                  </div>
+                )}
                 <div className="dato">
                   <span className="dato-etiqueta">Ruta (T · P · FAT)</span>
                   <span className="dato-valor mono">{txt(falla.ruta)}</span>
