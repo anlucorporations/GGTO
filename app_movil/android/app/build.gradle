@@ -23,7 +23,7 @@ if (tieneFirmaRelease) {
 android {
     namespace = "com.example.ggto_tecnico"
     compileSdk = 35
-    ndkVersion = flutter.ndkVersion  // la que trae el SDK de compilación (evita exigir NDK 26 en máquinas sin él)
+    ndkVersion = "26.1.10909125"  // alineado con los plugins (connectivity_plus, geolocator, sqflite, etc.)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
