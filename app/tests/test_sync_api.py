@@ -20,13 +20,14 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import Despacho, DespachoCasos, Tecnico
+from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos, Tecnico, Usuario
 
 BASE = "/api/v1"
 SYNC = f"{BASE}/sync"
 CASOS = f"{BASE}/casos"
 
 P00_TEC = "TESTTEC"
+P00_ADMIN = "TESTADM"
 
 
 @pytest.fixture()
@@ -206,6 +207,194 @@ def test_descarga_de_un_admin_sin_cuadrilla_no_falla(client, entorno_sync):
     cuerpo = r.json()
     assert cuerpo["casos"] == []
     assert cuerpo["catalogos"]["modelos"], "los catálogos deben viajar aunque no haya casos"
+    # D-83: la APK ya no dice «no hay casos nuevos»: explica el motivo real.
+    assert cuerpo["motivo"] == "SIN_CUADRILLA"
+    assert "cuadrilla vigente" in cuerpo["mensaje"]
+    assert cuerpo["cuadrilla"] is None
+
+
+# --------------------------------------------------------------------------- #
+# DESCARGA · motivo explícito (D-83)
+# --------------------------------------------------------------------------- #
+def _id_tecnico_de_prueba(db_session) -> int:
+    id_tecnico = db_session.scalar(select(Tecnico.id_tecnico).where(Tecnico.p00 == P00_TEC))
+    assert id_tecnico is not None
+    return id_tecnico
+
+
+def _agregar_a_cuadrilla(client, headers, id_cuadrilla: int, id_tecnico: int,
+                         rol: str = "REPARADOR_PRINCIPAL") -> None:
+    r = client.post(
+        f"{BASE}/cuadrillas/{id_cuadrilla}/integrantes",
+        json={"id_tecnico": id_tecnico, "rol_cuadrilla": rol},
+        headers=headers,
+    )
+    assert r.status_code == 201, r.text
+
+
+def _cuadrilla(client, headers, id_central: int, codigo: str, nombre: str,
+               es_supervisor: bool = False) -> int:
+    r = client.post(
+        f"{BASE}/cuadrillas",
+        json={"id_central": id_central, "codigo": codigo, "nombre": nombre,
+              "es_supervisor": es_supervisor},
+        headers=headers,
+    )
+    assert r.status_code == 201, r.text
+    return r.json()["id_cuadrilla"]
+
+
+def _cuadrilla_de_gestion(db_session, id_central: int) -> Cuadrilla:
+    """Cuadrilla de gestión (C-00) sembrada por `schema.sql`.
+
+    Solo puede existir **una** por central (índice único parcial sobre
+    `es_supervisor`), así que no se puede crear otra en las pruebas.
+    """
+    cuadrilla = db_session.scalar(
+        select(Cuadrilla).where(
+            Cuadrilla.id_central == id_central, Cuadrilla.es_supervisor.is_(True)
+        )
+    )
+    assert cuadrilla is not None, "falta la cuadrilla de gestión sembrada (C-00)"
+    return cuadrilla
+
+
+def test_descarga_en_cuadrilla_de_gestion_explica_el_motivo(client, entorno_sync, admin_token,
+                                                            db_session):
+    """La cuadrilla de gestión (C-00) no recibe despacho de campo.
+
+    Era el caso de producción: el técnico quedaba en C-00, la DESCARGA devolvía
+    cero casos y la APK lo anunciaba como «No hay casos nuevos ni cambios».
+    """
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    gestion = _cuadrilla_de_gestion(db_session, admin_token["id_central"])
+
+    retiro = client.delete(
+        f"{BASE}/cuadrillas/{entorno_sync['id_cuadrilla_a']}/integrantes/{id_tecnico}",
+        headers=headers,
+    )
+    assert retiro.status_code == 204, retiro.text
+    _agregar_a_cuadrilla(client, headers, gestion.id_cuadrilla, id_tecnico, "SUPERVISOR")
+
+    r = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"])
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["casos"] == []
+    assert cuerpo["motivo"] == "CUADRILLA_GESTION"
+    assert cuerpo["cuadrilla"]["codigo"] == gestion.codigo
+    assert cuerpo["cuadrilla"]["es_supervisor"] is True
+    assert "gestión" in cuerpo["mensaje"]
+    assert cuerpo["catalogos"]["modelos"], "los catálogos viajan aunque no haya casos"
+
+
+def test_descarga_prefiere_la_cuadrilla_de_campo(client, entorno_sync, admin_token, db_session):
+    """Con dos cuadrillas vigentes gana la de campo (D-83)."""
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    gestion = _cuadrilla_de_gestion(db_session, admin_token["id_central"])
+    _agregar_a_cuadrilla(client, headers, gestion.id_cuadrilla, id_tecnico, "SUPERVISOR")
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["cuadrilla"]["id_cuadrilla"] == entorno_sync["id_cuadrilla_a"]
+    assert cuerpo["motivo"] == "OK"
+    ids = {c["id_caso"] for c in cuerpo["casos"]}
+    assert entorno_sync["c_a"]["id_caso"] in ids, "perdió el trabajo de la cuadrilla de campo"
+
+
+def test_descarga_sin_despacho_explica_el_motivo(client, entorno_sync, admin_token, db_session):
+    """Cuadrilla de campo sin casos despachados."""
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    id_vacia = _cuadrilla(client, headers, admin_token["id_central"], "TCS3", "Sin despacho")
+    retiro = client.delete(
+        f"{BASE}/cuadrillas/{entorno_sync['id_cuadrilla_a']}/integrantes/{id_tecnico}",
+        headers=headers,
+    )
+    assert retiro.status_code == 204, retiro.text
+    _agregar_a_cuadrilla(client, headers, id_vacia, id_tecnico)
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["casos"] == []
+    assert cuerpo["motivo"] == "SIN_DESPACHO"
+    assert cuerpo["cuadrilla"]["codigo"] == "TCS3"
+    assert "no tiene casos despachados" in cuerpo["mensaje"]
+
+
+def test_descarga_sin_tecnico_vinculado_explica_el_motivo(client, entorno_sync, db_session):
+    """Cuenta de usuario sin técnico vinculado (no debe quedar en silencio)."""
+    usuario = db_session.scalar(select(Usuario).where(Usuario.p00 == P00_ADMIN))
+    assert usuario is not None
+    usuario.id_tecnico = None
+    db_session.commit()
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["admin"]).json()
+    assert cuerpo["casos"] == []
+    assert cuerpo["motivo"] == "SIN_TECNICO"
+    assert "no está vinculada a un técnico" in cuerpo["mensaje"]
+    assert cuerpo["cuadrilla"] is None
+
+
+def test_descarga_sin_cambios_explica_el_motivo(client, entorno_sync):
+    """El diferencial vacío ya no se confunde con «no hay trabajo»."""
+    futuro = (datetime.now(UTC) + timedelta(days=1)).isoformat()
+    cuerpo = client.get(f"{SYNC}/descarga", params={"desde": futuro},
+                        headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["casos"] == []
+    assert cuerpo["motivo"] == "SIN_CAMBIOS"
+    assert cuerpo["casos_cuadrilla"] > 0, "debe informar cuántos casos tiene la cuadrilla"
+    assert "no hay cambios" in cuerpo["mensaje"]
+
+
+def test_descarga_indica_la_cuadrilla_y_su_total(client, entorno_sync):
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["motivo"] == "OK"
+    assert cuerpo["cuadrilla"]["codigo"] == "TCS1"
+    assert cuerpo["cuadrilla"]["es_supervisor"] is False
+    assert cuerpo["casos_cuadrilla"] >= len(cuerpo["casos"])
+
+
+# --------------------------------------------------------------------------- #
+# Integrantes de cuadrilla (D-83)
+# --------------------------------------------------------------------------- #
+def test_integrante_duplicado_da_409(client, entorno_sync, admin_token, db_session):
+    """No se admite dos veces la misma pertenencia activa."""
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    r = client.post(
+        f"{BASE}/cuadrillas/{entorno_sync['id_cuadrilla_a']}/integrantes",
+        json={"id_tecnico": id_tecnico, "rol_cuadrilla": "SUPERVISOR"},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 409, r.text
+    assert "activo" in r.json()["detail"]
+
+
+def test_retirar_integrante_cierra_las_pertenencias_activas(client, entorno_sync, admin_token,
+                                                            db_session):
+    """Un duplicado heredado también queda cerrado al retirar al técnico."""
+    id_a = entorno_sync["id_cuadrilla_a"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    db_session.add(
+        CuadrillaTecnico(
+            id_cuadrilla=id_a,
+            id_tecnico=id_tecnico,
+            rol_cuadrilla="SUPERVISOR",
+            desde=date.today() - timedelta(days=1),
+        )
+    )
+    db_session.commit()
+
+    r = client.delete(f"{BASE}/cuadrillas/{id_a}/integrantes/{id_tecnico}",
+                      headers=admin_token["admin"])
+    assert r.status_code == 204, r.text
+    activos = db_session.scalars(
+        select(CuadrillaTecnico).where(
+            CuadrillaTecnico.id_cuadrilla == id_a,
+            CuadrillaTecnico.id_tecnico == id_tecnico,
+            CuadrillaTecnico.hasta.is_(None),
+        )
+    ).all()
+    assert list(activos) == [], "quedó una pertenencia activa"
 
 
 def test_descarga_incluye_caso_recien_despachado_en_nuevo(client, entorno_sync):

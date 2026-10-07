@@ -40,6 +40,18 @@ logger = logging.getLogger(__name__)
 #: dejaría al técnico sin nada que descargar.
 ESTADOS_TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 
+#: Motivos de una DESCARGA vacía (D-83). Antes, los cuatro casos devolvían
+#: `casos: []` y la APK los anunciaba igual («No hay casos nuevos ni cambios»),
+#: de modo que un técnico sin cuadrilla, uno en la cuadrilla de gestión
+#: (C-00) o una cuadrilla sin despacho parecían «todo sincronizado».
+MOTIVO_OK = "OK"
+MOTIVO_SIN_TECNICO = "SIN_TECNICO"
+MOTIVO_SIN_CUADRILLA = "SIN_CUADRILLA"
+MOTIVO_CUADRILLA_GESTION = "CUADRILLA_GESTION"
+MOTIVO_SIN_DESPACHO = "SIN_DESPACHO"
+MOTIVO_SIN_PENDIENTES = "SIN_PENDIENTES"
+MOTIVO_SIN_CAMBIOS = "SIN_CAMBIOS"
+
 #: Tipos admitidos por el CHECK de `actividad.tipo` (ver `db/schema.sql`).
 #: La APK envía «ENRUTADO»; en la tabla se guarda «ENRUTE».
 TIPOS_DB = {
@@ -64,23 +76,33 @@ RESULTADOS_VALIDOS = frozenset(RESULTADO_POR_TIPO.values())
 
 
 def _cuadrilla_activa(db: Session, usuario: Usuario) -> Cuadrilla | None:
-    """Cuadrilla vigente del técnico vinculado a la cuenta (si existe)."""
+    """Cuadrilla vigente del técnico vinculado a la cuenta (si existe).
+
+    D-83: si el técnico tiene **varias** cuadrillas vigentes se prefiere, en este
+    orden: la pertenencia **abierta** (`hasta` nula, que es la que la web muestra
+    como activa) sobre la que termina hoy, una cuadrilla de **campo** sobre la de
+    gestión (`es_supervisor`), y la asignación más reciente. Así, mover a un
+    técnico de C-00 a una cuadrilla de campo surte efecto el mismo día.
+    """
     if usuario.id_tecnico is None:
         return None
     hoy = date.today()
-    id_cuadrilla = db.scalar(
-        select(CuadrillaTecnico.id_cuadrilla)
+    return db.scalars(
+        select(Cuadrilla)
+        .join(CuadrillaTecnico, CuadrillaTecnico.id_cuadrilla == Cuadrilla.id_cuadrilla)
         .where(
             CuadrillaTecnico.id_tecnico == usuario.id_tecnico,
             CuadrillaTecnico.desde <= hoy,
             (CuadrillaTecnico.hasta.is_(None)) | (CuadrillaTecnico.hasta >= hoy),
         )
-        .order_by(CuadrillaTecnico.desde.desc())
+        .order_by(
+            CuadrillaTecnico.hasta.is_(None).desc(),
+            Cuadrilla.es_supervisor.asc(),
+            CuadrillaTecnico.desde.desc(),
+            Cuadrilla.id_cuadrilla.desc(),
+        )
         .limit(1)
-    )
-    if id_cuadrilla is None:
-        return None
-    return db.get(Cuadrilla, id_cuadrilla)
+    ).first()
 
 
 def resolver_cuadrilla(db: Session, usuario: Usuario) -> dict[str, Any]:
@@ -175,6 +197,44 @@ def _caso_sync(caso: Caso, sector_nombre: str | None, dc: DespachoCasos | None) 
     }
 
 
+def _info_cuadrilla(c: Cuadrilla | None) -> dict[str, Any] | None:
+    """Cuadrilla que el servidor resolvió para la sesión (D-83)."""
+    if c is None:
+        return None
+    return {
+        "id_cuadrilla": c.id_cuadrilla,
+        "codigo": c.codigo,
+        "nombre": c.nombre,
+        "es_supervisor": c.es_supervisor,
+    }
+
+
+def _respuesta(
+    catalogos: dict[str, Any],
+    casos: list[dict[str, Any]],
+    motivo: str,
+    mensaje: str,
+    cuadrilla: Cuadrilla | None = None,
+    casos_cuadrilla: int = 0,
+) -> dict[str, Any]:
+    """Payload de DESCARGA con el motivo explícito (D-83).
+
+    `motivo` es estable para la máquina y `mensaje` va listo para mostrar: así la
+    APK explica por qué no hay casos en vez de decir siempre «no hay casos
+    nuevos» (que era falso cuando el técnico no tenía cuadrilla, estaba en la de
+    gestión o su cuadrilla no tenía despacho).
+    """
+    return {
+        "server_ts": datetime.now(UTC),
+        "casos": casos,
+        "catalogos": catalogos,
+        "motivo": motivo,
+        "mensaje": mensaje,
+        "cuadrilla": _info_cuadrilla(cuadrilla),
+        "casos_cuadrilla": casos_cuadrilla,
+    }
+
+
 def construir_descarga(
     db: Session,
     usuario: Usuario,
@@ -186,6 +246,8 @@ def construir_descarga(
     - Si `ids_conocidos` se envía, solo retorna los casos que faltan en local o
       que cambiaron desde `desde`.
     - Si no se envía, retorna todos los operables de la cuadrilla.
+    - D-83: siempre acompaña `motivo`/`mensaje`/`cuadrilla` para que la APK
+      distinga «no hay nada despachado» de «ya tiene todo».
     """
     rol = usuario.rol.codigo if usuario.rol else ""
     if rol not in {"ADMIN", "SUPERVISOR", "SUPER"} and rol != "TECNICO":
@@ -197,11 +259,31 @@ def construir_descarga(
 
     c = _cuadrilla_activa(db, usuario)
     if c is None:
-        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": catalogos}
+        if usuario.id_tecnico is None:
+            return _respuesta(
+                catalogos, [], MOTIVO_SIN_TECNICO,
+                "Su cuenta no está vinculada a un técnico: pida a su supervisor "
+                "que la registre en el sistema.",
+            )
+        return _respuesta(
+            catalogos, [], MOTIVO_SIN_CUADRILLA,
+            "No tiene una cuadrilla vigente: pida a su supervisor que lo asigne "
+            "a una cuadrilla.",
+        )
 
     ids_cuadrilla = _casos_ids_de_cuadrilla(db, c.id_cuadrilla)
     if not ids_cuadrilla:
-        return {"server_ts": datetime.now(UTC), "casos": [], "catalogos": catalogos}
+        if c.es_supervisor:
+            return _respuesta(
+                catalogos, [], MOTIVO_CUADRILLA_GESTION,
+                f"Su cuadrilla {c.codigo} es de gestión (supervisor) y no recibe "
+                "trabajo de campo: pida a su supervisor una cuadrilla de campo.",
+                c,
+            )
+        return _respuesta(
+            catalogos, [], MOTIVO_SIN_DESPACHO,
+            f"Su cuadrilla {c.codigo} no tiene casos despachados todavía.", c,
+        )
 
     stmt = (
         select(Caso)
@@ -229,6 +311,12 @@ def construir_descarga(
             if dc.id_caso not in dc_map:
                 dc_map[dc.id_caso] = dc
 
+    if not casos:
+        return _respuesta(
+            catalogos, [], MOTIVO_SIN_PENDIENTES,
+            f"Su cuadrilla {c.codigo} no tiene casos pendientes: todos están cerrados.", c,
+        )
+
     salida: list[dict[str, Any]] = []
     for caso in casos:
         # DESCARGA diferencial (D-73):
@@ -248,11 +336,16 @@ def construir_descarga(
         sector_nombre = sectores.get(caso.id_sector) if caso.id_sector else None
         salida.append(_caso_sync(caso, sector_nombre, dc_map.get(caso.id_caso)))
 
-    return {
-        "server_ts": datetime.now(UTC),
-        "casos": salida,
-        "catalogos": catalogos,
-    }
+    if salida:
+        motivo = MOTIVO_OK
+        mensaje = f"{len(salida)} caso(s) de su cuadrilla {c.codigo}."
+    else:
+        motivo = MOTIVO_SIN_CAMBIOS
+        mensaje = (
+            f"Su cuadrilla {c.codigo} tiene {len(casos)} caso(s) y el dispositivo "
+            "ya los tiene todos: no hay cambios."
+        )
+    return _respuesta(catalogos, salida, motivo, mensaje, c, len(casos))
 
 
 def _catalogos(db: Session) -> dict[str, Any]:

@@ -28,6 +28,15 @@ class SyncCuadrillaOut(BaseModel):
     es_supervisor: bool = False
 
 
+class CuadrillaSyncOut(BaseModel):
+    """Cuadrilla que el servidor resolvió para la DESCARGA (D-83)."""
+
+    id_cuadrilla: int
+    codigo: str
+    nombre: str
+    es_supervisor: bool = False
+
+
 class CasoSyncOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,6 +67,12 @@ class SyncDescargaOut(BaseModel):
     server_ts: datetime
     casos: list[CasoSyncOut] = Field(default_factory=list)
     catalogos: CatalogoSyncOut = Field(default_factory=CatalogoSyncOut)
+    # D-83: la APK explica por qué no hay casos en lugar de decir siempre
+    # «No hay casos nuevos ni cambios».
+    motivo: str = "OK"
+    mensaje: str = ""
+    cuadrilla: CuadrillaSyncOut | None = None
+    casos_cuadrilla: int = 0
 
 
 class EvidenciaUploadOut(BaseModel):

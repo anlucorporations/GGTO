@@ -21,6 +21,11 @@ class CasosProvider extends ChangeNotifier {
   DateTime? _actualizadoEn;
   DateTime? _sincronizadoEn;
   int _total = 0;
+  // D-83: explicación del servidor sobre la última descarga.
+  String _motivo = '';
+  String _mensajeServidor = '';
+  String? _cuadrillaCodigo;
+  int _casosCuadrilla = 0;
 
   List<Map<String, dynamic>> get casos => _casos;
   bool get cargando => _cargando;
@@ -30,6 +35,27 @@ class CasosProvider extends ChangeNotifier {
   bool get desdeCache => _desdeCache;
   String? get error => _error;
   String get consulta => _consulta;
+
+  /// Motivo devuelto por el servidor en la última descarga (`OK`, `SIN_CUADRILLA`,
+  /// `CUADRILLA_GESTION`, `SIN_DESPACHO`, `SIN_PENDIENTES`, `SIN_CAMBIOS`…).
+  String get motivoServidor => _motivo;
+
+  /// Mensaje del servidor que explica por qué no hay casos (D-83).
+  String get mensajeServidor => _mensajeServidor;
+
+  /// Cuadrilla que el servidor resolvió para este usuario (p. ej. `C-001`).
+  String? get cuadrillaCodigo => _cuadrillaCodigo;
+
+  /// Casos despachados que el servidor tiene para esa cuadrilla.
+  int get casosCuadrilla => _casosCuadrilla;
+
+  /// Explicación para la pantalla cuando el dispositivo no tiene casos: usa el
+  /// mensaje del servidor y, si no lo hay, el texto genérico.
+  String get explicacionSinCasos {
+    if (_mensajeServidor.isNotEmpty) return _mensajeServidor;
+    if (_error != null) return _error!;
+    return 'No tiene casos asignados en este momento.';
+  }
 
   /// Fecha del contenido local (la última descarga con éxito).
   DateTime? get actualizadoEn => _actualizadoEn;
@@ -60,6 +86,10 @@ class CasosProvider extends ChangeNotifier {
       onProgreso?.call('Descargando los casos de mi cuadrilla…', 0.05);
       final resultado = await DownloadService.descargar(onProgreso: onProgreso);
       _actualizadoEn = resultado.serverTs ?? DateTime.now();
+      _motivo = resultado.motivo;
+      _mensajeServidor = resultado.mensaje;
+      _cuadrillaCodigo = resultado.cuadrillaCodigo;
+      _casosCuadrilla = resultado.casosCuadrilla;
       _desdeCache = false;
       _error = null;
     } on ApiError catch (error) {

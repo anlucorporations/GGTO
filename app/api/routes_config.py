@@ -550,6 +550,24 @@ def agregar_integrante(
 ):
     _o_404(db, Cuadrilla, id_cuadrilla, "Cuadrilla")
     _o_404(db, Tecnico, datos.id_tecnico, "Técnico")
+    # D-83: un técnico no puede tener **dos pertenencias activas** en la misma
+    # cuadrilla (pasaba al cambiarle el rol: quedaba SUPERVISOR y REPARADOR
+    # PRINCIPAL a la vez, y el despacho no sabía cuál usar).
+    activo = db.scalar(
+        select(CuadrillaTecnico).where(
+            CuadrillaTecnico.id_cuadrilla == id_cuadrilla,
+            CuadrillaTecnico.id_tecnico == datos.id_tecnico,
+            CuadrillaTecnico.hasta.is_(None),
+        )
+    )
+    if activo is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "El técnico ya es integrante activo de la cuadrilla como "
+                f"{activo.rol_cuadrilla}; retírelo antes de volver a asignarlo."
+            ),
+        )
     integrante = CuadrillaTecnico(
         id_cuadrilla=id_cuadrilla,
         id_tecnico=datos.id_tecnico,
@@ -572,16 +590,21 @@ def retirar_integrante(
     _: Usuario = Depends(_escritura),
 ):
     hoy = date.today()
-    integrante = db.scalar(
-        select(CuadrillaTecnico).where(
-            CuadrillaTecnico.id_cuadrilla == id_cuadrilla,
-            CuadrillaTecnico.id_tecnico == id_tecnico,
-            CuadrillaTecnico.hasta.is_(None),
-        )
+    # D-83: se cierran **todas** las pertenencias activas (antes solo la primera,
+    # así que un registro duplicado seguía dejando al técnico en la cuadrilla).
+    integrantes = list(
+        db.scalars(
+            select(CuadrillaTecnico).where(
+                CuadrillaTecnico.id_cuadrilla == id_cuadrilla,
+                CuadrillaTecnico.id_tecnico == id_tecnico,
+                CuadrillaTecnico.hasta.is_(None),
+            )
+        ).all()
     )
-    if integrante is None:
+    if not integrantes:
         raise HTTPException(status_code=404, detail="El técnico no está activo en la cuadrilla")
-    integrante.hasta = hoy
+    for integrante in integrantes:
+        integrante.hasta = hoy
     _commit(db, "no se pudo retirar")
 
 

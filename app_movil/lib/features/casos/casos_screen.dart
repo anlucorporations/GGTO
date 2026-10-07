@@ -148,7 +148,7 @@ class _CasosScreenState extends State<CasosScreen> {
           children: [
             const SizedBox(height: 80),
             Icon(
-              casosProv.error != null ? Icons.cloud_off : Icons.inbox,
+              _iconoSinCasos(casosProv),
               size: 56,
               color: Colors.black26,
             ),
@@ -156,11 +156,22 @@ class _CasosScreenState extends State<CasosScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Text(
-                casosProv.error ?? 'No tiene casos asignados en este momento.',
+                // D-83: el servidor explica el motivo real (sin cuadrilla,
+                // cuadrilla de gestión, sin despacho…) en lugar del genérico.
+                casosProv.explicacionSinCasos,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 15),
               ),
             ),
+            if (casosProv.cuadrillaCodigo != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Cuadrilla ${casosProv.cuadrillaCodigo}'
+                '${casosProv.casosCuadrilla > 0 ? ' · ${casosProv.casosCuadrilla} casos despachados' : ''}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
             if (casosProv.error != null) ...[
               const SizedBox(height: 12),
               Center(
@@ -224,13 +235,15 @@ class _BannerContenidoLocal extends StatelessWidget {
     final color = sinRed ? Colors.amber.shade100 : Colors.blueGrey.shade50;
     final icono = sinRed ? Icons.cloud_off : Icons.smartphone;
     final fecha = casos.actualizadoEn;
+    // D-83: la cuadrilla que resolvió el servidor, visible en la franja.
+    final prefijo = casos.cuadrillaCodigo == null ? '' : 'Cuadrilla ${casos.cuadrillaCodigo} · ';
     final texto = sinRed
         ? (fecha == null
             ? 'Sin conexión: mostrando el contenido local del dispositivo.'
             : 'Sin conexión: contenido local del ${_fecha(fecha)}.')
         : (fecha == null
-            ? 'Contenido local · ${casos.locales} casos en el dispositivo.'
-            : 'Contenido local · ${casos.locales} casos · actualizado el ${_fecha(fecha)}.');
+            ? '${prefijo}Contenido local · ${casos.locales} casos en el dispositivo.'
+            : '${prefijo}Contenido local · ${casos.locales} casos · actualizado el ${_fecha(fecha)}.');
 
     return Container(
       width: double.infinity,
@@ -256,4 +269,15 @@ class _BannerContenidoLocal extends StatelessWidget {
     String dos(int v) => v.toString().padLeft(2, '0');
     return '${dos(fecha.day)}/${dos(fecha.month)} ${dos(fecha.hour)}:${dos(fecha.minute)}';
   }
+}
+
+/// Icono del estado vacío según el motivo que devolvió el servidor (D-83).
+IconData _iconoSinCasos(CasosProvider casos) {
+  if (casos.error != null) return Icons.cloud_off;
+  return switch (casos.motivoServidor) {
+    'SIN_TECNICO' => Icons.person_off,
+    'SIN_CUADRILLA' => Icons.group_off,
+    'CUADRILLA_GESTION' => Icons.supervisor_account,
+    _ => Icons.inbox,
+  };
 }
