@@ -12,6 +12,8 @@ QUÉ HACE
        `flutter build apk --release`.
     6. Verifica la firma con `apksigner` (rechaza la firma de depuración).
     7. Publica la APK como `app_movil/GGTOv2.apk` y reporta su SHA-256.
+    8. Copia la APK a `app/web/public/apk/` y regenera `apk.json`: es el archivo
+       que el técnico descarga desde el acceso (`/login`) y desde `/apk/`.
 
 SEGURIDAD
     · Por defecto es **simulación**: detecta todo y muestra el plan, sin compilar.
@@ -34,12 +36,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -49,6 +53,11 @@ KEY_PROPS = ANDROID / "key.properties"
 PUBSPEC = APP / "pubspec.yaml"
 APK_BUILD = APP / "build" / "app" / "outputs" / "flutter-apk" / "app-release.apk"
 APK_ENTREGA = APP / "GGTOv2.apk"
+
+#: Copia que sirve el sitio (`app/web/public/apk/`) y que descarga el técnico.
+WEB_APK_DIR = RAIZ / "app" / "web" / "public" / "apk"
+WEB_APK = WEB_APK_DIR / "ggto-tecnico.apk"
+WEB_META = WEB_APK_DIR / "apk.json"
 
 #: Nombre esperado del keystore de release.
 NOMBRE_JKS = "ggto-tecnico-release.jks"
@@ -83,13 +92,39 @@ def aviso(msg: str) -> None:
 
 
 def error(msg: str) -> None:
-    _imprimir(f"  ✗ {msg}", file=sys.stderr)
+    # El parámetro de `_imprimir` es `destino`: con `file=` cada ruta de error
+    # terminaba en `TypeError` en vez de mostrar el mensaje.
+    _imprimir(f"  ✗ {msg}", sys.stderr)
+
+
+#: Opciones cuyo valor siguiente es un secreto y no debe imprimirse.
+OPCIONES_SECRETAS = ("-storepass", "-keypass", "--storepass", "--keypass")
+
+
+def comando_visible(cmd: Sequence[str | Path]) -> str:
+    """Comando con las contraseñas enmascaradas.
+
+    `correr()` imprime el comando completo: sin este filtro, `keytool -storepass`
+    escribía la contraseña del keystore en la consola y en cualquier log
+    redirigido, justo lo que la cabecera del script promete no hacer.
+    """
+    partes: list[str] = []
+    ocultar = False
+    for parte in cmd:
+        texto = str(parte)
+        if ocultar:
+            partes.append("***")
+            ocultar = False
+            continue
+        partes.append(texto)
+        ocultar = texto in OPCIONES_SECRETAS
+    return " ".join(partes)
 
 
 def correr(cmd: Sequence[str | Path], cwd: Path | None = None, env: dict | None = None,
            capturar: bool = False) -> subprocess.CompletedProcess:
     """Ejecuta un comando mostrando su salida en vivo (o la captura)."""
-    print(f"  $ {' '.join(str(c) for c in cmd)}")
+    print(f"  $ {comando_visible(cmd)}")
     return subprocess.run(
         [str(c) for c in cmd],
         cwd=str(cwd) if cwd else None,
@@ -223,7 +258,7 @@ def diagnosticar_toolchain() -> dict:
     toolchain["java_home"], toolchain["keytool"] = localizar_java()
     toolchain["apksigner"] = localizar_apksigner(toolchain["sdk"])
 
-    paso("1/7 Cadena de herramientas")
+    paso("1/8 Cadena de herramientas")
     ok(f"Flutter       : {toolchain['flutter']}") if toolchain["flutter"] else error("Flutter no encontrado")
     ok(f"JAVA_HOME     : {toolchain['java_home'] or '(java del sistema)'}")
     if toolchain["keytool"]:
@@ -376,7 +411,7 @@ def version_actual() -> str:
 
 
 def preparar(env: dict, flutter: Path) -> bool:
-    paso("5/7 Preparando dependencias y parches")
+    paso("5/8 Preparando dependencias y parches")
     res = correr([flutter, "pub", "get"], cwd=APP, env=env)
     if res.returncode != 0:
         error("`flutter pub get` falló")
@@ -389,7 +424,7 @@ def preparar(env: dict, flutter: Path) -> bool:
 
 
 def compilar(env: dict, flutter: Path, dart_defines: list[str]) -> bool:
-    paso("6/7 Compilando la APK de release")
+    paso("6/8 Compilando la APK de release")
     cmd = [str(flutter), "build", "apk", "--release"]
     for definicion in dart_defines:
         cmd.append(f"--dart-define={definicion}")
@@ -402,7 +437,7 @@ def compilar(env: dict, flutter: Path, dart_defines: list[str]) -> bool:
 
 def verificar_firma(apksigner: Path | None, apk: Path, exigir_release: bool,
                     env: dict) -> bool:
-    paso("7/7 Verificando la firma")
+    paso("7/8 Verificando la firma")
     if apksigner is None:
         aviso("Sin apksigner no se puede verificar la firma; revisa el certificado a mano")
         return True
@@ -440,6 +475,38 @@ def sha256(ruta: Path) -> str:
         for bloque in iter(lambda: fh.read(1 << 20), b""):
             h.update(bloque)
     return h.hexdigest()
+
+
+def publicar_en_web(apk: Path, version: str) -> Path:
+    """Copia la APK al sitio y regenera sus metadatos (`apk.json`).
+
+    Es el archivo que descarga el técnico desde `/login` y desde `/apk/`, servido
+    por el mismo servicio de Cloud Run (GCP) que publica la SPA. Sin este paso la
+    entrega quedaba a medias: `app_movil/GGTOv2.apk` se actualizaba, pero el
+    binario del sitio seguía siendo el de una entrega anterior (el `.gitignore`
+    excluye el `.apk` y el `apk.json`, así que nada lo delataba en git).
+    """
+    WEB_APK_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(apk, WEB_APK)
+    bytes_ = WEB_APK.stat().st_size
+    meta = {
+        "archivo": WEB_APK.name,
+        "ruta": f"/apk/{WEB_APK.name}",
+        "nombre": "GGTO Técnico",
+        "version": version,
+        "bytes": bytes_,
+        "kb": round(bytes_ / 1024),
+        "sha256": sha256(WEB_APK),
+        "compilado_en": datetime.fromtimestamp(
+            WEB_APK.stat().st_mtime, tz=UTC
+        ).isoformat(),
+        "nota": "APK de evaluación. Contiene el aviso de uso restringido en el "
+                "primer arranque. No distribuir.",
+    }
+    WEB_META.write_text(
+        json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return WEB_APK
 
 
 # --------------------------------------------------------------------------- #
@@ -493,10 +560,10 @@ def main() -> int:
     jks: Path | None = None
 
     if args.firma_debug:
-        paso("2/7 Keystore")
+        paso("2/8 Keystore")
         aviso("Firma de depuración solicitada: no se usa el keystore de release")
     else:
-        paso("2/7 Detectando el keystore de release")
+        paso("2/8 Detectando el keystore de release")
         jks = detectar_keystore(args.keystore, props)
         if jks is None:
             error(f"No se encontró «{NOMBRE_JKS}»")
@@ -504,11 +571,11 @@ def main() -> int:
             print("      Para una APK de prueba: --firma-debug")
             return 3
         ok(f"Keystore: {jks}")
-        paso("3/7 Validando el keystore")
+        paso("3/8 Validando el keystore")
         if not validar_keystore(toolchain["keytool"], jks, props.get("keyAlias"),
                                 props.get("storePassword")):
             return 4
-        paso("4/7 Preparando key.properties")
+        paso("4/8 Preparando key.properties")
         if not asegurar_key_properties(jks, props, aplicar=args.confirmar):
             return 4
 
@@ -529,6 +596,10 @@ def main() -> int:
             print("  3) apksigner verify (exigir firma de release)")
         if destino:
             print(f"  {'6' if args.firma_debug else '4'}) publicar en {destino}")
+        if args.firma_debug:
+            print("  · el sitio web NO se actualiza con una firma de depuración")
+        elif destino:
+            print(f"  {'7' if args.firma_debug else '5'}) copiar a {WEB_APK} + apk.json")
         print("\nVuelve a ejecutar con --confirmar para compilar.")
         return 0
 
@@ -558,12 +629,23 @@ def main() -> int:
     publicada = publicar(APK_BUILD, destino)
     peso_mb = publicada.stat().st_size / (1024 * 1024)
 
+    servida: Path | None = None
+    if destino is not None and not args.firma_debug:
+        paso("8/8 Publicando en el sitio (app/web/public/apk)")
+        servida = publicar_en_web(publicada, version_actual())
+        ok(f"Sitio web : {servida} ({servida.stat().st_size / (1024 * 1024):.1f} MB)")
+        ok(f"Metadatos : {WEB_META.name}")
+    elif args.firma_debug and destino is not None:
+        aviso("Firma de depuración: no se publica en el sitio web")
+
     print("\n" + "=" * 75)
     print("APK LISTA")
     print(f"  Archivo     : {publicada}")
     print(f"  Tamaño      : {peso_mb:.1f} MB")
     print(f"  SHA-256     : {sha256(publicada)}")
     print(f"  Versión     : {version_actual()}")
+    if servida is not None:
+        print(f"  Descarga    : /apk/{servida.name} (servida por Cloud Run desde el acceso)")
     print("=" * 75)
     if exigir_release:
         print("Recuerda: sube el versionCode de pubspec.yaml en cada entrega a CANTV.")

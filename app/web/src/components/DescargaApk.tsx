@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IconoAndroid, IconoDescargar } from './Iconos';
 
 /**
  * Descarga de la APK y sugerencia de instalación en móvil.
@@ -121,6 +122,10 @@ export function cerrarSugerencia(): void {
 /**
  * Botón de descarga del APK, con la versión y el tamaño publicados.
  * Visible para todos los dispositivos (el técnico también usa la web en PC).
+ *
+ * El enlace apunta **al archivo** (`/apk/ggto-tecnico.apk`, servido por el
+ * servicio de Cloud Run en GCP), no a la página intermedia: un toque descarga.
+ * El enlace a la página de instrucciones se ofrece aparte.
  */
 export function DescargaApk({ compacto = false }: { compacto?: boolean }) {
   const { meta, disponible } = useApkMeta();
@@ -134,7 +139,13 @@ export function DescargaApk({ compacto = false }: { compacto?: boolean }) {
   }
 
   return (
-    <div className={`apk-caja${compacto ? ' apk-caja-compacta' : ''}`}>
+    <div
+      className={`apk-caja${compacto ? ' apk-caja-compacta' : ''}`}
+      title={meta ? `SHA-256: ${meta.sha256}` : undefined}
+    >
+      <span className="apk-icono" aria-hidden="true">
+        <IconoAndroid width={24} height={24} />
+      </span>
       <div className="apk-texto">
         <strong>Aplicación móvil · GGTO Técnico</strong>
         <span className="texto-pequeno">
@@ -143,9 +154,21 @@ export function DescargaApk({ compacto = false }: { compacto?: boolean }) {
             : 'Android · APK de evaluación'}
         </span>
       </div>
-      <a className="btn btn-apk" href={APK_PAGINA} download data-testid="descargar-apk">
-        Descargar APK
-      </a>
+      <div className="apk-acciones">
+        <a
+          className="btn btn-apk"
+          href={APK_URL}
+          download="ggto-tecnico.apk"
+          title="Descargar el archivo APK firmado (Android)"
+          data-testid="descargar-apk"
+        >
+          <IconoDescargar width={18} height={18} />
+          Descargar APK
+        </a>
+        <a className="enlace apk-instrucciones" href={APK_PAGINA} data-testid="instrucciones-apk">
+          Cómo instalar
+        </a>
+      </div>
     </div>
   );
 }
@@ -170,7 +193,7 @@ export function SugerenciaApk({ onCerrar }: { onCerrar?: () => void }) {
   return (
     <div className="sugerencia-apk" role="status" aria-live="polite" data-testid="sugerencia-apk">
       <div className="sugerencia-apk-icono" aria-hidden="true">
-        📱
+        <IconoAndroid width={26} height={26} />
       </div>
       <div className="sugerencia-apk-texto">
         <strong>Está usando un dispositivo móvil</strong>

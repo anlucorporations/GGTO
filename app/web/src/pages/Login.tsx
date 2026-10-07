@@ -14,6 +14,7 @@ import * as api from '../api/client';
 import type { PrimerAccesoOut } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import AvisoLegal from '../components/AvisoLegal';
+import { DescargaApk, SugerenciaApk } from '../components/DescargaApk';
 import Mensaje from '../components/Mensaje';
 import { aceptacionPrevia, registrarAceptacion } from '../disclaimer';
 
@@ -434,6 +435,12 @@ export default function Login() {
                 </div>
               </div>
             )}
+
+            {/* D-72: descarga de la APK de GGTO Técnico desde el acceso. El
+                icono descarga el archivo servido por el servicio en GCP
+                (`/apk/ggto-tecnico.apk`); en móvil se ofrece además instalar. */}
+            <SugerenciaApk />
+            <DescargaApk compacto />
           </>
         )}
       </div>

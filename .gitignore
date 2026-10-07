@@ -8,6 +8,11 @@ RepoTecnico/credenciales/
 *.jks
 *.keystore
 key.properties
+# Variantes que `publicar_apk.py` crea (respaldo y apartado temporal): llevan
+# `storePassword` en claro y quedaron versionadas por no cubrirlas el patrón
+# anterior. Se ignoran con cualquier nombre que empiece por `key.properties`.
+key.properties*
+app_movil/android/key.properties*
 
 # ---------------------------------------------------------------------------
 # Datos de entrada con PII de suscriptores (H-01)

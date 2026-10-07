@@ -58,4 +58,27 @@ async function buscarGlobal(page, termino) {
   return page.getByRole('listbox', { name: 'Resultados' });
 }
 
-module.exports = { USUARIOS, rellenar, marcar, iniciarSesion, cerrarSesion, buscarGlobal };
+/**
+ * Abre el acceso y acepta el aviso legal (D-71) si aún no se ha aceptado.
+ *
+ * Estaba escrita dentro de `01-login.spec.js` pero no se exportaba, así que
+ * `19-descarga-apk.spec.js` —que la importa— fallaba al invocarla.
+ */
+async function aceptarAviso(page) {
+  await page.goto('/login');
+  const muro = page.locator('.aviso-legal');
+  if (await muro.isVisible().catch(() => false)) {
+    await page.locator('#aviso-acepto').check();
+    await page.getByRole('button', { name: 'Aceptar e ingresar' }).click();
+  }
+}
+
+module.exports = {
+  USUARIOS,
+  rellenar,
+  marcar,
+  aceptarAviso,
+  iniciarSesion,
+  cerrarSesion,
+  buscarGlobal,
+};

@@ -454,3 +454,28 @@ export function IconoCerrado(props: Props) {
     </svg>
   );
 }
+
+/* --- Descarga de la APK (D-72 · enlace desde el acceso) --- */
+
+/** Descargar: flecha hacia la bandeja. */
+export function IconoDescargar(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5v11" />
+      <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+      <path d="M4.5 20h15" />
+    </svg>
+  );
+}
+
+/** Android: robot de la aplicación móvil. */
+export function IconoAndroid(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 11.5a7 7 0 0 1 14 0v5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5z" />
+      <path d="M8.5 11.5v-3M15.5 11.5v-3" />
+      <path d="m8.6 5.6-1.4-2M15.4 5.6l1.4-2" />
+      <path d="M9.5 15.5h.01M14.5 15.5h.01" />
+    </svg>
+  );
+}

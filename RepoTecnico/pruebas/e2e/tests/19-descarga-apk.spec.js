@@ -44,7 +44,11 @@ test.describe('Descarga de la APK', () => {
     expect(apk.status()).toBeLessThan(400);
 
     await abrirEnEscritorio(page);
-    await expect(page.getByTestId('descargar-apk')).toBeVisible();
+    // El icono del acceso apunta **al archivo**, no a la página intermedia.
+    const descarga = page.getByTestId('descargar-apk');
+    await expect(descarga).toBeVisible();
+    await expect(descarga).toHaveAttribute('href', '/apk/ggto-tecnico.apk');
+    await expect(descarga).toHaveAttribute('download', 'ggto-tecnico.apk');
     await expect(page.getByText(/Aplicación móvil · GGTO Técnico/)).toBeVisible();
     await expect(page.getByText(new RegExp(`Versión ${datos.version.replace('+', '\\+')}`))).toBeVisible();
   });
@@ -74,6 +78,10 @@ test.describe('Descarga de la APK', () => {
     await expect(page.getByTestId('sugerencia-apk')).toHaveCount(0);
     // La descarga manual sigue disponible tras omitir.
     await expect(page.getByTestId('descargar-apk')).toBeVisible();
+    // Y su enlace sigue siendo el del archivo publicado.
+    await expect(page.getByTestId('descargar-apk')).toHaveAttribute(
+      'href', '/apk/ggto-tecnico.apk',
+    );
   });
 
   test('la página de descarga explica la instalación', async ({ page }) => {
