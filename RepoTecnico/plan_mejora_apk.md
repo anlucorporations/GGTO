@@ -251,3 +251,43 @@ entrega `1.1.0`).
 (10 nuevas en `test/d87_ficha_test.dart`, incluida la regresión de M-06: en
 CONTACTADO el pie **no** ofrece «Marcar como contactado») · APK **`1.0.0+7`**
 publicada (SHA-256 `d55e0e92…`).
+
+### 7.3 D-88 · Flujo de campo completo — entregado en la `1.1.0+8` (2026-10-08)
+
+| Capa | Cambio |
+|---|---|
+| Backend | `POST /casos/{id}/no-contesta` (**RF-APK-12**): compone en **una transacción** el paso a `CITADO`, la cita de **1ra visita** (mañana 08:00; la hora la envía la APK en la zona del dispositivo) y la actividad de `CONTACTO` con el método `COS` («informado al COS»). Lo puede ejecutar el **TECNICO** |
+| Backend | `PATCH /casos/{id}/contacto` (**RF-APK-11**): el técnico corrige **solo** dirección y número de contacto, con validación de la serie **700/701/702** (normaliza el número), recálculo de sector y traza en `auditoria` (`datos_antes`/`datos_despues`). Cualquier otro campo sigue reservado a ADMIN/SUPERVISOR |
+| Backend | Catálogo: fila `('CONTACTO','COS','Cliente informado al COS')` en `schema.sql` + migración idempotente `scripts/migrar_d88_contacto_cos.py` (**aplicada en producción**, id 10) con simulación por defecto |
+| APK `acciones_caso.dart` | Acción `noContesta` en `NUEVO`/`ASIGNADO`/`EN_GESTION`; validación de teléfono (serie y 10 dígitos) y dirección; `citaDeNoContesta()` = mañana a las 08:00 |
+| APK `operaciones_service.dart` | `noContesta()` y `editarContacto()` con **escritura optimista** y cola offline. **Defecto corregido:** `cerrar`, `enrutar` y `agendarCita` exigen ADMIN/SUPERVISOR, así que un **TECNICO** recibía 403 y la acción se **perdía**; ahora un 403 también se **encola** (viaja en la CARGA, que sí lo admite) |
+| APK `caso_detalle_screen.dart` | Botón **«No contesta»** con confirmación (cita y aviso al COS), **diálogo de edición del contacto** con validación en vivo y tarjeta de **imágenes cargadas** (requisito 3.2bis) |
+| Entrega | APK **`1.1.0+8`** (SHA-256 `92dc6b73…`), imagen **`v24`** → revisión **`ggto-web-00039-g9n`** |
+
+**Verificación:** backend **307/307** (`pytest`, 8 pruebas nuevas en
+`test_d88_campo.py`) con `ruff`/`mypy` limpios · `flutter analyze` sin hallazgos ·
+`flutter test` **56/56** (10 nuevas) · **humo en vivo:** las dos rutas aparecen en
+el contrato, `POST /casos/999999/no-contesta` y `PATCH /casos/999999/contacto`
+responden **404 «Caso no encontrado»** (están cableadas) y un teléfono fuera de
+serie responde **422** con el mensaje de validación; la APK servida es la
+**`1.1.0+8`** con SHA idéntico al firmado.
+
+**Pendiente de este ciclo:** actualizar el **manual 11** (ficha con
+CABECERA/CUERPO/PIE, «No Contesta», edición del contacto, mensajería) y regenerar
+sus HTML/PDF con el flujo de `docs/Manuales/_build/sincronizar_manual.py`.
+
+---
+
+## 8. Cierre del plan
+
+| Ciclo | Requisitos | Estado | Entrega |
+|---|---|---|---|
+| D-84 | RF-APK-01, 02 | ✅ desplegado | `1.0.0+5` · rev 37 |
+| D-85 | RF-APK-03 | ✅ desplegado | `1.0.0+5` · rev 37 |
+| D-86 | RF-APK-04, 05 | ✅ desplegado | `1.0.0+6` · rev 38 |
+| D-87 | RF-APK-06, 07 | ✅ desplegado | `1.0.0+7` (en la v24) |
+| D-88 | RF-APK-08…12 | ✅ desplegado | `1.1.0+8` · rev 39 |
+
+**Cobertura:** las 10 observaciones de `mejoras_APK.md` (M-01…M-10) quedaron
+atendidas. Pendientes fuera del plan: la **rotación de la contraseña del keystore**
+y la actualización de los manuales HTML/PDF.
