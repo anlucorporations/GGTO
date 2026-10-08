@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_, select, text
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..models import (
     Actividad,
+    Auditoria,
     Caso,
     CasoEstadoHist,
     CatalogoMetodo,
@@ -32,7 +33,9 @@ from ..schemas.casos import (
     CasoUpdate,
     CierreCaso,
     CitaRapida,
+    ContactoUpdate,
     EnrutadoCaso,
+    NoContestaIn,
     PaginaCasos,
     ResolucionOut,
 )
@@ -556,6 +559,139 @@ def agendar_cita(
         estado_actual=caso.estado_actual,
         mensaje=f"Cita agendada para {datos.fecha_hora:%d/%m/%Y %H:%M}.",
     )
+
+
+@router.post("/{id_caso}/no-contesta", response_model=ResolucionOut,
+             summary="«No Contesta»: cita de 1ra visita, CITADO e informado al COS (D-88)")
+def no_contesta(
+    id_caso: int,
+    datos: NoContestaIn | None = None,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_gestion),
+) -> ResolucionOut:
+    """Compone el «No Contesta» del técnico en **una sola transacción** (RF-APK-12).
+
+    1. El caso pasa a `CITADO` con su bitácora de estado.
+    2. Se agenda la cita de **1ra visita** para el día siguiente a las 08:00 (la
+       hora la envía la APK, que conoce la zona del dispositivo).
+    3. Se registra la actividad de `CONTACTO` con el método `COS` («informado al
+       COS», D-88).
+
+    Lo puede ejecutar el **TECNICO** (es gestión del caso que atiende), a
+    diferencia del cierre o el enrutado, que exigen ADMIN/SUPERVISOR. La APK lo
+    encola si no hay red, de modo que llega íntegro en la CARGA.
+    """
+    caso = _o_404(db, id_caso)
+    if caso.estado_actual in {"CERRADO", "CANCELADO", "ENRUTADO"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"El caso está {caso.estado_actual}: no admite «No Contesta»",
+        )
+
+    metodo = db.scalar(
+        select(CatalogoMetodo).where(
+            CatalogoMetodo.dominio == "CONTACTO", CatalogoMetodo.codigo == "COS"
+        )
+    )
+    if metodo is None:
+        # El catálogo se siembra en `schema.sql`; en producción lo añade la
+        # migración D-88. Sin él no se puede dejar constancia del aviso al COS.
+        raise HTTPException(
+            status_code=409,
+            detail="Falta el método CONTACTO/COS en el catálogo (migración D-88 pendiente)",
+        )
+
+    ahora = datetime.now(UTC)
+    fecha_cita = (datos.fecha_hora if datos else None) or (
+        (ahora + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
+    )
+    observacion = ((datos.observacion if datos else None) or "").strip() or (
+        "1ra visita: el cliente no contestó; se informó al COS"
+    )
+
+    _registrar_estado(db, caso, "CITADO", "No contesta: 1ra visita", usuario.p00)
+    cita = Cita(
+        id_caso=caso.id_caso,
+        fecha_hora=fecha_cita,
+        tipo="ATENCION",
+        estado="PROPUESTA",
+        observacion=observacion[:500],
+        creado_por=usuario.p00,
+    )
+    db.add(cita)
+    caso.fecha_cita = fecha_cita
+    db.flush()
+    actividad = Actividad(
+        id_caso=caso.id_caso,
+        id_usuario=usuario.id_usuario,
+        tipo="CONTACTO",
+        resultado="CONTACTADO",
+        reporte_corto=observacion[:200],
+        id_metodo=metodo.id_metodo,
+        fecha_hora=ahora,
+        sincronizado=True,
+    )
+    db.add(actividad)
+    db.commit()
+    db.refresh(caso)
+    db.refresh(cita)
+    db.refresh(actividad)
+    return ResolucionOut(
+        accion="NO_CONTESTA",
+        id_actividad=actividad.id_actividad,
+        id_cita=cita.id_cita,
+        estado_actual=caso.estado_actual,
+        mensaje=(
+            f"Caso en CITADO con cita el {fecha_cita:%d/%m/%Y %H:%M} "
+            "(1ra visita, informado al COS)."
+        ),
+    )
+
+
+@router.patch("/{id_caso}/contacto", response_model=CasoOut,
+              summary="Corregir dirección y número de contacto desde el campo (D-88)")
+def actualizar_contacto(
+    id_caso: int,
+    datos: ContactoUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_gestion),
+) -> CasoOut:
+    """El técnico corrige **solo** la dirección y el teléfono del contacto.
+
+    Queda la traza en `auditoria` (`datos_antes` / `datos_despues`) y, si cambia
+    la dirección, se recalcula el sector como en la edición de gestión (RF-23).
+    Cualquier otro campo sigue reservado al PATCH de ADMIN/SUPERVISOR.
+    """
+    caso = _o_404(db, id_caso)
+    cambios = datos.model_dump(exclude_unset=True, exclude_none=True)
+    if not cambios:
+        raise HTTPException(
+            status_code=422, detail="Indique la dirección o el número de contacto"
+        )
+    if caso.estado_actual in {"CERRADO", "CANCELADO", "ENRUTADO"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"El caso está {caso.estado_actual}: no admite cambios de contacto",
+        )
+
+    antes = {campo: getattr(caso, campo) for campo in cambios}
+    for campo, valor in cambios.items():
+        setattr(caso, campo, valor)
+    if "direccion" in cambios:
+        caso.id_sector = _sectorizar(db, caso.id_central, caso.direccion)
+    db.add(
+        Auditoria(
+            usuario=usuario.p00,
+            accion="CONTACTO_CAMPO",
+            entidad="caso",
+            id_entidad=str(caso.id_caso),
+            datos_antes=antes,
+            datos_despues={campo: getattr(caso, campo) for campo in cambios},
+        )
+    )
+    db.commit()
+    db.refresh(caso)
+    return _resumen(db, [caso])[0]
 
 
 @router.post("/{id_caso}/enrutado", response_model=ResolucionOut,

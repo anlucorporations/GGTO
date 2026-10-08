@@ -234,3 +234,20 @@ hallazgos** · `flutter test` **38/38** (7 nuevas en `test/d86_mensajes_test.dar
 
 **Pendiente:** D-87 (ficha CABECERA/CUERPO/PIE) y D-88 (flujo de campo completo y
 entrega `1.1.0`).
+
+### 7.2 D-87 · Ficha con CABECERA · CUERPO · PIE — entregado en la `1.0.0+7` (2026-10-08)
+
+> Nota de versiones: como D-85 se entregó junto con D-84 (`1.0.0+5`) y D-86 salió
+> en la `1.0.0+6`, este ciclo se publica como **`1.0.0+7`** (el plan lo preveía en
+> la `+8`); la numeración se mantiene contigua y D-88 será la `1.1.0`.
+
+| Archivo | Cambio |
+|---|---|
+| `features/casos/acciones_caso.dart` **(nuevo)** | Regla **pura** de acciones por estado (`accionesDeEstado`, `puedeEditarContacto`, `notaDeEstado`, `estadosCerrados`, `notasPorEstado`): NUEVO/ASIGNADO → marcar contactado + agendar; CONTACTADO/CITADO → **solo** atender; CERRADO/CANCELADO/ENRUTADO/DIFERIDO → sin acciones con su explicación. **Cierra el defecto M-06** |
+| `widgets/ficha_caso.dart` **(nuevo)** | `FichaCabecera` (avatar, nombre, teléfono, chip de estado, icono **Editar**), `FichaCuerpo` (área desplazable adaptable), `FichaSeccion` (grupo colapsable `ExpansionTile`), `FichaPie` (acciones **fijas** con `SafeArea`, nota del estado y aviso de sincronización pendiente/sin conexión) |
+| `features/casos/caso_detalle_screen.dart` | Reescrita con `Column[CABECERA fija · CUERPO Expanded · PIE fijo]`: la cabecera y el pie **no se desplazan**. Grupos: Contacto (abierto), Administrativa, Técnica y Reporte (plegados, cada uno una ficha detalle). El chip de estado sale del `AppBar` a la cabecera. «Marcar como contactado» actúa **sin salir** de la ficha (el PIE cambia solo) y se retiró el `Navigator.pop` tras agendar/atender para que la ficha refleje el estado nuevo. El icono **Editar** queda visible y avisa de que la edición llega en D-88 (`PATCH /casos/{id}` exige ADMIN/SUPERVISOR) |
+
+**Verificación:** `flutter analyze` **sin hallazgos** · `flutter test` **48/48**
+(10 nuevas en `test/d87_ficha_test.dart`, incluida la regresión de M-06: en
+CONTACTADO el pie **no** ofrece «Marcar como contactado») · APK **`1.0.0+7`**
+publicada (SHA-256 `d55e0e92…`).

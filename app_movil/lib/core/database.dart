@@ -479,6 +479,26 @@ class DatabaseHelper {
     });
   }
 
+  /// Cuántas imágenes hay guardadas para el caso (D-88 · requisito 3.2bis).
+  ///
+  /// En `evidencia_local.id_caso` se guarda indistintamente el `id_averia` o el
+  /// `id_caso`, según el origen de la captura: se cuentan ambos.
+  Future<int> contarEvidenciasDeCaso(String idAveria, {int? idCaso}) async {
+    final db = await database;
+    var where = '(id_caso = ? OR id_averia = ?)';
+    final valores = <Object?>[idAveria, idAveria];
+    if (idCaso != null) {
+      where += ' OR id_caso = ?';
+      valores.add('$idCaso');
+    }
+    final filas = await db.rawQuery(
+      'SELECT COUNT(*) AS total FROM evidencia_local WHERE $where',
+      valores,
+    );
+    final valor = filas.isNotEmpty ? filas.first['total'] : 0;
+    return valor is int ? valor : 0;
+  }
+
   /// Evidencias de una jornada (desde `desde`), más recientes primero.
   Future<List<Map<String, dynamic>>> evidencias({DateTime? desde, String? idCaso}) async {
     final db = await database;

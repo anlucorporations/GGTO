@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ESTADOS_CASO = (
     "NUEVO",
@@ -215,6 +216,51 @@ class EnrutadoCaso(BaseModel):
                          description="Instancia destino (seguimiento, planta, masivos…)")
     motivo: str | None = Field(default=None, max_length=500)
     id_metodo: int | None = None
+
+
+class NoContestaIn(BaseModel):
+    """Cuerpo de «No Contesta» (D-88 · RF-APK-12).
+
+    La APK envía la cita del **día siguiente a las 08:00 en la hora del
+    dispositivo** (el técnico está en campo); si no la envía, el servidor propone
+    las 08:00 del día siguiente en UTC.
+    """
+
+    fecha_hora: datetime | None = None
+    observacion: str | None = Field(default=None, max_length=200)
+
+
+class ContactoUpdate(BaseModel):
+    """Edición de campo del contacto (D-88 · RF-APK-11).
+
+    Un técnico solo puede corregir la **dirección** y el **número de contacto**;
+    cualquier otro campo sigue reservado a la gestión por web.
+    """
+
+    direccion: str | None = Field(default=None, min_length=5, max_length=200)
+    telefono: str | None = Field(default=None, max_length=20)
+
+    @field_validator("telefono")
+    @classmethod
+    def _serie_valida(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        limpio = re.sub(r"[\s\-().]", "", valor.strip())
+        if not re.fullmatch(r"(700|701|702)\d{7}", limpio):
+            raise ValueError(
+                "El número de contacto debe ser de la serie 700, 701 o 702 (10 dígitos)"
+            )
+        return limpio
+
+    @field_validator("direccion")
+    @classmethod
+    def _direccion_util(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        limpio = " ".join(valor.split())
+        if len(limpio) < 5:
+            raise ValueError("La dirección indicada es demasiado corta")
+        return limpio
 
 
 class ResolucionOut(BaseModel):

@@ -2,6 +2,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
+import 'acciones_caso.dart';
 
 /// Resultado de una operación de campo.
 class ResultadoOperacion {
@@ -172,7 +173,7 @@ class OperacionesService {
         // Solapamiento con otra cita de la cuadrilla (RNF-04).
         return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
       }
-      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+      if (_convieneEncolar(error)) {
         await DatabaseHelper.instance.encolarAccion(
           tipo: 'CITA',
           endpoint: endpoint,
@@ -220,7 +221,7 @@ class OperacionesService {
           : 'Caso cerrado con $modo.';
       return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
     } on ApiError catch (error) {
-      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+      if (_convieneEncolar(error)) {
         // D-73: las evidencias NO se marcan como subidas aquí; `UploadService`
         // sube primero el archivo y luego envía la acción por `/sync/carga`.
         await DatabaseHelper.instance.encolarAccion(
@@ -267,7 +268,7 @@ class OperacionesService {
           : 'Caso enrutado a $destino.';
       return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
     } on ApiError catch (error) {
-      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+      if (_convieneEncolar(error)) {
         // D-73: la evidencia viaja dentro de la propia acción ENRUTADO; no se
         // marca subida ni se encola aparte (UploadService sube el archivo).
         await DatabaseHelper.instance.encolarAccion(
@@ -280,6 +281,122 @@ class OperacionesService {
         await _aplicarLocal(idAveria, estado: 'ENRUTADO', pendienteSync: true);
         return const ResultadoOperacion(
           mensaje: 'Sin conexión: el enrutado quedó guardado en el dispositivo y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// ¿El error se resuelve reintentando (red, servidor caído o **rol** que el
+  /// endpoint directo no admite)?
+  ///
+  /// D-88: `cerrar`, `enrutar` y `agendarCita` exigen ADMIN/SUPERVISOR, así que un
+  /// **TECNICO** recibía un 403 y la acción se perdía. Ahora se **encola** y viaja
+  /// en la CARGA (que sí lo admite): el trabajo de campo nunca se descarta.
+  static bool _convieneEncolar(ApiError error) =>
+      error.esDeRed ||
+      error.status == 403 ||
+      (error.status != null && error.status! >= 500);
+
+  /// «No Contesta» (D-88 · RF-APK-12).
+  ///
+  /// El caso pasa a `CITADO` con la cita de **1ra visita** (mañana 08:00) y queda
+  /// constancia de «informado al COS»: el servidor lo compone en una sola
+  /// transacción y, si no hay red, la acción viaja en la CARGA.
+  static Future<ResultadoOperacion> noContesta({
+    required int idCaso,
+    required String idAveria,
+    DateTime? fechaHora,
+    String? observacion,
+  }) async {
+    final cita = fechaHora ?? citaDeNoContesta();
+    final payload = <String, dynamic>{
+      'fecha_hora': cita.toUtc().toIso8601String(),
+      if (observacion != null && observacion.trim().isNotEmpty)
+        'observacion': observacion.trim(),
+    };
+    final endpoint = '/casos/$idCaso/no-contesta';
+    try {
+      final datos = await ApiClient.post(endpoint, data: payload);
+      final caso = await _refrescarCaso(idCaso);
+      final mensaje = datos is Map && datos['mensaje'] != null
+          ? '${datos['mensaje']}'
+          : 'El caso quedó CITADO con cita de 1ra visita.';
+      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
+    } on ApiError catch (error) {
+      if (_convieneEncolar(error)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'NO_CONTESTA',
+          endpoint: endpoint,
+          metodo: 'POST',
+          payload: payload,
+        );
+        // D-85: el cambio se ve de inmediato y queda marcado como pendiente.
+        await _aplicarLocal(
+          idAveria,
+          estado: 'CITADO',
+          pendienteSync: true,
+          extra: {'fecha_cita': cita.toUtc().toIso8601String()},
+        );
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: el «No Contesta» quedó guardado en el dispositivo '
+              'y se enviará al sincronizar.',
+          enviada: false,
+        );
+      }
+      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
+    }
+  }
+
+  /// Corrige la **dirección** y el **número de contacto** desde el campo (D-88 ·
+  /// RF-APK-11). El servidor valida la serie 700/701/702 y deja traza en
+  /// `auditoria`; sin red, la edición queda encolada.
+  static Future<ResultadoOperacion> editarContacto({
+    required int idCaso,
+    required String idAveria,
+    String? direccion,
+    String? telefono,
+  }) async {
+    final payload = <String, dynamic>{
+      if (direccion != null && direccion.trim().isNotEmpty)
+        'direccion': direccion.trim(),
+      if (telefono != null && telefono.trim().isNotEmpty)
+        'telefono': telefono.trim(),
+    };
+    if (payload.isEmpty) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique la dirección o el número de contacto.',
+        enviada: false,
+      );
+    }
+    final endpoint = '/casos/$idCaso/contacto';
+    try {
+      final datos = await ApiClient.patch(endpoint, data: payload);
+      final caso = datos is Map
+          ? Map<String, dynamic>.from(datos)
+          : await _refrescarCaso(idCaso);
+      if (caso != null) {
+        await DatabaseHelper.instance
+            .actualizarCasoLocal(conCambioLocal(caso, pendienteSync: false));
+      }
+      return ResultadoOperacion(
+        mensaje: 'Contacto actualizado en el caso.',
+        enviada: true,
+        caso: caso,
+      );
+    } on ApiError catch (error) {
+      if (_convieneEncolar(error)) {
+        await DatabaseHelper.instance.encolarAccion(
+          tipo: 'CONTACTO_CAMPO',
+          endpoint: endpoint,
+          metodo: 'PATCH',
+          payload: payload,
+        );
+        await _aplicarLocal(idAveria, pendienteSync: true, extra: payload);
+        return const ResultadoOperacion(
+          mensaje: 'Sin conexión: la corrección quedó guardada en el dispositivo '
+              'y se enviará al sincronizar.',
           enviada: false,
         );
       }
@@ -359,7 +476,7 @@ class OperacionesService {
       await ApiClient.post(endpoint, data: payload);
       return const ResultadoOperacion(mensaje: 'Falla masiva reportada.', enviada: true);
     } on ApiError catch (error) {
-      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+      if (_convieneEncolar(error)) {
         await DatabaseHelper.instance.encolarAccion(
           tipo: 'FALLA_MASIVA',
           endpoint: endpoint,
@@ -432,7 +549,7 @@ class OperacionesService {
         await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: false);
         return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
       }
-      if (error.esDeRed || (error.status != null && error.status! >= 500)) {
+      if (_convieneEncolar(error)) {
         await DatabaseHelper.instance.encolarAccion(
           tipo: tipo,
           endpoint: endpoint,

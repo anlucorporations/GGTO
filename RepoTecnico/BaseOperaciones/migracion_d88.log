@@ -1,0 +1,10 @@
+[2026-10-08T18:02:13+00:00] ==========================================================================
+[2026-10-08T18:02:13+00:00] MIGRACIÓN D-88 (método CONTACTO/COS) — SIMULACIÓN
+[2026-10-08T18:02:14+00:00] Antes: sin fila CONTACTO/COS
+[2026-10-08T18:02:14+00:00] Simulación: se añadiría el método CONTACTO/COS al catálogo.
+[2026-10-08T18:02:14+00:00] Vuelve a ejecutar con --aplicar para escribir.
+[2026-10-08T18:02:14+00:00] ==========================================================================
+[2026-10-08T18:02:14+00:00] MIGRACIÓN D-88 (método CONTACTO/COS) — APLICAR
+[2026-10-08T18:02:16+00:00] Antes: sin fila CONTACTO/COS
+[2026-10-08T18:02:16+00:00] Después: [(10, 'CONTACTO', 'COS', 'Cliente informado al COS')]
+[2026-10-08T18:02:16+00:00] MIGRACIÓN D-88: OK

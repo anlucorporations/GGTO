@@ -807,6 +807,8 @@ INSERT INTO catalogo_metodo (dominio, codigo, nombre) VALUES
     ('ENRUTE',   'COLA_PLANTA',     'Enrutado a planta externa'),
     ('ENRUTE',   'COLA_MASIVOS',    'Enrutado a unidad de masivos'),
     ('CONTACTO', 'TELEFONO',        'Contacto telefónico'),
+    -- D-88: «No Contesta» deja constancia de que el cliente quedó informado al COS.
+    ('CONTACTO', 'COS',             'Cliente informado al COS'),
     ('DIFERIDO', 'CLIENTE_AUSENTE', 'Cliente ausente'),
     ('DIFERIDO', 'REPROGRAMADO',    'Reprogramado por el cliente')
 ON CONFLICT (dominio, codigo) DO NOTHING;
