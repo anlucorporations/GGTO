@@ -62,6 +62,38 @@ def test_enviar_todos_y_recibir(client, admin_token):
     assert len(recibidos.json()) == 1 and recibidos.json()[0]["leido"] is False
 
 
+def test_ultimos_trae_los_mas_recientes_y_en_orden(client, admin_token):
+    """D-86: la primera carga de la APK pide los N **más recientes**.
+
+    Antes pedía `desde=0` y recibía los N más antiguos, así que con más de N
+    mensajes los recién llegados tardaban varios ciclos de sondeo en aparecer.
+    """
+    for i in range(5):
+        r = client.post(
+            f"{BASE}/mensajes",
+            json={"destino_tipo": "TODOS", "cuerpo": f"Mensaje {i}"},
+            headers=admin_token["admin"],
+        )
+        assert r.status_code == 201, r.text
+
+    recientes = client.get(f"{BASE}/mensajes?ultimos=3", headers=admin_token["tecnico"])
+    assert recientes.status_code == 200, recientes.text
+    cuerpos = [m["cuerpo"] for m in recientes.json()]
+    assert cuerpos == ["Mensaje 2", "Mensaje 3", "Mensaje 4"], (
+        "deben ser los 3 más recientes y venir en orden cronológico"
+    )
+
+    # El sondeo incremental (`desde`) no cambia: devuelve todo lo posterior.
+    todos = client.get(f"{BASE}/mensajes?desde=0", headers=admin_token["tecnico"])
+    assert todos.status_code == 200
+    assert len(todos.json()) == 5
+    despues = client.get(
+        f"{BASE}/mensajes?desde={recientes.json()[-1]['id_mensaje']}",
+        headers=admin_token["tecnico"],
+    )
+    assert despues.json() == []
+
+
 def test_rbac_y_validaciones(client, admin_token):
     # El técnico no puede enviar.
     assert client.post(

@@ -29,14 +29,18 @@ router = APIRouter(prefix="/api/v1/mensajes", tags=["mensajería interna"])
 _envio = require_roles("ADMIN", "SUPERVISOR")
 
 
-@router.get("", response_model=list[MensajeRecibidoOut], summary="Sondeo incremental (20 s)")
+@router.get("", response_model=list[MensajeRecibidoOut], summary="Sondeo incremental (60 s)")
 def listar(
     desde: int | None = Query(default=None, description="Último id visto"),
+    ultimos: int | None = Query(
+        default=None, ge=1, le=200,
+        description="D-86: los N más recientes (primera carga de la APK)",
+    ),
     limit: int = Query(default=50, ge=1, le=200),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> list[dict]:
-    return svc.recibidos(db, usuario, desde=desde, limit=limit)
+    return svc.recibidos(db, usuario, desde=desde, limit=limit, ultimos=ultimos)
 
 
 @router.get("/no-leidos", response_model=NoLeidosOut, summary="Contador de no leídos")

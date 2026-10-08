@@ -218,3 +218,19 @@ contenido local (D-82) y el motivo de la DESCARGA (D-83).
 
 **Pendiente:** D-86 (mensajería legible), D-87 (ficha CABECERA/CUERPO/PIE) y
 D-88 (flujo de campo completo y entrega `1.1.0`).
+
+### 7.1 D-86 · Mensajería legible — entregado en la `1.0.0+6` (2026-10-08)
+
+| Capa | Cambio |
+|---|---|
+| Backend | `GET /mensajes?ultimos=N` devuelve los **N más recientes** en orden cronológico (la APK pedía `desde=0` y recibía los N **más antiguos**). El resumen del endpoint pasa a «Sondeo incremental (60 s)» tras D-84. Prueba nueva: `test_ultimos_trae_los_mas_recientes_y_en_orden` |
+| `core/database.dart` | Esquema local **v4**: tabla `mensaje_local` (+ migración) con «leído» **pegajoso** (un mensaje marcado en el teléfono no vuelve a «no leído» si el sondeo lo trae antes de avisar al servidor) y ayudas `guardarMensajes`, `leerMensajes`, `maxIdMensaje`, `contarMensajesNoLeidos`, `marcarMensajesLeidosLocal` |
+| `mensajes_provider.dart` | **Primera carga = últimos 50**; después incremental con el **cursor guardado** (`MAX(id_mensaje)`), que ahora sobrevive al reinicio; la bandeja se pinta desde el dispositivo (orden estable y lectura sin conexión); `marcarLeido` local primero y aviso al servidor después; **`marcarTodosLeidos()`** con `POST /mensajes/leidos`; ayudas puras `ordenarMasRecientePrimero`, `filtrar`, `etiquetaDia`, `fechaDe` |
+| `mensajes_screen.dart` | Bandeja **del más reciente al más antiguo** agrupada **por día** («Hoy», «Ayer», `dd/mm/aaaa`), con hora en cada tarjeta, **chips de filtro** (no leídos, todos y por tipo) y acción **marcar todos como leídos**; sin borrado (DEC-2) |
+
+**Verificación:** backend **299/299** (`pytest`) · `flutter analyze` **sin
+hallazgos** · `flutter test` **38/38** (7 nuevas en `test/d86_mensajes_test.dart`)
+· APK **`1.0.0+6`** publicada (SHA-256 `0453c7fa…`).
+
+**Pendiente:** D-87 (ficha CABECERA/CUERPO/PIE) y D-88 (flujo de campo completo y
+entrega `1.1.0`).

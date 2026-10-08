@@ -12,7 +12,7 @@ class AppConstants {
   /// Debe coincidir **exactamente** con `version:` de `pubspec.yaml` (nombre y
   /// versionCode). Hay una prueba que lo verifica (`test/version_visible_test.dart`):
   /// al subir el versionCode de cada entrega a CANTV hay que actualizar ambos.
-  static const String version = '1.0.0+5';
+  static const String version = '1.0.0+6';
 
   /// Máximo de intentos de login antes del bloqueo (RF-20).
   static const int maxIntentos = 3;

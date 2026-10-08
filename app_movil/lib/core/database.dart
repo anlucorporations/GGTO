@@ -13,7 +13,7 @@ class DatabaseHelper {
   static Database? _database;
 
   /// Versión del esquema local. Al cambiarla hay que ampliar `_upgradeDB`.
-  static const int version = 3;
+  static const int version = 4;
 
   DatabaseHelper._init();
 
@@ -84,6 +84,17 @@ class DatabaseHelper {
         valor TEXT NOT NULL
       )
     ''');
+    // D-86: bandeja local de mensajes (lectura sin conexión y «leído» pegajoso).
+    await db.execute('''
+      CREATE TABLE mensaje_local (
+        id_mensaje INTEGER PRIMARY KEY,
+        tipo TEXT NOT NULL DEFAULT 'TEXTO',
+        cuerpo TEXT NOT NULL DEFAULT '',
+        leido INTEGER NOT NULL DEFAULT 0,
+        creado_en TEXT,
+        datos_json TEXT NOT NULL
+      )
+    ''');
   }
 
   /// Migración no destructiva: **no** borra evidencias ni la cola pendiente.
@@ -112,6 +123,19 @@ class DatabaseHelper {
         CREATE TABLE IF NOT EXISTS app_meta (
           clave TEXT PRIMARY KEY,
           valor TEXT NOT NULL
+        )
+      ''');
+    }
+    if (anterior < 4) {
+      // D-86: bandeja local de mensajes.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS mensaje_local (
+          id_mensaje INTEGER PRIMARY KEY,
+          tipo TEXT NOT NULL DEFAULT 'TEXTO',
+          cuerpo TEXT NOT NULL DEFAULT '',
+          leido INTEGER NOT NULL DEFAULT 0,
+          creado_en TEXT,
+          datos_json TEXT NOT NULL
         )
       ''');
     }
@@ -493,6 +517,116 @@ class DatabaseHelper {
   }
 
   // ------------------------------------------------------------------------- #
+  // ------------------------------------------------------------------------- #
+  // Mensajería local (D-86): bandeja guardada y «leído» pegajoso
+  // ------------------------------------------------------------------------- #
+
+  /// Guarda (o actualiza) los mensajes recibidos en la bandeja local.
+  ///
+  /// El «leído» es **pegajoso**: si el técnico ya lo marcó en el teléfono y aún
+  /// no pudo avisar al servidor (o el sondeo lo vuelve a traer), no se revierte.
+  Future<void> guardarMensajes(List<dynamic> mensajes) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final m in mensajes) {
+        if (m is! Map) continue;
+        final id = m['id_mensaje'];
+        if (id is! int) continue;
+        final previos = await txn.query(
+          'mensaje_local',
+          columns: ['leido'],
+          where: 'id_mensaje = ?',
+          whereArgs: [id],
+          limit: 1,
+        );
+        final yaLeido = previos.isNotEmpty && previos.first['leido'] == 1;
+        final datos = Map<String, dynamic>.from(m);
+        final leido = datos['leido'] == true || yaLeido;
+        datos['leido'] = leido;
+        await txn.insert(
+          'mensaje_local',
+          {
+            'id_mensaje': id,
+            'tipo': '${datos['tipo'] ?? 'TEXTO'}',
+            'cuerpo': '${datos['cuerpo'] ?? ''}',
+            'leido': leido ? 1 : 0,
+            'creado_en': '${datos['creado_en'] ?? ''}',
+            'datos_json': jsonEncode(datos),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  /// Lee la bandeja guardada en orden cronológico (el más antiguo primero).
+  Future<List<Map<String, dynamic>>> leerMensajes({int? limite}) async {
+    final db = await database;
+    final filas = await db.query('mensaje_local', orderBy: 'id_mensaje ASC');
+    final lista = <Map<String, dynamic>>[];
+    for (final fila in filas) {
+      try {
+        final datos = jsonDecode('${fila['datos_json']}');
+        if (datos is Map) lista.add(Map<String, dynamic>.from(datos));
+      } catch (_) {
+        // Registro corrupto: se ignora.
+      }
+    }
+    if (limite != null && lista.length > limite) {
+      return lista.sublist(lista.length - limite);
+    }
+    return lista;
+  }
+
+  /// Último `id_mensaje` guardado (cursor del sondeo incremental).
+  Future<int?> maxIdMensaje() async {
+    final db = await database;
+    final filas = await db.rawQuery('SELECT MAX(id_mensaje) AS ultimo FROM mensaje_local');
+    final valor = filas.isNotEmpty ? filas.first['ultimo'] : null;
+    return valor is int ? valor : null;
+  }
+
+  /// Cuántos mensajes de la bandeja están sin leer.
+  Future<int> contarMensajesNoLeidos() async {
+    final db = await database;
+    final filas =
+        await db.rawQuery('SELECT COUNT(*) AS total FROM mensaje_local WHERE leido = 0');
+    final valor = filas.isNotEmpty ? filas.first['total'] : 0;
+    return valor is int ? valor : 0;
+  }
+
+  /// Marca como leídos los mensajes indicados en la bandeja local.
+  Future<void> marcarMensajesLeidosLocal(List<int> ids) async {
+    if (ids.isEmpty) return;
+    final db = await database;
+    for (final id in ids) {
+      final filas = await db.query(
+        'mensaje_local',
+        columns: ['datos_json'],
+        where: 'id_mensaje = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (filas.isEmpty) continue;
+      Map<String, dynamic> datos;
+      try {
+        final decodificado = jsonDecode('${filas.first['datos_json']}');
+        datos = decodificado is Map
+            ? Map<String, dynamic>.from(decodificado)
+            : <String, dynamic>{};
+      } catch (_) {
+        datos = <String, dynamic>{};
+      }
+      datos['leido'] = true;
+      await db.update(
+        'mensaje_local',
+        {'leido': 1, 'datos_json': jsonEncode(datos)},
+        where: 'id_mensaje = ?',
+        whereArgs: [id],
+      );
+    }
+  }
+
   // Metadatos (D-81): identificador de dispositivo y último checklist
   // ------------------------------------------------------------------------- #
 

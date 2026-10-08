@@ -189,25 +189,36 @@ def _recibido(m: Mensaje, leido_en: datetime | None) -> dict[str, Any]:
 
 
 def recibidos(
-    db: Session, usuario: Usuario, desde: int | None = None, limit: int = 50
+    db: Session, usuario: Usuario, desde: int | None = None, limit: int = 50,
+    ultimos: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Sondeo incremental: mensajes del técnico con `id_mensaje > desde` y vigentes."""
+    """Sondeo incremental: mensajes del técnico con `id_mensaje > desde` y vigentes.
+
+    D-86: con `ultimos=N` se devuelven los **N más recientes** (y en orden
+    ascendente), que es lo que necesita la **primera carga** de la APK. Antes la
+    APK pedía `desde=0` y recibía los N **más antiguos**, así que con más de N
+    mensajes los recientes tardaban varios ciclos de sondeo en aparecer.
+    """
     if usuario.id_tecnico is None:
         return []
     ahora = datetime.now(UTC)
-    stmt = (
+    base = (
         select(Mensaje, MensajeDestino.leido_en)
         .join(MensajeDestino, MensajeDestino.id_mensaje == Mensaje.id_mensaje)
         .where(
             MensajeDestino.id_tecnico == usuario.id_tecnico,
             Mensaje.expira_en > ahora,
         )
-        .order_by(Mensaje.id_mensaje)
-        .limit(limit)
     )
+    if ultimos is not None:
+        recientes = list(
+            db.execute(base.order_by(Mensaje.id_mensaje.desc()).limit(ultimos)).all()
+        )
+        recientes.reverse()  # se entregan en orden cronológico
+        return [_recibido(m, leido) for m, leido in recientes]
     if desde is not None:
-        stmt = stmt.where(Mensaje.id_mensaje > desde)
-    filas = db.execute(stmt).all()
+        base = base.where(Mensaje.id_mensaje > desde)
+    filas = db.execute(base.order_by(Mensaje.id_mensaje).limit(limit)).all()
     return [_recibido(m, leido) for m, leido in filas]
 
 
