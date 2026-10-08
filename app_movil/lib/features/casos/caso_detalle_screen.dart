@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../widgets/estado_chip.dart';
 import 'atender_screen.dart';
+import 'casos_provider.dart';
 import 'contactar_screen.dart';
 
 /// Ficha del caso (RF-11 / §4.2) con las secciones **Administrativa** y
@@ -19,7 +21,17 @@ class CasoDetalleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final idAveria = _v('id_averia');
-    final estado = _v('estado_actual', porDefecto: 'NUEVO');
+    // D-85: la ficha sigue el estado **vivo** del caso. El mapa que recibe puede
+    // quedar obsoleto en cuanto el técnico actúa (el cambio ya está en SQLite y
+    // en el proveedor, sin esperar a la CARGA).
+    final vivo = context.watch<CasosProvider>().casos.firstWhere(
+          (c) => '${c['id_averia']}' == idAveria,
+          orElse: () => caso,
+        );
+    final pendienteSync = vivo['pendiente_sync'] == true;
+    final estado = '${vivo['estado_actual'] ?? ''}'.trim().isEmpty
+        ? 'NUEVO'
+        : '${vivo['estado_actual']}'.trim();
     final idCaso = caso['id_caso'] is int ? caso['id_caso'] as int : null;
     final puedeAtender = estado == 'CONTACTADO' || estado == 'CITADO' || estado == 'ASIGNADO';
     final yaCerrado = estado == 'CERRADO' || estado == 'CANCELADO';
@@ -31,7 +43,18 @@ class CasoDetalleScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(30),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: EstadoChip(estado: estado),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                EstadoChip(estado: estado),
+                if (pendienteSync) ...[
+                  const SizedBox(width: 8),
+                  const Icon(Icons.cloud_upload_outlined, size: 15),
+                  const SizedBox(width: 4),
+                  const Text('Por sincronizar', style: TextStyle(fontSize: 11)),
+                ],
+              ],
+            ),
           ),
         ),
       ),

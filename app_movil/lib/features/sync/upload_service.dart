@@ -154,6 +154,9 @@ class UploadService {
     final actividades = <Map<String, dynamic>>[];
     final estados = <Map<String, dynamic>>[];
     final idsBatch = <int>[];
+    // D-85: casos cuyo cambio local hay que dejar de marcar como pendiente al
+    // confirmarse el envío.
+    final idsCasoBatch = <int>[];
 
     for (final accion in acciones) {
       final payload = _payload(accion['payload']);
@@ -220,6 +223,7 @@ class UploadService {
           continue;
       }
       idsBatch.add(accion['id'] as int);
+      idsCasoBatch.add(idCaso);
     }
 
     if (actividades.isNotEmpty || estados.isNotEmpty) {
@@ -227,7 +231,7 @@ class UploadService {
         final respuesta = await ApiClient.post('/sync/carga', data: {
           'id_sync_log': sesion.idSesion,
           'dispositivo_id': await DatabaseHelper.instance.dispositivoId(),
-          'version_app': '1.0.0',
+          'version_app': AppConstants.version,
           'actividades': actividades,
           'estados': estados,
         });
@@ -243,6 +247,11 @@ class UploadService {
           if (rechazadas == 0) {
             for (final id in idsBatch) {
               await DatabaseHelper.instance.marcarAccionEnviada(id);
+            }
+            // D-85: el servidor confirmó el lote → los casos dejan de estar
+            // «pendiente de sincronizar» en el dispositivo.
+            for (final idCaso in idsCasoBatch) {
+              await DatabaseHelper.instance.limpiarPendienteSync(idCaso);
             }
           } else {
             for (final id in idsBatch) {

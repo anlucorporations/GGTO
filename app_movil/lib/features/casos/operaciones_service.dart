@@ -37,6 +37,40 @@ class ResultadoOperacion {
 class OperacionesService {
   const OperacionesService._();
 
+  /// Fusiona un cambio en el mapa del caso (D-85).
+  ///
+  /// Es **puro** (sin red ni base de datos) para poder probarlo aislado; la
+  /// escritura real la hace `DatabaseHelper.aplicarCambioLocal`.
+  static Map<String, dynamic> conCambioLocal(
+    Map<String, dynamic> caso, {
+    String? estado,
+    bool? pendienteSync,
+    Map<String, dynamic>? extra,
+  }) {
+    final salida = Map<String, dynamic>.from(caso);
+    if (estado != null && estado.isNotEmpty) salida['estado_actual'] = estado;
+    if (pendienteSync != null) salida['pendiente_sync'] = pendienteSync;
+    if (extra != null) salida.addAll(extra);
+    return salida;
+  }
+
+  /// Escribe el cambio en la **caché local** para que se vea de inmediato y
+  /// sobreviva al reinicio, haya o no conexión (D-85 · requisito 1 del usuario).
+  static Future<void> _aplicarLocal(
+    String idAveria, {
+    String? estado,
+    bool? pendienteSync,
+    Map<String, dynamic>? extra,
+  }) async {
+    if (idAveria.isEmpty) return;
+    await DatabaseHelper.instance.aplicarCambioLocal(
+      idAveria,
+      estado: estado,
+      pendienteSync: pendienteSync,
+      extra: extra,
+    );
+  }
+
   /// Marca el caso como CONTACTADO (RF-12).
   static Future<ResultadoOperacion> marcarContactado({
     required int idCaso,
@@ -145,8 +179,14 @@ class OperacionesService {
           metodo: 'POST',
           payload: payload,
         );
+        // D-85: la cita se ve en el teléfono aunque aún no haya viajado.
+        await _aplicarLocal(
+          idAveria,
+          pendienteSync: true,
+          extra: {'fecha_cita': fechaHora.toIso8601String()},
+        );
         return const ResultadoOperacion(
-          mensaje: 'Sin conexión: la cita quedó guardada y se enviará al sincronizar.',
+          mensaje: 'Sin conexión: la cita quedó guardada en el dispositivo y se enviará al sincronizar.',
           enviada: false,
         );
       }
@@ -189,8 +229,10 @@ class OperacionesService {
           metodo: 'POST',
           payload: payload,
         );
+        // D-85: el caso queda CERRADO en el dispositivo (marcado como pendiente).
+        await _aplicarLocal(idAveria, estado: 'CERRADO', pendienteSync: true);
         return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el cierre quedó guardado y se enviará al sincronizar.',
+          mensaje: 'Sin conexión: el cierre quedó guardado en el dispositivo y se enviará al sincronizar.',
           enviada: false,
         );
       }
@@ -234,8 +276,10 @@ class OperacionesService {
           metodo: 'POST',
           payload: {...payload, 'evidencias': evidencias},
         );
+        // D-85: el caso queda ENRUTADO en el dispositivo (pendiente de enviar).
+        await _aplicarLocal(idAveria, estado: 'ENRUTADO', pendienteSync: true);
         return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el enrutado quedó guardado y se enviará al sincronizar.',
+          mensaje: 'Sin conexión: el enrutado quedó guardado en el dispositivo y se enviará al sincronizar.',
           enviada: false,
         );
       }
@@ -368,15 +412,24 @@ class OperacionesService {
     required String exito,
   }) async {
     final endpoint = '/casos/$idCaso/estado';
+    final estadoNuevo = '${payload['estado_actual'] ?? ''}';
     try {
       final datos = await ApiClient.post(endpoint, data: payload);
       final caso = datos is Map
           ? Map<String, dynamic>.from(datos)
           : await _refrescarCaso(idCaso);
+      // D-85: el servidor confirmó; se guarda el caso y se quita el distintivo.
+      if (caso != null) {
+        await DatabaseHelper.instance
+            .actualizarCasoLocal(conCambioLocal(caso, pendienteSync: false));
+      } else {
+        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: false);
+      }
       return ResultadoOperacion(mensaje: exito, enviada: true, caso: caso);
     } on ApiError catch (error) {
       if (error.esConflicto) {
         // El caso ya está en ese estado: no es un fallo para el usuario.
+        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: false);
         return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
       }
       if (error.esDeRed || (error.status != null && error.status! >= 500)) {
@@ -386,8 +439,11 @@ class OperacionesService {
           metodo: 'POST',
           payload: payload,
         );
+        // D-85: el cambio se ve **ya** en el teléfono y queda marcado como
+        // pendiente de sincronizar (antes no se reflejaba hasta la CARGA).
+        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: true);
         return const ResultadoOperacion(
-          mensaje: 'Sin conexión: la acción quedó guardada y se enviará al sincronizar.',
+          mensaje: 'Sin conexión: el cambio quedó guardado en el dispositivo y se enviará al sincronizar.',
           enviada: false,
         );
       }

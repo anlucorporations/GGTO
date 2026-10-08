@@ -116,6 +116,16 @@ class CasosProvider extends ChangeNotifier {
     await cargar();
   }
 
+  /// Casos de la caché local sin tocar la red ni marcar «sin conexión» (D-84).
+  ///
+  /// Se usa al abrir la pantalla y al volver de la ficha: leer el dispositivo no
+  /// es sincronizar —la descarga solo ocurre cuando el técnico la pide— y este
+  /// camino **no** pinta la franja de «sin conexión».
+  Future<void> refrescarLocal() async {
+    await _leerLocal();
+    notifyListeners();
+  }
+
   /// Casos de la caché local sin tocar la red.
   Future<void> cargarDesdeCache({String? consulta}) async {
     _consulta = consulta ?? _consulta;

@@ -244,7 +244,71 @@ class DatabaseHelper {
     );
   }
 
+  /// Aplica un cambio **local** sobre el caso guardado, fusionándolo (D-85).
+  ///
+  /// A diferencia de `actualizarCasoLocal` —que reemplaza la fila con la
+  /// respuesta completa del servidor—, aquí se **fusiona** sobre el `datos_json`
+  /// existente para no perder campos, y **no** se toca `actualizado_en` (esa
+  /// marca significa «cuándo llegó el contenido del servidor» y es la referencia
+  /// del diferencial). `pendienteSync` deja el distintivo de la tarjeta.
+  Future<void> aplicarCambioLocal(
+    String idAveria, {
+    String? estado,
+    bool? pendienteSync,
+    Map<String, dynamic>? extra,
+  }) async {
+    if (idAveria.isEmpty) return;
+    final db = await database;
+    final filas = await db.query(
+      'caso_local',
+      where: 'id = ?',
+      whereArgs: [idAveria],
+      limit: 1,
+    );
+    if (filas.isEmpty) return;
+    final fila = filas.first;
+    Map<String, dynamic> datos;
+    try {
+      final decodificado = jsonDecode('${fila['datos_json']}');
+      datos = decodificado is Map
+          ? Map<String, dynamic>.from(decodificado)
+          : <String, dynamic>{};
+    } catch (_) {
+      datos = <String, dynamic>{};
+    }
+    if (estado != null && estado.isNotEmpty) datos['estado_actual'] = estado;
+    if (pendienteSync != null) datos['pendiente_sync'] = pendienteSync;
+    if (extra != null) datos.addAll(extra);
+    await db.update(
+      'caso_local',
+      {
+        'id_caso': datos['id_caso'] ?? fila['id_caso'],
+        'estado': '${datos['estado_actual'] ?? fila['estado'] ?? ''}',
+        'datos_json': jsonEncode(datos),
+      },
+      where: 'id = ?',
+      whereArgs: [idAveria],
+    );
+  }
+
   // ------------------------------------------------------------------------- #
+  /// Quita el distintivo «pendiente de sincronizar» del caso indicado (D-85).
+  ///
+  /// Se busca por `id_caso` porque la cola identifica el caso en el endpoint
+  /// (`/casos/{id}/estado`), no por el `id_averia` que usa la caché.
+  Future<void> limpiarPendienteSync(int idCaso) async {
+    final db = await database;
+    final filas = await db.query(
+      'caso_local',
+      columns: ['id'],
+      where: 'id_caso = ?',
+      whereArgs: [idCaso],
+      limit: 1,
+    );
+    if (filas.isEmpty) return;
+    await aplicarCambioLocal('${filas.first['id']}', pendienteSync: false);
+  }
+
   // Cola de acciones pendientes (outbox)
   // ------------------------------------------------------------------------- //
 

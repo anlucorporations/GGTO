@@ -45,7 +45,6 @@ class ResultadoSync {
 class SyncProvider extends ChangeNotifier {
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _suscripcion;
-  Timer? _temporizador;
 
   Map<String, int> _resumen = {'PENDIENTE': 0, 'REINTENTO': 0, 'ERROR': 0, 'TOTAL': 0};
   List<Map<String, dynamic>> _acciones = [];
@@ -126,20 +125,16 @@ class SyncProvider extends ChangeNotifier {
   }
 
 
-  /// Arranca la vigilancia de conectividad y vacía la cola al recuperar la red.
+  /// Arranca la vigilancia de conectividad (solo para el indicador).
+  ///
+  /// D-84 (DEC-3): **no** se vacía la cola al recuperar la red. La CARGA la
+  /// decide el técnico; la conectividad solo actualiza el indicador y la
+  /// disponibilidad de los botones.
   void iniciar() {
     _suscripcion ??= _connectivity.onConnectivityChanged.listen((resultados) {
       final conectado = resultados.any((r) => r != ConnectivityResult.none);
-      final recupero = conectado && !_enLinea;
       _enLinea = conectado;
       notifyListeners();
-      if (recupero) {
-        // Pequeña espera para que el sistema asiente la conexión.
-        _temporizador?.cancel();
-        _temporizador = Timer(const Duration(seconds: 2), () {
-          sincronizar(silencioso: true);
-        });
-      }
     });
 
     _connectivity.checkConnectivity().then((resultados) {
@@ -336,7 +331,6 @@ class SyncProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _temporizador?.cancel();
     _suscripcion?.cancel();
     super.dispose();
   }

@@ -36,10 +36,10 @@ class _CasosScreenState extends State<CasosScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final casos = Provider.of<CasosProvider>(context, listen: false);
       final sync = Provider.of<SyncProvider>(context, listen: false);
-      // 1.º el contenido local (instantáneo, funciona sin conexión)…
-      await casos.cargarDesdeCache();
-      // 2.º y después se intenta actualizar contra el servidor.
-      await casos.cargar(silencioso: true);
+      // D-84: abrir la pantalla **no** sincroniza. Se pinta el contenido local
+      // (instantáneo y válido sin conexión) y el técnico decide cuándo DESCARGAR
+      // o CARGAR desde la franja de estado.
+      await casos.refrescarLocal();
       await sync.refrescar();
     });
   }
@@ -104,7 +104,13 @@ class _CasosScreenState extends State<CasosScreen> {
       body: Column(
         children: [
           const OfflineBanner(),
-          _BannerContenidoLocal(casos: casosProv),
+          _BannerContenidoLocal(
+            casos: casosProv,
+            // D-84/DEC-3: la sincronización es explícita; la franja informa
+            // cuántas acciones están guardadas sin enviar y ofrece CARGA.
+            pendientes: sync.pendientesSinError,
+            onCargar: () => Navigator.pushNamed(context, '/sync'),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
             child: TextField(
@@ -212,8 +218,10 @@ class _CasosScreenState extends State<CasosScreen> {
                 MaterialPageRoute(builder: (_) => CasoDetalleScreen(caso: caso)),
               );
               if (!mounted) return;
-              // Al volver de la ficha, se refresca el listado.
-              casos.cargar(silencioso: true);
+              // D-84/D-85: al volver de la ficha se relee **lo local** (los
+              // cambios del técnico ya quedaron guardados en el dispositivo);
+              // no se descarga nada por abrir o cerrar una ficha.
+              casos.refrescarLocal();
             },
           );
         },
@@ -225,9 +233,19 @@ class _CasosScreenState extends State<CasosScreen> {
 /// Franja que informa que la lista es el **contenido local** del dispositivo
 /// (D-82 · requisito 1) y avisa cuando la descarga no pudo actualizarla.
 class _BannerContenidoLocal extends StatelessWidget {
-  const _BannerContenidoLocal({required this.casos});
+  const _BannerContenidoLocal({
+    required this.casos,
+    required this.pendientes,
+    required this.onCargar,
+  });
 
   final CasosProvider casos;
+
+  /// Acciones guardadas en el dispositivo que aún no viajaron (D-85).
+  final int pendientes;
+
+  /// Abre la CARGA (pantalla Dispositivo) con las acciones pendientes.
+  final VoidCallback onCargar;
 
   @override
   Widget build(BuildContext context) {
@@ -237,13 +255,14 @@ class _BannerContenidoLocal extends StatelessWidget {
     final fecha = casos.actualizadoEn;
     // D-83: la cuadrilla que resolvió el servidor, visible en la franja.
     final prefijo = casos.cuadrillaCodigo == null ? '' : 'Cuadrilla ${casos.cuadrillaCodigo} · ';
+    final cola = pendientes > 0 ? ' · $pendientes por enviar' : '';
     final texto = sinRed
         ? (fecha == null
-            ? 'Sin conexión: mostrando el contenido local del dispositivo.'
-            : 'Sin conexión: contenido local del ${_fecha(fecha)}.')
+            ? 'Sin conexión: mostrando el contenido local del dispositivo.$cola'
+            : 'Sin conexión: contenido local del ${_fecha(fecha)}.$cola')
         : (fecha == null
-            ? '${prefijo}Contenido local · ${casos.locales} casos en el dispositivo.'
-            : '${prefijo}Contenido local · ${casos.locales} casos · actualizado el ${_fecha(fecha)}.');
+            ? '${prefijo}Contenido local · ${casos.locales} casos.$cola'
+            : '${prefijo}Contenido local · ${casos.locales} casos · actualizado el ${_fecha(fecha)}.$cola');
 
     return Container(
       width: double.infinity,
@@ -256,10 +275,16 @@ class _BannerContenidoLocal extends StatelessWidget {
           Expanded(
             child: Text(texto, style: const TextStyle(fontSize: 12)),
           ),
+          // D-84 (DEC-3): nada se sincroniza solo; el técnico decide.
           TextButton(
             onPressed: casos.cargando ? null : () => casos.cargar(),
-            child: Text(sinRed ? 'Reintentar' : 'Actualizar'),
+            child: Text(sinRed ? 'Reintentar' : 'Descargar'),
           ),
+          if (pendientes > 0)
+            TextButton(
+              onPressed: onCargar,
+              child: Text('Cargar ($pendientes)'),
+            ),
         ],
       ),
     );
