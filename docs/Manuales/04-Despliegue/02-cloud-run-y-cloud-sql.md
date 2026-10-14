@@ -141,7 +141,8 @@ define 36 desde el ciclo D-66), las extensiones
 `pgcrypto 1.3` y `pg_trgm 1.6`, seguridad por fila (RLS) en las tablas `caso` y `despacho`, 14
 disparadores `actualizado_en`, 2 índices trigram y los datos iniciales previstos. El ciclo **D-66**
 agregó la tabla `cuadrilla_sector_dia` (asignación diaria de sectores a cuadrillas), por lo que el
-**esquema vigente suma 36 tablas**; para verlas en la base hay que volver a aplicar el script, que
+**esquema de la instantánea D-66 sumaba 36 tablas**; este conteo es histórico y no certifica el esquema
+desplegado actual. El DDL local consultado el 2026-10-12 contiene 41 tablas. Para aplicar cambios,
 es idempotente.
 
 ### base ggtov2 y usuario ggtov2_app
@@ -498,8 +499,8 @@ Comprobaciones adicionales recomendadas tras cualquier despliegue:
 1. **Registros sin errores de autenticación** contra Cloud SQL: la aplicación registra cada petición
    con `request_id`, método, ruta, código y duración mediante `ObservabilidadMiddleware`, y el
    formato de registro incluye marca de tiempo, nivel y nombre del registrador.
-2. **Estado de los datos:** que `/ready` reporte `tablas: 36` y PostgreSQL `15.18`, coherentes con el
-   esquema desplegado (36 tablas desde la incorporación de `cuadrilla_sector_dia` en D-66).
+2. **Estado de los datos (lista histórica de verificación):** el criterio de `/ready` con `tablas: 36`
+   corresponde a la instantánea D-66; no valida el esquema productivo actual.
 3. **Prueba de escritura:** un alta manual de caso debe generar un identificador
    `REF-<CENTRAL>-<NNNNNN>` mediante la función `generar_id_averia_ref`.
 4. **Revisión de estado** con `gcloud run revisions list`, para confirmar que la nueva revisión

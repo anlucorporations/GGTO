@@ -28,7 +28,11 @@ def _crear_caso(client, admin_token, id_averia: str = "TSTD88-1") -> dict:
             "id_averia": id_averia,
             "direccion": "CALLE 4 CON AVENIDA 5",
             "nombre_cliente": "CLIENTE D88",
-            "telefono": "7001234567",
+            # RN-AL-01: contacto, dirección, 70* y tipo de reporte obligatorios.
+            "contacto_cliente": "04243109000",
+            "id_pago": "7001234567",
+            "tipo_reporte": "REPARACION",
+            "tipo_problema": "SIN_SERVICIO",
         },
         headers=admin_token["admin"],
     )

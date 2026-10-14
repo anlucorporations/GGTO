@@ -12,14 +12,18 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..models import CuadrillaTecnico, Usuario
 from ..services import monitoreo as svc
+from ..services import pagos
 from ..services.consultas import cargar_config, resolver_central
-from .deps import get_current_user
+from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["monitoreo y reportes"])
 
+# D-90: métricas de la regla REPARACIÓN/REFERIDO (el TÉCNICO no las consulta).
+_gestion = require_roles("ADMIN", "SUPERVISOR")
 
-def _central(db: Session, id_central: int | None):
-    return resolver_central(db, id_central, cargar_config(db))
+
+def _central(db: Session, id_central: int | None, usuario: Usuario):
+    return resolver_central(db, id_central, cargar_config(db), usuario)
 
 
 def _cuadrilla_tecnico(db: Session, usuario: Usuario) -> int | None:
@@ -57,8 +61,8 @@ def diario(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    central = _central(db, id_central)
-    return svc.gestion_diaria(db, central.id_central, fecha or date.today(),
+    central = _central(db, id_central, usuario)
+    return svc.gestion_diaria(db, central.id_central, fecha or svc.hoy_operativo(),
                               _alcance(db, usuario, id_cuadrilla))
 
 
@@ -70,8 +74,8 @@ def semanal(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    central = _central(db, id_central)
-    return svc.gestion_semanal(db, central.id_central, desde or date.today(),
+    central = _central(db, id_central, usuario)
+    return svc.gestion_semanal(db, central.id_central, desde or svc.hoy_operativo(),
                                _alcance(db, usuario, id_cuadrilla))
 
 
@@ -84,8 +88,8 @@ def globales(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    central = _central(db, id_central)
-    hoy = date.today()
+    central = _central(db, id_central, usuario)
+    hoy = svc.hoy_operativo()
     return svc.casos_globales(db, central.id_central, desde or hoy.replace(day=1), hasta or hoy,
                               _alcance(db, usuario, id_cuadrilla))
 
@@ -97,7 +101,7 @@ def reparacion(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.reparacion(db, _central(db, id_central).id_central,
+    return svc.reparacion(db, _central(db, id_central, usuario).id_central,
                           _alcance(db, usuario, id_cuadrilla))
 
 
@@ -108,7 +112,7 @@ def construccion(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.construccion(db, _central(db, id_central).id_central,
+    return svc.construccion(db, _central(db, id_central, usuario).id_central,
                             _alcance(db, usuario, id_cuadrilla))
 
 
@@ -121,8 +125,8 @@ def cuadrilla(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    central = _central(db, id_central)
-    base, _sab = svc.rango_semana(desde or date.today())
+    central = _central(db, id_central, usuario)
+    base, _sab = svc.rango_semana(desde or svc.hoy_operativo())
     return svc.por_cuadrilla(db, central.id_central, base, dias,
                              _alcance(db, usuario, id_cuadrilla))
 
@@ -134,8 +138,71 @@ def capacidad(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    return svc.capacidad(db, _central(db, id_central).id_central,
+    return svc.capacidad(db, _central(db, id_central, usuario).id_central,
                          _alcance(db, usuario, id_cuadrilla))
+
+
+@router.get("/monitoreo/mensual", summary="Gestión mensual (D-96)")
+def mensual(
+    fecha: date | None = Query(default=None),
+    id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> dict:
+    central = _central(db, id_central, usuario)
+    return svc.gestion_mensual(
+        db, central.id_central, fecha or svc.hoy_operativo(), _alcance(db, usuario, id_cuadrilla)
+    )
+
+
+@router.get("/monitoreo/casos-especiales", summary="Resumen de casos especiales (D-96)")
+def casos_especiales(
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> dict:
+    return svc.casos_especiales_monitor(db, _central(db, id_central, usuario).id_central)
+
+
+@router.get("/monitoreo/construcciones", summary="Monitoreo de construcciones (D-96)")
+def construcciones(
+    id_central: int | None = Query(default=None),
+    id_cuadrilla: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> dict:
+    return svc.construccion(
+        db, _central(db, id_central, usuario).id_central, _alcance(db, usuario, id_cuadrilla)
+    )
+
+
+@router.get("/monitoreo/reclasificaciones",
+            summary="Regla REPARACIÓN ⇐ 70* + avería real: reclasificados y pendientes (D-90)")
+def reclasificaciones(
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_gestion),
+) -> dict:
+    """Métricas de RF-49/RF-50/RF-55 (ADMIN/SUPERVISOR; el TÉCNICO no las ve)."""
+    return svc.reclasificaciones(db, _central(db, id_central, _).id_central)
+
+
+@router.get("/monitoreo/identificadores",
+            summary="Métricas por identificador de pago: reincidencia y reportes (D-94)")
+def identificadores(
+    id_central: int | None = Query(default=None),
+    limite: int = Query(default=10, ge=1, le=50, description="Cuántos identificadores listar"),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_gestion),
+) -> dict:
+    """RF-54/RF-55 (ADMIN/SUPERVISOR): reportes por identificador y reincidentes."""
+    return svc.identificadores(
+        db,
+        _central(db, id_central, _).id_central,
+        pagos.dias_reincidencia(cargar_config(db)),
+        limite,
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -150,8 +217,8 @@ def reporte(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> dict:
-    central = _central(db, id_central)
-    return svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today(),
+    central = _central(db, id_central, usuario)
+    return svc.reporte_trabajo(db, central.id_central, periodo, fecha or svc.hoy_operativo(),
                                _alcance(db, usuario, id_cuadrilla))
 
 
@@ -165,8 +232,8 @@ def reporte_imprimible(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> HTMLResponse:
-    central = _central(db, id_central)
-    datos = svc.reporte_trabajo(db, central.id_central, periodo, fecha or date.today(),
+    central = _central(db, id_central, usuario)
+    datos = svc.reporte_trabajo(db, central.id_central, periodo, fecha or svc.hoy_operativo(),
                                 _alcance(db, usuario, id_cuadrilla))
     d, g, r, c = datos["diario"], datos["globales"], datos["reparacion"], datos["construccion"]
 
@@ -188,6 +255,25 @@ def reporte_imprimible(
     )
     filas_estado = "".join(
         f"<tr><td>{k}</td><td class='num'>{v}</td></tr>" for k, v in g["por_estado"].items()
+    )
+    # D-94: el informe también se lee desde el identificador de pago (RF-55).
+    ids = datos["identificadores"]
+    recl = datos["reclasificaciones"]
+    filas_identificadores = "".join(
+        f"<tr><td>{fila['numero']}</td><td class='num'>{fila['casos']}</td>"
+        f"<td class='num'>{fila['reportes_ventana']}</td>"
+        f"<td>{'Sí' if fila['reincidente'] else 'No'}</td></tr>"
+        for fila in ids["top"]
+    )
+    filas_reclasificaciones = "".join(
+        f"<tr><td>{etiqueta}</td><td class='num'>{recl[clave]}</td></tr>"
+        for clave, etiqueta in (
+            ("reparaciones_validas", "Reparaciones válidas (70* + avería real)"),
+            ("referidos", "Casos REFERIDO"),
+            ("reclasificadas", "Reparaciones reclasificadas a REFERIDO"),
+            ("referidos_sin_ficha", "Referidos sin ficha de especial"),
+            ("pendientes_historicos", "Reparaciones marcadas sin regularizar"),
+        )
     )
 
     html = f"""<!doctype html>
@@ -211,7 +297,8 @@ def reporte_imprimible(
   <h1>GGTO — Reporte de trabajo ({periodo})</h1>
   <div class="sub">
     <strong>Central:</strong> {central.nombre_central} ({central.codigo_central}) ·
-    <strong>Periodo:</strong> {datos['desde']} → {datos['hasta']}
+    <strong>Periodo:</strong> {datos['desde']} → {datos['hasta']} ·
+    <strong>Día operativo:</strong> {svc.ZONA_OPERATIVA}
   </div>
 
   <div class="tarjetas">
@@ -220,6 +307,13 @@ def reporte_imprimible(
     <div class="tarjeta">Reparación<b>{r['total']}</b></div>
     <div class="tarjeta">Construcción<b>{c['total']}</b></div>
     <div class="tarjeta">Cuadrillas activas<b>{datos['capacidad']['cuadrillas_activas']}</b></div>
+  </div>
+
+  <div class="tarjetas">
+    <div class="tarjeta">Identificadores de pago<b>{ids['con_casos']}</b></div>
+    <div class="tarjeta">Reincidentes ({ids['ventana_dias']} d)<b>{ids['reincidentes']}</b></div>
+    <div class="tarjeta">Casos sin 70*<b>{ids['casos_sin_identificador']}</b></div>
+    <div class="tarjeta">Reportes por 70* (media)<b>{ids['media_casos']}</b></div>
   </div>
 
   <h2>Gestión del día {d['fecha']}</h2>
@@ -236,6 +330,15 @@ def reporte_imprimible(
   <h2>Pendientes por estado</h2>
   <table><thead><tr><th>Estado</th><th class="num">Casos</th></tr></thead>
   <tbody>{filas_estado}</tbody></table>
+
+  <h2>Identificadores de pago con más reportes (últimos {ids['ventana_dias']} días)</h2>
+  <table><thead><tr><th>Identificador (70*)</th><th class="num">Casos</th>
+  <th class="num">En la ventana</th><th>Reincidente</th></tr></thead>
+  <tbody>{filas_identificadores}</tbody></table>
+
+  <h2>Regla REPARACIÓN ⇐ 70* + avería real</h2>
+  <table><thead><tr><th>Indicador</th><th class="num">Casos</th></tr></thead>
+  <tbody>{filas_reclasificaciones}</tbody></table>
 
   <p class="no-print"><button onclick="window.print()">Imprimir</button></p>
 </body></html>"""

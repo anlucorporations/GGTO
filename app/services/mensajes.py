@@ -13,7 +13,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
@@ -31,6 +31,7 @@ from ..models import (
     Tecnico,
     Usuario,
 )
+from .tiempo import dia_operativo
 
 
 def _config_int(db: Session, clave: str, defecto: int) -> int:
@@ -51,10 +52,15 @@ def _tz() -> ZoneInfo:
 # --------------------------------------------------------------------------- #
 # Creación y fan-out
 # --------------------------------------------------------------------------- #
-def resolver_destinatarios(db: Session, m: Mensaje) -> list[int]:
-    """IDs de los técnicos destinatarios según el `destino_tipo`."""
+def resolver_destinatarios(db: Session, m: Mensaje) -> list[tuple[int | None, str | None]]:
+    """Destinatarios del mensaje: lista de (id_tecnico, p00). Sin fallback."""
+    if m.destino_tipo == "SUPERVISOR":
+        if not m.id_usuario_destino:
+            return []
+        return [(None, m.id_usuario_destino)]
+
     if m.destino_tipo == "TECNICO":
-        return [m.id_tecnico] if m.id_tecnico else []
+        return [(m.id_tecnico, None)] if m.id_tecnico else []
 
     if m.destino_tipo == "CUADRILLA":
         if not m.id_cuadrilla:
@@ -66,20 +72,24 @@ def resolver_destinatarios(db: Session, m: Mensaje) -> list[int]:
                 (CuadrillaTecnico.hasta.is_(None)) | (CuadrillaTecnico.hasta >= hoy),
             )
         ).all()
-        return sorted({int(i) for i in miembros})
+        return [(int(i), None) for i in sorted({int(i) for i in miembros})]
 
-    # TODOS: técnicos con cuenta activa en la central.
-    cuentas = db.scalars(
-        select(Usuario.id_tecnico)
-        .join(Rol, Rol.id_rol == Usuario.id_rol)
-        .where(
-            Usuario.id_central == m.id_central,
-            Usuario.activo.is_(True),
-            Rol.codigo == "TECNICO",
-            Usuario.id_tecnico.isnot(None),
-        )
-    ).all()
-    return sorted({int(i) for i in cuentas if i is not None})
+    if m.destino_tipo == "TODOS":
+        # TODOS: técnicos con cuenta activa en la central.
+        cuentas = db.scalars(
+            select(Usuario.id_tecnico)
+            .join(Rol, Rol.id_rol == Usuario.id_rol)
+            .where(
+                Usuario.id_central == m.id_central,
+                Usuario.activo.is_(True),
+                Rol.codigo == "TECNICO",
+                Usuario.id_tecnico.isnot(None),
+            )
+        ).all()
+        return [(int(i), None) for i in sorted({int(i) for i in cuentas if i is not None})]
+
+    # Sin fallback (H-03/H-10)
+    return []
 
 
 def crear_mensaje(
@@ -92,6 +102,7 @@ def crear_mensaje(
     cuerpo: str,
     id_cuadrilla: int | None = None,
     id_tecnico: int | None = None,
+    id_usuario_destino: str | None = None,
     id_caso: int | None = None,
     dedupe_key: str | None = None,
     ahora: datetime | None = None,
@@ -103,13 +114,18 @@ def crear_mensaje(
         if existente is not None:
             return existente
 
-    dias = _config_int(db, "mensajeria.retencion_dias", 5)
+    if destino_tipo == "SUPERVISOR":
+        dias = _config_int(db, "mensajeria.retencion_gestion_dias", 90)
+    else:
+        dias = _config_int(db, "mensajeria.retencion_dias", 5)
+
     m = Mensaje(
         id_central=id_central,
         origen_p00=origen_p00,
         destino_tipo=destino_tipo,
         id_cuadrilla=id_cuadrilla if destino_tipo == "CUADRILLA" else None,
         id_tecnico=id_tecnico if destino_tipo == "TECNICO" else None,
+        id_usuario_destino=id_usuario_destino if destino_tipo == "SUPERVISOR" else None,
         tipo=tipo,
         cuerpo=cuerpo[:500],
         id_caso=id_caso,
@@ -119,15 +135,15 @@ def crear_mensaje(
     )
     db.add(m)
     db.flush()
-    for idt in resolver_destinatarios(db, m):
-        db.add(MensajeDestino(id_mensaje=m.id_mensaje, id_tecnico=idt))
+    for id_tec, p00_dest in resolver_destinatarios(db, m):
+        db.add(MensajeDestino(id_mensaje=m.id_mensaje, id_tecnico=id_tec, p00=p00_dest))
     db.commit()
     db.refresh(m)
     return m
 
 
 def enviar_manual(db: Session, usuario: Usuario, datos: dict[str, Any]) -> Mensaje:
-    """Envío manual de un mensaje (SUPER/ADMIN/SUPERVISOR)."""
+    """Envío manual de un mensaje (SUPER/ADMIN/SUPERVISOR a técnicos)."""
     if usuario.id_central is None:
         raise HTTPException(status_code=422, detail="El usuario no tiene central asignada")
     destino = datos["destino_tipo"]
@@ -168,9 +184,92 @@ def enviar_manual(db: Session, usuario: Usuario, datos: dict[str, Any]) -> Mensa
     )
 
 
+def enviar_a_supervisor(db: Session, usuario: Usuario, datos: dict[str, Any]) -> Mensaje:
+    """Envío de mensaje del Coordinador al Supervisor (DEC-G9 / DEC-G15)."""
+    if usuario.id_central is None:
+        raise HTTPException(status_code=422, detail="El usuario no tiene central asignada")
+    cuerpo = (datos.get("cuerpo") or "").strip()
+    if not cuerpo:
+        raise HTTPException(status_code=422, detail="El mensaje no puede estar vacío")
+
+    p00_supervisor = (datos.get("p00_supervisor") or "").strip()
+    escalar_al_admin = bool(datos.get("escalar_al_admin", False))
+
+    destinatario_p00: str | None = None
+    if p00_supervisor:
+        sup = db.scalar(
+            select(Usuario)
+            .join(Rol, Rol.id_rol == Usuario.id_rol)
+            .where(
+                Usuario.p00 == p00_supervisor,
+                Usuario.id_central == usuario.id_central,
+                Usuario.activo.is_(True),
+                Rol.codigo == "SUPERVISOR",
+            )
+        )
+        if sup is not None:
+            destinatario_p00 = sup.p00
+
+    if destinatario_p00 is None:
+        if escalar_al_admin:
+            # Buscar cualquier Supervisor activo en la central
+            hay_supervisor = db.scalar(
+                select(Usuario.id_usuario)
+                .join(Rol, Rol.id_rol == Usuario.id_rol)
+                .where(
+                    Usuario.id_central == usuario.id_central,
+                    Usuario.activo.is_(True),
+                    Rol.codigo == "SUPERVISOR",
+                )
+                .limit(1)
+            )
+            if hay_supervisor is not None and p00_supervisor:
+                raise HTTPException(status_code=404, detail="Supervisor no encontrado en su central")
+            # Escalar al ADMIN de la central
+            admin = db.scalar(
+                select(Usuario)
+                .join(Rol, Rol.id_rol == Usuario.id_rol)
+                .where(
+                    Usuario.id_central == usuario.id_central,
+                    Usuario.activo.is_(True),
+                    Rol.codigo == "ADMIN",
+                )
+                .limit(1)
+            )
+            if admin is None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="No hay Supervisor ni Administrador activo para recibir el mensaje",
+                )
+            destinatario_p00 = admin.p00
+        else:
+            raise HTTPException(status_code=404, detail="Supervisor no encontrado en su central")
+
+    return crear_mensaje(
+        db,
+        id_central=usuario.id_central,
+        origen_p00=usuario.p00,
+        destino_tipo="SUPERVISOR",
+        tipo="TEXTO",
+        cuerpo=cuerpo,
+        id_usuario_destino=destinatario_p00,
+        id_caso=datos.get("id_caso"),
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Recepción (sondeo incremental), lectura y contadores
 # --------------------------------------------------------------------------- #
+def _filtro_destinatario(usuario: Usuario):
+    if usuario.id_tecnico is not None and usuario.p00:
+        return or_(MensajeDestino.id_tecnico == usuario.id_tecnico, MensajeDestino.p00 == usuario.p00)
+    elif usuario.id_tecnico is not None:
+        return MensajeDestino.id_tecnico == usuario.id_tecnico
+    elif usuario.p00:
+        return MensajeDestino.p00 == usuario.p00
+    return None
+
+
 def _recibido(m: Mensaje, leido_en: datetime | None) -> dict[str, Any]:
     return {
         "id_mensaje": m.id_mensaje,
@@ -179,6 +278,7 @@ def _recibido(m: Mensaje, leido_en: datetime | None) -> dict[str, Any]:
         "destino_tipo": m.destino_tipo,
         "id_cuadrilla": m.id_cuadrilla,
         "id_tecnico": m.id_tecnico,
+        "id_usuario_destino": m.id_usuario_destino,
         "tipo": m.tipo,
         "cuerpo": m.cuerpo,
         "id_caso": m.id_caso,
@@ -192,21 +292,16 @@ def recibidos(
     db: Session, usuario: Usuario, desde: int | None = None, limit: int = 50,
     ultimos: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Sondeo incremental: mensajes del técnico con `id_mensaje > desde` y vigentes.
-
-    D-86: con `ultimos=N` se devuelven los **N más recientes** (y en orden
-    ascendente), que es lo que necesita la **primera carga** de la APK. Antes la
-    APK pedía `desde=0` y recibía los N **más antiguos**, así que con más de N
-    mensajes los recientes tardaban varios ciclos de sondeo en aparecer.
-    """
-    if usuario.id_tecnico is None:
+    """Sondeo incremental: mensajes del técnico o usuario de gestión con `id_mensaje > desde` y vigentes."""
+    filtro = _filtro_destinatario(usuario)
+    if filtro is None:
         return []
     ahora = datetime.now(UTC)
     base = (
         select(Mensaje, MensajeDestino.leido_en)
         .join(MensajeDestino, MensajeDestino.id_mensaje == Mensaje.id_mensaje)
         .where(
-            MensajeDestino.id_tecnico == usuario.id_tecnico,
+            filtro,
             Mensaje.expira_en > ahora,
         )
     )
@@ -223,9 +318,15 @@ def recibidos(
 
 
 def marcar_leido(db: Session, usuario: Usuario, id_mensaje: int) -> None:
-    if usuario.id_tecnico is None:
-        raise HTTPException(status_code=403, detail="Su usuario no es un técnico")
-    fila = db.get(MensajeDestino, (id_mensaje, usuario.id_tecnico))
+    filtro = _filtro_destinatario(usuario)
+    if filtro is None:
+        raise HTTPException(status_code=403, detail="Su usuario no puede recibir mensajes")
+    fila = db.scalar(
+        select(MensajeDestino).where(
+            MensajeDestino.id_mensaje == id_mensaje,
+            filtro,
+        )
+    )
     if fila is None:
         raise HTTPException(status_code=404, detail="Mensaje no encontrado")
     if fila.leido_en is None:
@@ -234,11 +335,12 @@ def marcar_leido(db: Session, usuario: Usuario, id_mensaje: int) -> None:
 
 
 def marcar_leidos(db: Session, usuario: Usuario, ids: list[int]) -> int:
-    if usuario.id_tecnico is None:
+    filtro = _filtro_destinatario(usuario)
+    if filtro is None:
         return 0
     filas = db.scalars(
         select(MensajeDestino).where(
-            MensajeDestino.id_tecnico == usuario.id_tecnico,
+            filtro,
             MensajeDestino.id_mensaje.in_(ids),
             MensajeDestino.leido_en.is_(None),
         )
@@ -251,7 +353,8 @@ def marcar_leidos(db: Session, usuario: Usuario, ids: list[int]) -> int:
 
 
 def contar_no_leidos(db: Session, usuario: Usuario) -> int:
-    if usuario.id_tecnico is None:
+    filtro = _filtro_destinatario(usuario)
+    if filtro is None:
         return 0
     ahora = datetime.now(UTC)
     return int(
@@ -260,7 +363,7 @@ def contar_no_leidos(db: Session, usuario: Usuario) -> int:
             .select_from(MensajeDestino)
             .join(Mensaje, Mensaje.id_mensaje == MensajeDestino.id_mensaje)
             .where(
-                MensajeDestino.id_tecnico == usuario.id_tecnico,
+                filtro,
                 MensajeDestino.leido_en.is_(None),
                 Mensaje.expira_en > ahora,
             )
@@ -356,7 +459,9 @@ def emitir_alarmas_despacho(db: Session, ahora: datetime | None = None) -> dict[
     ).all()
     emitidos = 0
     for f in fallas:
-        dia = f.fecha_deteccion.date() if f.fecha_deteccion else ahora.date()
+        # D-94: el día de la alarma es el **día operativo** (America/Caracas), el
+        # mismo con el que se programa la cobertura de la cuadrilla.
+        dia = dia_operativo(f.fecha_deteccion) if f.fecha_deteccion else dia_operativo(ahora)
         id_cuadrilla = f.id_cuadrilla
         if id_cuadrilla is None:
             id_cuadrilla = db.scalar(

@@ -11,7 +11,9 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from ..models import (
+    Auditoria,
     Caso,
+    Central,
     Cuadrilla,
     Despacho,
     DespachoCasos,
@@ -54,6 +56,11 @@ def _o_404(db: Session, id_despacho: int) -> Despacho:
     return obj
 
 
+def _de_usuario(db: Session, obj: Despacho, usuario: Usuario) -> Despacho:
+    resolver_central(db, obj.id_central, cargar_config(db), usuario)
+    return obj
+
+
 def _detalle(db: Session, despacho: Despacho) -> DespachoDetalleOut:
     cuadrilla = db.get(Cuadrilla, despacho.id_cuadrilla)
     detalle = DespachoDetalleOut.model_validate(despacho)
@@ -70,10 +77,10 @@ def propuesta(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_escritura),
 ) -> PropuestaOut:
     config = cargar_config(db)
-    central = resolver_central(db, id_central, config)
+    central = resolver_central(db, id_central, config, usuario)
     resultado = svc.construir_propuesta(db, central.id_central, fecha or date.today())
     return PropuestaOut(**resultado.como_dict())
 
@@ -88,7 +95,7 @@ def generar(
     usuario: Usuario = Depends(_escritura),
 ) -> list[Despacho]:
     config = cargar_config(db)
-    central = resolver_central(db, id_central, config)
+    central = resolver_central(db, id_central, config, usuario)
     dia = fecha or date.today()
 
     if reemplazar:
@@ -124,13 +131,14 @@ def listar(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> list[DespachoDetalleOut]:
     stmt = select(Despacho).order_by(Despacho.fecha.desc(), Despacho.id_cuadrilla)
+    if usuario.rol.codigo != "SUPER" or id_central is not None:
+        central = resolver_central(db, id_central, cargar_config(db), usuario)
+        stmt = stmt.where(Despacho.id_central == central.id_central)
     if fecha:
         stmt = stmt.where(Despacho.fecha == fecha)
-    if id_central:
-        stmt = stmt.where(Despacho.id_central == id_central)
     return [_detalle(db, d) for d in db.scalars(stmt).all()]
 
 
@@ -182,10 +190,10 @@ def proceso_despacho(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> ProcesoDespachoOut:
     config = cargar_config(db)
-    central = resolver_central(db, id_central, config)
+    central = resolver_central(db, id_central, config, usuario)
     return ProcesoDespachoOut(**svc.proceso(db, central.id_central, fecha or date.today()))
 
 
@@ -197,7 +205,7 @@ def guardar_asignacion_dia(
     usuario: Usuario = Depends(_escritura),
 ) -> ProcesoDespachoOut:
     config = cargar_config(db)
-    central = resolver_central(db, datos.id_central, config)
+    central = resolver_central(db, datos.id_central, config, usuario)
     svc.guardar_asignacion(
         db, central.id_central, datos.fecha,
         [bloque.model_dump() for bloque in datos.asignaciones], usuario.p00,
@@ -214,7 +222,7 @@ def procesar(
     usuario: Usuario = Depends(_escritura),
 ) -> list[Despacho]:
     config = cargar_config(db)
-    central = resolver_central(db, datos.id_central, config)
+    central = resolver_central(db, datos.id_central, config, usuario)
     dia = datos.fecha
 
     publicados = db.scalar(
@@ -264,9 +272,11 @@ def procesar(
 
 @router.get("/{id_despacho}", response_model=DespachoDetalleOut, summary="Detalle del despacho")
 def obtener(
-    id_despacho: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    id_despacho: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
 ) -> DespachoDetalleOut:
-    return _detalle(db, _o_404(db, id_despacho))
+    return _detalle(db, _de_usuario(db, _o_404(db, id_despacho), usuario))
 
 
 @router.patch("/{id_despacho}", response_model=DespachoDetalleOut, summary="Publicar / cerrar el despacho")
@@ -274,9 +284,9 @@ def actualizar(
     id_despacho: int,
     datos: DespachoUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_escritura),
 ) -> DespachoDetalleOut:
-    despacho = _o_404(db, id_despacho)
+    despacho = _de_usuario(db, _o_404(db, id_despacho), usuario)
     cambios = datos.model_dump(exclude_unset=True)
     if "observacion" in cambios:
         cambios.pop("observacion")  # la observación es por caso, no del despacho
@@ -400,7 +410,7 @@ def asignar_casos(
     if datos.id_cuadrilla is None:
         raise HTTPException(status_code=400, detail="Indique la cuadrilla destino")
     config = cargar_config(db)
-    central = resolver_central(db, datos.id_central, config)
+    central = resolver_central(db, datos.id_central, config, usuario)
     resultado = svc.asignar_casos(
         db, central.id_central, datos.fecha or date.today(), datos.id_cuadrilla,
         datos.ids_caso, datos.ids_caso_especial, usuario.p00,
@@ -421,10 +431,10 @@ def asignar_casos(
 def quitar_casos(
     datos: AsignacionCasosRequest,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_escritura),
 ) -> AsignacionCasosOut:
     config = cargar_config(db)
-    central = resolver_central(db, datos.id_central, config)
+    central = resolver_central(db, datos.id_central, config, usuario)
     resultado = svc.quitar_casos(
         db, central.id_central, datos.fecha or date.today(),
         datos.ids_caso, datos.ids_caso_especial,
@@ -458,6 +468,7 @@ def imprimible(
         f"<td>{(sectores.get(dc.id_sector) if dc.id_sector else None) or '—'}</td>"
         f"<td>{c.direccion or ''}</td>"
         f"<td>{c.nombre_cliente or ''}</td><td>{c.telefono or ''}</td>"
+        f"<td>{c.contacto_cliente or ''}</td>"
         f"<td>{dc.tipo_asignacion or ''}</td><td>{c.problema_reporte or ''}</td>"
         f"<td></td></tr>"
         for dc, c in filas
@@ -489,7 +500,8 @@ def imprimible(
   </div>
   <table>
     <thead><tr><th>#</th><th>ID avería</th><th>Sector</th><th>Dirección</th><th>Cliente</th>
-    <th>Teléfono</th><th>Tipo</th><th>Problema</th><th>Firma / resultado</th></tr></thead>
+    <th>Identificador de pago (70*)</th><th>Contacto</th><th>Tipo</th><th>Problema</th>
+    <th>Firma / resultado</th></tr></thead>
     <tbody>{filas_html}</tbody>
   </table>
   <p class="no-print"><button onclick="window.print()">Imprimir</button></p>
@@ -600,7 +612,8 @@ def enviar_despacho(
     for dc, caso in filas:
         lineas.append(
             f"{dc.orden_visita}. [{dc.tipo_asignacion}] {caso.id_averia} · "
-            f"{caso.direccion or ''} · {caso.telefono or ''}"
+            f"{caso.direccion or ''} · 70*: {caso.telefono or '—'}"
+            f"{f' · Contacto: {caso.contacto_cliente}' if caso.contacto_cliente else ''}"
         )
     cuerpo = "\n".join(lineas)
     asunto = f"Despacho {despacho.fecha} — Cuadrilla {cuadrilla.codigo if cuadrilla else ''}"

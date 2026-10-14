@@ -24,19 +24,55 @@ su resolución (Construcción/Reparación · Residencial/Empresa/Referidos)»
 
 El router se declara con `prefix="/api/v1/casos"` y la etiqueta `casos`, y su
 docstring lo vincula a «RF-30, RF-31, RF-32, RF-33 y bitácora RNF-12»
-(`app/api/routes_casos.py:1`, `app/api/routes_casos.py:24`).
+(`app/api/routes_casos.py:1`, `app/api/routes_casos.py:48`).
+
+### El identificador de pago (D-89) y la regla REPARACIÓN/REFERIDO (D-90)
+
+Desde **D-89** el caso dejó de ser el eje del histórico: lo es el **identificador de pago
+(70\*)**, que se guarda en la tabla `identificador_pago` (`app/models/pago_entities.py:25-43`,
+DDL en `RepoTecnico/db/schema.sql:292-304`) y se enlaza desde `caso.id_pago`
+(`RepoTecnico/db/schema.sql:324-325`). Un identificador puede acumular **varios reportes**
+(1→N); el número es **único global** y su patrón de negocio vive en
+`configuracion.pago.serie_regex` (por defecto `^70[0-9]{8}$`, `app/services/pagos.py:27,37-50`).
+
+La separación de números en la ficha es:
+
+| Dato | Columna | Significado |
+|---|---|---|
+| Identificador de pago (70\*) | `caso.telefono` (alias) + `caso.id_pago` (FK) | El número de negocio; solo contiene un 70\*. |
+| Número de contacto | `caso.contacto_cliente` | **Cualquier** otro número; además se suma a `caso.informacion` como `[CONTACTO] <numero>` (`app/services/pagos.py:144-151`). |
+
+El reparto lo hace `_aplicar_identificador` (`app/api/routes_casos.py:332-362`) y lo
+confirman las pruebas `app/tests/test_d89_identificador_pago.py` (alta manual, edición e
+ingesta).
+
+Sobre esa base, **D-90** añade la regla de negocio: una **REPARACIÓN** exige
+**identificador de pago (70\*) + ID de avería real** (un `REF-…` sintético **no** cuenta). Si
+falta cualquiera de los dos, el caso pasa a `tipo_caso='REFERIDO'`, se asegura su ficha
+`caso_especial` (idempotente, 1:1) y queda traza en `auditoria` con motivo
+`SIN_IDENTIFICADOR_PAGO` / `SIN_ID_AVERIA` / `SIN_IDENTIFICADOR_PAGO_Y_AVERIA`. Toda la
+lógica vive en `app/services/clasificacion.py` (`tiene_id_averia_real` `:41-44`,
+`esta_marcado` `:47-51`, `motivo_marca` `:54-66`, `asegurar_caso_especial` `:77-105`,
+`aplicar_regla_reparacion` `:121-173`, `aplicar_en_cambio` `:176-194`) y se describe en
+detalle en el manual 06. La base la refuerza con el trigger
+`trg_caso_reparacion_a_referido` y el `CHECK ck_reparacion_con_ip`
+(`RepoTecnico/db/schema.sql:812-843`). `tipo_caso` incluye ya `REFERIDO`
+(`app/schemas/casos.py:22`).
 
 ### Permisos
 
-La escritura exige rol ADMIN o SUPERVISOR mediante
+La escritura completa exige rol ADMIN o SUPERVISOR mediante
 `_escritura = require_roles("ADMIN", "SUPERVISOR")`
-(`app/api/routes_casos.py:26`). Las lecturas (listado, búsqueda, ficha e
-historial) usan `get_current_user`
-(`app/api/routes_casos.py:92`, `app/api/routes_casos.py:175`,
-`app/api/routes_casos.py:280`, `app/api/routes_casos.py:320`). El rol TECNICO
+(`app/api/routes_casos.py:51`). La gestión del caso (cambio de estado, cierre, cita, «No
+Contesta» y corrección del contacto de campo) suma al TECNICO con
+`_gestion = require_roles("ADMIN", "SUPERVISOR", "TECNICO")`
+(`app/api/routes_casos.py:53`). Las lecturas (listado, búsqueda, ficha, historial y
+relacionados) usan `get_current_user`
+(`app/api/routes_casos.py:183`, `app/api/routes_casos.py:281`,
+`app/api/routes_casos.py:446`, `app/api/routes_casos.py:857`). El rol TECNICO
 puede leer pero no crear ni editar, comportamiento fijado por
 `test_tecnico_puede_leer_pero_no_escribir`
-(`app/tests/test_casos_api.py:45-48`).
+(`app/tests/test_casos_api.py:45-52`).
 
 ## Estados del caso (D-29) y ciclo de vida
 
@@ -62,164 +98,214 @@ Pydantic como `ESTADOS_CASO` (`app/schemas/casos.py:10-20`) y se restringe con u
 ### Restricciones en base de datos
 
 El `CHECK` del DDL contiene exactamente la misma lista
-(`RepoTecnico/db/schema.sql:297-299`), con `DEFAULT 'NUEVO'`. El modelo
+(`RepoTecnico/db/schema.sql:319-321`), con `DEFAULT 'NUEVO'`. El modelo
 SQLAlchemy declara `estado_actual` con valor por defecto `"NUEVO"` y tipo
-`String(20)` (`app/models/caso_entities.py:54`). Enviar un estado inventado
+`String(20)` (`app/models/caso_entities.py:60`). Enviar un estado inventado
 produce `422`, como verifica `test_estado_invalido`
-(`app/tests/test_casos_api.py:172-177`).
+(`app/tests/test_casos_api.py:172-181`).
 
 ### Ciclo de vida observado
 
 1. Un caso nace por ingesta CSV con `estado_actual='NUEVO'`
-   (`app/models/caso_entities.py:54`) o por alta manual, que fija `NUEVO` y
+   (`app/models/caso_entities.py:60`) o por alta manual, que fija `NUEVO` y
    escribe la primera fila de bitácora
-   (`app/api/routes_casos.py:254`, `app/api/routes_casos.py:261-269`).
+   (`app/api/routes_casos.py:417`, `app/api/routes_casos.py:427-435`).
 2. La edición puede cambiar el estado mediante `PATCH`
-   (`app/api/routes_casos.py:309-310`).
+   (`app/api/routes_casos.py:511-512`).
 3. Cada cambio real de estado se apila en `caso_estado_hist` y se consulta por
    `GET /api/v1/casos/{id_caso}/historial`
-   (`app/api/routes_casos.py:317-329`).
+   (`app/api/routes_casos.py:546-570`).
 4. Los estados `CERRADO` y `CANCELADO` son terminales a efectos del indicador
-   «pendiente» (`app/api/routes_casos.py:62-63`) y también del cálculo de fallas
+   «pendiente» (`app/api/routes_casos.py:89-90`) y también del cálculo de fallas
    masivas (`app/services/fallas.py:71`).
+5. **D-90:** si el caso es una `REPARACION` sin 70\* o sin ID de avería real, en el mismo
+   `INSERT`/`UPDATE` el servicio (y, como red de seguridad, el trigger de la base) lo
+   convierte a `tipo_caso='REFERIDO'` (`app/api/routes_casos.py:426` en el alta,
+   `:515` en la edición).
 
 ## Endpoints
 
-El router agrupa seis operaciones bajo `/api/v1/casos`
-(`app/api/routes_casos.py:24`).
+El router agrupa **trece** operaciones bajo `/api/v1/casos`
+(`app/api/routes_casos.py:48`): listado, búsqueda, alta, ficha, edición, estado, historial,
+cierre, cita, «No Contesta», contacto, enrutado y relacionados.
 
 ### `GET /api/v1/casos` (filtros y paginación)
 
-Referencia: `app/api/routes_casos.py:89`. Devuelve un objeto `PaginaCasos` con
+Referencia: `app/api/routes_casos.py:180`. Devuelve un objeto `PaginaCasos` con
 `items`, `total`, `page`, `page_size` y `pages`
-(`app/schemas/casos.py:104-109`).
+(`app/schemas/casos.py:117-122`).
 
 #### Filtros aceptados
 
 | Parámetro | Tipo | Comportamiento | Referencia |
 |---|---|---|---|
-| `q` | texto | Búsqueda `ilike` sobre `id_averia`, `telefono`, `nombre_cliente` y `direccion` | `app/api/routes_casos.py:112-121` |
-| `id_averia` | texto | `ilike` parcial | `app/api/routes_casos.py:122-123` |
-| `telefono` | texto | `ilike` parcial | `app/api/routes_casos.py:124-125` |
-| `id_central` | entero | Igualdad | `app/api/routes_casos.py:126-127` |
-| `id_sector` | entero | Igualdad | `app/api/routes_casos.py:128-129` |
-| `id_causa` | entero | Igualdad | `app/api/routes_casos.py:130-131` |
-| `id_lote_ingesta` | entero | Igualdad | `app/api/routes_casos.py:132-133` |
-| `estado_actual` | texto | Igualdad | `app/api/routes_casos.py:134-135` |
-| `tipo_caso` | texto | Igualdad | `app/api/routes_casos.py:136-137` |
-| `categoria` | texto | Igualdad | `app/api/routes_casos.py:138-139` |
-| `origen` | texto | Igualdad | `app/api/routes_casos.py:140-141` |
-| `en_gestion_supervisor` | booleano | Igualdad | `app/api/routes_casos.py:142-143` |
-| `es_falla_masiva` | booleano | Igualdad | `app/api/routes_casos.py:144-145` |
-| `desde` / `hasta` | fecha-hora | Rango sobre `fecha_reporte` | `app/api/routes_casos.py:146-149` |
+| `q` | texto | Búsqueda `ilike` sobre avería, teléfono, cliente, dirección, tipo, categoría, estado y nombre de sector | `app/api/routes_casos.py:210-225` |
+| `id_averia` | texto | `ilike` parcial | `app/api/routes_casos.py:226-227` |
+| `telefono` | texto | `ilike` **solo** sobre `caso.telefono` (el identificador de pago) | `app/api/routes_casos.py:228-229` |
+| `id_central` | entero | Igualdad | `app/api/routes_casos.py:230-231` |
+| `id_sector` | entero | Igualdad | `app/api/routes_casos.py:232-233` |
+| `id_cuadrilla` | entero | Cuadrilla del **último despacho** que incluyó el caso (D-72) | `app/api/routes_casos.py:234-235` |
+| `id_causa` | entero | Igualdad | `app/api/routes_casos.py:236-237` |
+| `id_lote_ingesta` | entero | Igualdad | `app/api/routes_casos.py:238-239` |
+| `estado_actual` | texto | Igualdad | `app/api/routes_casos.py:240-241` |
+| `tipo_caso` | texto | Igualdad | `app/api/routes_casos.py:242-243` |
+| `categoria` | texto | Igualdad | `app/api/routes_casos.py:244-245` |
+| `origen` | texto | Igualdad | `app/api/routes_casos.py:246-247` |
+| `en_gestion_supervisor` | booleano | Igualdad | `app/api/routes_casos.py:248-249` |
+| `es_falla_masiva` | booleano | Igualdad | `app/api/routes_casos.py:250-251` |
+| `desde` / `hasta` | fecha-hora | Rango sobre `fecha_reporte` | `app/api/routes_casos.py:252-255` |
 
 #### Paginación y orden
 
 `page` arranca en 1 (`ge=1`) y `page_size` vale 25 por defecto, con mínimo 1 y
-máximo 200 (`app/api/routes_casos.py:108-109`). El total se calcula con
-`count()` (`app/api/routes_casos.py:151`) y el número de páginas se deriva por
-división entera (`app/api/routes_casos.py:159`). El orden es
+máximo 200 (`app/api/routes_casos.py:207-208`). El total se calcula con
+`count()` (`app/api/routes_casos.py:257`) y el número de páginas se deriva por
+división entera (`app/api/routes_casos.py:265`). El orden es
 `fecha_reporte` descendente con los nulos al final y, como desempate,
-`id_caso` descendente (`app/api/routes_casos.py:155`); la prueba
+`id_caso` descendente (`app/api/routes_casos.py:261`); la prueba
 `test_listado_ordenado_por_fecha_descendente` lo verifica
-(`app/tests/test_casos_api.py:239-244`).
+(`app/tests/test_casos_api.py:239-245`).
 
 #### Iconos de estado calculados
 
-`_resumen` completa cada `CasoOut` con `sector_nombre` y cuatro booleanos
-calculados (`app/api/routes_casos.py:56-83`,
-`app/schemas/casos.py:97-101`):
+`_resumen` completa cada `CasoOut` con `sector_nombre`, cuatro booleanos
+calculados y —desde D-89/D-90— los campos del identificador y de la regla
+(`app/api/routes_casos.py:83-149`, `app/schemas/casos.py:105-114`):
 
-| Icono | Condición | Referencia |
+| Icono / campo | Condición | Referencia |
 |---|---|---|
-| `pendiente` | El estado no es `CERRADO` ni `CANCELADO` | `app/api/routes_casos.py:62-63` |
-| `asignado` | Existe fila en `despacho_caso` o el estado es `ASIGNADO` | `app/api/routes_casos.py:64-66` |
-| `citado` | Existe cita en estado `PROPUESTA` o `CONFIRMADA` | `app/api/routes_casos.py:67-68` |
-| `gestion` | `en_gestion_supervisor`, estado `EN_GESTION` o despacho `GESTIONADO` | `app/api/routes_casos.py:69-71` |
+| `pendiente` | El estado no es `CERRADO` ni `CANCELADO` | `app/api/routes_casos.py:89-90` |
+| `asignado` | Existe fila en `despacho_caso` o el estado es `ASIGNADO` | `app/api/routes_casos.py:91-93` |
+| `citado` | Existe cita en estado `PROPUESTA` o `CONFIRMADA` | `app/api/routes_casos.py:94-95` |
+| `gestion` | `en_gestion_supervisor`, estado `EN_GESTION` o despacho `GESTIONADO` | `app/api/routes_casos.py:96-98` |
+| `id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre` | Cuadrilla del último despacho (D-78) | `app/api/routes_casos.py:139-141` |
+| `marcado_reclasificar` | `clasificacion.esta_marcado(caso)` (D-90) | `app/api/routes_casos.py:143` |
+| `motivo_marca` | `SIN_IDENTIFICADOR_PAGO` / `SIN_ID_AVERIA` / ambos | `app/api/routes_casos.py:144` |
+| `tiene_identificador_pago` | `caso.id_pago is not None` | `app/api/routes_casos.py:145` |
+| `tiene_id_averia_real` | `id_averia` no vacío y **no** `REF-…` | `app/api/routes_casos.py:146` |
 
 ### `GET /api/v1/casos/buscar`
 
-Referencia: `app/api/routes_casos.py:172`. Es el endpoint del buscador global y
+Referencia: `app/api/routes_casos.py:278`. Es el endpoint del buscador global y
 de la búsqueda rápida del PANEL. Exige al menos uno de `q`, `id_averia` o
 `telefono`; si no se envía ninguno responde `422` con el mensaje «Indique `q`,
 `id_averia` o `telefono` para buscar»
-(`app/api/routes_casos.py:181-185`). La prueba `test_buscar_sin_parametros` fija
-ese comportamiento (`app/tests/test_casos_api.py:112-114`).
+(`app/api/routes_casos.py:287-291`). La prueba `test_buscar_sin_parametros` fija
+ese comportamiento (`app/tests/test_casos_api.py:112-115`).
 
 | Parámetro | Comportamiento | Referencia |
 |---|---|---|
-| `q` | `ilike` sobre avería, teléfono, cliente y dirección | `app/api/routes_casos.py:187-196` |
-| `id_averia` | Igualdad exacta tras `strip()` | `app/api/routes_casos.py:197-198` |
-| `telefono` | Igualdad o `ilike` parcial | `app/api/routes_casos.py:199-203` |
-| `limite` | 20 por defecto, entre 1 y 100 | `app/api/routes_casos.py:179` |
+| `q` | `ilike` sobre avería, **identificador de pago** (`telefono`), **número de contacto** (`contacto_cliente`), cliente y dirección (D-92) | `app/api/routes_casos.py:293-305` |
+| `id_averia` | Igualdad exacta tras `strip()` | `app/api/routes_casos.py:306-307` |
+| `telefono` | Igualdad o `ilike` parcial, también sobre el número de contacto | `app/api/routes_casos.py:308-317` |
+| `limite` | 20 por defecto, entre 1 y 100 | `app/api/routes_casos.py:285` |
 
 Cuando se combinan varios criterios se aplica `or_(*condiciones)`; con un solo
-criterio se usa directamente (`app/api/routes_casos.py:207`). El orden es
+criterio se usa directamente (`app/api/routes_casos.py:321`). El orden es
 `fecha_reporte` descendente con nulos al final
-(`app/api/routes_casos.py:208`).
+(`app/api/routes_casos.py:322`).
 
 ### `POST /api/v1/casos` (alta manual `REF-...`)
 
-Referencia: `app/api/routes_casos.py:218`. Responde `201 Created` y exige rol de
-escritura (`app/api/routes_casos.py:218-223`). La secuencia del alta es:
+Referencia: `app/api/routes_casos.py:365`. Responde `201 Created` y exige rol de
+escritura (`app/api/routes_casos.py:365-371`). La secuencia del alta es:
 
-1. Resolver la central indicada o la configurada
-   (`app/api/routes_casos.py:225-226`).
+1. Resolver la central indicada o la configurada y compilar el patrón del 70\*
+   (`app/api/routes_casos.py:372-374`).
 2. Si el cuerpo no trae `id_averia`, generarlo con la función de base de datos
-   `generar_id_averia_ref` (`app/api/routes_casos.py:229-233`).
+   `generar_id_averia_ref` (`app/api/routes_casos.py:378-382`).
 3. Rechazar con `409` si el `id_averia` ya existe
-   (`app/api/routes_casos.py:235-236`).
-4. Respetar el `id_sector` enviado (validando su existencia con `404`) o
+   (`app/api/routes_casos.py:384-385`).
+4. **Clasificar el número (D-89)**: `_aplicar_identificador` resuelve el 70\* en
+   `identificador_pago` (y lo deja como alias en `telefono`) o lo trata como número de
+   contacto (`app/api/routes_casos.py:387-398`, `:332-362`). El campo `id_pago` del cuerpo
+   (`app/schemas/casos.py:134-135`) tiene prioridad sobre `telefono`.
+5. Respetar el `id_sector` enviado (validando su existencia con `404`) o
    sectorizar automáticamente por la dirección
-   (`app/api/routes_casos.py:238-242`).
-5. Completar `fecha_reporte` con la hora actual si viene vacía y fijar
-   `ayudantes=[]` (`app/api/routes_casos.py:244-246`).
-6. Crear el `Caso` con `origen="MANUAL"`, `estado_actual="NUEVO"`, el código y
+   (`app/api/routes_casos.py:400-404`).
+6. Completar `fecha_reporte` con la hora actual si viene vacía y fijar
+   `ayudantes=[]` (`app/api/routes_casos.py:406-408`).
+7. Crear el `Caso` con `origen="MANUAL"`, `estado_actual="NUEVO"`, `id_pago`, el código y
    nombre de la central y el P00 del usuario
-   (`app/api/routes_casos.py:248-258`).
-7. Escribir la primera fila de bitácora con motivo «Alta manual desde PANEL»
-   (`app/api/routes_casos.py:261-269`).
+   (`app/api/routes_casos.py:410-423`).
+8. **Aplicar la regla D-90** (`app/api/routes_casos.py:424-426`): una REPARACIÓN sin 70\* o
+   sin avería real se registra como REFERIDO.
+9. Escribir la primera fila de bitácora con motivo «Alta manual desde PANEL»
+   (`app/api/routes_casos.py:427-435`).
+
+#### Datos obligatorios del alta (RN-AL-01)
+
+Al **incorporar un caso manual** —y también un caso especial, ver
+`06-seguimiento-especiales-agenda.md`— hay que informar, sin excepción:
+
+| Dato | Campo del cuerpo | Obligatorio |
+|---|---|---|
+| Nombre de contacto | `nombre_cliente` | Siempre |
+| Teléfono de contacto | `contacto_cliente` | Siempre |
+| Dirección del inmueble | `direccion` | Siempre |
+| Teléfono con el **identificador de pago (70\*)** | `id_pago` | Siempre (se valida contra `pago.serie_regex`; si no cumple → **422**) |
+| Tipo de reporte (Reparación/Construcción) | `tipo_reporte` | Siempre (`REPARACION` o `CONSTRUCCION`) |
+| Id de avería | `id_averia` | Solo si `tipo_reporte=REPARACION` |
+| Tipo de problema | `tipo_problema` | Solo si `tipo_reporte=REPARACION` |
+
+`CasoManualCreate` (`app/schemas/casos.py`) concentra la regla: los campos
+`nombre_cliente`, `contacto_cliente` y `direccion` son obligatorios y no admiten
+blanco (`field_validator`), y `model_validator` exige el 70\* y —en una
+REPARACIÓN— el id de avería y el tipo de problema. El `tipo_caso` del caso lo fija
+`tipo_reporte`; la regla D-90 puede reclasificarlo después.
+
+Como consecuencia del 70\* obligatorio, el alta manual ya no puede producir por sí
+misma una REPARACIÓN **sin** identificador: la reclasificación a `REFERIDO` sigue
+ocurriendo cuando el `id_averia` informado es sintético (`REF-…`).
 
 #### Verificación
 
 `test_alta_manual_genera_identificador_ref` comprueba que el identificador
 empieza por `REF-2324X-`, que el origen es `MANUAL`, el estado `NUEVO` y que
-`en_gestion_supervisor` es falso (`app/tests/test_casos_api.py:54-61`).
+`en_gestion_supervisor` es falso (`app/tests/test_casos_api.py:54-62`).
 `test_alta_manual_con_id_explicito` cubre el identificador provisto y el `409`
-por duplicado (`app/tests/test_casos_api.py:64-72`).
+por duplicado (`app/tests/test_casos_api.py:64-73`). El enlace con el
+identificador de pago lo cubre
+`test_el_alta_manual_enlaza_el_identificador`
+(`app/tests/test_d89_identificador_pago.py:368-395`).
 
 ### `GET /api/v1/casos/{id_caso}`
 
-Referencia: `app/api/routes_casos.py:278`. Devuelve la ficha completa como
+Referencia: `app/api/routes_casos.py:444`. Devuelve la ficha completa como
 `CasoOut`, incluidos el nombre del sector, los cuatro iconos de estado
-(`app/api/routes_casos.py:281`) y —desde D-78— la **cuadrilla del último
-despacho** (`id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre`). Si el caso
+(`app/api/routes_casos.py:447`) y —desde D-78— la **cuadrilla del último
+despacho** (`id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre`), además de los
+campos del identificador de pago y de la marca de D-89/D-90. Si el caso
 no existe, `_o_404` responde `404` con «Caso no encontrado»
-(`app/api/routes_casos.py:29-33`), verificado por `test_ficha_y_404`
-(`app/tests/test_casos_api.py:117-123`).
+(`app/api/routes_casos.py:56-60`), verificado por `test_ficha_y_404`
+(`app/tests/test_casos_api.py:117-127`).
 
 ### `PATCH /api/v1/casos/{id_caso}` (historial de estado)
 
-Referencia: `app/api/routes_casos.py:284`. Es una edición parcial: solo se
+Referencia: `app/api/routes_casos.py:450`. Es una edición parcial: solo se
 aplican los campos presentes en el cuerpo, gracias a
-`model_dump(exclude_unset=True)` (`app/api/routes_casos.py:292`).
+`model_dump(exclude_unset=True)` (`app/api/routes_casos.py:458`).
 
 #### Campos con tratamiento especial
 
 | Campo | Tratamiento | Referencia |
 |---|---|---|
-| `motivo_estado` | Se extrae del cuerpo y se usa como motivo de la bitácora; no se persiste en `caso` | `app/api/routes_casos.py:294` |
-| `estado_actual` | Se extrae y se procesa por `_registrar_estado` | `app/api/routes_casos.py:295`, `app/api/routes_casos.py:309-310` |
-| `id_sector` | Se valida contra `sector` (`404` si no existe) y se asigna | `app/api/routes_casos.py:296`, `app/api/routes_casos.py:301-304` |
-| `direccion` | Si no se envió `id_sector`, dispara la re-sectorización automática | `app/api/routes_casos.py:305-307` |
+| `motivo_estado` | Se extrae del cuerpo y se usa como motivo de la bitácora; no se persiste en `caso` | `app/api/routes_casos.py:460` |
+| `estado_actual` | Se extrae y se procesa por `_registrar_estado` | `app/api/routes_casos.py:461`, `app/api/routes_casos.py:511-512` |
+| `id_sector` | Se valida contra `sector` (`404` si no existe) y se asigna | `app/api/routes_casos.py:462`, `app/api/routes_casos.py:503-506` |
+| `direccion` | Si no se envió `id_sector`, dispara la re-sectorización automática | `app/api/routes_casos.py:507-509` |
+| `id_pago` | **D-89:** se normaliza y se valida contra el patrón; si no lo cumple → **422** `"El identificador de pago no cumple el patrón configurado (70*)"`; si lo cumple, se resuelve la ficha y `telefono` queda como alias | `app/api/routes_casos.py:463-477` |
+| `telefono` | **D-89:** si es un 70\* se resuelve el identificador; si es cualquier otro número, el alias `telefono` queda `NULL` y el valor pasa a `contacto_cliente` y a `informacion` | `app/api/routes_casos.py:478-491` |
+| `contacto_cliente` | Se normaliza (RN-IP-07) y se refleja en `informacion` como `[CONTACTO] …` | `app/api/routes_casos.py:492-498` |
 
 El resto de campos se aplica con `setattr` en un bucle
-(`app/api/routes_casos.py:298-299`).
+(`app/api/routes_casos.py:500-501`). Al final, y **antes** del `commit`, se aplica la regla
+de D-90 (`clasificacion.aplicar_en_cambio`, `app/api/routes_casos.py:514-515`).
 
 > Observación de mantenimiento: `CasoUpdate` admite un campo `sector_nombre`
-> (`app/schemas/casos.py:149`) que no existe como columna del modelo `Caso`
-> (`app/models/caso_entities.py:41-118`). Al aplicarse con `setattr`
-> (`app/api/routes_casos.py:298-299`) el valor no se persiste. El cliente web no
+> (`app/schemas/casos.py:166`) que no existe como columna del modelo `Caso`
+> (`app/models/caso_entities.py:47-128`). Al aplicarse con `setattr`
+> (`app/api/routes_casos.py:500-501`) el valor no se persiste. El cliente web no
 > lo envía, por lo que hoy es inocuo; conviene evitarlo en integraciones futuras.
 
 #### Verificación
@@ -227,15 +313,53 @@ El resto de campos se aplica con `setattr` en un bucle
 `test_edicion_registra_historial_de_estado` comprueba que el cambio a
 `CONTACTADO` con motivo queda en la bitácora con el P00 del usuario y que
 repetir el mismo estado no añade una segunda fila
-(`app/tests/test_casos_api.py:129-156`).
+(`app/tests/test_casos_api.py:129-157`). La interpretación del teléfono en la edición la
+cubre `test_la_edicion_interpreta_el_telefono`
+(`app/tests/test_d89_identificador_pago.py:397-431`).
 
 ### `GET /api/v1/casos/{id_caso}/historial`
 
-Referencia: `app/api/routes_casos.py:317`. Verifica primero la existencia del
+Referencia: `app/api/routes_casos.py:546`. Verifica primero la existencia del
 caso (`404` si falta) y devuelve la bitácora `caso_estado_hist` ordenada por
 `id_hist` descendente, es decir, del movimiento más reciente al más antiguo
-(`app/api/routes_casos.py:322-328`). El esquema de salida es
-`CasoEstadoHistOut` (`app/schemas/casos.py:158-167`).
+(`app/api/routes_casos.py:551-558`). El esquema de salida es
+`CasoEstadoHistOut` (`app/schemas/casos.py:175-184`).
+
+### `PATCH /api/v1/casos/{id_caso}/contacto` (corrección desde el campo)
+
+Referencia: `app/api/routes_casos.py:761`. Es el camino del **técnico de campo**
+(`_gestion`, `app/api/routes_casos.py:767`): corrige **dirección** y número, exige que el caso no
+esté en estado terminal (**409**, `app/api/routes_casos.py:781-785`), recalcula el sector si
+cambia la dirección (`:790-791`) y deja traza en `auditoria`
+(`acción="CONTACTO_CAMPO"`, `app/api/routes_casos.py:792-801`).
+
+> ⚠️ **Discrepancia verificada (D-93/DEC-IP-7).** El cuerpo del endpoint usa el esquema
+> `ContactoUpdate` (`app/schemas/casos.py:244-274`), que **solo** declara `direccion` y
+> **`telefono`**, y cuyo validador sigue exigiendo las series `(700|701|702)\d{7}`
+> (`app/schemas/casos.py:254-264`). **No** existe la clave `contacto` ni el tratamiento de
+> «un 70\* se registra como identificador del caso». En cambio, la APK ya envía la clave
+> `contacto` (`app_movil/lib/features/casos/operaciones_service.dart:367`). Al no existir en
+> el esquema, Pydantic la ignora y el endpoint responde **422** «Indique la dirección o el
+> número de contacto» (`app/api/routes_casos.py:777-780`). Por tanto: **lo descrito en el
+> incremento D-93 para este endpoint no está aplicado en este árbol**; queda como
+> **pendiente de confirmar** para el equipo de desarrollo (ver manual 11, sección 7.4).
+> El histórico por identificador, en cambio, **sí** está aplicado (ver abajo).
+
+### `GET /api/v1/casos/{id_caso}/relacionados` (pestaña Histórico, D-89/D-92)
+
+Referencia: `app/api/routes_casos.py:852`. Devuelve los antecedentes del caso y es la
+fuente de la pestaña **Histórico** de la ficha. El eje del histórico es el
+**identificador de pago**: la consulta filtra por `Caso.telefono == telefono`, es decir, por
+el alias del 70\* (`app/api/routes_casos.py:871-878`), y para cada antecedente añade el
+`id_averia` anterior, la fecha de cierre, el problema reportado y la justificación del cierre
+a partir de la última actividad de tipo `CIERRE` (`app/api/routes_casos.py:882-920`). El
+docstring y el código contemplan una caída a `contacto_cliente` cuando `telefono` está vacío
+(`app/api/routes_casos.py:862-867`), pero como la consulta compara contra `Caso.telefono`,
+un caso cuyo número sea de contacto **no** agrupa antecedentes: lo confirman
+`test_relacionados_agrupa_antecedentes_por_identificador_de_pago`
+(`app/tests/test_casos_api.py:429-459`) y
+`test_relacionados_sin_identificador_no_devuelve_antecedentes`
+(`app/tests/test_casos_api.py:462-479`).
 
 ## Reglas de negocio
 
@@ -254,39 +378,39 @@ manuales) reciben un identificador sintético `REF-<CÓDIGO_CENTRAL>-<NNNNNN>`
 
 El backend la invoca con SQL directo
 (`text("SELECT generar_id_averia_ref(:c)")`,
-`app/api/routes_casos.py:231-233`). El resultado del formato observado en
+`app/api/routes_casos.py:380-382`). El resultado del formato observado en
 pruebas es `REF-2324X-` (`app/tests/test_casos_api.py:58`).
 
 ### Re-sectorización automática al editar dirección
 
 Cuando un `PATCH` incluye `direccion` y **no** incluye `id_sector`, el backend
 recalcula el sector con `_sectorizar`
-(`app/api/routes_casos.py:305-307`). `_sectorizar` delega en `asignar_sector`
+(`app/api/routes_casos.py:507-509`). `_sectorizar` delega en `asignar_sector`
 con los patrones de la central del caso
-(`app/api/routes_casos.py:52-53`), que ordena los patrones por longitud
+(`app/api/routes_casos.py:79-80`), que ordena los patrones por longitud
 descendente y admite coincidencia `CONTIENE`, `EXACTO` o `REGEX`
 (`app/services/sectorizacion.py:33`, `app/services/sectorizacion.py:53-57`). Si
 no hay coincidencia, el sector queda en `None`
 (`app/services/sectorizacion.py:58`). La prueba
 `test_edicion_recalcula_sector` parte de un caso sin sector y, al corregir la
 dirección, obtiene el sector esperado
-(`app/tests/test_casos_api.py:159-169`).
+(`app/tests/test_casos_api.py:159-170`).
 
 ### Registro en `caso_estado_hist`
 
 `_registrar_estado` implementa la regla de idempotencia de la bitácora:
 
 1. Si el estado nuevo es igual al actual, retorna sin escribir
-   (`app/api/routes_casos.py:38-39`).
+   (`app/api/routes_casos.py:65-66`).
 2. En caso contrario, inserta una fila con `estado_anterior`, `estado_nuevo`,
-   `motivo` y `usuario` (`app/api/routes_casos.py:40-48`).
-3. Actualiza `caso.estado_actual` (`app/api/routes_casos.py:49`).
+   `motivo` y `usuario` (`app/api/routes_casos.py:67-75`).
+3. Actualiza `caso.estado_actual` (`app/api/routes_casos.py:76`).
 
 La tabla `caso_estado_hist` tiene `fecha_hora` con `DEFAULT now()`
-(`RepoTecnico/db/schema.sql:403`) y borrado en cascada cuando se elimina el caso
-(`RepoTecnico/db/schema.sql:398`). El alta manual inserta la fila inicial
+(`RepoTecnico/db/schema.sql:427`) y borrado en cascada cuando se elimina el caso
+(`RepoTecnico/db/schema.sql:422`). El alta manual inserta la fila inicial
 directamente en la ruta, sin pasar por `_registrar_estado`, porque el caso aún
-no tiene estado previo (`app/api/routes_casos.py:261-269`).
+no tiene estado previo (`app/api/routes_casos.py:427-435`).
 
 ## Esquemas y modelo
 
@@ -347,6 +471,20 @@ defecto de la fecha están en el DDL
 
 Es la página más extensa del módulo (964 líneas). Se organiza en tres bloques:
 filtros y listado, ficha con edición y cambio de estado, e historial.
+
+#### Solo casos abiertos (RN-AL-02)
+
+La sección CASOS muestra **únicamente casos abiertos**: la página envía siempre
+`solo_abiertos=true` en el listado (`app/web/src/pages/Casos.tsx`, `cargarLista`)
+y el selector de estado ofrece solo los estados abiertos (`NUEVO`, `ASIGNADO`,
+`CONTACTADO`, `CITADO`, `DIFERIDO`, `EN_GESTION`, `ENRUTADO`), sin `CERRADO` ni
+`CANCELADO` (`app/web/src/pages/Casos.tsx`, constante `ESTADOS`).
+
+El backend lo resuelve con el parámetro `solo_abiertos` de `GET /api/v1/casos`
+(`app/api/routes_casos.py`), que excluye los estados terminales
+`ESTADOS_TERMINALES = ("CERRADO", "CANCELADO")` definidos en `app/schemas/casos.py`.
+Es una lista **opt-in**: el resto de consumidores (despacho, monitoreo, informes)
+siguen viendo el universo completo salvo que pidan el filtro.
 
 #### Filtros mostrados
 

@@ -1,6 +1,11 @@
 # Diagrama Entidad-Relación — Modelo de datos GGTO
 
-> Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de
+> **Estado verificado 2026-10-12:** DDL local de 41 tablas, con 36 entidades
+> originales del modelo y cinco tablas complementarias en §10 de
+> `RepoTecnico/modelo_er.md`. El esquema desplegado no se consultó.
+
+> Este manual explica, con palabras sencillas, cómo se conectan las entidades y
+> tablas del modelo de datos GGTO:
 > la base GGTO. Es la versión literal del manual técnico: conserva las mismas
 > secciones y todos los diagramas por dominio, pero los presenta con un lenguaje
 > claro y con los vínculos simplificados para que se lean fácil. Si algo no se
@@ -20,21 +25,18 @@
 4. **Revisa los tres puentes.** Tres relaciones de muchos a muchos se resuelven
    con tablas puente: `cuadrilla_tecnico`, `cuadrilla_herramienta` y
    `despacho_caso`.
-5. **Recuerda las reglas del sistema.** La base tiene 36 tablas y ya contiene
-   datos reales (42 casos con datos personales) en un servicio público: el
-   acceso debe restringirse. La tabla número 36, `cuadrilla_sector_dia`, guarda
-   qué sectores atiende cada cuadrilla cada día (ciclo D-66). Telegram y correo
-   no tienen credenciales, así que los envíos quedan PENDIENTES; WhatsApp no
-   existe en la v1; la app móvil Flutter no está desarrollada (Ciclo 8
-   pospuesto); y el riesgo aceptado D-26 indica que no hay respaldos/PITR hasta
-   migrar de instancia.
+5. **Recuerda el estado real.** El DDL local define 41 tablas; hay cinco
+   complementarias a las 36 entidades originales del modelo. La APK de campo
+   existe (`1.1.0+9`), pero la gestión multirol V2 está pendiente. Cloud SQL está
+   activa y no tiene respaldos automáticos habilitados.
 
 ## Visión general del modelo
 
-### 36 tablas y 7 dominios
+### 41 tablas físicas locales y 36 entidades originales
 
-El esquema físico contiene 36 sentencias `CREATE TABLE` y el modelo de origen
-las representa en siete bloques temáticos:
+El DDL local contiene 41 sentencias `CREATE TABLE`. El modelo de origen representa
+36 entidades en siete bloques temáticos y documenta cinco tablas complementarias
+en §10:
 
 | # | Dominio | Entidades del diagrama | Nº |
 |---|---|---|---|
@@ -47,9 +49,8 @@ las representa en siete bloques temáticos:
 | 7 | Soporte y auditoría | CONFIGURACION, AUDITORIA, NOTIFICACION | 3 |
 
 Las entidades definidas con atributos propios en los dominios 2 a 7 suman
-13 + 8 + 4 + 4 + 4 + 3 = 36. Además, cada bloque repite entidades de otros
-dominios como referencia para dibujar la relación (por ejemplo, `CASO` aparece
-en los dominios 4, 5 y 7). En total, **36 tablas** distintas.
+36. Las cinco tablas complementarias se detallan en el bloque correspondiente;
+cada diagrama repite entidades de otros dominios como referencias.
 
 ### Convención de diagramas (Mermaid erDiagram)
 
@@ -76,7 +77,7 @@ implementan con `CHECK`, `UNIQUE` o directamente en el servicio.
 
 ### Vista general de relaciones
 
-Muestra el grafo completo de dependencias entre las 36 tablas. La imagen
+Muestra el grafo completo de dependencias entre las entidades principales del modelo. La imagen
 siguiente es la versión simplificada y legible: solo nombres de tablas y
 relaciones.
 
@@ -544,11 +545,9 @@ de trabajo previa que el motor de reparto consulta.
 
 ### Gestión técnica (offline)
 
-El título original del documento es «Gestión técnica (app móvil)». Debe
-precisarse que **la aplicación móvil Flutter no está desarrollada** (Ciclo 8
-pospuesto): este bloque describe el modelo previsto para la operación en campo y
-las tablas existen en el script de la base, pero en la v1 ningún flujo de la API
-las escribe. WhatsApp tampoco existe en la v1.
+El título original del documento es «Gestión técnica (app móvil)». La aplicación
+Flutter de campo sí está desarrollada; las pantallas de gestión multirol son
+alcance V2 pendiente. Este bloque describe el modelo de datos del trabajo móvil.
 
 ```mermaid
 erDiagram

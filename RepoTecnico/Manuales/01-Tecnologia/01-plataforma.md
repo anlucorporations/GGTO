@@ -203,7 +203,7 @@ abre una `Session` y la cierra en el bloque `finally` (`app/core/db.py:43-49`).
 | `DB_SSLMODE` | `prefer` | `app/core/config.py:23` |
 | `DB_SCHEMA` | vacío (esquema por defecto) | `app/core/config.py:25` |
 
-El esquema físico consta de **36 tablas** (35 tras la verificación inicial registrada en
+El DDL local inspeccionado consta de **41 tablas** (35 tras la verificación inicial registrada en
 `RepoTecnico/entornos_globales.md:303`, más `cuadrilla_sector_dia` del ciclo D-66). El detalle de las entidades corresponde a los
 manuales `05-Diccionario-de-Datos/01-entidades.md` y `06-Diagrama-Relacional/01-diagrama-er.md`.
 

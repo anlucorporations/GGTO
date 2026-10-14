@@ -31,7 +31,11 @@ def entorno(client, admin_token):
 
     caso = client.post("/api/v1/casos",
                        json={"id_averia": "TSTE-1", "direccion": "SECTOR ALFA CASA 1",
-                             "nombre_cliente": "CLIENTE E"}, headers=headers)
+                             "nombre_cliente": "CLIENTE E",
+                             "contacto_cliente": "04141112233",
+                             "id_pago": "7014000800",
+                             "tipo_reporte": "REPARACION",
+                             "tipo_problema": "SIN_SERVICIO"}, headers=headers)
     assert caso.status_code == 201, caso.text
 
     yield {"headers": headers, "id_central": id_central,
@@ -55,6 +59,8 @@ def test_ingresar_empresa_crea_caso_y_solicitante(client, entorno):
         "crear_solicitante": {"unidad": "Unidad de Empresas", "nombre": "ANA PEREZ",
                               "contacto": "7001234567", "canal": "TELEGRAM"},
         "direccion": "SECTOR ALFA TORRE 2", "nombre_cliente": "EMPRESA DEMO CA",
+        "contacto_cliente": "04142223344", "telefono": "7014000801",
+        "tipo_problema": "PUNTO_OPTICO",
     }, headers=entorno["headers"])
     assert r.status_code == 201, r.text
     cuerpo = r.json()
@@ -63,7 +69,49 @@ def test_ingresar_empresa_crea_caso_y_solicitante(client, entorno):
     assert cuerpo["prioridad"] == "ALTA"
     assert cuerpo["id_solicitante"] is not None
     assert cuerpo["id_caso"] is not None
-    assert cuerpo["tiene_id_averia"] is True
+    # RN-AL-01: los datos del alta y del solicitante quedan registrados.
+    assert cuerpo["contacto_cliente"] == "4142223344"
+    assert cuerpo["telefono"] == "7014000801"
+    assert cuerpo["tipo_problema"] == "PUNTO_OPTICO"
+    assert cuerpo["solicitante_nombre"] == "ANA PEREZ"
+    # D-90: el id de avería sintético `REF-…` **no** cuenta como avería real.
+    assert cuerpo["tiene_id_averia"] is False
+
+
+def test_el_alta_especial_exige_los_datos_obligatorios(client, entorno):
+    """RN-AL-01: sin los datos del alta (y del solicitante) el alta da 422."""
+    r = client.post(ESPECIALES, json={
+        "clasificacion": "REFERIDO", "tipo_actividad": "REPARACION",
+    }, headers=entorno["headers"])
+    assert r.status_code == 422, r.text
+
+    # Falta el teléfono con el identificador de pago (70*).
+    r = client.post(ESPECIALES, json={
+        "clasificacion": "REFERIDO", "tipo_actividad": "CONSTRUCCION",
+        "nombre_cliente": "CLIENTE", "contacto_cliente": "04142223344",
+        "direccion": "SECTOR ALFA CASA 3",
+        "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS",
+                              "contacto": "04142223344"},
+    }, headers=entorno["headers"])
+    assert r.status_code == 422, r.text
+
+    # Una REPARACIÓN sin id de avería ni tipo de problema tampoco entra.
+    r = client.post(ESPECIALES, json={
+        "clasificacion": "REFERIDO", "tipo_actividad": "REPARACION",
+        "nombre_cliente": "CLIENTE", "contacto_cliente": "04142223344",
+        "direccion": "SECTOR ALFA CASA 3", "telefono": "7014000802",
+        "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS",
+                              "contacto": "04142223344"},
+    }, headers=entorno["headers"])
+    assert r.status_code == 422, r.text
+
+    # Sin datos del solicitante tampoco.
+    r = client.post(ESPECIALES, json={
+        "clasificacion": "REFERIDO", "tipo_actividad": "CONSTRUCCION",
+        "nombre_cliente": "CLIENTE", "contacto_cliente": "04142223344",
+        "direccion": "SECTOR ALFA CASA 3", "telefono": "7014000803",
+    }, headers=entorno["headers"])
+    assert r.status_code == 422, r.text
 
 
 def test_ingresar_referido_sin_id_averia(client, entorno):
@@ -71,10 +119,14 @@ def test_ingresar_referido_sin_id_averia(client, entorno):
         "clasificacion": "REFERIDO", "tipo_actividad": "REPARACION", "prioridad": "MEDIA",
         "descripcion": "Referido de otra área sin incidencia",
         "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS", "contacto": "7009998888"},
+        "nombre_cliente": "CLIENTE REFERIDO", "contacto_cliente": "04143334455",
+        "telefono": "7014000804", "direccion": "SECTOR ALFA CASA 4",
+        "id_averia": "REF-2324X-900010", "tipo_problema": "SIN_SERVICIO",
     }, headers=entorno["headers"])
     assert r.status_code == 201, r.text
     cuerpo = r.json()
-    assert cuerpo["tiene_id_averia"] is True  # el sistema genera REF-…
+    # D-90: el `REF-…` informado es sintético y **no** cuenta como avería real.
+    assert cuerpo["tiene_id_averia"] is False
 
     asociado = client.get(f"/api/v1/casos/{cuerpo['id_caso']}", headers=entorno["headers"]).json()
     assert asociado["id_averia"].startswith("REF-2324X-")
@@ -84,9 +136,21 @@ def test_ingresar_referido_sin_id_averia(client, entorno):
 def test_filtros_y_actualizacion_de_especiales(client, entorno):
     creados = []
     for i, (clas, prio) in enumerate((("EMPRESA", "ALTA"), ("REFERIDO", "BAJA"), ("EMPRESA", "MEDIA"))):
+        # D-90: la ficha del especial es **una por caso** (idempotente), así que
+        # cada especial necesita su propio caso asociado.
+        caso = client.post("/api/v1/casos",
+                           json={"id_averia": f"TSTE-F{i}",
+                                 "direccion": "SECTOR ALFA CASA 1",
+                                 "nombre_cliente": f"CLIENTE E{i}",
+                                 "contacto_cliente": "04141112233",
+                                 "id_pago": f"70140009{i:02d}",
+                                 "tipo_reporte": "CONSTRUCCION"},
+                           headers=entorno["headers"]).json()
         r = client.post(ESPECIALES, json={
             "clasificacion": clas, "tipo_actividad": "REPARACION", "prioridad": prio,
-            "descripcion": f"caso {i}", "id_caso": entorno["id_caso"],
+            "descripcion": f"caso {i}", "id_caso": caso["id_caso"],
+            "crear_solicitante": {"unidad": "Masivos", "nombre": f"SOL {i}",
+                                  "contacto": "04141112233"},
         }, headers=entorno["headers"])
         assert r.status_code == 201, r.text
         creados.append(r.json()["id_caso_especial"])

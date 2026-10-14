@@ -54,6 +54,20 @@ const ACCION_RESOLUCION = [
   { valor: 'ENRRUTAR', etiqueta: 'ENRRUTAR' },
 ];
 
+/** Motivo de la marca de reclasificación, en lenguaje de la operación (D-90). */
+export function motivoMarcaTexto(motivo: string | null): string {
+  switch (motivo) {
+    case 'SIN_IDENTIFICADOR_PAGO':
+      return 'falta el identificador de pago (70*)';
+    case 'SIN_ID_AVERIA':
+      return 'falta el ID de avería real';
+    case 'SIN_IDENTIFICADOR_PAGO_Y_AVERIA':
+      return 'faltan el identificador de pago (70*) y el ID de avería real';
+    default:
+      return 'el caso no cumple las condiciones de una REPARACIÓN';
+  }
+}
+
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: ReactNode }) {
   const vacio = valor === null || valor === undefined || valor === '';
   return (
@@ -157,10 +171,9 @@ export default function FichaCaso({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pestana, caso.id_caso]);
 
-  const telefonoReferencia = useMemo(
-    () => caso.telefono || caso.contacto_cliente || '',
-    [caso.telefono, caso.contacto_cliente],
-  );
+  // D-92/CU-D89-03: el histórico se construye alrededor del **identificador de
+  // pago** (70*); el número de contacto no agrupa antecedentes.
+  const identificadorPago = useMemo(() => caso.telefono ?? '', [caso.telefono]);
 
   async function guardarEdicion() {
     setError('');
@@ -287,6 +300,17 @@ export default function FichaCaso({
         ))}
       </div>
 
+      {/* D-90/D-92: marca derivada de la regla REPARACIÓN ⇐ 70* + avería real. */}
+      {caso.marcado_reclasificar && (
+        <p className="chip-regla regla-alerta" id="ficha-marca-reclasificar"
+           title="Al guardar cualquier cambio, el sistema registrará el caso como REFERIDO">
+          Reclasificar a REFERIDO
+          <span className="texto-pequeno">
+            {motivoMarcaTexto(caso.motivo_marca)}
+          </span>
+        </p>
+      )}
+
       {/* ------------------------------ RESUMEN ------------------------------ */}
       {pestana === 'resumen' && (
         <div className="datos-grid">
@@ -317,10 +341,32 @@ export default function FichaCaso({
       {pestana === 'contacto' && (
         <div className="datos-grid">
           <Dato etiqueta="Cliente" valor={caso.nombre_cliente} />
-          <Dato etiqueta="Teléfono" valor={caso.telefono ? <span className="mono">{caso.telefono}</span> : ''} />
+          <Dato
+            etiqueta="Identificador de pago (70*)"
+            valor={
+              caso.telefono ? (
+                <span className="mono" id="ficha-identificador-pago">{caso.telefono}</span>
+              ) : (
+                <span className="texto-pequeno" id="ficha-identificador-pago">
+                  sin identificador de pago
+                </span>
+              )
+            }
+          />
           <Dato etiqueta="Dirección" valor={caso.direccion} />
           <Dato etiqueta="Persona que reporta" valor={caso.persona_reporta} />
-          <Dato etiqueta="Contacto del cliente" valor={caso.contacto_cliente} />
+          <Dato
+            etiqueta="Número de contacto"
+            valor={
+              caso.contacto_cliente ? (
+                <span className="mono" id="ficha-numero-contacto">{caso.contacto_cliente}</span>
+              ) : (
+                <span className="texto-pequeno" id="ficha-numero-contacto">
+                  sin número de contacto
+                </span>
+              )
+            }
+          />
         </div>
       )}
 
@@ -675,46 +721,59 @@ export default function FichaCaso({
       {pestana === 'historico' && (
         <div className="datos-columna">
           <p className="texto-pequeno">
-            Casos anteriores asociados al teléfono <strong className="mono">{telefonoReferencia || 'sin dato'}</strong>{' '}
+            Casos anteriores del <strong>identificador de pago (70*)</strong>{' '}
+            <strong className="mono" id="historico-identificador">
+              {identificadorPago || 'sin identificador'}
+            </strong>{' '}
             del ID de avería.
           </p>
           {cargandoRel ? (
             <p className="texto-pequeno">Buscando antecedentes…</p>
-          ) : !telefonoReferencia ? (
-            <p className="vacio">El caso no tiene teléfono de referencia para buscar antecedentes.</p>
+          ) : !identificadorPago ? (
+            <p className="vacio" id="historico-sin-identificador">
+              El caso no tiene identificador de pago: el histórico se construye alrededor del 70*,
+              así que no hay antecedentes que buscar.
+            </p>
           ) : relacionados && relacionados.length === 0 ? (
-            <p className="vacio">No hay casos anteriores con ese teléfono.</p>
+            <p className="vacio">No hay casos anteriores con ese identificador de pago.</p>
           ) : (
-            <div className="tabla-envoltura">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID de avería anterior</th>
-                    <th>Fecha de cierre</th>
-                    <th>Problema reportado</th>
-                    <th>Justificación de cierre</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(relacionados ?? []).map((r) => (
-                    <tr key={r.id_caso}>
-                      <td className="mono">{r.id_averia}</td>
-                      <td>{r.fecha_cierre ? fechaHora(r.fecha_cierre) : 'sin cierre'}</td>
-                      <td>{r.problema_reporte ?? '—'}</td>
-                      <td>{r.justificacion_cierre ?? '—'}</td>
-                      <td>{r.estado_actual}</td>
+            <>
+              {/* D-92/RF-54: reincidencia = el identificador acumula ≥ 2 reportes. */}
+              <p className="chip-regla" id="historico-reincidencia">
+                Reincidente: <strong>{(relacionados?.length ?? 0) + 1}</strong> reportes del
+                identificador de pago
+              </p>
+              <div className="tabla-envoltura">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID de avería anterior</th>
+                      <th>Fecha de cierre</th>
+                      <th>Problema reportado</th>
+                      <th>Justificación de cierre</th>
+                      <th>Estado</th>
                     </tr>
-                  ))}
-                </tbody>
-                <PieTabla
-                  colSpan={5}
-                  total={(relacionados ?? []).length}
-                  singular="antecedente"
-                  plural="antecedentes"
-                />
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {(relacionados ?? []).map((r) => (
+                      <tr key={r.id_caso}>
+                        <td className="mono">{r.id_averia}</td>
+                        <td>{r.fecha_cierre ? fechaHora(r.fecha_cierre) : 'sin cierre'}</td>
+                        <td>{r.problema_reporte ?? '—'}</td>
+                        <td>{r.justificacion_cierre ?? '—'}</td>
+                        <td>{r.estado_actual}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <PieTabla
+                    colSpan={5}
+                    total={(relacionados ?? []).length}
+                    singular="antecedente"
+                    plural="antecedentes"
+                  />
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

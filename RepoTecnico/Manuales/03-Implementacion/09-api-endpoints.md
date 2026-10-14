@@ -67,24 +67,48 @@ inactivo → 401; usuario bloqueado → 423. La respuesta 401 incluye la cabecer
 La SPA consume la API con el mismo esquema: el token se guarda en `localStorage` y
 se adjunta como `Bearer` en cada llamada (`app/web/src/api/client.ts:193,237`).
 
-### Relación 95 paths / 126 operaciones
+### Relación de paths y operaciones (revisión D-94)
 
-El esquema OpenAPI publicado (`app.openapi()`) reporta **95 rutas (*paths*)** y
-**126 operaciones** (combinación método + path) tras incorporar las cuatro
-operaciones de sincronización móvil de la D-73 (`/sync/cuadrilla`,
-`/sync/descarga`, `/evidencias/upload`, `/sync/carga`). La diferencia se explica porque
-**26 paths comparten varios métodos**; cada path adicional con *n* métodos aporta
-*n − 1* operaciones extra, en total **30 operaciones extra** (79 + 30 = 109). Cuatro de
-esos paths compartidos tienen tres métodos (`/central/{id_central}`, `/sectores/{id_sector}`,
-`/tecnicos/{id_tecnico}` y `/flota/{id_flota}`), lo que explica que 26 paths aporten 30
-operaciones extra. Las cuatro rutas incorporadas por el ciclo **D-66**
-(`GET /api/v1/despachos/proceso`, `PUT /api/v1/despachos/asignacion`,
-`POST /api/v1/despachos/procesar` y `POST /api/v1/ingesta/sectorizar-pendientes`) y las
-**dos incorporadas por D-67** (`GET /api/v1/auth/primer-acceso` y
-`POST /api/v1/auth/palabras/{p00}/regenerar`) son de un solo método, por lo que no alteran
-el número de paths compartidos.
+El esquema OpenAPI publicado (`app.openapi()`) reporta **117 rutas (*paths*)** y
+**150 operaciones** (combinación método + path) al cierre de **D-94**. El conteo
+es reproducible:
 
-Los paths compartidos verificados son 26, entre ellos:
+```python
+import app.main as m
+s = m.app.openapi()
+len(s["paths"])                                   # 117
+sum(len([k for k in v if k in
+        ("get","post","put","patch","delete")]) for v in s["paths"].values())  # 150
+```
+
+El código contiene **154 decoradores `@router.*`** en `app/api/routes_*.py`; los
+**4** de `app/api/routes_mantenimiento.py` quedan fuera del esquema por
+`include_in_schema=False` (`app/api/routes_mantenimiento.py:21`), lo que explica
+la diferencia (154 − 4 = 150). **29 paths comparten varios métodos** (por
+ejemplo `/api/v1/casos` con GET y POST), y esos métodos extra son la razón de que
+las operaciones superen a los paths.
+
+Incorporaciones de los ciclos **D-89…D-94** verificadas en el esquema:
+
+| Operación nueva o modificada | Ciclo | Referencia |
+|---|---|---|
+| `GET /api/v1/monitoreo/reclasificaciones` | D-90 | `app/api/routes_monitoreo.py:145-153` |
+| `GET /api/v1/monitoreo/identificadores` | D-94 | `app/api/routes_monitoreo.py:156-170` |
+| `GET /api/v1/casos/buscar` — la búsqueda cubre además `contacto_cliente` | D-92 | `app/api/routes_casos.py:278-326` |
+| `POST /api/v1/casos` y `PATCH /api/v1/casos/{id}` — admiten `id_pago` | D-89/D-91 | `app/api/routes_casos.py:365-438,450-519` |
+| `POST /api/v1/casos` — datos obligatorios del alta (**RN-AL-01**) | RN-AL | `app/schemas/casos.py` (`CasoManualCreate`) |
+| `GET /api/v1/casos` — nuevo filtro `solo_abiertos` (**RN-AL-02**) | RN-AL | `app/api/routes_casos.py` (`listar`) |
+| `POST /api/v1/casos-especiales` — datos obligatorios del alta y del solicitante (**RN-AL-01**) | RN-AL | `app/schemas/especiales.py` (`CasoEspecialCreate`) |
+| `PATCH /api/v1/casos/{id}/contacto` — edición de campo del contacto | D-88/D-93 | `app/api/routes_casos.py:761-804` |
+| `POST /api/v1/ingesta` — encabezado inválido deja el lote en `ERROR` y responde 422 | RT-20 | `app/api/routes_ingesta.py:189-216` |
+
+Las cifras anteriores del proyecto («73 endpoints», «95 paths / 126 operaciones»)
+corresponden a cortes previos a D-74…D-94 (`RepoTecnico/plan_desarrollo.md:227`,
+`RepoTecnico/pruebas/plan_pruebas.md:21`). La descomposición exacta por ciclo de
+los 117 paths **queda pendiente de confirmar**; las cifras vigentes de esta
+sección están verificadas con `app.openapi()` sobre el árbol de trabajo.
+
+Los paths compartidos verificados incluyen:
 
 | Path | Métodos | Path | Métodos |
 |---|---|---|---|
@@ -101,30 +125,14 @@ Los paths compartidos verificados son 26, entre ellos:
 | `/api/v1/catalogos/metodos` | GET, POST | `/api/v1/despachos/{id_despacho}` | GET, PATCH |
 | `/api/v1/cuadrillas/{id_cuadrilla}` | GET, PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | DELETE, PATCH |
 
-Por eso los documentos del proyecto y las pruebas hablaban de **«73 endpoints»**
-cuando en realidad se referían a *73 paths*: `RepoTecnico/plan_desarrollo.md:227`
-(«73 endpoints OpenAPI»), `RepoTecnico/pruebas/informe_fase4.md:78` y
-`RepoTecnico/pruebas/plan_pruebas.md:21`. Esa cifra es **anterior al ciclo D-66**;
-tras D-66 y D-67 la superficie fue de **79 paths**; con las cuatro operaciones
-de sincronización móvil de la D-73, la cifra vigente es de **95 paths**.
-
-En el código hay **109 decoradores `@router.*`** —uno por operación publicada—.
-La cifra de **98 operaciones** que aparece en notas previas del proyecto no
-coincide con el código verificado; la diferencia corresponde a las operaciones
-que sí existen y que aquel inventario no listaba: las cinco ya documentadas
-(`POST /api/v1/auth/setup` — `app/api/routes_auth.py:129`,
-`POST /api/v1/sectores/{id_sector}/direcciones` —
-`app/api/routes_config.py:201`,
-`DELETE /api/v1/sectores/{id_sector}/direcciones/{id_direccion}` —
-`app/api/routes_config.py:220`,
-`POST /api/v1/cuadrillas/{id_cuadrilla}/integrantes` — `app/api/routes_config.py:471`
-y `DELETE /api/v1/cuadrillas/{id_cuadrilla}/integrantes/{id_tecnico}` —
-`app/api/routes_config.py:495`), las cuatro del ciclo D-66
-(`app/api/routes_despachos.py:177,190,207` y `app/api/routes_ingesta.py:217`) y las dos de
-D-67 (`app/api/routes_auth.py:219` y `app/api/routes_auth.py:275`).
-La cifra vigente y comprobable era **109 operaciones / 79 paths** hasta D-72; con
-las cuatro operaciones móviles suma **126 / 95**. El origen exacto del conteo de
-98 queda **pendiente de confirmar**.
+Los documentos del proyecto hablaban de **«73 endpoints»** cuando en realidad se
+referían a *73 paths*: `RepoTecnico/plan_desarrollo.md:227` («73 endpoints
+OpenAPI»), `RepoTecnico/pruebas/informe_fase4.md:78` y
+`RepoTecnico/pruebas/plan_pruebas.md:21`. Aquellas cifras (73 → 79 → 95 paths;
+109 → 126 operaciones) son cortes sucesivos y **quedaron superados** por los
+ciclos D-74…D-94: la superficie vigente es la verificada arriba (**117 paths /
+150 operaciones**). El origen exacto de conteos intermedios como «98
+operaciones» no se pudo reconstruir y queda **pendiente de confirmar**.
 
 ### Documentación OpenAPI en /docs
 
@@ -297,47 +305,89 @@ Cinco operaciones. Las dos de escritura reciben el archivo por
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| POST | `/api/v1/ingesta/preview` | Simular la ingesta del CSV sin guardar | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:124` |
-| POST | `/api/v1/ingesta` | Cargar el archivo diario e insertar los casos nuevos | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:138` |
-| GET | `/api/v1/ingesta/lotes` | Historial de cargas (`limite` 1–200, por defecto 50) | Autenticado | `app/api/routes_ingesta.py:194` |
-| GET | `/api/v1/ingesta/lotes/{id_lote}` | Detalle de una carga | Autenticado | `app/api/routes_ingesta.py:207` |
-| POST | `/api/v1/ingesta/sectorizar-pendientes` | Re-sectorizar los casos con `id_sector` nulo de la central (**D-66**) | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:217` |
+| POST | `/api/v1/ingesta/preview` | Simular la ingesta del CSV sin guardar | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:162-178` |
+| POST | `/api/v1/ingesta` | Cargar el archivo diario e insertar los casos nuevos | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:189-292` |
+| GET | `/api/v1/ingesta/lotes` | Historial de cargas (`limite` 1–200, por defecto 50) | Autenticado | `app/api/routes_ingesta.py:294-304` |
+| GET | `/api/v1/ingesta/lotes/{id_lote}` | Detalle de una carga | Autenticado | `app/api/routes_ingesta.py:307-314` |
+| POST | `/api/v1/ingesta/sectorizar-pendientes` | Re-sectorizar los casos con `id_sector` nulo de la central (**D-66**) | ADMIN/SUPERVISOR | `app/api/routes_ingesta.py:317-349` |
 
 La carga real crea un `IngestaLote` y luego los casos, dejando el lote en `OK` y
-los avisos en `detalle_error` (`app/api/routes_ingesta.py:152-179`). Tras insertar,
+los avisos en `detalle_error` (`app/api/routes_ingesta.py:221-273`). Tras insertar,
 dispara la detección automática de fallas masivas por concentración
-(`app/api/routes_ingesta.py:181-191`). El resumen incluye filas leídas, filas de
+(`app/api/routes_ingesta.py:275-279`). El resumen incluye filas leídas, filas de
 la central, casos nuevos, duplicados, descartados, sectorizados, sin sector,
 casos de cuadrilla 0 y las **direcciones sin sector** agrupadas por dirección
-normalizada (`app/api/routes_ingesta.py:65-118`). El endpoint
+normalizada (`app/api/routes_ingesta.py:65-118`), más los contadores de **D-89
+(RF-56)** `filas_sin_identificador_pago` y `filas_con_contacto`
+(`app/api/routes_ingesta.py:94-110`). El endpoint
 `sectorizar-pendientes` aplica los patrones vigentes a los casos de la central con
 `id_sector IS NULL` y devuelve `revisados`, `asignados` y `sin_sector`
-(`app/api/routes_ingesta.py:217-251`).
+(`app/api/routes_ingesta.py:317-349`).
+
+**RT-20 — encabezado inválido (D-89/D-90).** Si el archivo no trae las **80
+columnas** esperadas (`app/services/ingesta.py:22`), la carga **no** inserta
+casos: crea el `IngestaLote` con `estado="ERROR"` y `detalle_error`, hace
+`commit` y responde **422** con el detalle de columnas
+(`app/api/routes_ingesta.py:200-216`; validación en
+`app/services/ingesta.py:171-179`). El `preview` también responde 422 pero sin
+crear lote (`app/api/routes_ingesta.py:170-171`).
 
 ### Casos y PANEL (app/api/routes_casos.py)
 
-Seis operaciones. Escritura para ADMIN/SUPERVISOR (`app/api/routes_casos.py:26`);
-lectura para cualquier usuario autenticado.
+**Trece operaciones** (el inventario anterior decía seis; D-88 y D-89 añadieron el
+resto). Escritura para ADMIN/SUPERVISOR (`app/api/routes_casos.py:51`); lectura
+para cualquier usuario autenticado.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/casos` | Listado paginado con filtros | Autenticado | `app/api/routes_casos.py:89` |
-| GET | `/api/v1/casos/buscar` | Búsqueda rápida de PANEL por `q`, `id_averia` o `telefono` | Autenticado | `app/api/routes_casos.py:172` |
-| POST | `/api/v1/casos` | Alta manual (genera `REF-…` si no hay `id_averia`) | ADMIN/SUPERVISOR | `app/api/routes_casos.py:218` |
-| GET | `/api/v1/casos/{id_caso}` | Ficha completa del caso | Autenticado | `app/api/routes_casos.py:278` |
-| PATCH | `/api/v1/casos/{id_caso}` | Actualizar campos, sector y/o estado | ADMIN/SUPERVISOR | `app/api/routes_casos.py:284` |
-| GET | `/api/v1/casos/{id_caso}/historial` | Bitácora de estados del caso | Autenticado | `app/api/routes_casos.py:317` |
+| GET | `/api/v1/casos` | Listado paginado con filtros | Autenticado | `app/api/routes_casos.py:180-276` |
+| GET | `/api/v1/casos/buscar` | Búsqueda rápida de PANEL por `q`, `id_averia` o `telefono`; cubre también `contacto_cliente` | Autenticado | `app/api/routes_casos.py:278-326` |
+| POST | `/api/v1/casos` | Alta manual (genera `REF-…` si no hay `id_averia`); admite `id_pago` | ADMIN/SUPERVISOR | `app/api/routes_casos.py:365-438` |
+| GET | `/api/v1/casos/{id_caso}` | Ficha completa del caso | Autenticado | `app/api/routes_casos.py:444-447` |
+| PATCH | `/api/v1/casos/{id_caso}` | Actualizar campos, sector, `id_pago` y/o estado | ADMIN/SUPERVISOR | `app/api/routes_casos.py:450-519` |
+| POST | `/api/v1/casos/{id_caso}/estado` | Cambiar el estado desde la gestión | ADMIN/SUPERVISOR | `app/api/routes_casos.py:522-544` |
+| GET | `/api/v1/casos/{id_caso}/historial` | Bitácora de estados del caso | Autenticado | `app/api/routes_casos.py:546-564` |
+| POST | `/api/v1/casos/{id_caso}/cierre` | Registrar el cierre con método | ADMIN/SUPERVISOR | `app/api/routes_casos.py:577-639` |
+| POST | `/api/v1/casos/{id_caso}/cita` | Agendar una cita rápida | ADMIN/SUPERVISOR | `app/api/routes_casos.py:641-671` |
+| POST | `/api/v1/casos/{id_caso}/no-contesta` | Registrar «No Contesta» (**D-88**) | ADMIN/SUPERVISOR | `app/api/routes_casos.py:673-758` |
+| PATCH | `/api/v1/casos/{id_caso}/contacto` | Corregir dirección y número de contacto desde el campo (**D-88**) | ADMIN/SUPERVISOR/TECNICO | `app/api/routes_casos.py:761-804` |
+| POST | `/api/v1/casos/{id_caso}/enrutado` | Enrutar el caso a otra instancia | ADMIN/SUPERVISOR | `app/api/routes_casos.py:807-849` |
+| GET | `/api/v1/casos/{id_caso}/relacionados` | Antecedentes del mismo teléfono o dirección | Autenticado | `app/api/routes_casos.py:852-920` |
 
 El listado admite los filtros `q`, `id_averia`, `telefono`, `id_central`,
 `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, `tipo_caso`,
 `categoria`, `origen`, `en_gestion_supervisor`, `es_falla_masiva`, `desde` y
-`hasta` (`app/api/routes_casos.py:93-109`). Ordena por `fecha_reporte` descendente
-y `id_caso` descendente (`:155`). Cada `CasoOut` del listado añade `sector_nombre`
+`hasta` (`app/api/routes_casos.py:181-198`). Ordena por `fecha_reporte` descendente
+y `id_caso` descendente. Cada `CasoOut` del listado añade `sector_nombre`
 y los indicadores `pendiente`, `asignado`, `citado` y `gestion`
-(`app/api/routes_casos.py:56-83`). El alta manual usa la función de base de datos
-`generar_id_averia_ref` (`:231-233`), rechaza duplicados con 409 (`:235-236`) y
-registra el estado inicial `NUEVO` en el historial (`:261-269`). Al corregir la
-dirección, el sector se recalcula (`:305-307`).
+(`app/api/routes_casos.py:83-153`). El alta manual usa la función de base de datos
+`generar_id_averia_ref` (`:379-382`), rechaza duplicados con 409 (`:384-385`) y
+registra el estado inicial `NUEVO` en el historial (`:427-435`). Al corregir la
+dirección, el sector se recalcula (`:507-509`).
+
+**Identificador de pago en los casos (D-89).** El alta (`POST`) y la edición
+(`PATCH`) aceptan el campo **`id_pago`** (también llamado «identificador» en la
+interfaz) y lo clasifican con `app/services/pagos.py`:
+
+- Un número que cumple el patrón configurado (`configuracion.pago.serie_regex`,
+  por defecto `^70[0-9]{8}$`) se resuelve como **identificador**: se crea la ficha
+  si no existe y `caso.telefono` queda como alias (`app/api/routes_casos.py:332-362,377-391`).
+- Cualquier otro número es **número de contacto**: va a `contacto_cliente` y se
+  suma a `informacion` como `[CONTACTO] <numero>` (`app/services/pagos.py:100-151,208-226`).
+- En el `PATCH`, un `id_pago` que **no** cumple el patrón responde **422**
+  («El identificador de pago no cumple el patrón configurado (70*)»,
+  `app/api/routes_casos.py:467-473`).
+
+**`PATCH /casos/{id}/contacto` — divergencia D-93 pendiente.** El contrato real
+del endpoint es `ContactoUpdate` con los campos `direccion` y **`telefono`**, y el
+validador **exige las series 700/701/702** (`app/schemas/casos.py:244-264`). La
+APK de D-93 envía en cambio la clave **`contacto`** y espera que un `70*` se
+registre como identificador del caso
+(`app_movil/lib/features/casos/operaciones_service.dart:352-378`); el backend
+**no** interpreta ese campo. Queda **pendiente de confirmar** si el contrato se
+homologa a `contacto` (y se retira la restricción de series) o si la APK debe
+volver a `telefono`.
+
 
 ### Despacho (app/api/routes_despachos.py)
 
@@ -404,7 +454,7 @@ seguimiento). Escritura para ADMIN/SUPERVISOR
 | GET | `/api/v1/solicitantes` | Listar personal externo solicitante | Autenticado | `app/api/routes_especiales.py:50` |
 | POST | `/api/v1/solicitantes` | Crear solicitante | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:57` |
 | GET | `/api/v1/casos-especiales` | Listar casos especiales; filtros `clasificacion`, `estado`, `prioridad`, `solo_pendientes` | Autenticado | `app/api/routes_especiales.py:103` |
-| POST | `/api/v1/casos-especiales` | Ingresar un caso especial (puede crear el caso y el solicitante) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:124` |
+| POST | `/api/v1/casos-especiales` | Ingresar un caso especial (puede crear el caso y el solicitante). **RN-AL-01**: exige nombre y teléfono de contacto, dirección, teléfono con el 70\*, tipo de reporte —y, si es REPARACIÓN, id de avería y tipo de problema— y los datos del solicitante (nombre, unidad y contacto) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:124` |
 | GET | `/api/v1/casos-especiales/{id_caso_especial}` | Obtener un caso especial | Autenticado | `app/api/routes_especiales.py:173` |
 | PATCH | `/api/v1/casos-especiales/{id_caso_especial}` | Actualizar un caso especial | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:183` |
 | GET | `/api/v1/citas` | Agenda de citas; filtros `desde`, `hasta`, `id_cuadrilla`, `estado` | Autenticado | `app/api/routes_especiales.py:280` |
@@ -429,27 +479,79 @@ el caso pasa a `ENRUTADO` (`:400-403`); al registrarlo `DEVUELTO`, vuelve a
 
 ### Monitoreo y reportes (app/api/routes_monitoreo.py)
 
-Nueve operaciones, todas de **lectura** para cualquier usuario autenticado. Las
-fórmulas están definidas en `RepoTecnico/metricas.md` y el encabezado del archivo
-lo referencia (`app/api/routes_monitoreo.py:1`).
+**Once operaciones**, todas de **lectura**. Las fórmulas están definidas en
+`RepoTecnico/metricas.md` y el encabezado del archivo lo referencia
+(`app/api/routes_monitoreo.py:1`). D-90 y D-94 añadieron dos operaciones de
+gestión restringidas a **ADMIN/SUPERVISOR**.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/monitoreo/diario` | Gestión diaria (`fecha`) | Autenticado | `app/api/routes_monitoreo.py:27` |
-| GET | `/api/v1/monitoreo/semanal` | Curva semanal lunes a sábado (`desde`) | Autenticado | `app/api/routes_monitoreo.py:38` |
-| GET | `/api/v1/monitoreo/globales` | Pendientes vs resueltos (`desde`, `hasta`) | Autenticado | `app/api/routes_monitoreo.py:49` |
-| GET | `/api/v1/monitoreo/reparacion` | Pendientes de reparación por tipo | Autenticado | `app/api/routes_monitoreo.py:62` |
-| GET | `/api/v1/monitoreo/construccion` | Pendientes de construcción por tipo | Autenticado | `app/api/routes_monitoreo.py:71` |
-| GET | `/api/v1/monitoreo/cuadrilla` | Asignados, cerrados y gestionados por cuadrilla (`desde`, `dias`) | Autenticado | `app/api/routes_monitoreo.py:80` |
-| GET | `/api/v1/monitoreo/capacidad` | Capacidad operativa | Autenticado | `app/api/routes_monitoreo.py:93` |
-| GET | `/api/v1/reportes/trabajo` | Reporte de trabajo (`periodo`: diario/semanal/mensual) | Autenticado | `app/api/routes_monitoreo.py:105` |
-| GET | `/api/v1/reportes/trabajo/imprimible` | Reporte de trabajo en HTML imprimible | Autenticado | `app/api/routes_monitoreo.py:117` |
+| GET | `/api/v1/monitoreo/diario` | Gestión diaria (`fecha`) | Autenticado | `app/api/routes_monitoreo.py:56-66` |
+| GET | `/api/v1/monitoreo/semanal` | Curva semanal lunes a sábado (`desde`) | Autenticado | `app/api/routes_monitoreo.py:69-79` |
+| GET | `/api/v1/monitoreo/globales` | Pendientes vs resueltos (`desde`, `hasta`) | Autenticado | `app/api/routes_monitoreo.py:82-94` |
+| GET | `/api/v1/monitoreo/reparacion` | Pendientes de reparación por tipo | Autenticado | `app/api/routes_monitoreo.py:97-105` |
+| GET | `/api/v1/monitoreo/construccion` | Pendientes de construcción por tipo | Autenticado | `app/api/routes_monitoreo.py:108-116` |
+| GET | `/api/v1/monitoreo/cuadrilla` | Asignados, cerrados y gestionados por cuadrilla (`desde`, `dias`) | Autenticado | `app/api/routes_monitoreo.py:119-131` |
+| GET | `/api/v1/monitoreo/capacidad` | Capacidad operativa | Autenticado | `app/api/routes_monitoreo.py:134-142` |
+| GET | `/api/v1/monitoreo/reclasificaciones` | **D-90:** reclasificados a REFERIDO y pendientes históricos | **ADMIN/SUPERVISOR** | `app/api/routes_monitoreo.py:145-153` |
+| GET | `/api/v1/monitoreo/identificadores` | **D-94:** métricas por identificador de pago (`reincidencia`, `top`) | **ADMIN/SUPERVISOR** | `app/api/routes_monitoreo.py:156-170` |
+| GET | `/api/v1/reportes/trabajo` | Reporte de trabajo (`periodo`: diario/semanal/mensual) | Autenticado | `app/api/routes_monitoreo.py:176-187` |
+| GET | `/api/v1/reportes/trabajo/imprimible` | Reporte de trabajo en HTML imprimible | Autenticado | `app/api/routes_monitoreo.py:190-310` |
 
 Todas aceptan `id_central` opcional y resuelven la central activa cuando se omite
-(`app/api/routes_monitoreo.py:20-21`). El parámetro `periodo` está restringido por
-patrón a `^(diario|semanal|mensual)$` (`:107,120`), lo que produce **422** ante un
+(`app/api/routes_monitoreo.py:25-26`). El parámetro `periodo` está restringido por
+patrón a `^(diario|semanal|mensual)$` (`:178,193`), lo que produce **422** ante un
 valor inválido. El reporte imprimible compone una plantilla HTML con tamaño carta
-(`:150-198`).
+(`:244-309`) y **D-94** añadió al informe las tablas de identificadores de pago y
+de reclasificaciones (`app/api/routes_monitoreo.py:224-242,299-306`).
+
+**Día operativo (D-94).** Las rutas de MONITOREO y REPORTES usan
+`svc.hoy_operativo()` como valor por defecto de `fecha`/`desde`
+(`app/api/routes_monitoreo.py:65,78,92,129,186,201`), y
+`app/services/monitoreo.py::_dia()` convierte las columnas con
+`func.timezone('America/Caracas', columna)` en vez de `func.date(...)`
+(`app/services/monitoreo.py:57-65`). El motivo: `func.date` se evalúa en la zona
+de la **sesión** (UTC en Cloud SQL) y a partir de las 20:00 de Caracas los casos
+caían en el día siguiente (`app/services/tiempo.py:1-8`). El reporte imprimible
+rotula la zona operativa (`app/api/routes_monitoreo.py:266`).
+
+**RBAC de las dos operaciones de gestión.** Usan la dependencia
+`_gestion = require_roles("ADMIN", "SUPERVISOR")`
+(`app/api/routes_monitoreo.py:22`); el rol **TECNICO** recibe **403**. El
+`SUPER` pasa por el bypass de `app/api/deps.py:65`. Las métricas de
+`/monitoreo/identificadores` se calculan en `app/services/monitoreo.py:335-393`
+(claves `con_casos`, `casos_con_identificador`, `casos_sin_identificador`,
+`media_casos`, `max_casos`, `reincidentes`, `top`, `ventana_dias`) con la ventana
+`pago.reincidencia_dias` (90 días por defecto,
+`app/services/pagos.py:53-59`).
+
+### Identificador de pago (70\*) en la API (D-89…D-94)
+
+No hay un módulo de endpoints propio del identificador en la v1 (su CRUD
+dedicado queda **pendiente de confirmar**, aunque la matriz RBAC lo declara). El
+identificador se consume desde los endpoints ya descritos:
+
+| Punto de contacto | Comportamiento verificado | Referencia |
+|---|---|---|
+| `CasoOut` | Expone `id_pago`, `marcado_reclasificar`, `motivo_marca`, `tiene_identificador_pago` y `tiene_id_averia_real`; los tres últimos se **calculan** en el endpoint, no son columnas | `app/schemas/casos.py:46-52`; `app/api/routes_casos.py:145-152` |
+| `POST /casos` y `PATCH /casos/{id}` | Aceptan `id_pago` y clasifican el número recibido (identificador vs contacto) | `app/api/routes_casos.py:332-362,463-498` |
+| `GET /casos/buscar` | `q` y `telefono` cubren `telefono` (identificador) **y** `contacto_cliente` | `app/api/routes_casos.py:292-317` |
+| `POST /ingesta` | Resuelve y enlaza el identificador de cada fila (con `cache` por lote) y cuenta las filas sin identificador | `app/api/routes_ingesta.py:237-267` |
+| `POST /casos-especiales` | Aplica la misma clasificación al crear el caso especial | `app/api/routes_especiales.py:80-100` |
+| `GET /monitoreo/identificadores` | Reincidencia y reportes por 70\* (ADMIN/SUPERVISOR) | `app/api/routes_monitoreo.py:156-170` |
+| Despacho imprimible | La ficha rotula **«Identificador de pago (70\*)»** y **«Contacto»** (antes «Teléfono») y añade esa columna | `app/api/routes_despachos.py:458-459,490-494` |
+
+**Regla REPARACIÓN (D-90) y traza.** Todo cambio del caso pasa por
+`clasificacion.aplicar_en_cambio(...)`, que reclasifica a `REFERIDO` si falta el
+identificador o el `id_averia` real y deja la traza en `auditoria` con
+`accion="RECLASIFICACION_REFERIDO"` y el `motivo` (`SIN_IDENTIFICADOR_PAGO`,
+`SIN_ID_AVERIA` o `SIN_IDENTIFICADOR_PAGO_Y_AVERIA`)
+(`app/services/clasificacion.py:26-35,121-173`). Se aplica en **ocho caminos de
+escritura**: alta manual (`app/api/routes_casos.py:426`), edición (`:515`), cambio
+de estado (`:540`), cierre (`:630`), cita (`:661`), «No Contesta» (`:744`) y
+enrutado (`:840`), más el alta de ESPECIALES
+(`app/api/routes_especiales.py:124`). El resultado viaja en el mensaje de la
+respuesta (`app/services/clasificacion.py:32-35,168-173`).
 
 ### Alertas, Telegram y MCP (app/api/routes_alertas.py)
 
@@ -622,7 +724,11 @@ no tiene rol asociado o su rol no está en la lista permitida
 (`app/api/deps.py:60-70`). Otros casos: usuario inactivo en el login
 (`app/api/routes_auth.py:92`), intento de forzar un solapamiento de citas sin ser
 SUPER (`app/api/routes_especiales.py:320,347`) y secreto inválido del webhook de
-Telegram (`app/api/routes_alertas.py:265`). La prueba negativa de escritura con rol
+Telegram (`app/api/routes_alertas.py:265`). **D-90/D-94:** el rol **TECNICO** recibe
+**403** en `GET /monitoreo/reclasificaciones` y `GET /monitoreo/identificadores`
+(la dependencia `_gestion = require_roles("ADMIN", "SUPERVISOR")` no lo incluye:
+`app/api/routes_monitoreo.py:22,150,162`); el `SUPER` pasa por el bypass
+(`app/api/deps.py:65`). La prueba negativa de escritura con rol
 TECNICO está en `app/tests/test_contratos.py:107-111` y la matriz de RBAC en
 `:127-136`.
 
@@ -652,11 +758,19 @@ repetido (`app/api/routes_especiales.py:77-78`) y solapamiento de citas
 Validación. FastAPI devuelve 422 automáticamente ante cuerpos que no cumplen el
 esquema Pydantic; la prueba de contrato comprueba que el `detail` es una lista
 (`app/tests/test_contratos.py:120-124`). Además hay 422 explícitos: búsqueda sin
-criterio (`app/api/routes_casos.py:181-185`), clave y confirmación distintas
+criterio (`app/api/routes_casos.py:287-291`), clave y confirmación distintas
 (`app/api/routes_auth.py:143-144`), `id_solicitante` y `crear_solicitante`
 simultáneos (`app/api/routes_especiales.py:131-135`), cita sin `id_caso` ni
 `id_caso_especial` (`app/api/routes_especiales.py:308-309`) y `periodo` inválido
-en reportes (`app/api/routes_monitoreo.py:107`).
+en reportes (`app/api/routes_monitoreo.py:178`).
+
+Los tres 422 incorporados por D-89…D-94 son:
+
+| Caso | Detalle de la respuesta | Referencia |
+|---|---|---|
+| **Encabezado del CSV inválido (RT-20)** | «El encabezado tiene *n* columnas; se esperaban 80». La carga **crea el lote en `ERROR`** con 0 casos antes de responder | `app/api/routes_ingesta.py:200-216`; `app/services/ingesta.py:171-179` |
+| **`id_pago` que no cumple el patrón** | «El identificador de pago no cumple el patrón configurado (70\*)» | `app/api/routes_casos.py:467-473` |
+| **PATCH de contacto sin datos** | «Indique la dirección o el número de contacto» | `app/api/routes_casos.py:777-780` |
 
 ### 423
 
@@ -680,19 +794,19 @@ IP del cliente (`app/api/routes_auth.py:84-85`).
 
 Solo el listado de casos implementa paginación completa, con los parámetros
 `page` (≥ 1) y `page_size` (1–200, por defecto 25)
-(`app/api/routes_casos.py:108-109`). La respuesta usa el esquema `PaginaCasos` con
+(`app/api/routes_casos.py:207-208`). La respuesta usa el esquema `PaginaCasos` con
 `items`, `total`, `page`, `page_size` y `pages`
-(`app/schemas/casos.py:104-109`), calculado como `(total + page_size - 1) //
-page_size` (`app/api/routes_casos.py:159`). La prueba de contrato exige esas cinco
+(`app/schemas/casos.py:117-122`), calculado como `(total + page_size - 1) //
+page_size` (`app/api/routes_casos.py:265`). La prueba de contrato exige esas cinco
 claves (`app/tests/test_contratos.py:146-150`).
 
 Los demás listados no usan `page`: emplean un tope `limite`
 (`/api/v1/ingesta/lotes`, 1–200 y por defecto 50,
-`app/api/routes_ingesta.py:194-198`; `/api/v1/notificaciones`, 1–500 y por defecto
-100, `app/api/routes_alertas.py:169-176`) o devuelven la colección completa
+`app/api/routes_ingesta.py:294-298`; `/api/v1/notificaciones`, 1–500 y por defecto
+100, `app/api/routes_alertas.py:355-362`) o devuelven la colección completa
 ordenada (por ejemplo, `/api/v1/central`, `app/api/routes_config.py:87-90`). La
 búsqueda de PANEL acota con `limite` (1–100, por defecto 20,
-`app/api/routes_casos.py:179`).
+`app/api/routes_casos.py:285`).
 
 ### Filtros
 
@@ -700,8 +814,8 @@ Los filtros se declaran como *query params* tipados. Los más relevantes:
 
 | Endpoint | Filtros | Línea |
 |---|---|---|
-| `GET /api/v1/casos` | `q`, `id_averia`, `telefono`, `id_central`, `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, `tipo_caso`, `categoria`, `origen`, `en_gestion_supervisor`, `es_falla_masiva`, `desde`, `hasta` | `app/api/routes_casos.py:93-109` |
-| `GET /api/v1/casos/buscar` | `q`, `id_averia`, `telefono`, `limite` | `app/api/routes_casos.py:176-179` |
+| `GET /api/v1/casos` | `q`, `id_averia`, `telefono`, `id_central`, `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, **`solo_abiertos`** (excluye `CERRADO`/`CANCELADO`), `tipo_caso`, `categoria`, `origen`, `en_gestion_supervisor`, `es_falla_masiva`, `desde`, `hasta` | `app/api/routes_casos.py:181-198` |
+| `GET /api/v1/casos/buscar` | `q`, `id_averia`, `telefono`, `limite`; `q`/`telefono` cubren `telefono` **y** `contacto_cliente` (**D-92**) | `app/api/routes_casos.py:282-285,292-317` |
 | `GET /api/v1/central` | `solo_activas` | `app/api/routes_config.py:85` |
 | `GET /api/v1/sectores` | `id_central`, `solo_activos` | `app/api/routes_config.py:144-145` |
 | `GET /api/v1/tecnicos` | `id_central`, `status` | `app/api/routes_config.py:293-294` |
@@ -712,7 +826,8 @@ Los filtros se declaran como *query params* tipados. Los más relevantes:
 | `GET /api/v1/seguimiento` | `id_caso`, `estado`, `instancia_destino` | `app/api/routes_especiales.py:373-375` |
 | `GET /api/v1/fallas-masivas` | `estado`, `id_central`, `solo_activas` | `app/api/routes_alertas.py:50-52` |
 | `GET /api/v1/notificaciones` | `estado`, `canal`, `limite` | `app/api/routes_alertas.py:174-176` |
-| `GET /api/v1/monitoreo/*` y reportes | `fecha`, `desde`, `hasta`, `dias`, `id_central`, `periodo` | `app/api/routes_monitoreo.py:29-30,40-41,51-53,83-84,107-109` |
+| `GET /api/v1/monitoreo/*` y reportes | `fecha`, `desde`, `hasta`, `dias`, `id_central`, `periodo`; `fecha`/`desde` por defecto = **día operativo** `America/Caracas` (**D-94**) | `app/api/routes_monitoreo.py:58-60,71-73,84-87,120-124,178-181` |
+| `GET /api/v1/monitoreo/identificadores` | `id_central`, `limite` (1–50, por defecto 10); la ventana sale de `pago.reincidencia_dias` (**D-94**) | `app/api/routes_monitoreo.py:159-169` |
 
 Los rangos de fecha se aplican sobre `Caso.fecha_reporte` (`desde`/`hasta`,
 `app/api/routes_casos.py:146-149`).
@@ -723,25 +838,28 @@ El control de acceso se implementa en `app/api/deps.py`. `require_roles(*roles)`
 devuelve una dependencia que exige uno de los roles indicados
 (`app/api/deps.py:52-72`); el rol **SUPER** concede cualquier operación sin
 enumerarse (`ROL_SUPER = "SUPER"` en `:20`, comparación en `:65`). Esto es
-consistente con `RepoTecnico/requerimientos.md:252-253`.
+consistente con `RepoTecnico/requerimientos.md:264-265`.
 
-En la práctica, cada archivo de rutas define una única dependencia de escritura:
+En la práctica, cada archivo de rutas define sus dependencias de escritura:
 
 | Archivo | Dependencia de escritura | Línea |
 |---|---|---|
 | `app/api/routes_config.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_config.py:60` |
-| `app/api/routes_ingesta.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_ingesta.py:23` |
-| `app/api/routes_casos.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_casos.py:26` |
+| `app/api/routes_ingesta.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_ingesta.py:31` |
+| `app/api/routes_casos.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_casos.py:51` |
+| `app/api/routes_casos.py` | `require_roles("ADMIN", "SUPERVISOR", "TECNICO")` — `PATCH /casos/{id}/contacto` (**D-88**) | `app/api/routes_casos.py:53,767` |
 | `app/api/routes_despachos.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_despachos.py:42` |
 | `app/api/routes_especiales.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_especiales.py:41` |
 | `app/api/routes_alertas.py` | `require_roles("ADMIN", "SUPERVISOR")` | `app/api/routes_alertas.py:31` |
+| `app/api/routes_monitoreo.py` | `require_roles("ADMIN", "SUPERVISOR")` — solo las dos métricas de gestión (**D-90/D-94**) | `app/api/routes_monitoreo.py:22,150,162` |
 
-Consecuencia verificada: **en la v1 ninguna operación de escritura acepta el rol
-TECNICO**. La matriz de `RepoTecnico/requerimientos.md:246` prevé CRUD del técnico
-para la «gestión técnica» desde la app móvil, que corresponde al Ciclo 8 y **no
-está desarrollada**; por tanto, esa capacidad no existe en la API actual. La
-excepción singular al esquema es el forzado de solapamiento de citas, reservado
-exclusivamente a SUPER (`app/api/routes_especiales.py:319-320,346-347`).
+Consecuencia verificada: **la única operación de escritura que acepta el rol
+TECNICO es `PATCH /api/v1/casos/{id}/contacto`** (edición de dirección y número
+de contacto desde el campo, D-88). El resto de la escritura es ADMIN/SUPERVISOR,
+que es lo que refleja la matriz de `RepoTecnico/requerimientos.md:253` al reservar
+el CRUD técnico a la app móvil. La otra excepción singular al esquema es el
+forzado de solapamiento de citas, reservado exclusivamente a SUPER
+(`app/api/routes_especiales.py:319-320,346-347`).
 
 ### Request-id
 

@@ -31,6 +31,7 @@ from .entities import (
 from .especiales_entities import CasoEspecial, Cita, Seguimiento, Solicitante
 from .insumos_entities import OrdenMaterial
 from .mensaje_entities import Mensaje, MensajeDestino
+from .pago_entities import IdentificadorPago
 from .sync_entities import SyncCheck, SyncLog
 
 __all__ = [
@@ -55,6 +56,7 @@ __all__ = [
     "FallaMasiva",
     "Flota",
     "Herramienta",
+    "IdentificadorPago",
     "IngestaLote",
     "Mensaje",
     "MensajeDestino",

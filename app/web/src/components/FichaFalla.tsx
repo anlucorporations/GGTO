@@ -51,12 +51,16 @@ function claseEstado(estado: string): string {
 interface Props {
   falla: FallaMasivaOut;
   onCerrar: () => void;
+  /** Coordinador: consulta y solicitud de materiales, sin gestión de la falla. */
+  soloMateriales?: boolean;
   /** El padre recarga la tabla con la falla devuelta por la API. */
   onActualizada: (falla: FallaMasivaOut, mensaje: string) => void;
 }
 
-export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
+export default function FichaFalla({ falla, onCerrar, onActualizada, soloMateriales = false }: Props) {
   const { soloLectura } = useAuth();
+  const lecturaFalla = soloLectura || soloMateriales;
+  const puedeSolicitarMaterial = !soloLectura || soloMateriales;
   const [pestana, setPestana] = useState<PestanaFalla>('masiva');
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState('');
@@ -206,7 +210,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
       }
     >
       <div className="falla-pestanas" role="tablist" aria-label="Secciones de la falla">
-        {PESTANAS.map((p) => (
+        {PESTANAS.filter((p) => !soloMateriales || p.id === 'masiva' || p.id === 'materiales').map((p) => (
           <button
             key={p.id}
             type="button"
@@ -300,7 +304,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
                   </div>
                 )}
               </div>
-              {!soloLectura && (
+              {!lecturaFalla && (
                 <div className="acciones-form">
                   <button
                     type="button"
@@ -396,7 +400,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
               maxLength={2000}
               rows={3}
               placeholder="Ej.: cuadrilla 1 a las 8:00 con fusionadora y 100 m de fibra"
-              disabled={soloLectura}
+              disabled={lecturaFalla}
             />
           </div>
           <div className="campo campo-ancho">
@@ -408,7 +412,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
               maxLength={2000}
               rows={2}
               placeholder="Resumen de la atención para el reporte"
-              disabled={soloLectura}
+              disabled={lecturaFalla}
             />
           </div>
           <div className="campo campo-ancho">
@@ -420,14 +424,14 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
               value={evidencias}
               onChange={(e) => setEvidencias(e.target.value)}
               placeholder="IMG-001, IMG-002"
-              disabled={soloLectura}
+              disabled={lecturaFalla}
             />
           </div>
           <div className="acciones-form">
             <button
               type="submit"
               className="btn"
-              disabled={soloLectura || ocupado === 'plan' || planificacion.trim().length < 5}
+              disabled={lecturaFalla || ocupado === 'plan' || planificacion.trim().length < 5}
             >
               {ocupado === 'plan' ? 'Guardando…' : 'Guardar planificación'}
             </button>
@@ -437,7 +441,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
 
       {pestana === 'materiales' && (
         <div className="falla-panel" role="tabpanel">
-          {!soloLectura && (
+          {puedeSolicitarMaterial && (
             <form
               className="formulario filtros-tabla"
               onSubmit={(e) => void solicitarMaterial(e)}
@@ -543,7 +547,7 @@ export default function FichaFalla({ falla, onCerrar, onActualizada }: Props) {
                 key={estado}
                 type="button"
                 className={`btn btn-mini${estado === 'CERRADA' ? ' btn-peligro' : ' btn-secundario'}`}
-                disabled={soloLectura || falla.estado === estado || ocupado !== ''}
+                disabled={lecturaFalla || falla.estado === estado || ocupado !== ''}
                 onClick={() => void cambiarEstado(estado)}
               >
                 {ocupado === `estado-${estado}` ? 'Guardando…' : estado}

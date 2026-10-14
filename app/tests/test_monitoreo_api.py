@@ -2,22 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 import pytest
+
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/monitoreo"
 REPORTES = "/api/v1/reportes/trabajo"
 
 
 def hoy() -> date:
-    """Fecha de hoy calculada en el momento de la prueba.
+    """Fecha de hoy en el **día operativo** (`America/Caracas` · RNF-13).
 
-    No se captura al importar el módulo: una corrida que cruce la medianoche
-    dejaría de coincidir con la fecha de los registros creados por la propia
-    prueba (los `creado_en` se comparan por día).
+    D-94: las métricas comparan el día operativo (antes `date(timestamptz)`, que
+    PostgreSQL evalúa en UTC y hacía fallar la prueba entre las 20:00 y la
+    medianoche de Caracas, cuando en UTC ya es el día siguiente).
     """
-    return date.today()
+    return hoy_operativo()
 
 
 @pytest.fixture()
@@ -35,7 +37,9 @@ def entorno(client, admin_token):
 
     def crear(id_averia, **extra):
         cuerpo = {"id_averia": id_averia, "direccion": "SECTOR ALFA CASA 1",
-                  "nombre_cliente": "CLIENTE", "telefono": "7000000000"}
+                  "nombre_cliente": "CLIENTE", "contacto_cliente": "04140000000",
+                  "id_pago": "7000000000", "tipo_reporte": "REPARACION",
+                  "tipo_problema": "SIN_SERVICIO"}
         cuerpo.update(extra)
         r = client.post("/api/v1/casos", json=cuerpo, headers=headers)
         assert r.status_code == 201, r.text
@@ -43,7 +47,8 @@ def entorno(client, admin_token):
 
     casos = [crear(f"TSTM-{i}") for i in range(3)]
     casos.append(crear("TSTM-E", categoria="EMPRESA"))
-    casos.append(crear("TSTM-C", categoria="EMPRESA", tipo_caso="CONSTRUCCION"))
+    casos.append(crear("TSTM-C", categoria="EMPRESA", tipo_reporte="CONSTRUCCION",
+                       tipo_problema=None))
 
     # Cerrar uno residencial para que cuente como resuelto del día
     cerrado = client.patch(f"/api/v1/casos/{casos[0]['id_caso']}",
@@ -207,7 +212,9 @@ def test_tecnico_puede_consultar(client, entorno, admin_token):
 
 
 def test_cita_cuenta_en_el_dia(client, entorno):
-    ahora = datetime.now().replace(microsecond=0)
+    # La cita se anota en la zona de la base (UTC) para que el día coincida con el
+    # que consultan las métricas (mismo criterio que `hoy()`).
+    ahora = datetime.now(UTC).replace(microsecond=0)
     r = client.post("/api/v1/citas",
                     json={"fecha_hora": ahora.isoformat(), "id_caso": entorno["id_caso_cerrado"]},
                     headers=entorno["headers"])

@@ -8,12 +8,15 @@ test.describe('Especiales', () => {
 
     await page.getByRole('button', { name: 'Agregar caso' }).click();
     await expect(page.getByRole('dialog', { name: 'Agregar caso' })).toBeVisible();
-    await rellenar(page.getByLabel('Nombre del cliente'), 'Empresa Solicitante E2E');
-    await rellenar(page.getByLabel('Dirección'), 'CALLE E2E, GALPÓN 5');
+    // RN-AL-01: datos obligatorios del alta (comunes al caso normal y al especial).
+    await rellenar(page.getByLabel('Nombre de contacto'), 'Empresa Solicitante E2E');
+    await rellenar(page.getByLabel('Teléfono de contacto'), '04249998877');
+    await rellenar(page.getByLabel('Teléfono — identificador de pago'), '7014000878');
+    await rellenar(page.getByLabel('Dirección del inmueble'), 'CALLE E2E, GALPÓN 5');
+    await rellenar(page.getByLabel('Tipo de reporte'), 'CONSTRUCCION');
     await rellenar(page.getByLabel('Problema reportado'), 'Solicitud de construcción de punto');
     await marcar(page.getByLabel('Es un caso especial'), true);
     await rellenar(page.getByLabel('Clasificación'), 'REFERIDO');
-    await rellenar(page.getByLabel('Tipo de actividad'), 'CONSTRUCCION');
     await rellenar(page.getByLabel('Prioridad'), 'ALTA');
     await rellenar(page.getByLabel('Solicitante — unidad'), 'UNIDAD E2E');
     await rellenar(page.getByLabel('Solicitante — nombre'), 'Solicitante E2E');

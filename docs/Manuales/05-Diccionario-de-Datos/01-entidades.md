@@ -1,5 +1,9 @@
 # Diccionario de Datos — Entidades de la base GGTO
 
+> **Estado verificado 2026-10-12:** DDL local con 41 tablas; ORM con 36. La
+> instancia desplegada está activa, pero su esquema no se consultó. La APK actual
+> es de campo (`1.1.0+9`), no una APK multirol V2.
+
 > Este manual explica, con palabras sencillas, qué información guarda la base de
 > datos del sistema GGTO y cómo se organiza. Es la versión literal del manual
 > técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos
@@ -9,10 +13,8 @@
 ## Empezar en 5 minutos
 
 1. **Entiende la idea general.** La base de datos es como un archivador gigante.
-   Dentro tiene 36 «cajones» llamados **tablas** (por ejemplo, `caso`, `despacho`
-   o `cuadrilla`). Cada tabla guarda un tipo de información distinto. La tabla
-   número 36, `cuadrilla_sector_dia`, es la que guarda qué sectores atiende cada
-   cuadrilla cada día (ciclo D-66).
+   El DDL local define 41 «cajones» llamados **tablas** (por ejemplo, `caso`,
+   `despacho` o `cuadrilla`). Cada tabla guarda un tipo de información distinto.
 2. **Ubica el centro del sistema.** Casi todo gira alrededor de la tabla `caso`:
    allí se registra cada avería o solicitud de trabajo, con su dirección,
    teléfono y estado. Empieza por ahí para entender el resto.
@@ -25,10 +27,9 @@
    listas maestras: se configuran una vez y se consultan siempre.
 5. **Cuida los datos personales.** La base guarda teléfonos, nombres, cédulas,
    direcciones y ubicaciones (datos personales o PII). Hay datos reales cargados
-   (42 casos con datos personales) y el servicio es público: **el acceso debe
-   restringirse**. Recuerda además que Telegram y correo todavía no tienen
-   credenciales, así que los envíos quedan PENDIENTES; WhatsApp no existe en la
-   v1; y la app móvil Flutter no está desarrollada (Ciclo 8 pospuesto).
+   (42 casos con datos personales); el servicio Cloud Run acepta invocaciones
+   públicas, mientras las rutas de negocio requieren autenticación. Cloud SQL
+   tiene respaldos automáticos deshabilitados según la configuración consultada.
 
 ## Visión general
 
@@ -40,7 +41,7 @@ Ficha de identificación del sistema y de la base que describe este manual:
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor de base de datos | PostgreSQL 15 (instancia compartida `truekeate-main:southamerica-east1:truekeate-db-dev`) |
 | Base | `ggtov2` · usuario de aplicación `ggtov2_app` |
-| Script de creación (DDL) | `RepoTecnico/db/schema.sql` — 820 líneas y **36 tablas** |
+| Script de creación (DDL) | `RepoTecnico/db/schema.sql` — **41 tablas locales** |
 | Mapeo a objetos de Python (ORM) | `app/models/*.py` (SQLAlchemy 2.x declarativo) |
 | Diccionario de origen | `RepoTecnico/diccionario_datos.md` (Borrador v0.2, «sujeto a validación») |
 | Esquema de pruebas | La variable `DB_SCHEMA` agrega `options=-csearch_path=<esquema>,public` (en `app/core/db.py`) |
@@ -64,26 +65,27 @@ y el script real difieren, la diferencia se señala en la sección **Fuentes →
 Divergencias detectadas**. Lo que no se pudo verificar se marca como
 «pendiente de confirmar».
 
-### Las 36 tablas del esquema
+### Las 41 tablas del DDL local
 
-El script de creación contiene **36 sentencias `CREATE TABLE`** (conteo directo
-sobre `RepoTecnico/db/schema.sql`). Se agrupan en siete dominios funcionales:
+El script de creación local contiene **41 sentencias `CREATE TABLE`** (conteo directo
+sobre `RepoTecnico/db/schema.sql`). La instancia desplegada no se inspeccionó.
 
 | Dominio | Tablas | Nº |
 |---|---|---|
 | Seguridad y acceso | `rol`, `usuario`, `dispositivo_seguridad`, `auditoria` | 4 |
 | Configuración | `central`, `sector`, `sector_direccion`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta`, `causa`, `catalogo_metodo`, `configuracion` | 12 |
-| Operación | `ingesta_lote`, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 7 |
+| Operación | `ingesta_lote`, `identificador_pago`, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 8 |
 | Especiales | `solicitante`, `caso_especial`, `seguimiento`, `cita` | 4 |
 | Despacho | `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | 4 |
 | Insumos (v2) | `insumo`, `orden_material`, `orden_material_detalle`, `inventario_movimiento` | 4 |
 | Notificaciones | `notificacion` | 1 |
-| **Total** | | **36** |
+| Mensajería y sincronización | `sync_log`, `sync_check`, `mensaje`, `mensaje_destino` | 4 |
+| **Total** | | **41** |
 
 <!-- GENERAR_IMAGEN: dominios-datos.svg -->
 ```mermaid
 flowchart TB
-    BASE["Base de datos GGTO<br/>36 tablas en 7 dominios"]
+    BASE["DDL local GGTO<br/>41 tablas en 8 dominios"]
     BASE --> D1["Seguridad y acceso<br/>4 tablas"]
     BASE --> D2["Configuración<br/>12 tablas"]
     BASE --> D3["Operación<br/>7 tablas"]
@@ -173,9 +175,9 @@ Notas de tipado verificadas:
   `varchar`.
 - `dispositivo_seguridad.palabras_hash` es `jsonb` con valor inicial `'[]'`;
   el modelo de Python lo expone como una lista.
-- Los modelos de Python mapean **29 de las 36 tablas**. Las siete tablas
-  restantes (`actividad`, `evidencia`, `incidente`, `sincronizacion`, `insumo`,
-  `orden_material_detalle`, `inventario_movimiento`) no tienen clase propia y
+- Los modelos de Python mapean **36 de las 41 tablas**. Las cinco tablas
+  restantes (`incidente`, `sincronizacion`, `insumo`, `orden_material_detalle`,
+  `inventario_movimiento`) no tienen clase propia y
   solo existen en el script de la base (ver **Fuentes → Cobertura del ORM**).
   La tabla `auditoria` **sí** tiene modelo desde el ciclo D-67.
 
@@ -989,15 +991,16 @@ de requerimiento asociados y las cinco dudas abiertas.
 
 ### `RepoTecnico/db/schema.sql`
 
-Fuente normativa de la estructura física: 36 tablas, 2 extensiones, 2 funciones
-(`set_actualizado_en` y `generar_id_averia_ref`), 1 secuencia (`seq_caso_ref`),
+Fuente normativa de la estructura física local: 41 tablas, 2 extensiones, 4 funciones
+(`set_actualizado_en`, `generar_id_averia_ref`, `app_central_actual` y
+`fn_caso_reparacion_a_referido`), 1 secuencia (`seq_caso_ref`),
 22 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
 idempotentes. Es el archivo que se aplica con
 `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f RepoTecnico/db/schema.sql`.
 
 ### Cobertura del ORM (`app/models/`)
 
-Los modelos de Python mapean 29 tablas mediante 6 módulos:
+Los modelos de Python mapean 36 tablas mediante los módulos declarativos actuales:
 
 - `entities.py`: `rol`, `central`, `tecnico`, `usuario`, `dispositivo_seguridad`,
   `auditoria`.
@@ -1011,13 +1014,9 @@ Los modelos de Python mapean 29 tablas mediante 6 módulos:
   `seguimiento`.
 - `insumos_entities.py`: `orden_material`.
 
-Las siete tablas sin modelo son `actividad`, `evidencia`, `incidente`,
-`sincronizacion`, `insumo`, `orden_material_detalle` e `inventario_movimiento`;
-una búsqueda en el código Python confirma que tampoco se consultan
-con SQL directo. Es decir, en la v1 esas tablas existen en la base pero ningún
-flujo de la aplicación las escribe: **pendiente de confirmar** si corresponden
-a módulos diferidos (app móvil y v2 de insumos) o a trabajo aún no implementado.
-Recuerda que la app móvil Flutter no está desarrollada (Ciclo 8 pospuesto).
+Las cinco tablas sin modelo son `incidente`, `sincronizacion`, `insumo`,
+`orden_material_detalle` e `inventario_movimiento`. Esto describe el DDL local;
+no se consultó el esquema desplegado ni se confirmó su uso en producción.
 
 La tabla `auditoria` era una de esas tablas sin modelo, pero dejó de serlo en el
 ciclo D-67: ahora tiene la clase `Auditoria` y la aplicación la escribe al dar de

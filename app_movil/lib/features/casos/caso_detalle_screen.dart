@@ -66,7 +66,9 @@ class CasoDetalleScreen extends StatelessWidget {
             context,
             idCaso,
             idAveria,
-            v('telefono', porDefecto: ''),
+            // D-93: se llama al **número de contacto** (el 70* es el
+            // identificador de pago, no un teléfono para contactar).
+            v('contacto_cliente', porDefecto: ''),
             v('nombre_cliente', porDefecto: ''),
           ),
         ),
@@ -95,7 +97,8 @@ class CasoDetalleScreen extends StatelessWidget {
           // CABECERA (fija): de quién es la ficha y qué se puede editar.
           FichaCabecera(
             nombre: v('nombre_cliente', porDefecto: 'Cliente sin nombre'),
-            telefono: v('telefono', porDefecto: ''),
+            identificadorPago: v('telefono', porDefecto: ''),
+            contacto: v('contacto_cliente', porDefecto: ''),
             estado: estado,
             pendienteSync: pendienteSync,
             onEditar: puedeEditarContacto(estado)
@@ -104,7 +107,7 @@ class CasoDetalleScreen extends StatelessWidget {
                       idCaso,
                       idAveria,
                       v('direccion', porDefecto: ''),
-                      v('telefono', porDefecto: ''),
+                      v('contacto_cliente', porDefecto: ''),
                     )
                 : null,
           ),
@@ -118,8 +121,8 @@ class CasoDetalleScreen extends StatelessWidget {
                   abierta: true,
                   filas: [
                     ('Nombre', v('nombre_cliente')),
-                    ('Teléfono', v('telefono')),
-                    ('Contacto', v('contacto_cliente')),
+                    ('Identificador de pago (70*)', v('telefono')),
+                    ('Número de contacto', v('contacto_cliente')),
                     ('Persona que reporta', v('persona_reporta')),
                     ('Dirección', v('direccion')),
                     ('Sector', v('sector_nombre')),
@@ -194,7 +197,7 @@ class CasoDetalleScreen extends StatelessWidget {
   }
 
   Future<void> _agendarCita(BuildContext context, int? idCaso, String idAveria,
-      String telefono, String nombreCliente) async {
+      String contacto, String nombreCliente) async {
     if (idCaso == null) return;
     final casos = context.read<CasosProvider>();
     await Navigator.push(
@@ -203,7 +206,7 @@ class CasoDetalleScreen extends StatelessWidget {
         builder: (_) => ContactarScreen(
           idCaso: idCaso,
           idAveria: idAveria,
-          telefono: telefono,
+          contacto: contacto,
           nombreCliente: nombreCliente,
         ),
       ),
@@ -270,9 +273,12 @@ class CasoDetalleScreen extends StatelessWidget {
     mensajeria.showSnackBar(SnackBar(content: Text(resultado.mensaje)));
   }
 
-  /// Edita la **dirección** y el **número de contacto** (D-88 · RF-APK-11).
+  /// Edita la **dirección** y el **número de contacto** (D-88/D-93 · RF-APK-11).
+  ///
+  /// El **identificador de pago (70\\*)** no se edita desde el campo: vive en la
+  /// cabecera en solo lectura (D-93).
   Future<void> _editar(BuildContext context, int? idCaso, String idAveria,
-      String direccion, String telefono) async {
+      String direccion, String contacto) async {
     if (idCaso == null) return;
     final casos = context.read<CasosProvider>();
     final mensajeria = ScaffoldMessenger.of(context);
@@ -280,7 +286,7 @@ class CasoDetalleScreen extends StatelessWidget {
       context: context,
       builder: (_) => _EditarContactoDialog(
         direccion: direccion,
-        telefono: telefono,
+        contacto: contacto,
       ),
     );
     if (cambios == null || cambios.isEmpty) return;
@@ -289,7 +295,7 @@ class CasoDetalleScreen extends StatelessWidget {
       idCaso: idCaso,
       idAveria: idAveria,
       direccion: cambios['direccion'],
-      telefono: cambios['telefono'],
+      contacto: cambios['contacto'],
     );
     await casos.refrescarLocal();
     mensajeria.showSnackBar(SnackBar(content: Text(resultado.mensaje)));
@@ -298,10 +304,10 @@ class CasoDetalleScreen extends StatelessWidget {
 
 /// Formulario de edición del contacto, con la validación de la ficha.
 class _EditarContactoDialog extends StatefulWidget {
-  const _EditarContactoDialog({required this.direccion, required this.telefono});
+  const _EditarContactoDialog({required this.direccion, required this.contacto});
 
   final String direccion;
-  final String telefono;
+  final String contacto;
 
   @override
   State<_EditarContactoDialog> createState() => _EditarContactoDialogState();
@@ -310,14 +316,14 @@ class _EditarContactoDialog extends StatefulWidget {
 class _EditarContactoDialogState extends State<_EditarContactoDialog> {
   late final TextEditingController _direccion =
       TextEditingController(text: widget.direccion);
-  late final TextEditingController _telefono =
-      TextEditingController(text: widget.telefono);
+  late final TextEditingController _contacto =
+      TextEditingController(text: widget.contacto);
   final _formulario = GlobalKey<FormState>();
 
   @override
   void dispose() {
     _direccion.dispose();
-    _telefono.dispose();
+    _contacto.dispose();
     super.dispose();
   }
 
@@ -327,8 +333,8 @@ class _EditarContactoDialogState extends State<_EditarContactoDialog> {
     if (_direccion.text.trim() != widget.direccion.trim()) {
       cambios['direccion'] = _direccion.text.trim();
     }
-    if (_telefono.text.trim() != widget.telefono.trim()) {
-      cambios['telefono'] = _telefono.text.trim();
+    if (_contacto.text.trim() != widget.contacto.trim()) {
+      cambios['contacto'] = _contacto.text.trim();
     }
     Navigator.pop(context, cambios);
   }
@@ -350,13 +356,16 @@ class _EditarContactoDialogState extends State<_EditarContactoDialog> {
             ),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _telefono,
+              controller: _contacto,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: 'Número de contacto',
-                hintText: '7001234567',
+                hintText: '04142223344',
+                helperText: 'Cualquier número. Si escribe un 70* se registra como '
+                    'identificador de pago del caso.',
+                helperMaxLines: 2,
               ),
-              validator: (valor) => errorTelefono(valor ?? ''),
+              validator: (valor) => errorNumeroContacto(valor ?? ''),
             ),
           ],
         ),

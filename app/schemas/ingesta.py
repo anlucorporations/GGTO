@@ -22,6 +22,15 @@ class DireccionSinSector(BaseModel):
     ejemplo_id_averia: str | None = None
 
 
+class AvisoIngesta(BaseModel):
+    """Fila del archivo cuya clasificación de números generó un aviso (RF-56)."""
+
+    fila: int | None = None
+    id_averia: str | None = None
+    numero: str | None = None
+    motivo: str | None = None
+
+
 class ResumenIngesta(BaseModel):
     archivo: str
     filas_leidas: int
@@ -32,7 +41,10 @@ class ResumenIngesta(BaseModel):
     sectorizados: int
     sin_sector: int
     cuadrilla0: int
+    filas_sin_identificador_pago: int = 0
+    filas_con_contacto: int = 0
     avisos: list[str] = Field(default_factory=list)
+    avisos_detalle: list[AvisoIngesta] = Field(default_factory=list)
     ejemplos: list[EjemploCaso] = Field(default_factory=list)
     direcciones_sin_sector: list[DireccionSinSector] = Field(default_factory=list)
     id_lote: int | None = None
@@ -57,6 +69,9 @@ class IngestaLoteOut(BaseModel):
     casos_nuevos: int
     casos_duplicados: int
     casos_descartados: int
+    filas_sin_identificador_pago: int = 0
+    filas_con_contacto: int = 0
+    avisos: list[AvisoIngesta] = Field(default_factory=list)
     estado: str
     detalle_error: str | None = None
     usuario: str | None = None

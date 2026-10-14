@@ -186,6 +186,10 @@ def _caso_sync(caso: Caso, sector_nombre: str | None, dc: DespachoCasos | None) 
         "sector_nombre": sector_nombre,
         "direccion": caso.direccion,
         "telefono": caso.telefono,
+        # D-96: el teléfono para **contactar** al cliente es `contacto_cliente`;
+        # `telefono` es el identificador de pago (70*) y no sirve para llamar.
+        "contacto_cliente": caso.contacto_cliente,
+        "persona_reporta": caso.persona_reporta,
         "nombre_cliente": caso.nombre_cliente,
         "problema_reporte": caso.problema_reporte,
         "informacion": caso.informacion,

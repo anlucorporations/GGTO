@@ -212,6 +212,30 @@ escritura (`ADMIN` o `SUPERVISOR`). La secuencia del alta es:
    central y el P00 del usuario que lo creó.
 7. Se escribe la primera fila de la bitácora con el motivo «Alta manual desde PANEL».
 
+#### Datos obligatorios del alta
+
+Al dar de alta un caso **manual** hay que llenar, sin excepción, estos datos; si falta
+cualquiera de ellos el sistema responde con un error **422** y no crea nada:
+
+| Dato | Qué se escribe | ¿Cuándo es obligatorio? |
+|---|---|---|
+| Nombre de contacto | El nombre de la persona con la que se habla | Siempre |
+| Teléfono de contacto | El número al que se llama al cliente | Siempre |
+| Dirección del inmueble | Dónde está el servicio reportado | Siempre |
+| Teléfono — identificador de pago (70\*) | El número del identificador de pago del caso | Siempre. Si el número no es un 70\*, el sistema lo rechaza |
+| Tipo de reporte | Reparación o Construcción | Siempre |
+| ID de avería | El número de avería real del reporte | Solo cuando el tipo de reporte es **Reparación** |
+| Tipo de problema | La clasificación del problema | Solo cuando el tipo de reporte es **Reparación** |
+
+Al **incorporar un caso especial** se piden esos mismos datos —con el mismo detalle: en
+una Reparación, el ID de avería y el tipo de problema— y **además** los **datos del
+solicitante**: nombre, unidad y contacto de quien pide el caso (puede elegirse uno ya
+registrado o darlo de alta en el mismo formulario).
+
+Como el identificador de pago (70\*) es obligatorio, un alta manual ya no puede quedar
+como una Reparación sin identificador: si hace falta un caso **REFERIDO**, el sistema lo
+marca cuando el ID de avería indicado es de los sintéticos (`REF-…`).
+
 #### Verificación
 
 Dos pruebas automáticas respaldan este comportamiento. La primera comprueba que el identificador
@@ -371,6 +395,14 @@ bitácora se borra en cascada.
 
 Es la página más extensa del módulo (964 líneas). Se organiza en tres bloques: filtros y
 listado, ficha con edición y cambio de estado, e historial.
+
+#### Solo casos abiertos
+
+La página **CASOS** muestra **únicamente los casos abiertos**: los que están en estado
+**CERRADO** o **CANCELADO** no aparecen en el listado, y el selector de **Estado** ya no
+los ofrece como opción. El filtro lo aplica el servidor (`solo_abiertos`), de modo que el
+total y las páginas corresponden solo al trabajo abierto. Es un comportamiento exclusivo de
+esta sección: el despacho, el monitoreo y los informes siguen viendo el universo completo.
 
 #### Filtros mostrados
 

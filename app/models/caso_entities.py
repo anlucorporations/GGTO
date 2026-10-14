@@ -32,6 +32,12 @@ class IngestaLote(Base):
     casos_nuevos: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     casos_duplicados: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     casos_descartados: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # D-89 (RF-56): avisos de la clasificación de números del archivo.
+    filas_sin_identificador_pago: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    filas_con_contacto: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    avisos: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="PROCESANDO")
     detalle_error: Mapped[str | None] = mapped_column(Text)
     usuario: Mapped[str | None] = mapped_column(String(20))
@@ -54,6 +60,9 @@ class Caso(Base):
     estado_actual: Mapped[str] = mapped_column(String(20), nullable=False, default="NUEVO")
     id_sector: Mapped[int | None] = mapped_column(ForeignKey("sector.id_sector"))
     id_causa: Mapped[int | None] = mapped_column(ForeignKey("causa.id_causa"))
+    # D-89 (RF-45 / DEC-IP-4): identificador de pago (70*) del caso. `telefono`
+    # se mantiene como alias de lectura de su `numero`.
+    id_pago: Mapped[int | None] = mapped_column(ForeignKey("identificador_pago.id_pago"))
     id_lote_ingesta: Mapped[int | None] = mapped_column(ForeignKey("ingesta_lote.id_lote"))
     en_gestion_supervisor: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     es_falla_masiva: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

@@ -1,5 +1,10 @@
 # Plataforma GGTO — Visión general y arquitectura
 
+> **Estado verificado 2026-10-12:** GGTO V1 continúa desplegado; GGTO V2 está
+> parcialmente implementado. La APK vigente (`1.1.0+9`) es de campo y todavía no
+> ofrece gestión por rol. La auditoría de código, documentación y despliegue está
+> en `RepoTecnico/auditoria_estado_real_v2.md` dentro del repositorio.
+
 > Manual para todo público. Explica qué es **GGTO**, para qué sirve y cómo está armado por dentro,
 > en lenguaje sencillo. GGTO es el *Sistema de administración de reportes de avería y construcción
 > de puntos ópticos* de **CANTV C.A., Central Francisco Salias (Área 4)**. Este manual no promete
@@ -69,10 +74,10 @@ disponibilidad) y **14 RT** (requisitos técnicos).
 | Entorno por defecto | development (desarrollo) |
 | Zona horaria | America/Caracas |
 
-**Lo que NO existe todavía (no lo busques):**
+**Capacidades que deben distinguirse por versión:**
 
-- **La aplicación móvil Flutter no está desarrollada.** Estaba prevista para el Ciclo 8 y ese ciclo
-  quedó pospuesto. No hay APK para instalar en teléfonos.
+- **La APK Flutter existe como aplicación de campo** (`1.1.0+9`), con casos, sincronización,
+  alertas, mensajes y perfil. Las pantallas de gestión multirol V2 siguen pendientes.
 - **WhatsApp no existe en esta versión.** Se retiró de los requerimientos y quedó reservado para una
   versión futura (v3).
 - **Telegram y el correo todavía no envían de verdad.** No tienen credenciales cargadas en
@@ -174,7 +179,7 @@ flowchart TB
         WEB -->|"misma dirección, sin CORS"| API
     end
     subgraph Datos["Base de datos"]
-        PG[("PostgreSQL 15<br/>base ggtov2<br/>36 tablas")]
+        PG[("PostgreSQL 15<br/>base ggtov2<br/>41 tablas en DDL local")]
     end
     subgraph Canales["Canales hacia afuera"]
         TG["Telegram<br/>(sin credenciales: PENDIENTE)"]
@@ -235,9 +240,8 @@ pura, sin pantallas.
 ### Base de datos PostgreSQL
 
 El **almacén** de GGTO es una base de datos **PostgreSQL**. Guarda todo: usuarios, centrales,
-técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son **36 tablas**.
-La última en incorporarse (ciclo D-66) es `cuadrilla_sector_dia`, que guarda qué sectores atiende
-cada cuadrilla cada día.
+técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. El DDL local tiene **41 tablas**;
+el esquema desplegado no se consultó en el corte de esta auditoría.
 
 Datos de conexión usuales (los valores reales se cargan por entorno y no se escriben en este
 manual):

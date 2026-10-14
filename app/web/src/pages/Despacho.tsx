@@ -98,7 +98,7 @@ function TablaCasosAsignados({ casos }: { casos: CasoAsignadoOut[] }) {
             <th>Sector</th>
             <th>Dirección</th>
             <th>Cliente</th>
-            <th>Teléfono</th>
+            <th>Identificador de pago (70*)</th>
             <th>Tipo asignación</th>
             <th>¿Cita?</th>
             <th>Estado</th>

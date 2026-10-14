@@ -100,7 +100,11 @@ void main() {
       expect(cabecera, findsOneWidget);
       expect(find.descendant(of: cabecera, matching: find.text('CLIENTE PRUEBA')),
           findsOneWidget);
-      expect(find.descendant(of: cabecera, matching: find.text('7001234567')),
+      // D-93: la cabecera rotula el identificador de pago (70*).
+      expect(
+          find.descendant(
+              of: cabecera,
+              matching: find.textContaining('Identificador de pago (70*): 7001234567')),
           findsOneWidget);
       expect(find.descendant(of: cabecera, matching: find.text('NUEVO')),
           findsOneWidget); // chip de estado
@@ -148,8 +152,16 @@ void main() {
       // El grupo de contacto arranca abierto: su información se ve.
       expect(find.text('Contacto'), findsOneWidget);
       expect(find.text('CALLE 4 CON AV 5'), findsOneWidget);
-      // Los demás arrancan plegados: sus filas no se pintan.
+      // D-93: la cabecera muestra el identificador de pago y el contacto, así que
+      // los grupos siguientes pueden quedar fuera de la vista: se desplaza.
+      await tester.dragUntilVisible(
+        find.text('Administrativa'),
+        find.byType(Scrollable).first,
+        const Offset(0, -80),
+      );
+      await tester.pumpAndSettle();
       expect(find.text('Administrativa'), findsOneWidget);
+      // Los demás arrancan plegados: sus filas no se pintan.
       expect(find.text('Plan'), findsNothing);
 
       await tester.tap(find.text('Administrativa'));

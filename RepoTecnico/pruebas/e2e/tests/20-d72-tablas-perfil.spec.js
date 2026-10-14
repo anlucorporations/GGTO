@@ -66,12 +66,14 @@ test.describe('ESPECIALES (D-72)', () => {
     await iniciarSesion(page, USUARIOS.admin);
     await page.getByRole('button', { name: 'Agregar caso' }).click();
     const modal = page.getByRole('dialog', { name: 'Agregar caso' });
-    await rellenar(modal.getByLabel('Nombre del cliente'), 'Gobernación E2E D72');
-    await rellenar(modal.getByLabel('Dirección'), 'AV E2E, GOBERNACIÓN 1');
+    await rellenar(modal.getByLabel('Nombre de contacto'), 'Gobernación E2E D72');
+    await rellenar(modal.getByLabel('Teléfono de contacto'), '04241231231');
+    await rellenar(modal.getByLabel('Teléfono — identificador de pago'), '7014000879');
+    await rellenar(modal.getByLabel('Dirección del inmueble'), 'AV E2E, GOBERNACIÓN 1');
     await rellenar(modal.getByLabel('Problema reportado'), 'Enlace dedicado solicitado');
     await page.getByLabel('Es un caso especial').check();
     await rellenar(modal.getByLabel('Clasificación'), 'GOBIERNO');
-    await rellenar(modal.getByLabel('Tipo de actividad'), 'REPARACION');
+    await rellenar(modal.getByLabel('Tipo de reporte'), 'CONSTRUCCION');
     await rellenar(modal.getByLabel('Prioridad'), 'MEDIA');
     await rellenar(modal.getByLabel('Solicitante — unidad'), 'UNIDAD D72');
     await rellenar(modal.getByLabel('Solicitante — nombre'), 'Solicitante D72');

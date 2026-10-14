@@ -97,12 +97,14 @@ test.describe('Asignación de casos a cuadrillas (D-77/D-78)', () => {
     await page.getByRole('button', { name: 'Agregar caso' }).click();
     const alta = page.getByRole('dialog', { name: 'Agregar caso' });
     await expect(alta).toBeVisible();
-    await rellenar(alta.getByLabel('Nombre del cliente'), 'Gobierno E2E D-79');
-    await rellenar(alta.getByLabel('Dirección'), 'CALLE E2E, POSTE 79');
+    await rellenar(alta.getByLabel('Nombre de contacto'), 'Gobierno E2E D-79');
+    await rellenar(alta.getByLabel('Teléfono de contacto'), '04247778899');
+    await rellenar(alta.getByLabel('Teléfono — identificador de pago'), '7014000880');
+    await rellenar(alta.getByLabel('Dirección del inmueble'), 'CALLE E2E, POSTE 79');
     await rellenar(alta.getByLabel('Problema reportado'), 'Poste caído frente a la escuela');
     await marcar(alta.getByLabel('Es un caso especial'), true);
     await rellenar(alta.getByLabel('Clasificación'), 'GOBIERNO');
-    await rellenar(alta.getByLabel('Tipo de actividad'), 'REPARACION');
+    await rellenar(alta.getByLabel('Tipo de reporte'), 'CONSTRUCCION');
     await rellenar(alta.getByLabel('Prioridad'), 'ALTA');
     await rellenar(alta.getByLabel('Solicitante — unidad'), 'ALCALDIA E2E');
     await rellenar(alta.getByLabel('Solicitante — nombre'), 'Solicitante D79');

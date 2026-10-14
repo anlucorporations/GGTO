@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -25,6 +26,7 @@ from ..models import (
     Usuario,
 )
 from ..schemas.casos import (
+    ESTADOS_TERMINALES,
     CasoEstadoHistOut,
     CasoGestionEstado,
     CasoManualCreate,
@@ -39,14 +41,18 @@ from ..schemas.casos import (
     PaginaCasos,
     ResolucionOut,
 )
+from ..services import clasificacion, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
-from .deps import get_current_user, require_roles
+from .deps import require_roles
 
 router = APIRouter(prefix="/api/v1/casos", tags=["casos"])
 
 # Edición completa de casos: ADMIN y SUPERVISOR (SUPER tiene acceso total).
 _escritura = require_roles("ADMIN", "SUPERVISOR")
+# COORDINADOR consulta casos solo desde las vistas específicas de especiales y
+# fallas masivas; no puede leer el universo ni las fichas de /casos (DEC-G20).
+_lectura = require_roles("TECNICO", "ADMIN", "SUPERVISOR")
 # Gestión del estado del caso: se suma el rol TECNICO (D-68).
 _gestion = require_roles("ADMIN", "SUPERVISOR", "TECNICO")
 
@@ -137,6 +143,11 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
             id_cuadrilla=id_cuadrilla,
             cuadrilla_codigo=(cuadrilla.codigo if cuadrilla else None),
             cuadrilla_nombre=(cuadrilla.nombre if cuadrilla else None),
+            # D-90: marca derivada de la regla REPARACIÓN ⇐ 70* + avería real.
+            marcado_reclasificar=clasificacion.esta_marcado(caso),
+            motivo_marca=clasificacion.motivo_marca(caso),
+            tiene_identificador_pago=caso.id_pago is not None,
+            tiene_id_averia_real=clasificacion.tiene_id_averia_real(caso),
         )
         salida.append(CasoOut(**datos))
     return salida
@@ -173,7 +184,7 @@ def _casos_de_cuadrilla(id_cuadrilla: int):
 @router.get("", response_model=PaginaCasos, summary="Listado de casos con filtros")
 def listar(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(_lectura),
     q: str | None = Query(
         default=None,
         description="Texto libre: busca en todos los renglones de la tabla "
@@ -190,6 +201,11 @@ def listar(
     id_causa: int | None = None,
     id_lote_ingesta: int | None = None,
     estado_actual: str | None = None,
+    solo_abiertos: bool = Query(
+        default=False,
+        description="Solo casos **abiertos** (excluye CERRADO y CANCELADO); es lo "
+                    "que usa la sección CASOS de la web",
+    ),
     tipo_caso: str | None = None,
     categoria: str | None = None,
     origen: str | None = None,
@@ -200,7 +216,8 @@ def listar(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=200),
 ) -> PaginaCasos:
-    condiciones = []
+    central = resolver_central(db, id_central, cargar_config(db), usuario)
+    condiciones = [Caso.id_central == central.id_central]
     if q:
         patron = f"%{q.strip()}%"
         sectores_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
@@ -220,8 +237,6 @@ def listar(
         condiciones.append(Caso.id_averia.ilike(f"%{id_averia.strip()}%"))
     if telefono:
         condiciones.append(Caso.telefono.ilike(f"%{telefono.strip()}%"))
-    if id_central is not None:
-        condiciones.append(Caso.id_central == id_central)
     if id_sector is not None:
         condiciones.append(Caso.id_sector == id_sector)
     if id_cuadrilla is not None:
@@ -232,6 +247,9 @@ def listar(
         condiciones.append(Caso.id_lote_ingesta == id_lote_ingesta)
     if estado_actual:
         condiciones.append(Caso.estado_actual == estado_actual)
+    if solo_abiertos:
+        # RF-33: la sección CASOS muestra solo trabajo abierto.
+        condiciones.append(Caso.estado_actual.notin_(ESTADOS_TERMINALES))
     if tipo_caso:
         condiciones.append(Caso.tipo_caso == tipo_caso)
     if categoria:
@@ -271,7 +289,7 @@ def listar(
 @router.get("/buscar", response_model=list[CasoOut], summary="Buscar por id_averia o teléfono")
 def buscar(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(_lectura),
     q: str | None = Query(default=None, description="Incidente o número de teléfono"),
     id_averia: str | None = Query(default=None),
     telefono: str | None = Query(default=None),
@@ -285,10 +303,13 @@ def buscar(
     condiciones = []
     if q:
         termino = q.strip()
+        # D-92 (adelanto mínimo de RT-19): la búsqueda cubre el **identificador de
+        # pago** (`telefono`) y el **número de contacto** (`contacto_cliente`).
         condiciones.append(
             or_(
                 Caso.id_averia.ilike(f"%{termino}%"),
                 Caso.telefono.ilike(f"%{termino}%"),
+                Caso.contacto_cliente.ilike(f"%{termino}%"),
                 Caso.nombre_cliente.ilike(f"%{termino}%"),
                 Caso.direccion.ilike(f"%{termino}%"),
             )
@@ -298,7 +319,12 @@ def buscar(
     if telefono:
         limpio = telefono.strip()
         condiciones.append(
-            or_(Caso.telefono == limpio, Caso.telefono.ilike(f"%{limpio}%"))
+            or_(
+                Caso.telefono == limpio,
+                Caso.telefono.ilike(f"%{limpio}%"),
+                Caso.contacto_cliente == limpio,
+                Caso.contacto_cliente.ilike(f"%{limpio}%"),
+            )
         )
     encontrados = list(
         db.scalars(
@@ -314,6 +340,39 @@ def buscar(
 # --------------------------------------------------------------------------- #
 # Alta manual (RF-32)
 # --------------------------------------------------------------------------- #
+def _aplicar_identificador(
+    db: Session,
+    valores: dict,
+    valor: str | None,
+    id_central: int,
+    patron: re.Pattern[str],
+) -> int | None:
+    """Clasifica el número recibido (D-89).
+
+    Un 70\\* se resuelve como **identificador de pago** y `telefono` queda como su
+    alias; cualquier otro número es **número de contacto** y se suma a
+    `informacion` (RN-IP-01/02, DEC-IP-2).
+    """
+    numero = pagos.normalizar_numero(valor)
+    if not numero:
+        return None
+    if pagos.es_identificador_pago(numero, patron):
+        valores["telefono"] = numero
+        return pagos.resolver_identificador(
+            db,
+            numero,
+            id_central,
+            valores.get("nombre_cliente"),
+            valores.get("direccion"),
+        )
+    valores["telefono"] = None
+    valores["contacto_cliente"] = valores.get("contacto_cliente") or numero
+    valores["informacion"] = pagos.componer_informacion(
+        valores.get("informacion"), [numero]
+    )
+    return None
+
+
 @router.post("", response_model=CasoOut, status_code=status.HTTP_201_CREATED,
              summary="Alta manual de un caso (genera REF-… si no hay id_averia)")
 def crear_manual(
@@ -323,8 +382,19 @@ def crear_manual(
 ) -> CasoOut:
     config = cargar_config(db)
     central = resolver_central(db, datos.id_central, config)
+    patron = pagos.compilar_patron(config)
 
-    valores = datos.model_dump(exclude={"id_sector", "id_averia", "id_central"})
+    valores = datos.model_dump(
+        exclude={"id_sector", "id_averia", "id_central", "tipo_reporte"}
+    )
+    numero_pago = valores.pop("id_pago", None) or valores.get("telefono")
+    # RN-AL-01: el teléfono del alta es el **identificador de pago (70*)**; un
+    # número que no cumpla el patrón no sirve como identificador del caso.
+    if not pagos.es_identificador_pago(pagos.normalizar_numero(numero_pago), patron):
+        raise HTTPException(
+            status_code=422,
+            detail="El teléfono debe ser el identificador de pago (70*) del caso",
+        )
     id_averia = (datos.id_averia or "").strip()
     if not id_averia:
         id_averia = db.execute(
@@ -333,6 +403,19 @@ def crear_manual(
 
     if db.scalar(select(Caso.id_caso).where(Caso.id_averia == id_averia)) is not None:
         raise HTTPException(status_code=409, detail=f"Ya existe un caso con id_averia {id_averia}")
+
+    # D-89: el identificador de pago se resuelve y `telefono` queda como su alias;
+    # cualquier otro número es número de contacto (RN-IP-01/02).
+    id_pago = _aplicar_identificador(
+        db, valores, numero_pago or valores.get("telefono"), central.id_central, patron
+    )
+    # RN-IP-07: el número de contacto también se normaliza y se refleja en `informacion`.
+    contacto = pagos.normalizar_numero(valores.get("contacto_cliente"))
+    valores["contacto_cliente"] = contacto or None
+    if contacto:
+        valores["informacion"] = pagos.componer_informacion(
+            valores.get("informacion"), [contacto]
+        )
 
     id_sector = datos.id_sector
     if id_sector is None:
@@ -348,6 +431,10 @@ def crear_manual(
         **valores,
         id_central=central.id_central,
         id_averia=id_averia,
+        # RN-AL-01: el tipo de reporte del alta fija el `tipo_caso` (la regla de
+        # REPARACIÓN/REFERIDO de D-90 puede reclasificarlo después).
+        tipo_caso=datos.tipo_reporte,
+        id_pago=id_pago,
         id_sector=id_sector,
         origen="MANUAL",
         estado_actual="NUEVO",
@@ -357,6 +444,9 @@ def crear_manual(
     )
     db.add(caso)
     db.flush()
+    # D-90 (RF-49): una REPARACIÓN sin 70* o sin avería real se registra como
+    # caso especial REFERIDO (el trigger de D-89 ya ajusta el `tipo_caso`).
+    clasificacion.aplicar_regla_reparacion(db, caso, "ALTA_MANUAL", usuario.p00)
     db.add(
         CasoEstadoHist(
             id_caso=caso.id_caso,
@@ -376,7 +466,7 @@ def crear_manual(
 # --------------------------------------------------------------------------- #
 @router.get("/{id_caso}", response_model=CasoOut, summary="Ficha completa del caso")
 def obtener(id_caso: int, db: Session = Depends(get_db),
-            _: Usuario = Depends(get_current_user)) -> CasoOut:
+            _: Usuario = Depends(_lectura)) -> CasoOut:
     return _resumen(db, [_o_404(db, id_caso)])[0]
 
 
@@ -393,6 +483,42 @@ def actualizar(
     motivo = cambios.pop("motivo_estado", None)
     nuevo_estado = cambios.pop("estado_actual", None)
     id_sector = cambios.pop("id_sector", None)
+    numero_pago = cambios.pop("id_pago", None)
+
+    # D-89: identificador de pago explícito (validado) o interpretación del teléfono.
+    patron = pagos.compilar_patron(cargar_config(db))
+    if numero_pago:
+        numero = pagos.normalizar_numero(numero_pago)
+        if not pagos.es_identificador_pago(numero, patron):
+            raise HTTPException(
+                status_code=422,
+                detail="El identificador de pago no cumple el patrón configurado (70*)",
+            )
+        caso.id_pago = pagos.resolver_identificador(
+            db, numero, caso.id_central, caso.nombre_cliente, caso.direccion
+        )
+        cambios["telefono"] = numero
+    if "telefono" in cambios:
+        numero = pagos.normalizar_numero(cambios["telefono"])
+        if numero and pagos.es_identificador_pago(numero, patron):
+            caso.id_pago = pagos.resolver_identificador(
+                db, numero, caso.id_central, caso.nombre_cliente, caso.direccion
+            )
+            cambios["telefono"] = numero
+        else:
+            cambios["telefono"] = None
+            if numero:
+                cambios["contacto_cliente"] = cambios.get("contacto_cliente") or numero
+                cambios["informacion"] = pagos.componer_informacion(
+                    cambios.get("informacion") or caso.informacion, [numero]
+                )
+    if cambios.get("contacto_cliente"):
+        contacto = pagos.normalizar_numero(cambios["contacto_cliente"])
+        cambios["contacto_cliente"] = contacto or None
+        if contacto:
+            cambios["informacion"] = pagos.componer_informacion(
+                cambios.get("informacion") or caso.informacion, [contacto]
+            )
 
     for campo, valor in cambios.items():
         setattr(caso, campo, valor)
@@ -407,6 +533,9 @@ def actualizar(
 
     if nuevo_estado is not None:
         _registrar_estado(db, caso, nuevo_estado, motivo, usuario.p00)
+
+    # D-90 (RF-50): el cambio regulariza el caso marcado (cualquier escritura).
+    clasificacion.aplicar_en_cambio(db, caso, "EDICION", usuario.p00)
 
     db.commit()
     db.refresh(caso)
@@ -431,6 +560,7 @@ def cambiar_estado(
     if datos.estado_actual == caso.estado_actual:
         raise HTTPException(status_code=409, detail="El caso ya está en ese estado")
     _registrar_estado(db, caso, datos.estado_actual, datos.motivo_estado, usuario.p00)
+    clasificacion.aplicar_en_cambio(db, caso, "CAMBIO_ESTADO", usuario.p00)
     db.commit()
     db.refresh(caso)
     return _resumen(db, [caso])[0]
@@ -439,7 +569,7 @@ def cambiar_estado(
 @router.get("/{id_caso}/historial", response_model=list[CasoEstadoHistOut],
             summary="Bitácora de estados del caso")
 def historial(
-    id_caso: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    id_caso: int, db: Session = Depends(get_db), _: Usuario = Depends(_lectura)
 ) -> list[CasoEstadoHist]:
     _o_404(db, id_caso)
     return list(
@@ -520,6 +650,7 @@ def cerrar_caso(
 
     if caso.estado_actual != "CERRADO":
         _registrar_estado(db, caso, "CERRADO", f"Cierre con {datos.modo}", usuario.p00)
+    clasificacion.aplicar_en_cambio(db, caso, "CIERRE", usuario.p00)
     db.commit()
     db.refresh(caso)
     return ResolucionOut(
@@ -550,6 +681,7 @@ def agendar_cita(
     )
     db.add(cita)
     caso.fecha_cita = datos.fecha_hora
+    clasificacion.aplicar_en_cambio(db, caso, "CITA", usuario.p00)
     db.commit()
     db.refresh(caso)
     db.refresh(cita)
@@ -632,6 +764,7 @@ def no_contesta(
         sincronizado=True,
     )
     db.add(actividad)
+    clasificacion.aplicar_en_cambio(db, caso, "NO_CONTESTA", usuario.p00)
     db.commit()
     db.refresh(caso)
     db.refresh(cita)
@@ -727,6 +860,7 @@ def enrutar_caso(
 
     if caso.estado_actual != "ENRUTADO":
         _registrar_estado(db, caso, "ENRUTADO", f"Enrutado a {datos.destino}", usuario.p00)
+    clasificacion.aplicar_en_cambio(db, caso, "ENRUTADO", usuario.p00)
     db.commit()
     db.refresh(caso)
     return ResolucionOut(
@@ -743,7 +877,7 @@ def enrutar_caso(
 def relacionados(
     id_caso: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    _: Usuario = Depends(_lectura),
     limite: int = Query(default=20, ge=1, le=100),
 ) -> list[CasoRelacionado]:
     """Casos previos asociados al teléfono del caso (pestaña Histórico, D-70).

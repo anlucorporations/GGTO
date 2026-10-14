@@ -69,14 +69,17 @@ def entorno_d72(client, admin_token, db_session):
 
     def crear(id_averia, **extra):
         cuerpo = {"id_averia": id_averia, "direccion": "SECTOR OMICRON 1",
-                  "nombre_cliente": f"CLIENTE {id_averia[-1]}", "telefono": "7007000000"}
+                  "nombre_cliente": f"CLIENTE {id_averia[-1]}",
+                  "contacto_cliente": "04141112233", "id_pago": "7007000000",
+                  "tipo_reporte": "REPARACION", "tipo_problema": "SIN_SERVICIO"}
         cuerpo.update(extra)
         r = client.post(CASOS, json=cuerpo, headers=headers)
         assert r.status_code == 201, r.text
         return r.json()
 
     c1 = crear("TSTD72-1")
-    c2 = crear("TSTD72-2", tipo_caso="CONSTRUCCION", categoria="GOBIERNO")
+    c2 = crear("TSTD72-2", tipo_reporte="CONSTRUCCION", tipo_problema=None,
+               categoria="GOBIERNO")
     c3 = crear("TSTD72-3")
 
     hoy = date.today()
@@ -156,7 +159,8 @@ def test_especiales_nuevos_filtros_y_columnas(client, entorno_d72):
         "clasificacion": "GOBIERNO", "tipo_actividad": "CONSTRUCCION", "prioridad": "ALTA",
         "descripcion": "anillo de fibra institucional",
         "id_solicitante": id_sol,
-        "nombre_cliente": "MINISTERIO DEMO", "telefono": "7001112233",
+        "nombre_cliente": "MINISTERIO DEMO", "telefono": "7007000001",
+        "contacto_cliente": "04147778899",
         "direccion": "SECTOR OMICRON 9",
     }, headers=headers)
     assert r.status_code == 201, r.text

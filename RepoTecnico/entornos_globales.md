@@ -5,9 +5,9 @@
 | Proyecto | **GGTO** — Gestión de averías y puntos ópticos (CANTV, Central Francisco Salias / Área 4) |
 | Workspace | `/home/dsh/workspace/CANTV_PDE` |
 | Carpeta técnica | `/home/dsh/workspace/CANTV_PDE/RepoTecnico` |
-| Infraestructura GCP | Proyecto **GGTOv2** (`ggtov2`) — detalle en `GGTOv2_GCP.md` |
-| Fase | Fase 1 — Concepto |
-| Estado | Borrador v0.1 |
+| Infraestructura GCP | Cloud Run y Cloud SQL consultados en el proyecto `truekeate-main`; la base lógica GGTO es `ggtov2`. Ver auditoría V2. |
+| Fase | V1 desplegada; V2 en definición e implementación parcial |
+| Estado | La configuración que sigue es mayormente histórica/planificada. Estado observado al 2026-10-12 en [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
 
 > Este archivo registra **configuración, rutas, variables de entorno y comandos** importantes.
 > Nunca se escriben secretos: solo se referencian por nombre en Secret Manager.
@@ -50,25 +50,27 @@ Variables relevantes de `.env.global` (entorno **MCC**, distinto de GGTOv2):
 
 ## 2. Infraestructura GCP del proyecto (GGTOv2)
 
+> **Estado observado 2026-10-12:** el proyecto activo de gcloud es `truekeate-main`. El servicio desplegado es Cloud Run `ggto-web` en `europe-west1`, revisión `ggto-web-00039-g9n`, imagen `v24`, 100 % del tráfico y con `allUsers` en `roles/run.invoker`. Cloud SQL `truekeate-db-dev` (PostgreSQL 15, `southamerica-east1`) está `RUNNABLE`; los backups automáticos están deshabilitados. La tabla siguiente conserva identificadores planeados de la etapa inicial y no debe tratarse como descripción del despliegue actual.
+
 | Recurso | Identificador |
 |---|---|
-| Proyecto | `ggtov2` (projectNumber `905974355709`) |
+| Proyecto que contiene los recursos verificados | `truekeate-main` |
 | Organización | `organizations/253767381125` |
 | Cuenta de facturación | `billingAccounts/013B00-B9A67C-014A43` — ⚠️ **cupo agotado (5 proyectos)** |
 | Región | `europe-west1` |
 | VPC / subred | `ggtov2-vpc` / `ggtov2-subnet` (10.10.0.0/24) |
 | SA runtime | `ggtov2-app@ggtov2.iam.gserviceaccount.com` |
 | SA despliegue | `ggtov2-deploy@ggtov2.iam.gserviceaccount.com` |
-| Servicio web | Cloud Run `ggtov2-web` |
-| Repositorio de imágenes | `europe-west1-docker.pkg.dev/ggtov2/ggtov2-web` |
+| Servicio web planeado originalmente | Cloud Run `ggtov2-web` — **no coincide con el servicio verificado** `ggto-web` |
+| Imagen activa observada | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v24` |
 | Bucket de activos | `ggtov2-assets-905974355709` |
-| Cloud SQL planificado | `ggtov2-pg` (PostgreSQL 16) — *no creado por bloqueo de facturación* |
+| Cloud SQL existente observado | `truekeate-db-dev` (PostgreSQL 15, `southamerica-east1`); backups automáticos deshabilitados |
 
 ### 2.1 Base de datos PostgreSQL operativa (instancia reutilizada)
 
 | Dato | Valor |
 |---|---|
-| Instancia | `truekeate-main:southamerica-east1:truekeate-db-dev` (POSTGRES_15) |
+| Instancia | `truekeate-main:southamerica-east1:truekeate-db-dev` (POSTGRES_15; estado `RUNNABLE` consultado el 2026-10-12) |
 | Base de datos | `ggtov2` |
 | Usuario | `ggtov2_app` |
 | Contraseña | Secret Manager: `projects/truekeate-main/secrets/ggtov2-db-password` |

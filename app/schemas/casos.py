@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 ESTADOS_CASO = (
     "NUEVO",
@@ -19,8 +19,12 @@ ESTADOS_CASO = (
     "CERRADO",
     "CANCELADO",
 )
-TIPO_CASO = Literal["AVERIA", "REPARACION", "CONSTRUCCION"]
+TIPO_CASO = Literal["AVERIA", "REPARACION", "CONSTRUCCION", "REFERIDO"]
 CATEGORIA = Literal["RESIDENCIAL", "EMPRESA", "REFERIDO", "GOBIERNO"]
+#: Tipo de reporte del alta (RN-AL-01): solo REPARACIÓN o CONSTRUCCIÓN.
+TIPO_REPORTE = Literal["REPARACION", "CONSTRUCCION"]
+#: Estados que **no** cuentan como trabajo abierto (mismo criterio que MONITOREO).
+ESTADOS_TERMINALES = ("CERRADO", "CANCELADO")
 ORIGEN = Literal["INGESTA_CSV", "MANUAL", "TELEGRAM", "MCP_IA"]
 EstadoCaso = Literal[
     "NUEVO", "ASIGNADO", "CONTACTADO", "CITADO", "DIFERIDO",
@@ -43,6 +47,13 @@ class CasoOut(BaseModel):
     sector_nombre: str | None = None
     id_causa: int | None = None
     id_lote_ingesta: int | None = None
+    id_pago: int | None = None          # D-89: identificador de pago del caso
+    # D-90: marca derivada de la regla REPARACIÓN ⇐ 70* + avería real (la calcula
+    # el endpoint; `motivo_marca` ∈ SIN_IDENTIFICADOR_PAGO | SIN_ID_AVERIA | ambos).
+    marcado_reclasificar: bool = False
+    motivo_marca: str | None = None
+    tiene_identificador_pago: bool = False
+    tiene_id_averia_real: bool = True
     en_gestion_supervisor: bool
     es_falla_masiva: bool
 
@@ -116,24 +127,80 @@ class PaginaCasos(BaseModel):
 
 
 class CasoManualCreate(BaseModel):
-    """Alta manual desde PANEL (RF-32). Si no se indica `id_averia` se genera `REF-…`."""
+    """Alta manual desde PANEL (RF-32) — datos obligatorios (RN-AL-01).
+
+    Al **incorporar un caso manual** hay que informar, sin excepción:
+
+    - **nombre y teléfono de contacto** (`nombre_cliente` y `contacto_cliente`);
+    - **dirección del inmueble** (`direccion`);
+    - **teléfono con el identificador de pago (70\\*)** (`id_pago`);
+    - **tipo de reporte** (`tipo_reporte`: REPARACIÓN o CONSTRUCCIÓN);
+    - **datos extra**: si el reporte es una **REPARACIÓN**, el **id de avería**
+      (`id_averia`) y el **tipo de problema** (`tipo_problema`).
+
+    Solo cuando no se indica `id_averia` el sistema genera un `REF-…` sintético;
+    con `tipo_reporte=REPARACION` el id de avería es obligatorio, de modo que ese
+    camino queda reservado a CONSTRUCCIÓN.
+    """
 
     id_central: int | None = None
+    tipo_reporte: TIPO_REPORTE
     id_averia: str | None = Field(default=None, max_length=30)
     categoria: CATEGORIA = "RESIDENCIAL"
-    tipo_caso: TIPO_CASO = "AVERIA"
-    nombre_cliente: str | None = Field(default=None, max_length=160)
+    nombre_cliente: str = Field(min_length=1, max_length=160,
+                                description="Nombre de contacto (obligatorio)")
     telefono: str | None = Field(default=None, max_length=30)
-    direccion: str | None = None
+    id_pago: str | None = Field(default=None, max_length=20,
+                                description="Teléfono con el identificador de pago "
+                                            "(70*) del caso (D-89) — obligatorio")
+    contacto_cliente: str = Field(min_length=1, max_length=60,
+                                  description="Teléfono de contacto (obligatorio)")
+    direccion: str = Field(min_length=1,
+                           description="Dirección del inmueble (obligatoria)")
     informacion: str | None = None
     problema_reporte: str | None = None
+    tipo_problema: str | None = Field(
+        default=None, max_length=20,
+        description="Obligatorio cuando `tipo_reporte` es REPARACION")
     persona_reporta: str | None = Field(default=None, max_length=120)
-    contacto_cliente: str | None = Field(default=None, max_length=60)
     fecha_reporte: datetime | None = None
     fecha_cita: datetime | None = None
     fecha_compromiso: datetime | None = None
     id_sector: int | None = None
     tipo_servicio: str | None = Field(default=None, max_length=40)
+
+    @field_validator("nombre_cliente", "contacto_cliente", "direccion")
+    @classmethod
+    def _no_vacio(cls, valor: str) -> str:
+        limpio = valor.strip()
+        if not limpio:
+            raise ValueError("El campo es obligatorio y no puede quedar en blanco")
+        return limpio
+
+    @model_validator(mode="after")
+    def _validar_datos_obligatorios(self) -> CasoManualCreate:
+        falta_pago = not (self.id_pago or self.telefono or "").strip()
+        if falta_pago:
+            raise ValueError(
+                "El teléfono con el identificador de pago (70*) es obligatorio "
+                "(`id_pago`)"
+            )
+        if self.tipo_reporte == "REPARACION":
+            faltan = [
+                nombre
+                for nombre, valor in (
+                    ("id_averia", self.id_averia),
+                    ("tipo_problema", self.tipo_problema),
+                )
+                if not (valor or "").strip()
+            ]
+            if faltan:
+                raise ValueError(
+                    "En un reporte de REPARACIÓN son obligatorios: "
+                    + ", ".join(faltan)
+                )
+        return self
+
 
 
 class CasoUpdate(BaseModel):
@@ -141,6 +208,8 @@ class CasoUpdate(BaseModel):
 
     nombre_cliente: str | None = Field(default=None, max_length=160)
     telefono: str | None = Field(default=None, max_length=30)
+    id_pago: str | None = Field(default=None, max_length=20,
+                               description="Identificador de pago (70*) del caso (D-89)")
     direccion: str | None = None
     informacion: str | None = None
     problema_reporte: str | None = None

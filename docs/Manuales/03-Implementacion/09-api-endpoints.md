@@ -629,8 +629,9 @@ aplican configuración, ingesta, casos, despachos, especiales y alertas.
 
 Consecuencia verificada: **en la versión 1 ninguna operación de escritura acepta el rol TECNICO**. La matriz
 de requerimientos prevé que el técnico tenga su propio CRUD para la «gestión técnica» desde la **app móvil**,
-que corresponde al Ciclo 8 y **no está desarrollada**; por lo tanto, **esa capacidad no existe en la API
-actual**. La única excepción al esquema es el **forzado de solapamiento de citas**, reservado exclusivamente
+que corresponde a la gestión técnica móvil. La APK de campo existe, pero la escritura por TECNICO
+descrita en esa matriz sigue pendiente en la API actual. La única excepción al esquema es el
+**forzado de solapamiento de citas**, reservado exclusivamente
 al rol **SUPER**.
 
 ### Request-id

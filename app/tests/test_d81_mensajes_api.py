@@ -9,6 +9,8 @@ from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 
+from app.services.tiempo import dia_operativo
+
 from app.models import (
     Cuadrilla,
     CuadrillaSectorDia,
@@ -186,7 +188,11 @@ def test_cierre_de_sync_emite_estado_sync(client, admin_token, db_session):
 def test_recordatorios_citas_idempotente(client, admin_token, db_session, monkeypatch):
     id_cuadrilla, _ = _cuadrilla_con_tecnico(db_session, admin_token)
     caso = client.post(
-        CASOS, json={"id_averia": "TSTCITA-1", "direccion": "X"}, headers=admin_token["admin"]
+        CASOS,
+        json={"id_averia": "TSTCITA-1", "direccion": "X",
+              "nombre_cliente": "CLIENTE CITA", "contacto_cliente": "04141112233",
+              "id_pago": "7014000700", "tipo_reporte": "CONSTRUCCION"},
+        headers=admin_token["admin"],
     ).json()
     from app.models import Cita
 
@@ -221,7 +227,9 @@ def test_alarmas_despacho(client, admin_token, db_session, monkeypatch):
     db_session.add(
         CuadrillaSectorDia(
             id_central=admin_token["id_central"],
-            fecha=date.today(),
+            # D-94: la alarma usa el **día operativo** (America/Caracas) de la
+            # detección; la asignación de cobertura debe ser de ese mismo día.
+            fecha=dia_operativo(datetime.now(UTC)),
             id_cuadrilla=id_cuadrilla,
             id_sector=sector.id_sector,
         )

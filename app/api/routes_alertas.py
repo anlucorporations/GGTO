@@ -37,7 +37,7 @@ from ..services import fallas as svc_fallas
 from ..services import outbox
 from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, resolver_central
-from .deps import get_current_user, require_roles
+from .deps import _material, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["alertas, telegram y mcp"])
 _escritura = require_roles("ADMIN", "SUPERVISOR")
@@ -48,6 +48,14 @@ def _o_404(db: Session, id_falla: int) -> FallaMasiva:
     falla = db.get(FallaMasiva, id_falla)
     if falla is None:
         raise HTTPException(status_code=404, detail="Falla masiva no encontrada")
+    return falla
+
+
+def _falla_de_usuario(db: Session, id_falla: int, usuario: Usuario) -> FallaMasiva:
+    falla = _o_404(db, id_falla)
+    central = resolver_central(db, falla.id_central, cargar_config(db), usuario)
+    if central.id_central != falla.id_central:
+        raise HTTPException(status_code=403, detail="No tiene acceso a esta falla masiva")
     return falla
 
 
@@ -154,16 +162,17 @@ def _salida1(db: Session, falla: FallaMasiva) -> FallaMasivaOut:
             summary="Fallas masivas registradas")
 def listar_fallas(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
     estado: str | None = None,
     id_central: int | None = None,
     solo_activas: bool = Query(default=False),
 ) -> list[FallaMasivaOut]:
     stmt = select(FallaMasiva).order_by(FallaMasiva.id_falla.desc())
+    if usuario.rol.codigo != "SUPER" or id_central is not None:
+        central = resolver_central(db, id_central, cargar_config(db), usuario)
+        stmt = stmt.where(FallaMasiva.id_central == central.id_central)
     if estado:
         stmt = stmt.where(FallaMasiva.estado == estado)
-    if id_central:
-        stmt = stmt.where(FallaMasiva.id_central == id_central)
     if solo_activas:
         stmt = stmt.where(FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")))
     return _salida(db, list(db.scalars(stmt).all()))
@@ -206,14 +215,14 @@ def reportar_falla(
 def reportar_falla_campo(
     datos: FallaMasivaCampo,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(require_roles("TECNICO", "ADMIN", "SUPERVISOR")),
 ) -> FallaMasivaOut:
     """Reporte del **técnico en campo**: ODN, dirección, FAT, descripción y
     hasta 2 fotos.
 
     A diferencia de `POST /fallas-masivas` (reservado a ADMIN/SUPERVISOR), este
-    endpoint lo puede usar cualquier usuario autenticado —el TECNICO es quien
-    detecta la concentración— y siempre registra el origen `REPORTE_TECNICO`.
+    endpoint lo pueden usar TECNICO, ADMIN y SUPERVISOR. COORDINADOR no puede
+    reportar desde campo (DEC-G11). Siempre registra el origen `REPORTE_TECNICO`.
     La cuadrilla se toma de la del propio reportante (la activa del día) y, si
     no tiene, la más cercana al sector indicado.
     """
@@ -303,9 +312,9 @@ def planificar_falla(
 def obtener_falla(
     id_falla: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> FallaMasivaOut:
-    return _salida1(db, _o_404(db, id_falla))
+    return _salida1(db, _falla_de_usuario(db, id_falla, usuario))
 
 
 @router.get("/fallas-masivas/{id_falla}/ordenes", response_model=list[OrdenMaterialOut],
@@ -313,9 +322,9 @@ def obtener_falla(
 def listar_ordenes(
     id_falla: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
 ) -> list[OrdenMaterial]:
-    _o_404(db, id_falla)
+    _falla_de_usuario(db, id_falla, usuario)
     # `id_falla` real (D-75) + compatibilidad con las solicitudes históricas
     # que solo guardaban el marcador «[Falla N]» en la observación.
     stmt = (
@@ -333,9 +342,9 @@ def solicitar_material(
     id_falla: int,
     datos: MaterialRequest,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_material),
 ) -> OrdenMaterial:
-    falla = _o_404(db, id_falla)
+    falla = _falla_de_usuario(db, id_falla, usuario)
     orden = OrdenMaterial(
         id_falla=falla.id_falla,  # D-75: vínculo real, ya no solo el texto
         id_cuadrilla=datos.id_cuadrilla or falla.id_cuadrilla,
@@ -356,12 +365,16 @@ def solicitar_material(
             summary="Bandeja de notificaciones")
 def listar_notificaciones(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
     estado: str | None = None,
     canal: str | None = None,
     limite: int = Query(default=100, ge=1, le=500),
 ) -> list[Notificacion]:
     stmt = select(Notificacion).order_by(Notificacion.id_notificacion.desc()).limit(limite)
+    if usuario.rol.codigo == "COORDINADOR":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        casos_central = select(Caso.id_caso).where(Caso.id_central == central.id_central)
+        stmt = stmt.where(Notificacion.id_caso.in_(casos_central))
     if estado:
         stmt = stmt.where(Notificacion.estado == estado)
     if canal:

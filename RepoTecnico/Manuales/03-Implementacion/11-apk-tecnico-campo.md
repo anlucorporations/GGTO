@@ -1,13 +1,19 @@
-# 11 — La APK del técnico: contenido local, progreso de sincronización, sección Usuario y falla masiva de campo (Incremento D-82)
+# 11 — La APK del técnico: contenido local, progreso de sincronización, sección Usuario, falla masiva de campo (D-82) e identificador de pago (D-93)
 
-> Manual técnico de la aplicación **GGTO Técnico** (`app_movil/`, Flutter) tras el
-> incremento **D-82**, que cubre cinco requisitos pedidos por el usuario:
+> Manual técnico de la aplicación **GGTO Técnico** (`app_movil/`, Flutter). El
+> incremento **D-82** cubre cinco requisitos pedidos por el usuario:
 > (1) que la APK muestre el **contenido local**; (2) una **barra con el progreso de
 > la sincronización**; (3) un **menú de usuario** (icono de Usuario); (4) una
 > **sección Usuario** con cambio de contraseña, palabras de seguridad (mostradas
 > con la contraseña actual), datos personales y datos administrativos; y (5) el
 > **reporte de falla masiva** con ODN · dirección · FAT · descripción y **máximo 2
 > fotos** de evidencia.
+>
+> El incremento **D-93** (versión `1.1.0+9`) lleva a la ficha de campo la
+> separación **identificador de pago (70\*) / número de contacto** que el backend
+> estrenó en D-89: se documenta en la sección 7 de este manual.
+
+> **Alcance vigente:** este manual describe la APK de campo `1.1.0+9`. No describe una APK multirol ya entregada. La V2 solicitada debe integrar TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER; a la fecha de corte no existen las pantallas ni la navegación de gestión en `app_movil/`. Ver [`../../auditoria_estado_real_v2.md`](../../auditoria_estado_real_v2.md).
 
 ---
 
@@ -194,29 +200,116 @@ del reporte (`FM-<millis>`).
 
 ---
 
-## 7. Configuración y despliegue
+## 7. El identificador de pago (70\*) en la APK — Incremento D-93
+
+> Versión entregada: `1.1.0+9` (`app_movil/pubspec.yaml:5`, espejo en
+> `app_movil/lib/core/constants.dart:15`, verificado por
+> `test/version_visible_test.dart`). El incremento D-93 alinea la APK con el eje
+> del sistema introducido en D-89: el caso se identifica por el **identificador de
+> pago (70\*)** y el teléfono deja de ser «el número del cliente». Documento del
+> incremento: [`../../incremento_D89_identificador_pago.md`](../../incremento_D89_identificador_pago.md).
+
+### 7.1 La regla de los números
+
+`app_movil/lib/features/casos/acciones_caso.dart`:
+
+| Miembro | Línea | Qué hace |
+|---|---|---|
+| `patronIdentificadorPago` | `:74` | `RegExp(r'^70\d{8}$')` — el mismo valor por defecto del servidor (`configuracion.pago.serie_regex`, DEC-IP-1). La APK **no** lee la configuración del servidor: sirve para **rotular** el dato y avisar al técnico; la validación de negocio es responsabilidad del servidor. |
+| `normalizarNumero()` | `:78` | RN-IP-07: quita separadores, el prefijo internacional (`0058`/`58`) y el `0` inicial. Réplica de `app/services/pagos.py:65`. |
+| `esIdentificadorPago()` | `:96` | `patronIdentificadorPago.hasMatch(normalizarNumero(valor))`. |
+| `errorNumeroContacto()` | `:104` | **Cualquier** número es un contacto válido: solo rechaza el texto que no tenga ningún dígito. |
+
+**Retirados en D-93.** `seriesTelefono`, `normalizarTelefono` y `errorTelefono` ya
+**no existen** en `app_movil/lib/` (verificado: cero coincidencias de esos
+identificadores en todo el árbol). Las series 700/701/702 dejaron de ser una
+restricción de la ficha; solo sobreviven como ejemplo en comentarios y pruebas.
+
+### 7.2 La cabecera de la ficha
+
+`app_movil/lib/widgets/ficha_caso.dart` — `FichaCabecera` recibe dos datos
+distintos y los rotula por separado:
+
+| Dato | Línea | Comportamiento |
+|---|---|---|
+| `identificadorPago` | `:32`, pintado en `:80` | «Identificador de pago (70\*): …», o «Sin identificador de pago (70\*)» si viene vacío (`:78-80`). Va en **solo lectura**: la cabecera **no** lo edita. |
+| `contacto` | `:35`, pintado en `:95` | «Número de contacto: …», o «Sin número de contacto». |
+
+La ficha de detalle alimenta ambos desde la caché local
+(`app_movil/lib/features/casos/caso_detalle_screen.dart:100-101`: `telefono` →
+identificador, `contacto_cliente` → contacto) y repite los rótulos en la sección
+**Contacto** del cuerpo (`caso_detalle_screen.dart:124-125`). El icono de edición
+lleva el tooltip «Editar dirección y contacto» (`ficha_caso.dart:109`).
+
+### 7.3 El diálogo de edición
+
+`app_movil/lib/features/casos/caso_detalle_screen.dart` — `_EditarContactoDialog`
+(`:306`):
+
+- edita **dirección** (`:351-356`, validador `errorDireccion`) y **número de
+  contacto** (`:358-369`, validador `errorNumeroContacto`);
+- el campo de contacto lleva el aviso: *«Cualquier número. Si escribe un 70\* se
+  registra como identificador de pago del caso.»* (`:364-365`);
+- solo envía lo que cambió (`:333-338`).
+
+### 7.4 El envío al servidor
+
+`app_movil/lib/features/casos/operaciones_service.dart::editarContacto`
+(`:357`): arma el payload con las claves `direccion` y **`contacto`** (`:364-368`
+— la clave que acepta `PATCH /api/v1/casos/{id}/contacto` desde D-93, ver el
+manual 04) y llama a `PATCH /casos/{idCaso}/contacto` (`:376`). Detecta si el
+valor era un 70\* (`:375`) y el mensaje de éxito lo distingue: «… se registró como
+identificador de pago del caso.» frente a «Contacto actualizado en el caso.»
+(`:387-389`). Sin red, la edición queda **encolada** como `CONTACTO_CAMPO`
+(`:396-399`).
+
+### 7.5 La tarjeta, la pantalla CONTACTAR y la búsqueda local
+
+| Pieza | Ubicación | Rótulo |
+|---|---|---|
+| Tarjeta de la lista | `app_movil/lib/widgets/caso_card.dart` | «Contacto: …» a partir de `caso['contacto_cliente']`. **El teléfono que se muestra para contactar es el contacto, no el 70\*** (RN-AL-03): el identificador de pago queda en la ficha. |
+| Pantalla CONTACTAR | `app_movil/lib/features/casos/contactar_screen.dart:24-26,176` | «Número de contacto: …» (o «Sin número de contacto»); el comentario deja claro que **el 70\* no se usa para contactar**, se llama al contacto. |
+| Búsqueda local del dispositivo | `app_movil/lib/core/database.dart:237-245` | La aguja busca en `id_averia`, **`telefono`** (identificador de pago) y **`contacto_cliente`**, además de nombre y dirección. |
+| Ficha de la APK (variante compacta) | `app_movil/lib/widgets/ficha_caso.dart` (misma clase) | Los dos rótulos, siempre juntos. |
+
+La **descarga** de la APK incluye ahora `contacto_cliente` y `persona_reporta`
+(`app/services/sync.py`, `_caso_sync`): sin ellos la ficha y la tarjeta no tenían
+el número con el que se llama al cliente y solo quedaba el 70\*.
+
+### 7.6 Pruebas de D-93
+
+`app_movil/test/d93_identificador_pago_test.dart` cubre la normalización
+(RN-IP-07), la detección del 70\*, la cabecera con el identificador en solo
+lectura y el número de contacto, los rótulos de la ficha y —**RN-AL-03**— que la
+tarjeta de la lista muestra el **contacto** y no el 70\*, y la ayuda del diálogo
+de edición. La evidencia de regresión previa sigue en
+`app_movil/test/d87_ficha_test.dart:107` y `app_movil/test/d88_flujo_campo_test.dart:86-102`.
+
+---
+
+## 8. Configuración y despliegue
 
 | Elemento | Valor |
 |---|---|
-| Versión visible | `AppConstants.version` = `1.0.0+3` (`pubspec.yaml`), verificada por `test/version_visible_test.dart`. |
+| Versión visible | `AppConstants.version` = `1.1.0+9` (`app_movil/pubspec.yaml:5`, `app_movil/lib/core/constants.dart:15`), verificada por `test/version_visible_test.dart`. (En D-82 la entrega era `1.0.0+3`.) |
 | URL de la API | `AppConstants.baseUrl` (`--dart-define=GGTO_API_BASE=…`). |
 | Firma | Keystore oficial `RepoTecnico/credenciales/ggto-tecnico-release.jks` + `app_movil/android/key.properties`; publicación con `python scripts/publicar_apk.py --confirmar` (valida el keystore y la firma con `apksigner`). |
 | Entrega | `app_movil/GGTOv2.apk` con su SHA-256. |
 
 ---
 
-## 8. Pruebas
+## 9. Pruebas
 
 | Nivel | Comando | Cobertura D-82 |
 |---|---|---|
 | Análisis | `flutter analyze` | Sin hallazgos. |
-| Unitarias/widget | `flutter test` | `test/d82_apk_test.dart` (12): validación del reporte de campo, barra de progreso (porcentaje y widget), icono de usuario → ruta `/usuario`, datos de la sección Usuario. |
+| Unitarias/widget | `flutter test` | `test/d82_apk_test.dart` (12): validación del reporte de campo, barra de progreso (porcentaje y widget), icono de usuario → ruta `/usuario`, datos de la sección Usuario. **D-93:** `test/d93_identificador_pago_test.dart` (normalización RN-IP-07, detección del 70\*, cabecera en solo lectura, rótulos de ficha/tarjeta y aviso del diálogo). |
 | Integración backend | `pytest` con `GGTO_TEST_DB_URL` | `app/tests/test_d82_falla_campo.py` (6): ODN/dirección/FAT/descripción y 2 fotos, 422 si falta un dato o si hay 3 fotos, cuadrilla del reportante y RBAC intacto. `test_auth.py` (3 nuevas): palabras con la clave actual + auditoría + palabras anteriores invalidadas, cambio de clave y perfil propio. |
 | Migración | `scripts/migrar_d82_falla_campo.py` (`--dsn`) | Simulación → aplicar → verificación → reejecución idempotente. |
 
 ---
 
-## 9. Trazabilidad
+## 10. Trazabilidad
 
 | Requisito | Dónde |
 |---|---|
@@ -224,6 +317,8 @@ del reporte (`FM-<millis>`).
 | RF-14 (evidencias) | `evidencia_service.dart` (`TipoEvidencia.fallaMasiva`), `alertas_screen.dart` |
 | RF-16 (falla masiva de campo) | `alertas_screen.dart`, `POST /fallas-masivas/reporte-campo` |
 | RF-20 / RNF-01 | `usuario_screen.dart` (`/auth/cambio-clave`, `/auth/palabras/mostrar`) |
+| RF-45/RF-46 (identificador de pago) · D-93 | `acciones_caso.dart` (`patronIdentificadorPago`, `normalizarNumero`, `esIdentificadorPago`), `ficha_caso.dart`, `caso_detalle_screen.dart`, `caso_card.dart`, `contactar_screen.dart`, `operaciones_service.dart::editarContacto` |
+| DEC-IP-7 (un 70\* es identificador del caso) | `operaciones_service.dart:375-389` (aviso) + servidor `PATCH /casos/{id}/contacto` (manual 04) |
 | RNF-06 (offline) | caché local de casos, perfil y cuadrilla; cola de acciones con las fotos |
 | RNF-21/22 | rutas protegidas y contraseña actual exigida en cada operación sensible |
 

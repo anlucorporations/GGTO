@@ -1,4 +1,4 @@
-# Requerimientos — Plataforma GGTO (Gestión de Averías y Puntos Ópticos)
+# Requerimientos — GGTO V2 (Gestión de Averías y Puntos Ópticos)
 
 | Campo | Valor |
 |---|---|
@@ -6,19 +6,25 @@
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
 | Fuente | `RepoTecnico/BRIEF-GGTO-INICIAL.md` |
 | Muestra de datos | `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas, pseudonimizada, delimitador `;`) |
-| Infraestructura | Proyecto GCP **GGTOv2** (`ggtov2`) + PostgreSQL (Cloud SQL) — ver `GGTOv2_GCP.md` |
-| Fase | Fase 1 — Concepto |
-| Estado | **v1.0 — validado por el cliente** (entrevista bloques 1–5 + auditoría V1) |
-| Decisiones | D-01..D-31 (ver `estado_proyecto.md` y §8) |
+| Infraestructura | Cloud Run verificado en proyecto GCP `truekeate-main`; base lógica `ggtov2` / instancia documentada `truekeate-db-dev`. Ver `GGTOv2_GCP.md` y [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
+| Fase | V1 operativa + definición e implementación parcial de V2 |
+| Estado | **V1:** línea técnica desplegada. **V2:** objetivo, no entrega terminada. Ver [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
+| Decisiones | Base D-01…D-94; incremento V2 DEC-G1…DEC-G19 (ver `estado_proyecto.md`, `incremento_D95_apk_gestion.md`) |
 
-> Este documento es la **guía principal de desarrollo**. Se actualiza de forma incremental.
+> Este documento conserva requisitos de la línea inicial y los incrementos posteriores. Los requisitos describen el **comportamiento objetivo** y no prueban que el código lo implemente. Para el estado implementado, desplegado y pendiente, consultar [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md).
 > Convención de identificadores: `RF-xxx` (funcional), `RNF-xxx` (no funcional, ISO 25010), `RT-xxx` (técnico).
+
+## Alcance de GGTO V2
+
+La V2 debe entregar **una sola APK Android Flutter con navegación y autorización según rol** para **TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER (Super Usuario)**. El TÉCNICO conserva el flujo de campo y sincronización manual. SUPERVISOR/ADMIN requieren capacidades operativas de gestión; COORDINADOR tiene el alcance limitado definido en la matriz D-95; SUPER conserva su alcance de plataforma y consulta de auditoría. La matriz funcional y las excepciones aceptadas están en [`incremento_D95_apk_gestion.md`](incremento_D95_apk_gestion.md).
+
+**Estado de implementación al 2026-10-12:** el código de la APK sigue en `1.1.0+9` y solo tiene navegación de campo; no cumple todavía la navegación multirol V2. Las menciones a módulos/roles V2 en este documento son especificaciones pendientes hasta que la auditoría confirme su cierre.
 
 ---
 
 ## 1. Visión general
 
-Crear una **plataforma web multiplataforma** para la administración de reportes de avería GPON y de
+Crear y mantener una **plataforma web con una APK Android Flutter multirol** para la administración de reportes de avería GPON y de
 solicitudes de construcción de puntos ópticos de la Central Francisco Salias (Área 4), que:
 
 1. Ingeste diariamente el archivo matriz `detalle_averias_gpon_<fecha>.csv` y conserve solo los casos
@@ -47,6 +53,13 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **ACT-04** | **Administrador del sistema** | Configura el entorno (central, técnicos, flota, cuadrillas, catálogos, roles). | Web PC |
 | **ACT-05** | **Sistema (automático)** | Ingesta, detección de duplicados, sectorización, propuesta de despacho, gestión automatizada, mensajería, generación de reportes. | Backend |
 | **ACT-06** | **Integración IA (WEB-MCP)** | Canal conversacional que interpreta y registra casos especiales y consultas. | MCP sobre web |
+| **ACT-07** | **Coordinador** *(incremento D-95…D-98 · **DEC-G1**)* | Consulta el **monitoreo de la gestión** en sus 5 vistas, **crea casos especiales**, consulta las **fallas masivas** y solicita su **material**, **envía mensajes al Supervisor** y **monitorea las alertas** (sin actuar sobre ellas). Entra con `P00` + clave (el MFA queda **diferido**, RA-01). Es una **cuenta de gestión separada** de `tecnico` (DEC-G16). | APK Android de gestión / Web |
+
+> **Gobierno del rol nuevo (DEC-G17):** dueño funcional y soporte de 1.º/2.º nivel = **SUPERVISOR** de la
+> central; **auditoría de sus acciones** = **SUPER** en solo lectura de `auditoria` (separada de ADMIN,
+> hallazgo H-27); **custodia del keystore y publicación de la APK** = **Super Usuario**. El
+> **administrador del catálogo de roles** es el **Super Usuario** (acceso total, D-50): no hay endpoint
+> CRUD del catálogo `rol` y D-95 no lo crea.
 
 ---
 
@@ -173,6 +186,19 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 
 ---
 
+### 4.6 Datos obligatorios del alta y alcance del listado (RN-AL)
+
+> Añadidas al cerrar el ajuste operativo del alta manual/especial, el listado de
+> CASOS y el teléfono de contacto de la APK.
+
+| ID | Regla | Detalle | Verificación |
+|---|---|---|---|
+| **RN-AL-01** | **Datos obligatorios del alta** (manual y especial) | Al incorporar un caso manual o especial se deben ingresar **obligatoriamente**: el **nombre y el teléfono de contacto** (`nombre_cliente`, `contacto_cliente`), la **dirección del inmueble** (`direccion`), el **teléfono con el identificador de pago (70\*)** (`id_pago`/`telefono`), el **tipo de reporte** (REPARACIÓN o CONSTRUCCIÓN) y los **datos extra**: si el reporte es una REPARACIÓN, el **id de avería** y el **tipo de problema**. En el caso especial son obligatorios además los **datos del solicitante** (nombre, unidad y contacto). El incumplimiento responde **422**. | `app/tests/test_casos_api.py` (`test_alta_manual_exige_los_datos_obligatorios`), `app/tests/test_especiales_api.py` (`test_el_alta_especial_exige_los_datos_obligatorios`) |
+| **RN-AL-02** | **CASOS muestra solo casos abiertos** | La sección CASOS de la web lista únicamente casos **abiertos**: excluye `CERRADO` y `CANCELADO` (parámetro `solo_abiertos` de `GET /api/v1/casos`). | `app/tests/test_casos_api.py`, sección CASOS de la web |
+| **RN-AL-03** | **El teléfono de contacto de la APK es el contacto** | En la APK, el teléfono que se muestra **para contactar** al cliente es el **número de contacto** (`contacto_cliente`), nunca el identificador de pago (70\*). | `app_movil/test/d93_identificador_pago_test.dart` |
+
+---
+
 ## 5. Requerimientos No Funcionales (ISO/IEC 25010)
 
 | ID | Categoría | Requerimiento | Criterio de verificación |
@@ -221,6 +247,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | `mensaje` / `mensaje_destino` (D-81) | Sí (origen `p00`, cuerpo) | **5 días** | Eliminar (job de purga) |
 | `sync_log` / `sync_check` (D-81) | Sí (`p00`, dispositivo, `detalle` jsonb) | **90 días** | Eliminar (job de purga, por lotes) |
 | `solicitante` | Sí (nombre, contacto) | 5 años | Anonimizar |
+| `identificador_pago` (D-89) | Sí (`numero` del abonado, `nombre_titular`, `direccion_principal`) | 5 años | Anonimizar titular y dirección; conservar el número normalizado como dato de conciliación |
 | `dispositivo_seguridad` | No (hashes) | Mientras la cuenta esté activa | Eliminar con la cuenta |
 | `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
 
@@ -244,9 +271,13 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 | CASOS / SEGUIMIENTO / EMPRESAS / REFERIDOS | **CRUD** | CRUD | CRUD | Lectura + gestión de su cuadrilla |
 | DESPACHO (armar, publicar, reporte 16:00) | **CRUD** | CRUD | CRUD | Lectura de su despacho |
 | GESTIÓN (cuadrilla 0) | **CRUD** | CRUD | CRUD | — |
-| MONITOREO / GRÁFICOS | **Lectura** | Lectura | Lectura | — |
+| MONITOREO / GRÁFICOS | **Lectura** | Lectura | Lectura | Lectura de su cuadrilla *(D-72)* |
+| MONITOREO — métricas por identificador de pago: reincidencia, reportes por 70\* y reclasificados *(D-94)* | **Lectura** | Lectura | Lectura | — |
+| IDENTIFICADOR DE PAGO — histórico, reincidencia y ciclo de vida *(D-89)* | **CRUD** | CRUD | CRUD (histórico y consulta; edición del número y del estado con auditoría) | Lectura de sus casos (titular enmascarado) |
+| AUDITORÍA | **Lectura** | Lectura | — | — |
+| AUDITORÍA — página filtrable de trazas *(D-89)* | **Lectura** | Lectura | — | — |
 | GESTIÓN TÉCNICA (contactar, atender, cerrar, enrutar, diferir, evidencias) | **CRUD** | — | Lectura | CRUD (solo sus casos y offline) |
-| ALERTAS (falla masiva, incidentes, solicitud de material) | **CRUD** | Lectura | Lectura | CRUD |
+| ALERTAS (declarar/planificar/cerrar fallas masivas e incidentes) | **CRUD** | **CRUD** | **CRUD** | **Reporte de campo** *(el TECNICO reporta; no gestiona)* |
 | INSUMOS (v2) | **CRUD** | CRUD | CRUD | Solicitud |
 | AUDITORÍA | **Lectura** | Lectura | — | — |
 | USUARIOS y accesos | **CRUD** | CRUD | Alta/baja de técnicos | — |
@@ -262,6 +293,48 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 > **MFA obligatorio** para ADMIN y SUPERVISOR (RNF-22). El TÉCNICO usa `P00` + clave con bloqueo a los
 > 3 intentos y recuperación con 3 de las 12 palabras (RF-20).
 
+### 5.2.1 Rol **COORDINADOR** (incremento D-95…D-98)
+
+> Incorporado al cerrar la auditoría de Fase 1 del incremento **D-95…D-98** (informe
+> `INFORME_OPTIMIZACION_D95_V1.md`). El rol es **nuevo** (decisión **DEC-G1**) y su alcance lo fijan
+> **DEC-G3, G7, G8, G11, G13, G14, G16 y G17**.
+
+| Módulo / acción | SUPER | ADMIN | SUPERVISOR | **COORDINADOR** | TECNICO |
+|---|---|---|---|---|---|
+| MONITOREO / GRÁFICOS | Lectura | Lectura | Lectura | **Lectura** | Lectura de su cuadrilla |
+| CASOS — ver, asignar a cuadrilla, alta manual y edición ligera | CRUD | CRUD | CRUD | **—** | Lectura de sus casos |
+| ESPECIALES — listar y abrir ficha | CRUD | CRUD | CRUD | **Lectura** | — |
+| ESPECIALES — crear | CRUD | CRUD | CRUD | **Crear** | — |
+| DESPACHO | CRUD | CRUD | CRUD | **—** | Lectura de su despacho |
+| GESTIÓN (cuadrilla 0) | CRUD | CRUD | CRUD | **—** | — |
+| FALLAS MASIVAS — consulta | CRUD | CRUD | CRUD | **Lectura** | Reporte |
+| FALLAS MASIVAS — declarar, planificar, cerrar | CRUD | CRUD | CRUD | **—** | Reporte |
+| ORDEN DE MATERIAL de una falla | CRUD | CRUD | CRUD | **Crear / consultar** | Solicitud |
+| ALERTAS — bandeja y fichas | Lectura | Lectura | Lectura | **Lectura** | Lectura |
+| ALERTAS — reporte de campo de falla masiva | CRUD | CRUD | CRUD | **—** *(DEC-G11)* | **Reporte** |
+| MENSAJERÍA — enviar a técnicos / cuadrillas | CRUD | CRUD | CRUD | **—** | — |
+| MENSAJERÍA — enviar a un Supervisor concreto | — | — | — | **Crear** *(DEC-G9/G15)* | — |
+| MENSAJERÍA — bandeja propia | CRUD | CRUD | CRUD | **Enviados** | Recibidos |
+| INGESTA · CONFIGURACIÓN · AUDITORÍA · SISTEMAS | (vigentes) | (vigentes) | (vigentes) | **—** | — |
+
+**Notas de seguridad (críticas, de la auditoría):**
+
+1. **El guard de alertas es COMPARTIDO** (`app/api/routes_alertas.py:43`,
+   `_escritura = require_roles("ADMIN","SUPERVISOR")`). Añadir `COORDINADOR` a esa dependencia le
+   abriría **declarar, planificar y cerrar** fallas: es una **elevación de privilegios** (hallazgo
+   **H-09**). D-95 debe **separar la dependencia por capacidad** antes de conceder nada al rol nuevo.
+2. **El guard de mensajería también es compartido** (`app/api/routes_mensajes.py:29`): ampliarlo daría
+   al Coordinador difusión a `TODOS`/`CUADRILLA`/`TECNICO`, y el *fallback* de `resolver_destinatarios`
+   haría *fan-out* a **todos los técnicos** ante un destino nuevo (hallazgo **H-10**). El envío del
+   Coordinador exige endpoint y guard **dedicados**, y **eliminar el fallback**.
+3. **La matriz no basta**: el acotado por central **no está activo** (hallazgo **H-01**; ver §5.2.1 del
+   incremento, §9.3). Mientras la RLS siga inerte y `resolver_central` no compare con
+   `usuario.id_central`, el rol nuevo **leería PII de cualquier central**.
+4. **MFA:** RNF-22 queda **diferido** por decisión expresa (**DEC-G14**, riesgo aceptado **RA-01**): el
+   Coordinador entra con `P00` + clave y recuperación con 3 de las 12 palabras.
+
+---
+
 ### 5.3 Gobierno de datos en la v1 (D-39)
 
 | Función | Responsable en v1 | Estado |
@@ -273,6 +346,11 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 | Soporte / helpdesk de la plataforma y la APK | **SUPERVISOR** (registro por correo) | Informal en v1 |
 | Responsable de protección de datos | CANTV (externo) | Pendiente de designar |
 | Dueño del sistema origen CANTV (entrega del CSV) | CANTV (externo) | Pendiente de formalizar |
+| **Dueño funcional del rol COORDINADOR** (incremento D-95…D-98, **DEC-G17**) | **SUPERVISOR** de la central | Nuevo |
+| **Soporte de 1.º y 2.º nivel del COORDINADOR** (**DEC-G17**) | **SUPERVISOR** de la central | Nuevo |
+| **Auditoría de las acciones del COORDINADOR** (**DEC-G17**) | **SUPER** (solo lectura de `auditoria`) | Se separa de ADMIN para no repetir el conflicto de que ADMIN ejecuta el despacho y a la vez audita (hallazgo **H-27**) |
+| **Custodia del keystore y publicación de la APK multi-rol** (**DEC-G17**) | **Super Usuario** (ANLUcorporations) | Nuevo; el keystore oficial no está en este entorno |
+| **Responsable de protección de datos y firmante del DPA con CANTV** | CANTV (externo) | **Pendiente de designar** — bloquea cerrar el riesgo aceptado **RA-02** (caché local sin cifrar, DEC-G19) |
 
 ---
 

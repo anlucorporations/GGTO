@@ -19,7 +19,11 @@ def entorno(client, admin_token, db_session):
     for i in range(6):
         r = client.post("/api/v1/casos",
                         json={"id_averia": f"TSTA-{i}", "direccion": "SECTOR ALFA CASA 1",
-                              "nombre_cliente": "CLIENTE A"}, headers=headers)
+                              "nombre_cliente": "CLIENTE A",
+                              "contacto_cliente": "04140000000",
+                              "id_pago": "7000000000",
+                              "tipo_reporte": "REPARACION",
+                              "tipo_problema": "SIN_SERVICIO"}, headers=headers)
         assert r.status_code == 201, r.text
         casos.append(r.json()["id_caso"])
     # El OLT no se carga por la vía manual: se fija directamente para simular la ingesta

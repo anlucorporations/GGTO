@@ -11,21 +11,28 @@ import Mensaje from './Mensaje';
 import { IconoCerrar } from './Iconos';
 import { nv } from '../utils';
 
+/** Tipo de reporte del alta (RN-AL-01): solo REPARACIÓN o CONSTRUCCIÓN. */
+type TipoReporte = 'REPARACION' | 'CONSTRUCCION';
+
 const CLASIFICACIONES: ClasificacionEspecial[] = ['REFERIDO', 'EMPRESA', 'GOBIERNO'];
-const TIPOS_ACTIVIDAD: TipoActividadEspecial[] = ['REPARACION', 'CONSTRUCCION'];
+const TIPOS_REPORTE: TipoReporte[] = ['REPARACION', 'CONSTRUCCION'];
 const PRIORIDADES: PrioridadEspecial[] = ['ALTA', 'MEDIA', 'BAJA'];
 const CANALES: CanalSolicitante[] = ['TELEGRAM', 'MCP_IA', 'MANUAL', 'CORREO'];
 
 interface Formulario {
+  /** RN-AL-01: datos obligatorios del alta (comunes al caso manual y especial). */
   nombre_cliente: string;
+  contacto_cliente: string;
   telefono: string;
   direccion: string;
+  tipo_reporte: TipoActividadEspecial;
+  id_averia: string;
+  tipo_problema: string;
   informacion: string;
   problema_reporte: string;
   fecha_reporte: string;
   es_especial: boolean;
   clasificacion: ClasificacionEspecial;
-  tipo_actividad: TipoActividadEspecial;
   prioridad: PrioridadEspecial;
   requiere_informe: boolean;
   sol_unidad: string;
@@ -48,14 +55,17 @@ function ahoraLocal(): string {
 function formularioVacio(): Formulario {
   return {
     nombre_cliente: '',
+    contacto_cliente: '',
     telefono: '',
     direccion: '',
+    tipo_reporte: 'REPARACION',
+    id_averia: '',
+    tipo_problema: '',
     informacion: '',
     problema_reporte: '',
     fecha_reporte: ahoraLocal(),
     es_especial: false,
     clasificacion: 'REFERIDO',
-    tipo_actividad: 'REPARACION',
     prioridad: 'MEDIA',
     requiere_informe: true,
     sol_unidad: '',
@@ -126,6 +136,29 @@ export default function ModalCaso({ onCerrar }: Props) {
     evento.preventDefault();
     setError('');
 
+    // RN-AL-01: datos obligatorios del alta, comunes al caso manual y al especial.
+    const nombreCliente = form.nombre_cliente.trim();
+    const contactoCliente = form.contacto_cliente.trim();
+    const telefonoPago = form.telefono.trim();
+    const direccion = form.direccion.trim();
+    const idAveria = form.id_averia.trim();
+    const tipoProblema = form.tipo_problema.trim();
+    const esReparacion = form.tipo_reporte === 'REPARACION';
+
+    if (!nombreCliente || !contactoCliente || !telefonoPago || !direccion) {
+      setError(
+        'Complete los datos obligatorios: nombre y teléfono de contacto, dirección ' +
+          'del inmueble y teléfono con el identificador de pago (70*).',
+      );
+      return;
+    }
+    if (esReparacion && (!idAveria || !tipoProblema)) {
+      setError(
+        'En un reporte de REPARACIÓN son obligatorios el ID de avería y el tipo de problema.',
+      );
+      return;
+    }
+
     if (form.es_especial) {
       const unidad = form.sol_unidad.trim();
       const nombre = form.sol_nombre.trim();
@@ -140,28 +173,31 @@ export default function ModalCaso({ onCerrar }: Props) {
       try {
         const creado = await api.crearCasoEspecial({
           clasificacion: form.clasificacion,
-          tipo_actividad: form.tipo_actividad,
+          tipo_actividad: form.tipo_reporte,
           prioridad: form.prioridad,
           requiere_informe: form.requiere_informe,
           descripcion: nv(form.informacion),
-          nombre_cliente: nv(form.nombre_cliente),
-          telefono: nv(form.telefono),
-          direccion: nv(form.direccion),
+          nombre_cliente: nombreCliente,
+          contacto_cliente: contactoCliente,
+          telefono: telefonoPago,
+          direccion,
+          id_averia: idAveria || null,
+          tipo_problema: tipoProblema || null,
           crear_solicitante: { unidad, nombre, contacto, canal: form.sol_canal },
         });
-        let idAveria: string | null = null;
+        let idAveriaCaso: string | null = null;
         if (creado.id_caso !== null) {
           try {
-            idAveria = (await api.obtenerCaso(creado.id_caso)).id_averia;
+            idAveriaCaso = (await api.obtenerCaso(creado.id_caso)).id_averia;
           } catch {
-            idAveria = null;
+            idAveriaCaso = null;
           }
         }
         setResultado({
           tipo: 'especial',
           id_caso: creado.id_caso,
           id_caso_especial: creado.id_caso_especial,
-          id_averia: idAveria,
+          id_averia: idAveriaCaso,
         });
       } catch (e) {
         setError(e instanceof api.ApiError ? e.message : 'Error al crear el caso especial.');
@@ -172,22 +208,17 @@ export default function ModalCaso({ onCerrar }: Props) {
     }
 
     const payload: CasoManualCreate = {
-      nombre_cliente: nv(form.nombre_cliente),
-      telefono: nv(form.telefono),
-      direccion: nv(form.direccion),
+      tipo_reporte: form.tipo_reporte,
+      id_averia: idAveria || null,
+      nombre_cliente: nombreCliente,
+      contacto_cliente: contactoCliente,
+      id_pago: telefonoPago,
+      direccion,
+      tipo_problema: tipoProblema || null,
       informacion: nv(form.informacion),
       problema_reporte: nv(form.problema_reporte),
       fecha_reporte: form.fecha_reporte ? form.fecha_reporte : null,
     };
-    if (
-      !payload.nombre_cliente &&
-      !payload.telefono &&
-      !payload.direccion &&
-      !payload.problema_reporte
-    ) {
-      setError('Complete al menos nombre, teléfono, dirección o problema reportado.');
-      return;
-    }
     setGuardando(true);
     try {
       const creado = await api.crearCaso(payload);
@@ -285,20 +316,50 @@ export default function ModalCaso({ onCerrar }: Props) {
             <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
 
             <div className="campo campo-ancho">
-              <label htmlFor="nc-nombre">Nombre del cliente</label>
+              <label htmlFor="nc-nombre">Nombre de contacto *</label>
               <input
                 id="nc-nombre"
+                required
                 value={form.nombre_cliente}
                 onChange={(e) => setForm({ ...form, nombre_cliente: e.target.value })}
               />
             </div>
             <div className="campo">
-              <label htmlFor="nc-telefono">Teléfono</label>
+              <label htmlFor="nc-contacto">Teléfono de contacto *</label>
+              <input
+                id="nc-contacto"
+                required
+                type="tel"
+                value={form.contacto_cliente}
+                onChange={(e) => setForm({ ...form, contacto_cliente: e.target.value })}
+                placeholder="04142223344"
+              />
+            </div>
+            <div className="campo">
+              <label htmlFor="nc-telefono">Teléfono — identificador de pago (70*) *</label>
               <input
                 id="nc-telefono"
+                required
                 value={form.telefono}
                 onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                placeholder="7014000848"
               />
+            </div>
+            <div className="campo">
+              <label htmlFor="nc-reporte">Tipo de reporte *</label>
+              <select
+                id="nc-reporte"
+                value={form.tipo_reporte}
+                onChange={(e) =>
+                  setForm({ ...form, tipo_reporte: e.target.value as TipoActividadEspecial })
+                }
+              >
+                {TIPOS_REPORTE.map((t) => (
+                  <option key={t} value={t}>
+                    {t === 'REPARACION' ? 'Reparación' : 'Construcción'}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="campo">
               <label htmlFor="nc-fecha">Fecha de reporte</label>
@@ -310,13 +371,37 @@ export default function ModalCaso({ onCerrar }: Props) {
               />
             </div>
             <div className="campo campo-ancho">
-              <label htmlFor="nc-direccion">Dirección</label>
+              <label htmlFor="nc-direccion">Dirección del inmueble *</label>
               <input
                 id="nc-direccion"
+                required
                 value={form.direccion}
                 onChange={(e) => setForm({ ...form, direccion: e.target.value })}
               />
             </div>
+            {form.tipo_reporte === 'REPARACION' && (
+              <>
+                <div className="campo">
+                  <label htmlFor="nc-averia">ID de avería *</label>
+                  <input
+                    id="nc-averia"
+                    required
+                    value={form.id_averia}
+                    onChange={(e) => setForm({ ...form, id_averia: e.target.value })}
+                  />
+                </div>
+                <div className="campo">
+                  <label htmlFor="nc-tipo-problema">Tipo de problema *</label>
+                  <input
+                    id="nc-tipo-problema"
+                    required
+                    maxLength={20}
+                    value={form.tipo_problema}
+                    onChange={(e) => setForm({ ...form, tipo_problema: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
             <div className="campo campo-ancho">
               <label htmlFor="nc-problema">Problema reportado</label>
               <textarea
@@ -364,25 +449,6 @@ export default function ModalCaso({ onCerrar }: Props) {
                     </select>
                   </div>
                   <div className="campo">
-                    <label htmlFor="nc-actividad">Tipo de actividad</label>
-                    <select
-                      id="nc-actividad"
-                      value={form.tipo_actividad}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          tipo_actividad: e.target.value as TipoActividadEspecial,
-                        })
-                      }
-                    >
-                      {TIPOS_ACTIVIDAD.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo">
                     <label htmlFor="nc-prioridad">Prioridad</label>
                     <select
                       id="nc-prioridad"
@@ -408,25 +474,28 @@ export default function ModalCaso({ onCerrar }: Props) {
                     <label htmlFor="nc-informe">Requiere informe</label>
                   </div>
                   <div className="campo">
-                    <label htmlFor="nc-sol-unidad">Solicitante — unidad</label>
+                    <label htmlFor="nc-sol-unidad">Solicitante — unidad *</label>
                     <input
                       id="nc-sol-unidad"
+                      required
                       value={form.sol_unidad}
                       onChange={(e) => setForm({ ...form, sol_unidad: e.target.value })}
                     />
                   </div>
                   <div className="campo">
-                    <label htmlFor="nc-sol-nombre">Solicitante — nombre</label>
+                    <label htmlFor="nc-sol-nombre">Solicitante — nombre *</label>
                     <input
                       id="nc-sol-nombre"
+                      required
                       value={form.sol_nombre}
                       onChange={(e) => setForm({ ...form, sol_nombre: e.target.value })}
                     />
                   </div>
                   <div className="campo">
-                    <label htmlFor="nc-sol-contacto">Solicitante — contacto</label>
+                    <label htmlFor="nc-sol-contacto">Solicitante — contacto *</label>
                     <input
                       id="nc-sol-contacto"
+                      required
                       value={form.sol_contacto}
                       onChange={(e) => setForm({ ...form, sol_contacto: e.target.value })}
                     />

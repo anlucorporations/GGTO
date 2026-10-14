@@ -24,8 +24,8 @@ from ..core.db import Base
 
 #: Tipos de mensaje automático o manual.
 TIPOS_MENSAJE = ("RECORDATORIO_CITA", "ESTADO_SYNC", "ALARMA_DESPACHO", "TEXTO")
-#: Tipos de destinatario.
-TIPOS_DESTINO = ("TODOS", "CUADRILLA", "TECNICO")
+#: Tipos de destinatario (D-95: se suma SUPERVISOR para mensajería del Coordinador).
+TIPOS_DESTINO = ("TODOS", "CUADRILLA", "TECNICO", "SUPERVISOR")
 
 
 class Mensaje(Base):
@@ -44,6 +44,10 @@ class Mensaje(Base):
     id_tecnico: Mapped[int | None] = mapped_column(
         ForeignKey("tecnico.id_tecnico", ondelete="SET NULL")
     )
+    #: Destinatario usuario concreto (D-95: Coordinador -> Supervisor concreto o escalado al ADMIN).
+    id_usuario_destino: Mapped[str | None] = mapped_column(
+        ForeignKey("usuario.p00", ondelete="SET NULL")
+    )
     tipo: Mapped[str] = mapped_column(String(20), nullable=False)
     cuerpo: Mapped[str] = mapped_column(String(500), nullable=False)
     id_caso: Mapped[int | None] = mapped_column(ForeignKey("caso.id_caso", ondelete="SET NULL"))
@@ -57,7 +61,8 @@ class Mensaje(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "destino_tipo IN ('TODOS','CUADRILLA','TECNICO')", name="ck_mensaje_destino_tipo"
+            "destino_tipo IN ('TODOS','CUADRILLA','TECNICO','SUPERVISOR')",
+            name="ck_mensaje_destino_tipo",
         ),
         CheckConstraint(
             "tipo IN ('RECORDATORIO_CITA','ESTADO_SYNC','ALARMA_DESPACHO','TEXTO')",
@@ -65,23 +70,35 @@ class Mensaje(Base):
         ),
         CheckConstraint("expira_en > creado_en", name="ck_mensaje_expira"),
         CheckConstraint(
-            "(destino_tipo = 'TODOS'     AND id_cuadrilla IS NULL     AND id_tecnico IS NULL) OR "
-            "(destino_tipo = 'CUADRILLA' AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL) OR "
-            "(destino_tipo = 'TECNICO'   AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL)",
+            "(destino_tipo = 'TODOS'      AND id_cuadrilla IS NULL     AND id_tecnico IS NULL     AND id_usuario_destino IS NULL) OR "
+            "(destino_tipo = 'CUADRILLA'  AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL     AND id_usuario_destino IS NULL) OR "
+            "(destino_tipo = 'TECNICO'    AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL   AND id_usuario_destino IS NULL) OR "
+            "(destino_tipo = 'SUPERVISOR' AND id_usuario_destino IS NOT NULL AND id_cuadrilla IS NULL AND id_tecnico IS NULL)",
             name="ck_mensaje_destino_xor",
         ),
     )
 
 
 class MensajeDestino(Base):
-    """Fan-out de destinatarios y lectura por técnico (A-03/A-06)."""
+    """Fan-out de destinatarios y lectura por técnico o usuario (A-03/A-06/D-95)."""
 
     __tablename__ = "mensaje_destino"
 
+    id_destino: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     id_mensaje: Mapped[int] = mapped_column(
-        ForeignKey("mensaje.id_mensaje", ondelete="CASCADE"), primary_key=True
+        ForeignKey("mensaje.id_mensaje", ondelete="CASCADE"), nullable=False
     )
-    id_tecnico: Mapped[int] = mapped_column(
-        ForeignKey("tecnico.id_tecnico", ondelete="CASCADE"), primary_key=True
+    id_tecnico: Mapped[int | None] = mapped_column(
+        ForeignKey("tecnico.id_tecnico", ondelete="CASCADE"), nullable=True
+    )
+    p00: Mapped[str | None] = mapped_column(
+        ForeignKey("usuario.p00", ondelete="CASCADE"), nullable=True
     )
     leido_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint(
+            "(p00 IS NULL AND id_tecnico IS NOT NULL) OR (p00 IS NOT NULL AND id_tecnico IS NULL)",
+            name="ck_mensaje_destino_un_destinatario",
+        ),
+    )

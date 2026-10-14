@@ -439,6 +439,13 @@ export interface CasoOut {
   persona_reporta: string | null;
   contacto_cliente: string | null;
 
+  // D-89/D-90: identificador de pago (70*) y marca de la regla REPARACIÓN/REFERIDO.
+  id_pago: number | null;
+  marcado_reclasificar: boolean;
+  motivo_marca: string | null;
+  tiene_identificador_pago: boolean;
+  tiene_id_averia_real: boolean;
+
   fecha_reporte: string | null;
   fecha_compromiso: string | null;
   fecha_cita: string | null;
@@ -477,18 +484,25 @@ export interface PaginaCasos {
   pages: number;
 }
 
+/** Alta manual (RF-32). RN-AL-01: los datos de abajo son obligatorios. */
 export interface CasoManualCreate {
   id_central?: number | null;
+  /** Tipo de reporte de la alta: sola REPARACIÓN o CONSTRUCCIÓN. */
+  tipo_reporte: 'REPARACION' | 'CONSTRUCCION';
+  /** Obligatorio cuando `tipo_reporte` es REPARACION. */
   id_averia?: string | null;
   categoria?: CategoriaCaso;
-  tipo_caso?: TipoCaso;
-  nombre_cliente?: string | null;
+  nombre_cliente: string;
+  /** Teléfono con el identificador de pago (70*) del caso. */
+  id_pago: string;
   telefono?: string | null;
-  direccion?: string | null;
+  direccion: string;
   informacion?: string | null;
   problema_reporte?: string | null;
+  /** Obligatorio cuando `tipo_reporte` es REPARACION. */
+  tipo_problema?: string | null;
   persona_reporta?: string | null;
-  contacto_cliente?: string | null;
+  contacto_cliente: string;
   fecha_reporte?: string | null;
   fecha_cita?: string | null;
   fecha_compromiso?: string | null;
@@ -539,6 +553,8 @@ export type CasosFiltros = {
   id_causa?: number;
   id_lote_ingesta?: number;
   estado_actual?: string;
+  /** Solo casos abiertos (excluye CERRADO y CANCELADO) — sección CASOS. */
+  solo_abiertos?: boolean;
   tipo_caso?: string;
   categoria?: string;
   origen?: string;
@@ -829,10 +845,15 @@ export interface CasoEspecialCreate {
   id_caso?: number | null;
   id_solicitante?: number | null;
   crear_solicitante?: SolicitanteCreate;
+  /** Obligatorio cuando `tipo_actividad` es REPARACION (RN-AL-01). */
   id_averia?: string | null;
   nombre_cliente?: string | null;
+  contacto_cliente?: string | null;
+  /** Teléfono con el identificador de pago (70*) del caso. */
   telefono?: string | null;
   direccion?: string | null;
+  /** Obligatorio cuando `tipo_actividad` es REPARACION. */
+  tipo_problema?: string | null;
 }
 
 export interface CasoEspecialUpdate {
@@ -866,6 +887,10 @@ export interface CasoEspecialOut {
   /* D-72: Dirección y Nombre tomados del caso asociado. */
   direccion: string | null;
   nombre_cliente: string | null;
+  /* RN-AL-01: contacto, identificador de pago y tipo de problema del caso. */
+  contacto_cliente: string | null;
+  telefono: string | null;
+  tipo_problema: string | null;
   pendiente: boolean;
   asignado: boolean;
   citado: boolean;
@@ -1089,6 +1114,37 @@ export interface MonitoreoCapacidad {
   sectores_activos: number;
 }
 
+/** Identificador de pago con más reportes (D-94). */
+export interface IdentificadorTop {
+  numero: string;
+  casos: number;
+  reportes_ventana: number;
+  reincidente: boolean;
+}
+
+/** D-94: métricas por identificador de pago (RF-54/RF-55). */
+export interface MonitoreoIdentificadores {
+  ventana_dias: number;
+  con_casos: number;
+  casos_con_identificador: number;
+  casos_sin_identificador: number;
+  media_casos: number;
+  max_casos: number;
+  reincidentes: number;
+  top: IdentificadorTop[];
+}
+
+/** D-90/D-94: regla REPARACIÓN ⇐ 70* + avería real. */
+export interface MonitoreoReclasificaciones {
+  reparaciones_validas: number;
+  referidos: number;
+  reclasificadas: number;
+  pendientes_historicos: number;
+  pendientes_historicos_en_terminal: number;
+  referidos_sin_ficha: number;
+  referidos_por_clasificacion: Record<string, number>;
+}
+
 /** Periodo del reporte de trabajo (`GET /reportes/trabajo`). */
 export type PeriodoReporte = 'diario' | 'semanal' | 'mensual';
 
@@ -1104,6 +1160,8 @@ export interface ReporteTrabajo {
   construccion: MonitoreoConstruccion;
   cuadrilla: MonitoreoCuadrillaOut;
   capacidad: MonitoreoCapacidad;
+  reclasificaciones: MonitoreoReclasificaciones;
+  identificadores: MonitoreoIdentificadores;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1393,6 +1451,12 @@ export interface MensajeCreate {
   id_tecnico?: number | null;
   cuerpo: string;
   id_caso?: number | null;
+}
+
+export interface SupervisorMensaje {
+  p00: string;
+  nombre: string | null;
+  apellido: string | null;
 }
 
 /* ------------------------------------------------------------------ */

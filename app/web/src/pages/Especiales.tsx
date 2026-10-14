@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../api/client';
 import type {
+  CasoEspecialCreate,
   CasoEspecialOut,
   Cuadrilla,
   CasoEspecialUpdate,
@@ -78,8 +79,11 @@ function aEdicion(c: CasoEspecialOut): EdicionForm {
 }
 
 export default function Especiales() {
-  const { soloLectura } = useAuth();
+  const { soloLectura, usuario } = useAuth();
   const navigate = useNavigate();
+  const rol = usuario?.rol ?? '';
+  const puedeGestionar = ['ADMIN', 'SUPERVISOR'].includes(rol);
+  const puedeCrear = ['ADMIN', 'SUPERVISOR', 'COORDINADOR'].includes(rol);
 
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
@@ -106,14 +110,15 @@ export default function Especiales() {
     requiere_informe: true,
   });
   const [guardando, setGuardando] = useState(false);
+  const [crearAbierto, setCrearAbierto] = useState(false);
 
   useEffect(() => {
-    if (soloLectura) return;
+    if (!puedeGestionar) return;
     api
       .listarCuadrillas({ solo_activas: true })
       .then(setCuadrillas)
       .catch(() => setCuadrillas([]));
-  }, [soloLectura]);
+  }, [puedeGestionar]);
 
   /** D-79: asigna el especial abierto a la cuadrilla elegida (despacho de hoy). */
   async function asignarCuadrilla() {
@@ -195,6 +200,21 @@ export default function Especiales() {
     };
   }, []);
 
+  async function crearEspecial(datos: CasoEspecialCreate) {
+    setGuardando(true);
+    setError('');
+    try {
+      await api.crearCasoEspecial(datos);
+      setCrearAbierto(false);
+      setOk('Caso especial creado.');
+      await cargarLista();
+    } catch (e) {
+      setError(detalleDe(e, 'No se pudo crear el caso especial.'));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
   function filtrar(evento: FormEvent) {
     evento.preventDefault();
     setAplicados({ ...borrador });
@@ -267,11 +287,13 @@ export default function Especiales() {
       <div className="pagina-cabecera">
         <div>
           <h1>Especiales</h1>
-          <p>
-            Empresas, referidos y gobierno. Use «Agregar caso» en la barra superior para registrar
-            uno nuevo.
-          </p>
+          <p>Empresas, referidos y gobierno.</p>
         </div>
+        {puedeCrear && (
+          <button type="button" className="btn" onClick={() => setCrearAbierto(true)}>
+            Crear caso especial
+          </button>
+        )}
       </div>
 
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
@@ -562,7 +584,7 @@ export default function Especiales() {
           )}
 
           {/* D-79: bloque Despacho para asignar/quitar el especial */}
-          {!soloLectura && (
+          {puedeGestionar && (
             <>
               <h3 className="subtitulo-seccion">Despacho</h3>
               <div className="formulario modal-formulario">
@@ -610,7 +632,7 @@ export default function Especiales() {
             </>
           )}
 
-          {!soloLectura && (
+          {puedeGestionar && (
             <>
               <h3 className="subtitulo-seccion">Editar caso especial</h3>
               <form className="formulario modal-formulario" onSubmit={(e) => void guardarEdicion(e)}>
@@ -683,6 +705,221 @@ export default function Especiales() {
           )}
         </Modal>
       )}
+      {crearAbierto && (
+        <Modal titulo="Crear caso especial" onCerrar={() => setCrearAbierto(false)}>
+          <FormularioCrearEspecial
+            solicitantes={solicitantes}
+            guardando={guardando}
+            onCancelar={() => setCrearAbierto(false)}
+            onCrear={(datos) => void crearEspecial(datos)}
+          />
+        </Modal>
+      )}
     </>
+  );
+}
+
+function FormularioCrearEspecial({
+  solicitantes,
+  guardando,
+  onCancelar,
+  onCrear,
+}: {
+  solicitantes: Solicitante[];
+  guardando: boolean;
+  onCancelar: () => void;
+  onCrear: (datos: CasoEspecialCreate) => void;
+}) {
+  const [clasificacion, setClasificacion] = useState<ClasificacionEspecial>('REFERIDO');
+  const [actividad, setActividad] = useState<TipoActividadEspecial>('REPARACION');
+  const [prioridad, setPrioridad] = useState<PrioridadEspecial>('MEDIA');
+  const [idSolicitante, setIdSolicitante] = useState('');
+  const [nuevoSolicitante, setNuevoSolicitante] = useState(false);
+  const [solUnidad, setSolUnidad] = useState('');
+  const [solNombre, setSolNombre] = useState('');
+  const [solContacto, setSolContacto] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [contacto, setContacto] = useState('');
+  const [averia, setAveria] = useState('');
+  const [tipoProblema, setTipoProblema] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [requiereInforme, setRequiereInforme] = useState(true);
+  const [error, setError] = useState('');
+
+  function enviar(evento: FormEvent) {
+    evento.preventDefault();
+    // RN-AL-01: los datos del alta y del solicitante son obligatorios.
+    const faltaSolicitante = nuevoSolicitante
+      ? !solUnidad.trim() || !solNombre.trim() || !solContacto.trim()
+      : !idSolicitante;
+    if (faltaSolicitante) {
+      setError(
+        'Datos del solicitante obligatorios: indique uno registrado o complete ' +
+          'unidad, nombre y contacto del nuevo.',
+      );
+      return;
+    }
+    if (
+      !nombre.trim() ||
+      !contacto.trim() ||
+      !telefono.trim() ||
+      !direccion.trim()
+    ) {
+      setError(
+        'Complete nombre y teléfono de contacto, dirección del inmueble y el ' +
+          'teléfono con el identificador de pago (70*).',
+      );
+      return;
+    }
+    if (actividad === 'REPARACION' && (!averia.trim() || !tipoProblema.trim())) {
+      setError(
+        'En un reporte de REPARACIÓN son obligatorios el ID de avería y el tipo de problema.',
+      );
+      return;
+    }
+    setError('');
+    onCrear({
+      clasificacion,
+      tipo_actividad: actividad,
+      prioridad,
+      requiere_informe: requiereInforme,
+      id_solicitante: nuevoSolicitante ? null : Number(idSolicitante),
+      crear_solicitante: nuevoSolicitante
+        ? {
+            unidad: solUnidad.trim(),
+            nombre: solNombre.trim(),
+            contacto: solContacto.trim(),
+            canal: 'MANUAL',
+          }
+        : undefined,
+      nombre_cliente: nombre.trim(),
+      contacto_cliente: contacto.trim(),
+      id_averia: averia.trim() || null,
+      tipo_problema: tipoProblema.trim() || null,
+      telefono: telefono.trim(),
+      direccion: direccion.trim(),
+      descripcion: descripcion.trim() || null,
+    });
+  }
+
+  return (
+    <form className="formulario modal-formulario" onSubmit={enviar}>
+      <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+      <div className="campo">
+        <label htmlFor="esp-nuevo-clasificacion">Clasificación</label>
+        <select id="esp-nuevo-clasificacion" value={clasificacion}
+          onChange={(e) => setClasificacion(e.target.value as ClasificacionEspecial)}>
+          {CLASIFICACIONES.map((valor) => <option key={valor}>{valor}</option>)}
+        </select>
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-actividad">Tipo de reporte *</label>
+        <select id="esp-nuevo-actividad" value={actividad}
+          onChange={(e) => setActividad(e.target.value as TipoActividadEspecial)}>
+          {ACTIVIDADES.map((valor) => (
+            <option key={valor} value={valor}>
+              {valor === 'REPARACION' ? 'Reparación' : 'Construcción'}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-prioridad">Prioridad</label>
+        <select id="esp-nuevo-prioridad" value={prioridad}
+          onChange={(e) => setPrioridad(e.target.value as PrioridadEspecial)}>
+          {PRIORIDADES.map((valor) => <option key={valor}>{valor}</option>)}
+        </select>
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-solicitante">Solicitante registrado *</label>
+        <select id="esp-nuevo-solicitante" value={idSolicitante}
+          disabled={nuevoSolicitante}
+          onChange={(e) => setIdSolicitante(e.target.value)}>
+          <option value="">Seleccione un solicitante…</option>
+          {solicitantes.map((s) => (
+            <option key={s.id_solicitante} value={s.id_solicitante}>
+              {s.nombre} — {s.unidad}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="campo campo-check">
+        <input id="esp-nuevo-sol-nuevo" type="checkbox" checked={nuevoSolicitante}
+          onChange={(e) => setNuevoSolicitante(e.target.checked)} />
+        <label htmlFor="esp-nuevo-sol-nuevo">Registrar un solicitante nuevo</label>
+      </div>
+      {nuevoSolicitante && (
+        <>
+          <div className="campo">
+            <label htmlFor="esp-nuevo-sol-unidad">Solicitante — unidad *</label>
+            <input id="esp-nuevo-sol-unidad" required value={solUnidad}
+              onChange={(e) => setSolUnidad(e.target.value)} />
+          </div>
+          <div className="campo">
+            <label htmlFor="esp-nuevo-sol-nombre">Solicitante — nombre *</label>
+            <input id="esp-nuevo-sol-nombre" required value={solNombre}
+              onChange={(e) => setSolNombre(e.target.value)} />
+          </div>
+          <div className="campo">
+            <label htmlFor="esp-nuevo-sol-contacto">Solicitante — contacto *</label>
+            <input id="esp-nuevo-sol-contacto" required value={solContacto}
+              onChange={(e) => setSolContacto(e.target.value)} />
+          </div>
+        </>
+      )}
+      <div className="campo">
+        <label htmlFor="esp-nuevo-cliente">Nombre de contacto *</label>
+        <input id="esp-nuevo-cliente" required value={nombre}
+          onChange={(e) => setNombre(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-contacto">Teléfono de contacto *</label>
+        <input id="esp-nuevo-contacto" required type="tel" value={contacto}
+          onChange={(e) => setContacto(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-averia">ID de avería {actividad === 'REPARACION' ? '*' : ''}</label>
+        <input id="esp-nuevo-averia" required={actividad === 'REPARACION'} value={averia}
+          onChange={(e) => setAveria(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-tipo-problema">
+          Tipo de problema {actividad === 'REPARACION' ? '*' : ''}
+        </label>
+        <input id="esp-nuevo-tipo-problema" maxLength={20}
+          required={actividad === 'REPARACION'} value={tipoProblema}
+          onChange={(e) => setTipoProblema(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label htmlFor="esp-nuevo-telefono">Teléfono — identificador de pago (70*) *</label>
+        <input id="esp-nuevo-telefono" required value={telefono}
+          placeholder="7014000848" onChange={(e) => setTelefono(e.target.value)} />
+      </div>
+      <div className="campo campo-ancho">
+        <label htmlFor="esp-nuevo-direccion">Dirección del inmueble *</label>
+        <input id="esp-nuevo-direccion" required value={direccion}
+          onChange={(e) => setDireccion(e.target.value)} />
+      </div>
+      <div className="campo campo-ancho">
+        <label htmlFor="esp-nuevo-descripcion">Descripción</label>
+        <textarea id="esp-nuevo-descripcion" value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)} rows={3} />
+      </div>
+      <label className="campo campo-check">
+        <input type="checkbox" checked={requiereInforme}
+          onChange={(e) => setRequiereInforme(e.target.checked)} />
+        Requiere informe
+      </label>
+      <div className="acciones-form">
+        <button type="submit" className="btn" disabled={guardando}>
+          {guardando ? 'Creando…' : 'Crear caso especial'}
+        </button>
+        <button type="button" className="btn btn-secundario" onClick={onCancelar} disabled={guardando}>
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }

@@ -222,11 +222,12 @@ def nombres_de_sector(db: Session, id_central: int) -> dict[int, str]:
 # --------------------------------------------------------------------------- #
 # Asignación diaria de sectores a cuadrillas
 # --------------------------------------------------------------------------- #
-def asignacion_guardada(db: Session, fecha: date) -> dict[int, int]:
-    """`id_sector -> id_cuadrilla` guardado para la fecha (puede estar vacío)."""
-    filas = db.scalars(
-        select(CuadrillaSectorDia).where(CuadrillaSectorDia.fecha == fecha)
-    ).all()
+def asignacion_guardada(db: Session, fecha: date, id_central: int | None = None) -> dict[int, int]:
+    """`id_sector -> id_cuadrilla` guardado para la fecha y central (H-13)."""
+    stmt = select(CuadrillaSectorDia).where(CuadrillaSectorDia.fecha == fecha)
+    if id_central is not None:
+        stmt = stmt.where(CuadrillaSectorDia.id_central == id_central)
+    filas = db.scalars(stmt).all()
     return {f.id_sector: f.id_cuadrilla for f in filas}
 
 
@@ -253,7 +254,7 @@ def asignacion_efectiva(
     db: Session, id_central: int, fecha: date
 ) -> tuple[dict[int, int], str]:
     """Asignación del día: la guardada o, si no existe, una propuesta equilibrada."""
-    guardada = asignacion_guardada(db, fecha)
+    guardada = asignacion_guardada(db, fecha, id_central=id_central)
     if guardada:
         return guardada, "GUARDADA"
     cuadrillas = cuadrillas_activas(db, id_central)
@@ -269,7 +270,12 @@ def guardar_asignacion(
     usuario: str | None,
 ) -> dict[int, int]:
     """Reemplaza la asignación del día. `asignaciones`: [{id_cuadrilla, ids_sector}]."""
-    db.execute(delete(CuadrillaSectorDia).where(CuadrillaSectorDia.fecha == fecha))
+    db.execute(
+        delete(CuadrillaSectorDia).where(
+            CuadrillaSectorDia.fecha == fecha,
+            CuadrillaSectorDia.id_central == id_central,
+        )
+    )
     vistos: set[int] = set()
     for bloque in asignaciones or []:
         crudo_cuadrilla = bloque.get("id_cuadrilla")
@@ -291,7 +297,7 @@ def guardar_asignacion(
                 )
             )
     db.flush()
-    return asignacion_guardada(db, fecha)
+    return asignacion_guardada(db, fecha, id_central=id_central)
 
 
 # --------------------------------------------------------------------------- #
@@ -335,7 +341,7 @@ def construir_propuesta(
         casos = seleccionar_casos(db, id_central, fecha)
     nombres = nombres_de_sector(db, id_central)
     if asignacion is None:
-        asignacion = asignacion_guardada(db, fecha)
+        asignacion = asignacion_guardada(db, fecha, id_central=id_central)
         if not asignacion and cuadrillas:
             asignacion = propuesta_asignacion(cuadrillas, casos)
 

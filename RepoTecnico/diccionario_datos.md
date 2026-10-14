@@ -1,4 +1,4 @@
-# Diccionario de Datos — Plataforma GGTO
+# Diccionario de Datos — GGTO V2
 
 | Campo | Valor |
 |---|---|
@@ -6,10 +6,12 @@
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor | **PostgreSQL** |
 | Fuente | `BRIEF-GGTO-INICIAL.md` + muestra pseudonimizada `muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas → 49 campos destino) |
-| Fase | Fase 1 — Concepto |
-| Estado | Borrador v0.2 — **sujeto a validación** |
+| Fase | Mantenimiento de V1 y definición/implementación parcial de V2 |
+| Estado | El inventario original es conceptual. El DDL local actual contiene **41 tablas**; SQLAlchemy mapea **36** y cinco tablas no tienen clase ORM. No se debe presentar este borrador como inventario físico completo. |
 | Modelo E-R | [`modelo_er.md`](modelo_er.md) (diagramas Mermaid) |
 | Script DDL | [`db/schema.sql`](db/schema.sql) (PostgreSQL) |
+
+> **Estado de sincronización (2026-10-12):** para el esquema físico prevalece `db/schema.sql`; para el mapeo Python prevalece `app/models/`. El diagrama `modelo_er.md` ahora complementa sus 36 entidades originales con las cinco tablas que faltaban. El catálogo DDL solo siembra SUPER, ADMIN, SUPERVISOR y TECNICO; COORDINADOR es requisito V2 pero aún no está sembrado ni cuenta con migración D-95. La APK multirol no agrega una tabla: las cuentas se modelan en `usuario` y el rol en `rol`.
 
 > Convenciones:
 > - `PK` = clave primaria, `FK` = clave foránea, `UQ` = único, `NN` = no nulo.
@@ -72,6 +74,7 @@
 | 35 | Checklist de sincronización | `sync_check` | Estado, hora y detalle **por paso** (RF-40, D-81). |
 | 36 | Mensaje interno | `mensaje` | Mensajería interna supervisor→técnicos (RF-41, D-81). |
 | 37 | Destino de mensaje | `mensaje_destino` | Fan-out de destinatarios y lectura por técnico (RF-41, D-81). |
+| 38 | Identificador de pago | `identificador_pago` | Historial normalizado del identificador de pago y sus casos asociados (D-89). |
 
 ---
 

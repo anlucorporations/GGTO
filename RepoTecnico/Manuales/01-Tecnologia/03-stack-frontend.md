@@ -724,8 +724,7 @@ El estado verificado del frontend y sus pendientes son los siguientes:
   `tsc`, de la construcción de Vite y de las pruebas E2E de Playwright dentro de ese *workflow* es
   **pendiente de confirmar**; en el momento de redactar este manual no aparecen como pasos del
   archivo de CI.
-- **Aplicación móvil.** La APK Android en Flutter **no está desarrollada** (ciclo 8 diferido); este
-  manual no la documenta como existente. Cualquier referencia a una app móvil en la interfaz web se
-  refiere a la adaptación responsive de la propia SPA, no a una aplicación nativa.
+- **Aplicación móvil.** Existe una APK Flutter de campo (`1.1.0+9`); este manual no documenta su
+  implementación. La APK multirol V2 para gestión sigue pendiente.
 - **WhatsApp.** No existe integración con WhatsApp; fue diferida a la v3
   (`RepoTecnico/estado_proyecto.md:79`).

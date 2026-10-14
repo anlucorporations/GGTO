@@ -298,7 +298,7 @@ function LocalizadorCaso({ casoSel, onSeleccionar }: LocalizadorProps) {
               id="loc-valor"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              placeholder={criterio === 'numero' ? 'Teléfono' : 'ID de avería'}
+              placeholder={criterio === 'numero' ? 'Identificador de pago (70*) o contacto' : 'ID de avería'}
             />
           )}
         </div>
@@ -337,7 +337,7 @@ function LocalizadorCaso({ casoSel, onSeleccionar }: LocalizadorProps) {
               <span className="dato-valor">{casoSel.nombre_cliente ?? '—'}</span>
             </div>
             <div className="dato">
-              <span className="dato-etiqueta">Teléfono</span>
+              <span className="dato-etiqueta">Identificador de pago (70*)</span>
               <span className="dato-valor mono">{casoSel.telefono ?? '—'}</span>
             </div>
             <div className="dato">

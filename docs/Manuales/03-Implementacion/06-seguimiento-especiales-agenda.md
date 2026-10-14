@@ -147,13 +147,21 @@ Cuando la petición no trae `id_caso`, el sistema crea el caso asociado. Sus pas
    `REF-<CÓDIGO_CENTRAL>-<NNNNNN>`. Para la Central Francisco Salias produce valores como
    `REF-2324X-000001`.
 3. Rechazar duplicados con **409** y el mensaje «Ya existe un caso con id_averia …».
-4. Sectorizar la dirección con los patrones de la central.
-5. Crear el caso con:
+4. **Exigir los datos obligatorios del alta**: nombre y teléfono de contacto, dirección del
+   inmueble y el teléfono con el **identificador de pago (70\*)**; si el teléfono no es un 70\*,
+   el alta se rechaza con **422**. Además, los **datos del solicitante** (nombre, unidad y
+   contacto) son obligatorios siempre —se indica uno ya registrado o se crea en la misma
+   operación—, y cuando el tipo de reporte es **Reparación** también se exigen el **ID de
+   avería** y el **tipo de problema**.
+5. Sectorizar la dirección con los patrones de la central.
+6. Crear el caso con:
    - `origen="MANUAL"`.
    - `estado_actual="NUEVO"`.
    - `tipo_caso` igual a `CONSTRUCCION` si el tipo de actividad es construcción, y `REPARACION`
      en caso contrario.
    - `categoria` igual a la clasificación del caso especial.
+   - el **teléfono de contacto** en `contacto_cliente` (separado del identificador de pago) y
+     el **tipo de problema** informado.
 
 El caso especial se guarda en estado `ABIERTO` y con `tiene_id_averia=True` cuando el caso
 asociado existe.

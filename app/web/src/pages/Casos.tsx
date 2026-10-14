@@ -23,6 +23,10 @@ import EstadoChips from '../components/EstadoChips';
 import { useAuth } from '../auth/AuthContext';
 import { fecha, fechaHora, nv } from '../utils';
 
+/**
+ * Estados **abiertos** del listado: la sección CASOS muestra solo trabajo
+ * abierto, así que CERRADO y CANCELADO quedan fuera del filtro (RN-AL-02).
+ */
 const ESTADOS: EstadoCaso[] = [
   'NUEVO',
   'ASIGNADO',
@@ -31,8 +35,6 @@ const ESTADOS: EstadoCaso[] = [
   'DIFERIDO',
   'EN_GESTION',
   'ENRUTADO',
-  'CERRADO',
-  'CANCELADO',
 ];
 
 const CATEGORIAS: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
@@ -298,6 +300,8 @@ export default function Casos() {
         estado_actual: aplicados.estado_actual,
         categoria: aplicados.categoria,
         tipo_caso: aplicados.tipo_caso,
+        // RN-AL-02: la sección CASOS lista solo casos abiertos.
+        solo_abiertos: true,
         page,
         page_size: tamanio,
       };
@@ -440,7 +444,11 @@ export default function Casos() {
 
       {/* Filtros + listado (RF-33) */}
       <div className="panel-bloque">
-        <h2>Listado de casos</h2>
+        <h2>Listado de casos abiertos</h2>
+        <p className="texto-pequeno">
+          Solo se muestran los casos abiertos: los <strong>CERRADO</strong> y{' '}
+          <strong>CANCELADO</strong> quedan fuera del listado.
+        </p>
         <form className="formulario filtros-tabla" onSubmit={filtrar}>
           <div className="campo">
             <label htmlFor="filtro-q">Texto libre</label>

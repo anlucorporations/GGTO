@@ -19,7 +19,12 @@ def _entorno(client, admin_token, db_session) -> dict:
     db_session.flush()
 
     def caso(id_averia: str) -> int:
-        r = client.post(CASOS, json={"id_averia": id_averia, "direccion": "X"}, headers=headers)
+        r = client.post(CASOS, json={
+            "id_averia": id_averia, "direccion": "X",
+            "nombre_cliente": "CLIENTE PANEL",
+            "contacto_cliente": "04141112233", "id_pago": "7008000000",
+            "tipo_reporte": "REPARACION", "tipo_problema": "SIN_SERVICIO",
+        }, headers=headers)
         assert r.status_code == 201, r.text
         return r.json()["id_caso"]
 
@@ -56,7 +61,12 @@ def test_panel_referidos(client, admin_token, db_session):
     # Caso especial REFERIDO añadido al despacho del día.
     esp = client.post(
         f"{BASE}/casos-especiales",
-        json={"clasificacion": "REFERIDO", "tipo_actividad": "REPARACION", "prioridad": "ALTA"},
+        json={"clasificacion": "REFERIDO", "tipo_actividad": "REPARACION", "prioridad": "ALTA",
+              "nombre_cliente": "CLIENTE PANEL", "contacto_cliente": "04141112233",
+              "telefono": "7008000001", "direccion": "SECTOR PANEL 1",
+              "id_averia": "REF-2324X-900020", "tipo_problema": "SIN_SERVICIO",
+              "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS",
+                                    "contacto": "04141112233"}},
         headers=admin_token["admin"],
     )
     assert esp.status_code == 201, esp.text

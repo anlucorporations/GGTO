@@ -14,13 +14,17 @@ class ContactarScreen extends StatefulWidget {
     super.key,
     required this.idCaso,
     required this.idAveria,
-    this.telefono = '',
+    this.contacto = '',
     this.nombreCliente = '',
   });
 
   final int idCaso;
   final String idAveria;
-  final String telefono;
+
+  /// **Número de contacto** del cliente (D-93): es el número al que se llama. El
+  /// identificador de pago (70*) no se usa para contactar.
+  final String contacto;
+
   final String nombreCliente;
 
   @override
@@ -169,12 +173,12 @@ class _ContactarScreenState extends State<ContactarScreen> {
                 title: Text(widget.nombreCliente.isEmpty ? 'Cliente' : widget.nombreCliente),
                 subtitle: Text(
                   '${widget.idAveria}\n'
-                  '${widget.telefono.isEmpty ? 'Sin teléfono registrado' : 'Tel: ${widget.telefono}'}',
+                  '${widget.contacto.isEmpty ? 'Sin número de contacto' : 'Número de contacto: ${widget.contacto}'}',
                 ),
                 isThreeLine: true,
               ),
             ),
-            if (widget.telefono.isNotEmpty) ...[
+            if (widget.contacto.isNotEmpty) ...[
               const SizedBox(height: 6),
               const Text(
                 'Llame al cliente, acuerde la atención y registre el resultado.',

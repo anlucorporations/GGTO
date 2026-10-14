@@ -13,8 +13,11 @@ import 'features/auth/primer_acceso_screen.dart';
 import 'features/auth/unlock_screen.dart';
 import 'features/casos/casos_provider.dart';
 import 'features/casos/casos_screen.dart';
+import 'features/inicio/inicio_gestion_screen.dart';
+import 'features/gestion/gestion_screen.dart';
 import 'features/mensajes/mensajes_provider.dart';
 import 'features/mensajes/mensajes_screen.dart';
+import 'features/monitoreo/monitoreo_screen.dart';
 import 'features/sync/sync_provider.dart';
 import 'features/sync/sync_screen.dart';
 import 'features/usuario/usuario_screen.dart';
@@ -41,7 +44,8 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()..restaurarSesion()),
+        ChangeNotifierProvider(
+            create: (_) => AuthProvider()..restaurarSesion()),
         ChangeNotifierProvider(create: (_) => CasosProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()..iniciar()),
         ChangeNotifierProvider(create: (_) => MensajesProvider()..iniciar()),
@@ -110,9 +114,22 @@ class _GGTOAppState extends State<GGTOApp> {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/inicio': (context) => const _RutaInicio(),
         '/unlock': (context) => const UnlockScreen(),
         '/primer-acceso': (context) => const PrimerAccesoScreen(),
         '/casos': (context) => const _RutaProtegida(child: CasosScreen()),
+        '/gestion': (context) => const _RutaProtegida(
+              roles: {'SUPER', 'ADMIN', 'SUPERVISOR'},
+              child: GestionScreen(),
+            ),
+        '/casos-gestion': (context) => const _RutaProtegida(
+              roles: {'SUPER', 'ADMIN', 'SUPERVISOR'},
+              child: GestionScreen(soloGestion: false),
+            ),
+        '/monitoreo': (context) => const _RutaProtegida(
+              roles: {'SUPER', 'ADMIN', 'SUPERVISOR', 'COORDINADOR'},
+              child: MonitoreoScreen(),
+            ),
         '/sync': (context) => const _RutaProtegida(child: SyncScreen()),
         '/alertas': (context) => const _RutaProtegida(child: AlertasScreen()),
         '/mensajes': (context) => const _RutaProtegida(child: MensajesScreen()),
@@ -122,11 +139,9 @@ class _GGTOAppState extends State<GGTOApp> {
   }
 }
 
-/// Bloquea el acceso a las pantallas de campo sin sesión activa.
-class _RutaProtegida extends StatelessWidget {
-  const _RutaProtegida({required this.child});
-
-  final Widget child;
+/// Conserva la entrada del Técnico y lleva los roles de gestión a MONITOREO.
+class _RutaInicio extends StatelessWidget {
+  const _RutaInicio();
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +153,35 @@ class _RutaProtegida extends StatelessWidget {
         }
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return auth.rol == 'TECNICO'
+        ? const CasosScreen()
+        : InicioGestionScreen(rol: auth.rol);
+  }
+}
+
+/// Bloquea el acceso a las pantallas de campo sin sesión activa.
+class _RutaProtegida extends StatelessWidget {
+  const _RutaProtegida({required this.child, this.roles});
+
+  final Widget child;
+  final Set<String>? roles;
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    if (!auth.autenticado) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (ruta) => false);
+        }
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (roles != null && !roles!.contains(auth.rol)) {
+      return const Scaffold(
+        body: Center(child: Text('Su rol no tiene acceso a esta pantalla.')),
+      );
     }
     return child;
   }

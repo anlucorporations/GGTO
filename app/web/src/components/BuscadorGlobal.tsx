@@ -5,6 +5,43 @@ import type { CasoOut } from '../api/types';
 import { IconoBuscar, IconoCerrar } from './Iconos';
 import { useCerrarDesplegable } from './useCerrarDesplegable';
 
+/** ¿El caso coincidió por el identificador de pago o por el número de contacto? */
+function grupoDe(caso: CasoOut, termino: string): 'identificador' | 'contacto' | 'otros' {
+  const t = termino.trim();
+  if (t && (caso.telefono ?? '').includes(t)) return 'identificador';
+  if (t && (caso.contacto_cliente ?? '').includes(t)) return 'contacto';
+  return 'otros';
+}
+
+/**
+ * D-92/CU-D89-04: los resultados se muestran en **grupos separados** según el dato
+ * por el que coincidieron (identificador de pago o número de contacto), sin
+ * mezclarlos; el resto (avería, cliente, dirección) va en «Otros datos».
+ */
+export function agruparResultados(
+  resultados: CasoOut[],
+  termino: string,
+): { clave: 'identificador' | 'contacto' | 'otros'; titulo: string; casos: CasoOut[] }[] {
+  const identificador: CasoOut[] = [];
+  const contacto: CasoOut[] = [];
+  const otros: CasoOut[] = [];
+  for (const caso of resultados) {
+    const grupo = grupoDe(caso, termino);
+    if (grupo === 'identificador') identificador.push(caso);
+    else if (grupo === 'contacto') contacto.push(caso);
+    else otros.push(caso);
+  }
+  return [
+    { clave: 'identificador', titulo: 'Identificador de pago (70*)', casos: identificador },
+    { clave: 'contacto', titulo: 'Número de contacto', casos: contacto },
+    { clave: 'otros', titulo: 'Otros datos (avería, cliente, dirección)', casos: otros },
+  ].filter((g) => g.casos.length > 0) as {
+    clave: 'identificador' | 'contacto' | 'otros';
+    titulo: string;
+    casos: CasoOut[];
+  }[];
+}
+
 /**
  * Buscador global de la barra superior (RF-30): un único cuadro que consulta
  * `/casos/buscar?q=` y muestra hasta 8 coincidencias en un desplegable.
@@ -127,27 +164,34 @@ export default function BuscadorGlobal({
           {resultados.length === 0 ? (
             <p className="buscador-vacio">Sin coincidencias</p>
           ) : (
-            <ul>
-              {resultados.map((c) => (
-                <li key={c.id_caso}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected="false"
-                    className="buscador-item"
-                    onClick={() => abrirCaso(c)}
-                  >
-                    <span className="mono">{c.id_averia}</span>
-                    <span className="buscador-item-datos">
-                      <span>{c.nombre_cliente ?? 'Cliente sin nombre'}</span>
-                      <span className="texto-pequeno">
-                        {c.telefono ?? 'sin teléfono'} · {c.estado_actual}
-                      </span>
-                    </span>
-                  </button>
-                </li>
+            <div className="buscador-grupos">
+              {agruparResultados(resultados, texto).map((grupo) => (
+                <div key={grupo.clave} className="buscador-grupo" data-grupo={grupo.clave}>
+                  <p className="buscador-grupo-titulo texto-pequeno">{grupo.titulo}</p>
+                  <ul>
+                    {grupo.casos.map((c) => (
+                      <li key={c.id_caso}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected="false"
+                          className="buscador-item"
+                          onClick={() => abrirCaso(c)}
+                        >
+                          <span className="mono">{c.id_averia}</span>
+                          <span className="buscador-item-datos">
+                            <span>{c.nombre_cliente ?? 'Cliente sin nombre'}</span>
+                            <span className="texto-pequeno">
+                              {c.telefono ?? 'sin identificador de pago'} · {c.estado_actual}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       )}

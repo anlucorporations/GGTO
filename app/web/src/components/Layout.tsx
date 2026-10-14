@@ -222,7 +222,11 @@ export default function Layout() {
   const rol = usuario?.rol ?? '';
   const puedeConfigurar = ROLES_CONFIG.includes(rol);
   // D-72: DESPACHO (y CONFIGURACIÓN) quedan fuera del alcance del Técnico.
-  const seccionesVisibles = SECCIONES.filter((s) => s.roles === null || s.roles.includes(rol));
+  const seccionesVisibles = SECCIONES.filter(
+    (s) =>
+      (s.roles === null || s.roles.includes(rol)) &&
+      !(rol === 'COORDINADOR' && s.ruta === '/casos'),
+  );
 
   return (
     <div className="app-shell">

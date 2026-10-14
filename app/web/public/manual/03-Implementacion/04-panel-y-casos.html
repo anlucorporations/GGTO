@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-panel-y-casos-rf-30-rf-33" data-target="vision-general-panel-y-casos-rf-30-rf-33"><span class="tn">2</span> Visión general (PANEL y CASOS, RF-30..RF-33)</a><span class="pag"></span><ul><li class="n3"><a href="#permisos" data-target="permisos"><span class="tn">2.1</span> Permisos</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#estados-del-caso-d-29-y-ciclo-de-vida" data-target="estados-del-caso-d-29-y-ciclo-de-vida"><span class="tn">3</span> Estados del caso (D-29) y ciclo de vida</a><span class="pag"></span><ul><li class="n3"><a href="#catalogo-de-estados" data-target="catalogo-de-estados"><span class="tn">3.1</span> Catálogo de estados</a><span class="pag"></span></li><li class="n3"><a href="#restricciones-en-base-de-datos" data-target="restricciones-en-base-de-datos"><span class="tn">3.2</span> Restricciones en base de datos</a><span class="pag"></span></li><li class="n3"><a href="#ciclo-de-vida-observado" data-target="ciclo-de-vida-observado"><span class="tn">3.3</span> Ciclo de vida observado</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints" data-target="endpoints"><span class="tn">4</span> Endpoints</a><span class="pag"></span><ul><li class="n3"><a href="#get-api-v1-casos-filtros-y-paginacion" data-target="get-api-v1-casos-filtros-y-paginacion"><span class="tn">4.1</span> <code>GET /api/v1/casos</code> (filtros y paginación)</a><span class="pag"></span><ul><li class="n4"><a href="#filtros-aceptados" data-target="filtros-aceptados"><span class="tn">4.1.1</span> Filtros aceptados</a><span class="pag"></span></li><li class="n4"><a href="#paginacion-y-orden" data-target="paginacion-y-orden"><span class="tn">4.1.2</span> Paginación y orden</a><span class="pag"></span></li><li class="n4"><a href="#iconos-de-estado-calculados" data-target="iconos-de-estado-calculados"><span class="tn">4.1.3</span> Iconos de estado calculados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-buscar" data-target="get-api-v1-casos-buscar"><span class="tn">4.2</span> <code>GET /api/v1/casos/buscar</code></a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-casos-alta-manual-ref" data-target="post-api-v1-casos-alta-manual-ref"><span class="tn">4.3</span> <code>POST /api/v1/casos</code> (alta manual <code>REF-...</code>)</a><span class="pag"></span><ul><li class="n4"><a href="#verificacion" data-target="verificacion"><span class="tn">4.3.1</span> Verificación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-id-caso" data-target="get-api-v1-casos-id-caso"><span class="tn">4.4</span> <code>GET /api/v1/casos/{id_caso}</code></a><span class="pag"></span></li><li class="n3"><a href="#patch-api-v1-casos-id-caso-historial-de-estado" data-target="patch-api-v1-casos-id-caso-historial-de-estado"><span class="tn">4.5</span> <code>PATCH /api/v1/casos/{id_caso}</code> (historial de estado)</a><span class="pag"></span><ul><li class="n4"><a href="#campos-con-tratamiento-especial" data-target="campos-con-tratamiento-especial"><span class="tn">4.5.1</span> Campos con tratamiento especial</a><span class="pag"></span></li><li class="n4"><a href="#verificacion-2" data-target="verificacion-2"><span class="tn">4.5.2</span> Verificación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-id-caso-historial" data-target="get-api-v1-casos-id-caso-historial"><span class="tn">4.6</span> <code>GET /api/v1/casos/{id_caso}/historial</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#reglas-de-negocio" data-target="reglas-de-negocio"><span class="tn">5</span> Reglas de negocio</a><span class="pag"></span><ul><li class="n3"><a href="#generacion-generar-id-averia-ref" data-target="generacion-generar-id-averia-ref"><span class="tn">5.1</span> Generación <code>generar_id_averia_ref</code></a><span class="pag"></span></li><li class="n3"><a href="#re-sectorizacion-automatica-al-editar-direccion" data-target="re-sectorizacion-automatica-al-editar-direccion"><span class="tn">5.2</span> Re-sectorización automática al editar dirección</a><span class="pag"></span></li><li class="n3"><a href="#registro-en-caso-estado-hist" data-target="registro-en-caso-estado-hist"><span class="tn">5.3</span> Registro en <code>caso_estado_hist</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#esquemas-y-modelo" data-target="esquemas-y-modelo"><span class="tn">6</span> Esquemas y modelo</a><span class="pag"></span><ul><li class="n3"><a href="#esquemas-pydantic-app-schemas-casos-py" data-target="esquemas-pydantic-app-schemas-casos-py"><span class="tn">6.1</span> Esquemas Pydantic (<code>app/schemas/casos.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-caso-app-models-caso-entities-py" data-target="modelo-caso-app-models-caso-entities-py"><span class="tn">6.2</span> Modelo <code>Caso</code> (<code>app/models/caso_entities.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-casoestadohist" data-target="modelo-casoestadohist"><span class="tn">6.3</span> Modelo <code>CasoEstadoHist</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-casos-y-panel" data-target="pagina-web-casos-y-panel"><span class="tn">7</span> Página web CASOS y Panel</a><span class="pag"></span><ul><li class="n3"><a href="#casos-app-web-src-pages-casos-tsx" data-target="casos-app-web-src-pages-casos-tsx"><span class="tn">7.1</span> CASOS (<code>app/web/src/pages/Casos.tsx</code>)</a><span class="pag"></span><ul><li class="n4"><a href="#filtros-mostrados" data-target="filtros-mostrados"><span class="tn">7.1.1</span> Filtros mostrados</a><span class="pag"></span></li><li class="n4"><a href="#paginacion" data-target="paginacion"><span class="tn">7.1.2</span> Paginación</a><span class="pag"></span></li><li class="n4"><a href="#ficha" data-target="ficha"><span class="tn">7.1.3</span> Ficha</a><span class="pag"></span></li><li class="n4"><a href="#editar-el-sector-la-cita-y-la-informacion" data-target="editar-el-sector-la-cita-y-la-informacion"><span class="tn">7.1.4</span> Editar el sector, la cita y la información</a><span class="pag"></span></li><li class="n4"><a href="#cambio-de-estado" data-target="cambio-de-estado"><span class="tn">7.1.5</span> Cambio de estado</a><span class="pag"></span></li><li class="n4"><a href="#historial" data-target="historial"><span class="tn">7.1.6</span> Historial</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#panel-app-web-src-pages-panel-tsx" data-target="panel-app-web-src-pages-panel-tsx"><span class="tn">7.2</span> PANEL (<code>app/web/src/pages/Panel.tsx</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modal-agregar-caso-app-web-src-components-modalcaso-tsx" data-target="modal-agregar-caso-app-web-src-components-modalcaso-tsx"><span class="tn">7.3</span> Modal «Agregar caso» (<code>app/web/src/components/ModalCaso.tsx</code>)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#buscador-global-de-la-barra-superior-d-57" data-target="buscador-global-de-la-barra-superior-d-57"><span class="tn">8</span> Buscador global de la barra superior (D-57)</a><span class="pag"></span><ul><li class="n3"><a href="#comportamiento" data-target="comportamiento"><span class="tn">8.1</span> Comportamiento</a><span class="pag"></span></li><li class="n3"><a href="#navegacion-a-la-ficha" data-target="navegacion-a-la-ficha"><span class="tn">8.2</span> Navegación a la ficha</a><span class="pag"></span></li><li class="n3"><a href="#accesibilidad" data-target="accesibilidad"><span class="tn">8.3</span> Accesibilidad</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas-app-tests-test-casos-api-py-17-pruebas" data-target="pruebas-app-tests-test-casos-api-py-17-pruebas"><span class="tn">9</span> Pruebas (<code>app/tests/test_casos_api.py</code>, 17 pruebas)</a><span class="pag"></span><ul><li class="n3"><a href="#cobertura-por-area" data-target="cobertura-por-area"><span class="tn">9.1</span> Cobertura por área</a><span class="pag"></span></li><li class="n3"><a href="#trazabilidad" data-target="trazabilidad"><span class="tn">9.2</span> Trazabilidad</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-panel-y-casos-rf-30-rf-33" data-target="vision-general-panel-y-casos-rf-30-rf-33"><span class="tn">2</span> Visión general (PANEL y CASOS, RF-30..RF-33)</a><span class="pag"></span><ul><li class="n3"><a href="#permisos" data-target="permisos"><span class="tn">2.1</span> Permisos</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#estados-del-caso-d-29-y-ciclo-de-vida" data-target="estados-del-caso-d-29-y-ciclo-de-vida"><span class="tn">3</span> Estados del caso (D-29) y ciclo de vida</a><span class="pag"></span><ul><li class="n3"><a href="#catalogo-de-estados" data-target="catalogo-de-estados"><span class="tn">3.1</span> Catálogo de estados</a><span class="pag"></span></li><li class="n3"><a href="#restricciones-en-base-de-datos" data-target="restricciones-en-base-de-datos"><span class="tn">3.2</span> Restricciones en base de datos</a><span class="pag"></span></li><li class="n3"><a href="#ciclo-de-vida-observado" data-target="ciclo-de-vida-observado"><span class="tn">3.3</span> Ciclo de vida observado</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#endpoints" data-target="endpoints"><span class="tn">4</span> Endpoints</a><span class="pag"></span><ul><li class="n3"><a href="#get-api-v1-casos-filtros-y-paginacion" data-target="get-api-v1-casos-filtros-y-paginacion"><span class="tn">4.1</span> <code>GET /api/v1/casos</code> (filtros y paginación)</a><span class="pag"></span><ul><li class="n4"><a href="#filtros-aceptados" data-target="filtros-aceptados"><span class="tn">4.1.1</span> Filtros aceptados</a><span class="pag"></span></li><li class="n4"><a href="#paginacion-y-orden" data-target="paginacion-y-orden"><span class="tn">4.1.2</span> Paginación y orden</a><span class="pag"></span></li><li class="n4"><a href="#iconos-de-estado-calculados" data-target="iconos-de-estado-calculados"><span class="tn">4.1.3</span> Iconos de estado calculados</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-buscar" data-target="get-api-v1-casos-buscar"><span class="tn">4.2</span> <code>GET /api/v1/casos/buscar</code></a><span class="pag"></span></li><li class="n3"><a href="#post-api-v1-casos-alta-manual-ref" data-target="post-api-v1-casos-alta-manual-ref"><span class="tn">4.3</span> <code>POST /api/v1/casos</code> (alta manual <code>REF-...</code>)</a><span class="pag"></span><ul><li class="n4"><a href="#datos-obligatorios-del-alta" data-target="datos-obligatorios-del-alta"><span class="tn">4.3.1</span> Datos obligatorios del alta</a><span class="pag"></span></li><li class="n4"><a href="#verificacion" data-target="verificacion"><span class="tn">4.3.2</span> Verificación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-id-caso" data-target="get-api-v1-casos-id-caso"><span class="tn">4.4</span> <code>GET /api/v1/casos/{id_caso}</code></a><span class="pag"></span></li><li class="n3"><a href="#patch-api-v1-casos-id-caso-historial-de-estado" data-target="patch-api-v1-casos-id-caso-historial-de-estado"><span class="tn">4.5</span> <code>PATCH /api/v1/casos/{id_caso}</code> (historial de estado)</a><span class="pag"></span><ul><li class="n4"><a href="#campos-con-tratamiento-especial" data-target="campos-con-tratamiento-especial"><span class="tn">4.5.1</span> Campos con tratamiento especial</a><span class="pag"></span></li><li class="n4"><a href="#verificacion-2" data-target="verificacion-2"><span class="tn">4.5.2</span> Verificación</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#get-api-v1-casos-id-caso-historial" data-target="get-api-v1-casos-id-caso-historial"><span class="tn">4.6</span> <code>GET /api/v1/casos/{id_caso}/historial</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#reglas-de-negocio" data-target="reglas-de-negocio"><span class="tn">5</span> Reglas de negocio</a><span class="pag"></span><ul><li class="n3"><a href="#generacion-generar-id-averia-ref" data-target="generacion-generar-id-averia-ref"><span class="tn">5.1</span> Generación <code>generar_id_averia_ref</code></a><span class="pag"></span></li><li class="n3"><a href="#re-sectorizacion-automatica-al-editar-direccion" data-target="re-sectorizacion-automatica-al-editar-direccion"><span class="tn">5.2</span> Re-sectorización automática al editar dirección</a><span class="pag"></span></li><li class="n3"><a href="#registro-en-caso-estado-hist" data-target="registro-en-caso-estado-hist"><span class="tn">5.3</span> Registro en <code>caso_estado_hist</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#esquemas-y-modelo" data-target="esquemas-y-modelo"><span class="tn">6</span> Esquemas y modelo</a><span class="pag"></span><ul><li class="n3"><a href="#esquemas-pydantic-app-schemas-casos-py" data-target="esquemas-pydantic-app-schemas-casos-py"><span class="tn">6.1</span> Esquemas Pydantic (<code>app/schemas/casos.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-caso-app-models-caso-entities-py" data-target="modelo-caso-app-models-caso-entities-py"><span class="tn">6.2</span> Modelo <code>Caso</code> (<code>app/models/caso_entities.py</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modelo-casoestadohist" data-target="modelo-casoestadohist"><span class="tn">6.3</span> Modelo <code>CasoEstadoHist</code></a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pagina-web-casos-y-panel" data-target="pagina-web-casos-y-panel"><span class="tn">7</span> Página web CASOS y Panel</a><span class="pag"></span><ul><li class="n3"><a href="#casos-app-web-src-pages-casos-tsx" data-target="casos-app-web-src-pages-casos-tsx"><span class="tn">7.1</span> CASOS (<code>app/web/src/pages/Casos.tsx</code>)</a><span class="pag"></span><ul><li class="n4"><a href="#solo-casos-abiertos" data-target="solo-casos-abiertos"><span class="tn">7.1.1</span> Solo casos abiertos</a><span class="pag"></span></li><li class="n4"><a href="#filtros-mostrados" data-target="filtros-mostrados"><span class="tn">7.1.2</span> Filtros mostrados</a><span class="pag"></span></li><li class="n4"><a href="#paginacion" data-target="paginacion"><span class="tn">7.1.3</span> Paginación</a><span class="pag"></span></li><li class="n4"><a href="#ficha" data-target="ficha"><span class="tn">7.1.4</span> Ficha</a><span class="pag"></span></li><li class="n4"><a href="#editar-el-sector-la-cita-y-la-informacion" data-target="editar-el-sector-la-cita-y-la-informacion"><span class="tn">7.1.5</span> Editar el sector, la cita y la información</a><span class="pag"></span></li><li class="n4"><a href="#cambio-de-estado" data-target="cambio-de-estado"><span class="tn">7.1.6</span> Cambio de estado</a><span class="pag"></span></li><li class="n4"><a href="#historial" data-target="historial"><span class="tn">7.1.7</span> Historial</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#panel-app-web-src-pages-panel-tsx" data-target="panel-app-web-src-pages-panel-tsx"><span class="tn">7.2</span> PANEL (<code>app/web/src/pages/Panel.tsx</code>)</a><span class="pag"></span></li><li class="n3"><a href="#modal-agregar-caso-app-web-src-components-modalcaso-tsx" data-target="modal-agregar-caso-app-web-src-components-modalcaso-tsx"><span class="tn">7.3</span> Modal «Agregar caso» (<code>app/web/src/components/ModalCaso.tsx</code>)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#buscador-global-de-la-barra-superior-d-57" data-target="buscador-global-de-la-barra-superior-d-57"><span class="tn">8</span> Buscador global de la barra superior (D-57)</a><span class="pag"></span><ul><li class="n3"><a href="#comportamiento" data-target="comportamiento"><span class="tn">8.1</span> Comportamiento</a><span class="pag"></span></li><li class="n3"><a href="#navegacion-a-la-ficha" data-target="navegacion-a-la-ficha"><span class="tn">8.2</span> Navegación a la ficha</a><span class="pag"></span></li><li class="n3"><a href="#accesibilidad" data-target="accesibilidad"><span class="tn">8.3</span> Accesibilidad</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas-app-tests-test-casos-api-py-17-pruebas" data-target="pruebas-app-tests-test-casos-api-py-17-pruebas"><span class="tn">9</span> Pruebas (<code>app/tests/test_casos_api.py</code>, 17 pruebas)</a><span class="pag"></span><ul><li class="n3"><a href="#cobertura-por-area" data-target="cobertura-por-area"><span class="tn">9.1</span> Cobertura por área</a><span class="pag"></span></li><li class="n3"><a href="#trazabilidad" data-target="trazabilidad"><span class="tn">9.2</span> Trazabilidad</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/04-panel-y-casos.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>02/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>14/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 06/10/2026</span>
+          <span>Edición HTML y PDF generada el 14/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1149,7 +1149,63 @@ como lista vacía.</li>
 central y el P00 del usuario que lo creó.</li>
 <li>Se escribe la primera fila de la bitácora con el motivo «Alta manual desde PANEL».</li>
 </ol>
-<h4 id="verificacion"><span class="sec-num">4.3.1</span>Verificación</h4>
+<h4 id="datos-obligatorios-del-alta"><span class="sec-num">4.3.1</span>Datos obligatorios del alta</h4>
+<p>Al dar de alta un caso <strong>manual</strong> hay que llenar, sin excepción, estos datos; si falta
+cualquiera de ellos el sistema responde con un error <strong>422</strong> y no crea nada:</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>Qué se escribe</th>
+<th>¿Cuándo es obligatorio?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nombre de contacto</td>
+<td>El nombre de la persona con la que se habla</td>
+<td>Siempre</td>
+</tr>
+<tr>
+<td>Teléfono de contacto</td>
+<td>El número al que se llama al cliente</td>
+<td>Siempre</td>
+</tr>
+<tr>
+<td>Dirección del inmueble</td>
+<td>Dónde está el servicio reportado</td>
+<td>Siempre</td>
+</tr>
+<tr>
+<td>Teléfono — identificador de pago (70*)</td>
+<td>El número del identificador de pago del caso</td>
+<td>Siempre. Si el número no es un 70*, el sistema lo rechaza</td>
+</tr>
+<tr>
+<td>Tipo de reporte</td>
+<td>Reparación o Construcción</td>
+<td>Siempre</td>
+</tr>
+<tr>
+<td>ID de avería</td>
+<td>El número de avería real del reporte</td>
+<td>Solo cuando el tipo de reporte es <strong>Reparación</strong></td>
+</tr>
+<tr>
+<td>Tipo de problema</td>
+<td>La clasificación del problema</td>
+<td>Solo cuando el tipo de reporte es <strong>Reparación</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Al <strong>incorporar un caso especial</strong> se piden esos mismos datos —con el mismo detalle: en
+una Reparación, el ID de avería y el tipo de problema— y <strong>además</strong> los <strong>datos del
+solicitante</strong>: nombre, unidad y contacto de quien pide el caso (puede elegirse uno ya
+registrado o darlo de alta en el mismo formulario).</p>
+<p>Como el identificador de pago (70*) es obligatorio, un alta manual ya no puede quedar
+como una Reparación sin identificador: si hace falta un caso <strong>REFERIDO</strong>, el sistema lo
+marca cuando el ID de avería indicado es de los sintéticos (<code>REF-…</code>).</p>
+<h4 id="verificacion"><span class="sec-num">4.3.2</span>Verificación</h4>
 <p>Dos pruebas automáticas respaldan este comportamiento. La primera comprueba que el identificador
 generado empieza por <code>REF-2324X-</code>, que el origen es <code>MANUAL</code>, que el estado es <code>NUEVO</code> y que
 <code>en_gestion_supervisor</code> es falso. La segunda cubre el caso en que el usuario sí envía un
@@ -1352,7 +1408,13 @@ bitácora se borra en cascada.</p>
 <h3 id="casos-app-web-src-pages-casos-tsx"><span class="sec-num">7.1</span>CASOS (<code>app/web/src/pages/Casos.tsx</code>)</h3>
 <p>Es la página más extensa del módulo (964 líneas). Se organiza en tres bloques: filtros y
 listado, ficha con edición y cambio de estado, e historial.</p>
-<h4 id="filtros-mostrados"><span class="sec-num">7.1.1</span>Filtros mostrados</h4>
+<h4 id="solo-casos-abiertos"><span class="sec-num">7.1.1</span>Solo casos abiertos</h4>
+<p>La página <strong>CASOS</strong> muestra <strong>únicamente los casos abiertos</strong>: los que están en estado
+<strong>CERRADO</strong> o <strong>CANCELADO</strong> no aparecen en el listado, y el selector de <strong>Estado</strong> ya no
+los ofrece como opción. El filtro lo aplica el servidor (<code>solo_abiertos</code>), de modo que el
+total y las páginas corresponden solo al trabajo abierto. Es un comportamiento exclusivo de
+esta sección: el despacho, el monitoreo y los informes siguen viendo el universo completo.</p>
+<h4 id="filtros-mostrados"><span class="sec-num">7.1.2</span>Filtros mostrados</h4>
 <p>La interfaz ofrece estos filtros: texto libre, estado, clase, tipo, origen, «Cuadrilla 0
 (supervisor)» y rango de fechas de reporte. Los catálogos de estados, categorías, tipos y
 orígenes están declarados en la propia pantalla.</p>
@@ -1361,15 +1423,15 @@ orígenes están declarados en la propia pantalla.</p>
 <code>id_lote_ingesta</code>, aunque el backend sí los acepta. Si necesitas filtrar por esos campos, hoy
 hay que hacerlo por API.</p>
 </blockquote>
-<h4 id="paginacion"><span class="sec-num">7.1.2</span>Paginación</h4>
+<h4 id="paginacion"><span class="sec-num">7.1.3</span>Paginación</h4>
 <p>Los tamaños de página disponibles son 10, 25, 50 y 100, y el valor inicial es 25. La barra
 inferior muestra el total y la página actual, y ofrece los botones «Anterior» y «Siguiente».
 Cuando estás en el primer o el último límite, el botón correspondiente queda deshabilitado.</p>
-<h4 id="ficha"><span class="sec-num">7.1.3</span>Ficha</h4>
+<h4 id="ficha"><span class="sec-num">7.1.4</span>Ficha</h4>
 <p>La ficha se abre al seleccionar cualquier parte del renglón y reparte la información en
 pestañas: <strong>Resumen, Contacto, Datos técnicos, Clasificación, Textos, Resolución e Histórico</strong>.
 Los campos vacíos se muestran como «—». La antigua pestaña <strong>Gestión</strong> ya no existe.</p>
-<h4 id="editar-el-sector-la-cita-y-la-informacion"><span class="sec-num">7.1.4</span>Editar el sector, la cita y la información</h4>
+<h4 id="editar-el-sector-la-cita-y-la-informacion"><span class="sec-num">7.1.5</span>Editar el sector, la cita y la información</h4>
 <ul>
 <li>En la pestaña <strong>Clasificación</strong>, el botón <strong>Editar</strong> del título habilita el formulario con el
 <strong>Sector</strong> (incluye la opción «Sin sector»), la <strong>Fecha de cita</strong> y la <strong>Información</strong> (hasta
@@ -1380,13 +1442,13 @@ sector, el sector se recalcula solo.</li>
 <li>El botón <strong>Editar</strong> vuelve a abrir el formulario las veces que haga falta, incluso después de
 guardar.</li>
 </ul>
-<h4 id="cambio-de-estado"><span class="sec-num">7.1.5</span>Cambio de estado</h4>
+<h4 id="cambio-de-estado"><span class="sec-num">7.1.6</span>Cambio de estado</h4>
 <ul>
 <li>Desde D-76 la ficha web <strong>no</strong> permite cambiar el estado: el formulario se retiró junto con la
 pestaña Gestión.</li>
 <li>El movimiento de estado sigue disponible en la operación del API para otros clientes (la APK).</li>
 </ul>
-<h4 id="historial"><span class="sec-num">7.1.6</span>Historial</h4>
+<h4 id="historial"><span class="sec-num">7.1.7</span>Historial</h4>
 <p>Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y fecha y hora, bajo
 la ficha. Se carga con la operación de historial del cliente de API.</p>
 <h3 id="panel-app-web-src-pages-panel-tsx"><span class="sec-num">7.2</span>PANEL (<code>app/web/src/pages/Panel.tsx</code>)</h3>
@@ -1574,7 +1636,7 @@ pruebas de navegador con Playwright.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 06/10/2026</span>
+    <span>Generado el 14/10/2026</span>
   </div>
 </footer>
 

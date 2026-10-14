@@ -51,9 +51,12 @@ test.describe('Casos', () => {
   test('el alta manual genera un caso REF- y lo lista', async ({ page }) => {
     await page.getByRole('button', { name: 'Agregar caso' }).click();
     await expect(page.getByRole('dialog', { name: 'Agregar caso' })).toBeVisible();
-    await rellenar(page.getByLabel('Nombre del cliente'), 'Cliente Manual E2E');
-    await rellenar(page.getByLabel('Teléfono'), '04149998877');
-    await rellenar(page.getByLabel('Dirección'), 'CALLE E2E, CASA 99');
+    // RN-AL-01: el alta exige contacto, dirección, 70* y tipo de reporte.
+    await rellenar(page.getByLabel('Nombre de contacto'), 'Cliente Manual E2E');
+    await rellenar(page.getByLabel('Teléfono de contacto'), '04142223344');
+    await rellenar(page.getByLabel('Teléfono — identificador de pago'), '7014000877');
+    await rellenar(page.getByLabel('Dirección del inmueble'), 'CALLE E2E, CASA 99');
+    await rellenar(page.getByLabel('Tipo de reporte'), 'CONSTRUCCION');
     await rellenar(page.getByLabel('Problema reportado'), 'FALLA FIBRA reportada en campo');
     await page.getByRole('button', { name: 'Guardar caso' }).click();
     await expect(page.getByText(/REF-2324X-/).first()).toBeVisible();

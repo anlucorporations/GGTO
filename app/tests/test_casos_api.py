@@ -10,9 +10,11 @@ from app.models import Caso, CasoEstadoHist
 BASE = "/api/v1/casos"
 CASO_MANUAL = {
     "categoria": "RESIDENCIAL",
-    "tipo_caso": "AVERIA",
+    # RN-AL-01: datos obligatorios del alta manual.
+    "tipo_reporte": "CONSTRUCCION",
     "nombre_cliente": "CLIENTE MANUAL",
-    "telefono": "7001234567",
+    "contacto_cliente": "04140000000",
+    "id_pago": "7001234567",
     "direccion": "CALLE VALLE ARRIBA 123",
     "informacion": "Prueba de alta manual",
     "problema_reporte": "NO NAVEGA",
@@ -61,6 +63,53 @@ def test_alta_manual_genera_identificador_ref(client, admin_token):
     assert caso["en_gestion_supervisor"] is False
 
 
+def test_alta_manual_exige_los_datos_obligatorios(client, admin_token):
+    """RN-AL-01: el alta manual exige los datos de contacto, la dirección, el 70*
+    y el tipo de reporte; en una REPARACIÓN, además el id de avería y el tipo de
+    problema."""
+    base = {"id_averia": "TSTRN01", "nombre_cliente": "CLIENTE RN",
+            "contacto_cliente": "04140000000", "id_pago": "7001234000",
+            "direccion": "CALLE RN 1"}
+
+    # Sin `tipo_reporte` no hay alta.
+    r = client.post(BASE, json=base, headers=admin_token["admin"])
+    assert r.status_code == 422, r.text
+
+    # Sin teléfono de contacto, tampoco.
+    sin_contacto = {k: v for k, v in base.items() if k != "contacto_cliente"}
+    r = client.post(BASE, json={**sin_contacto, "tipo_reporte": "CONSTRUCCION"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 422, r.text
+
+    # Sin el identificador de pago (70*), tampoco.
+    sin_pago = {k: v for k, v in base.items() if k != "id_pago"}
+    r = client.post(BASE, json={**sin_pago, "tipo_reporte": "CONSTRUCCION"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 422, r.text
+
+    # Un número de contacto no sirve como identificador de pago.
+    r = client.post(BASE, json={**base, "id_pago": "04140000000",
+                                "tipo_reporte": "CONSTRUCCION"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 422, r.text
+
+    # REPARACIÓN sin id de avería ni tipo de problema.
+    r = client.post(BASE, json={**base, "id_averia": None,
+                                "tipo_reporte": "REPARACION"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 422, r.text
+
+    # CONSTRUCCIÓN sí entra con esos mismos datos (el id de avería es opcional).
+    r = client.post(BASE, json={**base, "tipo_reporte": "CONSTRUCCION"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 201, r.text
+    caso = r.json()
+    assert caso["tipo_caso"] == "CONSTRUCCION"
+    assert caso["contacto_cliente"] == "4140000000"
+    assert caso["telefono"] == "7001234000"
+    assert caso["id_pago"] is not None
+
+
 def test_alta_manual_con_id_explicito(client, admin_token):
     r = client.post(BASE, json={**CASO_MANUAL, "id_averia": "MAN-0001"},
                     headers=admin_token["admin"])
@@ -102,7 +151,7 @@ def test_buscar_por_id_averia(client, admin_token):
 
 def test_buscar_por_telefono(client, admin_token):
     client.post(BASE, json={**CASO_MANUAL, "id_averia": "MAN-0011",
-                            "telefono": "7009998888"}, headers=admin_token["admin"])
+                            "id_pago": "7009998888"}, headers=admin_token["admin"])
     r = client.get(f"{BASE}/buscar", params={"telefono": "7009998888"},
                    headers=admin_token["admin"])
     assert r.status_code == 200
@@ -211,6 +260,28 @@ def test_listado_filtros_y_paginacion(client, admin_token):
     assert supervisor["total"] == 3
 
 
+def test_listado_solo_abiertos_excluye_los_terminales(client, admin_token):
+    """RN-AL-02: la sección CASOS de la web lista solo casos abiertos."""
+    creados = [
+        client.post(BASE, json={**CASO_MANUAL, "id_averia": f"MAN-004{i}"},
+                    headers=admin_token["admin"]).json()
+        for i in range(3)
+    ]
+    for caso, estado in ((creados[0], "CERRADO"), (creados[1], "CANCELADO")):
+        r = client.patch(f"{BASE}/{caso['id_caso']}", json={"estado_actual": estado},
+                         headers=admin_token["admin"])
+        assert r.status_code == 200, r.text
+
+    # Sin el filtro el universo sigue completo (despacho, monitoreo, informes).
+    todos = client.get(BASE, headers=admin_token["admin"]).json()
+    assert todos["total"] == 3
+
+    abiertos = client.get(BASE, params={"solo_abiertos": True},
+                          headers=admin_token["admin"]).json()
+    assert abiertos["total"] == 1
+    assert [c["id_averia"] for c in abiertos["items"]] == ["MAN-0042"]
+
+
 def test_listado_incluye_casos_ingeridos(client, admin_token):
     """Los casos creados por la ingesta aparecen en el listado y en la búsqueda."""
     import pathlib
@@ -261,7 +332,8 @@ def test_tecnico_puede_cambiar_el_estado_desde_la_gestion(client, admin_token, d
 
     creado = client.post(
         "/api/v1/casos",
-        json={"id_averia": "TSTG01", "direccion": "CALLE TST G01", "nombre_cliente": "GESTION"},
+        json={**CASO_MANUAL, "id_averia": "TSTG01", "direccion": "CALLE TST G01",
+              "nombre_cliente": "GESTION"},
         headers=admin_token["admin"],
     )
     assert creado.status_code == 201, creado.text
@@ -308,7 +380,7 @@ def test_tecnico_puede_cambiar_el_estado_desde_la_gestion(client, admin_token, d
 def test_estado_invalido_en_gestion(client, admin_token):
     creado = client.post(
         "/api/v1/casos",
-        json={"id_averia": "TSTG02", "direccion": "CALLE TST G02"},
+        json={**CASO_MANUAL, "id_averia": "TSTG02", "direccion": "CALLE TST G02"},
         headers=admin_token["admin"],
     ).json()
     r = client.post(f"/api/v1/casos/{creado['id_caso']}/estado",
@@ -319,14 +391,23 @@ def test_estado_invalido_en_gestion(client, admin_token):
 # --------------------------------------------------------------------------- #
 # Resolución del caso: cierre, cita, enrutado e histórico (D-70)
 # --------------------------------------------------------------------------- #
-def _caso_con_telefono(client, admin_token, id_averia="TSTRES01", telefono="+582121111111"):
+def _caso_con_telefono(client, admin_token, id_averia="TSTRES01", id_pago="7014000950",
+                       contacto="+582121111111"):
+    """Alta manual con los datos obligatorios (RN-AL-01).
+
+    `id_pago` es el **identificador de pago (70*)** del caso y `contacto` su
+    teléfono de contacto: el alta manual ya no admite un caso sin 70*.
+    """
     r = client.post(
         "/api/v1/casos",
         json={
             "id_averia": id_averia,
             "direccion": "CALLE TST RESUELVE",
-            "telefono": telefono,
+            "id_pago": id_pago,
+            "contacto_cliente": contacto,
             "nombre_cliente": "RESOLUCION",
+            "tipo_reporte": "REPARACION",
+            "tipo_problema": "SIN_SERVICIO",
             "problema_reporte": "SIN SERVICIO GPON",
         },
         headers=admin_token["admin"],
@@ -426,13 +507,16 @@ def test_enrutado_crea_seguimiento_y_estado(client, admin_token, db_session):
     assert actividad.tipo == "ENRUTE" and actividad.resultado == "ENRUTADO"
 
 
-def test_relacionados_agrupa_antecedentes_por_telefono(client, admin_token):
-    """La pestaña Histórico muestra ids anteriores con su cierre y justificación."""
-    telefono = "+582129999888"
-    viejo = _caso_con_telefono(client, admin_token, "TSTHIST01", telefono)
-    nuevo = _caso_con_telefono(client, admin_token, "TSTHIST02", telefono)
+def test_relacionados_agrupa_antecedentes_por_identificador_de_pago(client, admin_token):
+    """La pestaña Histórico muestra los casos del mismo identificador de pago (D-89).
 
-    # Sin antecedentes todavía para el primero
+    El eje del histórico es el **identificador de pago (70\\*)**: un número de
+    contacto no agrupa antecedentes (RN-IP-01, CU-D89-03).
+    """
+    identificador = "7014000864"
+    viejo = _caso_con_telefono(client, admin_token, "TSTHIST01", identificador)
+    nuevo = _caso_con_telefono(client, admin_token, "TSTHIST02", "+58 701-400.0864")
+    assert viejo["id_pago"] == nuevo["id_pago"] is not None
     assert client.get(f"/api/v1/casos/{nuevo['id_caso']}/relacionados",
                       headers=admin_token["admin"]).json()[0]["id_averia"] == "TSTHIST01"
 
@@ -454,12 +538,30 @@ def test_relacionados_agrupa_antecedentes_por_telefono(client, admin_token):
     assert "SACAS" in antecedente["justificacion_cierre"]
     assert "Reparación de acometida" in antecedente["justificacion_cierre"]
 
-    # Un caso sin teléfono no tiene antecedentes
-    suelto = client.post("/api/v1/casos",
-                         json={"id_averia": "TSTHIST03", "direccion": "CALLE TST SUELTO"},
-                         headers=admin_token["admin"]).json()
-    assert client.get(f"/api/v1/casos/{suelto['id_caso']}/relacionados",
-                      headers=admin_token["admin"]).json() == []
+
+def test_relacionados_sin_antecedentes(client, admin_token):
+    """Sin otros casos del mismo identificador de pago no hay antecedentes.
+
+    El 70* es el eje del histórico y el contacto **no** agrupa (RN-IP-01,
+    CU-D89-03): el caso guarda el contacto normalizado, aparte del identificador.
+    """
+    caso = _caso_con_telefono(client, admin_token, "TSTHIST03",
+                              id_pago="7014000951", contacto="0412-123-4567")
+    assert caso["id_pago"] is not None
+    assert caso["telefono"] == "7014000951"
+    assert caso["contacto_cliente"] == "4121234567"
+
+    r = client.get(f"/api/v1/casos/{caso['id_caso']}/relacionados",
+                   headers=admin_token["admin"])
+    assert r.status_code == 200
+    assert r.json() == []
+
+    # Un segundo caso con el mismo 70* sí devuelve el primero.
+    otro = _caso_con_telefono(client, admin_token, "TSTHIST04",
+                              id_pago="7014000951", contacto="0412-999-8877")
+    relacionados = client.get(f"/api/v1/casos/{otro['id_caso']}/relacionados",
+                              headers=admin_token["admin"]).json()
+    assert [c["id_averia"] for c in relacionados] == ["TSTHIST03"]
 
 
 def test_no_se_puede_cerrar_dos_veces_y_los_seriales_no_colisionan(client, admin_token):

@@ -16,8 +16,9 @@ test.describe('Ayuda', () => {
     await page.goto('/ayuda');
     // 8 temas tras añadir el aviso legal (D-71)
     await expect(page.locator('.ayuda-tema')).toHaveCount(8);
-    // 23 secciones: se publicó el aviso legal como tema General (D-71)
-    await expect(page.locator('.ayuda-seccion')).toHaveCount(23);
+    // 25 secciones: el árbol real de manuales (D-94 añadió OPERACIÓN y sus 2
+    // secciones; antes eran 23 y el índice ya reflejaba 25).
+    await expect(page.locator('.ayuda-seccion')).toHaveCount(25);
     expect(await page.locator('.ayuda-subsecciones a').count()).toBeGreaterThan(100);
     await expect(page.getByRole('link', { name: 'Abrir manual HTML' }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Descargar PDF' }).first()).toBeVisible();
@@ -30,7 +31,8 @@ test.describe('Ayuda', () => {
     await expect(page.getByText(/coinciden con «despacho»/)).toBeVisible();
     const visibles = await page.locator('.ayuda-seccion').count();
     expect(visibles).toBeGreaterThan(0);
-    expect(visibles).toBeLessThan(22);
+    // El filtro acota el índice completo (25 secciones desde D-94).
+    expect(visibles).toBeLessThan(25);
   });
 
   test('el manual HTML y el PDF se sirven sin error', async ({ page, request }) => {

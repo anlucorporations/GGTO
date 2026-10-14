@@ -61,7 +61,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
       return;
     }
     if (_claveController.text.isEmpty) {
-      setState(() => _error = 'Indique su clave para entrar tras el desbloqueo.');
+      setState(
+          () => _error = 'Indique su clave para entrar tras el desbloqueo.');
       return;
     }
 
@@ -69,7 +70,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final error = await auth.desbloquear(
       p00: _p00Controller.text,
       palabras: [
-        for (var i = 0; i < 3; i++) {'pos': _posiciones[i], 'valor': _palabras[i].text.trim()},
+        for (var i = 0; i < 3; i++)
+          {'pos': _posiciones[i], 'valor': _palabras[i].text.trim()},
       ],
       clave: _claveController.text,
     );
@@ -77,7 +79,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
     setState(() => _enviando = false);
 
     if (error == null) {
-      Navigator.pushReplacementNamed(context, '/casos');
+      Navigator.pushReplacementNamed(context, '/inicio');
       return;
     }
     setState(() => _error = error);
@@ -98,7 +100,6 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 16),
-
               if (_error != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -107,11 +108,11 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     border: Border.all(color: const Color(0xFFE57373)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(_error!, style: const TextStyle(color: Color(0xFFB71C1C))),
+                  child: Text(_error!,
+                      style: const TextStyle(color: Color(0xFFB71C1C))),
                 ),
                 const SizedBox(height: 12),
               ],
-
               TextField(
                 controller: _p00Controller,
                 decoration: const InputDecoration(
@@ -120,7 +121,6 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-
               for (var i = 0; i < 3; i++) ...[
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -139,7 +139,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
                             DropdownMenuItem(value: p, child: Text('Pos $p')),
                         ],
                         onChanged: (valor) {
-                          if (valor != null) setState(() => _posiciones[i] = valor);
+                          if (valor != null)
+                            setState(() => _posiciones[i] = valor);
                         },
                       ),
                     ),
@@ -158,7 +159,6 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-
               const SizedBox(height: 4),
               const Text(
                 'Al desbloquear se solicita su clave para iniciar sesión: el desbloqueo por sí '
@@ -179,7 +179,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: _enviando ? null : _desbloquear,
-                  child: Text(_enviando ? 'Desbloqueando…' : 'Desbloquear e ingresar'),
+                  child: Text(
+                      _enviando ? 'Desbloqueando…' : 'Desbloquear e ingresar'),
                 ),
               ),
             ],

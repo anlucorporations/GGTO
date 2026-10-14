@@ -184,7 +184,11 @@ def test_super_usuario_tiene_acceso_total(client, admin_token):
 
     # Escritura en CASOS
     caso = client.post("/api/v1/casos", json={"id_averia": "TSTSUP-1",
-                                              "nombre_cliente": "SUPER TEST"},
+                                              "nombre_cliente": "SUPER TEST",
+                                              "contacto_cliente": "04141112233",
+                                              "id_pago": "7009000000",
+                                              "direccion": "SECTOR SUPER 1",
+                                              "tipo_reporte": "CONSTRUCCION"},
                        headers=headers)
     assert caso.status_code == 201, caso.text
 

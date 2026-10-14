@@ -7,7 +7,7 @@ from collections.abc import Callable
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
@@ -46,6 +46,17 @@ def get_current_user(
         raise CREDENCIALES_INVALIDAS
     if usuario.bloqueado:
         raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Usuario bloqueado")
+
+    # D-95: Acotado real por central en la sesión de base de datos
+    if db.bind and db.bind.dialect.name == "postgresql":
+        if usuario.rol and usuario.rol.codigo == ROL_SUPER:
+            db.execute(text("SELECT set_config('app.sin_acotar', 'on', true)"))
+        if usuario.id_central is not None:
+            db.execute(
+                text("SELECT set_config('app.id_central', :c, true)"),
+                {"c": str(usuario.id_central)},
+            )
+
     return usuario
 
 
@@ -70,3 +81,11 @@ def require_roles(*roles: str) -> Callable[[Usuario], Usuario]:
         )
 
     return _check
+
+
+# Guards por capacidad (D-95 / H-09 / H-10 / DEC-G8 / DEC-G9 / DEC-G17)
+_material = require_roles("ADMIN", "SUPERVISOR", "COORDINADOR")
+_especial_alta = require_roles("ADMIN", "SUPERVISOR", "COORDINADOR")
+_envio_supervisor = require_roles("COORDINADOR")
+_falla_escritura = require_roles("ADMIN", "SUPERVISOR")
+_auditoria_lectura = require_roles()  # solo SUPER pasa gracias al bypass ROL_SUPER

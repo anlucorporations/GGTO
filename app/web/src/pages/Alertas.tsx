@@ -54,7 +54,9 @@ function claseEstado(estado: string): string {
 /* ------------------------------------------------------------------ */
 
 export default function Alertas() {
-  const { soloLectura } = useAuth();
+  const { soloLectura, usuario } = useAuth();
+  const esCoordinador = usuario?.rol === 'COORDINADOR';
+  const soloConsulta = soloLectura || esCoordinador;
   const [metricas, setMetricas] = useState<MetricasOut | null>(null);
   const [fallas, setFallas] = useState<FallaMasivaOut[]>([]);
   const [notificaciones, setNotificaciones] = useState<NotificacionOut[]>([]);
@@ -74,7 +76,7 @@ export default function Alertas() {
     setCargando(true);
     setError('');
     const resultados = await Promise.allSettled([
-      api.obtenerMetricas(),
+      esCoordinador ? Promise.resolve(null) : api.obtenerMetricas(),
       api.listarFallasMasivasAlertas({ solo_activas: soloActivas }),
       api.listarOutbox({ estado: estadoNotif || undefined }),
     ]);
@@ -86,7 +88,7 @@ export default function Alertas() {
       setError(detalleDe(fallo.reason, 'Error al cargar las alertas.'));
     }
     setCargando(false);
-  }, [soloActivas, estadoNotif]);
+  }, [soloActivas, estadoNotif, esCoordinador]);
 
   useEffect(() => {
     void cargar();
@@ -145,7 +147,7 @@ export default function Alertas() {
             type="button"
             className="btn"
             onClick={() => void detectar()}
-            disabled={soloLectura || ocupado !== ''}
+            disabled={soloConsulta || ocupado !== ''}
           >
             <IconoFalla width={17} height={17} /> {ocupado === 'detectar' ? 'Detectando…' : 'Detectar fallas'}
           </button>
@@ -153,7 +155,7 @@ export default function Alertas() {
             type="button"
             className="btn"
             onClick={() => setModalManual(true)}
-            disabled={soloLectura}
+            disabled={soloConsulta}
           >
             Reportar falla
           </button>
@@ -168,7 +170,9 @@ export default function Alertas() {
         <h2>
           <IconoAlertas width={18} height={18} /> Alertas Diarias
         </h2>
-        {metricas ? (
+          {esCoordinador ? (
+            <p className="texto-pequeno">Vista de alertas y fallas de su central.</p>
+          ) : metricas ? (
           <>
             <div className="rejilla-tarjetas">
               <div className="tarjeta">
@@ -324,7 +328,7 @@ export default function Alertas() {
             type="button"
             className="btn"
             onClick={() => void procesar()}
-            disabled={soloLectura || ocupado !== ''}
+            disabled={soloConsulta || ocupado !== ''}
           >
             {ocupado === 'procesar' ? 'Procesando…' : 'Procesar outbox'}
           </button>
@@ -392,7 +396,12 @@ export default function Alertas() {
       {/* D-75: ficha flotante con pestañas (Masiva · Planificar · Materiales ·
           Cerrar) que concentra todas las acciones de la falla. */}
       {ficha && (
-        <FichaFalla falla={ficha} onCerrar={() => setFicha(null)} onActualizada={fallaActualizada} />
+        <FichaFalla
+          falla={ficha}
+          onCerrar={() => setFicha(null)}
+          onActualizada={fallaActualizada}
+          soloMateriales={esCoordinador}
+        />
       )}
     </>
   );

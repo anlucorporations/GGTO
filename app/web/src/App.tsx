@@ -19,6 +19,7 @@ import Ayuda from './pages/Ayuda';
 import Sistemas from './pages/Sistemas';
 import Perfil from './pages/Perfil';
 import Mensajes from './pages/Mensajes';
+import RutaCasos from './components/RutaCasos';
 
 export default function App() {
   return (
@@ -34,7 +35,9 @@ export default function App() {
           <Route path="ingesta" element={<Navigate to="/?pestana=ingesta" replace />} />
           <Route path="monitoreo" element={<Navigate to="/?pestana=monitoreo" replace />} />
           <Route path="alertas" element={<Navigate to="/?pestana=alertas" replace />} />
-          <Route path="casos" element={<Casos />} />
+          <Route element={<RutaCasos />}>
+            <Route path="casos" element={<Casos />} />
+          </Route>
           <Route path="especiales" element={<Especiales />} />
           <Route path="agenda" element={<Agenda />} />
           <Route path="ayuda" element={<Ayuda />} />

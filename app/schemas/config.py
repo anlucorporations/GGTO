@@ -127,15 +127,42 @@ class TecnicoUpdate(BaseModel):
     status: STATUS_TECNICO | None = None
 
 
-# Roles que pueden asignarse desde TÉCNICOS. El rol SUPER queda excluido a
-# propósito: es la cuenta única del Super Usuario y no se reparte (D-68).
-ROL_ASIGNABLE = Literal["TECNICO", "SUPERVISOR", "ADMIN"]
+# Roles que pueden asignarse desde TÉCNICOS o cuentas de gestión (D-68 / D-95).
+# El rol SUPER queda excluido a propósito: es la cuenta única del Super Usuario y no se reparte.
+ROL_ASIGNABLE = Literal["TECNICO", "SUPERVISOR", "ADMIN", "COORDINADOR"]
 
 
 class CambioRol(BaseModel):
     """Cambio de rol de la cuenta de acceso del técnico (solo SUPER/SUPERVISOR)."""
 
     rol: ROL_ASIGNABLE
+
+
+class UsuarioGestionIn(BaseModel):
+    """Pre-alta de cuenta de gestión (SUPER / SUPERVISOR) — D-95 / DEC-G16."""
+
+    p00: str = Field(min_length=3, max_length=20)
+    nombre: str = Field(min_length=1, max_length=80)
+    apellido: str | None = Field(default=None, max_length=80)
+    correo: str = Field(min_length=5, max_length=120)
+    id_central: int
+    rol: ROL_ASIGNABLE
+
+
+class UsuarioGestionOut(BaseModel):
+    """Respuesta de pre-alta de cuenta de gestión."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_usuario: int
+    p00: str
+    nombre: str | None = None
+    apellido: str | None = None
+    correo: str | None = None
+    id_central: int | None = None
+    id_tecnico: int | None = None
+    rol: str
+    estado: str = "SIN_ALTA"
 
 
 class TecnicoOut(BaseModel):

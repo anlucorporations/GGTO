@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from ..models import (
     Caso,
+    CasoEspecial,
     CasoEstadoHist,
     Cita,
     Cuadrilla,
@@ -17,13 +18,16 @@ from ..models import (
     DespachoCasos,
     Flota,
     Herramienta,
+    IdentificadorPago,
     Sector,
     Tecnico,
 )
+from .tiempo import ZONA_OPERATIVA, hoy_operativo  # noqa: F401 - reexportado a las rutas
 
 PENDIENTE_EXCLUIR = ("CERRADO", "CANCELADO")
 EMPRESARIAL = ("EMPRESA", "GOBIERNO")
 DIAS_SEMANA = 6  # lunes a sábado
+TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 
 
 def rango_semana(fecha: date) -> tuple[date, date]:
@@ -48,6 +52,17 @@ def _dias(desde: date, dias: int = DIAS_SEMANA) -> list[date]:
 
 def _conteo(db: Session, *condiciones) -> int:
     return db.scalar(select(func.count()).select_from(Caso).where(*condiciones)) or 0
+
+
+def _dia(columna):
+    """Día operativo de una columna `timestamptz` (America/Caracas · RNF-13).
+
+    Antes eran `func.date(columna)`, que PostgreSQL evalúa en la zona de la
+    **sesión** (UTC en Cloud SQL): un caso creado a las 22:00 de Caracas caía en el
+    día siguiente y las métricas del día no cuadraban. La conversión se hace en la
+    base —que ya trae la base de zonas horarias— y no en Python.
+    """
+    return func.date(func.timezone(ZONA_OPERATIVA, columna))
 
 
 def _casos_de_cuadrilla(id_cuadrilla: int):
@@ -79,7 +94,7 @@ def _resueltos(
     condiciones = [
         Caso.id_central == id_central,
         CasoEstadoHist.estado_nuevo == "CERRADO",
-        func.date(CasoEstadoHist.fecha_hora).between(desde, hasta),
+        _dia(CasoEstadoHist.fecha_hora).between(desde, hasta),
         *_scope_cuadrilla(id_cuadrilla),
     ]
     if categoria:
@@ -101,7 +116,7 @@ def _cambiaron_a(
     return db.scalar(
         select(func.count()).select_from(CasoEstadoHist).join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
         .where(Caso.id_central == id_central, CasoEstadoHist.estado_nuevo == estado,
-               func.date(CasoEstadoHist.fecha_hora).between(desde, hasta),
+               _dia(CasoEstadoHist.fecha_hora).between(desde, hasta),
                *_scope_cuadrilla(id_cuadrilla))
     ) or 0
 
@@ -116,19 +131,19 @@ def _pendientes(db: Session, id_central: int, *extra):
 def gestion_diaria(db: Session, id_central: int, fecha: date,
                    id_cuadrilla: int | None = None) -> dict:
     extra = _scope_cuadrilla(id_cuadrilla)
-    citados_cond = [func.date(Cita.fecha_hora) == fecha, Cita.id_caso.is_not(None)]
+    citados_cond = [_dia(Cita.fecha_hora) == fecha, Cita.id_caso.is_not(None)]
     if id_cuadrilla is not None:
         citados_cond.append(Cita.id_cuadrilla == id_cuadrilla)
     return {
         "fecha": fecha.isoformat(),
         "ingresos_nuevos": _conteo(db, Caso.id_central == id_central,
-                                   func.date(Caso.creado_en) == fecha, *extra),
+                                   _dia(Caso.creado_en) == fecha, *extra),
         "resueltos_residencial": _resueltos(db, id_central, fecha, fecha, "RESIDENCIAL", id_cuadrilla),
         "resueltos_empresarial": db.scalar(
             select(func.count()).select_from(CasoEstadoHist)
             .join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
             .where(Caso.id_central == id_central, CasoEstadoHist.estado_nuevo == "CERRADO",
-                   func.date(CasoEstadoHist.fecha_hora) == fecha, Caso.categoria.in_(EMPRESARIAL),
+                   _dia(CasoEstadoHist.fecha_hora) == fecha, Caso.categoria.in_(EMPRESARIAL),
                    *extra)
         ) or 0,
         "resueltos_referidos": _resueltos(db, id_central, fecha, fecha, "REFERIDO", id_cuadrilla),
@@ -167,7 +182,7 @@ def _por_dia_cuadrilla(db: Session, id_central: int, id_cuadrilla: int, dia: dat
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
         .where(Despacho.id_central == id_central, Despacho.id_cuadrilla == id_cuadrilla,
                Despacho.fecha == dia, CasoEstadoHist.estado_nuevo == "CERRADO",
-               func.date(CasoEstadoHist.fecha_hora) == dia)
+               _dia(CasoEstadoHist.fecha_hora) == dia)
     ) or 0
     return {"fecha": dia.isoformat(), "asignados": asignados, "cerrados": cerrados,
             "gestionados": gestionados}
@@ -199,6 +214,70 @@ def gestion_semanal(db: Session, id_central: int, desde: date,
             "gestionados": gestionados,
         })
     return {"desde": lunes.isoformat(), "hasta": sabado.isoformat(), "dias": dias}
+
+
+def gestion_mensual(db: Session, id_central: int, fecha: date,
+                    id_cuadrilla: int | None = None) -> dict:
+    """Resumen agregado del mes operativo de `fecha` (D-96 / RF-APK-13)."""
+    desde, hasta = rango_periodo("mensual", fecha)
+    extra = _scope_cuadrilla(id_cuadrilla)
+    citados = db.scalar(
+        select(func.count(func.distinct(Cita.id_caso)))
+        .join(Caso, Caso.id_caso == Cita.id_caso)
+        .where(Caso.id_central == id_central, _dia(Cita.fecha_hora).between(desde, hasta),
+               *_scope_cuadrilla(id_cuadrilla),
+               *([Cita.id_cuadrilla == id_cuadrilla] if id_cuadrilla is not None else []))
+    ) or 0
+    diferidos = _cambiaron_a(db, id_central, "DIFERIDO", desde, hasta, id_cuadrilla)
+    resueltos_empresarial = db.scalar(
+        select(func.count()).select_from(CasoEstadoHist)
+        .join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
+        .where(
+            Caso.id_central == id_central,
+            CasoEstadoHist.estado_nuevo == "CERRADO",
+            _dia(CasoEstadoHist.fecha_hora).between(desde, hasta),
+            Caso.categoria.in_(EMPRESARIAL),
+            *_scope_cuadrilla(id_cuadrilla),
+        )
+    ) or 0
+    return {
+        "desde": desde.isoformat(),
+        "hasta": hasta.isoformat(),
+        "ingresos_nuevos": _conteo(
+            db, Caso.id_central == id_central, _dia(Caso.creado_en).between(desde, hasta), *extra
+        ),
+        "resueltos_residencial": _resueltos(
+            db, id_central, desde, hasta, "RESIDENCIAL", id_cuadrilla
+        ),
+        "resueltos_empresarial": resueltos_empresarial,
+        "resueltos_referidos": _resueltos(
+            db, id_central, desde, hasta, "REFERIDO", id_cuadrilla
+        ),
+        "citados": citados,
+        "diferidos": diferidos,
+        "pendientes_total": _pendientes(db, id_central, *extra),
+    }
+
+
+def casos_especiales_monitor(db: Session, id_central: int) -> dict:
+    """Conteo de casos especiales por clasificación y estado, sin exponer PII."""
+    filas = db.execute(
+        select(CasoEspecial.clasificacion, CasoEspecial.estado, func.count())
+        .join(Caso, Caso.id_caso == CasoEspecial.id_caso)
+        .where(Caso.id_central == id_central)
+        .group_by(CasoEspecial.clasificacion, CasoEspecial.estado)
+        .order_by(CasoEspecial.clasificacion, CasoEspecial.estado)
+    ).all()
+    por_clasificacion: dict[str, int] = {}
+    por_estado: dict[str, int] = {}
+    for clasificacion, estado, cantidad in filas:
+        por_clasificacion[clasificacion] = por_clasificacion.get(clasificacion, 0) + cantidad
+        por_estado[estado] = por_estado.get(estado, 0) + cantidad
+    return {
+        "total": sum(por_clasificacion.values()),
+        "por_clasificacion": por_clasificacion,
+        "por_estado": por_estado,
+    }
 
 
 def casos_globales(db: Session, id_central: int, desde: date, hasta: date,
@@ -243,6 +322,139 @@ def construccion(db: Session, id_central: int, id_cuadrilla: int | None = None) 
                                 Caso.categoria.in_(EMPRESARIAL), *extra)
     return {"residenciales": residenciales, "empresariales": empresariales,
             "total": residenciales + empresariales}
+
+
+def reclasificaciones(db: Session, id_central: int) -> dict:
+    """Métricas de la regla REPARACIÓN ⇐ 70* + avería real (RF-49/RF-50/RF-55).
+
+    - `reparaciones_validas`: REPARACIÓN con identificador de pago y avería real.
+    - `referidos`: casos `tipo_caso='REFERIDO'` (el destino del incumplimiento).
+    - `reclasificadas`: referidos con ficha de especial de actividad REPARACIÓN
+      (nacieron como reparación y no acreditaron sus claves).
+    - `pendientes_historicos`: REPARACIONES **marcadas** (sin 70* o sin avería real)
+      que aún no han tenido su próximo cambio (DEC-IP-3).
+    - `referidos_sin_ficha`: referidos sin fila en `caso_especial` (estado
+      transitorio entre D-89 y D-90, o escrituras que no pasan por el servicio).
+    """
+    base = (Caso.id_central == id_central,)
+    validas = _conteo(
+        db, *base,
+        Caso.tipo_caso == "REPARACION",
+        Caso.id_pago.isnot(None),
+        Caso.id_averia.notlike("REF-%"),
+    )
+    referidos = _conteo(db, *base, Caso.tipo_caso == "REFERIDO")
+    marcadas = db.scalar(
+        select(func.count()).select_from(Caso).where(
+            *base,
+            Caso.tipo_caso == "REPARACION",
+            (Caso.id_pago.is_(None)) | (Caso.id_averia.like("REF-%")),
+        )
+    ) or 0
+    en_terminal = db.scalar(
+        select(func.count()).select_from(Caso).where(
+            *base,
+            Caso.tipo_caso == "REPARACION",
+            (Caso.id_pago.is_(None)) | (Caso.id_averia.like("REF-%")),
+            Caso.estado_actual.in_(TERMINALES),
+        )
+    ) or 0
+    con_ficha = db.scalar(
+        select(func.count())
+        .select_from(CasoEspecial)
+        .where(
+            CasoEspecial.tipo_actividad == "REPARACION",
+            CasoEspecial.id_caso.in_(
+                select(Caso.id_caso).where(*base, Caso.tipo_caso == "REFERIDO")
+            ),
+        )
+    ) or 0
+    sin_ficha = db.scalar(
+        select(func.count()).select_from(Caso).where(
+            *base,
+            Caso.tipo_caso == "REFERIDO",
+            ~Caso.id_caso.in_(select(CasoEspecial.id_caso).where(
+                CasoEspecial.id_caso.isnot(None))),
+        )
+    ) or 0
+    por_clasificacion = {
+        fila[0]: fila[1]
+        for fila in db.execute(
+            select(Caso.categoria, func.count())
+            .where(*base, Caso.tipo_caso == "REFERIDO")
+            .group_by(Caso.categoria)
+        ).all()
+    }
+    return {
+        "reparaciones_validas": validas,
+        "referidos": referidos,
+        "reclasificadas": con_ficha,
+        "pendientes_historicos": int(marcadas),
+        "pendientes_historicos_en_terminal": int(en_terminal),
+        "referidos_sin_ficha": int(sin_ficha),
+        "referidos_por_clasificacion": por_clasificacion,
+    }
+
+
+def identificadores(db: Session, id_central: int, dias: int = 90, limite: int = 10) -> dict:
+    """Métricas por **identificador de pago (70\\*)** (RF-54/RF-55).
+
+    El identificador es la clave que enlaza al usuario con la institución y puede
+    tener **varios reportes**: estas métricas miran el caso desde ese lado.
+
+    - `con_casos`: identificadores distintos con al menos un caso de la central.
+    - `casos_con_identificador` / `casos_sin_identificador`: reparto de los casos.
+    - `media_casos` y `max_casos`: reportes por identificador.
+    - `reincidentes`: identificadores con **2 o más reportes** dentro de la ventana
+      (`pago.reincidencia_dias`, por defecto 90 días · RF-54).
+    - `top`: los identificadores con más reportes en la ventana (número, total de
+      casos y si es reincidente).
+    """
+    base = (Caso.id_central == id_central,)
+    desde = datetime.now(UTC) - timedelta(days=dias)
+    agrupado = (
+        select(
+            Caso.id_pago.label("id_pago"),
+            func.count().label("casos"),
+            func.sum(case((Caso.creado_en >= desde, 1), else_=0)).label("en_ventana"),
+        )
+        .where(*base, Caso.id_pago.isnot(None))
+        .group_by(Caso.id_pago)
+        .subquery()
+    )
+    filas = db.execute(
+        select(IdentificadorPago.numero, agrupado.c.casos, agrupado.c.en_ventana)
+        .join(IdentificadorPago, IdentificadorPago.id_pago == agrupado.c.id_pago)
+        .order_by(agrupado.c.en_ventana.desc(), agrupado.c.casos.desc(), IdentificadorPago.numero)
+        .limit(limite)
+    ).all()
+    totales = db.execute(
+        select(
+            func.count(agrupado.c.id_pago),
+            func.coalesce(func.sum(agrupado.c.casos), 0),
+            func.coalesce(func.max(agrupado.c.casos), 0),
+            func.coalesce(func.sum(case((agrupado.c.en_ventana >= 2, 1), else_=0)), 0),
+        )
+    ).one()
+    con_casos, total_casos, max_casos, reincidentes = (int(valor or 0) for valor in totales)
+    return {
+        "ventana_dias": dias,
+        "con_casos": con_casos,
+        "casos_con_identificador": total_casos,
+        "casos_sin_identificador": _conteo(db, *base, Caso.id_pago.is_(None)),
+        "media_casos": round(total_casos / con_casos, 1) if con_casos else 0.0,
+        "max_casos": max_casos,
+        "reincidentes": reincidentes,
+        "top": [
+            {
+                "numero": fila[0],
+                "casos": int(fila[1]),
+                "reportes_ventana": int(fila[2] or 0),
+                "reincidente": int(fila[2] or 0) >= 2,
+            }
+            for fila in filas
+        ],
+    }
 
 
 def por_cuadrilla(db: Session, id_central: int, desde: date, dias: int = DIAS_SEMANA,
@@ -328,5 +540,8 @@ def reporte_trabajo(db: Session, id_central: int, periodo: str, fecha: date,
         "construccion": construccion(db, id_central, id_cuadrilla),
         "cuadrilla": por_cuadrilla(db, id_central, lunes, DIAS_SEMANA, id_cuadrilla),
         "capacidad": capacidad(db, id_central, id_cuadrilla),
+        # D-94: RF-55 pide que el informe también muestre el lado del identificador.
+        "reclasificaciones": reclasificaciones(db, id_central),
+        "identificadores": identificadores(db, id_central),
     }
 

@@ -168,6 +168,17 @@ def parsear_encabezado(contenido: str) -> list[str]:
         return []
 
 
+def columnas_encabezado(contenido: bytes | str) -> int:
+    """Número de columnas del encabezado del archivo (RT-20)."""
+    texto = decodificar(contenido) if isinstance(contenido, bytes) else contenido
+    return len(parsear_encabezado(texto.lstrip("\ufeff")))
+
+
+def encabezado_valido(contenido: bytes | str) -> bool:
+    """El contrato exige exactamente 80 columnas (RT-05 / RT-20)."""
+    return columnas_encabezado(contenido) == COLUMNAS_ESPERADAS
+
+
 def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
     """Devuelve (filas mapeadas, avisos) sin tocar la base de datos."""
     texto = decodificar(contenido) if isinstance(contenido, bytes) else contenido
@@ -188,12 +199,12 @@ def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
     filas: list[dict[str, Any]] = []
     malformadas = 0
     recortados = 0
-    for cruda in lector:
+    for numero_linea, cruda in enumerate(lector, start=2):
         if not any(celda.strip() for celda in cruda):
             continue
         if len(cruda) != COLUMNAS_ESPERADAS:
             malformadas += 1
-        fila: dict[str, Any] = {}
+        fila: dict[str, Any] = {"_linea": numero_linea}
         for campo, indices, tipo in ESPECIFICACION:
             if tipo == "unir":
                 partes = [cruda[i].strip() for i in indices if i < len(cruda) and cruda[i].strip()]

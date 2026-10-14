@@ -1,0 +1,90 @@
+[2026-10-09T22:42:09+00:00] ==========================================================================
+[2026-10-09T22:42:09+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — SIMULACIÓN
+[2026-10-09T22:42:09+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:42:09+00:00] Inventario (solo lectura): casos sin número=0, con 70* válido=3, con número no válido=1, identificadores distintos=2, ya enlazados=0, REPARACIONES marcadas=0
+[2026-10-09T22:42:09+00:00] Identificadores compartidos por varios casos: {'7014000848': [1, 2]}
+[2026-10-09T22:42:09+00:00] Simulación: se aplicaría el DDL, el backfill y los avisos del lote.
+[2026-10-09T22:42:09+00:00] Vuelve a ejecutar con --aplicar para escribir.
+[2026-10-09T22:42:10+00:00] ==========================================================================
+[2026-10-09T22:42:10+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — APLICAR
+[2026-10-09T22:42:10+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:42:10+00:00] DDL aplicado: tabla identificador_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: columna caso.id_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: FK caso.id_pago → identificador_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: índices de caso.id_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: tipo_caso admite REFERIDO
+[2026-10-09T22:42:10+00:00] DDL aplicado: contadores y avisos del lote de ingesta
+[2026-10-09T22:42:10+00:00] DDL aplicado: trigger de reclasificación REPARACIÓN → REFERIDO
+[2026-10-09T22:42:10+00:00] DDL aplicado: CHECK ck_reparacion_con_ip (NOT VALID)
+[2026-10-09T22:42:10+00:00] DDL aplicado: RLS de identificador_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: trigger actualizado_en de identificador_pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: parámetros del identificador de pago
+[2026-10-09T22:42:10+00:00] DDL aplicado: respaldo para revertir el backfill
+[2026-10-09T22:42:10+00:00] Backfill: {'identificadores_creados': 2, 'casos_enlazados': 3, 'contactos_sumados': 1}
+[2026-10-09T22:42:10+00:00] Verificaciones post-migración: OK
+[2026-10-09T22:42:10+00:00] Inventario final: identificadores distintos=2, casos enlazados=3, REPARACIONES marcadas=0 (se reclasifican en su próximo cambio, DEC-IP-3)
+[2026-10-09T22:42:10+00:00] MIGRACIÓN D-89: OK
+[2026-10-09T22:42:11+00:00] ==========================================================================
+[2026-10-09T22:42:11+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — APLICAR
+[2026-10-09T22:42:11+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:42:11+00:00] DDL aplicado: tabla identificador_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: columna caso.id_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: FK caso.id_pago → identificador_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: índices de caso.id_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: tipo_caso admite REFERIDO
+[2026-10-09T22:42:11+00:00] DDL aplicado: contadores y avisos del lote de ingesta
+[2026-10-09T22:42:11+00:00] DDL aplicado: trigger de reclasificación REPARACIÓN → REFERIDO
+[2026-10-09T22:42:11+00:00] DDL aplicado: CHECK ck_reparacion_con_ip (NOT VALID)
+[2026-10-09T22:42:11+00:00] DDL aplicado: RLS de identificador_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: trigger actualizado_en de identificador_pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: parámetros del identificador de pago
+[2026-10-09T22:42:11+00:00] DDL aplicado: respaldo para revertir el backfill
+[2026-10-09T22:42:11+00:00] Backfill: {'identificadores_creados': 0, 'casos_enlazados': 0, 'contactos_sumados': 0}
+[2026-10-09T22:42:11+00:00] Verificaciones post-migración: OK
+[2026-10-09T22:42:11+00:00] Inventario final: identificadores distintos=2, casos enlazados=3, REPARACIONES marcadas=0 (se reclasifican en su próximo cambio, DEC-IP-3)
+[2026-10-09T22:42:11+00:00] MIGRACIÓN D-89: OK
+[2026-10-09T22:42:51+00:00] ==========================================================================
+[2026-10-09T22:42:51+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — APLICAR
+[2026-10-09T22:42:52+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:42:52+00:00] DDL aplicado: tabla identificador_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: columna caso.id_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: FK caso.id_pago → identificador_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: índices de caso.id_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: tipo_caso admite REFERIDO
+[2026-10-09T22:42:52+00:00] DDL aplicado: contadores y avisos del lote de ingesta
+[2026-10-09T22:42:52+00:00] DDL aplicado: trigger de reclasificación REPARACIÓN → REFERIDO
+[2026-10-09T22:42:52+00:00] DDL aplicado: CHECK ck_reparacion_con_ip (NOT VALID)
+[2026-10-09T22:42:52+00:00] DDL aplicado: RLS de identificador_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: trigger actualizado_en de identificador_pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: parámetros del identificador de pago
+[2026-10-09T22:42:52+00:00] DDL aplicado: respaldo para revertir el backfill
+[2026-10-09T22:42:52+00:00] Backfill: {'identificadores_creados': 1, 'casos_enlazados': 2, 'contactos_sumados': 1, 'alias_limpiados': 2}
+[2026-10-09T22:42:52+00:00] Verificaciones post-migración: OK
+[2026-10-09T22:42:52+00:00] Inventario final: identificadores distintos=1, casos enlazados=2, REPARACIONES marcadas=0 (se reclasifican en su próximo cambio, DEC-IP-3)
+[2026-10-09T22:42:52+00:00] MIGRACIÓN D-89: OK
+[2026-10-09T22:42:53+00:00] ==========================================================================
+[2026-10-09T22:42:53+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — APLICAR
+[2026-10-09T22:42:53+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:42:53+00:00] DDL aplicado: tabla identificador_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: columna caso.id_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: FK caso.id_pago → identificador_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: índices de caso.id_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: tipo_caso admite REFERIDO
+[2026-10-09T22:42:53+00:00] DDL aplicado: contadores y avisos del lote de ingesta
+[2026-10-09T22:42:53+00:00] DDL aplicado: trigger de reclasificación REPARACIÓN → REFERIDO
+[2026-10-09T22:42:53+00:00] DDL aplicado: CHECK ck_reparacion_con_ip (NOT VALID)
+[2026-10-09T22:42:53+00:00] DDL aplicado: RLS de identificador_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: trigger actualizado_en de identificador_pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: parámetros del identificador de pago
+[2026-10-09T22:42:53+00:00] DDL aplicado: respaldo para revertir el backfill
+[2026-10-09T22:42:53+00:00] Backfill: {'identificadores_creados': 0, 'casos_enlazados': 0, 'contactos_sumados': 0, 'alias_limpiados': 0}
+[2026-10-09T22:42:53+00:00] Verificaciones post-migración: OK
+[2026-10-09T22:42:53+00:00] Inventario final: identificadores distintos=1, casos enlazados=2, REPARACIONES marcadas=0 (se reclasifican en su próximo cambio, DEC-IP-3)
+[2026-10-09T22:42:53+00:00] MIGRACIÓN D-89: OK
+[2026-10-09T22:56:17+00:00] ==========================================================================
+[2026-10-09T22:56:17+00:00] MIGRACIÓN D-89 (identificador de pago 70*) — SIMULACIÓN
+[2026-10-09T22:56:17+00:00] Patrón vigente del identificador: ^70[0-9]{8}$
+[2026-10-09T22:56:17+00:00] Inventario (solo lectura): casos sin número=2, con 70* válido=2, con número no válido=0, identificadores distintos=1, ya enlazados=2, REPARACIONES marcadas=0
+[2026-10-09T22:56:17+00:00] Identificadores compartidos por varios casos: {'7014000848': [2, 1]}
+[2026-10-09T22:56:17+00:00] Simulación: se aplicaría el DDL, el backfill y los avisos del lote.
+[2026-10-09T22:56:17+00:00] Vuelve a ejecutar con --aplicar para escribir.

@@ -5,21 +5,30 @@
  * por línea en PC, el icono de edición del título (edición limitada a Sector,
  * Fecha de cita e Información con 200 caracteres) y la pestaña RESOLUCIÓN con
  * CERRAR / CITA / ENRRUTAR, incluido el cierre con modo IVR/COS/SACAS y el
- * HISTÓRICO de casos relacionados por teléfono.
+ * HISTÓRICO de casos relacionados por identificador de pago (70*).
  */
 const { test, expect } = require('@playwright/test');
 const { USUARIOS, rellenar, iniciarSesion } = require('../helpers');
 
 
-/** Crea un caso desde la interfaz y devuelve su `id_averia` generado por el sistema. */
+/**
+ * Crea un caso desde la interfaz y devuelve su `id_averia` generado por el sistema.
+ *
+ * RN-AL-01: el alta exige nombre y teléfono de contacto, dirección, el **teléfono
+ * con el identificador de pago (70\*)** y el tipo de reporte. Se usa CONSTRUCCIÓN
+ * para que el sistema genere el `REF-…` (en una REPARACIÓN el id de avería y el
+ * tipo de problema son obligatorios).
+ */
 async function crearCase(page, { cliente, telefono, direccion }) {
   await page.goto('/casos');
   await page.getByRole('button', { name: 'Agregar caso' }).first().click();
   const alta = page.getByRole('dialog', { name: /Agregar caso/ });
   await expect(alta).toBeVisible({ timeout: 30_000 });
-  await rellenar(alta.getByLabel('Nombre del cliente'), cliente);
-  if (telefono) await rellenar(alta.getByLabel('Teléfono'), telefono);
-  await rellenar(alta.getByLabel('Dirección'), direccion);
+  await rellenar(alta.getByLabel('Nombre de contacto'), cliente);
+  await rellenar(alta.getByLabel('Teléfono de contacto'), '04241112233');
+  if (telefono) await rellenar(alta.getByLabel('Teléfono — identificador de pago'), telefono);
+  await rellenar(alta.getByLabel('Dirección del inmueble'), direccion);
+  await rellenar(alta.getByLabel('Tipo de reporte'), 'CONSTRUCCION');
   await rellenar(alta.getByLabel('Problema reportado'), 'SIN SERVICIO GPON');
   await alta.getByRole('button', { name: 'Guardar caso' }).click();
   await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 60_000 });
@@ -81,7 +90,7 @@ test.describe('Ficha del caso en pestañas', () => {
     // Cada pestaña muestra datos de su naturaleza
     await ficha.getByRole('tab', { name: 'Contacto' }).click();
     await expect(ficha.getByText('Cliente').first()).toBeVisible();
-    await expect(ficha.getByText('Teléfono').first()).toBeVisible();
+    await expect(ficha.getByText('Identificador de pago (70*)').first()).toBeVisible();
     await ficha.getByRole('tab', { name: 'Datos técnicos' }).click();
     await expect(ficha.getByText('OLT').first()).toBeVisible();
   });
@@ -170,7 +179,7 @@ test.describe('Ficha del caso en pestañas', () => {
 
     const idAveria = await crearCase(page, {
       cliente: `CIERRE UI ${sufijo}`,
-      telefono: `+58212${sufijo}`,
+      telefono: `7014${sufijo}`,
       direccion: `CALLE TST UI ${sufijo}`,
     });
 
@@ -189,17 +198,18 @@ test.describe('Ficha del caso en pestañas', () => {
   });
 
 
-  test('HISTÓRICO muestra los antecedentes del mismo teléfono', async ({ page }) => {
+  test('HISTÓRICO muestra los antecedentes del mismo identificador de pago', async ({ page }) => {
     const sufijo = String(Date.now()).slice(-6);
-    const telefono = `+58212${sufijo}`;
+    // D-92: el histórico gira alrededor del identificador de pago (70*).
+    const identificador = `7014${sufijo}`;
     await iniciarSesion(page, USUARIOS.admin);
 
-    // Dos casos creados desde la interfaz con el mismo teléfono
+    // Dos casos creados desde la interfaz con el mismo identificador de pago
     const primero = await crearCase(page, {
-      cliente: `ANTECEDENTES A ${sufijo}`, telefono, direccion: 'CALLE TST HISTORICO',
+      cliente: `ANTECEDENTES A ${sufijo}`, telefono: identificador, direccion: 'CALLE TST HISTORICO',
     });
     const segundo = await crearCase(page, {
-      cliente: `ANTECEDENTES B ${sufijo}`, telefono, direccion: 'CALLE TST HISTORICO',
+      cliente: `ANTECEDENTES B ${sufijo}`, telefono: identificador, direccion: 'CALLE TST HISTORICO',
     });
 
     // El primero se cierra con COS
@@ -216,11 +226,13 @@ test.describe('Ficha del caso en pestañas', () => {
     // El segundo debe ver al primero como antecedente, con su justificación
     ficha = await abrirFichaPorId(page, segundo);
     await ficha.getByRole('tab', { name: 'Histórico' }).click();
-    await expect(ficha.getByText('Casos anteriores asociados al teléfono')).toBeVisible({ timeout: 30_000 });
+    await expect(ficha.getByText('Casos anteriores del')).toBeVisible({ timeout: 30_000 });
     await expect(ficha.getByRole('columnheader', { name: 'ID de avería anterior' })).toBeVisible();
     await expect(ficha.getByRole('cell', { name: primero })).toBeVisible({ timeout: 30_000 });
     await expect(ficha.getByText('Total: 1 antecedente')).toBeVisible();
     await expect(ficha.getByText('Cierre con COS:', { exact: false })).toBeVisible();
+    // D-92/RF-54: dos reportes del identificador ⇒ reincidente.
+    await expect(ficha.locator('#historico-reincidencia')).toContainText('2');
   });
 
 

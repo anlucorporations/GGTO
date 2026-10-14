@@ -18,6 +18,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .api import (
     routes_alertas,
+    routes_auditoria,
     routes_auth,
     routes_casos,
     routes_config,
@@ -82,6 +83,7 @@ app.add_middleware(
 
 app.include_router(routes_health.router)
 app.include_router(routes_auth.router)
+app.include_router(routes_auditoria.router)
 app.include_router(routes_config.router)
 app.include_router(routes_ingesta.router)
 app.include_router(routes_casos.router)

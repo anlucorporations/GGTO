@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Central, Configuracion, Sector, SectorDireccion
+from ..models import Central, Configuracion, Sector, SectorDireccion, Usuario
 from .sectorizacion import Patron
 
 
@@ -17,8 +17,33 @@ def cargar_config(db: Session) -> dict[str, Any]:
     return {c.clave: c.valor for c in db.scalars(select(Configuracion)).all()}
 
 
-def resolver_central(db: Session, id_central: int | None, config: dict[str, Any]) -> Central:
-    """Central indicada o, si no, la configurada en `ingesta.central_codigo`."""
+def central_del_usuario(db: Session, usuario: Usuario) -> Central:
+    """Devuelve la central del usuario o error 403/404."""
+    if usuario.id_central is None:
+        raise HTTPException(status_code=403, detail="Su usuario no tiene central asignada")
+    central = db.get(Central, usuario.id_central)
+    if central is None:
+        raise HTTPException(status_code=404, detail="Central no encontrada")
+    return central
+
+
+def resolver_central(
+    db: Session,
+    id_central: int | None,
+    config: dict[str, Any],
+    usuario: Usuario | None = None,
+) -> Central:
+    """Central indicada o, si no, la configurada en `ingesta.central_codigo` (D-95 / H-01).
+
+    Si se proporciona `usuario` y no es rol SUPER, se valida que coincida con `usuario.id_central`.
+    """
+    if usuario is not None and (usuario.rol is None or usuario.rol.codigo != "SUPER"):
+        if usuario.id_central is None:
+            raise HTTPException(status_code=403, detail="Su usuario no tiene central asignada")
+        if id_central is not None and id_central != usuario.id_central:
+            raise HTTPException(status_code=403, detail="No tiene acceso a la central solicitada")
+        id_central = usuario.id_central
+
     if id_central is not None:
         central = db.get(Central, id_central)
     else:

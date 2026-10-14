@@ -6,11 +6,11 @@
 | Motor | **PostgreSQL** |
 | Script DDL | [`db/schema.sql`](db/schema.sql) — se edita a medida del desarrollo |
 | Diccionario | [`diccionario_datos.md`](diccionario_datos.md) |
-| Fase | Fase 1 — Concepto |
-| Estado | Borrador v0.1 |
+| Fase | Mantenimiento del modelo para V1/V2 |
+| Estado | **41 tablas físicas representadas** en los siete bloques originales y el bloque complementario §10; el DDL local sigue siendo la fuente de columnas y restricciones. |
 
 > Los diagramas usan **Mermaid** (`erDiagram`) y son renderizables en GitLab/GitHub/VS Code.
-> Para editar: modificar el bloque y regenerar. El DDL se mantiene sincronizado con estos diagramas.
+> Los diagramas originales representan 36 entidades; §10 agrega las cinco tablas físicas incorporadas después. Para crear o migrar la estructura física prevalece `db/schema.sql`.
 
 **Convenciones de tipos (Mermaid no admite paréntesis):**
 
@@ -660,3 +660,24 @@ erDiagram
 2. Actualizar el bloque Mermaid afectado en este archivo.
 3. Verificar que ambos representen las mismas entidades, campos y relaciones.
 4. Registrar el cambio en `estado_proyecto.md`.
+
+---
+
+## 10. Tablas físicas añadidas después del modelo conceptual
+
+Este bloque documenta las cinco tablas que existen en `db/schema.sql` pero no estaban representadas en los siete diagramas originales. Mantenerlo sincronizado con el DDL. El catálogo `rol` también cambió de alcance: el DDL siembra cuatro roles y COORDINADOR sigue pendiente de migración para V2.
+
+```mermaid
+erDiagram
+    CENTRAL ||--o{ IDENTIFICADOR_PAGO : registra
+    IDENTIFICADOR_PAGO ||--o{ CASO : identifica
+    SYNC_LOG ||--o{ SYNC_CHECK : desglosa
+    CENTRAL ||--o{ MENSAJE : delimita
+    USUARIO o|--o{ MENSAJE : origina
+    CUADRILLA o|--o{ MENSAJE : destinataria
+    TECNICO o|--o{ MENSAJE : destinatario
+    MENSAJE ||--o{ MENSAJE_DESTINO : distribuye
+    TECNICO ||--o{ MENSAJE_DESTINO : recibe
+```
+
+El diagrama muestra las relaciones de clave foránea presentes en el DDL local. No incluye como FK `sync_log.p00` porque la columna no tiene una restricción `REFERENCES`; tampoco representa el destino de gestión al Supervisor, pues las tablas físicas actuales aún no implementan ese contrato.

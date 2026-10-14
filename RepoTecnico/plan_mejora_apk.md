@@ -10,6 +10,17 @@
 > dos «3.2»). Aquí cada observación recibe un identificador estable **M-01…M-10**
 > para poder trazarla a un requisito y a un ciclo.
 
+> ⚠️ **Actualización D-93 (2026-10-08) — la serie 700/701/702 ya no aplica.** El
+> cambio de foco al **identificador de pago (70\*)** reescribió la regla de los
+> números de la APK: el 70\* es el **identificador de pago** (se muestra rotulado y
+> en solo lectura en la cabecera) y **cualquier otro número** es el **número de
+> contacto**, que es el único editable desde la ficha. Por tanto, donde este plan
+> dice «teléfono de la serie 700/701/702» (**RF-APK-08**, **RF-APK-11**, M-09 y la
+> descripción de `FichaCabecera`) debe leerse: **identificador de pago (70\*) en la
+> cabecera** + **número de contacto sin restricción de serie** (si el técnico teclea
+> un 70\* en el contacto, el servidor lo registra como identificador del caso). Ver
+> `RepoTecnico/documento_tecnico_D89.md` §16 y `RepoTecnico/incremento_D89_identificador_pago.md`.
+
 ---
 
 ## 0. Decisiones cerradas con el usuario (2026-10-07)

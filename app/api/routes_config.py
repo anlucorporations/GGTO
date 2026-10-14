@@ -56,8 +56,10 @@ from ..schemas.config import (
     TecnicoCreate,
     TecnicoOut,
     TecnicoUpdate,
+    UsuarioGestionIn,
+    UsuarioGestionOut,
 )
-from .deps import get_current_user, require_roles
+from .deps import ROL_SUPER, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["configuración"])
 
@@ -404,6 +406,76 @@ def cambiar_rol_tecnico(
     return _tecnico_con_estado(db, obj)
 
 
+@router.post("/usuarios-gestion", response_model=UsuarioGestionOut, status_code=status.HTTP_201_CREATED,
+             summary="Pre-alta de cuenta de gestión (SUPER / SUPERVISOR) — D-95 / DEC-G16")
+def crear_usuario_gestion(
+    datos: UsuarioGestionIn,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(_gestor_roles),
+) -> UsuarioGestionOut:
+    """Pre-alta de cuenta de gestión sin necesidad de fila en técnico (DEC-G16)."""
+    rol = db.scalar(select(Rol).where(Rol.codigo == datos.rol))
+    if rol is None:
+        raise HTTPException(status_code=404, detail=f"El rol {datos.rol} no existe")
+
+    if usuario_actual.rol and usuario_actual.rol.codigo != "SUPER":
+        if usuario_actual.id_central != datos.id_central:
+            raise HTTPException(status_code=403, detail="No puede crear usuarios en otra central")
+
+    central = db.get(Central, datos.id_central)
+    if central is None:
+        raise HTTPException(status_code=404, detail="Central no encontrada")
+
+    if db.scalar(select(Usuario.id_usuario).where(Usuario.p00 == datos.p00)):
+        raise HTTPException(status_code=409, detail="El P00 ya está registrado")
+    if db.scalar(select(Usuario.id_usuario).where(Usuario.correo == datos.correo)):
+        raise HTTPException(status_code=409, detail="El correo ya está registrado")
+
+    nueva_cuenta = Usuario(
+        p00=datos.p00,
+        nombre=datos.nombre,
+        apellido=datos.apellido,
+        correo=datos.correo,
+        clave_hash=hash_password(secrets.token_urlsafe(24)),
+        id_rol=rol.id_rol,
+        id_tecnico=None,
+        id_central=datos.id_central,
+        activo=True,
+    )
+    db.add(nueva_cuenta)
+    db.add(
+        Auditoria(
+            id_central=datos.id_central,
+            usuario=usuario_actual.p00,
+            accion="ALTA_USUARIO_GESTION",
+            entidad="usuario",
+            id_entidad=datos.p00,
+            resultado="OK",
+            datos_despues={
+                "p00": datos.p00,
+                "nombre": datos.nombre,
+                "apellido": datos.apellido,
+                "correo": datos.correo,
+                "rol": datos.rol,
+                "id_central": datos.id_central,
+            },
+        )
+    )
+    _commit(db, "no se pudo crear el usuario de gestión")
+    db.refresh(nueva_cuenta)
+    return UsuarioGestionOut(
+        id_usuario=nueva_cuenta.id_usuario,
+        p00=nueva_cuenta.p00,
+        nombre=nueva_cuenta.nombre,
+        apellido=nueva_cuenta.apellido,
+        correo=nueva_cuenta.correo,
+        id_central=nueva_cuenta.id_central,
+        id_tecnico=None,
+        rol=datos.rol,
+        estado="SIN_ALTA",
+    )
+
+
 @router.delete("/tecnicos/{id_tecnico}", status_code=status.HTTP_204_NO_CONTENT)
 def desactivar_tecnico(
     id_tecnico: int, db: Session = Depends(get_db), _: Usuario = Depends(_escritura)
@@ -477,11 +549,17 @@ def retirar_flota(
 @router.get("/cuadrillas", response_model=list[CuadrillaOut])
 def listar_cuadrillas(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
     id_central: int | None = None,
     solo_activas: bool = Query(default=False),
 ):
     stmt = select(Cuadrilla).order_by(Cuadrilla.codigo)
+    if usuario.rol is None or usuario.rol.codigo != ROL_SUPER:
+        if usuario.id_central is None:
+            raise HTTPException(status_code=403, detail="Su usuario no tiene central asignada")
+        if id_central is not None and id_central != usuario.id_central:
+            raise HTTPException(status_code=403, detail="No tiene acceso a la central solicitada")
+        id_central = usuario.id_central
     if id_central is not None:
         stmt = stmt.where(Cuadrilla.id_central == id_central)
     if solo_activas:

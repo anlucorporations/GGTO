@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de Operación y Mantenimiento — GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene,">
+<meta name="description" content="Corte operativo verificado 2026-10-12: servicio Cloud Run ggto-web en revisión ggto-web-00039-g9n, imagen v24; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desp">
 <meta property="og:image" content="../imagenes/rutina-diaria.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,28 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Operación</span>
           <h1 class="portada-titulo">Manual de Operación y Mantenimiento — GGTO</h1>
-          <p class="portada-resumen">Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene, qué hacer ante un incidente y cómo se sostiene el servicio. Cuando una capacidad está prevista pero todavía no existe, se dice con claridad «pendiente de confirmar». Así ninguna persona espera una función que aún no está lista.</p>
+          <p class="portada-resumen">Corte operativo verificado 2026-10-12: servicio Cloud Run ggto-web en revisión ggto-web-00039-g9n, imagen v24; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas de restauración no se validaron en esta auditoría. Consulta el informe RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene, […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/01-operacion-y-mantenimiento.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 06/10/2026</span>
+          <span>Edición HTML y PDF generada el 14/10/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>Corte operativo verificado 2026-10-12:</strong> servicio Cloud Run <code>ggto-web</code> en
+revisión <code>ggto-web-00039-g9n</code>, imagen <code>v24</code>; Cloud SQL está RUNNABLE y los
+respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas
+de restauración no se validaron en esta auditoría. Consulta el informe
+<code>RepoTecnico/auditoria_estado_real_v2.md</code> dentro del repositorio.</p>
+</blockquote>
 <blockquote>
 <p>Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4).
 Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la
@@ -1301,7 +1308,8 @@ archivos. Este procedimiento está <strong>pendiente de confirmar y de documenta
 <hr />
 <h2 id="mantenimiento"><span class="sec-num">5</span>Mantenimiento</h2>
 <h3 id="esquema-db-schema-sql-y-recarga-de-catalogos"><span class="sec-num">5.1</span>Esquema (db/schema.sql) y recarga de catálogos</h3>
-<p>El esquema completo está en el archivo <code>db/schema.sql</code> y define <strong>36 tablas</strong>, las extensiones
+<p>El DDL local del archivo <code>db/schema.sql</code> define <strong>41 tablas</strong>; el esquema productivo no se consultó.
+El script también define las extensiones
 <code>pgcrypto</code> y <code>pg_trgm</code>, seguridad por filas (RLS) en <code>caso</code> y <code>despacho</code>, y <strong>14 disparadores</strong>
 (<em>triggers</em>) de marca <code>actualizado_en</code>. La tabla número 36 (<code>cuadrilla_sector_dia</code>, ciclo D-66)
 guarda qué sectores atiende cada cuadrilla cada día.</p>
@@ -1656,7 +1664,7 @@ confirmar»</strong>.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 06/10/2026</span>
+    <span>Generado el 14/10/2026</span>
   </div>
 </footer>
 

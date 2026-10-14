@@ -234,7 +234,14 @@ class DatabaseHelper {
 
     final aguja = consulta.trim().toLowerCase();
     return casos.where((caso) {
-      final campos = [caso['id_averia'], caso['telefono'], caso['nombre_cliente'], caso['direccion']];
+      // D-93: la búsqueda local cubre el identificador de pago y el contacto.
+      final campos = [
+        caso['id_averia'],
+        caso['telefono'],
+        caso['contacto_cliente'],
+        caso['nombre_cliente'],
+        caso['direccion'],
+      ];
       return campos.any((valor) => '${valor ?? ''}'.toLowerCase().contains(aguja));
     }).toList();
   }

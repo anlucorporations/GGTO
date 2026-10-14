@@ -4,8 +4,8 @@
 > averías** que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se
 > queda solo con los casos de la central configurada, cómo evita repetidos y cómo crea los
 > casos nuevos. Está dirigido a técnicos de campo, supervisores y administradores de la
-> Central Francisco Salias (Área 4). La aplicación móvil todavía no está desarrollada (el
-> Ciclo 8 quedó pospuesto): la carga se hace desde la interfaz web. Cuando algo no pudo
+> Central Francisco Salias (Área 4). Existe APK Flutter de campo `1.1.0+9`; la carga CSV
+> se hace desde la interfaz web. Cuando algo no pudo
 > comprobarse, se indica con la frase **«pendiente de confirmar»**.
 
 ## Empezar en 5 minutos

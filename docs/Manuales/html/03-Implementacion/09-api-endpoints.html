@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/09-api-endpoints.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>01/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 06/10/2026</span>
+          <span>Edición HTML y PDF generada el 14/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -2189,8 +2189,9 @@ Esto es consistente con los requerimientos del proyecto.</p>
 aplican configuración, ingesta, casos, despachos, especiales y alertas.</p>
 <p>Consecuencia verificada: <strong>en la versión 1 ninguna operación de escritura acepta el rol TECNICO</strong>. La matriz
 de requerimientos prevé que el técnico tenga su propio CRUD para la «gestión técnica» desde la <strong>app móvil</strong>,
-que corresponde al Ciclo 8 y <strong>no está desarrollada</strong>; por lo tanto, <strong>esa capacidad no existe en la API
-actual</strong>. La única excepción al esquema es el <strong>forzado de solapamiento de citas</strong>, reservado exclusivamente
+que corresponde a la gestión técnica móvil. La APK de campo existe, pero la escritura por TECNICO
+descrita en esa matriz sigue pendiente en la API actual. La única excepción al esquema es el
+<strong>forzado de solapamiento de citas</strong>, reservado exclusivamente
 al rol <strong>SUPER</strong>.</p>
 <h3 id="request-id"><span class="sec-num">6.4</span>Request-id</h3>
 <p>El middleware de observabilidad toma el valor de la cabecera <code>X-Request-ID</code> entrante o genera uno de 12
@@ -2287,7 +2288,7 @@ puntos son de operación y deben resolverse antes de exponer el sistema.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 06/10/2026</span>
+    <span>Generado el 14/10/2026</span>
   </div>
 </footer>
 

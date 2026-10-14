@@ -1,8 +1,9 @@
 // Pruebas del incremento D-88 (flujo de campo completo).
 //
 // Cubren la regla del «No Contesta» (acción nueva en NUEVO/ASIGNADO/EN_GESTION),
-// la validación de la edición del contacto (serie 700/701/702), la cita de 1ra
-// visita propuesta y su presencia en la ficha, además del conteo de imágenes.
+// la edición del contacto desde el campo (D-93: cualquier número; el 70* se
+// registra como identificador de pago), la cita de 1ra visita propuesta y su
+// presencia en la ficha, además del conteo de imágenes.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,20 +81,27 @@ void main() {
     });
   });
 
-  group('D-88 · edición del contacto (RF-APK-11)', () {
-    test('normaliza el número de la serie 700/701/702', () {
-      expect(normalizarTelefono('7001234567'), '7001234567');
-      expect(normalizarTelefono('701-555-6677'), '7015556677');
-      expect(normalizarTelefono('(702) 123 4567'), '7021234567');
+  group('D-88/D-93 · edición del contacto (RF-APK-11)', () {
+    test('normaliza cualquier número igual que el servidor (RN-IP-07)', () {
+      expect(normalizarNumero('7001234567'), '7001234567');
+      expect(normalizarNumero('701-555-6677'), '7015556677');
+      expect(normalizarNumero('(702) 123 4567'), '7021234567');
+      expect(normalizarNumero('+58 0414-222-3344'), '4142223344');
+      expect(normalizarNumero('0058 701-400.0848'), '7014000848');
     });
 
-    test('rechaza números que no son de la serie o no tienen 10 dígitos', () {
-      expect(normalizarTelefono('04121234567'), isNull);
-      expect(normalizarTelefono('700123456'), isNull);
-      expect(normalizarTelefono('7031234567'), isNull);
-      expect(errorTelefono('04121234567'), contains('700'));
-      expect(errorTelefono('7001234567'), isNull);
-      expect(errorTelefono(''), isNull);
+    test('reconoce el identificador de pago (70*) y ya no exige las series', () {
+      expect(esIdentificadorPago('7014000848'), isTrue);
+      expect(esIdentificadorPago('700-123.4567'), isTrue);
+      expect(esIdentificadorPago('7030000000'), isTrue); // cualquier 70*
+      expect(esIdentificadorPago('04142223344'), isFalse);
+      // D-93: un móvil es un contacto válido (antes se rechazaba).
+      expect(errorNumeroContacto('04121234567'), isNull);
+      expect(errorNumeroContacto('0414-222-3344'), isNull);
+      // Un 70* tampoco es error: el servidor lo registra como identificador.
+      expect(errorNumeroContacto('7014000848'), isNull);
+      expect(errorNumeroContacto(''), isNull);
+      expect(errorNumeroContacto('SIN NUMERO'), contains('válido'));
     });
 
     test('la dirección exige un mínimo y el vacío no es error', () {
@@ -110,12 +118,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Editar el contacto'), findsOneWidget);
 
-      // Un teléfono fuera de la serie no se acepta.
+      // Un valor sin dígitos no se acepta (cualquier número sí).
       await tester.enterText(
-          find.widgetWithText(TextFormField, 'Número de contacto'), '04121234567');
+          find.widgetWithText(TextFormField, 'Número de contacto'), 'SIN NUMERO');
       await tester.tap(find.text('Guardar'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('serie 700, 701 o 702'), findsOneWidget);
+      expect(find.textContaining('Indique un número de contacto válido'), findsOneWidget);
       expect(find.text('Editar el contacto'), findsOneWidget);
     });
   });

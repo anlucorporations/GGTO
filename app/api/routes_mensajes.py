@@ -7,10 +7,11 @@ recepción (sondeo cada 20 s) y la lectura, los técnicos.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Usuario
+from ..models import Rol, Usuario
 from ..schemas.mensajes import (
     BandejaOut,
     LeidosIn,
@@ -18,15 +19,49 @@ from ..schemas.mensajes import (
     MensajeIn,
     MensajeOut,
     MensajeRecibidoOut,
+    MensajeSupervisorIn,
     NoLeidosOut,
 )
 from ..services import mensajes as svc
-from .deps import get_current_user, require_roles
+from ..services.consultas import cargar_config, resolver_central
+from .deps import _envio_supervisor, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/mensajes", tags=["mensajería interna"])
 
 #: El envío es de SUPER/ADMIN/SUPERVISOR; los técnicos solo reciben y leen.
 _envio = require_roles("ADMIN", "SUPERVISOR")
+
+
+@router.get("/supervisores", summary="Supervisores de la central del Coordinador")
+def listar_supervisores(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_envio_supervisor),
+) -> list[dict[str, str | None]]:
+    central = resolver_central(db, None, cargar_config(db), usuario)
+    filas = db.execute(
+        select(Usuario.p00, Usuario.nombre, Usuario.apellido)
+        .join(Rol, Rol.id_rol == Usuario.id_rol)
+        .where(
+            Usuario.id_central == central.id_central,
+            Usuario.activo.is_(True),
+            Rol.codigo == "SUPERVISOR",
+        )
+        .order_by(Usuario.nombre, Usuario.apellido, Usuario.p00)
+    ).all()
+    return [
+        {"p00": p00, "nombre": nombre, "apellido": apellido}
+        for p00, nombre, apellido in filas
+    ]
+
+
+@router.post("/supervisor", response_model=MensajeOut, status_code=status.HTTP_201_CREATED,
+             summary="Coordinador: enviar mensaje al Supervisor (DEC-G9 / DEC-G15)")
+def enviar_a_supervisor_endpoint(
+    datos: MensajeSupervisorIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_envio_supervisor),
+) -> MensajeOut:
+    return MensajeOut.model_validate(svc.enviar_a_supervisor(db, usuario, datos.model_dump()))
 
 
 @router.get("", response_model=list[MensajeRecibidoOut], summary="Sondeo incremental (60 s)")

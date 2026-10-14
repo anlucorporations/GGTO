@@ -182,6 +182,9 @@ CREATE TABLE IF NOT EXISTS usuario (
     id_rol              integer      NOT NULL REFERENCES rol(id_rol),
     id_tecnico          integer      REFERENCES tecnico(id_tecnico),
     id_central          integer      REFERENCES central(id_central),  -- alcance por central (D-36)
+    -- D-95: nombre y apellido del usuario (destinatarios de mensajería y perfil).
+    nombre              varchar(80),
+    apellido            varchar(80),
     intentos_fallidos   smallint     NOT NULL DEFAULT 0,
     bloqueado           boolean      NOT NULL DEFAULT false,
     bloqueo_cliente     boolean      NOT NULL DEFAULT false,
@@ -274,6 +277,10 @@ CREATE TABLE IF NOT EXISTS ingesta_lote (
     casos_nuevos        integer      NOT NULL DEFAULT 0,
     casos_duplicados    integer      NOT NULL DEFAULT 0,
     casos_descartados   integer      NOT NULL DEFAULT 0,
+    -- D-89 (RF-56): clasificación de los números del archivo.
+    filas_sin_identificador_pago integer NOT NULL DEFAULT 0,
+    filas_con_contacto           integer NOT NULL DEFAULT 0,
+    avisos              jsonb        NOT NULL DEFAULT '[]'::jsonb,
     estado              varchar(20)  NOT NULL DEFAULT 'PROCESANDO'
                         CHECK (estado IN ('PROCESANDO','OK','ERROR')),
     detalle_error       text,
@@ -281,7 +288,25 @@ CREATE TABLE IF NOT EXISTS ingesta_lote (
     creado_en           timestamptz  NOT NULL DEFAULT now()
 );
 
--- 4.2 Tabla central de casos
+-- 4.2 Identificador de pago (70*) — eje del histórico (D-89 / DEC-IP-1,4,6)
+--     Ficha ÚNICA GLOBAL por número; `id_central` es la central de ORIGEN.
+--     El patrón de negocio (70\d{8}) es parametrizable en
+--     `configuracion.pago.serie_regex`; el CHECK solo valida el formato.
+CREATE TABLE IF NOT EXISTS identificador_pago (
+    id_pago             bigserial    PRIMARY KEY,
+    numero              varchar(15)  NOT NULL,
+    id_central          integer      NOT NULL REFERENCES central(id_central),
+    nombre_titular      varchar(160),
+    direccion_principal text,
+    estado              varchar(12)  NOT NULL DEFAULT 'ACTIVO'
+                        CHECK (estado IN ('ACTIVO','SUSPENDIDO','BAJA')),
+    creado_en           timestamptz  NOT NULL DEFAULT now(),
+    actualizado_en      timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT uq_ip_numero UNIQUE (numero),
+    CONSTRAINT ck_ip_serie  CHECK (numero ~ '^[0-9]{7,15}$')
+);
+
+-- 4.3 Tabla central de casos
 CREATE TABLE IF NOT EXISTS caso (
     id_caso                 bigserial    PRIMARY KEY,
     id_central              integer      NOT NULL REFERENCES central(id_central),
@@ -291,7 +316,7 @@ CREATE TABLE IF NOT EXISTS caso (
     origen                  varchar(20)  NOT NULL DEFAULT 'INGESTA_CSV'
                             CHECK (origen IN ('INGESTA_CSV','MANUAL','TELEGRAM','MCP_IA')),
     tipo_caso               varchar(20)  NOT NULL DEFAULT 'AVERIA'
-                            CHECK (tipo_caso IN ('AVERIA','REPARACION','CONSTRUCCION')),
+                            CHECK (tipo_caso IN ('AVERIA','REPARACION','CONSTRUCCION','REFERIDO')),
     categoria               varchar(20)  NOT NULL DEFAULT 'RESIDENCIAL'
                             CHECK (categoria IN ('RESIDENCIAL','EMPRESA','REFERIDO','GOBIERNO')),
     estado_actual           varchar(20)  NOT NULL DEFAULT 'NUEVO'
@@ -299,6 +324,8 @@ CREATE TABLE IF NOT EXISTS caso (
                                    'DIFERIDO','EN_GESTION','ENRUTADO','CERRADO','CANCELADO')),
     id_sector               integer      REFERENCES sector(id_sector),
     id_causa                integer      REFERENCES causa(id_causa),
+    id_pago                 bigint       REFERENCES identificador_pago(id_pago)
+                                         ON DELETE RESTRICT,   -- D-89 (RF-45 / DEC-IP-4)
     id_lote_ingesta         bigint       REFERENCES ingesta_lote(id_lote),
     en_gestion_supervisor   boolean      NOT NULL DEFAULT false,
     es_falla_masiva         boolean      NOT NULL DEFAULT false,
@@ -698,12 +725,15 @@ CREATE TABLE IF NOT EXISTS notificacion (
 
 CREATE TABLE IF NOT EXISTS auditoria (
     id_auditoria    bigserial    PRIMARY KEY,
+    id_central      integer      REFERENCES central(id_central),  -- D-95: alcance por central
     usuario         varchar(20),
     accion          varchar(60)  NOT NULL,
     entidad         varchar(60),
     id_entidad      varchar(40),
     datos_antes     jsonb,
     datos_despues   jsonb,
+    resultado       varchar(20),                                 -- D-95: OK / ERROR
+    request_id      varchar(40),                                 -- D-95: traza de la petición
     ip              inet,
     fecha_hora      timestamptz  NOT NULL DEFAULT now()
 );
@@ -711,6 +741,8 @@ CREATE TABLE IF NOT EXISTS auditoria (
 -- -----------------------------------------------------------------------------
 -- 9. Índices de consulta frecuente
 -- -----------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS ix_caso_id_pago       ON caso (id_pago);
+CREATE INDEX IF NOT EXISTS ix_caso_id_pago_fecha ON caso (id_pago, fecha_reporte);
 CREATE INDEX IF NOT EXISTS ix_caso_central            ON caso (id_central);
 CREATE INDEX IF NOT EXISTS ix_caso_sector             ON caso (id_sector);
 CREATE INDEX IF NOT EXISTS ix_caso_telefono           ON caso (telefono);
@@ -765,6 +797,57 @@ CREATE POLICY p_despacho_central ON despacho
     USING      (app_central_actual() IS NULL OR id_central = app_central_actual())
     WITH CHECK (app_central_actual() IS NULL OR id_central = app_central_actual());
 
+-- D-89 (DEC-IP-6): la ficha del identificador es única y global, pero solo se ve
+-- si es de la central del usuario o si esa central tiene algún caso enlazado.
+ALTER TABLE identificador_pago ENABLE ROW LEVEL SECURITY;
+ALTER TABLE identificador_pago FORCE  ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_ip_central ON identificador_pago;
+CREATE POLICY p_ip_central ON identificador_pago
+    USING      (app_central_actual() IS NULL
+                OR id_central = app_central_actual()
+                OR EXISTS (SELECT 1 FROM caso c
+                            WHERE c.id_pago = identificador_pago.id_pago
+                              AND c.id_central = app_central_actual()))
+    WITH CHECK (app_central_actual() IS NULL OR id_central = app_central_actual());
+
+-- -----------------------------------------------------------------------------
+-- 9.2 Regla de REPARACIÓN: 70* + ID de AVERÍA o REFERIDO (D-89 / RN-IP-05,14)
+-- -----------------------------------------------------------------------------
+-- El trigger decide ANTES de validar, así ninguna escritura existente falla y las
+-- filas históricas se regularizan en su primer cambio (DEC-IP-3).
+CREATE OR REPLACE FUNCTION fn_caso_reparacion_a_referido()
+RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.tipo_caso = 'REPARACION'
+       AND (NEW.id_pago IS NULL OR NEW.id_averia LIKE 'REF-%') THEN
+        NEW.tipo_caso := 'REFERIDO';
+        IF NEW.categoria IN ('RESIDENCIAL', 'REFERIDO') THEN
+            NEW.categoria := 'REFERIDO';
+        END IF;   -- EMPRESA/GOBIERNO se conservan como clasificación de negocio
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_caso_reparacion_a_referido ON caso;
+CREATE TRIGGER trg_caso_reparacion_a_referido
+    BEFORE INSERT OR UPDATE ON caso
+    FOR EACH ROW EXECUTE FUNCTION fn_caso_reparacion_a_referido();
+
+-- Red de seguridad: rige para toda escritura (NOT VALID evita el escaneo inicial
+-- de las filas históricas, que el trigger regulariza en su primer cambio).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_reparacion_con_ip') THEN
+        ALTER TABLE caso ADD CONSTRAINT ck_reparacion_con_ip
+            CHECK (tipo_caso <> 'REPARACION'
+                   OR (id_pago IS NOT NULL AND id_averia NOT LIKE 'REF-%'))
+            NOT VALID;
+    END IF;
+END;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 10. Triggers: actualizado_en automático
 -- -----------------------------------------------------------------------------
@@ -773,7 +856,8 @@ DECLARE
     t text;
     tablas text[] := ARRAY[
         'central','sector','tecnico','usuario','flota','herramienta','cuadrilla',
-        'caso','caso_especial','despacho','falla_masiva','insumo','orden_material','configuracion'
+        'caso','caso_especial','despacho','falla_masiva','insumo','orden_material','configuracion',
+        'identificador_pago'
     ];
 BEGIN
     FOREACH t IN ARRAY tablas LOOP
@@ -795,6 +879,7 @@ INSERT INTO rol (codigo, nombre, descripcion) VALUES
     ('SUPER',      'Super Usuario', 'Acceso total a todas las secciones y funciones de la plataforma'),
     ('ADMIN',      'Administrador', 'Configura el entorno, usuarios y catálogos'),
     ('SUPERVISOR', 'Supervisor',    'Ingesta, despacho, cuadrillas, reportes y GESTIÓN'),
+    ('COORDINADOR','Coordinador',   'Monitoreo, casos especiales, fallas masivas y mensajería al Supervisor'),
     ('TECNICO',    'Técnico',       'Gestión de casos en campo (app móvil)')
 ON CONFLICT (codigo) DO NOTHING;
 
@@ -854,6 +939,10 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('mcp.api_key',                 '""'::jsonb,               'Clave del servidor MCP (si está vacía no se exige)'),
     ('seguridad.max_intentos',      '3'::jsonb,                 'Intentos de login antes del bloqueo'),
     ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación'),
+    -- Incremento D-89 (identificador de pago 70*)
+    ('pago.serie_regex',            '"^70[0-9]{8}$"'::jsonb,    'Patrón del identificador de pago (DEC-IP-1)'),
+    ('pago.reincidencia_dias',      '90'::jsonb,                'Ventana en días para marcar reincidencia (RF-54)'),
+    ('referido.reclasificar_en_proximo_cambio', 'true'::jsonb,  'Marcar REPARACIONES sin IP/avería y reclasificarlas al siguiente cambio (DEC-IP-3)'),
     -- Incremento D-81 (mensajería/panel/sincronización)
     ('mensajeria.poll_segundos',       '20'::jsonb, 'Periodo del sondeo de mensajes (única pieza del sistema con 20 s)'),
     ('panel.sync_segundos',            '30'::jsonb, 'Periodo del auto-refresco del panel (Admin/Supervisor)'),
@@ -893,9 +982,10 @@ CREATE TABLE IF NOT EXISTS mensaje (
     id_mensaje     bigserial    PRIMARY KEY,
     id_central     integer      NOT NULL REFERENCES central(id_central),
     origen_p00     varchar(20)  REFERENCES usuario(p00),   -- NULL en los automáticos del sistema
-    destino_tipo   varchar(12)  NOT NULL CHECK (destino_tipo IN ('TODOS','CUADRILLA','TECNICO')),
+    destino_tipo   varchar(12)  NOT NULL CHECK (destino_tipo IN ('TODOS','CUADRILLA','TECNICO','SUPERVISOR')),
     id_cuadrilla   integer      REFERENCES cuadrilla(id_cuadrilla) ON DELETE SET NULL,
     id_tecnico     integer      REFERENCES tecnico(id_tecnico)     ON DELETE SET NULL,
+    id_usuario_destino varchar(20) REFERENCES usuario(p00) ON DELETE SET NULL,
     tipo           varchar(20)  NOT NULL
                    CHECK (tipo IN ('RECORDATORIO_CITA','ESTADO_SYNC','ALARMA_DESPACHO','TEXTO')),
     cuerpo         varchar(500) NOT NULL,
@@ -905,9 +995,10 @@ CREATE TABLE IF NOT EXISTS mensaje (
     expira_en      timestamptz  NOT NULL DEFAULT (now() + interval '5 days'),
     CHECK (expira_en > creado_en),
     CHECK (
-        (destino_tipo = 'TODOS'     AND id_cuadrilla IS NULL     AND id_tecnico IS NULL) OR
-        (destino_tipo = 'CUADRILLA' AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL) OR
-        (destino_tipo = 'TECNICO'   AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL)
+        (destino_tipo = 'TODOS'     AND id_cuadrilla IS NULL     AND id_tecnico IS NULL AND id_usuario_destino IS NULL) OR
+        (destino_tipo = 'CUADRILLA' AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL AND id_usuario_destino IS NULL) OR
+        (destino_tipo = 'TECNICO'   AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL AND id_usuario_destino IS NULL) OR
+        (destino_tipo = 'SUPERVISOR' AND id_usuario_destino IS NOT NULL AND id_cuadrilla IS NULL AND id_tecnico IS NULL)
     )
 );
 CREATE INDEX IF NOT EXISTS ix_mensaje_creado ON mensaje (creado_en DESC);
@@ -916,10 +1007,12 @@ CREATE INDEX IF NOT EXISTS ix_mensaje_central ON mensaje (id_central);
 
 -- 12.4 Fan-out de destinatarios + lectura por técnico (A-03/A-06)
 CREATE TABLE IF NOT EXISTS mensaje_destino (
+    id_destino   bigserial   PRIMARY KEY,
     id_mensaje   bigint      NOT NULL REFERENCES mensaje(id_mensaje) ON DELETE CASCADE,
-    id_tecnico   integer     NOT NULL REFERENCES tecnico(id_tecnico) ON DELETE CASCADE,
+    id_tecnico   integer     REFERENCES tecnico(id_tecnico) ON DELETE CASCADE,
+    p00          varchar(20) REFERENCES usuario(p00) ON DELETE CASCADE,
     leido_en     timestamptz,
-    PRIMARY KEY (id_mensaje, id_tecnico)
+    CHECK ((p00 IS NULL AND id_tecnico IS NOT NULL) OR (p00 IS NOT NULL AND id_tecnico IS NULL))
 );
 CREATE INDEX IF NOT EXISTS ix_mensaje_destino_tecnico ON mensaje_destino (id_tecnico, id_mensaje);
 

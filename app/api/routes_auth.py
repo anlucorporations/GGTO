@@ -65,8 +65,8 @@ def _usuario_out(u: Usuario) -> UsuarioOut:
         rol=u.rol.codigo if u.rol else "DESCONOCIDO",
         id_rol=u.id_rol,
         id_central=u.id_central,
-        nombre=u.tecnico.nombre if u.tecnico else None,
-        apellido=u.tecnico.apellido if u.tecnico else None,
+        nombre=u.nombre or (u.tecnico.nombre if u.tecnico else None),
+        apellido=u.apellido or (u.tecnico.apellido if u.tecnico else None),
     )
 
 
@@ -261,7 +261,12 @@ def primer_acceso(
         select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == p00)
     )
     activada = bool(dispositivo is not None and dispositivo.palabras_hash)
-    nombre = f"{tecnico.nombre} {tecnico.apellido or ''}".strip() if tecnico else None
+    if usuario and (usuario.nombre or usuario.apellido):
+        nombre = f"{usuario.nombre or ''} {usuario.apellido or ''}".strip() or None
+    elif tecnico:
+        nombre = f"{tecnico.nombre} {tecnico.apellido or ''}".strip() or None
+    else:
+        nombre = None
 
     if usuario is None and tecnico is None:
         return PrimerAccesoOut(

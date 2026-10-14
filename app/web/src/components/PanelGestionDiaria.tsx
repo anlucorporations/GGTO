@@ -145,12 +145,38 @@ function AltaCasoEspecial({
   const [actividad, setActividad] = useState<TipoActividadEspecial>('REPARACION');
   const [prioridad, setPrioridad] = useState<PrioridadEspecial>('MEDIA');
   const [nombre, setNombre] = useState('');
+  const [contacto, setContacto] = useState('');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [averia, setAveria] = useState('');
+  const [tipoProblema, setTipoProblema] = useState('');
+  const [solUnidad, setSolUnidad] = useState('');
+  const [solNombre, setSolNombre] = useState('');
+  const [solContacto, setSolContacto] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   async function guardar() {
+    // RN-AL-01: datos del alta y del solicitante obligatorios.
+    if (!nombre.trim() || !contacto.trim() || !telefono.trim() || !direccion.trim()) {
+      setError(
+        'Complete nombre y teléfono de contacto, dirección del inmueble y el ' +
+          'teléfono con el identificador de pago (70*).',
+      );
+      return;
+    }
+    if (actividad === 'REPARACION' && (!averia.trim() || !tipoProblema.trim())) {
+      setError(
+        'En un reporte de REPARACIÓN son obligatorios el ID de avería y el tipo de problema.',
+      );
+      return;
+    }
+    if (!solUnidad.trim() || !solNombre.trim() || !solContacto.trim()) {
+      setError(
+        'Datos del solicitante obligatorios: nombre, unidad y contacto.',
+      );
+      return;
+    }
     setEnviando(true);
     setError('');
     try {
@@ -158,9 +184,18 @@ function AltaCasoEspecial({
         clasificacion,
         tipo_actividad: actividad,
         prioridad,
-        nombre_cliente: nombre || null,
-        telefono: telefono || null,
-        direccion: direccion || null,
+        nombre_cliente: nombre.trim(),
+        contacto_cliente: contacto.trim(),
+        telefono: telefono.trim(),
+        direccion: direccion.trim(),
+        id_averia: averia.trim() || null,
+        tipo_problema: tipoProblema.trim() || null,
+        crear_solicitante: {
+          unidad: solUnidad.trim(),
+          nombre: solNombre.trim(),
+          contacto: solContacto.trim(),
+          canal: 'MANUAL',
+        },
       });
       onCreado(r.id_caso);
     } catch (e) {
@@ -187,7 +222,7 @@ function AltaCasoEspecial({
           </select>
         </div>
         <div className="campo">
-          <label htmlFor="esp-actividad">Tipo de actividad *</label>
+          <label htmlFor="esp-actividad">Tipo de reporte *</label>
           <select
             id="esp-actividad"
             value={actividad}
@@ -210,19 +245,91 @@ function AltaCasoEspecial({
           </select>
         </div>
         <div className="campo">
-          <label htmlFor="esp-nombre">Nombre del solicitante/cliente</label>
-          <input id="esp-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          <label htmlFor="esp-nombre">Nombre de contacto *</label>
+          <input
+            id="esp-nombre"
+            required
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+          />
         </div>
         <div className="campo">
-          <label htmlFor="esp-telefono">Teléfono</label>
-          <input id="esp-telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+          <label htmlFor="esp-contacto">Teléfono de contacto *</label>
+          <input
+            id="esp-contacto"
+            required
+            type="tel"
+            value={contacto}
+            onChange={(e) => setContacto(e.target.value)}
+          />
         </div>
         <div className="campo">
-          <label htmlFor="esp-direccion">Dirección</label>
+          <label htmlFor="esp-telefono">Teléfono — identificador de pago (70*) *</label>
+          <input
+            id="esp-telefono"
+            required
+            placeholder="7014000848"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="esp-averia">
+            ID de avería {actividad === 'REPARACION' ? '*' : ''}
+          </label>
+          <input
+            id="esp-averia"
+            required={actividad === 'REPARACION'}
+            value={averia}
+            onChange={(e) => setAveria(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="esp-tipo-problema">
+            Tipo de problema {actividad === 'REPARACION' ? '*' : ''}
+          </label>
+          <input
+            id="esp-tipo-problema"
+            maxLength={20}
+            required={actividad === 'REPARACION'}
+            value={tipoProblema}
+            onChange={(e) => setTipoProblema(e.target.value)}
+          />
+        </div>
+        <div className="campo campo-ancho">
+          <label htmlFor="esp-direccion">Dirección del inmueble *</label>
           <input
             id="esp-direccion"
+            required
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="esp-sol-unidad">Solicitante — unidad *</label>
+          <input
+            id="esp-sol-unidad"
+            required
+            value={solUnidad}
+            onChange={(e) => setSolUnidad(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="esp-sol-nombre">Solicitante — nombre *</label>
+          <input
+            id="esp-sol-nombre"
+            required
+            value={solNombre}
+            onChange={(e) => setSolNombre(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="esp-sol-contacto">Solicitante — contacto *</label>
+          <input
+            id="esp-sol-contacto"
+            required
+            value={solContacto}
+            onChange={(e) => setSolContacto(e.target.value)}
           />
         </div>
         <div className="acciones-form">

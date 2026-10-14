@@ -1,5 +1,11 @@
 # 11 — La app del técnico: lo que cambió (Incremento D-82)
 
+> **Estado verificado 2026-10-12:** la APK Flutter disponible es de campo,
+> versión `1.1.0+9`, con casos, sincronización, alertas, mensajes y perfil. No
+> incluye las pantallas de gestión para Supervisor/Admin/Coordinador/SuperUsuario
+> descritas como objetivo V2. La implementación parcial y sus brechas están en
+> `RepoTecnico/auditoria_estado_real_v2.md` dentro del repositorio.
+
 > Este manual explica, en lenguaje sencillo, cinco mejoras de la **app del técnico**
 > (la APK «GGTO Técnico»): que siempre muestre lo que tiene guardado en el teléfono,
 > que muestre una barra con el avance de la sincronización, que tenga un **menú de
@@ -131,6 +137,20 @@ Al pulsar **«Reportar falla masiva»**:
 No se pierde nada: el reporte y sus fotos **quedan guardados** en el teléfono. La
 app lo avisa con un mensaje naranja. Cuando haya internet (o al pulsar **Cargar**
 en la pantalla Dispositivo), se suben las fotos y se envía el reporte.
+
+---
+
+## El teléfono para llamar al cliente
+
+En la **lista de casos** («Mis casos») cada tarjeta muestra el nombre del cliente y, debajo,
+el **teléfono de contacto**: ese es el número al que se llama.
+
+El **identificador de pago (70\*)** no es un teléfono: es la clave con la que el caso se
+enlaza a la cuenta del cliente. Por eso ya **no** aparece como número para contactar; si lo
+necesitas, lo tienes en la ficha del caso, rotulado como «Identificador de pago (70\*)».
+
+Al abrir la ficha y pulsar **Agendar cita**, la app también toma el **número de contacto**
+(el mismo que se ve en la tarjeta), nunca el 70\*.
 
 ---
 

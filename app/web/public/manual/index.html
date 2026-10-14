@@ -779,7 +779,7 @@ a { color: var(--azul); }
   <a class="marca" href="index.html"><b>GGTO</b><span>&nbsp;· CANTV</span></a>
   <span class="chip">Manuales literales</span>
   <span class="topbar-sep"></span>
-  <span class="chip">Edición 06/10/2026</span>
+  <span class="chip">Edición 14/10/2026</span>
 </header>
 <div class="doc-layout" style="display:block">
   <main class="doc-main">
@@ -800,7 +800,7 @@ a { color: var(--azul); }
           <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
           <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
           <div><dt>PDF</dt><dd>Carpeta <code>docs/Manuales/pdf/</code></dd></div>
-          <div><dt>Generado</dt><dd>06/10/2026</dd></div>
+          <div><dt>Generado</dt><dd>14/10/2026</dd></div>
         </dl>
       </div>
     </section>
@@ -824,7 +824,7 @@ a { color: var(--azul); }
         <article class="tarjeta">
           <img class="tarjeta-mini" src="imagenes/onboarding-tecnico.png" alt="Figura de Plataforma GGTO — Visión general y arquitectura">
           <h3>Plataforma GGTO — Visión general y arquitectura</h3>
-          <p>Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central </p>
+          <p>Estado verificado 2026-10-12: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.1.0+9) es de campo y todavía no ofrece gestión por rol. La auditoría de código, documentación y despliegue está e</p>
           <p class="tarjeta-enlaces">
             <a href="01-Tecnologia/01-plataforma.html">Ver en HTML</a>
             <a href="pdf/01-Tecnologia/01-plataforma.pdf">Descargar PDF</a>
@@ -969,7 +969,7 @@ a { color: var(--azul); }
         <article class="tarjeta">
           
           <h3>11 — La app del técnico: lo que cambió (Incremento D-82)</h3>
-          <p>Este manual explica, en lenguaje sencillo, cinco mejoras de la app del técnico (la APK «GGTO Técnico»): que siempre muestre lo que tiene guardado en el teléfono, que muestre una barra con el avance de la sincronización, que tenga </p>
+          <p>Estado verificado 2026-10-12: la APK Flutter disponible es de campo, versión 1.1.0+9, con casos, sincronización, alertas, mensajes y perfil. No incluye las pantallas de gestión para Supervisor/Admin/Coordinador/SuperUsuario descri</p>
           <p class="tarjeta-enlaces">
             <a href="03-Implementacion/11-apk-tecnico-campo.html">Ver en HTML</a>
             <a href="pdf/03-Implementacion/11-apk-tecnico-campo.pdf">Descargar PDF</a>
@@ -1024,7 +1024,7 @@ a { color: var(--azul); }
         <article class="tarjeta">
           <img class="tarjeta-mini" src="imagenes/dominios-datos.png" alt="Figura de Diccionario de Datos — Entidades de la base GGTO">
           <h3>Diccionario de Datos — Entidades de la base GGTO</h3>
-          <p>Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mism</p>
+          <p>Estado verificado 2026-10-12: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa, pero su esquema no se consultó. La APK actual es de campo (1.1.0+9), no una APK multirol V2. Este manual explica, con palabras</p>
           <p class="tarjeta-enlaces">
             <a href="05-Diccionario-de-Datos/01-entidades.html">Ver en HTML</a>
             <a href="pdf/05-Diccionario-de-Datos/01-entidades.pdf">Descargar PDF</a>
@@ -1038,7 +1038,7 @@ a { color: var(--azul); }
         <article class="tarjeta">
           <img class="tarjeta-mini" src="imagenes/modelo-relacional-general.png" alt="Figura de Diagrama Entidad-Relación — Modelo de datos GGTO">
           <h3>Diagrama Entidad-Relación — Modelo de datos GGTO</h3>
-          <p>Este manual explica, con palabras sencillas, cómo se conectan las 36 tablas de la base GGTO. Es la versión literal del manual técnico: conserva las mismas secciones y todos los diagramas por dominio, pero los presenta con un lengu</p>
+          <p>Estado verificado 2026-10-12: DDL local de 41 tablas, con 36 entidades originales del modelo y cinco tablas complementarias en §10 de RepoTecnico/modelo_er.md. El esquema desplegado no se consultó. Este manual explica, con palabra</p>
           <p class="tarjeta-enlaces">
             <a href="06-Diagrama-Relacional/01-diagrama-er.html">Ver en HTML</a>
             <a href="pdf/06-Diagrama-Relacional/01-diagrama-er.pdf">Descargar PDF</a>
@@ -1052,7 +1052,7 @@ a { color: var(--azul); }
         <article class="tarjeta">
           <img class="tarjeta-mini" src="imagenes/rutina-diaria.png" alt="Figura de Manual de Operación y Mantenimiento — GGTO">
           <h3>Manual de Operación y Mantenimiento — GGTO</h3>
-          <p>Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene, qué hacer ante un incidente y</p>
+          <p>Corte operativo verificado 2026-10-12: servicio Cloud Run ggto-web en revisión ggto-web-00039-g9n, imagen v24; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas de restau</p>
           <p class="tarjeta-enlaces">
             <a href="07-Operacion/01-operacion-y-mantenimiento.html">Ver en HTML</a>
             <a href="pdf/07-Operacion/01-operacion-y-mantenimiento.pdf">Descargar PDF</a>
@@ -1073,7 +1073,7 @@ a { color: var(--azul); }
 </div>
 <footer class="doc-pie">
   <div><strong>GGTO</strong> — Sistema de administración de reportes de avería y construcción de puntos ópticos</div>
-  <div class="pie-nav"><span>CANTV C.A. — Central Francisco Salias (Área 4)</span><span>Generado el 06/10/2026</span></div>
+  <div class="pie-nav"><span>CANTV C.A. — Central Francisco Salias (Área 4)</span><span>Generado el 14/10/2026</span></div>
 </footer>
 </body>
 </html>

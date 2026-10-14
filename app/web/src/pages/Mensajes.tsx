@@ -6,12 +6,13 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import * as api from '../api/client';
-import type { Cuadrilla, Mensaje, Tecnico } from '../api/types';
+import type { Cuadrilla, Mensaje, SupervisorMensaje, Tecnico } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import Mensaje_ from '../components/Mensaje';
 import { useMensajes } from '../components/useMensajes';
 
 const ROLES_ENVIO = ['SUPER', 'ADMIN', 'SUPERVISOR'];
+const ROL_COORDINADOR = 'COORDINADOR';
 
 function hora(iso: string): string {
   const d = new Date(iso);
@@ -29,6 +30,7 @@ const ETIQUETA_TIPO: Record<string, string> = {
 export default function Mensajes() {
   const { usuario } = useAuth();
   const puedeEnviar = ROLES_ENVIO.includes(usuario?.rol ?? '');
+  const esCoordinador = usuario?.rol === ROL_COORDINADOR;
   const { mensajes, noLeidos, marcarLeido } = useMensajes();
 
   const [pestana, setPestana] = useState<'recibidos' | 'enviados'>('recibidos');
@@ -39,6 +41,9 @@ export default function Mensajes() {
   const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [enviados, setEnviados] = useState<Mensaje[]>([]);
+  const [supervisores, setSupervisores] = useState<SupervisorMensaje[]>([]);
+  const [p00Supervisor, setP00Supervisor] = useState('');
+  const [escalarAlAdmin, setEscalarAlAdmin] = useState(false);
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
@@ -47,6 +52,16 @@ export default function Mensajes() {
     void api.listarCuadrillas({ solo_activas: true }).then(setCuadrillas).catch(() => {});
     void api.listarTecnicos().then(setTecnicos).catch(() => {});
   }, [puedeEnviar]);
+
+  useEffect(() => {
+    if (!esCoordinador) return;
+    void api.listarSupervisoresMensaje().then((lista) => {
+      setSupervisores(lista);
+      setP00Supervisor(lista[0]?.p00 ?? '');
+    }).catch((e) => {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudieron cargar los Supervisores.');
+    });
+  }, [esCoordinador]);
 
   const cargarEnviados = useCallback(async () => {
     try {
@@ -65,6 +80,16 @@ export default function Mensajes() {
     setError('');
     setOk('');
     try {
+      if (esCoordinador) {
+        await api.enviarMensajeSupervisor({
+          p00_supervisor: p00Supervisor,
+          cuerpo,
+          escalar_al_admin: escalarAlAdmin,
+        });
+        setCuerpo('');
+        setOk('Mensaje enviado al Supervisor.');
+        return;
+      }
       await api.enviarMensaje({
         destino_tipo: destino,
         id_cuadrilla: destino === 'CUADRILLA' ? Number(idCuadrilla) : null,
@@ -90,6 +115,56 @@ export default function Mensajes() {
 
       <Mensaje_ tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje_ tipo="ok" texto={ok} onCerrar={() => setOk('')} />
+
+      {esCoordinador && (
+        <div className="panel-bloque">
+          <h2>Enviar mensaje al Supervisor</h2>
+          {supervisores.length > 0 ? (
+            <div className="campo">
+              <label htmlFor="msg-supervisor">Supervisor</label>
+              <select
+                id="msg-supervisor"
+                value={p00Supervisor}
+                onChange={(e) => setP00Supervisor(e.target.value)}
+              >
+                {supervisores.map((s) => (
+                  <option key={s.p00} value={s.p00}>
+                    {[s.nombre, s.apellido].filter(Boolean).join(' ') || s.p00}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <label className="campo campo-check">
+              <input
+                type="checkbox"
+                checked={escalarAlAdmin}
+                onChange={(e) => setEscalarAlAdmin(e.target.checked)}
+              />
+              Escalar al Administrador si no hay Supervisor activo
+            </label>
+          )}
+          <div className="campo">
+            <label htmlFor="msg-cuerpo">Mensaje (máx. 500)</label>
+            <textarea
+              id="msg-cuerpo"
+              maxLength={500}
+              rows={3}
+              value={cuerpo}
+              onChange={(e) => setCuerpo(e.target.value)}
+              placeholder="Escriba un mensaje para el Supervisor…"
+            />
+          </div>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => void enviar()}
+            disabled={!cuerpo.trim() || (supervisores.length > 0 && !p00Supervisor)}
+          >
+            Enviar al Supervisor
+          </button>
+        </div>
+      )}
 
       {puedeEnviar && (
         <div className="panel-bloque">

@@ -12,9 +12,17 @@ from ..core.db import get_db
 from ..models import Central, IngestaLote, Usuario
 from ..models.caso_entities import Caso
 from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta, SectorizacionPendientesOut
-from ..services import cuadrilla0, fallas
+from ..services import cuadrilla0, fallas, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
-from ..services.ingesta import ESPECIFICACION, filtrar_por_central, normalizar, parsear
+from ..services.ingesta import (
+    COLUMNAS_ESPERADAS,
+    ESPECIFICACION,
+    columnas_encabezado,
+    encabezado_valido,
+    filtrar_por_central,
+    normalizar,
+    parsear,
+)
 from ..services.sectorizacion import Patron, asignar_sector
 from .deps import get_current_user, require_roles
 
@@ -23,6 +31,7 @@ router = APIRouter(prefix="/api/v1/ingesta", tags=["ingesta"])
 _escritura = require_roles("ADMIN", "SUPERVISOR")
 CAMPOS_ESPECIFICACION = tuple(c for c, _, _ in ESPECIFICACION)
 TAMANO_LOTE_CONSULTA = 1000
+MAX_AVISOS_DETALLE = 500
 
 
 # --------------------------------------------------------------------------- #
@@ -72,9 +81,38 @@ def _analizar(
         "sectorizados": 0,
         "sin_sector": 0,
         "cuadrilla0": 0,
+        "filas_sin_identificador_pago": 0,
+        "filas_con_contacto": 0,
         "avisos": avisos,
         "ejemplos": [],
     }
+
+    # D-89 (RF-45/RF-46/RF-56): clasificación de los números de cada fila.
+    patron = pagos.compilar_patron(config)
+    avisos_detalle: list[dict[str, Any]] = []
+    for fila in candidatas:
+        clasificacion = pagos.clasificar_numeros(fila, patron)
+        fila["_clasificacion"] = clasificacion
+        if clasificacion.sin_identificador:
+            resumen["filas_sin_identificador_pago"] += 1
+            if len(avisos_detalle) < MAX_AVISOS_DETALLE:
+                avisos_detalle.append({
+                    "fila": fila.get("_linea"),
+                    "id_averia": fila.get("id_averia"),
+                    "numero": pagos.normalizar_numero(fila.get("telefono")) or None,
+                    "motivo": clasificacion.motivo,
+                })
+        if clasificacion.contactos:
+            resumen["filas_con_contacto"] += 1
+    resumen["avisos_detalle"] = avisos_detalle
+    if resumen["filas_sin_identificador_pago"]:
+        resumen["avisos"].append(
+            f"{resumen['filas_sin_identificador_pago']} filas sin identificador de pago (70*)"
+        )
+    if resumen["filas_con_contacto"]:
+        resumen["avisos"].append(
+            f"{resumen['filas_con_contacto']} filas con número de contacto sumado a informacion"
+        )
 
     for fila in candidatas:
         id_sector = asignar_sector(fila.get("direccion"), patrones)
@@ -129,10 +167,23 @@ async def preview(
     _: Usuario = Depends(_escritura),
 ) -> ResumenIngesta:
     contenido = await archivo.read()
+    if not encabezado_valido(contenido):
+        raise HTTPException(status_code=422, detail=_detalle_encabezado(contenido))
     resumen, _cand, _central, _patrones, _config = _analizar(db, contenido, id_central)
     resumen["archivo"] = archivo.filename or "sin-nombre"
-    return ResumenIngesta(**{k: v for k, v in resumen.items() if k != "ejemplos"},
-                          ejemplos=resumen["ejemplos"])
+    return ResumenIngesta(
+        **{k: v for k, v in resumen.items() if k not in ("ejemplos", "avisos_detalle")},
+        ejemplos=resumen["ejemplos"],
+        avisos_detalle=resumen["avisos_detalle"],
+    )
+
+
+def _detalle_encabezado(contenido: bytes | str) -> str:
+    """Mensaje único de la validación de encabezado (RT-20)."""
+    return (
+        f"El encabezado tiene {columnas_encabezado(contenido)} columnas; "
+        f"se esperaban {COLUMNAS_ESPERADAS} (RT-05 / RT-20)"
+    )
 
 
 @router.post("", response_model=ResumenIngesta, status_code=status.HTTP_201_CREATED,
@@ -146,6 +197,24 @@ async def cargar(
     contenido = await archivo.read()
     nombre = archivo.filename or "sin-nombre"
 
+    # RT-20: encabezado inválido → lote en ERROR, 0 casos y 422 al cliente.
+    if not encabezado_valido(contenido):
+        detalle = _detalle_encabezado(contenido)
+        config = cargar_config(db)
+        central = resolver_central(db, id_central, config)
+        db.add(
+            IngestaLote(
+                archivo=nombre[:255],
+                id_central=central.id_central,
+                filas_leidas=0,
+                estado="ERROR",
+                detalle_error=detalle,
+                usuario=usuario.p00,
+            )
+        )
+        db.commit()
+        raise HTTPException(status_code=422, detail=detalle)
+
     resumen, candidatas, central, _patrones, _config = _analizar(db, contenido, id_central)
     resumen["archivo"] = nombre
 
@@ -157,14 +226,26 @@ async def cargar(
         casos_nuevos=resumen["casos_nuevos"],
         casos_duplicados=resumen["casos_duplicados"],
         casos_descartados=resumen["casos_descartados"],
+        filas_sin_identificador_pago=resumen["filas_sin_identificador_pago"],
+        filas_con_contacto=resumen["filas_con_contacto"],
         estado="PROCESANDO",
         usuario=usuario.p00,
     )
     db.add(lote)
     db.flush()
 
+    cache_pagos: dict[str, int] = {}
     for fila in candidatas:
         datos = {campo: fila.get(campo) for campo in CAMPOS_ESPECIFICACION}
+        clasificacion = fila.get("_clasificacion")
+        if clasificacion is not None:
+            datos["telefono"] = clasificacion.identificador
+            datos["contacto_cliente"] = (
+                clasificacion.contacto_principal or datos.get("contacto_cliente")
+            )
+            datos["informacion"] = pagos.componer_informacion(
+                datos.get("informacion"), clasificacion.contactos
+            )
         datos["id_central"] = central.id_central
         datos["id_lote_ingesta"] = lote.id_lote
         datos["id_sector"] = fila.get("_id_sector")
@@ -172,10 +253,23 @@ async def cargar(
         datos["origen"] = "INGESTA_CSV"
         datos["creado_por"] = usuario.p00
         datos["ayudantes"] = datos.get("ayudantes") or []
+        datos["id_pago"] = (
+            pagos.resolver_identificador(
+                db,
+                clasificacion.identificador,
+                central.id_central,
+                datos.get("nombre_cliente"),
+                datos.get("direccion"),
+                cache_pagos,
+            )
+            if clasificacion is not None and clasificacion.identificador
+            else None
+        )
         db.add(Caso(**datos))
 
     lote.estado = "OK"
     lote.detalle_error = "; ".join(resumen["avisos"]) or None
+    lote.avisos = resumen["avisos_detalle"]
     db.commit()
 
     # RF-09: detección automática de fallas masivas por concentración
@@ -185,8 +279,14 @@ async def cargar(
         resumen["fallas_masivas"] = len(creadas)
 
     return ResumenIngesta(
-        **{k: v for k, v in resumen.items() if k not in ("ejemplos", "fallas_masivas")},
-        id_lote=lote.id_lote, ejemplos=resumen["ejemplos"],
+        **{
+            k: v
+            for k, v in resumen.items()
+            if k not in ("ejemplos", "fallas_masivas", "avisos_detalle")
+        },
+        id_lote=lote.id_lote,
+        ejemplos=resumen["ejemplos"],
+        avisos_detalle=resumen["avisos_detalle"],
         fallas_masivas=resumen.get("fallas_masivas", 0),
     )
 

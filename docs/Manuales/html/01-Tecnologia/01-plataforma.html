@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plataforma GGTO — Visión general y arquitectura — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ó">
+<meta name="description" content="Estado verificado 2026-10-12: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.1.0+9) es de campo y todavía no ofrece gestión por rol. La auditoría de código, doc">
 <meta property="og:image" content="../../../imagenes/onboarding-tecnico.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,27 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Tecnología</span>
           <h1 class="portada-titulo">Plataforma GGTO — Visión general y arquitectura</h1>
-          <p class="portada-resumen">Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área 4). Este manual no promete funciones que todavía no existen: cuando algo está pendiente, lo dice con claridad.</p>
+          <p class="portada-resumen">Estado verificado 2026-10-12: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.1.0+9) es de campo y todavía no ofrece gestión por rol. La auditoría de código, documentación y despliegue está en RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área 4). Este […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Tecnología</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/01-Tecnologia/01-plataforma.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 06/10/2026</span>
+          <span>Edición HTML y PDF generada el 14/10/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>Estado verificado 2026-10-12:</strong> GGTO V1 continúa desplegado; GGTO V2 está
+parcialmente implementado. La APK vigente (<code>1.1.0+9</code>) es de campo y todavía no
+ofrece gestión por rol. La auditoría de código, documentación y despliegue está
+en <code>RepoTecnico/auditoria_estado_real_v2.md</code> dentro del repositorio.</p>
+</blockquote>
 <blockquote>
 <p>Manual para todo público. Explica qué es <strong>GGTO</strong>, para qué sirve y cómo está armado por dentro,
 en lenguaje sencillo. GGTO es el <em>Sistema de administración de reportes de avería y construcción
@@ -887,10 +893,10 @@ disponibilidad) y <strong>14 RT</strong> (requisitos técnicos).</p>
 </tr>
 </tbody>
 </table></div>
-<p><strong>Lo que NO existe todavía (no lo busques):</strong></p>
+<p><strong>Capacidades que deben distinguirse por versión:</strong></p>
 <ul>
-<li><strong>La aplicación móvil Flutter no está desarrollada.</strong> Estaba prevista para el Ciclo 8 y ese ciclo
-quedó pospuesto. No hay APK para instalar en teléfonos.</li>
+<li><strong>La APK Flutter existe como aplicación de campo</strong> (<code>1.1.0+9</code>), con casos, sincronización,
+alertas, mensajes y perfil. Las pantallas de gestión multirol V2 siguen pendientes.</li>
 <li><strong>WhatsApp no existe en esta versión.</strong> Se retiró de los requerimientos y quedó reservado para una
 versión futura (v3).</li>
 <li><strong>Telegram y el correo todavía no envían de verdad.</strong> No tienen credenciales cargadas en
@@ -1082,7 +1088,7 @@ afuera</strong> (Telegram, correo y MCP). Veamos cada una.</p>
         WEB --&gt;|&quot;misma dirección, sin CORS&quot;| API
     end
     subgraph Datos[&quot;Base de datos&quot;]
-        PG[(&quot;PostgreSQL 15&lt;br/&gt;base ggtov2&lt;br/&gt;36 tablas&quot;)]
+        PG[(&quot;PostgreSQL 15&lt;br/&gt;base ggtov2&lt;br/&gt;41 tablas en DDL local&quot;)]
     end
     subgraph Canales[&quot;Canales hacia afuera&quot;]
         TG[&quot;Telegram&lt;br/&gt;(sin credenciales: PENDIENTE)&quot;]
@@ -1177,9 +1183,8 @@ devuelve la página principal y React decide qué mostrar. A esto se le llama <e
 pura, sin pantallas.</p>
 <h3 id="base-de-datos-postgresql"><span class="sec-num">3.3</span>Base de datos PostgreSQL</h3>
 <p>El <strong>almacén</strong> de GGTO es una base de datos <strong>PostgreSQL</strong>. Guarda todo: usuarios, centrales,
-técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. En total son <strong>36 tablas</strong>.
-La última en incorporarse (ciclo D-66) es <code>cuadrilla_sector_dia</code>, que guarda qué sectores atiende
-cada cuadrilla cada día.</p>
+técnicos, cuadrillas, casos, despachos, citas, notificaciones y más. El DDL local tiene <strong>41 tablas</strong>;
+el esquema desplegado no se consultó en el corte de esta auditoría.</p>
 <p>Datos de conexión usuales (los valores reales se cargan por entorno y no se escriben en este
 manual):</p>
 <div class="tabla-scroll"><table>
@@ -1598,7 +1603,7 @@ usarlas para una decisión.</strong> Lo que no se pueda comprobar se reporta com
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Tecnología</span>
-    <span>Generado el 06/10/2026</span>
+    <span>Generado el 14/10/2026</span>
   </div>
 </footer>
 

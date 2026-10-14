@@ -4,8 +4,8 @@
 > GGTO: la sección donde se registran la central, los sectores, los técnicos, la flota, las
 > cuadrillas, los catálogos y los parámetros del sistema. Está dirigido a supervisores y
 > administradores de la Central Francisco Salias (Área 4) de CANTV, y también sirve de
-> consulta para técnicos de campo. La aplicación móvil todavía no está desarrollada (el
-> Ciclo 8 quedó pospuesto), así que la configuración se hace desde la interfaz web. Cuando
+> consulta para técnicos de campo. Existe APK Flutter de campo `1.1.0+9`; la configuración
+> se hace desde la interfaz web. Cuando
 > algo no pudo comprobarse, se indica con la frase **«pendiente de confirmar»**.
 
 ## Empezar en 5 minutos

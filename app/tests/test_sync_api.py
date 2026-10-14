@@ -68,9 +68,12 @@ def entorno_sync(client, admin_token, db_session):
     assert inc.status_code == 201, inc.text
 
     def crear(id_averia: str, **extra: object) -> dict:
-        r = client.post(CASOS, json={"id_averia": id_averia, "direccion": "SECTOR SYNC 1",
-                                     "nombre_cliente": f"CLIENTE {id_averia}",
-                                     "telefono": "7007000000"}, headers=headers)
+        cuerpo = {"id_averia": id_averia, "direccion": "SECTOR SYNC 1",
+                  "nombre_cliente": f"CLIENTE {id_averia}",
+                  "contacto_cliente": "04142223344", "id_pago": "7007000000",
+                  "tipo_reporte": "REPARACION", "tipo_problema": "SIN_SERVICIO"}
+        cuerpo.update(extra)
+        r = client.post(CASOS, json=cuerpo, headers=headers)
         assert r.status_code == 201, r.text
         caso = r.json()
         # Un caso recién creado nace NUEVO; aquí se deja ASIGNADO salvo que el

@@ -6,7 +6,7 @@
 > fueron leídas del repositorio. Las versiones declaradas provienen de `package.json` y las
 > **resueltas** de `package-lock.json`; lo que no puede comprobarse se marca como **pendiente de
 > confirmar**. Este manual **no** documenta aplicaciones móviles ni canales de mensajería: la
-> app Flutter del proyecto **no está desarrollada**.
+> existe una APK Flutter de campo (`1.1.0+9`); la APK de gestión multirol V2 sigue pendiente.
 
 ## Fuentes
 

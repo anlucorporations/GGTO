@@ -18,25 +18,35 @@ class FichaCabecera extends StatelessWidget {
   const FichaCabecera({
     super.key,
     required this.nombre,
-    required this.telefono,
+    required this.identificadorPago,
     required this.estado,
+    this.contacto = '',
     this.pendienteSync = false,
     this.onEditar,
   });
 
   final String nombre;
-  final String telefono;
+
+  /// **Identificador de pago (70\\*)** del caso: la clave de negocio que enlaza al
+  /// usuario con la institución (D-89/D-93). Se muestra en **solo lectura**.
+  final String identificadorPago;
+
+  /// Número de contacto del cliente (el que se puede corregir desde el campo).
+  final String contacto;
+
   final String estado;
 
   /// Hay cambios guardados en el dispositivo sin enviar (D-85).
   final bool pendienteSync;
 
-  /// Icono **Editar** (dirección y número de contacto · D-88).
+  /// Icono **Editar** (dirección y número de contacto · D-88/D-93).
   final VoidCallback? onEditar;
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
+    final ip = identificadorPago.trim();
+    final tel = contacto.trim();
     return Material(
       color: tema.colorScheme.surface,
       elevation: 1,
@@ -57,14 +67,38 @@ class FichaCabecera extends StatelessWidget {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
+                  // D-93: el identificador de pago va en la cabecera, rotulado y
+                  // en solo lectura (no se edita desde el campo).
                   Row(
                     children: [
-                      if (telefono.trim().isNotEmpty) ...[
-                        const Icon(Icons.call, size: 14, color: Colors.black54),
-                        const SizedBox(width: 4),
-                        Text(telefono, style: const TextStyle(fontSize: 13)),
-                        const SizedBox(width: 10),
-                      ],
+                      const Icon(Icons.badge_outlined, size: 14, color: Colors.black54),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          ip.isEmpty
+                              ? 'Sin identificador de pago (70*)'
+                              : 'Identificador de pago (70*): $ip',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.call, size: 14, color: Colors.black54),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          tel.isEmpty ? 'Sin número de contacto' : 'Número de contacto: $tel',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12.5),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       EstadoChip(estado: estado),
                     ],
                   ),

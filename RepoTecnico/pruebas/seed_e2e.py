@@ -34,6 +34,7 @@ from app.models import (  # noqa: E402
     Cuadrilla,
     CuadrillaTecnico,
     Flota,
+    IdentificadorPago,
     Rol,
     Sector,
     SectorDireccion,
@@ -156,6 +157,10 @@ def sembrar(db) -> dict:
     db.flush()
 
     # --- Casos: 6 concentrados en un OLT (dispara RF-09 con umbral 5) ---
+    # D-89: cada caso llevaba un móvil en `telefono`; ahora el **identificador de
+    # pago (70*)** es el eje y el móvil es el número de contacto. Sin `id_pago`,
+    # la regla de D-90 convertiría la REPARACIÓN E2E-0007 en REFERIDO y cambiaría
+    # el universo del despacho y del panel.
     ahora = datetime.now(UTC)
     definiciones = [
         ("E2E-0001", "RESIDENCIAL", "NUEVO", "e2e-olt-00", "AVERIA"),
@@ -168,6 +173,15 @@ def sembrar(db) -> dict:
         ("E2E-0008", "GOBIERNO", "NUEVO", "e2e-olt-01", "CONSTRUCCION"),
     ]
     for indice, (id_averia, categoria, estado, olt, tipo) in enumerate(definiciones):
+        numero = f"701400{indice:04d}"
+        identificador = IdentificadorPago(
+            numero=numero,
+            id_central=central.id_central,
+            nombre_titular=f"Cliente E2E {indice + 1}",
+            direccion_principal=f"CALLE E2E, CASA {indice + 1}, SECTOR E2E",
+        )
+        db.add(identificador)
+        db.flush()
         db.add(
             Caso(
                 id_central=central.id_central,
@@ -178,8 +192,10 @@ def sembrar(db) -> dict:
                 estado_actual=estado,
                 id_sector=sector.id_sector,
                 id_causa=causa.id_causa,
+                id_pago=identificador.id_pago,
                 nombre_cliente=f"Cliente E2E {indice + 1}",
-                telefono=f"0414000{indice:04d}",
+                telefono=numero,
+                contacto_cliente=f"0414000{indice:04d}",
                 direccion=f"CALLE E2E, CASA {indice + 1}, SECTOR E2E",
                 problema_reporte="FALLA FIBRA E2E" if indice % 2 == 0 else "NAVEGACION LENTA E2E",
                 olt=olt,

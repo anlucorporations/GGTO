@@ -6,39 +6,53 @@
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
 | Motor | PostgreSQL 15 (instancia compartida `truekeate-main:southamerica-east1:truekeate-db-dev`) |
 | Base | `ggtov2` · usuario de aplicación `ggtov2_app` |
-| DDL de referencia | `RepoTecnico/db/schema.sql` (820 líneas, **36 tablas**) |
+| DDL de referencia | `RepoTecnico/db/schema.sql` (**41 tablas locales**) |
 | Mapeo ORM | `app/models/*.py` (SQLAlchemy 2.x declarativo) |
 | Diccionario de origen | `RepoTecnico/diccionario_datos.md` (Borrador v0.2, «sujeto a validación») |
 | Esquema de pruebas | `DB_SCHEMA` añade `options=-csearch_path=<esquema>,public` (`app/core/db.py:33-36`) |
 
-> Este manual describe las entidades **tal como están implementadas** en el DDL
-> desplegado y en los modelos ORM. Cuando el diccionario de origen (`diccionario_datos.md`)
+> Este manual describe el DDL local y los modelos ORM inspeccionados el 2026-10-12. La instancia
+> desplegada está activa, pero su esquema no se consultó en esta auditoría. Cuando el diccionario de origen (`diccionario_datos.md`)
 > y el DDL difieren, la divergencia se señala de forma explícita en la sección
 > **Fuentes → Divergencias detectadas**. Lo no verificable se marca como
 > «pendiente de confirmar».
 
 ## Visión general
 
-### Las 36 tablas del esquema
+### Las 41 tablas del esquema
 
-El DDL contiene **36 sentencias `CREATE TABLE`** (conteo directo sobre
-`RepoTecnico/db/schema.sql`). Se agrupan en siete dominios funcionales.
+El DDL contiene **41 sentencias `CREATE TABLE`** (conteo directo sobre
+`RepoTecnico/db/schema.sql`, revisado en el cierre de **D-89…D-94**). Se agrupan
+en ocho dominios funcionales.
 
 | Dominio | Tablas | Nº |
 |---|---|---|
 | Seguridad y acceso | `rol`, `usuario`, `dispositivo_seguridad`, `auditoria` | 4 |
 | Configuración | `central`, `sector`, `sector_direccion`, `tecnico`, `flota`, `herramienta`, `cuadrilla`, `cuadrilla_tecnico`, `cuadrilla_herramienta`, `causa`, `catalogo_metodo`, `configuracion` | 12 |
-| Operación | `ingesta_lote`, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 7 |
+| Operación | `ingesta_lote`, **`identificador_pago`**, `caso`, `caso_estado_hist`, `actividad`, `evidencia`, `incidente`, `sincronizacion` | 8 |
 | Especiales | `solicitante`, `caso_especial`, `seguimiento`, `cita` | 4 |
 | Despacho | `despacho`, `despacho_caso`, `cuadrilla_sector_dia`, `falla_masiva` | 4 |
 | Insumos (v2) | `insumo`, `orden_material`, `orden_material_detalle`, `inventario_movimiento` | 4 |
 | Notificaciones | `notificacion` | 1 |
-| **Total** | | **36** |
+| Mensajería y sincronización | `sync_log`, `sync_check`, `mensaje`, `mensaje_destino` | 4 |
+| **Total** | | **41** |
+
+> **Cambios de D-89…D-94 en el esquema.** `identificador_pago` es la tabla nueva
+> del incremento D-89 (`RepoTecnico/db/schema.sql:292-304`); `caso` suma
+> `id_pago` (`:324-325`) y el enumerado de `tipo_caso` incorpora `REFERIDO`
+> (`:315-316`). Las cuatro tablas de **Mensajería y sincronización** provienen de
+> D-73/D-81 y se documentan en
+> [`10-sincronizacion-mensajeria-panel.md`](../03-Implementacion/10-sincronizacion-mensajeria-panel.md);
+> quedan **pendientes de confirmar** en este diccionario sus columnas una a una.
 
 Tablas de catálogo sembradas con datos iniciales idempotentes:
-`rol` (4 filas: SUPER, ADMIN, SUPERVISOR, TECNICO), `catalogo_metodo` (9 filas),
+`rol` (4 filas: SUPER, ADMIN, SUPERVISOR, TECNICO). COORDINADOR aparece en código
+V2, pero no en el seed ni en una migración local; su presencia en producción no se
+verificó. También se siembran `catalogo_metodo` (10 filas),
 `central` (1 fila: `2324X` FRANCISCO SALIAS), `cuadrilla` (1 fila: `C-00`) y
-`configuracion` (22 parámetros) — `RepoTecnico/db/schema.sql:753-814`.
+`configuracion` (32 parámetros, entre ellos `pago.serie_regex`,
+`pago.reincidencia_dias` y `referido.reclasificar_en_proximo_cambio`) —
+`RepoTecnico/db/schema.sql:868-947`.
 El catálogo `causa` **no** se puebla desde el CSV: es administrable y su
 mantenimiento corresponde al administrador de catálogos (`RepoTecnico/diccionario_datos.md:499-501`).
 
@@ -83,11 +97,9 @@ Notas de tipado verificadas:
 - `dispositivo_seguridad.palabras_hash` es `jsonb` con `DEFAULT '[]'`
   (`RepoTecnico/db/schema.sql:565`); el modelo lo expone como `list`
   (`app/models/entities.py:92`).
-- El ORM mapea **29 de las 36 tablas** (D-66 añadió `cuadrilla_sector_dia` y D-67 añadió
-  `auditoria`). Las **siete** tablas restantes
-  (`actividad`, `evidencia`, `incidente`, `sincronizacion`, `insumo`,
-  `orden_material_detalle`, `inventario_movimiento`) no tienen
-  clase declarativa y solo existen en el DDL (ver **Fuentes → Cobertura del ORM**).
+- El ORM mapea **36 de las 41 tablas**. Las cinco tablas sin clase declarativa son
+  `incidente`, `insumo`, `inventario_movimiento`, `orden_material_detalle` y `sincronizacion`
+  (ver **Fuentes → Cobertura del ORM**).
 
 ### Campos de auditoría (creado_en, actualizado_en)
 
@@ -444,7 +456,7 @@ Los parámetros relacionados con secretos solo se nombran, nunca se transcriben:
 #### `ingesta_lote` — carga del CSV diario
 
 Propósito: cabecera y métricas de cada carga del archivo
-`detalle_averias_gpon_*.csv` (`RepoTecnico/db/schema.sql:267-282`;
+`detalle_averias_gpon_*.csv` (`RepoTecnico/db/schema.sql:267-286`;
 ORM `app/models/caso_entities.py:23-38`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
@@ -455,35 +467,89 @@ ORM `app/models/caso_entities.py:23-38`).
 | `id_central` | `integer` | FK→`central` | Central del lote. |
 | `filas_leidas` / `filas_central` | `integer` | NN, `0` | Filas totales y filas de la central. |
 | `casos_nuevos` / `casos_duplicados` / `casos_descartados` | `integer` | NN, `0` | Resultado de la deduplicación por `id_averia`. |
-| `estado` | `varchar(20)` | NN, `PROCESANDO` | `PROCESANDO`/`OK`/`ERROR`. |
+| `filas_sin_identificador_pago` | `integer` | NN, `0` | **D-89 (RF-56):** filas del archivo sin ningún número que cumpla el patrón `70*`. |
+| `filas_con_contacto` | `integer` | NN, `0` | **D-89 (RF-56):** filas con al menos un número de contacto (cualquier otro número). |
+| `avisos` | `jsonb` | NN, `'[]'` | Detalle estructurado de los avisos de la carga (`app/api/routes_ingesta.py:272`). |
+| `estado` | `varchar(20)` | NN, `PROCESANDO` | `PROCESANDO`/`OK`/`ERROR`; un encabezado inválido deja el lote en `ERROR` con 422 (RT-20, `app/api/routes_ingesta.py:200-216`). |
 | `detalle_error` | `text` | — | Mensaje de error del lote. |
 | `usuario` | `varchar(20)` | — | P00 que ejecutó la carga. |
 | `creado_en` | `timestamptz` | NN | Auditoría. |
+
+#### `identificador_pago` — ficha única del 70\* (D-89)
+
+Propósito: **eje del histórico de casos**. El *identificador de pago* es el
+número telefónico `70\*` que enlaza al usuario con la institución (CANTV). Es
+una **ficha única global** por número: un mismo identificador acumula **N
+reportes** (casos con su propio `id_averia`), de modo que los históricos y la
+reincidencia se construyen a su alrededor y no alrededor del caso
+(`RepoTecnico/db/schema.sql:288-304`; ORM `app/models/pago_entities.py:25-43`).
+
+| Campo | Tipo | Clave / Nulo | Descripción |
+|---|---|---|---|
+| `id_pago` | `bigserial` | PK, NN | Identificador interno de la ficha. |
+| `numero` | `varchar(15)` | NN, `UNIQUE` (`uq_ip_numero`) | Número normalizado (solo dígitos, sin prefijo internacional ni `0` inicial: `app/services/pagos.py:65-78`). |
+| `id_central` | `integer` | FK→`central(id_central)`, NN | **Central de origen**: la primera que vio el número. |
+| `nombre_titular` | `varchar(160)` | — | Titular del servicio (PII; el TÉCNICO lo ve enmascarado). |
+| `direccion_principal` | `text` | — | Dirección principal asociada (PII). |
+| `estado` | `varchar(12)` | NN, `ACTIVO` | Ciclo de vida: `ACTIVO`/`SUSPENDIDO`/`BAJA` (`app/models/pago_entities.py:22`). |
+| `creado_en` | `timestamptz` | NN, `now()` | Auditoría. |
+| `actualizado_en` | `timestamptz` | NN, `now()` | Auditoría; refrescado por `trg_identificador_pago_actualizado` (`RepoTecnico/db/schema.sql:854,860-861`). |
+
+Restricciones y políticas verificadas:
+
+| Objeto | Regla | Referencia |
+|---|---|---|
+| `uq_ip_numero` | `UNIQUE (numero)` — una sola ficha por número (DEC-IP-6) | `RepoTecnico/db/schema.sql:302` |
+| `ck_ip_serie` | `CHECK (numero ~ '^[0-9]{7,15}$')` — solo formato; el patrón **de negocio** (`^70[0-9]{8}$`) vive en `configuracion.pago.serie_regex` y lo valida `app/services/pagos.py:37-50` | `RepoTecnico/db/schema.sql:303` |
+| `p_ip_central` (RLS) | `USING`: la ve la central de origen **o** cualquiera con casos enlazados; `WITH CHECK`: solo la central de origen | `RepoTecnico/db/schema.sql:796-805` |
+| Alta idempotente | `INSERT … ON CONFLICT (numero) DO NOTHING` + `SELECT` (tolerante a concurrencia) | `app/services/pagos.py:157-193` |
+| Índices relacionados | `ix_caso_id_pago` y `ix_caso_id_pago_fecha` (sobre `caso`) | `RepoTecnico/db/schema.sql:738-739` |
+
+> **Nota de alcance.** El identificador **no** tiene endpoint propio de CRUD en
+> la v1: se consume desde los casos (alta/edición con `id_pago`), la búsqueda y
+> las métricas de MONITOREO. La matriz RBAC lo declara como módulo
+> («IDENTIFICADOR DE PAGO — histórico, reincidencia y ciclo de vida») en
+> `RepoTecnico/requerimientos.md:250`; su materialización como API dedicada queda
+> **pendiente de confirmar**.
 
 #### `caso` — entidad central de averías
 
 Propósito: tabla central del sistema; mapea el CSV (80 columnas depuradas) más
 los campos propios del sistema. La deduplicación global se apoya en
-`id_averia` (`RepoTecnico/db/schema.sql:285-364`; ORM `app/models/caso_entities.py:41-118`).
+`id_averia` (`RepoTecnico/db/schema.sql:307-388`; ORM `app/models/caso_entities.py:47-128`).
 
 | Grupo | Campos (tipo) | Nulo | Descripción |
 |---|---|---|---|
 | Identidad | `id_caso` (`bigserial` PK), `id_central` (FK, NN) | — | Identificador interno y central propietaria. |
-| Clasificación | `id_averia` `varchar(30)` UQ NN; `origen` NN `INGESTA_CSV`; `tipo_caso` NN `AVERIA`; `categoria` NN `RESIDENCIAL` | Solo `id_averia`/`origen`/`tipo_caso`/`categoria` son NN | Enumerados con `CHECK`: origen `INGESTA_CSV`/`MANUAL`/`TELEGRAM`/`MCP_IA`; tipo `AVERIA`/`REPARACION`/`CONSTRUCCION`; categoría `RESIDENCIAL`/`EMPRESA`/`REFERIDO`/`GOBIERNO`. |
-| Estado | `estado_actual` `varchar(20)` NN `NUEVO` | NN | `NUEVO`/`ASIGNADO`/`CONTACTADO`/`CITADO`/`DIFERIDO`/`EN_GESTION`/`ENRUTADO`/`CERRADO`/`CANCELADO` (`RepoTecnico/db/schema.sql:297-299`). |
-| Enlaces | `id_sector` FK, `id_causa` FK, `id_lote_ingesta` FK | Sí | Sectorización, causa y lote de origen. |
+| Clasificación | `id_averia` `varchar(30)` UQ NN; `origen` NN `INGESTA_CSV`; `tipo_caso` NN `AVERIA`; `categoria` NN `RESIDENCIAL` | Solo `id_averia`/`origen`/`tipo_caso`/`categoria` son NN | Enumerados con `CHECK`: origen `INGESTA_CSV`/`MANUAL`/`TELEGRAM`/`MCP_IA`; tipo `AVERIA`/`REPARACION`/`CONSTRUCCION`/**`REFERIDO`** `RepoTecnico/db/schema.sql:315-316`; categoría `RESIDENCIAL`/`EMPRESA`/`REFERIDO`/`GOBIERNO`. |
+| Estado | `estado_actual` `varchar(20)` NN `NUEVO` | NN | `NUEVO`/`ASIGNADO`/`CONTACTADO`/`CITADO`/`DIFERIDO`/`EN_GESTION`/`ENRUTADO`/`CERRADO`/`CANCELADO` (`RepoTecnico/db/schema.sql:319-321`). |
+| Enlaces | `id_sector` FK, `id_causa` FK, **`id_pago`** FK, `id_lote_ingesta` FK | Sí | **`id_pago` (D-89)** → `identificador_pago(id_pago)` con `ON DELETE RESTRICT` y cardinalidad **1 → N** (un identificador, varios reportes) (`RepoTecnico/db/schema.sql:324-325`). Sectorización, causa y lote de origen. |
 | Banderas | `en_gestion_supervisor` NN `false`, `es_falla_masiva` NN `false`, `creado_por` FK→`usuario.p00` | `creado_por` sí | Gestión por cuadrilla 0 y agregación a falla masiva. |
 | Geografía | `region`, `estado_geografico`, `capital_estado`, `municipio`, `parroquia`, `estado_operativo`, `distrito`, `area`, `codigo_central`, `nombre_central` (`varchar`) | Sí | Copia denormalizada usada como filtro de central. |
-| Contacto | `telefono` `varchar(30)`, `fecha_reporte`, `persona_reporta` `varchar(120)`, `contacto_cliente` `varchar(60)`, `fecha_compromiso`, `fecha_cita`, `ultimo_comentario` `text`, `results` `text`, `asignado_a` `varchar(60)`, `cuadrilla_externa` `varchar(40)`, `estatus_origen` `varchar(20)`, `problema_reporte` `text`, `informacion` `text`, `nombre_cliente` `varchar(160)`, `direccion` `text` | Sí | `informacion` unifica las columnas 31, 32 y 52 del CSV (D-27, `RepoTecnico/db/schema.sql:332`); `direccion` es la base de la sectorización. |
+| Contacto | `telefono` `varchar(30)`, `fecha_reporte`, `persona_reporta` `varchar(120)`, `contacto_cliente` `varchar(60)`, `fecha_compromiso`, `fecha_cita`, `ultimo_comentario` `text`, `results` `text`, `asignado_a` `varchar(60)`, `cuadrilla_externa` `varchar(40)`, `estatus_origen` `varchar(20)`, `problema_reporte` `text`, `informacion` `text`, `nombre_cliente` `varchar(160)`, `direccion` `text` | Sí | `informacion` unifica las columnas 31, 32 y 52 del CSV (D-27, `RepoTecnico/db/schema.sql:356`); `direccion` es la base de la sectorización. |
+| Identificador y contactos (D-89) | `telefono` `varchar(30)` — **alias legado** del identificador; `contacto_cliente` `varchar(60)` — **número de contacto**; `informacion` `text` — refleja los contactos como `[CONTACTO] <numero>` | Sí | `telefono` **solo** contiene un `70\*` (el `numero` del identificador enlazado en `id_pago`); cualquier otro número va a `contacto_cliente` y se suma a `informacion` con la marca `[CONTACTO]` (`app/services/pagos.py:100-151,208-226`). El alias **no** sustituye a la FK: la relación de negocio es `id_pago`. |
 | Técnico/lógico | `olt` `varchar(40)`, `plan` `varchar(60)`, `slot` `varchar(10)`, `puerto` `varchar(10)`, `fat` `varchar(80)`, `serial` `varchar(60)`, `extra`, `area_trabajo`, `tipo_servicio`, `tipo_problema`, `dias_area_resolutoria` `integer`, `unidad_negocio`, `ups`, `codigos_gestionados_venapp`, `codigos_sin_gestion_venapp` | Sí | Datos de red y gestión VENAPP. |
 | Asignación origen | `reparador_principal` `varchar(20)`, `ayudantes` `jsonb` NN `'[]'`, `flota_can`, `despacho_nombre`, `despacho_apellido`, `telefono_oficina`, `telefono_movil`, `fecha_hora_asignacion` | `ayudantes` NN; el resto sí | Hasta 9 ayudantes en el arreglo JSON. |
 | Auditoría | `creado_en` NN, `actualizado_en` NN | NN | Refrescado por disparador. |
 
-El comentario del modelo indica **63 columnas** (`app/models/caso_entities.py:42`)
-y el conteo sobre el DDL confirma 63 definiciones de columna en
-`RepoTecnico/db/schema.sql:286-363`. El diccionario de origen habla de **49 campos destino**
+El comentario del modelo indica **63 columnas** (`app/models/caso_entities.py:48`),
+pero el conteo sobre el DDL da **64** definiciones de columna en
+`RepoTecnico/db/schema.sql:308-387`: la diferencia es **`id_pago`**, añadida por
+D-89 sin actualizar el docstring del ORM (`app/models/caso_entities.py:63-65`) —
+queda **pendiente de confirmar** si se corrige el comentario o se documenta la
+divergencia. El diccionario de origen habla de **49 campos destino**
 del CSV (`diccionario_datos.md:8,238`): corresponde al mapeo de columnas del
 archivo, no al total físico de la tabla (ver **Divergencias detectadas**).
+
+**Reglas de negocio asociadas a `caso` (D-89/D-90).** Además de las columnas,
+el esquema instala dos garantías que no son columnas:
+
+| Objeto | Qué hace | Referencia |
+|---|---|---|
+| `trg_caso_reparacion_a_referido` | `BEFORE INSERT OR UPDATE`: si `tipo_caso='REPARACION'` y falta `id_pago` o `id_averia` empieza por `REF-`, pasa el caso a `REFERIDO` (y `categoria` a `REFERIDO` si era `RESIDENCIAL`/`REFERIDO`). | `RepoTecnico/db/schema.sql:812-830` |
+| `ck_reparacion_con_ip` | `CHECK` **NOT VALID**: `tipo_caso <> 'REPARACION' OR (id_pago IS NOT NULL AND id_averia NOT LIKE 'REF-%')`. Rige toda escritura nueva. | `RepoTecnico/db/schema.sql:834-843` |
+| marca derivada | `marcado_reclasificar` / `motivo_marca` **no** son columnas: los calcula `app/api/routes_casos.py:83-153` con `app/services/clasificacion.py:47-66`. | `app/schemas/casos.py:49-52` |
+| `caso_especial` | La ficha del caso especial es **idempotente (1:1)**: `asegurar_caso_especial()` crea o actualiza la única fila del caso. | `app/services/clasificacion.py:77-105` |
 
 #### `caso_estado_hist` — bitácora de estados
 
@@ -601,13 +667,15 @@ Propósito: unidad, nombre y contacto de quien reporta un caso especial
 
 #### `caso_especial` — referidos, empresas y gobiernos
 
-Propósito: subtipo de caso sin `id_averia` de origen
-(`RepoTecnico/db/schema.sql:376-393`; ORM `app/models/especiales_entities.py:35-51`).
+Propósito: ficha de los casos **especiales** (referidos, empresas y gobiernos).
+Desde D-90 es además el destino de toda **REPARACIÓN que no acredita sus claves**
+(`70*` + `id_averia` real), y su relación con `caso` es **1:1 idempotente**
+(`RepoTecnico/db/schema.sql:400-417`; ORM `app/models/especiales_entities.py:35-51`).
 
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
 | `id_caso_especial` | `serial` | PK, NN | Identificador. |
-| `id_caso` | `bigint` | FK→`caso` `ON DELETE CASCADE` | Caso vinculado si existe. |
+| `id_caso` | `bigint` | FK→`caso` `ON DELETE CASCADE` | Caso vinculado. `asegurar_caso_especial()` garantiza **como máximo una fila por caso** (`app/services/clasificacion.py:88-105`), de modo que la relación efectiva es **1:1**. |
 | `id_solicitante` | `integer` | FK→`solicitante` | Quién lo reporta. |
 | `clasificacion` | `varchar(20)` | NN | `REFERIDO`/`EMPRESA`/`GOBIERNO`. |
 | `tipo_actividad` | `varchar(20)` | NN | `REPARACION`/`CONSTRUCCION`. |
@@ -617,6 +685,20 @@ Propósito: subtipo de caso sin `id_averia` de origen
 | `requiere_informe` | `boolean` | NN, `true` | Exige informe de atención. |
 | `estado` | `varchar(20)` | NN, `ABIERTO` | `ABIERTO`/`EN_PROCESO`/`ATENDIDO`/`CERRADO`. |
 | `creado_en` / `actualizado_en` | `timestamptz` | NN | Auditoría. |
+
+Relación con la regla REPARACIÓN/REFERIDO (D-90, `app/services/clasificacion.py`):
+
+- La ficha nace con `clasificacion = REFERIDO` y, si el caso trae
+  `categoria` `EMPRESA`/`GOBIERNO`, se conserva esa clasificación de negocio
+  (`app/services/clasificacion.py:69-71`).
+- `tipo_actividad = REPARACION`, `prioridad = MEDIA` y `estado = ABIERTO` son los
+  valores del alta; `tiene_id_averia` refleja si el `id_averia` es real o
+  sintético (`REF-…`) (`app/services/clasificacion.py:91-99`).
+- El solicitante (`id_solicitante`) es opcional y se resuelve en el alta de
+  ESPECIALES (`app/api/routes_especiales.py:71-100`).
+- La **marca** que motiva la reclasificación (`marcado_reclasificar`,
+  `motivo_marca`) **no** se persiste en esta tabla ni en `caso`: es derivada de
+  `tipo_caso`, `id_pago` e `id_averia` (`app/services/clasificacion.py:47-66`).
 
 #### `seguimiento` — derivación a otras instancias
 
@@ -863,6 +945,7 @@ sobre el DDL es:
 | Tabla | Campos con PII | Clasificación propuesta |
 |---|---|---|
 | `caso` | `telefono`, `nombre_cliente`, `direccion`, `persona_reporta`, `contacto_cliente`, `telefono_oficina`, `telefono_movil`, `serial`, `informacion` (texto libre) | Confidencial |
+| `identificador_pago` | `numero` (70\*), `nombre_titular`, `direccion_principal` **(D-89)** | Confidencial; el TÉCNICO ve el titular **enmascarado** (`RepoTecnico/requerimientos.md:250`) |
 | `tecnico` | `cedula`, `telefono`, `correo`, `nombre`, `apellido` | Confidencial (personal interno) |
 | `usuario` | `correo`, `clave_hash` (secreto de autenticación) | Restringido |
 | `solicitante` | `nombre`, `contacto` | Confidencial |
@@ -893,6 +976,7 @@ implementación. El diccionario de origen describe `clave_hash` como
 | `auditoria` | Sí | 3 años | Archivar sin PII |
 | `notificacion` | Sí | 1 año | Eliminar |
 | `solicitante` | Sí | 5 años | Anonimizar |
+| `identificador_pago` | Sí (`numero`, `nombre_titular`, `direccion_principal`) | Mientras existan casos enlazados (`ON DELETE RESTRICT`) | Revisar antes de dar de baja la ficha |
 | `dispositivo_seguridad` | No (hashes) | Mientras la cuenta esté activa | Eliminar con la cuenta |
 | `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
 
@@ -914,47 +998,60 @@ asociados y la sección de dudas abiertas (`RepoTecnico/diccionario_datos.md:492
 
 ### `RepoTecnico/db/schema.sql`
 
-Fuente normativa de la estructura física: 36 tablas, 2 extensiones, 2 funciones
-(`set_actualizado_en`, `generar_id_averia_ref`), 1 secuencia (`seq_caso_ref`),
-22 objetos de índice, 2 políticas RLS, 14 disparadores y las semillas
-idempotentes (`RepoTecnico/db/schema.sql:18-820`). Es el archivo que se aplica
+Fuente normativa de la estructura física: 41 tablas, 2 extensiones, 4 funciones
+(`set_actualizado_en`, `generar_id_averia_ref`, `app_central_actual` y
+`fn_caso_reparacion_a_referido`), 1 secuencia
+(`seq_caso_ref`), 3 políticas RLS (`p_caso_central`, `p_despacho_central`,
+`p_ip_central`), **15 tablas** con disparador `actualizado_en` más el disparador
+`trg_caso_reparacion_a_referido` y las semillas idempotentes
+(`RepoTecnico/db/schema.sql:18-1015`). Es el archivo que se aplica
 con `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f RepoTecnico/db/schema.sql`
 (`RepoTecnico/db/schema.sql:12-15`).
 
+> **Aviso sobre las referencias de línea.** D-89 insertó `identificador_pago`
+> (`:288-304`) y desplazó en ~22 líneas todo el DDL posterior; D-73/D-81 añadieron
+> cuatro tablas. Las referencias `:nnn` de este manual están actualizadas a la
+> revisión D-89…D-94 salvo las de secciones no tocadas por estos ciclos, donde
+> pueden apuntar a una línea anterior del mismo archivo.
+
 ### Cobertura del ORM (`app/models/`)
 
-El ORM mapea **29 tablas** mediante 6 módulos
-(`app/models/__init__.py:1-23`): `entities.py` (rol, central, tecnico, usuario,
-dispositivo_seguridad, **auditoria** —D-67—), `caso_entities.py` (ingesta_lote, caso,
-caso_estado_hist), `config_entities.py` (sector, sector_direccion, flota,
-herramienta, cuadrilla, cuadrilla_tecnico, cuadrilla_herramienta, causa,
-catalogo_metodo, configuracion), `despacho_entities.py` (despacho,
-despacho_caso, cuadrilla_sector_dia, notificacion, falla_masiva), `especiales_entities.py`
-(solicitante, caso_especial, cita, seguimiento) e `insumos_entities.py`
-(orden_material). Las **siete tablas sin modelo** son `actividad`, `evidencia`,
-`incidente`, `sincronizacion`, `insumo`, `orden_material_detalle` e
-`inventario_movimiento`; una búsqueda en `app/**/*.py` confirma
-que tampoco son referenciadas por SQL directo. Es decir, en la v1 esas tablas
-existen en la base pero ningún flujo de la aplicación las escribe:
-**pendiente de confirmar** si corresponden a módulos diferidos (app móvil y
-v2 de insumos) o a trabajo aún no implementado.
+El ORM mapea **36 de las 41 tablas** mediante 9 módulos
+(`app/models/__init__.py:1-74`): `entities.py` (rol, central, tecnico, usuario,
+dispositivo_seguridad, **auditoria** —D-67—, **actividad** y **evidencia**),
+`caso_entities.py` (ingesta_lote, caso, caso_estado_hist),
+`config_entities.py` (sector, sector_direccion, flota, herramienta, cuadrilla,
+cuadrilla_tecnico, cuadrilla_herramienta, causa, catalogo_metodo, configuracion),
+`despacho_entities.py` (despacho, despacho_caso, cuadrilla_sector_dia,
+notificacion, falla_masiva), `especiales_entities.py` (solicitante,
+caso_especial, cita, seguimiento), `insumos_entities.py` (orden_material),
+**`pago_entities.py` (`IdentificadorPago`, D-89 — `app/models/pago_entities.py:25-43`)**,
+`mensaje_entities.py` (mensaje, mensaje_destino) y `sync_entities.py`
+(sync_log, sync_check). Las **cinco tablas sin modelo ORM** son `incidente`,
+`sincronizacion`, `insumo`, `orden_material_detalle` e `inventario_movimiento`.
+El DDL local las define, pero no se consultó el esquema desplegado ni se verificó
+el uso de cada tabla en producción.
 
 ### Divergencias detectadas
 
 | # | Tema | `diccionario_datos.md` | Implementación real | Referencia |
 |---|---|---|---|---|
-| 1 | Tipo de `despacho.id_despacho` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:368` vs `RepoTecnico/db/schema.sql:442` |
-| 2 | Tipo de `cita.id_cita` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:351` vs `RepoTecnico/db/schema.sql:422` |
+| 1 | Tipo de `despacho.id_despacho` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:368` vs `RepoTecnico/db/schema.sql:466` |
+| 2 | Tipo de `cita.id_cita` | `serial` | `bigserial` | `RepoTecnico/diccionario_datos.md:351` vs `RepoTecnico/db/schema.sql:446` |
 | 3 | Hash de clave | «bcrypt/argon2» | Argon2id | `RepoTecnico/diccionario_datos.md:137` vs `app/core/security.py:16-25` |
 | 4 | Dominios de `catalogo_metodo` | `CIERRE`/`ENRUTE`/`DIFERIDO` | Incluye `CONTACTO` | `RepoTecnico/diccionario_datos.md:456` vs `RepoTecnico/db/schema.sql:90-91` |
-| 5 | Códigos de `rol` | `SUPERVISOR`, `TECNICO`, `ADMIN` | Además `SUPER` (bypass total) | `RepoTecnico/diccionario_datos.md:149` vs `RepoTecnico/db/schema.sql:753-758`, `app/api/deps.py:20,65` |
-| 6 | Columna `actividad.metodo` | Listada como `varchar(20)` | No existe; el método se referencia con `id_metodo` (FK) | `RepoTecnico/diccionario_datos.md:417-418` vs `RepoTecnico/db/schema.sql:523` |
-| 7 | `cita.estado` | Sin `CANCELADA` | Incluye `CANCELADA` | `RepoTecnico/diccionario_datos.md:356` vs `RepoTecnico/db/schema.sql:429-430` |
-| 8 | `caso_especial.estado` | Sin enumerado | `CHECK` con 4 estados | `RepoTecnico/diccionario_datos.md:337` vs `RepoTecnico/db/schema.sql:389-390` |
-| 9 | Nº de columnas de `caso` | «49 campos destino» (mapeo CSV) | 63 columnas físicas | `diccionario_datos.md:8,238` vs `RepoTecnico/db/schema.sql:286-363`, `app/models/caso_entities.py:42` |
+| 5 | Códigos de `rol` | `SUPERVISOR`, `TECNICO`, `ADMIN` | Además `SUPER` (bypass total) | `RepoTecnico/diccionario_datos.md:149` vs `RepoTecnico/db/schema.sql:872-877`, `app/api/deps.py:20,65` |
+| 6 | Columna `actividad.metodo` | Listada como `varchar(20)` | No existe; el método se referencia con `id_metodo` (FK) | `RepoTecnico/diccionario_datos.md:417-418` vs `RepoTecnico/db/schema.sql:546-547` |
+| 7 | `cita.estado` | Sin `CANCELADA` | Incluye `CANCELADA` | `RepoTecnico/diccionario_datos.md:356` vs `RepoTecnico/db/schema.sql:453-454` |
+| 8 | `caso_especial.estado` | Sin enumerado | `CHECK` con 4 estados | `RepoTecnico/diccionario_datos.md:337` vs `RepoTecnico/db/schema.sql:413-414` |
+| 9 | Nº de columnas de `caso` | «49 campos destino» (mapeo CSV) | **64** columnas físicas (63 antes de D-89) | `diccionario_datos.md:8,238` vs `RepoTecnico/db/schema.sql:308-387`, `app/models/caso_entities.py:48` |
 | 10 | Tipo de `ingesta_lote.fecha_archivo` | No precisado | `date` en DDL; `DateTime` en el ORM | `RepoTecnico/db/schema.sql:270` vs `app/models/caso_entities.py:28` |
-| 11 | Longitud de `caso.extra` | No precisada | `varchar(120)` en DDL; `String(40)` en el ORM | `RepoTecnico/db/schema.sql:343` vs `app/models/caso_entities.py:98` |
-| 12 | Disparador de `dispositivo_seguridad` | No aplica | Tiene `actualizado_en` pero sin disparador | `RepoTecnico/db/schema.sql:570` vs `RepoTecnico/db/schema.sql:734-737` |
+| 11 | Longitud de `caso.extra` | No precisada | `varchar(120)` en DDL; `String(40)` en el ORM | `RepoTecnico/db/schema.sql:367` vs `app/models/caso_entities.py:98` |
+| 12 | Disparador de `dispositivo_seguridad` | No aplica | Tiene `actualizado_en` pero sin disparador | `RepoTecnico/db/schema.sql:594` vs `RepoTecnico/db/schema.sql:848-864` |
+| 13 | `caso.telefono` | Teléfono del cliente | **Alias legado** del identificador de pago: solo contiene un `70\*`; el contacto vive en `contacto_cliente` | `RepoTecnico/diccionario_datos.md` vs `RepoTecnico/db/schema.sql:324-325,344` y `app/services/pagos.py:100-151` |
+| 14 | `caso.tipo_caso` | `AVERIA`/`REPARACION`/`CONSTRUCCION` | Incorpora **`REFERIDO`** (D-89/D-90) | `RepoTecnico/diccionario_datos.md` vs `RepoTecnico/db/schema.sql:315-316` y `app/schemas/casos.py:22` |
+| 15 | Nº de columnas de `caso` | «63 columnas» (docstring del ORM) | **64** físicas tras añadir `id_pago` (D-89) | `app/models/caso_entities.py:48` vs `RepoTecnico/db/schema.sql:308-387` |
+| 16 | Clave del `PATCH /casos/{id}/contacto` | La APK D-93 envía **`contacto`** y espera que un `70\*` se registre como identificador del caso | El backend solo acepta `direccion` y `telefono`, y **mantiene** la validación de series `700/701/702` | `app_movil/lib/features/casos/operaciones_service.dart:352-378` vs `app/schemas/casos.py:244-264` |
 
 Las divergencias 10 y 11 son de **mapeo ORM**, no del DDL: al no usar migraciones
 Alembic en el baseline actual, un `DateTime` sobre una columna `date` puede

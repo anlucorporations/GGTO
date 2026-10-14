@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import * as api from '../api/client';
 import type { CasoEstadoHistOut, CasoOut } from '../api/types';
 import Modal from './Modal';
+import { motivoMarcaTexto } from './FichaCaso';
 
 interface Props {
   /** Término con el que se abre (avería o teléfono). */
@@ -205,7 +206,7 @@ export default function FichaRapida({ terminoInicial = '', idCasoInicial = null,
                   <strong>{c.nombre_cliente ?? 'Cliente sin nombre'}</strong>
                   <span className="texto-pequeno">
                     {' '}
-                    · {c.telefono ?? 'sin teléfono'} · {c.estado_actual}
+                    · {c.telefono ?? 'sin identificador de pago'} · {c.estado_actual}
                   </span>
                 </button>
               </li>
@@ -230,6 +231,14 @@ export default function FichaRapida({ terminoInicial = '', idCasoInicial = null,
               </button>
             ))}
           </div>
+
+          {/* D-90/D-92: marca derivada de la regla REPARACIÓN ⇐ 70* + avería real. */}
+          {caso.marcado_reclasificar && (
+            <p className="chip-regla regla-alerta" id="rapida-marca-reclasificar">
+              Reclasificar a REFERIDO
+              <span className="texto-pequeno">{motivoMarcaTexto(caso.motivo_marca)}</span>
+            </p>
+          )}
 
           {pestana === 'ACTUAL' && (
             <div role="tabpanel" aria-label="Actual">
@@ -324,10 +333,10 @@ export default function FichaRapida({ terminoInicial = '', idCasoInicial = null,
                   <tbody>
                     <Grupo titulo="Cliente" />
                     <Fila etiqueta="Nombre" valor={caso.nombre_cliente} />
-                    <Fila etiqueta="Teléfono" valor={caso.telefono} />
+                    <Fila etiqueta="Identificador de pago (70*)" valor={caso.telefono} />
                     <Fila etiqueta="Dirección" valor={caso.direccion} />
                     <Fila etiqueta="Persona que reporta" valor={caso.persona_reporta} />
-                    <Fila etiqueta="Contacto del cliente" valor={caso.contacto_cliente} />
+                    <Fila etiqueta="Número de contacto" valor={caso.contacto_cliente} />
                     <Grupo titulo="Ubicación" />
                     <Fila etiqueta="Sector" valor={caso.sector_nombre ?? caso.id_sector} />
                     <Fila etiqueta="Municipio" valor={caso.municipio} />

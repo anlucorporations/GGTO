@@ -75,6 +75,7 @@ import type {
   MensajeCreate,
   MensajeRecibido,
   BandejaMensajes,
+  SupervisorMensaje,
   Metodo,
   MetodoCreate,
   MonitoreoCapacidad,
@@ -82,6 +83,8 @@ import type {
   MonitoreoCuadrillaOut,
   MonitoreoDiario,
   MonitoreoGlobales,
+  MonitoreoIdentificadores,
+  MonitoreoReclasificaciones,
   MonitoreoReparacion,
   MonitoreoSemanal,
   PaginaCasos,
@@ -936,6 +939,18 @@ export function monitoreoCapacidad(): Promise<MonitoreoCapacidad> {
   return request<MonitoreoCapacidad>('/monitoreo/capacidad');
 }
 
+/** D-94: métricas por identificador de pago (reincidencia y reportes por 70*). */
+export function monitoreoIdentificadores(limite = 10): Promise<MonitoreoIdentificadores> {
+  return request<MonitoreoIdentificadores>(
+    `/monitoreo/identificadores${construirQuery({ limite })}`,
+  );
+}
+
+/** D-90/D-94: regla REPARACIÓN ⇐ 70* + avería real (reclasificados y pendientes). */
+export function monitoreoReclasificaciones(): Promise<MonitoreoReclasificaciones> {
+  return request<MonitoreoReclasificaciones>('/monitoreo/reclasificaciones');
+}
+
 /** Reporte consolidado de trabajo (diario, semanal o mensual). */
 export function reporteTrabajo(
   periodo: PeriodoReporte,
@@ -1120,6 +1135,18 @@ export function mensajesNoLeidos(): Promise<{ total: number }> {
 
 export function enviarMensaje(data: MensajeCreate): Promise<Mensaje> {
   return conCuerpo<Mensaje>('/mensajes', 'POST', data);
+}
+
+export function listarSupervisoresMensaje(): Promise<SupervisorMensaje[]> {
+  return request<SupervisorMensaje[]>('/mensajes/supervisores');
+}
+
+export function enviarMensajeSupervisor(data: {
+  p00_supervisor: string;
+  cuerpo: string;
+  escalar_al_admin?: boolean;
+}): Promise<Mensaje> {
+  return conCuerpo<Mensaje>('/mensajes/supervisor', 'POST', data);
 }
 
 export function marcarMensajeLeido(idMensaje: number): Promise<void> {

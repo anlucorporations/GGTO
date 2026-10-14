@@ -34,7 +34,10 @@ def entorno(client, admin_token):
 
     def crear(id_averia, direccion, **extra):
         cuerpo = {"id_averia": id_averia, "direccion": direccion,
-                  "nombre_cliente": f"CLIENTE {id_averia}", "telefono": "7000000000"}
+                  "nombre_cliente": f"CLIENTE {id_averia}",
+                  "contacto_cliente": "04140000000", "id_pago": "7000000000",
+                  "tipo_reporte": "REPARACION",
+                  "tipo_problema": "SIN_SERVICIO"}
         cuerpo.update(extra)
         r = client.post("/api/v1/casos", json=cuerpo, headers=headers)
         assert r.status_code == 201, r.text
@@ -49,7 +52,8 @@ def entorno(client, admin_token):
     crear("TSTD-R0", "SECTOR BETA CALLE 1", categoria="REFERIDO")
     crear("TSTD-R1", "SECTOR BETA CALLE 2", categoria="REFERIDO")
     crear("TSTD-E0", "SECTOR ALFA AV 3", categoria="EMPRESA")
-    crear("TSTD-C0", "SECTOR ALFA TORRE 1", tipo_caso="CONSTRUCCION", categoria="EMPRESA")
+    crear("TSTD-C0", "SECTOR ALFA TORRE 1", tipo_reporte="CONSTRUCCION",
+          tipo_problema=None, categoria="EMPRESA")
 
     yield {"headers": headers, "id_central": id_central}
 
@@ -600,7 +604,14 @@ def test_asignar_caso_especial_a_una_cuadrilla(client, entorno, db_session):
         json={"descripcion": "Poste caído frente a la escuela",
               "clasificacion": "GOBIERNO", "prioridad": "ALTA",
               "tipo_actividad": "REPARACION",
-              "direccion": "SECTOR ALFA CALLE 9"},
+              "direccion": "SECTOR ALFA CALLE 9",
+              "nombre_cliente": "GOBIERNO DEMO",
+              "contacto_cliente": "04141112233",
+              "telefono": "7014000900",
+              "id_averia": "TSTESP-D77",
+              "tipo_problema": "POSTE_CAIDO",
+              "crear_solicitante": {"unidad": "Alcaldía", "nombre": "ANA GOMEZ",
+                                    "contacto": "04141112233"}},
         headers=entorno["headers"],
     )
     assert especial.status_code == 201, especial.text

@@ -269,13 +269,14 @@ formalmente**.
 
 ### Esquema (db/schema.sql) y recarga de catálogos
 
-El esquema completo está en `RepoTecnico/db/schema.sql` y define **36 tablas** (35 originales más
-`cuadrilla_sector_dia` del ciclo D-66), las extensiones
+El DDL local de `RepoTecnico/db/schema.sql` define **41 tablas**. El esquema productivo
+no se consultó en el corte 2026-10-12. El script también define las extensiones
 `pgcrypto` y `pg_trgm`, RLS en `caso` y `despacho`, y 14 triggers `actualizado_en`
 (`RepoTecnico/entornos_globales.md:299-309`). El script es idempotente por el uso de
 `CREATE TABLE IF NOT EXISTS` y `CREATE INDEX IF NOT EXISTS` (`RepoTecnico/db/schema.sql:64,665-677`).
-Una aplicación inicial carga las semillas: 3 roles, 1 central (`2324X`), 1 cuadrilla (`C-00`),
-9 métodos, 13 parámetros y 0 causas (`RepoTecnico/entornos_globales.md:308`).
+La semilla local actual define 4 roles (SUPER, ADMIN, SUPERVISOR, TECNICO), 1 central (`2324X`),
+1 cuadrilla (`C-00`), 10 métodos y 32 parámetros; COORDINADOR no está en el seed. La configuración
+de la instancia desplegada no se verificó.
 
 Los catálogos se mantienen **desde la aplicación**, no reeditando el DDL:
 

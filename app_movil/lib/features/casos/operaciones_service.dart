@@ -350,19 +350,21 @@ class OperacionesService {
   }
 
   /// Corrige la **dirección** y el **número de contacto** desde el campo (D-88 ·
-  /// RF-APK-11). El servidor valida la serie 700/701/702 y deja traza en
-  /// `auditoria`; sin red, la edición queda encolada.
+  /// RF-APK-11 · D-93). El servidor acepta **cualquier** número en `contacto`
+  /// (ya no exige las series 700/701/702): si el técnico teclea un **70\***, el
+  /// servidor lo registra como **identificador de pago del caso** y la APK se lo
+  /// informa. Sin red, la edición queda encolada.
   static Future<ResultadoOperacion> editarContacto({
     required int idCaso,
     required String idAveria,
     String? direccion,
-    String? telefono,
+    String? contacto,
   }) async {
+    final texto = (contacto ?? '').trim();
     final payload = <String, dynamic>{
       if (direccion != null && direccion.trim().isNotEmpty)
         'direccion': direccion.trim(),
-      if (telefono != null && telefono.trim().isNotEmpty)
-        'telefono': telefono.trim(),
+      if (texto.isNotEmpty) 'contacto': texto,
     };
     if (payload.isEmpty) {
       return const ResultadoOperacion(
@@ -370,6 +372,7 @@ class OperacionesService {
         enviada: false,
       );
     }
+    final eraIdentificador = esIdentificadorPago(texto);
     final endpoint = '/casos/$idCaso/contacto';
     try {
       final datos = await ApiClient.patch(endpoint, data: payload);
@@ -381,7 +384,9 @@ class OperacionesService {
             .actualizarCasoLocal(conCambioLocal(caso, pendienteSync: false));
       }
       return ResultadoOperacion(
-        mensaje: 'Contacto actualizado en el caso.',
+        mensaje: eraIdentificador
+            ? '${normalizarNumero(texto)} se registró como identificador de pago del caso.'
+            : 'Contacto actualizado en el caso.',
         enviada: true,
         caso: caso,
       );

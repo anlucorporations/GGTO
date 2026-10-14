@@ -37,7 +37,7 @@ La decisión **D-66** cambió la forma de repartir el trabajo. Ahora:
 
 - Los **sectores que atiende cada cuadrilla se guardan por día** en una tabla nueva
   (`cuadrilla_sector_dia`) y el **supervisor puede cambiarlos**. La base pasa a tener
-  **36 tablas**.
+  41 tablas en el DDL local (el esquema desplegado no se consultó en el corte 2026-10-12).
 - El reparto se hace **por el sector de cada cuadrilla**: un sector completo va a la cuadrilla
   que lo tiene asignado.
 - Los **citados del día** tienen prioridad: se visitan primero y, si su sector no tiene

@@ -216,6 +216,21 @@ h3 {
   font-style: italic;
 }
 
+/* D-92/CU-D89-04: resultados agrupados por el dato que coincidió. */
+
+.buscador-grupo + .buscador-grupo {
+  border-top: 1px solid var(--gris-borde);
+}
+
+.buscador-grupo-titulo {
+  margin: 0;
+  padding: 6px 10px 2px;
+  color: var(--gris-texto);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
 /* --- Botón agregar caso (2.2) --- */
 
 .btn-agregar {

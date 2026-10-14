@@ -33,7 +33,7 @@ interface PEstana {
 }
 
 const PESTANAS: PEstana[] = [
-  { id: 'widget', etiqueta: 'Widget', roles: null },
+  { id: 'widget', etiqueta: 'Widget', roles: ['SUPER', 'ADMIN', 'SUPERVISOR', 'TECNICO'] },
   { id: 'ingesta', etiqueta: 'Ingesta', roles: ['SUPER', 'ADMIN', 'SUPERVISOR'] },
   { id: 'monitoreo', etiqueta: 'Monitoreo', roles: null },
   { id: 'alertas', etiqueta: 'Alertas', roles: null },

@@ -34,9 +34,10 @@ from ..schemas.especiales import (
     SolicitanteCreate,
     SolicitanteOut,
 )
+from ..services import clasificacion, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
-from .deps import ROL_SUPER, get_current_user, require_roles
+from .deps import ROL_SUPER, _especial_alta, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["seguimiento y especiales"])
 _escritura = require_roles("ADMIN", "SUPERVISOR")
@@ -71,12 +72,31 @@ def crear_solicitante(
 # --------------------------------------------------------------------------- #
 def _crear_caso_asociado(db: Session, datos: CasoEspecialCreate, usuario: Usuario) -> Caso:
     config = cargar_config(db)
-    central = resolver_central(db, None, config)
+    central = resolver_central(db, None, config, usuario)
     id_averia = (datos.id_averia or "").strip() or db.execute(
         text("SELECT generar_id_averia_ref(:c)"), {"c": central.id_central}
     ).scalar_one()
     if db.scalar(select(Caso.id_caso).where(Caso.id_averia == id_averia)):
         raise HTTPException(status_code=409, detail=f"Ya existe un caso con id_averia {id_averia}")
+
+    # D-89/D-90 + RN-AL-01: el teléfono del alta **es** el identificador de pago
+    # (70*) del caso; el **teléfono de contacto** va aparte y se registra como
+    # `contacto_cliente` (y en `informacion`, como en el resto del sistema).
+    patron = pagos.compilar_patron(config)
+    numero = pagos.normalizar_numero(datos.telefono)
+    if not pagos.es_identificador_pago(numero, patron):
+        raise HTTPException(
+            status_code=422,
+            detail="El teléfono debe ser el identificador de pago (70*) del caso",
+        )
+    telefono = numero
+    id_pago = pagos.resolver_identificador(
+        db, numero, central.id_central, datos.nombre_cliente, datos.direccion
+    )
+    contacto = pagos.normalizar_numero(datos.contacto_cliente) or None
+    informacion = pagos.componer_informacion(
+        datos.descripcion, [contacto] if contacto else []
+    )
 
     id_sector = asignar_sector(datos.direccion, cargar_patrones(db, central.id_central))
     caso = Caso(
@@ -87,10 +107,13 @@ def _crear_caso_asociado(db: Session, datos: CasoEspecialCreate, usuario: Usuari
         categoria=datos.clasificacion,
         estado_actual="NUEVO",
         id_sector=id_sector,
+        id_pago=id_pago,
         nombre_cliente=datos.nombre_cliente,
-        telefono=datos.telefono,
+        telefono=telefono,
+        contacto_cliente=contacto,
         direccion=datos.direccion,
-        informacion=datos.descripcion,
+        tipo_problema=datos.tipo_problema,
+        informacion=informacion,
         codigo_central=central.codigo_central,
         nombre_central=central.nombre_central,
         creado_por=usuario.p00,
@@ -98,13 +121,16 @@ def _crear_caso_asociado(db: Session, datos: CasoEspecialCreate, usuario: Usuari
     )
     db.add(caso)
     db.flush()
+    # D-90: si el especial es una REPARACIÓN sin 70* o sin avería real, la regla la
+    # convierte en REFERIDO (el trigger de la base ya ajusta el `tipo_caso`).
+    clasificacion.aplicar_regla_reparacion(db, caso, "ALTA_ESPECIAL", usuario.p00)
     return caso
 
 
 @router.get("/casos-especiales", response_model=list[CasoEspecialOut])
 def listar_especiales(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
     clasificacion: str | None = None,
     estado: str | None = None,
     prioridad: str | None = None,
@@ -118,6 +144,13 @@ def listar_especiales(
     solo_pendientes: bool = Query(default=False),
 ) -> list[CasoEspecialOut]:
     stmt = select(CasoEspecial).order_by(CasoEspecial.id_caso_especial.desc())
+    if usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        stmt = stmt.where(
+            CasoEspecial.id_caso.in_(
+                select(Caso.id_caso).where(Caso.id_central == central.id_central)
+            )
+        )
     if clasificacion:
         stmt = stmt.where(CasoEspecial.clasificacion == clasificacion)
     if estado:
@@ -167,14 +200,10 @@ def listar_especiales(
 def crear_especial(
     datos: CasoEspecialCreate,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_especial_alta),
 ) -> CasoEspecialOut:
-    if datos.id_caso and datos.id_solicitante and datos.crear_solicitante:
-        raise HTTPException(
-            status_code=422,
-            detail="Indique `id_solicitante` o `crear_solicitante`, no ambos",
-        )
-
+    # RN-AL-01: los datos del solicitante son obligatorios y son **uno solo**
+    # (el esquema ya exige `crear_solicitante` o `id_solicitante`).
     id_solicitante = datos.id_solicitante
     if datos.crear_solicitante:
         solicitante = Solicitante(**datos.crear_solicitante.model_dump())
@@ -186,26 +215,29 @@ def crear_especial(
 
     id_caso = datos.id_caso
     if id_caso:
-        if db.get(Caso, id_caso) is None:
+        caso = db.get(Caso, id_caso)
+        if caso is None:
             raise HTTPException(status_code=404, detail="Caso no encontrado")
-        tiene_id = bool(db.scalar(select(Caso.id_averia).where(Caso.id_caso == id_caso)))
+        resolver_central(db, caso.id_central, cargar_config(db), usuario)
     else:
         caso = _crear_caso_asociado(db, datos, usuario)
         id_caso = caso.id_caso
-        tiene_id = True
+    # D-90: `tiene_id_averia` refleja la realidad (el id sintético `REF-…` no cuenta).
+    tiene_id = clasificacion.tiene_id_averia_real(caso)
 
-    especial = CasoEspecial(
-        id_caso=id_caso,
-        id_solicitante=id_solicitante,
-        clasificacion=datos.clasificacion,
-        tipo_actividad=datos.tipo_actividad,
-        prioridad=datos.prioridad,
-        tiene_id_averia=tiene_id,
-        descripcion=datos.descripcion,
-        requiere_informe=datos.requiere_informe,
-        estado="ABIERTO",
-    )
-    db.add(especial)
+    # D-90: la ficha del especial es **idempotente** (una sola por caso): si ya
+    # existe —p. ej. la creó la regla de reclasificación— se actualiza.
+    especial = db.scalar(select(CasoEspecial).where(CasoEspecial.id_caso == id_caso))
+    if especial is None:
+        especial = CasoEspecial(id_caso=id_caso, estado="ABIERTO")
+        db.add(especial)
+    especial.id_solicitante = id_solicitante
+    especial.clasificacion = datos.clasificacion
+    especial.tipo_actividad = datos.tipo_actividad
+    especial.prioridad = datos.prioridad
+    especial.tiene_id_averia = tiene_id
+    especial.descripcion = datos.descripcion
+    especial.requiere_informe = datos.requiere_informe
     db.commit()
     db.refresh(especial)
     # D-72: se responde con el resumen enriquecido (sector, solicitante,
@@ -215,11 +247,18 @@ def crear_especial(
 
 @router.get("/casos-especiales/{id_caso_especial}", response_model=CasoEspecialOut)
 def obtener_especial(
-    id_caso_especial: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    id_caso_especial: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
 ) -> CasoEspecial:
     obj = db.get(CasoEspecial, id_caso_especial)
     if obj is None:
         raise HTTPException(status_code=404, detail="Caso especial no encontrado")
+    if obj.id_caso is not None:
+        caso = db.get(Caso, obj.id_caso)
+        if caso is None:
+            raise HTTPException(status_code=404, detail="Caso asociado no encontrado")
+        resolver_central(db, caso.id_central, cargar_config(db), usuario)
     return obj
 
 
@@ -228,11 +267,16 @@ def actualizar_especial(
     id_caso_especial: int,
     datos: CasoEspecialUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_escritura),
 ) -> CasoEspecial:
     obj = db.get(CasoEspecial, id_caso_especial)
     if obj is None:
         raise HTTPException(status_code=404, detail="Caso especial no encontrado")
+    if obj.id_caso is not None:
+        caso = db.get(Caso, obj.id_caso)
+        if caso is None:
+            raise HTTPException(status_code=404, detail="Caso asociado no encontrado")
+        resolver_central(db, caso.id_central, cargar_config(db), usuario)
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(obj, campo, valor)
     db.commit()
@@ -313,6 +357,10 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             # D-72: columnas Dirección y Nombre del listado de ESPECIALES.
             direccion=(caso.direccion if caso else None),
             nombre_cliente=(caso.nombre_cliente if caso else None),
+            # RN-AL-01: contacto, identificador de pago y tipo de problema del caso.
+            contacto_cliente=(caso.contacto_cliente if caso else None),
+            telefono=(caso.telefono if caso else None),
+            tipo_problema=(caso.tipo_problema if caso else None),
             pendiente=esp.estado in ("ABIERTO", "EN_PROCESO"),
             asignado=(esp.id_caso in asignados) if esp.id_caso else False,
             citado=esp.id_caso_especial in citados

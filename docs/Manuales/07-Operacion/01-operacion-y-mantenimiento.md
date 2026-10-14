@@ -1,5 +1,11 @@
 # Manual de Operación y Mantenimiento — GGTO
 
+> **Corte operativo verificado 2026-10-12:** servicio Cloud Run `ggto-web` en
+> revisión `ggto-web-00039-g9n`, imagen `v24`; Cloud SQL está RUNNABLE y los
+> respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas
+> de restauración no se validaron en esta auditoría. Consulta el informe
+> `RepoTecnico/auditoria_estado_real_v2.md` dentro del repositorio.
+
 > Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4).
 > Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la
 > información, cómo se mantiene, qué hacer ante un incidente y cómo se sostiene el servicio.
@@ -308,7 +314,8 @@ archivos. Este procedimiento está **pendiente de confirmar y de documentar form
 
 ### Esquema (db/schema.sql) y recarga de catálogos
 
-El esquema completo está en el archivo `db/schema.sql` y define **36 tablas**, las extensiones
+El DDL local del archivo `db/schema.sql` define **41 tablas**; el esquema productivo no se consultó.
+El script también define las extensiones
 `pgcrypto` y `pg_trgm`, seguridad por filas (RLS) en `caso` y `despacho`, y **14 disparadores**
 (*triggers*) de marca `actualizado_en`. La tabla número 36 (`cuadrilla_sector_dia`, ciclo D-66)
 guarda qué sectores atiende cada cuadrilla cada día.

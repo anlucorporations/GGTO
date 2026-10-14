@@ -79,6 +79,8 @@ class Usuario(Base):
     id_rol: Mapped[int] = mapped_column(ForeignKey("rol.id_rol"), nullable=False)
     id_tecnico: Mapped[int | None] = mapped_column(ForeignKey("tecnico.id_tecnico"))
     id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
+    nombre: Mapped[str | None] = mapped_column(String(80))
+    apellido: Mapped[str | None] = mapped_column(String(80))
     intentos_fallidos: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
     bloqueado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     bloqueo_cliente: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -108,21 +110,25 @@ class DispositivoSeguridad(Base):
 
 
 class Auditoria(Base):
-    """Bitácora de acciones sensibles (RF de gobernanza / D-67).
+    """Bitácora de acciones sensibles (RF de gobernanza / D-67 / D-95).
 
     El acceso y la regeneración de palabras de seguridad quedan registrados
-    aquí para que el Super Usuario pueda auditar la recuperación de cuentas.
+    aquí para que el Super Usuario pueda auditar la recuperación de cuentas,
+    así como las acciones de gestión (altas, órdenes de material, despacho).
     """
 
     __tablename__ = "auditoria"
 
     id_auditoria: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
     usuario: Mapped[str | None] = mapped_column(String(20))
     accion: Mapped[str] = mapped_column(String(60), nullable=False)
     entidad: Mapped[str | None] = mapped_column(String(60))
     id_entidad: Mapped[str | None] = mapped_column(String(40))
     datos_antes: Mapped[dict | None] = mapped_column(JSONB)
     datos_despues: Mapped[dict | None] = mapped_column(JSONB)
+    resultado: Mapped[str | None] = mapped_column(String(20))
+    request_id: Mapped[str | None] = mapped_column(String(40))
     fecha_hora: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

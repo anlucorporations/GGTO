@@ -527,7 +527,6 @@ Estado verificado y cosas por cerrar:
 - **Integración continua:** el flujo verificado ejecuta las revisiones de Python y las pruebas de
   Python. La ejecución de la revisión de tipos de la web, de la construcción y de las pruebas de
   navegador dentro de ese flujo está **pendiente de confirmar**.
-- **Aplicación móvil:** la app Flutter para Android **no está desarrollada** (Ciclo 8 diferido). Este
-  manual no la documenta como existente. Cuando en este sistema se habla de "móvil", se refiere a que
-  la web se adapta a pantallas pequeñas, no a una aplicación nativa.
+- **Aplicación móvil:** existe APK Flutter de campo `1.1.0+9`. Este manual no documenta su
+  implementación interna; la APK multirol V2 para gestión sigue pendiente.
 - **WhatsApp:** no existe integración. Quedó diferida a la versión 3.

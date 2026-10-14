@@ -15,14 +15,16 @@ class CasoCard extends StatelessWidget {
     final cliente = '${caso['nombre_cliente'] ?? ''}'.trim();
     final sector = '${caso['sector_nombre'] ?? ''}'.trim();
     final direccion = '${caso['direccion'] ?? ''}'.trim();
-    final telefono = '${caso['telefono'] ?? ''}'.trim();
+    // El teléfono para contactar al cliente es el **contacto**: `telefono` es el
+    // identificador de pago (70*) y no es un número para llamar.
+    final contacto = '${caso['contacto_cliente'] ?? ''}'.trim();
     final estado = '${caso['estado_actual'] ?? 'DESCONOCIDO'}';
     final pendienteSync = caso['pendiente_sync'] == true;
 
     final detalles = <String>[
       if (cliente.isNotEmpty) cliente,
       if (sector.isNotEmpty) 'Sector: $sector',
-      if (telefono.isNotEmpty) 'Tel: $telefono',
+      if (contacto.isNotEmpty) 'Contacto: $contacto',
       if (direccion.isNotEmpty) direccion,
       if (pendienteSync) 'Cambio pendiente de sincronizar',
     ];
@@ -43,11 +45,12 @@ class CasoCard extends StatelessWidget {
           ),
         ),
         trailing: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             EstadoChip(estado: estado),
-            const SizedBox(height: 6),
-            const Icon(Icons.chevron_right, size: 20),
+            const SizedBox(height: 2),
+            const Icon(Icons.chevron_right, size: 18),
           ],
         ),
         isThreeLine: detalles.length > 1,

@@ -47,6 +47,7 @@ DELETE FROM orden_material;
 DELETE FROM falla_masiva;
 DELETE FROM caso              WHERE id_averia LIKE 'DEMO-%' OR id_averia LIKE 'REF-%'
                                  OR id_averia LIKE 'MAN-%' OR id_averia LIKE 'TST%';
+DELETE FROM identificador_pago;
 DELETE FROM ingesta_lote;
 DELETE FROM cuadrilla_herramienta WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');
 DELETE FROM cuadrilla_tecnico   WHERE id_cuadrilla IN (SELECT id_cuadrilla FROM cuadrilla WHERE codigo LIKE 'TC%');

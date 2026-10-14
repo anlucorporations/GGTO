@@ -88,13 +88,26 @@ _PURGA_SYNC = text(
     """
 )
 
+_PURGA_AUDITORIA = text(
+    """
+    DELETE FROM auditoria
+     WHERE id_auditoria IN (
+        SELECT id_auditoria
+          FROM auditoria
+         WHERE fecha_hora < :ahora - make_interval(days => :ret)
+         LIMIT :lote
+     )
+    """
+)
+
 
 def purgar(db: Session, ahora: datetime | None = None) -> dict[str, Any]:
-    """Borra en lotes los mensajes vencidos y las `sync_log` fuera de retención."""
+    """Borra en lotes los mensajes vencidos, las `sync_log` y la auditoría fuera de retención."""
     ahora = ahora or datetime.now(UTC)
     ret_msj = _config_int(db, "mensajeria.retencion_dias", 5)
     ret_max = _config_int(db, "mensajeria.retencion_max_dias", 30)
     ret_sync = _config_int(db, "sync_log.retencion_dias", 90)
+    ret_auditoria = _config_int(db, "auditoria.retencion_dias", 365)
 
     mensajes = 0
     while True:
@@ -120,12 +133,26 @@ def purgar(db: Session, ahora: datetime | None = None) -> dict[str, Any]:
         if filas < LOTE:
             break
 
+    auditorias = 0
+    while True:
+        res = cast(
+            "CursorResult[Any]",
+            db.execute(_PURGA_AUDITORIA, {"ahora": ahora, "ret": ret_auditoria, "lote": LOTE}),
+        )
+        db.commit()
+        filas = res.rowcount or 0
+        auditorias += filas
+        if filas < LOTE:
+            break
+
     resultado = {
         "mensajes_eliminados": mensajes,
         "sync_log_eliminadas": sync_logs,
+        "auditorias_eliminadas": auditorias,
         "retencion_mensajes_dias": ret_msj,
         "retencion_max_dias": ret_max,
         "retencion_sync_dias": ret_sync,
+        "retencion_auditoria_dias": ret_auditoria,
     }
     db.add(
         Auditoria(

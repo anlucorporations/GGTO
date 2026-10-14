@@ -62,28 +62,49 @@ bool puedeEditarContacto(String estado) =>
 String? notaDeEstado(String estado) => notasPorEstado[estado.trim().toUpperCase()];
 
 // --------------------------------------------------------------------------- #
-// Edición del contacto desde el campo (D-88 · RF-APK-11)
+// Edición del contacto desde el campo (D-88 · RF-APK-11 · D-93)
 // --------------------------------------------------------------------------- #
 
-/// Serie de los números de contacto de CANTV que admite la ficha.
-const List<String> seriesTelefono = ['700', '701', '702'];
-
-/// Normaliza el número de contacto (quita espacios, guiones y paréntesis).
+/// Patrón del **identificador de pago** (70\\*), el mismo valor por defecto del
+/// servidor (`configuracion.pago.serie_regex`, DEC-IP-1).
 ///
-/// Devuelve `null` si no es de la serie **700/701/702** con 10 dígitos: la misma
-/// regla que valida el servidor en `PATCH /casos/{id}/contacto`.
-String? normalizarTelefono(String valor) {
-  final limpio = valor.replaceAll(RegExp(r'[\s\-().]'), '');
-  if (limpio.length != 10 || !RegExp(r'^\d{10}$').hasMatch(limpio)) return null;
-  if (!seriesTelefono.any(limpio.startsWith)) return null;
-  return limpio;
+/// La APK no lee la configuración del servidor: sirve para **rotular** el dato y
+/// para avisar al técnico; la validación de negocio es responsabilidad del
+/// servidor.
+final RegExp patronIdentificadorPago = RegExp(r'^70\d{8}$');
+
+/// Normaliza un número igual que el servidor (RN-IP-07): solo dígitos, sin
+/// prefijo internacional (`0058`, `58`) ni el `0` inicial.
+String normalizarNumero(String valor) {
+  var digitos = valor.replaceAll(RegExp(r'\D'), '');
+  if (digitos.startsWith('0058')) {
+    digitos = digitos.substring(4);
+  } else if (digitos.startsWith('58') && digitos.length >= 12) {
+    digitos = digitos.substring(2);
+  }
+  if (digitos.length == 11 && digitos.startsWith('0')) {
+    digitos = digitos.substring(1);
+  }
+  return digitos;
 }
 
-/// Mensaje de error del teléfono, o `null` si está bien (o vacío).
-String? errorTelefono(String valor) {
+/// ¿El valor es un **identificador de pago** (70\\*)?
+///
+/// D-93/DEC-IP-7: si el técnico lo teclea en el campo de contacto, el servidor lo
+/// registra como **identificador del caso** (no como contacto) y la APK se lo
+/// informa.
+bool esIdentificadorPago(String valor) =>
+    patronIdentificadorPago.hasMatch(normalizarNumero(valor));
+
+/// Mensaje de error del **número de contacto**, o `null` si está bien (o vacío).
+///
+/// Desde D-93 cualquier número es un contacto válido: el 70\\* dejó de ser «el
+/// número de contacto» (es el identificador de pago) y las series 700/701/702 ya
+/// no son una restricción de la ficha.
+String? errorNumeroContacto(String valor) {
   if (valor.trim().isEmpty) return null;
-  if (normalizarTelefono(valor) == null) {
-    return 'El número de contacto debe ser de la serie 700, 701 o 702 (10 dígitos).';
+  if (normalizarNumero(valor).isEmpty) {
+    return 'Indique un número de contacto válido.';
   }
   return null;
 }

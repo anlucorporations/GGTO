@@ -64,9 +64,9 @@ def test_mensaje_estructura_y_xor():
     assert "expira_en > creado_en" in checks
 
 
-def test_mensaje_destino_pk_compuesta():
+def test_mensaje_destino_pk():
     pk = [c.name for c in MensajeDestino.__table__.primary_key.columns]
-    assert pk == ["id_mensaje", "id_tecnico"]
+    assert pk == ["id_destino"]
 
 
 # --------------------------------------------------------------------------- #

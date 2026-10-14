@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (error == null) {
-      Navigator.pushReplacementNamed(context, '/casos');
+      Navigator.pushReplacementNamed(context, '/inicio');
       return;
     }
 
@@ -66,7 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+              constraints:
+                  BoxConstraints(minHeight: constraints.maxHeight - 40),
               child: Column(
                 // El Spacer() del pie exige `start`; el centrado vertical se
                 // logra con los SizedBox superiores.
@@ -118,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Clave',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: Icon(_verClave ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(_verClave
+                            ? Icons.visibility_off
+                            : Icons.visibility),
                         tooltip: _verClave ? 'Ocultar clave' : 'Mostrar clave',
                         onPressed: () => setState(() => _verClave = !_verClave),
                       ),
@@ -130,7 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 10),
                     Text(
                       'Intentos restantes: ${auth.intentosRestantes} de ${AppConstants.maxIntentos}',
-                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          color: Colors.orange, fontWeight: FontWeight.w600),
                     ),
                   ],
 
@@ -148,7 +152,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Desbloquear con 3 palabras'),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/primer-acceso'),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/primer-acceso'),
                     child: const Text('Primer acceso'),
                   ),
                   const SizedBox(height: 12),
