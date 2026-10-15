@@ -72,10 +72,13 @@ END;
 $$;
 
 ALTER TABLE mensaje_destino ADD COLUMN IF NOT EXISTS id_destino bigserial;
-ALTER TABLE mensaje_destino ALTER COLUMN id_tecnico DROP NOT NULL;
 ALTER TABLE mensaje_destino ADD COLUMN IF NOT EXISTS p00 varchar(20)
     REFERENCES usuario(p00) ON DELETE CASCADE;
 
+-- La PK histórica es (id_mensaje, id_tecnico): hay que soltarla **antes** de
+-- quitar el NOT NULL de `id_tecnico`, porque PostgreSQL no admite una columna de
+-- la PK sin NOT NULL («column "id_tecnico" is in a primary key»). Orden
+-- corregido al ejecutar la migración contra la base real.
 DO $$
 DECLARE c record;
 BEGIN
@@ -85,6 +88,14 @@ BEGIN
     LOOP
         EXECUTE format('ALTER TABLE mensaje_destino DROP CONSTRAINT %I', c.conname);
     END LOOP;
+END;
+$$;
+
+ALTER TABLE mensaje_destino ALTER COLUMN id_tecnico DROP NOT NULL;
+
+DO $$
+DECLARE c record;
+BEGIN
     FOR c IN
         SELECT conname FROM pg_constraint
         WHERE conrelid = 'mensaje_destino'::regclass AND contype = 'c'
