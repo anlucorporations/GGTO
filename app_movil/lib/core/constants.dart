@@ -12,10 +12,26 @@ class AppConstants {
   /// Debe coincidir **exactamente** con `version:` de `pubspec.yaml` (nombre y
   /// versionCode). Hay una prueba que lo verifica (`test/version_visible_test.dart`):
   /// al subir el versionCode de cada entrega a CANTV hay que actualizar ambos.
-  static const String version = '1.1.0+10';
+  static const String version = '1.3.0+12';
 
   /// Máximo de intentos de login antes del bloqueo (RF-20).
   static const int maxIntentos = 3;
+
+  // --------------------------------------------------------------------- //
+  // D-100 · Acceso sin conexión (PIN local)                                //
+  // --------------------------------------------------------------------- //
+
+  /// PIN de fábrica del acceso sin conexión, para las cuentas **ya dadas de
+  /// alta**. Se entrega así para que un técnico que nunca configuró nada pueda
+  /// entrar en campo, y la app **obliga a cambiarlo** en el primer uso.
+  static const String pinPorDefecto = '824605';
+
+  /// Longitud exigida al PIN (solo dígitos).
+  static const int pinLongitud = 6;
+
+  /// Vigencia del acceso sin conexión: pasadas estas horas sin conectarse, la
+  /// app exige red para renovar la credencial.
+  static const int credencialOfflineHoras = 24;
 
   /// Intentos de sincronización antes de marcar una acción como fallida.
   static const int maxIntentosSync = 5;

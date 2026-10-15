@@ -41,6 +41,11 @@ class ApiClient {
           final token = await AuthStorage.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+            // D-100: solo una petición que **llevaba** token puede caducar la
+            // sesión. Un 401 sin `Bearer` significa «no autenticado», no
+            // «sesión expirada», y no debe borrar la sesión cacheada que
+            // necesita el acceso sin conexión.
+            options.extra['d100_con_token'] = true;
           }
           handler.next(options);
         },
@@ -61,7 +66,8 @@ class ApiClient {
         },
         onError: (error, handler) async {
           final status = error.response?.statusCode;
-          if (status == 401 && _onSesionExpirada != null) {
+          final llevabaToken = error.requestOptions.extra['d100_con_token'] == true;
+          if (status == 401 && llevabaToken && _onSesionExpirada != null) {
             await _onSesionExpirada!();
           }
           // El error de red ya viene con la respuesta adjunta: se propaga tal cual.

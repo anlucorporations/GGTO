@@ -9,12 +9,15 @@ import 'features/auth/auth_provider.dart';
 import 'features/auth/disclaimer_screen.dart';
 import 'features/auth/disclaimer_storage.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/pin_screen.dart';
 import 'features/auth/primer_acceso_screen.dart';
 import 'features/auth/unlock_screen.dart';
 import 'features/casos/casos_provider.dart';
 import 'features/casos/casos_screen.dart';
 import 'features/inicio/inicio_gestion_screen.dart';
 import 'features/gestion/gestion_screen.dart';
+import 'features/masivas/masivas_provider.dart';
+import 'features/masivas/masivas_screen.dart';
 import 'features/mensajes/mensajes_provider.dart';
 import 'features/mensajes/mensajes_screen.dart';
 import 'features/monitoreo/monitoreo_screen.dart';
@@ -32,7 +35,10 @@ Future<void> main() async {
   // cierre de sesión ante un 401 (H-01/H-18/H-39).
   ApiClient.init(
     onSesionExpirada: () async {
-      await AuthStorage.limpiarSesion();
+      // D-100: se descarta el token caducado pero se conserva la identidad de la
+      // sesión, para que el técnico pueda seguir entrando sin conexión con su
+      // PIN local mientras la credencial esté vigente.
+      await AuthStorage.olvidarToken();
       navigatorKey.currentState?.pushNamedAndRemoveUntil(
         '/login',
         (ruta) => false,
@@ -47,6 +53,8 @@ Future<void> main() async {
         ChangeNotifierProvider(
             create: (_) => AuthProvider()..restaurarSesion()),
         ChangeNotifierProvider(create: (_) => CasosProvider()),
+        // D-99: masivas activas (bloque MASIVA fijo y su caché local).
+        ChangeNotifierProvider(create: (_) => MasivasProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()..iniciar()),
         ChangeNotifierProvider(create: (_) => MensajesProvider()..iniciar()),
       ],
@@ -114,6 +122,15 @@ class _GGTOAppState extends State<GGTOApp> {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
+        // D-100: acceso sin conexión con PIN local (solo rol TÉCNICO).
+        '/pin': (context) {
+          final argumentos = ModalRoute.of(context)?.settings.arguments;
+          final p00 = argumentos is Map && argumentos['p00'] is String
+              ? argumentos['p00'] as String
+              : null;
+          final cambiar = argumentos is Map && argumentos['cambiar'] == true;
+          return PinScreen(p00: p00, cambiar: cambiar);
+        },
         '/inicio': (context) => const _RutaInicio(),
         '/unlock': (context) => const UnlockScreen(),
         '/primer-acceso': (context) => const PrimerAccesoScreen(),
@@ -131,6 +148,9 @@ class _GGTOAppState extends State<GGTOApp> {
               child: MonitoreoScreen(),
             ),
         '/sync': (context) => const _RutaProtegida(child: SyncScreen()),
+        // D-99: bloque MASIVA (todos los roles la consultan; el rol decide qué
+        // fichas de gestión —Planificar, Materiales, Cerrar— se muestran).
+        '/masivas': (context) => const _RutaProtegida(child: MasivasScreen()),
         '/alertas': (context) => const _RutaProtegida(child: AlertasScreen()),
         '/mensajes': (context) => const _RutaProtegida(child: MensajesScreen()),
         '/usuario': (context) => const _RutaProtegida(child: UsuarioScreen()),

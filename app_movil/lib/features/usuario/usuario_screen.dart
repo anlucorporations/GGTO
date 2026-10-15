@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/api_error.dart';
 import '../../core/constants.dart';
+import '../../core/credencial_local.dart';
 import '../../core/database.dart';
 import '../../core/sesion.dart';
 import '../auth/auth_provider.dart';
+import '../auth/credencial_service.dart';
 import '../sync/sync_provider.dart';
 import 'usuario_service.dart';
 
@@ -48,6 +50,8 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
   bool _mostrandoPalabras = false;
   List<String> _palabras = const [];
   bool _claveVisible = false;
+  /// D-100: ficha del acceso sin conexión de este dispositivo, si existe.
+  CredencialLocal? _credencial;
 
   @override
   void initState() {
@@ -73,11 +77,14 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     final local = await UsuarioService.perfilLocal();
     final localCuadrilla = await UsuarioService.cuadrillaLocal();
     final dispositivo = await DatabaseHelper.instance.dispositivoId();
+    // D-100: el documento de credencial es local, así que se lee sin red.
+    final credencial = await CredencialService.ficha(auth.p00 ?? '');
     if (!mounted) return;
     setState(() {
       _perfil = local ?? _perfilDesdeSesion(auth.usuario);
       _cuadrilla = localCuadrilla ?? _cuadrilla;
       _dispositivo = dispositivo;
+      _credencial = credencial;
       _correoController.text = _perfil?.correo ?? '';
       _cargando = false;
     });
@@ -362,6 +369,57 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
             ],
           ),
           _seccion(
+            titulo: 'Acceso sin conexión (PIN)',
+            icono: Icons.wifi_off,
+            clave: 'pin',
+            hijos: [
+              const Text(
+                'La APK puede abrirse sin internet con un PIN de '
+                '${AppConstants.pinLongitud} dígitos. Solo el rol TÉCNICO tiene ese '
+                'acceso, y la credencial caduca a las '
+                '${AppConstants.credencialOfflineHoras} h sin conectarse.',
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              if (_credencial == null)
+                const Text(
+                  'Este dispositivo todavía no tiene acceso sin conexión: se '
+                  'habilita al iniciar sesión con internet.',
+                  style: TextStyle(fontSize: 14),
+                )
+              else ...[
+                _dato('P00', _credencial!.p00),
+                _dato('Emitida', _fechaLegible(_credencial!.emitidaEn)),
+                _dato('Último acceso con red', _fechaLegible(_credencial!.ultimoAccesoConRed)),
+                _dato('Vigencia', _vigenciaLegible(_credencial!)),
+                _dato('PIN', _credencial!.pinPorDefecto ? 'De fábrica (cámbielo)' : 'Personalizado'),
+                _dato('Intentos fallidos', '${_credencial!.intentosFallidos}'),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.password),
+                        label: Text(
+                          _credencial!.pinPorDefecto ? 'Definir PIN' : 'Cambiar PIN',
+                        ),
+                        onPressed: _cambiarPin,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Restablecer'),
+                        onPressed: _restablecerCredencial,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          _seccion(
             titulo: 'Palabras de seguridad',
             icono: Icons.key_outlined,
             clave: 'palabras',
@@ -500,13 +558,80 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     );
   }
 
+  /// D-100: fecha legible en hora local del dispositivo.
+  String _fechaLegible(DateTime momento) {
+    final local = momento.toLocal();
+    String dos(int v) => v.toString().padLeft(2, '0');
+    return '${dos(local.day)}/${dos(local.month)}/${local.year} '
+        '${dos(local.hour)}:${dos(local.minute)}';
+  }
+
+  /// D-100: cuánto le queda a la credencial antes de exigir conexión.
+  String _vigenciaLegible(CredencialLocal ficha) {
+    final restante = CredencialService.vigencia -
+        DateTime.now().toUtc().difference(ficha.ultimoAccesoConRed);
+    if (restante <= Duration.zero) return 'Caducada (exige conexión)';
+    final horas = restante.inHours;
+    final minutos = restante.inMinutes.remainder(60);
+    return '$horas h $minutos min';
+  }
+
+  /// Abre la pantalla del PIN en modo «cambio voluntario».
+  Future<void> _cambiarPin() async {
+    final auth = context.read<AuthProvider>();
+    final p00 = auth.p00 ?? _credencial?.p00 ?? '';
+    final cambiado = await Navigator.pushNamed(
+      context,
+      '/pin',
+      arguments: {'p00': p00, 'cambiar': true},
+    );
+    if (!mounted || cambiado != true) return;
+    final ficha = await CredencialService.ficha(p00);
+    if (!mounted) return;
+    setState(() => _credencial = ficha);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('PIN del acceso sin conexión actualizado.')),
+    );
+  }
+
+  /// Descarta el acceso sin conexión de este dispositivo.
+  Future<void> _restablecerCredencial() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text('Restablecer acceso sin conexión'),
+        content: const Text(
+          'Se descartará el PIN de este dispositivo. Para volver a entrar sin '
+          'conexión habrá que iniciar sesión con internet una vez.\n\n¿Continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: const Text('Restablecer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+    final auth = context.read<AuthProvider>();
+    await auth.olvidarCredencial(auth.p00 ?? _credencial?.p00 ?? '');
+    if (!mounted) return;
+    setState(() => _credencial = null);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Acceso sin conexión restablecido.')),
+    );
+  }
+
   Widget _seccion({
     required String titulo,
     required IconData icono,
     required String clave,
     required List<Widget> hijos,
-  }) {
-    return Card(
+  }) {    return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         key: PageStorageKey<String>(clave),

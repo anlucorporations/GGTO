@@ -51,6 +51,16 @@ class AuthStorage {
     return null;
   }
 
+  /// Borra **solo el token**, conservando la identidad de la sesión.
+  ///
+  /// D-100: cuando el token caduca estando conectado se descarta el token (ya no
+  /// sirve) pero se conserva `sesion_usuario`, que es lo que permite seguir
+  /// entrando **sin conexión** con el PIN local mientras la credencial siga
+  /// vigente.
+  static Future<void> olvidarToken() async {
+    await _storage.delete(key: _claveToken);
+  }
+
   /// Borra la sesión completa (token y datos).
   static Future<void> limpiarSesion() async {
     await _storage.delete(key: _claveToken);

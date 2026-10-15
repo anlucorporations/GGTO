@@ -4,7 +4,9 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/auth_storage.dart';
 import '../../core/constants.dart';
+import '../../core/credencial_local.dart';
 import '../../core/sesion.dart';
+import 'credencial_service.dart';
 
 /// Estado de autenticación y sesión del usuario.
 ///
@@ -12,6 +14,8 @@ import '../../core/sesion.dart';
 /// error real del servidor, **no cuenta los fallos de red** como intentos
 /// fallidos, guarda la sesión para arrancar sin conexión y cierra la sesión
 /// cuando el token expira.
+///
+/// D-100: añade el **acceso sin conexión con PIN local** para el rol TÉCNICO.
 class AuthProvider extends ChangeNotifier {
   SesionUsuario? _usuario;
   String? _token;
@@ -19,18 +23,23 @@ class AuthProvider extends ChangeNotifier {
   bool _bloqueado = false;
   bool _cargando = false;
   String? _ultimoError;
+  bool _offline = false;
 
   SesionUsuario? get usuario => _usuario;
   String? get p00 => _usuario?.p00;
   String get nombre => _usuario?.nombreCompleto ?? '';
   String get rol => _usuario?.rol ?? '';
-  bool get autenticado => _token != null && _token!.isNotEmpty;
+  bool get autenticado =>
+      _offline || (_token != null && _token!.isNotEmpty);
   bool get cargando => _cargando;
   int get intentosFallidos => _intentosFallidos;
   int get intentosRestantes =>
       (AppConstants.maxIntentos - _intentosFallidos).clamp(0, AppConstants.maxIntentos);
   bool get bloqueado => _bloqueado;
   String? get ultimoError => _ultimoError;
+
+  /// `true` si la sesión actual se abrió **sin conexión** (D-100).
+  bool get offline => _offline;
 
   /// Recupera la sesión guardada al arrancar (permite entrar **sin conexión**).
   Future<void> restaurarSesion() async {
@@ -48,6 +57,9 @@ class AuthProvider extends ChangeNotifier {
       if (datos is Map) {
         _usuario = SesionUsuario.fromJson(Map<String, dynamic>.from(datos));
         await AuthStorage.guardarSesion(_token!, _usuario!);
+        // D-100: con red, la credencial local renueva su vigencia de 24 h.
+        await CredencialService.registrarAccesoConRed(_usuario!);
+        _offline = false;
         notifyListeners();
         return true;
       }
@@ -89,7 +101,11 @@ class AuthProvider extends ChangeNotifier {
       _token = token;
       _intentosFallidos = 0;
       _bloqueado = false;
+      _offline = false;
       await AuthStorage.guardarSesion(token, _usuario!);
+      // D-100: el acceso con red emite (o renueva) la credencial local del
+      // técnico, con su PIN y la vigencia de 24 h.
+      await CredencialService.registrarAccesoConRed(_usuario!);
       return null;
     } on ApiError catch (error) {
       // Un fallo de red NO consume intentos (H-15).
@@ -204,6 +220,9 @@ class AuthProvider extends ChangeNotifier {
       if (datos is Map && _token != null) {
         _usuario = SesionUsuario.fromJson(Map<String, dynamic>.from(datos));
         await AuthStorage.guardarSesion(_token!, _usuario!);
+        // D-100: hay red, así que la credencial local renueva su vigencia.
+        await CredencialService.registrarAccesoConRed(_usuario!);
+        _offline = false;
         notifyListeners();
       }
     } on ApiError {
@@ -211,13 +230,87 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // --------------------------------------------------------------------- //
+  // D-100 · Acceso sin conexión con PIN local                              //
+  // --------------------------------------------------------------------- //
+
+  /// Verifica el PIN local de un P00 **sin** abrir la sesión.
+  ///
+  /// Solo el rol TÉCNICO tiene credencial: para cualquier otro P00 devuelve
+  /// `usuarioSinCredencial` (los roles de gestión siempre exigen conexión).
+  Future<ResultadoPin> verificarPinLocal(String p00, String pin) =>
+      CredencialService.verificar(p00: p00, pin: pin);
+
+  /// ¿Hay alguna credencial de acceso sin conexión en este dispositivo?
+  Future<bool> hayCredencialLocal() => CredencialService.hayCredencial();
+
+  /// Devuelve la ficha del P00 indicado, o `null`.
+  Future<CredencialLocal?> credencialDe(String p00) => CredencialService.ficha(p00);
+
+  /// Abre la **sesión cacheada** tras validar el PIN (D-100).
+  ///
+  /// No toca el servidor. Exige que la identidad guardada sea del mismo P00 que
+  /// la credencial: en un dispositivo compartido, abrir la credencial de un
+  /// técnico con la identidad que dejó otro sería un salto de identidad.
+  ///
+  /// El **token es opcional**: sin conexión no hace falta, y tras una caducidad
+  /// se descarta el token pero se conserva la identidad justamente para que este
+  /// camino siga funcionando dentro de las 24 h de vigencia.
+  Future<ResultadoPin> entrarSinConexion(String p00) async {
+    final ficha = await CredencialService.ficha(p00);
+    if (ficha == null) {
+      return const ResultadoPin(
+        EstadoPin.usuarioSinCredencial,
+        'No hay acceso sin conexión para ese P00 en este dispositivo.',
+      );
+    }
+    final sesion = await AuthStorage.getSesion();
+    if (sesion == null) {
+      return const ResultadoPin(
+        EstadoPin.sinSesionGuardada,
+        'No hay una sesión guardada que abrir. Conéctese a internet e inicie '
+        'sesión una vez para habilitar el acceso sin conexión.',
+      );
+    }
+    if (sesion.p00.toUpperCase() != ficha.p00.toUpperCase()) {
+      return const ResultadoPin(
+        EstadoPin.sesionIncoherente,
+        'La sesión guardada es de otro usuario. Conéctese a internet e inicie '
+        'sesión con su P00.',
+      );
+    }
+
+    _token = await AuthStorage.getToken();
+    _usuario = sesion;
+    _intentosFallidos = 0;
+    _bloqueado = false;
+    _offline = true;
+    notifyListeners();
+    return const ResultadoPin(EstadoPin.ok, 'Sesión abierta sin conexión.');
+  }
+
+  /// Cambia el PIN del acceso sin conexión. Devuelve `null` si se guardó.
+  Future<String?> cambiarPinLocal(String p00, String nuevoPin) =>
+      CredencialService.cambiarPin(p00: p00, nuevoPin: nuevoPin);
+
+  /// Descarta la credencial del P00 (olvido del PIN).
+  Future<void> olvidarCredencial(String p00) async {
+    await CredencialService.olvidar(p00);
+    notifyListeners();
+  }
+
   /// Cierra la sesión y borra el token (también al expirar).
+  ///
+  /// **Conserva** la credencial local: el PIN ya configurado se reutiliza en el
+  /// siguiente acceso con red. Si se quiere revocar el acceso sin conexión hay
+  /// que usar «Olvidé mi PIN» en el acceso o «Restablecer» en la sección Usuario.
   Future<void> cerrarSesion() async {
     await AuthStorage.limpiarSesion();
     _token = null;
     _usuario = null;
     _intentosFallidos = 0;
     _bloqueado = false;
+    _offline = false;
     notifyListeners();
   }
 
