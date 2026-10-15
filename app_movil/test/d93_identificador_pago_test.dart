@@ -14,6 +14,7 @@ import 'package:ggto_tecnico/features/casos/caso_detalle_screen.dart';
 import 'package:ggto_tecnico/features/casos/casos_provider.dart';
 import 'package:ggto_tecnico/features/sync/sync_provider.dart';
 import 'package:ggto_tecnico/widgets/caso_card.dart';
+import 'package:ggto_tecnico/widgets/ficha_caso.dart';
 
 class _CasosEspia extends CasosProvider {
   _CasosEspia(this._datos);
@@ -78,21 +79,35 @@ void main() {
   });
 
   group('D-93 · ficha del caso', () {
-    testWidgets('la cabecera rotula el identificador de pago y el contacto',
+    testWidgets('la cabecera muestra el identificador sin rótulo y el contacto',
         (tester) async {
       await tester.pumpWidget(_ficha(_caso()));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Identificador de pago (70*): 7014000848'),
+      // D-101: la cabecera pierde el rótulo del identificador de pago y deja
+      // solo el número; el contacto pasa a rotularse «Contacto». Se comprueba
+      // **dentro de la cabecera**: el número también está en el grupo Contacto.
+      final cabecera = find.byType(FichaCabecera);
+      expect(find.descendant(of: cabecera, matching: find.text('7014000848')),
           findsOneWidget);
-      expect(find.textContaining('Número de contacto: 4223109000'), findsOneWidget);
+      expect(
+          find.descendant(
+              of: cabecera,
+              matching: find.textContaining('Identificador de pago (70*)')),
+          findsNothing);
+      expect(
+          find.descendant(
+              of: cabecera, matching: find.textContaining('Contacto: 4223109000')),
+          findsOneWidget);
     });
 
-    testWidgets('sin identificador lo advierte en la cabecera', (tester) async {
+    testWidgets('sin identificador la cabecera no deja la fila vacía',
+        (tester) async {
       await tester.pumpWidget(_ficha(_caso(identificador: '', contacto: '')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Sin identificador de pago'), findsOneWidget);
+      // D-101: sin identificador no se pinta la fila (ni el aviso de antes).
+      expect(find.textContaining('Sin identificador de pago'), findsNothing);
       expect(find.textContaining('Sin número de contacto'), findsOneWidget);
     });
 

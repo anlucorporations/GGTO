@@ -44,24 +44,26 @@ class CasoDetalleScreen extends StatelessWidget {
     String v(String campo, {String porDefecto = '—'}) =>
         _v(vivo, campo, porDefecto: porDefecto);
 
-    // --- PIE: acciones del estado (RF-APK-06) ---
-    final botones = <Widget>[
+    // --- PIE: acciones del estado (RF-APK-06 · D-101) ---
+    //
+    // D-101: son **iconos con etiqueta**, no botones de ancho completo.
+    final accionesPie = <Widget>[
       if (acciones.contains(AccionCaso.marcarContactado))
-        _BotonPie(
+        FichaAccion(
           icono: Icons.phone_callback,
-          texto: 'Marcar como contactado',
+          etiqueta: 'Contactado',
           onPressed: () => _marcarContactado(context, idCaso, idAveria),
         ),
       if (acciones.contains(AccionCaso.noContesta))
-        _BotonPie(
+        FichaAccion(
           icono: Icons.phone_missed,
-          texto: 'No contesta',
+          etiqueta: 'No contesta',
           onPressed: () => _noContesta(context, idCaso, idAveria),
         ),
       if (acciones.contains(AccionCaso.agendarCita))
-        _BotonPie(
+        FichaAccion(
           icono: Icons.event,
-          texto: 'Agendar cita',
+          etiqueta: 'Agendar',
           onPressed: () => _agendarCita(
             context,
             idCaso,
@@ -73,9 +75,9 @@ class CasoDetalleScreen extends StatelessWidget {
           ),
         ),
       if (acciones.contains(AccionCaso.atender))
-        _BotonPie(
+        FichaAccion(
           icono: Icons.build,
-          texto: 'Atender',
+          etiqueta: 'Atender',
           onPressed: () => _atender(context, idCaso, idAveria, estado),
         ),
     ];
@@ -83,7 +85,7 @@ class CasoDetalleScreen extends StatelessWidget {
     final String? nota;
     if (idCaso == null) {
       nota = 'Este caso no tiene identificador interno: no se pueden registrar acciones.';
-    } else if (botones.isEmpty) {
+    } else if (accionesPie.isEmpty) {
       nota = notaDeEstado(estado) ??
           'El caso no admite acciones desde la app en su estado actual.';
     } else {
@@ -98,7 +100,12 @@ class CasoDetalleScreen extends StatelessWidget {
           FichaCabecera(
             nombre: v('nombre_cliente', porDefecto: 'Cliente sin nombre'),
             identificadorPago: v('telefono', porDefecto: ''),
-            contacto: v('contacto_cliente', porDefecto: ''),
+            // D-101: si el caso no trae contacto propio, se usa el teléfono que
+            // aparezca dentro del texto de «Información» del reporte.
+            contacto: contactoParaMostrar(
+              contacto: v('contacto_cliente', porDefecto: ''),
+              informacion: v('informacion', porDefecto: ''),
+            ),
             estado: estado,
             pendienteSync: pendienteSync,
             onEditar: puedeEditarContacto(estado)
@@ -172,7 +179,7 @@ class CasoDetalleScreen extends StatelessWidget {
           ),
           // PIE (fijo): lo que el estado permite hacer.
           FichaPie(
-            acciones: botones,
+            acciones: accionesPie,
             nota: nota,
             pendienteSync: pendienteSync,
             sinConexion: sinConexion,
@@ -433,29 +440,7 @@ class _EvidenciasDelCasoState extends State<_EvidenciasDelCaso> {
 }
 
 /// Botón del PIE con el alto táctil de la guía (RNF-23).
-class _BotonPie extends StatelessWidget {
-  const _BotonPie({
-    required this.icono,
-    required this.texto,
-    required this.onPressed,
-  });
+///
+/// D-101: lo sustituye [FichaAccion] (icono + etiqueta en fila), que vive en
+/// `ficha_caso.dart`.
 
-  final IconData icono;
-  final String texto;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SizedBox(
-        height: 48,
-        child: ElevatedButton.icon(
-          icon: Icon(icono),
-          label: Text(texto),
-          onPressed: onPressed,
-        ),
-      ),
-    );
-  }
-}

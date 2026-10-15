@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'estado_chip.dart';
+import 'estado_icono.dart';
 
 /// Tarjeta de resumen de un caso en la lista de trabajo del técnico (RF-11).
 class CasoCard extends StatelessWidget {
@@ -48,7 +48,8 @@ class CasoCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            EstadoChip(estado: estado),
+            // D-101: el estado va como **icono**, no como chip de texto.
+            EstadoIcono(estado: estado),
             const SizedBox(height: 2),
             const Icon(Icons.chevron_right, size: 18),
           ],

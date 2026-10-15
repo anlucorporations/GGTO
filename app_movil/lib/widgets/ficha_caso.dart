@@ -67,24 +67,25 @@ class FichaCabecera extends StatelessWidget {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
-                  // D-93: el identificador de pago va en la cabecera, rotulado y
-                  // en solo lectura (no se edita desde el campo).
-                  Row(
-                    children: [
-                      const Icon(Icons.badge_outlined, size: 14, color: Colors.black54),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          ip.isEmpty
-                              ? 'Sin identificador de pago (70*)'
-                              : 'Identificador de pago (70*): $ip',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5),
+                  // D-101: el identificador de pago se muestra **sin rótulo** en
+                  // la cabecera (el técnico ya sabe qué número es); si el caso no
+                  // lo trae, la fila no se pinta. El rótulo se conserva en la
+                  // sección «Contacto» del cuerpo.
+                  if (ip.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(Icons.badge_outlined, size: 14, color: Colors.black54),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            ip,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12.5),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   const SizedBox(height: 2),
                   Row(
                     children: [
@@ -92,7 +93,7 @@ class FichaCabecera extends StatelessWidget {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          tel.isEmpty ? 'Sin número de contacto' : 'Número de contacto: $tel',
+                          tel.isEmpty ? 'Sin número de contacto' : 'Contacto: $tel',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 12.5),
@@ -192,6 +193,58 @@ class FichaSeccion extends StatelessWidget {
   }
 }
 
+/// Acción del PIE como **icono con etiqueta** (D-101).
+///
+/// Antes eran botones de ancho completo apilados; con cuatro acciones el pie se
+/// comía la mitad de la pantalla. Ahora van en una fila, conservando el alto
+/// táctil mínimo de la guía (RNF-23) y la etiqueta bajo el icono, que es lo que
+/// hace reconocible la acción sin leer un botón largo.
+class FichaAccion extends StatelessWidget {
+  const FichaAccion({
+    super.key,
+    required this.icono,
+    required this.etiqueta,
+    required this.onPressed,
+    this.color,
+  });
+
+  final IconData icono;
+  final String etiqueta;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tono = color ?? Theme.of(context).colorScheme.primary;
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icono, color: tono, size: 26),
+                const SizedBox(height: 4),
+                Text(
+                  etiqueta,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11.5, color: tono, height: 1.15),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// PIE: acciones del estado y estado de la sincronización.
 class FichaPie extends StatelessWidget {
   const FichaPie({
@@ -232,7 +285,9 @@ class FichaPie extends StatelessWidget {
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
-              ...acciones,
+              // D-101: las acciones del estado van en **fila de iconos**. Cada
+              // [FichaAccion] es un `Expanded`, así que el `Row` reparte el ancho.
+              if (acciones.isNotEmpty) Row(children: acciones),
               if (pendienteSync)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),

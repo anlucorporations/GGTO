@@ -23,6 +23,39 @@ enum AccionCaso {
 /// Estados terminales: el caso no admite gestiones nuevas desde la APK.
 const Set<String> estadosCerrados = {'CERRADO', 'CANCELADO', 'ENRUTADO'};
 
+/// Estados en los que el caso **ya quedó gestionado** por el técnico.
+///
+/// D-101: estos casos se **ocultan del listado principal** para que el técnico
+/// trabaje solo con lo que le queda pendiente; hay un conmutador para volver a
+/// verlos. «No contesta» no es un estado propio —la acción deja el caso en
+/// `CITADO`—, así que queda cubierto por esta lista.
+const Set<String> estadosGestionados = {
+  'CERRADO',
+  'CANCELADO',
+  'ENRUTADO',
+  'DIFERIDO',
+  'CITADO',
+};
+
+/// ¿El caso ya fue gestionado y por tanto se oculta del listado principal?
+bool estaGestionado(String estado) =>
+    estadosGestionados.contains(estado.trim().toUpperCase());
+
+/// Casos que pinta el **listado principal**.
+///
+/// D-101: por defecto se ocultan los gestionados; con [verGestionados] se
+/// devuelven todos. Es una función pura para poder probar el filtro sin base de
+/// datos: el proveedor solo la aplica.
+List<Map<String, dynamic>> casosVisiblesDe(
+  List<Map<String, dynamic>> casos, {
+  required bool verGestionados,
+}) {
+  if (verGestionados) return casos;
+  return casos
+      .where((caso) => !estaGestionado('${caso['estado_actual'] ?? ''}'))
+      .toList();
+}
+
 /// Explicación que el PIE muestra cuando no hay acciones disponibles.
 const Map<String, String> notasPorEstado = {
   'CERRADO': 'El caso está cerrado: no admite nuevas gestiones desde la app.',
@@ -124,3 +157,46 @@ DateTime citaDeNoContesta({DateTime? ahora}) {
   final base = (ahora ?? DateTime.now()).add(const Duration(days: 1));
   return DateTime(base.year, base.month, base.day, 8);
 }
+
+// --------------------------------------------------------------------------- #
+// Contacto mostrado en la ficha (D-101)
+// --------------------------------------------------------------------------- #
+
+/// Teléfono venezolano dentro de un texto libre.
+///
+/// Acepta las formas habituales del archivo de ingesta: `04121234567`,
+/// `0412-1234567`, `+58 412 1234567`, `(0212) 555.1234`. Deliberadamente **no**
+/// reconoce un identificador de pago `70*` (10 dígitos que empiezan por 70): ese
+/// no es un número para llamar.
+final RegExp _patronTelefono = RegExp(
+  r'(?:\+?58[\s\-.()]*)?(0?)(4\d{2}|2\d{2})[\s\-.()]*(\d{3})[\s\-.()]*(\d{4})',
+);
+
+/// Devuelve el **primer teléfono** que aparezca en [texto], ya normalizado a los
+/// 11 dígitos con el `0` inicial (la forma que se marca desde el móvil).
+String? telefonoEnTexto(String texto) {
+  if (texto.trim().isEmpty) return null;
+  for (final coincidencia in _patronTelefono.allMatches(texto)) {
+    final inicial = coincidencia.group(1) ?? '';
+    final codigo = coincidencia.group(2) ?? '';
+    final cuerpo = '${coincidencia.group(3)}${coincidencia.group(4)}';
+    return '${inicial.isEmpty ? '0' : inicial}$codigo$cuerpo';
+  }
+  return null;
+}
+
+/// Contacto que se muestra en la cabecera de la ficha.
+///
+/// D-101: si el caso no trae **número de contacto propio**, se usa el que
+/// aparezca dentro del texto de `informacion` —la unión de tres columnas del CSV
+/// de ingesta—, que es donde llega en muchos reportes. Si tampoco hay número,
+/// devuelve cadena vacía.
+String contactoParaMostrar({
+  required String contacto,
+  required String informacion,
+}) {
+  final propio = contacto.trim();
+  if (propio.isNotEmpty) return propio;
+  return telefonoEnTexto(informacion) ?? '';
+}
+

@@ -100,11 +100,13 @@ void main() {
       expect(cabecera, findsOneWidget);
       expect(find.descendant(of: cabecera, matching: find.text('CLIENTE PRUEBA')),
           findsOneWidget);
-      // D-93: la cabecera rotula el identificador de pago (70*).
+      // D-101: la cabecera muestra el identificador de pago **sin rótulo**.
       expect(
           find.descendant(
               of: cabecera,
-              matching: find.textContaining('Identificador de pago (70*): 7001234567')),
+              matching: find.textContaining('Identificador de pago (70*)')),
+          findsNothing);
+      expect(find.descendant(of: cabecera, matching: find.text('7001234567')),
           findsOneWidget);
       expect(find.descendant(of: cabecera, matching: find.text('NUEVO')),
           findsOneWidget); // chip de estado
@@ -121,8 +123,10 @@ void main() {
       await tester.pumpWidget(_ficha(_caso('NUEVO')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Marcar como contactado'), findsOneWidget);
-      expect(find.text('Agendar cita'), findsOneWidget);
+      // D-101: las acciones del pie son iconos con etiqueta corta.
+      expect(find.text('Contactado'), findsOneWidget);
+      expect(find.text('No contesta'), findsOneWidget);
+      expect(find.text('Agendar'), findsOneWidget);
       expect(find.text('Atender'), findsNothing);
     });
 
@@ -132,8 +136,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Atender'), findsOneWidget);
-      expect(find.text('Marcar como contactado'), findsNothing);
-      expect(find.text('Agendar cita'), findsNothing);
+      expect(find.text('Contactado'), findsNothing);
+      expect(find.text('Agendar'), findsNothing);
     });
 
     testWidgets('en CERRADO avisa y no ofrece acciones', (tester) async {

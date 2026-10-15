@@ -174,6 +174,24 @@ class _CasosScreenState extends State<CasosScreen> {
               onSubmitted: (texto) => casosProv.buscar(texto),
             ),
           ),
+          // D-101: los casos ya gestionados se ocultan del listado; el técnico
+          // puede volver a verlos con este conmutador.
+          if (casosProv.gestionados > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FilterChip(
+                  selected: casosProv.verGestionados,
+                  avatar: Icon(
+                    casosProv.verGestionados ? Icons.visibility : Icons.visibility_off,
+                    size: 18,
+                  ),
+                  label: Text('Ver gestionados (${casosProv.gestionados})'),
+                  onSelected: (_) => casosProv.alternarGestionados(),
+                ),
+              ),
+            ),
           Expanded(child: _cuerpo(casosProv)),
         ],
       ),
@@ -185,7 +203,41 @@ class _CasosScreenState extends State<CasosScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (casosProv.casos.isEmpty) {
+    final visibles = casosProv.casosVisibles;
+
+    // D-101: el dispositivo tiene casos, pero todos están gestionados: el
+    // listado queda vacío solo porque el conmutador está apagado.
+    if (casosProv.todoGestionado) {
+      return RefreshIndicator(
+        onRefresh: _descargar,
+        child: ListView(
+          children: [
+            const SizedBox(height: 80),
+            const Icon(Icons.task_alt, size: 56, color: Colors.black26),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Text(
+                'No le quedan casos pendientes: los ${casosProv.gestionados} de este '
+                'dispositivo ya están gestionados.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.visibility),
+                label: const Text('Ver gestionados'),
+                onPressed: casosProv.alternarGestionados,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (visibles.isEmpty) {
       return RefreshIndicator(
         onRefresh: _descargar,
         child: ListView(
@@ -233,20 +285,21 @@ class _CasosScreenState extends State<CasosScreen> {
     return RefreshIndicator(
       onRefresh: _descargar,
       child: ListView.builder(
-        itemCount: casosProv.casos.length + 1,
+        itemCount: visibles.length + 1,
         itemBuilder: (context, index) {
-          if (index == casosProv.casos.length) {
+          if (index == visibles.length) {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                '${casosProv.casos.length} de ${casosProv.total} casos'
+                '${visibles.length} de ${casosProv.total} casos'
+                '${casosProv.gestionados > 0 && !casosProv.verGestionados ? ' · ${casosProv.gestionados} gestionado(s) oculto(s)' : ''}'
                 ' · contenido local del dispositivo',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
             );
           }
-          final caso = casosProv.casos[index];
+          final caso = visibles[index];
           return CasoCard(
             caso: caso,
             onTap: () async {

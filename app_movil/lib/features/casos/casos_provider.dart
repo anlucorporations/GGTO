@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_error.dart';
 import '../../core/database.dart';
 import '../sync/download_service.dart';
+import 'acciones_caso.dart';
 
 /// Lista de casos del técnico, con caché local para operar sin conexión.
 ///
@@ -12,10 +13,15 @@ import '../sync/download_service.dart';
 /// D-82: el **contenido local** (SQLite) es la fuente de la lista. Cualquier
 /// carga —con o sin conexión— vuelca la caché del dispositivo en pantalla, de
 /// modo que el técnico siempre ve sus casos aunque la descarga falle.
+///
+/// D-101: el listado principal esconde los casos **ya gestionados** (cerrado,
+/// enrutado, diferido, citado o cancelado); el técnico puede volver a verlos con
+/// [alternarGestionados].
 class CasosProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _casos = [];
   bool _cargando = false;
   bool _desdeCache = false;
+  bool _verGestionados = false;
   String? _error;
   String _consulta = '';
   DateTime? _actualizadoEn;
@@ -29,6 +35,27 @@ class CasosProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> get casos => _casos;
   bool get cargando => _cargando;
+
+  /// ¿El técnico pidió ver también los casos ya gestionados? (D-101)
+  bool get verGestionados => _verGestionados;
+
+  /// Cuántos casos de la caché ya están gestionados.
+  int get gestionados =>
+      _casos.where((c) => estaGestionado('${c['estado_actual'] ?? ''}')).length;
+
+  /// Cuántos casos quedan pendientes (los que ve el listado por defecto).
+  int get pendientes => _casos.length - gestionados;
+
+  /// Casos que pinta el **listado principal**: los pendientes y, si el técnico
+  /// activó el conmutador, también los gestionados (D-101).
+  List<Map<String, dynamic>> get casosVisibles =>
+      casosVisiblesDe(_casos, verGestionados: _verGestionados);
+
+  /// Muestra u oculta los casos ya gestionados.
+  void alternarGestionados() {
+    _verGestionados = !_verGestionados;
+    notifyListeners();
+  }
 
   /// `true` cuando la última descarga contra el servidor falló: lo que se ve en
   /// pantalla es el contenido local guardado.
@@ -63,7 +90,13 @@ class CasosProvider extends ChangeNotifier {
   /// Fecha del último intento de sincronización (haya funcionado o no).
   DateTime? get sincronizadoEn => _sincronizadoEn;
   int get total => _total;
-  bool get vacio => !_cargando && _casos.isEmpty;
+  /// ¿No hay nada que pintar en el listado? (D-101: cuenta lo **visible**).
+  bool get vacio => !_cargando && casosVisibles.isEmpty;
+
+  /// El dispositivo **sí** tiene casos, pero todos están gestionados: el listado
+  /// queda vacío solo porque el conmutador está apagado.
+  bool get todoGestionado =>
+      !_cargando && casosVisibles.isEmpty && _casos.isNotEmpty;
 
   /// Cuántos casos hay guardados en el dispositivo.
   int get locales => _casos.length;
