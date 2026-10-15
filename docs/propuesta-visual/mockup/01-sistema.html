@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GGTO · CANTV — Sistema de diseño propuesto (v2)</title>
+<link rel="stylesheet" href="ggto-v2.css" />
+</head>
+<body>
+
+<!-- ============================ Portada ============================ -->
+<header style="position:relative">
+  <img src="../assets/hero-web.svg" alt="Cabecera de marca GGTO · CANTV: degradado azul eléctrico a magenta con el logotipo CANTV en blanco"
+       style="display:block;width:100%;height:auto" />
+</header>
+<div class="franja-marca"></div>
+
+<div class="contenedor">
+  <div class="encabezado-seccion" style="padding:34px 0 0">
+    <div>
+      <p class="etiqueta-marca">Propuesta de sistema de diseño</p>
+      <h1>GGTO v2 · lenguaje visual CANTV</h1>
+      <p class="lead">Evolución de <code>app/web/src/styles.css</code> a partir de la imagen de referencia
+        <em>autogestión</em>: el degradado azul eléctrico → violeta → magenta y la trama de puntos se usan como
+        <b>superficie de marca</b>; los datos siguen viviendo sobre superficies claras de alto contraste.</p>
+    </div>
+    <div class="fila">
+      <span class="chip chip--info">WCAG 2.2 AA</span>
+      <span class="chip chip--exito">44 px táctil</span>
+      <span class="chip chip--especial">Sin fuentes externas</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 1. Marca ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>1 · Uso del logotipo</h2>
+        <p class="lead">Tres versiones, siempre desde el vector institucional. La versión monocroma blanca es la
+          única aprobada sobre el degradado, igual que en la imagen de referencia.</p>
+      </div>
+    </div>
+
+    <div class="rejilla rejilla--3">
+      <article class="tarjeta">
+        <div style="padding:26px;background:#fff;display:flex;align-items:center;justify-content:center;min-height:180px">
+          <img src="../assets/cantv-logo-color.svg" alt="Logotipo CANTV en azul, amarillo y rojo sobre fondo blanco" style="width:210px;height:auto" />
+        </div>
+        <div class="tarjeta__cuerpo">
+          <h3>Institucional (color)</h3>
+          <p class="tenue" style="font-size:.9rem;margin:0">Fondos claros, documentos, manuales y pie de correo.</p>
+        </div>
+      </article>
+
+      <article class="tarjeta">
+        <div class="cubierta-marca" style="min-height:180px;align-items:center;justify-content:center;display:flex">
+          <img src="../assets/cantv-logo-blanco.svg" alt="Logotipo CANTV monocromo blanco sobre el degradado de marca" style="width:210px;height:auto" />
+        </div>
+        <div class="tarjeta__cuerpo">
+          <h3>Monocromo blanco</h3>
+          <p class="tenue" style="font-size:.9rem;margin:0">Superficies de marca: login, portadas, cabeceras y APK.</p>
+        </div>
+      </article>
+
+      <article class="tarjeta">
+        <div style="padding:26px;background:#F4F7FC;display:flex;align-items:center;justify-content:center;min-height:180px">
+          <img src="../assets/cantv-logo-tinta.svg" alt="Logotipo CANTV monocromo azul eléctrico sobre fondo claro" style="width:210px;height:auto" />
+        </div>
+        <div class="tarjeta__cuerpo">
+          <h3>Monocromo tinta</h3>
+          <p class="tenue" style="font-size:.9rem;margin:0">Una sola tinta (fax, grabados, sellos, marcas de agua).</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="aviso aviso--info" style="margin-top:18px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+      <div>
+        <b>Zona de respeto y tamaño mínimo</b>
+        <p>Área libre equivalente a la altura de la «c» del logotipo. Ancho mínimo en pantalla: 96 px (barra superior)
+          y 32 px en la barra lateral de la APK. Nunca deformar, ni recolorear el logotipo a colores distintos de los
+          institucionales o del monocromo blanco/tinta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 2. Color ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>2 · Color</h2>
+        <p class="lead">Los siete colores de marca salen del k-means de la imagen de referencia
+          (<code>recursos/paleta_referencia.json</code>); los neutros y semánticos mantienen continuidad con la v1
+          para no reescribir las vistas existentes.</p>
+      </div>
+    </div>
+
+    <h3>Marca</h3>
+    <div class="rejilla rejilla--4" style="margin-bottom:26px">
+      <div class="muestra-color"><div class="parche" style="background:#021FBE"></div><div class="datos"><b>Azul eléctrico</b><code>#021FBE</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">26,7 % de la referencia · cabecera e iconos</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#3B1CAD"></div><div class="datos"><b>Violeta profundo</b><code>#3B1CAD</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">17,4 % · segundo tramo del degradado</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#7C12AF"></div><div class="datos"><b>Violeta</b><code>#7C12AF</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">10,6 % · centro del degradado</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#9D0BAC"></div><div class="datos"><b>Púrpura</b><code>#9D0BAC</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">9,0 % · transición cálida</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#C905A5"></div><div class="datos"><b>Magenta</b><code>#C905A5</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">14,0 % · cierre del degradado (5,19:1 con blanco)</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#E003A0"></div><div class="datos"><b>Fucsia</b><code>#E003A0</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">Esquina inferior · solo texto grande y gráficos (4,48:1)</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#00B8C4"></div><div class="datos"><b>Turquesa</b><code>#00B8C4</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">Acento de interacción y foco sobre superficies de marca</p></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#050B3D"></div><div class="datos"><b>Azul profundo</b><code>#050B3D</code><p class="tenue" style="margin:4px 0 0;font-size:.8rem">Base oscura: velo para garantizar contraste</p></div></div>
+    </div>
+
+    <h3>Neutros y semánticos</h3>
+    <div class="rejilla rejilla--4" style="margin-bottom:26px">
+      <div class="muestra-color"><div class="parche" style="background:#F4F7FC;border-bottom:1px solid #DCE3F0"></div><div class="datos"><b>Fondo</b><code>#F4F7FC</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#FFFFFF;border-bottom:1px solid #DCE3F0"></div><div class="datos"><b>Superficie</b><code>#FFFFFF</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#131A2A"></div><div class="datos"><b>Texto</b><code>#131A2A · 17,4:1</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#5A6684"></div><div class="datos"><b>Texto suave</b><code>#5A6684 · 5,7:1</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#1F7A4D"></div><div class="datos"><b>Éxito</b><code>#1F7A4D</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#8A6100"></div><div class="datos"><b>Alerta</b><code>#8A6100</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#B3261E"></div><div class="datos"><b>Error</b><code>#B3261E</code></div></div>
+      <div class="muestra-color"><div class="parche" style="background:#6A13A1"></div><div class="datos"><b>Especial</b><code>#6A13A1</code></div></div>
+    </div>
+
+    <h3>Degradados y superficies</h3>
+    <div class="rejilla rejilla--3">
+      <div class="tarjeta"><div style="height:120px;background:var(--grad-marca)"></div><div class="tarjeta__cuerpo"><b>--grad-marca</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">Fondo de la superficie de marca (login, portadas).</p></div></div>
+      <div class="tarjeta"><div style="height:120px;background:var(--grad-franja)"></div><div class="tarjeta__cuerpo"><b>--grad-franja</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">Franja de 3 px: la firma de marca entre cabecera y contenido.</p></div></div>
+      <div class="tarjeta"><div style="height:120px;background:var(--grad-cubierta)"></div><div class="tarjeta__cuerpo"><b>--grad-cubierta</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">Cubiertas de tarjetas destacadas y botón de marca.</p></div></div>
+      <div class="tarjeta"><div style="height:120px;background:var(--grad-suave)"></div><div class="tarjeta__cuerpo"><b>--grad-suave</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">Cabeceras de tabla y estados de solo lectura.</p></div></div>
+      <div class="tarjeta"><div style="height:120px;background:var(--grad-oscuro)"></div><div class="tarjeta__cuerpo"><b>--grad-oscuro</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">Barra superior: garantiza 9:1 con el texto blanco.</p></div></div>
+      <div class="tarjeta">
+        <div style="height:120px;background:#0B1BB4;background-image:radial-gradient(circle,rgba(229,221,248,.55) 2.6px,transparent 2.7px);background-size:26px 26px"></div>
+        <div class="tarjeta__cuerpo"><b>Trama de puntos</b><p class="tenue" style="margin:4px 0 0;font-size:.875rem">26 px de paso, punto de 2,6 px al 55 %: el detalle de la referencia.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 3. Tipografía ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>3 · Tipografía</h2>
+        <p class="lead"><b>Archivo</b> para titulares (aire bold institucional) e <b>Inter</b> para interfaz y cifras.
+          Se sirven <b>autoalojadas</b> (o con la pila del sistema como respaldo) porque la plataforma opera en la
+          intranet de la Central y no puede depender de Google Fonts.</p>
+      </div>
+    </div>
+
+    <div class="rejilla rejilla--2">
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Escala</h3><span class="chip chip--neutro chip--sin-punto">base 16 px</span></div>
+        <div class="tarjeta__cuerpo escala-tipo">
+          <div><span>display · 2,4 rem / 700</span><b style="font-size:2.4rem;font-family:var(--fuente-titular)">Panel de averías</b></div>
+          <div><span>h1 · 2,15 rem / 700</span><b style="font-size:2.15rem;font-family:var(--fuente-titular)">Casos en curso</b></div>
+          <div><span>h2 · 1,4 rem / 700</span><b style="font-size:1.4rem;font-family:var(--fuente-titular)">Despacho diario</b></div>
+          <div><span>h3 · 1,1 rem / 700</span><b style="font-size:1.1rem">Cuadrilla 0 (supervisor)</b></div>
+          <div><span>cuerpo · 1 rem / 400 · 1,5</span><span style="width:auto;color:var(--texto)">La ingesta diaria del CSV se valida antes de preparar el despacho.</span></div>
+          <div><span>tabla · 0,9375 rem / 1,45</span><span style="width:auto;color:var(--texto)">A-48213 · Los Chaguaramos · NAVEGACION LENTA</span></div>
+          <div><span>secundario · 0,8125 rem</span><span style="width:auto" class="tenue">Última sincronización hace 4 minutos</span></div>
+          <div><span>cifras · tabular-nums</span><span class="mono" style="width:auto;color:var(--texto)">1 284 · 93,6 % · 1,7 s</span></div>
+        </div>
+      </div>
+
+      <div class="pila">
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera"><h3>Reglas</h3></div>
+          <div class="tarjeta__cuerpo">
+            <ul style="margin:0;padding-left:20px;display:grid;gap:8px">
+              <li>Cuerpo nunca por debajo de 16 px; en tablas operativas 15 px como máximo de densidad.</li>
+              <li>Interlineado 1,5 en cuerpo y 1,45 en tablas; los titulares bajan a 1,18.</li>
+              <li>Ancho de línea de lectura entre 60 y 75 caracteres (<code>max-width: 68ch</code>).</li>
+              <li>Las cifras siempre <code>font-variant-numeric: tabular-nums</code> para que las columnas no bailen.</li>
+              <li>Nada de texto justificado ni de mayúsculas sostenidas en párrafos.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="aviso aviso--alerta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4l9 16H3zM12 10v4M12 17h.01"/></svg>
+          <div>
+            <b>Decisión pendiente de la Dirección</b>
+            <p>Autoalojar Inter y Archivo añade ~180 KB al paquete web. Alternativa: pila del sistema
+              (<code>Segoe UI</code>) sin coste. La propuesta funciona igual con ambas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 4. Componentes ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>4 · Componentes</h2>
+        <p class="lead">Todos los objetivos táctiles miden 44 × 44 px como mínimo, con estados
+          <em>hover</em>, <em>focus-visible</em>, <em>activo</em>, <em>deshabilitado</em> y <em>cargando</em>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla rejilla--2">
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Botones</h3></div>
+        <div class="tarjeta__cuerpo">
+          <div class="fila" style="margin-bottom:14px">
+            <button class="boton boton--marca">Preparar despacho</button>
+            <button class="boton boton--primario">Guardar</button>
+            <button class="boton boton--secundario">Cancelar</button>
+            <button class="boton boton--fantasma">Ver detalle</button>
+          </div>
+          <div class="fila" style="margin-bottom:14px">
+            <button class="boton boton--peligro">Eliminar caso</button>
+            <button class="boton boton--secundario" disabled>Sin permiso</button>
+            <button class="boton boton--marca boton--cargando">Procesando</button>
+          </div>
+          <div class="fila">
+            <button class="boton boton--secundario boton--pequeno">Exportar</button>
+            <button class="boton boton--fantasma boton--pequeno">Revisar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Campos y validación</h3></div>
+        <div class="tarjeta__cuerpo">
+          <div class="campo">
+            <label for="d-serial">Serial del ONT <span class="obligatorio">*</span></label>
+            <input id="d-serial" value="48575443A1B2" />
+            <p class="ayuda">Se enmascara para los roles sin permiso sobre el serial.</p>
+          </div>
+          <div class="campo con-error">
+            <label for="d-tel">Teléfono de contacto <span class="obligatorio">*</span></label>
+            <input id="d-tel" value="70" aria-invalid="true" aria-describedby="d-tel-error" />
+            <p class="error" id="d-tel-error">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+              Debe empezar por 70 y tener 10 dígitos.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Estados del caso</h3></div>
+        <div class="tarjeta__cuerpo">
+          <div class="fila" style="margin-bottom:12px">
+            <span class="chip chip--alerta">En espera</span>
+            <span class="chip chip--info">En despacho</span>
+            <span class="chip chip--exito">Ejecutado</span>
+            <span class="chip chip--error">Vencido</span>
+            <span class="chip chip--especial">Supervisor</span>
+            <span class="chip chip--neutro">Archivado</span>
+          </div>
+          <p class="tenue" style="font-size:.875rem;margin:0">Cada chip lleva punto de color <b>y</b> texto: el estado
+            nunca depende solo del color (daltonismo).</p>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Avisos</h3></div>
+        <div class="tarjeta__cuerpo pila" style="gap:12px">
+          <div class="aviso aviso--exito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Despacho generado</b><p>216 casos asignados a 9 cuadrillas.</p></div></div>
+          <div class="aviso aviso--error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg><div><b>La ingesta falló</b><p>Faltan 3 columnas obligatorias del contrato CSV.</p></div></div>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Carga y vacío</h3></div>
+        <div class="tarjeta__cuerpo">
+          <div class="pila" style="gap:10px;margin-bottom:16px">
+            <div class="esqueleto" style="height:16px;width:70%"></div>
+            <div class="esqueleto" style="height:16px;width:92%"></div>
+            <div class="esqueleto" style="height:16px;width:55%"></div>
+          </div>
+          <div class="vacio">
+            <span class="icono-circulo" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            </span>
+            <b>Sin resultados para «Prado de María»</b>
+            <p style="margin:0;font-size:.9rem">Pruebe con el número de caso o el teléfono enmascarado.</p>
+            <button class="boton boton--secundario boton--pequeno">Limpiar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Iconografía</h3><span class="chip chip--neutro chip--sin-punto">SVG, trazo 2 px</span></div>
+        <div class="tarjeta__cuerpo">
+          <div class="riel-iconos" aria-hidden="true">
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 8h6V4h-6z"/></svg></span>
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h18M6 7v13h12V7M9 7V4h6v3"/></svg></span>
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19V5m0 14h16M8 15V9m4 6V6m4 9v-4"/></svg></span>
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></svg></span>
+            <span class="icono-circulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          </div>
+          <p class="tenue" style="font-size:.875rem;margin:12px 0 0">Nunca emojis como iconos: rompen la alineación,
+            cambian con la fuente del sistema y no heredan el color del estado.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 5. Tabla y KPI ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>5 · Patrón de datos</h2>
+        <p class="lead">Indicadores con cubierta de marca y tabla densa con fila de SLA. Las cifras grandes usan
+          <code>tabular-nums</code> y el progreso del SLA combina color <b>y</b> texto.</p>
+      </div>
+    </div>
+
+    <div class="rejilla rejilla--4" style="margin-bottom:20px">
+      <article class="tarjeta-kpi"><p class="titulo">Casos activos</p><p class="valor">1 284</p><p class="pie"><span class="tendencia tendencia--baja">▼ 4,2 %</span> vs. ayer</p></article>
+      <article class="tarjeta-kpi"><p class="titulo">Sin asignar</p><p class="valor">216</p><p class="pie"><span class="tendencia tendencia--alta">▲ 12</span> requieren cuadrilla</p></article>
+      <article class="tarjeta-kpi"><p class="titulo">Cuadrilla 0</p><p class="valor">87</p><p class="pie"><span class="chip chip--especial">Supervisor</span></p></article>
+      <article class="tarjeta-kpi"><p class="titulo">SLO</p><p class="valor">93,6 %</p><p class="pie">meta 95 %</p></article>
+    </div>
+
+    <div class="marco-tabla">
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <caption class="visualmente-oculto">Muestra del patrón de tabla de casos</caption>
+          <thead>
+            <tr><th scope="col">Caso</th><th scope="col">Sector</th><th scope="col">Estado</th><th scope="col">Espera / SLA</th><th scope="col">Acción</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="codigo-caso">A-48213</span></td>
+              <td class="celda-fuerte">Los Chaguaramos</td>
+              <td><span class="chip chip--especial">Supervisor</span></td>
+              <td><div class="barra-sla" style="--pct:88%"><span></span></div><span class="celda-tenue">41 h de 48 h</span></td>
+              <td><button class="boton boton--fantasma boton--pequeno">Abrir</button></td>
+            </tr>
+            <tr>
+              <td><span class="codigo-caso">A-48176</span></td>
+              <td class="celda-fuerte">Prado de María</td>
+              <td><span class="chip chip--alerta">En espera</span></td>
+              <td><div class="barra-sla es-riesgo" style="--pct:96%"><span></span></div><span class="celda-tenue">46 h de 48 h</span></td>
+              <td><button class="boton boton--fantasma boton--pequeno">Abrir</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="paginacion">
+        <span>Mostrando 1–5 de 216 casos · teléfonos y seriales enmascarados para su rol</span>
+        <div class="paginador"><button type="button" aria-label="Página anterior">‹</button><button type="button" aria-current="page">1</button><button type="button">2</button><button type="button" aria-label="Página siguiente">›</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 6. Accesibilidad ============================ -->
+<section class="seccion">
+  <div class="contenedor">
+    <div class="encabezado-seccion">
+      <div>
+        <h2>6 · Accesibilidad verificada</h2>
+        <p class="lead">Los contrastes se calcularon con <code>scripts/contraste.py</code> (fórmula WCAG 2.2) sobre la
+          paleta propuesta; el resultado queda en <code>recursos/contraste.json</code>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla rejilla--2">
+      <div class="tarjeta">
+        <div class="tarjeta__cabecera"><h3>Contraste texto/fondo</h3></div>
+        <div class="tarjeta__cuerpo" style="padding-top:6px">
+          <table class="tabla-tokens">
+            <thead><tr><th>Combinación</th><th>Ratio</th><th>Veredicto</th></tr></thead>
+            <tbody>
+              <tr><td>#131A2A sobre #FFFFFF</td><td class="mono">17,37:1</td><td><span class="chip chip--exito">AA</span></td></tr>
+              <tr><td>#5A6684 sobre #FFFFFF</td><td class="mono">5,72:1</td><td><span class="chip chip--exito">AA</span></td></tr>
+              <tr><td>Blanco sobre #0B1BB4</td><td class="mono">11,48:1</td><td><span class="chip chip--exito">AAA</span></td></tr>
+              <tr><td>Blanco sobre #050B3D</td><td class="mono">18,72:1</td><td><span class="chip chip--exito">AAA</span></td></tr>
+              <tr><td>Blanco sobre #C905A5</td><td class="mono">5,19:1</td><td><span class="chip chip--exito">AA</span></td></tr>
+              <tr><td>Blanco sobre #E003A0</td><td class="mono">4,48:1</td><td><span class="chip chip--alerta">Solo texto grande</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="pila">
+        <div class="tarjeta">
+          <div class="tarjeta__cabecera"><h3>Reglas no negociables</h3></div>
+          <div class="tarjeta__cuerpo">
+            <ul style="margin:0;padding-left:20px;display:grid;gap:8px">
+              <li>Foco visible siempre: anillo turquesa de 3 px; blanco sobre superficies de marca. <b>Nunca</b> <code>outline: none</code> sin sustituto.</li>
+              <li>Objetivos táctiles ≥ 44 × 44 px, con 8 px de separación mínima.</li>
+              <li>El estado no se comunica solo con color: chip con punto + texto; SLA con barra + horas.</li>
+              <li><code>prefers-reduced-motion</code> detiene el degradado animado, el brillo de los esqueletos y el giro del botón de carga.</li>
+              <li>Labels siempre visibles: el placeholder nunca sustituye a la etiqueta.</li>
+              <li>Errores junto al campo, con <code>aria-invalid</code> y <code>aria-describedby</code>.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="aviso aviso--info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+          <div>
+            <b>Rendimiento y datos personales</b>
+            <p>Los degradados son CSS/SVG (sin imágenes): 0 KB de descarga frente a ~1,1 MB del PNG de la referencia.
+              La trama de puntos se dibuja con un <code>radial-gradient</code> repetido. Las vistas siguen mostrando
+              teléfono, dirección y serial enmascarados por rol (RNF-18).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pie-app">
+  <div class="contenedor">
+    GGTO — Sistema de administración de reportes de avería y construcción de puntos ópticos ·
+    CANTV C.A., Central Francisco Salias (Área 4). Propuesta visual v2 · uso interno y confidencial.
+  </div>
+</footer>
+</body>
+</html>

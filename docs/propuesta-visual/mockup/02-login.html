@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GGTO · CANTV — Acceso (propuesta UI/UX v2)</title>
+<link rel="stylesheet" href="ggto-v2.css" />
+</head>
+<body>
+<div class="franja-marca"></div>
+
+<main class="login">
+  <!-- ---------------- Superficie de marca: el lenguaje de la imagen ---------------- -->
+  <section class="login__marca sobre-marca" aria-labelledby="titulo-marca">
+    <span class="trama trama--arriba" aria-hidden="true"></span>
+    <span class="trama trama--abajo" aria-hidden="true"></span>
+
+    <a href="#" class="marca-app" aria-label="GGTO — CANTV, ir al inicio">
+      <img class="logo-grande" src="../assets/cantv-logo-blanco.svg" alt="CANTV" width="360" height="150" />
+    </a>
+
+    <div class="login__claims">
+      <p class="etiqueta-marca" style="color:#5CE1E6">Autogestión</p>
+      <h2 id="titulo-marca">Un solo tablero para la avería y el punto óptico</h2>
+      <p>Ingesta diaria del CSV, despacho por cuadrilla, seguimiento de casos especiales y
+        métricas de la Central Francisco Salias (Área 4), desde la web y desde la APK.</p>
+      <ul class="lista-ventajas">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          Ingesta y depuración del archivo diario de averías GPON.
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          Despacho con criterio de cuadrilla 0 y modo supervisor.
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          Trazabilidad por rol: técnico, supervisor, coordinador y administrador.
+        </li>
+      </ul>
+    </div>
+
+    <p class="pie-marca">Uso confidencial de CANTV C.A. · GGTO 2026 · Central Francisco Salias · Área 4</p>
+  </section>
+
+  <!-- ---------------- Superficie de trabajo: sobria y accesible ---------------- -->
+  <section class="login__panel">
+    <div class="login__caja">
+      <h1 style="margin-bottom:2px">Bienvenido a GGTO</h1>
+      <p class="tenue" style="margin-bottom:22px">Plataforma de gestión de averías — CANTV</p>
+
+      <div class="pestanas" role="tablist" aria-label="Modos de acceso">
+        <button class="pestana" role="tab" id="tab-login" aria-selected="true" aria-controls="panel-login" type="button">Iniciar sesión</button>
+        <button class="pestana" role="tab" id="tab-alta" aria-selected="false" aria-controls="panel-alta" type="button">Primer acceso</button>
+      </div>
+
+      <form id="panel-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+        <div class="campo">
+          <label for="p00">Usuario P00 <span class="obligatorio" aria-hidden="true">*</span></label>
+          <input id="p00" name="p00" type="text" inputmode="text" autocomplete="username"
+                 value="TSTCDPB" aria-describedby="ayuda-p00" required />
+          <p class="ayuda" id="ayuda-p00">Código de trabajador asignado por la Central (ej.: TSTCDPB).</p>
+        </div>
+
+        <div class="campo">
+          <label for="clave">Clave personal <span class="obligatorio" aria-hidden="true">*</span></label>
+          <input id="clave" name="clave" type="password" autocomplete="current-password"
+                 value="contrasena-demo" required />
+        </div>
+
+        <div class="fila" style="margin:-6px 0 18px">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:.9rem">
+            <input type="checkbox" checked style="width:18px;height:18px;accent-color:#0B1BB4" />
+            Mantener la sesión en este equipo
+          </label>
+          <span class="espaciador"></span>
+          <a class="enlace-clave" href="#">¿Olvidó su clave?</a>
+        </div>
+
+        <button class="boton boton--marca" type="submit" style="width:100%">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+          </svg>
+          Entrar a la plataforma
+        </button>
+      </form>
+
+      <div class="aviso aviso--info" style="margin-top:18px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+        </svg>
+        <div>
+          <b>Acceso desde la APK</b>
+          <p>El técnico de campo puede instalar la aplicación Android firmada y trabajar sin conexión.</p>
+          <a href="#" style="font-weight:700">Descargar la APK (versión firmada) →</a>
+        </div>
+      </div>
+
+      <p class="nota-legal">
+        El uso de esta aplicación no genera responsabilidad para CANTV C.A. Los datos de suscriptores
+        se tratan de forma confidencial, con enmascaramiento por rol y registro de auditoría.
+        <a href="#">Leer el aviso legal completo</a>.
+      </p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
