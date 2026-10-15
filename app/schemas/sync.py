@@ -56,6 +56,24 @@ class CasoSyncOut(BaseModel):
     orden_visita: int | None = None
     tipo_asignacion: str | None = None
     observacion_despacho: str | None = None
+    # D-96/D-99: teléfono de contacto y datos técnicos del caso. Sin ellos el
+    # bloque «Técnica» de la ficha de la APK no se pintaba tras la descarga.
+    contacto_cliente: str | None = None
+    persona_reporta: str | None = None
+    olt: str | None = None
+    plan: str | None = None
+    slot: str | None = None
+    puerto: str | None = None
+    fat: str | None = None
+    #: Columna EXTRA del archivo de ingesta: es donde viaja la RUTA.
+    extra: str | None = None
+    serial: str | None = None
+    tipo_servicio: str | None = None
+    area_trabajo: str | None = None
+    nombre_central: str | None = None
+    ultimo_comentario: str | None = None
+    fecha_reporte: datetime | None = None
+    es_falla_masiva: bool = False
 
 
 class CatalogoSyncOut(BaseModel):
@@ -73,6 +91,9 @@ class SyncDescargaOut(BaseModel):
     mensaje: str = ""
     cuadrilla: CuadrillaSyncOut | None = None
     casos_cuadrilla: int = 0
+    # D-99 (RF-72): masivas activas que atañen a la cuadrilla, con sus CASOS
+    # ASOCIADOS y la RUTA, para el bloque MASIVA fijo de la APK.
+    masivas: list[dict] = Field(default_factory=list)
 
 
 class EvidenciaUploadOut(BaseModel):

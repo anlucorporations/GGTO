@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -14,14 +15,20 @@ from ..core.db import get_db
 from ..models import (
     Caso,
     Cuadrilla,
+    Evidencia,
     FallaMasiva,
     IngestaLote,
     Notificacion,
     OrdenMaterial,
     Sector,
+    Solicitante,
     Usuario,
 )
 from ..schemas.alertas import (
+    AsociarCasosRequest,
+    CasoAsociadoOut,
+    CierreMasivaOut,
+    CierreMasivaRequest,
     FallaMasivaCampo,
     FallaMasivaManual,
     FallaMasivaOut,
@@ -32,8 +39,11 @@ from ..schemas.alertas import (
     OrdenMaterialOut,
     PlanificacionRequest,
     ProcesarOutboxOut,
+    UbicacionOut,
+    ValidadorCrassOut,
 )
 from ..services import fallas as svc_fallas
+from ..services import masivas as svc_masivas
 from ..services import outbox
 from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, resolver_central
@@ -75,12 +85,15 @@ def _texto_evidencias(seriales: list[str]) -> str | None:
 
 
 def _ruta_desde_caso(caso: Caso | None) -> tuple[str | None, str | None]:
-    """D-75: RUTA unificada (Tarjeta/slot + Puerto + FAT) y dirección corta del
-    caso representativo de la concentración."""
+    """RUTA unificada y dirección corta del caso representativo de la concentración.
+
+    D-99: la RUTA la resuelve `services.masivas.ruta_de_caso`, que da prioridad a
+    la columna **EXTRA** del archivo de ingesta —donde viaja la ruta— y, si viene
+    vacía, compone Tarjeta (slot) · Puerto · FAT (criterio D-75).
+    """
     if caso is None:
         return None, None
-    partes = [p for p in (caso.slot, caso.puerto, caso.fat) if p]
-    ruta = " · ".join(partes) or None
+    ruta = svc_masivas.ruta_de_caso(caso)
     direccion = (caso.direccion or "").strip()
     if not direccion:
         return ruta, None
@@ -131,11 +144,21 @@ def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
             .group_by(OrdenMaterial.id_falla)
         ).all()
     )
+    # D-99: nº real de casos asociados y validador del CRASS de las cerradas.
+    asociados = svc_masivas.contar_asociados(db, ids)
+    ids_validador = [f.id_validador_crass for f in fallas if f.id_validador_crass]
+    validadores = {
+        s.id_solicitante: s
+        for s in db.scalars(
+            select(Solicitante).where(Solicitante.id_solicitante.in_(ids_validador))
+        ).all()
+    } if ids_validador else {}
     salida: list[FallaMasivaOut] = []
     for f in fallas:
         caso, casos_afectos = _caso_representativo(db, f)
         ruta, dir_corta = _ruta_desde_caso(caso)
         cu = cuadrillas.get(f.id_cuadrilla) if f.id_cuadrilla else None
+        validador = validadores.get(f.id_validador_crass) if f.id_validador_crass else None
         datos = FallaMasivaOut.model_validate(f).model_dump()
         datos.update(
             sector_nombre=(sectores.get(f.id_sector) if f.id_sector is not None else None),
@@ -146,6 +169,11 @@ def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
             ordenes_count=ordenes.get(f.id_falla, 0),
             casos_afectos=casos_afectos,
             evidencias=_evidencias_de(f.evidencias),
+            evidencias_cierre=_evidencias_de(f.evidencias_cierre),
+            casos_asociados=asociados.get(f.id_falla, 0),
+            validador_crass=(
+                ValidadorCrassOut.model_validate(validador) if validador else None
+            ),
         )
         salida.append(FallaMasivaOut(**datos))
     return salida
@@ -159,22 +187,47 @@ def _salida1(db: Session, falla: FallaMasiva) -> FallaMasivaOut:
 # Fallas masivas (RF-09, RF-16, RF-17)
 # --------------------------------------------------------------------------- #
 @router.get("/fallas-masivas", response_model=list[FallaMasivaOut],
-            summary="Fallas masivas registradas")
+            summary="Fallas masivas registradas (histórico de la sección MASIVAS)")
 def listar_fallas(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
     estado: str | None = None,
     id_central: int | None = None,
     solo_activas: bool = Query(default=False),
+    q: str | None = Query(default=None, description="Busca en descripción, ODN, FAT y dirección"),
+    desde: datetime | None = Query(default=None, description="Desde fecha_deteccion"),
+    hasta: datetime | None = Query(default=None, description="Hasta fecha_deteccion"),
+    origen: str | None = None,
+    limite: int = Query(default=200, ge=1, le=1000),
 ) -> list[FallaMasivaOut]:
-    stmt = select(FallaMasiva).order_by(FallaMasiva.id_falla.desc())
+    """Histórico de masivas (RF-60).
+
+    Además del filtro por estado y central admite búsqueda textual (`q`), rango de
+    detección (`desde`/`hasta`) y origen, que es lo que consume la sección MASIVAS.
+    """
+    stmt = select(FallaMasiva).order_by(FallaMasiva.id_falla.desc()).limit(limite)
     if usuario.rol.codigo != "SUPER" or id_central is not None:
         central = resolver_central(db, id_central, cargar_config(db), usuario)
         stmt = stmt.where(FallaMasiva.id_central == central.id_central)
     if estado:
         stmt = stmt.where(FallaMasiva.estado == estado)
+    if origen:
+        stmt = stmt.where(FallaMasiva.origen == origen)
     if solo_activas:
         stmt = stmt.where(FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")))
+    if desde:
+        stmt = stmt.where(FallaMasiva.fecha_deteccion >= desde)
+    if hasta:
+        stmt = stmt.where(FallaMasiva.fecha_deteccion <= hasta)
+    if q:
+        patron = f"%{q.strip()}%"
+        stmt = stmt.where(or_(
+            FallaMasiva.descripcion.ilike(patron),
+            FallaMasiva.odn.ilike(patron),
+            FallaMasiva.fat.ilike(patron),
+            FallaMasiva.direccion.ilike(patron),
+            FallaMasiva.clave_concentracion.ilike(patron),
+        ))
     return _salida(db, list(db.scalars(stmt).all()))
 
 
@@ -203,6 +256,9 @@ def reportar_falla(
     )
     db.add(falla)
     db.flush()
+    # D-99: materializa la asociación de la concentración (o del sector, si el
+    # alta es manual) para que la ficha tenga CASOS ASOCIADOS desde el minuto cero.
+    svc_masivas.sincronizar_asociacion(db, falla, usuario.p00)
     svc_fallas.alertar(db, falla)
     db.commit()
     db.refresh(falla)
@@ -247,6 +303,21 @@ def reportar_falla_campo(
     )
     db.add(falla)
     db.flush()
+    # D-99 (RF-60): si las evidencias del reporte traen GPS, se guarda la posición
+    # del FAT afectado para el mapa de la sección MASIVAS.
+    seriales = [s.strip() for s in (falla.evidencias or "").split(",") if s.strip()]
+    if seriales:
+        punto = db.scalar(
+            select(Evidencia)
+            .where(Evidencia.serial_imagen.in_(seriales),
+                   Evidencia.latitud.is_not(None), Evidencia.longitud.is_not(None))
+            .order_by(Evidencia.fecha_hora.desc())
+            .limit(1)
+        )
+        if punto is not None:
+            falla.latitud = punto.latitud
+            falla.longitud = punto.longitud
+    svc_masivas.sincronizar_asociacion(db, falla, usuario.p00)
     svc_fallas.alertar(db, falla)
     db.commit()
     db.refresh(falla)
@@ -356,6 +427,188 @@ def solicitar_material(
     db.commit()
     db.refresh(orden)
     return orden
+
+
+# --------------------------------------------------------------------------- #
+# D-99 · Módulo MASIVAS: casos asociados, cierre en cascada y ubicación
+# --------------------------------------------------------------------------- #
+@router.get("/fallas-masivas/{id_falla}/casos", response_model=list[CasoAsociadoOut],
+            summary="CASOS ASOCIADOS de la masiva (D-99 · RF-59)")
+def listar_casos_asociados(
+    id_falla: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> list[CasoAsociadoOut]:
+    """Casos vinculados a la masiva, con sus datos técnicos y la RUTA."""
+    falla = _falla_de_usuario(db, id_falla, usuario)
+    return svc_masivas.casos_asociados(db, falla)
+
+
+@router.post("/fallas-masivas/{id_falla}/casos", response_model=list[CasoAsociadoOut],
+             status_code=status.HTTP_201_CREATED,
+             summary="Asociar casos a la masiva (D-99 · RF-59)")
+def asociar_casos(
+    id_falla: int,
+    datos: AsociarCasosRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> list[CasoAsociadoOut]:
+    falla = _o_404(db, id_falla)
+    try:
+        svc_masivas.asociar(db, falla, datos.ids_caso, usuario.p00)
+    except svc_masivas.MasivaInvalida as exc:
+        raise HTTPException(status_code=409 if not exc.no_encontrada else 404,
+                            detail=exc.mensaje) from exc
+    db.commit()
+    db.refresh(falla)
+    return svc_masivas.casos_asociados(db, falla)
+
+
+@router.delete("/fallas-masivas/{id_falla}/casos", response_model=list[CasoAsociadoOut],
+               summary="Quitar casos de la masiva (D-99 · RF-59)")
+def desasociar_casos(
+    id_falla: int,
+    datos: AsociarCasosRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> list[CasoAsociadoOut]:
+    falla = _o_404(db, id_falla)
+    svc_masivas.desasociar(db, falla, datos.ids_caso)
+    db.commit()
+    db.refresh(falla)
+    return svc_masivas.casos_asociados(db, falla)
+
+
+@router.post("/fallas-masivas/{id_falla}/cierre", response_model=CierreMasivaOut,
+             summary="Cerrar la masiva y sus casos asociados (D-99 · RF-61/RF-62)")
+def cerrar_masiva(
+    id_falla: int,
+    datos: CierreMasivaRequest,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> CierreMasivaOut:
+    """Cierra la masiva y **todos sus casos asociados**.
+
+    Exige la descripción del trabajo, el personal del CRASS que valida la
+    reparación y las evidencias. Cada caso asociado se cierra con el mismo modo
+    (IVR por defecto) y la descripción «Reparado en FDT»; los que ya estaban
+    cerrados se omiten y se informan en el detalle.
+    """
+    falla = _o_404(db, id_falla)
+    try:
+        resultado = svc_masivas.cerrar(db, falla, datos, usuario)
+    except svc_masivas.MasivaInvalida as exc:
+        raise HTTPException(status_code=409 if not exc.no_encontrada else 404,
+                            detail=exc.mensaje) from exc
+    db.commit()
+    return CierreMasivaOut(**resultado)
+
+
+@router.get("/fallas-masivas/{id_falla}/ubicacion", response_model=UbicacionOut,
+            summary="Ubicación geográfica y GPS del FAT afectado (D-99 · RF-60)")
+def ubicacion_falla(
+    id_falla: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> UbicacionOut:
+    falla = _falla_de_usuario(db, id_falla, usuario)
+    return svc_masivas.ubicacion(db, falla)
+
+
+@router.get("/fallas-masivas/{id_falla}/reporte",
+            summary="Reporte imprimible de la masiva (D-99 · RF-60)")
+def reporte_falla(
+    id_falla: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> HTMLResponse:
+    """Genera el reporte de la masiva: datos, casos asociados, materiales y cierre."""
+    falla = _falla_de_usuario(db, id_falla, usuario)
+    salida = _salida1(db, falla)
+    casos = svc_masivas.casos_asociados(db, falla)
+    ubicacion = svc_masivas.ubicacion(db, falla)
+    ordenes = list(db.scalars(
+        select(OrdenMaterial).where(OrdenMaterial.id_falla == id_falla)
+        .order_by(OrdenMaterial.id_orden)
+    ).all())
+
+    def _esc(valor: object) -> str:
+        return (
+            str(valor if valor is not None else "—")
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        )
+
+    filas_casos = "".join(
+        "<tr>"
+        f"<td>{_esc(c.id_averia)}</td><td>{_esc(c.estado_actual)}</td>"
+        f"<td>{_esc(c.ruta)}</td><td>{_esc(c.sector_nombre)}</td>"
+        f"<td>{_esc(c.nombre_cliente)}</td><td>{_esc(c.direccion)}</td>"
+        f"<td>{_esc(c.cuadrilla_codigo)}</td>"
+        "</tr>"
+        for c in casos
+    )
+    filas_ordenes = "".join(
+        "<tr>"
+        f"<td>{_esc(o.id_orden)}</td><td>{_esc(o.estado)}</td>"
+        f"<td>{_esc(o.solicitante_usuario)}</td><td>{_esc(o.observacion)}</td>"
+        f"<td>{_esc(o.fecha)}</td>"
+        "</tr>"
+        for o in ordenes
+    )
+    validador = salida.validador_crass
+    html = f"""<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Reporte de masiva #{_esc(falla.id_falla)}</title>
+<style>
+ body {{ font-family: system-ui, "Segoe UI", Roboto, sans-serif; margin: 24px; color: #1c2733; }}
+ h1 {{ font-size: 20px; }} h2 {{ font-size: 15px; margin-top: 22px; }}
+ table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
+ th, td {{ border: 1px solid #cbd5e1; padding: 5px 7px; text-align: left; }}
+ th {{ background: #eef2f7; }}
+ .datos th {{ width: 190px; background: #f8fafc; }}
+ @media print {{ .no-imprimir {{ display: none; }} }}
+</style></head><body>
+<h1>Reporte de falla masiva #{_esc(falla.id_falla)}</h1>
+<table class="datos"><tbody>
+<tr><th>Estado</th><td>{_esc(salida.estado)}</td></tr>
+<tr><th>Origen</th><td>{_esc(salida.origen)}</td></tr>
+<tr><th>Concentración</th><td>{_esc(salida.clave_concentracion)}</td></tr>
+<tr><th>Descripción</th><td>{_esc(salida.descripcion)}</td></tr>
+<tr><th>ODN</th><td>{_esc(salida.odn)}</td></tr>
+<tr><th>FAT</th><td>{_esc(salida.fat)}</td></tr>
+<tr><th>RUTA</th><td>{_esc(salida.ruta)}</td></tr>
+<tr><th>Dirección</th><td>{_esc(salida.direccion)}</td></tr>
+<tr><th>Sector</th><td>{_esc(salida.sector_nombre)}</td></tr>
+<tr><th>Cuadrilla</th><td>{_esc(salida.cuadrilla_codigo)}</td></tr>
+<tr><th>Casos asociados</th><td>{len(casos)}</td></tr>
+<tr><th>Casos cerrados</th><td>{_esc(salida.casos_cerrados)}</td></tr>
+<tr><th>Detectada</th><td>{_esc(salida.fecha_deteccion)}</td></tr>
+<tr><th>Planificación</th><td>{_esc(salida.planificacion)}</td></tr>
+<tr><th>Ubicación</th><td>{_esc(ubicacion.latitud)}, {_esc(ubicacion.longitud)}
+    ({_esc(ubicacion.origen)})</td></tr>
+<tr><th>Descripción del cierre</th><td>{_esc(salida.descripcion_cierre)}</td></tr>
+<tr><th>Valida (CRASS)</th><td>{_esc(validador.nombre if validador else None)}
+    · {_esc(validador.unidad if validador else None)}
+    · {_esc(validador.contacto if validador else None)}</td></tr>
+<tr><th>Cerrada por / en</th><td>{_esc(salida.cerrada_por)} · {_esc(salida.cerrada_en)}</td></tr>
+<tr><th>Evidencias del cierre</th><td>{_esc(", ".join(salida.evidencias_cierre))}</td></tr>
+</tbody></table>
+
+<h2>Casos asociados ({len(casos)})</h2>
+<table><thead><tr><th>Avería</th><th>Estado</th><th>RUTA</th><th>Sector</th>
+<th>Cliente</th><th>Dirección</th><th>Cuadrilla</th></tr></thead>
+<tbody>{filas_casos or '<tr><td colspan="7">Sin casos asociados</td></tr>'}</tbody></table>
+
+<h2>Materiales solicitados ({len(ordenes)})</h2>
+<table><thead><tr><th>Orden</th><th>Estado</th><th>Solicitante</th>
+<th>Observación</th><th>Fecha</th></tr></thead>
+<tbody>{filas_ordenes or '<tr><td colspan="5">Sin órdenes de material</td></tr>'}</tbody></table>
+
+<p class="no-imprimir" style="margin-top:22px">
+  <button onclick="window.print()">Imprimir</button>
+</p>
+</body></html>"""
+    return HTMLResponse(content=html)
 
 
 # --------------------------------------------------------------------------- #

@@ -20,6 +20,7 @@ import Sistemas from './pages/Sistemas';
 import Perfil from './pages/Perfil';
 import Mensajes from './pages/Mensajes';
 import RutaCasos from './components/RutaCasos';
+import { PaginaMasivas, RUTA_MASIVAS } from './masivas/registro';
 
 export default function App() {
   return (
@@ -50,6 +51,9 @@ export default function App() {
           {/* DESPACHO y CONFIGURACIÓN: no disponibles para el rol TÉCNICO (D-72). */}
           <Route element={<RutaGestion />}>
             <Route path="despacho" element={<Despacho />} />
+            {/* MASIVAS (D-99 · RF-60): módulo propio, con el mismo criterio de
+                acceso que DESPACHO (excluye al rol TÉCNICO). */}
+            <Route path={RUTA_MASIVAS.replace(/^\//, '')} element={<PaginaMasivas />} />
             <Route path="central" element={<Centrales />} />
             <Route path="sectores" element={<Sectores />} />
             <Route path="tecnicos" element={<Tecnicos />} />

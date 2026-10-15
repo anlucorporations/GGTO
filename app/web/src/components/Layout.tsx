@@ -20,6 +20,7 @@ import {
   IconoPerfil,
   IconoSalir,
 } from './Iconos';
+import { ETIQUETA_MASIVAS, IconoMasiva, ROLES_MASIVAS, RUTA_MASIVAS } from '../masivas/registro';
 
 type Icono = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -46,6 +47,14 @@ const SECCIONES: Seccion[] = [
   { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales, roles: null },
   { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda, roles: null },
   { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho, roles: ROLES_CONFIG },
+  // MASIVAS (D-99 · RF-60): sección propia para las fallas masivas.
+  {
+    ruta: RUTA_MASIVAS,
+    etiqueta: ETIQUETA_MASIVAS,
+    fin: false,
+    Icono: IconoMasiva,
+    roles: [...ROLES_MASIVAS],
+  },
   { ruta: '/ayuda', etiqueta: 'AYUDA', fin: false, Icono: IconoAyuda, roles: null },
 ];
 

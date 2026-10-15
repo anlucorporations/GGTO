@@ -20,7 +20,12 @@ from ..core.db import Base
 
 
 class Solicitante(Base):
-    """Personal externo que reporta casos especiales (unidad + nombre + contacto)."""
+    """Personal externo que reporta casos especiales (unidad + nombre + contacto).
+
+    D-99 (DEC-MA-4): pasa a ser el **catálogo de personal externo**. Además del
+    solicitante de un caso referido, registra al personal del CRASS que valida la
+    reparación de una masiva. El teléfono del catálogo es `contacto`.
+    """
 
     __tablename__ = "solicitante"
 
@@ -29,7 +34,14 @@ class Solicitante(Base):
     nombre: Mapped[str] = mapped_column(String(120), nullable=False)
     contacto: Mapped[str] = mapped_column(String(60), nullable=False)
     canal: Mapped[str | None] = mapped_column(String(20))
+    #: D-99: central a la que pertenece el registro (nulo en los históricos).
+    id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
+    documento: Mapped[str | None] = mapped_column(String(30))
+    #: SOLICITANTE (default histórico) · CRASS (valida reparaciones) · OTRO.
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False, default="SOLICITANTE")
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class CasoEspecial(Base):

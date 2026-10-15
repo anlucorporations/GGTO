@@ -8,6 +8,8 @@ import '../../widgets/boton_usuario.dart';
 import '../../widgets/caso_card.dart';
 import '../../widgets/offline_banner.dart';
 import '../auth/auth_provider.dart';
+import '../masivas/banner_masiva.dart';
+import '../masivas/masivas_provider.dart';
 import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
 import 'caso_detalle_screen.dart';
@@ -36,12 +38,27 @@ class _CasosScreenState extends State<CasosScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final casos = Provider.of<CasosProvider>(context, listen: false);
       final sync = Provider.of<SyncProvider>(context, listen: false);
+      // D-99: el bloque MASIVA es fijo y prioritario.
+      final masivas = MasivasProvider.opcional(context, escuchar: false);
       // D-84: abrir la pantalla **no** sincroniza. Se pinta el contenido local
       // (instantáneo y válido sin conexión) y el técnico decide cuándo DESCARGAR
       // o CARGAR desde la franja de estado.
       await casos.refrescarLocal();
+      // El bloque MASIVA se pinta de inmediato desde la caché (sin tocar la red).
+      await masivas?.refrescarLocal();
       await sync.refrescar();
     });
+  }
+
+  /// Descarga los casos y, con ellos, las masivas activas (D-99).
+  ///
+  /// La descarga es una sola (`GET /sync/descarga` viaja con `masivas`): aquí
+  /// solo hay que volcar la caché recién actualizada en el bloque MASIVA.
+  Future<void> _descargar() async {
+    final casos = context.read<CasosProvider>();
+    final masivas = MasivasProvider.opcional(context, escuchar: false);
+    await casos.cargar();
+    await masivas?.refrescarLocal();
   }
 
   @override
@@ -65,6 +82,9 @@ class _CasosScreenState extends State<CasosScreen> {
     final sync = Provider.of<SyncProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
     final mensajes = Provider.of<MensajesProvider>(context);
+    // D-99: el bloque MASIVA es tolerante: si el proveedor no está registrado
+    // (pantallas aisladas), simplemente no se pinta.
+    final masivas = MasivasProvider.opcional(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -88,6 +108,16 @@ class _CasosScreenState extends State<CasosScreen> {
             icon: const Icon(Icons.warning_amber),
             onPressed: () => Navigator.pushNamed(context, '/alertas'),
           ),
+          // D-99: acceso directo a MASIVAS, con el contador de activas.
+          IconButton(
+            tooltip: 'Masivas',
+            icon: Badge(
+              isLabelVisible: (masivas?.total ?? 0) > 0,
+              label: Text('${masivas?.total ?? 0}'),
+              child: const Icon(Icons.crisis_alert),
+            ),
+            onPressed: () => Navigator.pushNamed(context, '/masivas'),
+          ),
           IconButton(
             tooltip: 'Mensajes',
             icon: Badge(
@@ -110,6 +140,14 @@ class _CasosScreenState extends State<CasosScreen> {
             // cuántas acciones están guardadas sin enviar y ofrece CARGA.
             pendientes: sync.pendientesSinError,
             onCargar: () => Navigator.pushNamed(context, '/sync'),
+            // D-99: DESCARGAR también refresca el bloque MASIVA.
+            onDescargar: _descargar,
+          ),
+          // D-99 · MASIVA fija y priorizada: vive **fuera** del ListView (la
+          // lista va debajo, en el Expanded), así que no desaparece al desplazar.
+          BannerMasivaActiva(
+            masivas: masivas?.masivas ?? const [],
+            onTap: () => Navigator.pushNamed(context, '/masivas'),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
@@ -149,7 +187,7 @@ class _CasosScreenState extends State<CasosScreen> {
 
     if (casosProv.casos.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () => casosProv.cargar(),
+        onRefresh: _descargar,
         child: ListView(
           children: [
             const SizedBox(height: 80),
@@ -193,7 +231,7 @@ class _CasosScreenState extends State<CasosScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => casosProv.cargar(),
+      onRefresh: _descargar,
       child: ListView.builder(
         itemCount: casosProv.casos.length + 1,
         itemBuilder: (context, index) {
@@ -237,6 +275,7 @@ class _BannerContenidoLocal extends StatelessWidget {
     required this.casos,
     required this.pendientes,
     required this.onCargar,
+    this.onDescargar,
   });
 
   final CasosProvider casos;
@@ -246,6 +285,9 @@ class _BannerContenidoLocal extends StatelessWidget {
 
   /// Abre la CARGA (pantalla Dispositivo) con las acciones pendientes.
   final VoidCallback onCargar;
+
+  /// DESCARGAR: casos **y masivas** (D-99). Si no se informa, solo los casos.
+  final Future<void> Function()? onDescargar;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +319,9 @@ class _BannerContenidoLocal extends StatelessWidget {
           ),
           // D-84 (DEC-3): nada se sincroniza solo; el técnico decide.
           TextButton(
-            onPressed: casos.cargando ? null : () => casos.cargar(),
+            onPressed: casos.cargando
+                ? null
+                : () => (onDescargar ?? casos.cargar)(),
             child: Text(sinRed ? 'Reintentar' : 'Descargar'),
           ),
           if (pendientes > 0)

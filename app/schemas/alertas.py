@@ -3,9 +3,23 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class ValidadorCrassOut(BaseModel):
+    """Personal del CRASS que valida la reparación de una masiva (D-99 · DEC-MA-4).
+
+    Se resuelve desde el catálogo de personal externo (`solicitante`).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_solicitante: int
+    nombre: str
+    unidad: str
+    contacto: str | None = None
 
 
 class FallaMasivaOut(BaseModel):
@@ -42,6 +56,28 @@ class FallaMasivaOut(BaseModel):
     direccion_corta: str | None = None
     ordenes_count: int = 0
     casos_afectos: int | None = None
+
+    # D-99 · MASIVAS: asociación explícita, cierre y ubicación del FAT.
+    casos_asociados: int = 0
+    validador_crass: ValidadorCrassOut | None = None
+    descripcion_cierre: str | None = None
+    evidencias_cierre: list[str] = Field(default_factory=list)
+    cerrada_por: str | None = None
+    cerrada_en: datetime | None = None
+    casos_cerrados: int = 0
+    latitud: float | None = None
+    longitud: float | None = None
+
+    @field_validator("evidencias_cierre", mode="before")
+    @classmethod
+    def _cierre_sin_nulos(cls, valor: object) -> object:
+        """Mismo criterio que `evidencias`: la columna guarda seriales separados
+        por comas y el ORM entrega `None` cuando no hubo fotos."""
+        if valor is None:
+            return []
+        if isinstance(valor, str):
+            return [p.strip() for p in valor.split(",") if p.strip()]
+        return valor
 
     @field_validator("evidencias", mode="before")
     @classmethod
@@ -105,6 +141,89 @@ class MaterialRequest(BaseModel):
 
     descripcion: str = Field(min_length=3, max_length=500)
     id_cuadrilla: int | None = None
+
+
+# --------------------------------------------------------------------------- #
+# D-99 · Módulo MASIVAS
+# --------------------------------------------------------------------------- #
+class CasoAsociadoOut(BaseModel):
+    """Caso vinculado a una falla masiva (sección CASOS ASOCIADOS de la ficha)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_caso: int
+    id_averia: str
+    estado_actual: str
+    nombre_cliente: str | None = None
+    telefono: str | None = None
+    direccion: str | None = None
+    id_sector: int | None = None
+    sector_nombre: str | None = None
+    #: Datos técnicos y RUTA unificada (Slot · Puerto · FAT), más el EXTRA del
+    #: archivo de ingesta, que es donde viaja la ruta en la mayoría de los casos.
+    olt: str | None = None
+    slot: str | None = None
+    puerto: str | None = None
+    fat: str | None = None
+    extra: str | None = None
+    ruta: str | None = None
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
+    #: AUTO = la agregó la detección por concentración · MANUAL = la agregó una persona.
+    origen_asociacion: str = "AUTO"
+
+
+class AsociarCasosRequest(BaseModel):
+    """Cuerpo para asociar o desasociar casos de una masiva (D-99 · DEC-MA-1)."""
+
+    ids_caso: list[int] = Field(min_length=1, max_length=500)
+
+
+class CierreMasivaRequest(BaseModel):
+    """Cierre de la masiva (RF-61 · RF-62 · DEC-MA-3).
+
+    Exige la **descripción del trabajo**, el **personal del CRASS que valida la
+    reparación** y las **evidencias**. Al cerrar, todos los casos asociados se
+    cierran con el mismo modo y la misma descripción.
+    """
+
+    descripcion: str = Field(min_length=10, max_length=2000)
+    id_validador_crass: int
+    evidencias: list[str] = Field(default_factory=list, max_length=20)
+    #: Modo de cierre aplicado a los casos asociados (RF-62: CERRAR + IVR).
+    modo: Literal["IVR", "COS", "SACAS"] = "IVR"
+    #: Descripción que queda en cada caso asociado; por defecto «Reparado en FDT».
+    descripcion_caso: str = Field(default="Reparado en FDT", min_length=10, max_length=2000)
+    id_causa: int | None = None
+    latitud: float | None = None
+    longitud: float | None = None
+
+
+class CierreMasivaOut(BaseModel):
+    """Resultado del cierre en cascada de una masiva."""
+
+    id_falla: int
+    estado: str
+    casos_cerrados: int
+    casos_omitidos: int
+    detalle: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class UbicacionOut(BaseModel):
+    """Ubicación del FAT afectado para el mapa de la sección MASIVAS (RF-60)."""
+
+    id_falla: int
+    latitud: float | None = None
+    longitud: float | None = None
+    direccion: str | None = None
+    ruta: str | None = None
+    olt: str | None = None
+    fat: str | None = None
+    sector_nombre: str | None = None
+    origen: str = "SIN_DATOS"
+    #: Puntos GPS de las evidencias (actividad/evidencia) y de los casos.
+    puntos: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class OrdenMaterialOut(BaseModel):

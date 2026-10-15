@@ -74,6 +74,10 @@ class DespachoOut(BaseModel):
     enviado_canal: str | None = None
     enviado_en: datetime | None = None
     reporte_produccion_en: datetime | None = None
+    # D-99: trazas del corte de jornada y del último reproceso.
+    cerrado_en: datetime | None = None
+    cierre_auto: bool = False
+    reprocesado_en: datetime | None = None
     usuario_crea: str | None = None
     creado_en: datetime | None = None
 
@@ -130,10 +134,26 @@ class AsignacionUpdate(BaseModel):
     asignaciones: list[AsignacionBloque] = Field(default_factory=list)
 
 
+class MasivaProcesoOut(BaseModel):
+    """Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71)."""
+
+    id_falla: int
+    id_cuadrilla: int | None = None
+    estado: str
+    descripcion: str
+    es_activa: bool = True
+
+
 class ProcesoDespachoOut(BaseModel):
     fecha: date
     id_central: int
     asignacion_origen: str
+    #: D-99 (RF-67): True en el **primer** procesamiento de la jornada, cuando el
+    #: formulario debe pedir la asignación de sectores a las cuadrillas.
+    primera_vez: bool = True
+    #: D-99 (RF-68): True si la jornada ya tiene despachos (reproceso por sector).
+    reproceso: bool = False
+    masivas: list[MasivaProcesoOut] = Field(default_factory=list)
     universo: UniversoOut
     sectores: list[SectorProcesoOut] = Field(default_factory=list)
     cuadrillas: list[CuadrillaProcesoOut] = Field(default_factory=list)
@@ -218,6 +238,16 @@ class ReporteProduccionOut(BaseModel):
     id_central: int
     por_cuadrilla: list[dict]
     totales: dict
+
+
+class CierreJornadaOut(BaseModel):
+    """Resultado del corte de jornada del despacho (D-99 · RF-65)."""
+
+    despachos_cerrados: int = 0
+    casos_pendientes: int = 0
+    hora_corte: str
+    fecha_corte: str
+    detalle: list[dict] = Field(default_factory=list)
 
 
 class FallaMasivaCreate(BaseModel):

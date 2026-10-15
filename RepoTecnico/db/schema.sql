@@ -1019,6 +1019,119 @@ CREATE INDEX IF NOT EXISTS ix_mensaje_destino_tecnico ON mensaje_destino (id_tec
 -- 12.5 Idempotencia de recordatorios ante reprogramación (M-06)
 ALTER TABLE cita ADD COLUMN IF NOT EXISTS recordatorio_para timestamptz;
 
+-- =============================================================================
+-- 13. Incremento D-99 — módulo MASIVAS y jornada de despacho
+--     (RF-58…RF-72 · RNF-34…RNF-36 · RT-21…RT-24). Idempotente.
+-- =============================================================================
+
+-- 13.1 Estado PENDIENTE del caso (DEC-MA-6).
+--      Un caso despachado que no se cerró antes del corte de jornada vuelve al
+--      universo despachable en estado PENDIENTE, para reasignarse en la jornada
+--      siguiente. El CHECK vigente se reemplaza sin perder datos.
+DO $$
+DECLARE
+    c text;
+BEGIN
+    FOR c IN
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'caso'::regclass
+          AND contype  = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%estado_actual%'
+          AND pg_get_constraintdef(oid) NOT LIKE '%PENDIENTE%'
+    LOOP
+        EXECUTE format('ALTER TABLE caso DROP CONSTRAINT %I;', c);
+    END LOOP;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'caso'::regclass
+          AND contype  = 'c'
+          AND pg_get_constraintdef(oid) LIKE '%estado_actual%'
+    ) THEN
+        ALTER TABLE caso ADD CONSTRAINT ck_caso_estado_actual
+            CHECK (estado_actual IN ('NUEVO','PENDIENTE','ASIGNADO','CONTACTADO','CITADO',
+                                     'DIFERIDO','EN_GESTION','ENRUTADO','CERRADO','CANCELADO'));
+    END IF;
+END;
+$$;
+
+-- 13.2 Catálogo de PERSONAL EXTERNO (DEC-MA-4).
+--      Se amplía `solicitante` —la tabla que ya registraba al personal externo
+--      que reporta casos referidos— en vez de crear un catálogo paralelo: añade
+--      el tipo (SOLICITANTE/CRASS/OTRO), el documento, la central, el estado y
+--      la marca de actualización. `contacto` es el TELÉFONO del catálogo.
+ALTER TABLE solicitante ADD COLUMN IF NOT EXISTS id_central      integer
+    REFERENCES central(id_central);
+ALTER TABLE solicitante ADD COLUMN IF NOT EXISTS documento       varchar(30);
+ALTER TABLE solicitante ADD COLUMN IF NOT EXISTS tipo            varchar(20)
+    NOT NULL DEFAULT 'SOLICITANTE';
+ALTER TABLE solicitante ADD COLUMN IF NOT EXISTS activo          boolean NOT NULL DEFAULT true;
+ALTER TABLE solicitante ADD COLUMN IF NOT EXISTS actualizado_en  timestamptz NOT NULL DEFAULT now();
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'solicitante'::regclass
+          AND conname  = 'ck_solicitante_tipo'
+    ) THEN
+        ALTER TABLE solicitante ADD CONSTRAINT ck_solicitante_tipo
+            CHECK (tipo IN ('SOLICITANTE','CRASS','OTRO'));
+    END IF;
+END;
+$$;
+
+CREATE INDEX IF NOT EXISTS ix_solicitante_tipo    ON solicitante (tipo, activo);
+CREATE INDEX IF NOT EXISTS ix_solicitante_central ON solicitante (id_central, activo);
+
+DROP TRIGGER IF EXISTS trg_solicitante_actualizado ON solicitante;
+CREATE TRIGGER trg_solicitante_actualizado BEFORE UPDATE ON solicitante
+    FOR EACH ROW EXECUTE FUNCTION set_actualizado_en();
+
+-- 13.3 Asociación explícita caso ↔ falla masiva (DEC-MA-1).
+--      Sustituye la deducción implícita por `clave_concentracion`: permite
+--      listar los CASOS ASOCIADOS, agregar o quitar casos a mano y cerrar en
+--      cascada sin ambigüedad.
+CREATE TABLE IF NOT EXISTS falla_masiva_caso (
+    id_asociacion   bigserial    PRIMARY KEY,
+    id_falla        bigint       NOT NULL REFERENCES falla_masiva(id_falla) ON DELETE CASCADE,
+    id_caso         bigint       NOT NULL REFERENCES caso(id_caso) ON DELETE CASCADE,
+    origen          varchar(12)  NOT NULL DEFAULT 'AUTO' CHECK (origen IN ('AUTO','MANUAL')),
+    agregado_por    varchar(20)  REFERENCES usuario(p00),
+    agregado_en     timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (id_falla, id_caso)
+);
+CREATE INDEX IF NOT EXISTS ix_falla_masiva_caso_caso ON falla_masiva_caso (id_caso);
+
+-- 13.4 Cierre de la masiva (RF-61) y ubicación del FAT afectado (RF-60).
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS descripcion_cierre  text;
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS id_validador_crass  bigint
+    REFERENCES solicitante(id_solicitante) ON DELETE SET NULL;
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS evidencias_cierre   text;
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS cerrada_por         varchar(20) REFERENCES usuario(p00);
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS cerrada_en          timestamptz;
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS casos_cerrados      integer NOT NULL DEFAULT 0;
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS latitud             numeric(10,7);
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS longitud            numeric(10,7);
+CREATE INDEX IF NOT EXISTS ix_falla_masiva_estado
+    ON falla_masiva (id_central, estado, fecha_deteccion DESC);
+
+-- 13.5 Jornada del despacho (RF-65/RF-66).
+--      `cerrado_en` y `cierre_auto` dejan constancia del corte de las 23:50;
+--      `reprocesado_en` marca el último reproceso de la jornada.
+ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cerrado_en     timestamptz;
+ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cierre_auto    boolean NOT NULL DEFAULT false;
+ALTER TABLE despacho ADD COLUMN IF NOT EXISTS reprocesado_en timestamptz;
+
+-- 13.6 Parámetros del incremento.
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+    ('despacho.hora_cierre_jornada', '"23:50"'::jsonb,
+     'Hora del día operativo en que se cierran los despachos; lo no cerrado va a PENDIENTE (D-99)'),
+    ('fallas.asociar_automatico', 'true'::jsonb,
+     'Asocia a la falla masiva los casos de su concentración al detectarla (D-99)'),
+    ('fallas.historico_dias', '90'::jsonb,
+     'Días de histórico de masivas que devuelve la sección MASIVAS (D-99)')
+ON CONFLICT (clave) DO NOTHING;
+
 COMMIT;
 
 -- =============================================================================

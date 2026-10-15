@@ -111,6 +111,15 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
 
     if creadas:
         db.flush()
+        # D-99 (RF-58): la detección deja la **asociación explícita** de los casos
+        # de la concentración, para que la ficha tenga CASOS ASOCIADOS y el cierre
+        # en cascada no dependa de volver a deducirlos.
+        from . import masivas as svc_masivas
+
+        asociar = str(_config(db, "fallas.asociar_automatico", True)).strip('"').lower()
+        if asociar not in ("false", "0", "no"):
+            for falla in creadas:
+                svc_masivas.sincronizar_asociacion(db, falla)
         for falla in creadas:
             alertar(db, falla)
     return creadas

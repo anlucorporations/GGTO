@@ -16,6 +16,7 @@ from .despacho_entities import (
     Despacho,
     DespachoCasos,
     FallaMasiva,
+    FallaMasivaCaso,
     Notificacion,
 )
 from .entities import (
@@ -54,6 +55,7 @@ __all__ = [
     "DispositivoSeguridad",
     "Evidencia",
     "FallaMasiva",
+    "FallaMasivaCaso",
     "Flota",
     "Herramienta",
     "IdentificadorPago",

@@ -20,7 +20,6 @@ from ..models import (
     Cuadrilla,
     Despacho,
     DespachoCasos,
-    Evidencia,
     Sector,
     Seguimiento,
     Usuario,
@@ -41,7 +40,7 @@ from ..schemas.casos import (
     PaginaCasos,
     ResolucionOut,
 )
-from ..services import clasificacion, pagos
+from ..services import clasificacion, pagos, resolucion
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
 from .deps import require_roles
@@ -587,14 +586,11 @@ def historial(
 # `seguimiento`, y en el catálogo `catalogo_metodo` (dominio CIERRE: IVR/COS/SACAS).
 # --------------------------------------------------------------------------- #
 def _metodo_cierre(db: Session, codigo: str) -> CatalogoMetodo:
-    metodo = db.scalar(
-        select(CatalogoMetodo).where(
-            CatalogoMetodo.dominio == "CIERRE", CatalogoMetodo.codigo == codigo
-        )
-    )
-    if metodo is None:
-        raise HTTPException(status_code=404, detail=f"El modo de cierre {codigo} no está en el catálogo")
-    return metodo
+    """Compatibilidad D-70: el catálogo de cierre vive ahora en `services.resolucion`."""
+    try:
+        return resolucion.metodo_cierre(db, codigo)
+    except resolucion.CierreInvalido as exc:
+        raise HTTPException(status_code=404, detail=exc.mensaje) from exc
 
 
 @router.post("/{id_caso}/cierre", response_model=ResolucionOut,
@@ -605,52 +601,22 @@ def cerrar_caso(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
 ) -> ResolucionOut:
-    """Registra la actividad de cierre (tipo CIERRE) y pasa el caso a CERRADO."""
+    """Registra la actividad de cierre (tipo CIERRE) y pasa el caso a CERRADO.
+
+    D-99: la lógica vive en `services/resolucion.py` para que el cierre en cascada
+    de una masiva cierre los casos asociados por esta misma vía.
+    """
     caso = _o_404(db, id_caso)
-    if caso.estado_actual == "CERRADO":
+    try:
+        actividad = resolucion.cerrar_caso(
+            db, caso, modo=datos.modo, descripcion=datos.descripcion,
+            evidencias=datos.evidencias, id_causa=datos.id_causa, usuario=usuario,
+        )
+    except resolucion.CierreInvalido as exc:
         raise HTTPException(
-            status_code=409,
-            detail="El caso ya está cerrado; reabra el estado antes de registrar otro cierre",
-        )
-    metodo = _metodo_cierre(db, datos.modo)
+            status_code=409 if exc.ya_cerrado else 404, detail=exc.mensaje
+        ) from exc
 
-    actividad = Actividad(
-        id_caso=caso.id_caso,
-        id_usuario=usuario.id_usuario,
-        tipo="CIERRE",
-        resultado="CERRADO",
-        reporte_corto=datos.descripcion,
-        id_metodo=metodo.id_metodo,
-        id_causa=datos.id_causa,
-        fecha_hora=datetime.now(UTC),
-        sincronizado=True,
-    )
-    db.add(actividad)
-    db.flush()
-
-    ahora = datetime.now(UTC)
-    for indice, serial in enumerate(datos.evidencias, start=1):
-        limpio = serial.strip()
-        if not limpio:
-            continue
-        db.add(
-            Evidencia(
-                id_actividad=actividad.id_actividad,
-                tipo="DEMO",
-                # El serial debe ser único en toda la tabla: se incluye el id de la
-                # actividad para poder cerrar/reabrir el mismo caso varias veces.
-                serial_imagen=(
-                    f"{caso.id_averia}-A{actividad.id_actividad}-CIERRE-{indice:02d}"[:160]
-                ),
-                ruta_remota=limpio[:255],
-                fecha_hora=ahora,
-                origen_camara=False,
-            )
-        )
-
-    if caso.estado_actual != "CERRADO":
-        _registrar_estado(db, caso, "CERRADO", f"Cierre con {datos.modo}", usuario.p00)
-    clasificacion.aplicar_en_cambio(db, caso, "CIERRE", usuario.p00)
     db.commit()
     db.refresh(caso)
     return ResolucionOut(

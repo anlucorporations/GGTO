@@ -20,12 +20,32 @@ EstadoCita = Literal["PROPUESTA", "CONFIRMADA", "CUMPLIDA", "REPROGRAMADA", "DIF
 # Solicitantes
 # --------------------------------------------------------------------------- #
 class SolicitanteCreate(BaseModel):
-    """Datos del solicitante (RN-AL-01): nombre, unidad y contacto obligatorios."""
+    """Datos del solicitante (RN-AL-01): nombre, unidad y contacto obligatorios.
+
+    D-99: la misma tabla es el **catálogo de personal externo**. `tipo` distingue
+    al solicitante de un caso referido del personal del CRASS que valida la
+    reparación de una masiva; `contacto` es el teléfono del catálogo.
+    """
 
     unidad: str = Field(min_length=1, max_length=120)
     nombre: str = Field(min_length=1, max_length=120)
     contacto: str = Field(min_length=1, max_length=60)
     canal: Literal["TELEGRAM", "MCP_IA", "MANUAL", "CORREO"] | None = "MANUAL"
+    documento: str | None = Field(default=None, max_length=30)
+    tipo: Literal["SOLICITANTE", "CRASS", "OTRO"] = "SOLICITANTE"
+    activo: bool = True
+    id_central: int | None = None
+
+
+class SolicitanteUpdate(BaseModel):
+    """Edición parcial de una ficha del catálogo de personal externo (D-99)."""
+
+    unidad: str | None = Field(default=None, min_length=1, max_length=120)
+    nombre: str | None = Field(default=None, min_length=1, max_length=120)
+    contacto: str | None = Field(default=None, min_length=1, max_length=60)
+    documento: str | None = Field(default=None, max_length=30)
+    tipo: Literal["SOLICITANTE", "CRASS", "OTRO"] | None = None
+    activo: bool | None = None
 
 
 class SolicitanteOut(SolicitanteCreate):

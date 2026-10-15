@@ -40,6 +40,7 @@ from ..models import (
     CuadrillaSectorDia,
     Despacho,
     DespachoCasos,
+    FallaMasiva,
     Sector,
 )
 
@@ -561,10 +562,41 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         if id_cuadrilla in ids_por_cuadrilla and id_sector in sectores:
             ids_por_cuadrilla[id_cuadrilla].append(id_sector)
 
+    # D-99 (RF-67/RF-68): el primer procesamiento de la jornada no tiene sectores
+    # guardados y el formulario debe pedirlos; si ya hay despachos del día, es un
+    # reproceso y la asignación se rehace por sector.
+    guardada = asignacion_guardada(db, fecha, id_central)
+    despachos_del_dia = db.scalar(
+        select(func.count()).select_from(Despacho).where(
+            Despacho.id_central == id_central, Despacho.fecha == fecha
+        )
+    ) or 0
+    # Masivas activas asignadas a una cuadrilla: alimentan el icono MASIVA (RF-71).
+    masivas = [
+        {
+            "id_falla": f.id_falla,
+            "id_cuadrilla": f.id_cuadrilla,
+            "estado": f.estado,
+            "descripcion": f.descripcion,
+            "es_activa": f.estado in ("DETECTADA", "PLANIFICADA"),
+        }
+        for f in db.scalars(
+            select(FallaMasiva).where(
+                FallaMasiva.id_central == id_central,
+                FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")),
+            ).order_by(FallaMasiva.id_falla.desc())
+        ).all()
+    ]
+
     retorno = {
         "fecha": fecha.isoformat(),
         "id_central": id_central,
         "asignacion_origen": origen,
+        #: True = primer procesamiento de la jornada (hay que asignar los sectores).
+        "primera_vez": not guardada,
+        #: True = la jornada ya tiene despachos (el procesamiento es un reproceso).
+        "reproceso": bool(despachos_del_dia),
+        "masivas": masivas,
         "universo": {
             "total": len(casos),
             "comunes": sum(1 for c in casos if not es_especial(c)),

@@ -11,9 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from ..models import (
-    Auditoria,
     Caso,
-    Central,
     Cuadrilla,
     Despacho,
     DespachoCasos,
@@ -28,6 +26,7 @@ from ..schemas.despacho import (
     AsignacionUpdate,
     CasoAgregar,
     CasoEstadoUpdate,
+    CierreJornadaOut,
     DespachoDetalleOut,
     DespachoOut,
     DespachoUpdate,
@@ -41,6 +40,8 @@ from ..schemas.despacho import (
     ReporteProduccionOut,
 )
 from ..services import despacho as svc
+from ..services import jornada as svc_jornada
+from ..services import mensajes as svc_mensajes
 from ..services.consultas import cargar_config, resolver_central
 from ..services.notificaciones import enviar
 from .deps import get_current_user, require_roles
@@ -133,6 +134,10 @@ def listar(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> list[DespachoDetalleOut]:
+    # D-99 (RF-65, DEC-MA-5): cierre perezoso de la jornada vencida. Solo lo
+    # dispara la entrada de un SUPER/ADMIN/SUPERVISOR; para el resto de roles (y
+    # para el técnico de la APK) no tiene ningún efecto.
+    svc_jornada.quizas_cerrar(db, usuario)
     stmt = select(Despacho).order_by(Despacho.fecha.desc(), Despacho.id_cuadrilla)
     if usuario.rol.codigo != "SUPER" or id_central is not None:
         central = resolver_central(db, id_central, cargar_config(db), usuario)
@@ -238,6 +243,14 @@ def procesar(
             detail="Ya hay despachos publicados o cerrados para esa fecha",
         )
 
+    # D-99 (RF-68): si la jornada ya tenía despachos, este procesamiento es un
+    # reproceso y el aviso a los técnicos es «DESPACHO ACTUALIZADO».
+    reproceso = bool(db.scalar(
+        select(func.count()).select_from(Despacho).where(
+            Despacho.id_central == central.id_central, Despacho.fecha == dia
+        )
+    ))
+
     if datos.reemplazar:
         for previo in db.scalars(
             select(Despacho).where(
@@ -266,8 +279,48 @@ def procesar(
 
     resultado = svc.construir_propuesta(db, central.id_central, dia)
     creados = svc.guardar_propuesta(db, resultado, usuario.p00)
+    if reproceso:
+        for despacho in creados:
+            despacho.reprocesado_en = datetime.now(UTC)
+    codigos = {c.id_cuadrilla: c.codigo for c in db.scalars(select(Cuadrilla)).all()}
+    avisos = [
+        (d.id_cuadrilla, codigos.get(d.id_cuadrilla, str(d.id_cuadrilla)), len(d.casos))
+        for d in creados
+    ]
     db.commit()
+    # RF-69: el aviso a los técnicos va en su propia transacción para que un fallo
+    # de mensajería no deshaga el despacho recién procesado.
+    svc_mensajes.emitir_despacho_actualizado(
+        db, id_central=central.id_central, fecha=dia, cuadrillas=avisos,
+        origen_p00=usuario.p00, reproceso=reproceso,
+    )
     return creados
+
+
+@router.post("/cierre-jornada", response_model=CierreJornadaOut,
+             summary="Cerrar la jornada de despacho y devolver los casos a PENDIENTE (D-99)")
+def cierre_jornada(
+    id_central: int | None = Query(default=None),
+    solo_vencidos: bool = Query(
+        default=True, description="Solo los despachos que ya pasaron su hora de corte"
+    ),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> CierreJornadaOut:
+    """Corte de jornada del despacho (RF-65 · RF-66).
+
+    Declarado **antes** de `/{id_despacho}` para que `cierre-jornada` no se
+    interprete como un identificador. Normalmente no hay que llamarlo: el cierre
+    se dispara solo al entrar un SUPER/ADMIN/SUPERVISOR (DEC-MA-5).
+    """
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config, usuario)
+    resultado = svc_jornada.cerrar_jornada(
+        db, id_central=central.id_central, usuario_p00=usuario.p00,
+        solo_vencidos=solo_vencidos,
+    )
+    db.commit()
+    return CierreJornadaOut(**resultado)
 
 
 @router.get("/{id_despacho}", response_model=DespachoDetalleOut, summary="Detalle del despacho")
@@ -513,6 +566,13 @@ def imprimible(
 # Reporte de producción (RF-27)
 # --------------------------------------------------------------------------- #
 def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
+    """Reporte de producción del día (RF-27 · RF-70).
+
+    D-99 añade a cada cuadrilla el desglose que consume el **gráfico de aro** del
+    cumplimiento —ABIERTOS, CERRADOS, ENRUTADO, DIFERIDO y CITADOS— y la marca
+    `es_masiva`, que pinta el icono MASIVA en la cuadrilla a la que se le asignó
+    una falla masiva.
+    """
     filas = db.execute(
         select(Despacho, Cuadrilla, DespachoCasos, Caso)
         .join(Cuadrilla, Cuadrilla.id_cuadrilla == Despacho.id_cuadrilla)
@@ -521,27 +581,52 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         .where(Despacho.id_central == id_central, Despacho.fecha == fecha)
     ).all()
 
+    # Cuadrillas con una masiva activa asignada (RF-71): alimentan el icono.
+    masivas_por_cuadrilla: dict[int, list[int]] = {}
+    for falla in db.scalars(
+        select(FallaMasiva).where(
+            FallaMasiva.id_central == id_central,
+            FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")),
+        )
+    ).all():
+        if falla.id_cuadrilla:
+            masivas_por_cuadrilla.setdefault(falla.id_cuadrilla, []).append(falla.id_falla)
+
     por_cuadrilla: dict[str, dict] = {}
-    totales = {"asignados": 0, "cerrados": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
-               "referidos": 0, "empresas": 0}
+    totales = {"asignados": 0, "abiertos": 0, "cerrados": 0, "enrutado": 0, "citados": 0,
+               "diferidos": 0, "gestionados": 0, "referidos": 0, "empresas": 0,
+               "masivas": 0}
     for _despacho, cuadrilla, dc, caso in filas:
         fila = por_cuadrilla.setdefault(
             cuadrilla.codigo,
-            {"cuadrilla": cuadrilla.codigo, "nombre": cuadrilla.nombre, "asignados": 0,
-             "cerrados": 0, "citados": 0, "diferidos": 0, "gestionados": 0, "referidos": 0,
-             "empresas": 0},
+            {"cuadrilla": cuadrilla.codigo, "nombre": cuadrilla.nombre, "id_cuadrilla":
+             cuadrilla.id_cuadrilla, "asignados": 0, "abiertos": 0,
+             "cerrados": 0, "enrutado": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
+             "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": []},
         )
         fila["asignados"] += 1
         totales["asignados"] += 1
-        if caso.estado_actual == "CERRADO" or dc.estado == "CERRADO":
+        cerrado = caso.estado_actual == "CERRADO" or dc.estado == "CERRADO"
+        enrutado = caso.estado_actual == "ENRUTADO"
+        citado = caso.estado_actual == "CITADO" or dc.estado == "CITADO"
+        diferido = caso.estado_actual == "DIFERIDO" or dc.estado == "DIFERIDO"
+        if cerrado:
             fila["cerrados"] += 1
             totales["cerrados"] += 1
-        if caso.estado_actual == "CITADO" or dc.estado == "CITADO":
+        if enrutado:
+            fila["enrutado"] += 1
+            totales["enrutado"] += 1
+        if citado:
             fila["citados"] += 1
             totales["citados"] += 1
-        if caso.estado_actual == "DIFERIDO" or dc.estado == "DIFERIDO":
+        if diferido:
             fila["diferidos"] += 1
             totales["diferidos"] += 1
+        # ABIERTOS = asignados sin desenlace de la jornada. Se cuenta por caso en
+        # lugar de restar, para que un caso con dos marcas no descuadre el aro.
+        if not (cerrado or enrutado or citado or diferido):
+            fila["abiertos"] += 1
+            totales["abiertos"] += 1
         if dc.estado == "GESTIONADO":
             fila["gestionados"] += 1
             totales["gestionados"] += 1
@@ -551,6 +636,17 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         if dc.tipo_asignacion == "EMPRESA":
             fila["empresas"] += 1
             totales["empresas"] += 1
+        # Icono MASIVA: por asignación explícita del caso o por la masiva activa
+        # de la cuadrilla.
+        if dc.tipo_asignacion == "FALLA_MASIVA":
+            fila["es_masiva"] = True
+
+    for fila in por_cuadrilla.values():
+        ids = masivas_por_cuadrilla.get(fila["id_cuadrilla"] or 0)
+        if ids:
+            fila["es_masiva"] = True
+            fila["masivas"] = sorted(ids)
+        totales["masivas"] += len(fila["masivas"])
 
     return ReporteProduccionOut(
         fecha=fecha, id_central=id_central,

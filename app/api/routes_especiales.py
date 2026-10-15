@@ -15,6 +15,7 @@ from ..models import (
     Cuadrilla,
     Despacho,
     DespachoCasos,
+    FallaMasiva,
     Sector,
     Seguimiento,
     Solicitante,
@@ -33,6 +34,7 @@ from ..schemas.especiales import (
     SeguimientoUpdate,
     SolicitanteCreate,
     SolicitanteOut,
+    SolicitanteUpdate,
 )
 from ..services import clasificacion, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
@@ -47,24 +49,105 @@ ESTADOS_BLOQUEANTES_POR_DEFECTO = ("PROPUESTA", "CONFIRMADA")
 
 
 # --------------------------------------------------------------------------- #
-# Solicitantes (personal externo)
+# Personal externo: solicitantes de casos referidos y personal del CRASS (D-99)
 # --------------------------------------------------------------------------- #
 @router.get("/solicitantes", response_model=list[SolicitanteOut])
 def listar_solicitantes(
-    db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+    tipo: str | None = Query(default=None, pattern="^(SOLICITANTE|CRASS|OTRO)$"),
+    q: str | None = Query(default=None, description="Busca en nombre, unidad y documento"),
+    solo_activos: bool = Query(default=True),
 ) -> list[Solicitante]:
-    return list(db.scalars(select(Solicitante).order_by(Solicitante.unidad, Solicitante.nombre)).all())
+    """Catálogo de personal externo (D-99 · RF-63).
+
+    Es el desplegable del **validador del CRASS** al cerrar una masiva y el del
+    **solicitante** al dar de alta un caso referido.
+    """
+    stmt = select(Solicitante).order_by(Solicitante.unidad, Solicitante.nombre)
+    if usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        stmt = stmt.where(or_(Solicitante.id_central.is_(None),
+                              Solicitante.id_central == central.id_central))
+    if tipo:
+        stmt = stmt.where(Solicitante.tipo == tipo)
+    if solo_activos:
+        stmt = stmt.where(Solicitante.activo.is_(True))
+    if q:
+        patron = f"%{q.strip()}%"
+        stmt = stmt.where(or_(
+            Solicitante.nombre.ilike(patron),
+            Solicitante.unidad.ilike(patron),
+            Solicitante.documento.ilike(patron),
+            Solicitante.contacto.ilike(patron),
+        ))
+    return list(db.scalars(stmt).all())
 
 
 @router.post("/solicitantes", response_model=SolicitanteOut, status_code=status.HTTP_201_CREATED)
 def crear_solicitante(
-    datos: SolicitanteCreate, db: Session = Depends(get_db), _: Usuario = Depends(_escritura)
+    datos: SolicitanteCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
 ) -> Solicitante:
-    obj = Solicitante(**datos.model_dump())
+    valores = datos.model_dump()
+    if valores.get("id_central") is None:
+        valores["id_central"] = resolver_central(
+            db, None, cargar_config(db), usuario
+        ).id_central
+    obj = Solicitante(**valores)
     db.add(obj)
     db.commit()
     db.refresh(obj)
     return obj
+
+
+@router.patch("/solicitantes/{id_solicitante}", response_model=SolicitanteOut)
+def actualizar_solicitante(
+    id_solicitante: int,
+    datos: SolicitanteUpdate,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> Solicitante:
+    """Edita una ficha del catálogo de personal externo (D-99)."""
+    obj = db.get(Solicitante, id_solicitante)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Registro de personal externo no encontrado")
+    for campo, valor in datos.model_dump(exclude_unset=True).items():
+        setattr(obj, campo, valor)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+@router.delete("/solicitantes/{id_solicitante}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_solicitante(
+    id_solicitante: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> None:
+    """Da de baja una ficha del catálogo.
+
+    Si ya está referenciada por un caso especial o por una masiva cerrada se
+    **desactiva** en lugar de borrarse, para no romper la trazabilidad (D-99).
+    """
+    obj = db.get(Solicitante, id_solicitante)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Registro de personal externo no encontrado")
+    en_uso = bool(db.scalar(
+        select(func.count()).select_from(CasoEspecial).where(
+            CasoEspecial.id_solicitante == id_solicitante
+        )
+    )) or bool(db.scalar(
+        select(func.count()).select_from(FallaMasiva).where(
+            FallaMasiva.id_validador_crass == id_solicitante
+        )
+    ))
+    if en_uso:
+        obj.activo = False
+    else:
+        db.delete(obj)
+    db.commit()
 
 
 # --------------------------------------------------------------------------- #

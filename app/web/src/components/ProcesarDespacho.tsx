@@ -7,11 +7,17 @@
  *  - las **cuadrillas** con los sectores asignados, con la opción de modificar
  *    la asignación (selector por sector),
  *  - los botones **Procesar despacho** y **Cancelar**.
+ *
+ * D-99 (RF-67 · RF-68): distingue el **primer procesamiento de la jornada** —en el
+ * que la asignación de sectores a las cuadrillas es obligatoria— del **reproceso**,
+ * en el que los casos se reasignan según el sector de cada cuadrilla y se avisa a
+ * los técnicos con el DESPACHO ACTUALIZADO.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as api from '../api/client';
 import type { AsignacionBloque, DespachoDetalleOut, ProcesoDespachoOut } from '../api/types';
 import Modal from './Modal';
+import { IconoMasiva } from '../masivas/registro';
 
 interface Props {
   fecha: string;
@@ -82,6 +88,19 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const sinAsignarSector = sectores.filter(
     (s) => asignacion[s.id_sector] === null || asignacion[s.id_sector] === undefined,
   );
+  // D-99 (RF-67): en el primer procesamiento de la jornada hay que asignar los
+  // sectores antes de procesar; en un reproceso la reasignación es por sector.
+  const primeraVez = proceso?.primera_vez ?? false;
+  const reproceso = proceso?.reproceso ?? false;
+  const faltanSectores = primeraVez && sinAsignarSector.length > 0;
+  const masivasPorCuadrilla = useMemo(() => {
+    const mapa: Record<number, { id_falla: number; descripcion: string }[]> = {};
+    for (const m of proceso?.masivas ?? []) {
+      if (!m.es_activa || m.id_cuadrilla === null) continue;
+      (mapa[m.id_cuadrilla] ??= []).push({ id_falla: m.id_falla, descripcion: m.descripcion });
+    }
+    return mapa;
+  }, [proceso]);
 
   async function procesar() {
     setProcesando(true);
@@ -113,6 +132,26 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
         <p className="texto-pequeno">Cargando universo de casos…</p>
       ) : (
         <>
+          {/* D-99 (RF-67/RF-68): el paso que toca en esta jornada. */}
+          <div className={`aviso ${primeraVez ? 'aviso-info' : 'aviso-ok'}`}>
+            <span>
+              {primeraVez ? (
+                <>
+                  <strong>Primer procesamiento de la jornada.</strong> Asigne a cada
+                  cuadrilla los sectores que va a cubrir: los casos se reparten según
+                  el sector. Sin asignación, esos casos no se despachan.
+                </>
+              ) : (
+                <>
+                  <strong>Reproceso de la jornada.</strong> Los casos se vuelven a
+                  asignar a las cuadrillas según el sector de cada una y se avisa a los
+                  técnicos con el <strong>DESPACHO ACTUALIZADO</strong>.
+                  {reproceso && ' Este despacho ya existía y se reemplaza.'}
+                </>
+              )}
+            </span>
+          </div>
+
           <div className="ficha-tarjetas">
             <div className="ficha-tarjeta">
               <div className="etiqueta">Universo de casos</div>
@@ -269,9 +308,29 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                           ? 'Sin sectores asignados'
                           : suyos.map((s) => s.nombre ?? `#${s.id_sector}`).join(' · ')}
                     </p>
+                    {/* D-99 (RF-71): la cuadrilla con masiva asignada se marca. */}
+                    {(masivasPorCuadrilla[c.id_cuadrilla] ?? []).map((m) => (
+                      <span
+                        className="chip-masiva"
+                        key={m.id_falla}
+                        title={m.descripcion}
+                      >
+                        <IconoMasiva className="icono-masiva" />
+                        Masiva #{m.id_falla}
+                      </span>
+                    ))}
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {faltanSectores && (
+            <div className="aviso aviso-error">
+              <span>
+                Asigne todos los sectores antes del primer procesamiento de la jornada
+                ({sinAsignarSector.length} pendiente(s)).
+              </span>
             </div>
           )}
 
@@ -285,8 +344,17 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
           )}
 
           <div className="acciones-form">
-            <button className="btn" type="button" onClick={() => void procesar()} disabled={procesando}>
-              {procesando ? 'Procesando…' : 'Procesar despacho'}
+            <button
+              className="btn"
+              type="button"
+              onClick={() => void procesar()}
+              disabled={procesando || faltanSectores}
+            >
+              {procesando
+                ? 'Procesando…'
+                : primeraVez
+                  ? 'Procesar despacho'
+                  : 'Reprocesar despacho'}
             </button>
             <button className="btn btn-secundario" type="button" onClick={onCerrar} disabled={procesando}>
               Cancelar

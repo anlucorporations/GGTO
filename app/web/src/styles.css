@@ -2762,3 +2762,129 @@ input[type='file'] {
   font-weight: 700;
   text-align: center;
 }
+
+/* ==========================================================================
+   D-99 · Despacho: Box Infos, aro de cumplimiento por cuadrilla e icono MASIVA
+   ========================================================================== */
+
+/* Box Infos: resumen del despacho en la ficha flotante (RF-68). */
+.box-infos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.box-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--borde, #d8dee7);
+  border-left: 3px solid var(--borde, #d8dee7);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.box-info-valor {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--azul, #1565c0);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.box-info-etiqueta {
+  font-size: 12px;
+  color: var(--gris, #5b6b7c);
+}
+
+.box-info-abierto {
+  border-left-color: #0b4f9c;
+}
+
+.box-info-cerrado {
+  border-left-color: #1f7a4d;
+}
+
+.box-info-destacado {
+  background: #eef6ff;
+  border-left-color: var(--azul, #1565c0);
+}
+
+.box-info-masiva {
+  background: #fff5e6;
+  border-left-color: #b26a00;
+}
+
+.box-info-masiva .box-info-valor {
+  color: #b26a00;
+}
+
+/* Leyenda MASIVA de una cuadrilla (RF-71). */
+.chip-masiva {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: #fff1dc;
+  border: 1px solid #e0a458;
+  color: #8a5200;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.icono-masiva {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.celda-cuadrilla {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* Aro de cumplimiento por cuadrilla (RF-70). */
+.rejilla-aros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.aro-cuadrilla {
+  border: 1px solid var(--borde, #d8dee7);
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.aro-cuadrilla-cabecera {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.aro-cuadrilla-pie {
+  margin: 6px 0 0;
+  text-align: center;
+}
+
+.aviso-cierre-jornada {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--azul, #1565c0);
+  background: #f4f8fd;
+  border-radius: 0 6px 6px 0;
+}

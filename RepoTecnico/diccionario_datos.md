@@ -49,7 +49,7 @@
 | 10 | Cuadrilla–Herramienta | `cuadrilla_herramienta` | Asignación de herramientas. |
 | 11 | Caso/Avería | `caso` | Entidad central de casos (averías + construcción). |
 | 12 | Caso especial | `caso_especial` | Subtipo REFERIDO/EMPRESA/GOBIERNO/construcción sin `id_averia`. |
-| 13 | Solicitante externo | `solicitante` | Unidad + Nombre + Contacto del personal externo. |
+| 13 | Personal externo | `solicitante` | Unidad + Nombre + Teléfono. Catálogo de solicitantes y del personal del CRASS (D-99). |
 | 14 | Cita | `cita` | Agenda de contacto/atención por caso. |
 | 15 | Despacho | `despacho` | Cabecera del despacho diario por cuadrilla. |
 | 16 | Despacho–Caso | `despacho_caso` | Detalle de casos asignados. |
@@ -62,6 +62,7 @@
 | 23 | Inventario | `inventario_movimiento` | Ingresos/egresos de material (v2). |
 | 24 | Orden de material | `orden_material` / `orden_material_detalle` | Solicitudes de material (v2). |
 | 25 | Falla masiva | `falla_masiva` | Evento de falla masiva y su atención. |
+| 25b | Masiva–Caso | `falla_masiva_caso` | Asociación explícita de los CASOS ASOCIADOS (D-99 · DEC-MA-1). |
 | 26 | Incidente | `incidente` | Incidentes de flota/herramienta. |
 | 27 | Notificación | `notificacion` | Mensajes enviados por Telegram/correo/MCP. |
 | 28 | Seguridad del dispositivo | `dispositivo_seguridad` | 12 palabras, clave privada, estado de bloqueo. |
@@ -229,7 +230,8 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | tipo_caso | varchar(20) | NN | `AVERIA` / `REPARACION` / `CONSTRUCCION`. |
 | categoria | varchar(20) | NN | `RESIDENCIAL` / `EMPRESA` / `REFERIDO` / `GOBIERNO`. |
 | en_gestion_supervisor | boolean | NN, default false | Asignado a cuadrilla 0 (RF-25). |
-| es_falla_masiva | boolean | default false | RF-09. |
+| es_falla_masiva | boolean | default false | RF-09. D-99: se mantiene sincronizado con `falla_masiva_caso`. |
+| estado_actual | varchar(20) | NN, default `NUEVO` | `NUEVO`/`PENDIENTE`/`ASIGNADO`/`CONTACTADO`/`CITADO`/`DIFERIDO`/`EN_GESTION`/`ENRUTADO`/`CERRADO`/`CANCELADO`. **D-99 (DEC-MA-6):** `PENDIENTE` es el estado al que vuelve un caso despachado que no se cerró antes del corte de jornada; no es terminal, así que se reasigna en la jornada siguiente. |
 | id_sector | int | FK→sector, null | Sector de atención (RF-23). |
 | creado_en / actualizado_en | timestamptz | | |
 | creado_por | varchar(20) | FK→usuario.p00 | |
@@ -317,16 +319,24 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 
 ## 4. Casos especiales y seguimiento
 
-### 4.1 `solicitante` (personal externo)
+### 4.1 `solicitante` (catálogo de personal externo)
+
+D-99 (DEC-MA-4): la tabla es el **catálogo de personal externo**. Registra al
+**solicitante** de un caso referido y al **personal del CRASS** que valida la
+reparación de una masiva. El teléfono del catálogo es `contacto`.
 
 | Campo | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | id_solicitante | serial | PK | |
-| unidad | varchar(120) | NN | Unidad/área de la empresa. |
-| nombre | varchar(120) | NN | Nombre del contacto. |
-| contacto | varchar(60) | NN | Teléfono/correo. |
+| unidad | varchar(120) | NN | Unidad/área de la empresa (UNIDAD del catálogo). |
+| nombre | varchar(120) | NN | Nombre del contacto (NOMBRE del catálogo). |
+| contacto | varchar(60) | NN | Teléfono/correo (TELÉFONO del catálogo). |
 | canal | varchar(20) | | `TELEGRAM`/`CORREO`/`MCP_IA`/`MANUAL`. |
-| creado_en | timestamptz | | |
+| id_central | int | FK→central | D-99: central a la que pertenece (nulo en los históricos). |
+| documento | varchar(30) | | D-99: cédula u otro documento. |
+| tipo | varchar(20) | NN, default `SOLICITANTE` | D-99: `SOLICITANTE`/`CRASS`/`OTRO`. |
+| activo | boolean | NN, default true | D-99: la baja es lógica si la ficha está en uso. |
+| creado_en / actualizado_en | timestamptz | | |
 
 ### 4.2 `caso_especial`
 
@@ -381,6 +391,9 @@ sistema. La clave natural de deduplicación es **`id_averia`** (RF-22).
 | enviado_canal | varchar(20) | | `TELEGRAM`/`CORREO`. |
 | enviado_en | timestamptz | | |
 | reporte_produccion_en | timestamptz | | Cierre 04:00 p.m. (RF-27). |
+| cerrado_en | timestamptz | | D-99: instante del corte de jornada (RF-65). |
+| cierre_auto | boolean | NN, default false | D-99: el cierre lo hizo el corte de las 23:50, no una persona. |
+| reprocesado_en | timestamptz | | D-99: último reproceso del despacho en la jornada (RF-68). |
 | usuario_crea | varchar(20) | | |
 | creado_en / actualizado_en | timestamptz | | |
 
@@ -402,9 +415,39 @@ un sector pertenece como máximo a una cuadrilla por día.
 
 ### 5.4 `falla_masiva`
 
-`id_falla` PK · `id_central` FK · **`clave_concentracion`** (clave del grupo que la originó) · `descripcion` · `fecha_deteccion` · `id_sector` FK ·
-`id_cuadrilla` FK (mayor cercanía) · `estado` · `planificacion` (texto) · **`planificada_en`** (RF-17) ·
-`reporte_simple` · `creado_en`.
+`id_falla` PK · `id_central` FK · **`clave_concentracion`** (clave del grupo que la originó) · `descripcion` · `fecha_deteccion` · `origen` (`AUTOMATICA`/`REPORTE_TECNICO`/`MCP`) · `id_sector` FK ·
+`id_cuadrilla` FK (mayor cercanía) · `estado` (`DETECTADA`/`PLANIFICADA`/`ATENDIDA`/`CERRADA`) · `planificacion` (texto) · **`planificada_en`** (RF-17) ·
+`reporte_simple` · `odn`/`direccion`/`fat`/`evidencias` (D-82, reporte de campo) · `creado_en` · `actualizado_en`.
+
+**Columnas del incremento D-99 (RF-60/RF-61):**
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| descripcion_cierre | text | | Descripción del trabajo ejecutado, obligatoria al cerrar (RF-61). |
+| id_validador_crass | bigint | FK→solicitante, `ON DELETE SET NULL` | Personal del CRASS que valida la reparación (DEC-MA-2). |
+| evidencias_cierre | text | | Seriales de las evidencias del cierre, separados por coma. |
+| cerrada_por | varchar(20) | FK→usuario(p00) | Quién cerró la masiva. |
+| cerrada_en | timestamptz | | Cuándo se cerró. |
+| casos_cerrados | integer | NN, default 0 | Casos asociados que se cerraron en cascada (RF-62). |
+| latitud / longitud | numeric(10,7) | | Ubicación del FAT afectado para el mapa de MASIVAS (RF-60). |
+
+### 5.5 `falla_masiva_caso` — asociación explícita caso ↔ masiva (D-99 · DEC-MA-1)
+
+Es la **única fuente de verdad** de qué casos atiende una masiva. La puebla la
+detección automática por concentración y el alta manual, y se puede editar a mano;
+el cierre en cascada la recorre íntegra.
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_asociacion | bigserial | PK | |
+| id_falla | bigint | FK→falla_masiva, `ON DELETE CASCADE` | |
+| id_caso | bigint | FK→caso, `ON DELETE CASCADE` | |
+| origen | varchar(12) | NN, default `AUTO` | `AUTO` (detección) o `MANUAL` (una persona). |
+| agregado_por | varchar(20) | FK→usuario(p00) | |
+| agregado_en | timestamptz | NN | |
+
+**UNIQUE (`id_falla`, `id_caso`)** · índice por `id_caso`.
+
 
 ---
 

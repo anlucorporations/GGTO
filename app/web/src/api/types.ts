@@ -642,10 +642,27 @@ export interface AsignacionBloque {
   ids_sector: number[];
 }
 
+/** Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71). */
+export interface MasivaProcesoOut {
+  id_falla: number;
+  id_cuadrilla: number | null;
+  estado: string;
+  descripcion: string;
+  es_activa: boolean;
+}
+
 export interface ProcesoDespachoOut {
   fecha: string;
   id_central: number;
   asignacion_origen: string;
+  /**
+   * D-99 (RF-67): `true` en el **primer** procesamiento de la jornada, cuando hay
+   * que asignar los sectores a cada cuadrilla antes de procesar.
+   */
+  primera_vez: boolean;
+  /** D-99 (RF-68): `true` si la jornada ya tiene despachos (es un reproceso). */
+  reproceso: boolean;
+  masivas: MasivaProcesoOut[];
   universo: UniversoOut;
   sectores: SectorProcesoOut[];
   cuadrillas: CuadrillaProcesoOut[];
@@ -716,6 +733,10 @@ export interface DespachoDetalleOut {
   enviado_canal: string | null;
   enviado_en: string | null;
   reporte_produccion_en: string | null;
+  /* D-99: trazas del corte de jornada y del último reproceso. */
+  cerrado_en?: string | null;
+  cierre_auto?: boolean;
+  reprocesado_en?: string | null;
   usuario_crea: string | null;
   creado_en: string | null;
   cuadrilla_codigo: string | null;
@@ -766,8 +787,41 @@ export interface EnvioOut {
 export interface ReporteProduccionOut {
   fecha: string;
   id_central: number;
-  por_cuadrilla: Record<string, unknown>[];
+  por_cuadrilla: FilaProduccionOut[];
   totales: Record<string, number>;
+}
+
+/**
+ * Desglose de producción de una cuadrilla (RF-27 · RF-70).
+ *
+ * D-99 añade `abiertos` y `enrutado` —el aro de cumplimiento pinta ABIERTOS,
+ * CERRADOS, ENRUTADO, DIFERIDO y CITADOS— y `es_masiva`/`masivas`, que encienden
+ * el icono MASIVA de la cuadrilla a la que se le asignó una falla masiva.
+ */
+export interface FilaProduccionOut {
+  cuadrilla: string;
+  nombre: string;
+  id_cuadrilla: number;
+  asignados: number;
+  abiertos: number;
+  cerrados: number;
+  enrutado: number;
+  citados: number;
+  diferidos: number;
+  gestionados: number;
+  referidos: number;
+  empresas: number;
+  es_masiva: boolean;
+  masivas: number[];
+}
+
+/** Resultado del corte de jornada del despacho (D-99 · RF-65). */
+export interface CierreJornadaOut {
+  despachos_cerrados: number;
+  casos_pendientes: number;
+  hora_corte: string;
+  fecha_corte: string;
+  detalle: { id_despacho: number; fecha: string; casos_pendientes: number }[];
 }
 
 export interface FallaMasivaCreate {
@@ -805,6 +859,16 @@ export interface FallaMasivaOut {
   direccion?: string | null;
   fat?: string | null;
   evidencias?: string[];
+  /* D-99 · MASIVAS: asociación explícita, cierre y ubicación del FAT. */
+  casos_asociados?: number;
+  validador_crass?: ValidadorCrassOut | null;
+  descripcion_cierre?: string | null;
+  evidencias_cierre?: string[];
+  cerrada_por?: string | null;
+  cerrada_en?: string | null;
+  casos_cerrados?: number;
+  latitud?: number | null;
+  longitud?: number | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1178,7 +1242,131 @@ export interface FallaMasivaManual {
   id_sector?: number | null;
   id_cuadrilla?: number | null;
   origen?: OrigenFallaMasiva;
+  odn?: string | null;
+  direccion?: string | null;
+  fat?: string | null;
+  evidencias?: string[];
 }
+
+/* ------------------------------------------------------------------ */
+/* D-99 · MÓDULO MASIVAS                                              */
+/* ------------------------------------------------------------------ */
+
+/** Personal del CRASS que valida la reparación de una masiva (RF-61). */
+export interface ValidadorCrassOut {
+  id_solicitante: number;
+  nombre: string;
+  unidad: string;
+  contacto: string | null;
+}
+
+/** Caso vinculado a una masiva (CASOS ASOCIADOS de la ficha · RF-59). */
+export interface CasoAsociadoOut {
+  id_caso: number;
+  id_averia: string;
+  estado_actual: string;
+  nombre_cliente: string | null;
+  telefono: string | null;
+  direccion: string | null;
+  id_sector: number | null;
+  sector_nombre: string | null;
+  olt: string | null;
+  slot: string | null;
+  puerto: string | null;
+  fat: string | null;
+  /** Columna EXTRA del archivo de ingesta: donde viaja la RUTA. */
+  extra: string | null;
+  ruta: string | null;
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
+  origen_asociacion: 'AUTO' | 'MANUAL';
+}
+
+/** Cierre de la masiva (RF-61/RF-62): descripción, validador y evidencias. */
+export interface CierreMasivaRequest {
+  descripcion: string;
+  id_validador_crass: number;
+  evidencias?: string[];
+  modo?: 'IVR' | 'COS' | 'SACAS';
+  descripcion_caso?: string;
+  id_causa?: number | null;
+  latitud?: number | null;
+  longitud?: number | null;
+}
+
+export interface CierreMasivaOut {
+  id_falla: number;
+  estado: string;
+  casos_cerrados: number;
+  casos_omitidos: number;
+  detalle: { id_caso: number; id_averia?: string; resultado: string; motivo?: string }[];
+}
+
+/** Ubicación del FAT afectado para el mapa de MASIVAS (RF-60). */
+export interface UbicacionMasivaOut {
+  id_falla: number;
+  latitud: number | null;
+  longitud: number | null;
+  direccion: string | null;
+  ruta: string | null;
+  olt: string | null;
+  fat: string | null;
+  sector_nombre: string | null;
+  origen: string;
+  puntos: {
+    tipo: string;
+    serial?: string;
+    latitud: number | null;
+    longitud: number | null;
+    fecha_hora?: string | null;
+  }[];
+}
+
+/**
+ * Filtros del histórico de masivas de la sección MASIVAS.
+ *
+ * Es un alias de tipo (no una `interface`) para que `construirQuery` lo acepte:
+ * TypeScript solo da índice implícito a los alias de tipo de objeto.
+ */
+export type MasivasFiltros = {
+  estado?: EstadoFallaMasiva | '';
+  id_central?: number;
+  solo_activas?: boolean;
+  origen?: OrigenFallaMasiva | '';
+  q?: string;
+  desde?: string;
+  hasta?: string;
+  limite?: number;
+};
+
+/** Personal externo: solicitantes de referidos y personal del CRASS (RF-63). */
+export type TipoPersonalExterno = 'SOLICITANTE' | 'CRASS' | 'OTRO';
+
+export interface PersonalExterno {
+  id_solicitante: number;
+  nombre: string;
+  unidad: string;
+  contacto: string;
+  canal?: string | null;
+  documento?: string | null;
+  tipo: TipoPersonalExterno;
+  activo: boolean;
+  id_central?: number | null;
+}
+
+export interface PersonalExternoCreate {
+  nombre: string;
+  unidad: string;
+  contacto: string;
+  documento?: string | null;
+  tipo?: TipoPersonalExterno;
+  activo?: boolean;
+  id_central?: number | null;
+}
+
+export type PersonalExternoUpdate = Partial<PersonalExternoCreate>;
+
 
 /** Cambio de estado o cuadrilla de una falla (RF-09/RF-17). */
 export interface FallaMasivaUpdate {

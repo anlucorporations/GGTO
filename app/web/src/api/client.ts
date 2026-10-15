@@ -16,12 +16,16 @@ import type {
   CasoRelacionado,
   CitaRapida,
   CierreCaso,
+  CierreJornadaOut,
+  CierreMasivaOut,
+  CierreMasivaRequest,
   ChecklistDispositivo,
   ContenidoTabla,
   EstructuraBD,
   FichaTabla,
   CanalDespacho,
   CasoAgregar,
+  CasoAsociadoOut,
   CasoEspecialCreate,
   CasoEspecialOut,
   CasoEspecialUpdate,
@@ -113,6 +117,12 @@ import type {
   SincronizacionesFiltros,
   Solicitante,
   SolicitanteCreate,
+  MasivasFiltros,
+  PersonalExterno,
+  PersonalExternoCreate,
+  PersonalExternoUpdate,
+  TipoPersonalExterno,
+  UbicacionMasivaOut,
   Tecnico,
   TecnicoCreate,
   TecnicoUpdate,
@@ -1024,6 +1034,95 @@ export function solicitarMaterialFalla(
   data: MaterialFalla,
 ): Promise<OrdenMaterialOut> {
   return conCuerpo<OrdenMaterialOut>(`/fallas-masivas/${idFalla}/material`, 'POST', data);
+}
+
+/* ------------------------------------------------------------------ */
+/* D-99 · MÓDULO MASIVAS                                              */
+/* ------------------------------------------------------------------ */
+
+/** Histórico de masivas con búsqueda, rango de fechas y origen (RF-60). */
+export function listarMasivas(filtros: MasivasFiltros = {}): Promise<FallaMasivaOut[]> {
+  return request<FallaMasivaOut[]>(`/fallas-masivas${construirQuery(filtros)}`);
+}
+
+/** CASOS ASOCIADOS de la masiva, con datos técnicos y RUTA (RF-59). */
+export function casosAsociadosMasiva(idFalla: number): Promise<CasoAsociadoOut[]> {
+  return request<CasoAsociadoOut[]>(`/fallas-masivas/${idFalla}/casos`);
+}
+
+/** Asocia casos concretos a la masiva (RF-59). */
+export function asociarCasosMasiva(
+  idFalla: number,
+  idsCaso: number[],
+): Promise<CasoAsociadoOut[]> {
+  return conCuerpo<CasoAsociadoOut[]>(
+    `/fallas-masivas/${idFalla}/casos`, 'POST', { ids_caso: idsCaso },
+  );
+}
+
+/** Quita casos de la masiva (RF-59). */
+export function quitarCasosMasiva(
+  idFalla: number,
+  idsCaso: number[],
+): Promise<CasoAsociadoOut[]> {
+  return request<CasoAsociadoOut[]>(`/fallas-masivas/${idFalla}/casos`, {
+    method: 'DELETE',
+    body: JSON.stringify({ ids_caso: idsCaso }),
+  });
+}
+
+/** Cierra la masiva y sus casos asociados (RF-61/RF-62). */
+export function cerrarMasiva(
+  idFalla: number,
+  data: CierreMasivaRequest,
+): Promise<CierreMasivaOut> {
+  return conCuerpo<CierreMasivaOut>(`/fallas-masivas/${idFalla}/cierre`, 'POST', data);
+}
+
+/** Ubicación geográfica y GPS del FAT afectado (RF-60). */
+export function ubicacionMasiva(idFalla: number): Promise<UbicacionMasivaOut> {
+  return request<UbicacionMasivaOut>(`/fallas-masivas/${idFalla}/ubicacion`);
+}
+
+/** HTML del reporte imprimible de la masiva (RF-60). */
+export function reporteMasiva(idFalla: number): Promise<string> {
+  return requestTexto(`/fallas-masivas/${idFalla}/reporte`);
+}
+
+/** Catálogo de personal externo (solicitantes y CRASS) — RF-63. */
+export function listarPersonalExterno(
+  filtros: { tipo?: TipoPersonalExterno; q?: string; solo_activos?: boolean } = {},
+): Promise<PersonalExterno[]> {
+  return request<PersonalExterno[]>(`/solicitantes${construirQuery(filtros)}`);
+}
+
+export function crearPersonalExterno(data: PersonalExternoCreate): Promise<PersonalExterno> {
+  return conCuerpo<PersonalExterno>('/solicitantes', 'POST', data);
+}
+
+export function actualizarPersonalExterno(
+  id: number,
+  data: PersonalExternoUpdate,
+): Promise<PersonalExterno> {
+  return conCuerpo<PersonalExterno>(`/solicitantes/${id}`, 'PATCH', data);
+}
+
+export function borrarPersonalExterno(id: number): Promise<void> {
+  return request<void>(`/solicitantes/${id}`, { method: 'DELETE' });
+}
+
+/** Corte de jornada del despacho (D-99 · RF-65). Normalmente es automático. */
+export function cierreJornada(
+  idCentral?: number,
+  soloVencidos = true,
+): Promise<CierreJornadaOut> {
+  return request<CierreJornadaOut>(
+    `/despachos/cierre-jornada${construirQuery({
+      id_central: idCentral,
+      solo_vencidos: soloVencidos,
+    })}`,
+    { method: 'POST' },
+  );
 }
 
 /** Bandeja del outbox de notificaciones. */

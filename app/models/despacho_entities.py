@@ -10,6 +10,8 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Integer,
+    Numeric,
     SmallInteger,
     String,
     Text,
@@ -33,6 +35,11 @@ class Despacho(Base):
     enviado_canal: Mapped[str | None] = mapped_column(String(20))
     enviado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reporte_produccion_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # D-99: corte de jornada (RF-65). `cierre_auto` distingue el cierre de las
+    # 23:50 del cierre manual, que ya no se ofrece en la interfaz.
+    cerrado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cierre_auto: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    reprocesado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     usuario_crea: Mapped[str | None] = mapped_column(String(20))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -132,5 +139,44 @@ class FallaMasiva(Base):
     planificacion: Mapped[str | None] = mapped_column(Text)
     reporte_simple: Mapped[str | None] = mapped_column(Text)
     planificada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # D-99 (RF-61): cierre de la masiva. Exige descripción del trabajo, el
+    # personal del CRASS que valida la reparación y las evidencias.
+    descripcion_cierre: Mapped[str | None] = mapped_column(Text)
+    id_validador_crass: Mapped[int | None] = mapped_column(
+        ForeignKey("solicitante.id_solicitante", ondelete="SET NULL")
+    )
+    evidencias_cierre: Mapped[str | None] = mapped_column(Text)
+    cerrada_por: Mapped[str | None] = mapped_column(String(20))
+    cerrada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    casos_cerrados: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # D-99 (RF-60): ubicación del FAT afectado para el mapa de la sección MASIVAS.
+    latitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    longitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FallaMasivaCaso(Base):
+    """Asociación explícita entre una falla masiva y un caso (D-99 · DEC-MA-1).
+
+    Sustituye la deducción implícita por `clave_concentracion`: permite listar
+    los CASOS ASOCIADOS, agregar o quitar casos a mano y cerrar la masiva en
+    cascada sin ambigüedad.
+    """
+
+    __tablename__ = "falla_masiva_caso"
+
+    id_asociacion: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_falla: Mapped[int] = mapped_column(
+        ForeignKey("falla_masiva.id_falla", ondelete="CASCADE"), nullable=False
+    )
+    id_caso: Mapped[int] = mapped_column(
+        ForeignKey("caso.id_caso", ondelete="CASCADE"), nullable=False
+    )
+    origen: Mapped[str] = mapped_column(String(12), nullable=False, default="AUTO")
+    agregado_por: Mapped[str | None] = mapped_column(String(20))
+    agregado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("id_falla", "id_caso", name="falla_masiva_caso_id_falla_id_caso_key"),
+    )

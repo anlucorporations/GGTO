@@ -17,6 +17,7 @@ class ResultadoDescarga {
     this.mensaje = '',
     this.cuadrillaCodigo,
     this.casosCuadrilla = 0,
+    this.masivas = 0,
   });
 
   final int nuevos;
@@ -34,6 +35,12 @@ class ResultadoDescarga {
 
   /// Casos operables que el servidor tiene despachados para esa cuadrilla.
   final int casosCuadrilla;
+
+  /// D-99: masivas activas (DETECTADA o PLANIFICADA) que atañen a la cuadrilla.
+  ///
+  /// Viaja **siempre** con la descarga —aunque no haya casos nuevos— porque el
+  /// bloque MASIVA de la APK es fijo y debe reflejar el estado vigente.
+  final int masivas;
 
   /// ¿La descarga no trajo nada **porque no hay nada** (y no por un fallo)?
   bool get sinNovedades => nuevos == 0 && actualizados == 0;
@@ -101,6 +108,13 @@ class DownloadService {
         actualizados = r.$2;
       }
 
+      // D-99: las masivas activas acompañan a la descarga. Un servidor antiguo
+      // no las envía: se trata como lista vacía (no hay masivas que mostrar).
+      final listaMasivas = datos['masivas'];
+      final masivas = listaMasivas is List ? listaMasivas : const <dynamic>[];
+      avisar(0.8, 'Guardando las fallas masivas…');
+      await DatabaseHelper.instance.guardarMasivas(masivas);
+
       DateTime? serverTs;
       final ts = datos['server_ts'];
       if (ts is String) {
@@ -137,6 +151,7 @@ class DownloadService {
         mensaje: '${datos['mensaje'] ?? ''}',
         cuadrillaCodigo: codigo.isEmpty ? null : codigo,
         casosCuadrilla: casosCuadrilla,
+        masivas: masivas.length,
       );
     } catch (e) {
       if (sesion.idSesion != null) {

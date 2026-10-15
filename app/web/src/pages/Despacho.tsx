@@ -7,9 +7,8 @@ import type {
   EnvioOut,
   EstadoDespachoCaso,
   EstadoDespacho,
-  FallaMasivaOut,
+  FilaProduccionOut,
   NotificacionOut,
-  OrigenFallaMasiva,
   PropuestaOut,
   ReporteProduccionOut,
   TipoAsignacionDespacho,
@@ -18,6 +17,8 @@ import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import ProcesarDespacho from '../components/ProcesarDespacho';
+import { GraficoTorta, type PorcionTorta } from '../components/graficos';
+import { IconoMasiva } from '../masivas/registro';
 import { useAuth } from '../auth/AuthContext';
 import { fecha } from '../utils';
 
@@ -37,11 +38,11 @@ const TIPOS_ASIGNACION: TipoAsignacionDespacho[] = [
   'FALLA_MASIVA',
 ];
 
-const ORIGENES_FALLA = ['REPORTE_TECNICO', 'AUTOMATICA', 'MCP'];
-
 const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
   { clave: 'asignados', etiqueta: 'Asignados' },
+  { clave: 'abiertos', etiqueta: 'Abiertos' },
   { clave: 'cerrados', etiqueta: 'Cerrados' },
+  { clave: 'enrutado', etiqueta: 'Enrutado' },
   { clave: 'citados', etiqueta: 'Citados' },
   { clave: 'diferidos', etiqueta: 'Diferidos' },
   { clave: 'gestionados', etiqueta: 'Gestionados' },
@@ -49,13 +50,20 @@ const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
   { clave: 'empresas', etiqueta: 'Empresas' },
 ];
 
-interface FallaForm {
-  descripcion: string;
-  id_sector: string;
-  origen: string;
-}
-
-const FALLA_VACIA: FallaForm = { descripcion: '', id_sector: '', origen: 'REPORTE_TECNICO' };
+/**
+ * Cumplimiento del despacho en un aro (D-99 · RF-70).
+ *
+ * Las cinco porciones son las que pidió el negocio: ABIERTOS, CERRADOS,
+ * ENRUTADO, DIFERIDO y CITADOS. El centro del aro muestra el **porcentaje de
+ * cumplimiento** (cerrados / asignados) y la leyenda, los valores absolutos.
+ */
+const PORCIONES_CUMPLIMIENTO = [
+  { clave: 'cerrados', etiqueta: 'Cerrados', color: '#1f7a4d' },
+  { clave: 'abiertos', etiqueta: 'Abiertos', color: '#0b4f9c' },
+  { clave: 'enrutado', etiqueta: 'Enrutado', color: '#8a6100' },
+  { clave: 'citados', etiqueta: 'Citados', color: '#0e7490' },
+  { clave: 'diferidos', etiqueta: 'Diferido', color: '#b3261e' },
+] as const;
 
 function hoyISO(): string {
   const ahora = new Date();
@@ -67,7 +75,7 @@ function detalleDe(e: unknown, fallback: string): string {
   return e instanceof api.ApiError ? e.message : fallback;
 }
 
-function fechaHora(valor: string | null): string {
+function fechaHora(valor: string | null | undefined): string {
   return valor ? valor.replace('T', ' ').slice(0, 19) : '—';
 }
 
@@ -125,19 +133,81 @@ function TablaCasosAsignados({ casos }: { casos: CasoAsignadoOut[] }) {
   );
 }
 
-function FilaDesglose({ fila }: { fila: Record<string, unknown> }) {
+function FilaDesglose({ fila }: { fila: FilaProduccionOut }) {
   return (
     <tr>
-      <td>{txt(fila.cuadrilla)}</td>
-      <td>{txt(fila.nombre)}</td>
-      <td>{num(fila.asignados)}</td>
-      <td>{num(fila.cerrados)}</td>
-      <td>{num(fila.citados)}</td>
-      <td>{num(fila.diferidos)}</td>
-      <td>{num(fila.gestionados)}</td>
-      <td>{num(fila.referidos)}</td>
-      <td>{num(fila.empresas)}</td>
+      <td>
+        <span className="celda-cuadrilla">
+          {fila.cuadrilla}
+          {fila.es_masiva && (
+            <span
+              className="chip-masiva"
+              title={
+                fila.masivas?.length
+                  ? `Falla masiva asignada: #${fila.masivas.join(', #')}`
+                  : 'Falla masiva asignada'
+              }
+            >
+              <IconoMasiva className="icono-masiva" />
+              MASIVA
+            </span>
+          )}
+        </span>
+      </td>
+      <td>{fila.nombre}</td>
+      <td>{fila.asignados}</td>
+      <td>{fila.abiertos}</td>
+      <td>{fila.cerrados}</td>
+      <td>{fila.enrutado}</td>
+      <td>{fila.citados}</td>
+      <td>{fila.diferidos}</td>
+      <td>{fila.gestionados}</td>
+      <td>{fila.referidos}</td>
+      <td>{fila.empresas}</td>
     </tr>
+  );
+}
+
+/** Porcentaje de cumplimiento del despacho de una cuadrilla. */
+function cumplimientoDe(fila: FilaProduccionOut): number {
+  if (!fila.asignados) return 0;
+  return Math.round((fila.cerrados / fila.asignados) * 100);
+}
+
+/**
+ * Aro de cumplimiento de una cuadrilla (D-99 · RF-70).
+ *
+ * Sustituye al bloque de tarjetas: el negocio pidió ver el reparto ABIERTOS ·
+ * CERRADOS · ENRUTADO · DIFERIDO · CITADOS de **cada** cuadrilla de un vistazo.
+ */
+function AroCumplimiento({ fila }: { fila: FilaProduccionOut }) {
+  const porciones: PorcionTorta[] = PORCIONES_CUMPLIMIENTO.map((p) => ({
+    etiqueta: p.etiqueta,
+    valor: fila[p.clave],
+    color: p.color,
+  })).filter((p) => p.valor > 0);
+  const cumplimiento = cumplimientoDe(fila);
+  return (
+    <div className="aro-cuadrilla">
+      <div className="aro-cuadrilla-cabecera">
+        <strong>{fila.cuadrilla}</strong>
+        <span className="texto-pequeno">{fila.nombre}</span>
+        {fila.es_masiva && (
+          <span className="chip-masiva" title="Cuadrilla con falla masiva asignada">
+            <IconoMasiva className="icono-masiva" />
+            MASIVA
+          </span>
+        )}
+      </div>
+      {fila.asignados === 0 ? (
+        <p className="vacio">Sin casos asignados.</p>
+      ) : (
+        <GraficoTorta porciones={porciones} centro={`${cumplimiento}%`} />
+      )}
+      <p className="texto-pequeno aro-cuadrilla-pie">
+        {fila.cerrados} de {fila.asignados} cerrados · cumplimiento {cumplimiento}%
+      </p>
+    </div>
   );
 }
 
@@ -155,36 +225,102 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
           </div>
         ))}
       </div>
+
       {reporte.por_cuadrilla.length === 0 ? (
         <p className="vacio">Sin producción registrada.</p>
       ) : (
-        <div className="tabla-envoltura">
-          <table>
-            <thead>
-              <tr>
-                <th>Cuadrilla</th>
-                <th>Nombre</th>
-                <th>Asignados</th>
-                <th>Cerrados</th>
-                <th>Citados</th>
-                <th>Diferidos</th>
-                <th>Gestionados</th>
-                <th>Referidos</th>
-                <th>Empresas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reporte.por_cuadrilla.map((fila, indice) => (
-                <FilaDesglose key={`${txt(fila.cuadrilla)}-${indice}`} fila={fila} />
-              ))}
-            </tbody>
-            <PieTabla
-              colSpan={9}
-              total={reporte.por_cuadrilla.length}
-              singular="cuadrilla"
-              plural="cuadrillas"
-            />
-          </table>
+        <>
+          {/* D-99 (RF-70): un aro de cumplimiento por cada cuadrilla. */}
+          <h4 className="subtitulo-seccion">Cumplimiento por cuadrilla</h4>
+          <div className="rejilla-aros">
+            {reporte.por_cuadrilla.map((fila) => (
+              <AroCumplimiento key={fila.cuadrilla} fila={fila} />
+            ))}
+          </div>
+
+          <h4 className="subtitulo-seccion">Desglose</h4>
+          <div className="tabla-envoltura">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cuadrilla</th>
+                  <th>Nombre</th>
+                  <th>Asignados</th>
+                  <th>Abiertos</th>
+                  <th>Cerrados</th>
+                  <th>Enrutado</th>
+                  <th>Citados</th>
+                  <th>Diferidos</th>
+                  <th>Gestionados</th>
+                  <th>Referidos</th>
+                  <th>Empresas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reporte.por_cuadrilla.map((fila) => (
+                  <FilaDesglose key={`${fila.cuadrilla}-${fila.id_cuadrilla}`} fila={fila} />
+                ))}
+              </tbody>
+              <PieTabla
+                colSpan={11}
+                total={reporte.por_cuadrilla.length}
+                singular="cuadrilla"
+                plural="cuadrillas"
+              />
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Box Infos del despacho (D-99 · RF-68).
+ *
+ * Resume el despacho de un vistazo —cuántos casos tiene, cómo se reparten por
+ * desenlace y el porcentaje de cumplimiento— y sustituye al cuadro de información
+ * principal, que ahora se dispone en rejilla de datos.
+ */
+function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
+  const conteo = (estado: EstadoDespachoCaso) =>
+    despacho.casos.filter((c) => c.estado === estado).length;
+  const total = despacho.casos.length;
+  const cerrados = conteo('CERRADO');
+  const citados = conteo('CITADO');
+  const diferidos = conteo('DIFERIDO');
+  const gestionados = conteo('GESTIONADO');
+  const abiertos = total - cerrados - citados - diferidos - gestionados;
+  const cumplimiento = total ? Math.round((cerrados / total) * 100) : 0;
+  const masivos = despacho.casos.filter((c) => c.tipo_asignacion === 'FALLA_MASIVA').length;
+
+  const cajas: { etiqueta: string; valor: number; clase: string }[] = [
+    { etiqueta: 'Casos', valor: total, clase: '' },
+    { etiqueta: 'Abiertos', valor: abiertos, clase: 'box-info-abierto' },
+    { etiqueta: 'Cerrados', valor: cerrados, clase: 'box-info-cerrado' },
+    { etiqueta: 'Citados', valor: citados, clase: '' },
+    { etiqueta: 'Diferidos', valor: diferidos, clase: '' },
+    { etiqueta: 'Gestionados', valor: gestionados, clase: '' },
+  ];
+  return (
+    <div className="box-infos">
+      {cajas.map((caja) => (
+        <div className={`box-info ${caja.clase}`.trim()} key={caja.etiqueta}>
+          <span className="box-info-valor">{caja.valor}</span>
+          <span className="box-info-etiqueta">{caja.etiqueta}</span>
+        </div>
+      ))}
+      <div className="box-info box-info-destacado">
+        <span className="box-info-valor">{cumplimiento}%</span>
+        <span className="box-info-etiqueta">Cumplimiento</span>
+      </div>
+      {masivos > 0 && (
+        <div className="box-info box-info-masiva">
+          <span className="box-info-valor">
+            <IconoMasiva className="icono-masiva" />
+            {masivos}
+          </span>
+          <span className="box-info-etiqueta">Casos de masiva</span>
         </div>
       )}
     </div>
@@ -229,13 +365,6 @@ export default function Despacho() {
   const [reporteGlobal, setReporteGlobal] = useState<ReporteProduccionOut | null>(null);
   const [reporteSel, setReporteSel] = useState<ReporteProduccionOut | null>(null);
 
-  // Fallas masivas (RF-09).
-  const [fallas, setFallas] = useState<FallaMasivaOut[]>([]);
-  const [cargandoFallas, setCargandoFallas] = useState(true);
-  const [fallaForm, setFallaForm] = useState<FallaForm>(FALLA_VACIA);
-  const [creandoFalla, setCreandoFalla] = useState(false);
-  const [modalFalla, setModalFalla] = useState(false);
-
   const cargarDespachos = useCallback(async () => {
     setCargandoDespachos(true);
     try {
@@ -259,26 +388,10 @@ export default function Despacho() {
     }
   }, [fechaSel]);
 
-  const cargarFallas = useCallback(async () => {
-    setCargandoFallas(true);
-    try {
-      setFallas(await api.listarFallasMasivas());
-    } catch (e) {
-      setFallas([]);
-      setError(detalleDe(e, 'Error al listar las fallas masivas.'));
-    } finally {
-      setCargandoFallas(false);
-    }
-  }, []);
-
   useEffect(() => {
     void cargarDespachos();
     void cargarReporteGlobal();
   }, [cargarDespachos, cargarReporteGlobal]);
-
-  useEffect(() => {
-    void cargarFallas();
-  }, [cargarFallas]);
 
   // Al cambiar de fecha se descarta la propuesta y el detalle anteriores.
   useEffect(() => {
@@ -499,34 +612,6 @@ export default function Despacho() {
       setError(detalleDe(e, 'Error al enviar el despacho.'));
     } finally {
       setEnviando(false);
-    }
-  }
-
-  async function reportarFalla(evento: FormEvent) {
-    evento.preventDefault();
-    setError('');
-    setOk('');
-    const descripcion = fallaForm.descripcion.trim();
-    if (!descripcion) {
-      setError('Indique la descripción de la falla masiva.');
-      return;
-    }
-    const sector = fallaForm.id_sector.trim();
-    setCreandoFalla(true);
-    try {
-      await api.crearFallaMasiva({
-        descripcion,
-        id_sector: sector ? Number(sector) : null,
-        origen: fallaForm.origen as OrigenFallaMasiva,
-      });
-      setFallaForm(FALLA_VACIA);
-      setModalFalla(false);
-      setOk('Falla masiva registrada.');
-      await cargarFallas();
-    } catch (e) {
-      setError(detalleDe(e, 'Error al registrar la falla masiva.'));
-    } finally {
-      setCreandoFalla(false);
     }
   }
 
@@ -788,47 +873,56 @@ export default function Despacho() {
           }`}
           onCerrar={cerrarDetalle}
         >
+          {/* D-99 (RF-68): Box Infos con el resumen del despacho. El cuadro de
+              información principal se reorganiza debajo en rejilla. */}
+          <BoxInfosDespacho despacho={seleccionado} />
 
-          <div className="tabla-envoltura">
-            <table className="tabla-ficha">
-              <tbody>
-                <tr>
-                  <th>Central</th>
-                  <td>{seleccionado.id_central}</td>
-                </tr>
-                <tr>
-                  <th>Fecha</th>
-                  <td>{fecha(seleccionado.fecha)}</td>
-                </tr>
-                <tr>
-                  <th>Cuadrilla</th>
-                  <td>
-                    {seleccionado.cuadrilla_codigo ?? '—'}
-                    {seleccionado.cuadrilla_nombre ? ` — ${seleccionado.cuadrilla_nombre}` : ''}
-                  </td>
-                </tr>
-                <tr>
-                  <th>Estado</th>
-                  <td>{seleccionado.estado}</td>
-                </tr>
-                <tr>
-                  <th>Canal de envío</th>
-                  <td>{seleccionado.enviado_canal ?? '—'}</td>
-                </tr>
-                <tr>
-                  <th>Enviado en</th>
-                  <td>{fechaHora(seleccionado.enviado_en)}</td>
-                </tr>
-                <tr>
-                  <th>Generado por</th>
-                  <td>{seleccionado.usuario_crea ?? '—'}</td>
-                </tr>
-                <tr>
-                  <th>Casos</th>
-                  <td>{seleccionado.casos.length}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="datos-grid">
+            <div className="dato">
+              <span className="dato-etiqueta">Central</span>
+              <span className="dato-valor">{seleccionado.id_central}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Fecha</span>
+              <span className="dato-valor">{fecha(seleccionado.fecha)}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Cuadrilla</span>
+              <span className="dato-valor">
+                {seleccionado.cuadrilla_codigo ?? '—'}
+                {seleccionado.cuadrilla_nombre ? ` — ${seleccionado.cuadrilla_nombre}` : ''}
+              </span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Estado</span>
+              <span className="dato-valor">{seleccionado.estado}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Generado por</span>
+              <span className="dato-valor">{seleccionado.usuario_crea ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Canal de envío</span>
+              <span className="dato-valor">{seleccionado.enviado_canal ?? '—'}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Enviado en</span>
+              <span className="dato-valor">{fechaHora(seleccionado.enviado_en)}</span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Cierre de jornada</span>
+              <span className="dato-valor">
+                {seleccionado.cerrado_en
+                  ? `${fechaHora(seleccionado.cerrado_en)}${
+                      seleccionado.cierre_auto ? ' (automático)' : ''
+                    }`
+                  : 'Pendiente'}
+              </span>
+            </div>
+            <div className="dato">
+              <span className="dato-etiqueta">Último reproceso</span>
+              <span className="dato-valor">{fechaHora(seleccionado.reprocesado_en)}</span>
+            </div>
           </div>
 
           {!soloLectura && (
@@ -841,14 +935,9 @@ export default function Despacho() {
               >
                 Publicar
               </button>
-              <button
-                type="button"
-                className="btn btn-secundario"
-                onClick={() => void cambiarEstadoDespacho('CERRADO')}
-                disabled={ocupado || seleccionado.estado === 'CERRADO'}
-              >
-                Cerrar
-              </button>
+              {/* D-99 (RF-68): el despacho ya NO se cierra a mano desde aquí. El
+                  corte es automático a las 23:50 y los casos sin cerrar vuelven a
+                  PENDIENTE para la jornada siguiente. */}
               <button
                 type="button"
                 className="btn btn-secundario"
@@ -858,6 +947,12 @@ export default function Despacho() {
               </button>
             </div>
           )}
+
+          <p className="texto-pequeno aviso-cierre-jornada">
+            El despacho se cierra solo a las 23:50 del día de la jornada (o al entrar
+            un supervisor un día después). Los casos que no estén cerrados pasan a
+            PENDIENTE para reasignarse en la jornada siguiente.
+          </p>
 
           <div className="pagina-cabecera">
             <h3 className="subtitulo-seccion">Casos del despacho</h3>
@@ -1095,125 +1190,6 @@ export default function Despacho() {
           ))}
       </div>
 
-      {/* Fallas masivas (RF-09) */}
-      <div className="panel-bloque">
-        <div className="pagina-cabecera">
-          <h2>Fallas masivas</h2>
-          {!soloLectura && (
-            <button
-              type="button"
-              className="btn"
-              onClick={() => {
-                setError('');
-                setOk('');
-                setModalFalla(true);
-              }}
-            >
-              Registrar falla
-            </button>
-          )}
-        </div>
-
-        {!soloLectura && modalFalla && (
-          <Modal titulo="Registrar falla" onCerrar={() => setModalFalla(false)}>
-            <form className="formulario modal-formulario" onSubmit={(e) => void reportarFalla(e)}>
-              <div className="campo campo-ancho">
-                <label htmlFor="falla-descripcion">Descripción *</label>
-                <input
-                  id="falla-descripcion"
-                  value={fallaForm.descripcion}
-                  onChange={(e) => setFallaForm({ ...fallaForm, descripcion: e.target.value })}
-                  placeholder="Ej.: Corte de fibra sector Alfa"
-                />
-              </div>
-              <div className="campo">
-                <label htmlFor="falla-sector">ID de sector (opcional)</label>
-                <input
-                  id="falla-sector"
-                  type="number"
-                  min={1}
-                  value={fallaForm.id_sector}
-                  onChange={(e) => setFallaForm({ ...fallaForm, id_sector: e.target.value })}
-                />
-              </div>
-              <div className="campo">
-                <label htmlFor="falla-origen">Origen</label>
-                <select
-                  id="falla-origen"
-                  value={fallaForm.origen}
-                  onChange={(e) => setFallaForm({ ...fallaForm, origen: e.target.value })}
-                >
-                  {ORIGENES_FALLA.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="acciones-form">
-                <button type="submit" className="btn" disabled={creandoFalla}>
-                  {creandoFalla ? 'Registrando…' : 'Registrar falla'}
-                </button>
-              </div>
-            </form>
-          </Modal>
-        )}
-
-        <h3 className="subtitulo-seccion">Registradas</h3>
-        <div className="tabla-envoltura">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Central</th>
-                <th>Descripción</th>
-                <th>Detección</th>
-                <th>Origen</th>
-                <th>Sector</th>
-                <th>Cuadrilla</th>
-                <th>Estado</th>
-                <th>Planificación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargandoFallas ? (
-                <tr>
-                  <td colSpan={9} className="vacio">
-                    Cargando…
-                  </td>
-                </tr>
-              ) : fallas.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="vacio">
-                    No hay fallas masivas registradas.
-                  </td>
-                </tr>
-              ) : (
-                fallas.map((f) => (
-                  <tr key={f.id_falla}>
-                    <td>{f.id_falla}</td>
-                    <td>{f.id_central}</td>
-                    <td>{f.descripcion}</td>
-                    <td>{fechaHora(f.fecha_deteccion)}</td>
-                    <td>{f.origen}</td>
-                    <td>{f.id_sector ?? '—'}</td>
-                    <td>{f.id_cuadrilla ?? '—'}</td>
-                    <td>{f.estado}</td>
-                    <td>{f.planificacion ?? '—'}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-            <PieTabla
-              colSpan={9}
-              total={fallas.length}
-              singular="falla"
-              plural="fallas"
-              cargando={cargandoFallas}
-            />
-          </table>
-        </div>
-      </div>
     </>
   );
 }

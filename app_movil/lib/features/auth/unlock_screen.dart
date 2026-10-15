@@ -139,8 +139,9 @@ class _UnlockScreenState extends State<UnlockScreen> {
                             DropdownMenuItem(value: p, child: Text('Pos $p')),
                         ],
                         onChanged: (valor) {
-                          if (valor != null)
+                          if (valor != null) {
                             setState(() => _posiciones[i] = valor);
+                          }
                         },
                       ),
                     ),

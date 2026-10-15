@@ -489,3 +489,48 @@ def emitir_alarmas_despacho(db: Session, ahora: datetime | None = None) -> dict[
         emitidos += 1
     db.commit()
     return {"alarmas": emitidos}
+
+
+def emitir_despacho_actualizado(
+    db: Session,
+    *,
+    id_central: int,
+    fecha: date,
+    cuadrillas: list[tuple[int, str, int]],
+    origen_p00: str | None = None,
+    reproceso: bool = False,
+    ahora: datetime | None = None,
+) -> dict[str, int]:
+    """Avisa a cada cuadrilla con el **DESPACHO ACTUALIZADO** (D-99 · RF-69).
+
+    `cuadrillas` es una lista de `(id_cuadrilla, codigo, total_de_casos)`. El
+    aviso va en el **cuerpo** del mensaje porque el CHECK de `mensaje.tipo` solo
+    admite cuatro valores; se usa `ALARMA_DESPACHO`, que es el tipo previsto para
+    los avisos de la jornada.
+
+    La clave de deduplicación incluye el instante con microsegundos: cada
+    procesamiento (el primero y cada reproceso) genera su propio aviso.
+    """
+    momento = ahora or datetime.now(UTC)
+    marca = momento.strftime("%Y%m%d%H%M%S%f")
+    enviados = 0
+    for id_cuadrilla, codigo, total in cuadrillas:
+        etiqueta = "DESPACHO ACTUALIZADO" if reproceso else "DESPACHO DEL DÍA"
+        cuerpo = (
+            f"{etiqueta} — jornada {fecha.isoformat()}\n"
+            f"Cuadrilla {codigo}: {total} caso(s) asignado(s).\n"
+            "Abra la pestaña DESPACHO para ver la lista vigente."
+        )
+        crear_mensaje(
+            db,
+            id_central=id_central,
+            origen_p00=origen_p00,
+            destino_tipo="CUADRILLA",
+            tipo="ALARMA_DESPACHO",
+            cuerpo=cuerpo,
+            id_cuadrilla=id_cuadrilla,
+            dedupe_key=f"DESP:{id_cuadrilla}:{fecha.isoformat()}:{marca}"[:80],
+            ahora=momento,
+        )
+        enviados += 1
+    return {"avisos": enviados}

@@ -22,15 +22,19 @@ from ..models import (
     CatalogoMetodo,
     Causa,
     Cuadrilla,
+    CuadrillaSectorDia,
     CuadrillaTecnico,
     Despacho,
     DespachoCasos,
     Evidencia,
+    FallaMasiva,
+    OrdenMaterial,
     Sector,
     SyncCheck,
     SyncLog,
     Usuario,
 )
+from . import masivas as svc_masivas
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +202,23 @@ def _caso_sync(caso: Caso, sector_nombre: str | None, dc: DespachoCasos | None) 
         "orden_visita": dc.orden_visita if dc else None,
         "tipo_asignacion": dc.tipo_asignacion if dc else None,
         "observacion_despacho": dc.observacion if dc else None,
+        # D-99: datos técnicos y RUTA. Sin ellos el bloque «Técnica» de la ficha de
+        # la APK nunca se pintaba tras una descarga diferencial (los campos estaban
+        # vacíos y la ficha oculta las filas vacías). `extra` es la columna del
+        # archivo de ingesta donde viaja la RUTA.
+        "olt": caso.olt,
+        "plan": caso.plan,
+        "slot": caso.slot,
+        "puerto": caso.puerto,
+        "fat": caso.fat,
+        "extra": caso.extra,
+        "serial": caso.serial,
+        "tipo_servicio": caso.tipo_servicio,
+        "area_trabajo": caso.area_trabajo,
+        "nombre_central": caso.nombre_central,
+        "ultimo_comentario": caso.ultimo_comentario,
+        "fecha_reporte": caso.fecha_reporte,
+        "es_falla_masiva": caso.es_falla_masiva,
     }
 
 
@@ -213,6 +234,68 @@ def _info_cuadrilla(c: Cuadrilla | None) -> dict[str, Any] | None:
     }
 
 
+def _masivas_de_cuadrilla(db: Session, c: Cuadrilla) -> list[dict[str, Any]]:
+    """Masivas activas que atañen a la cuadrilla (D-99 · RF-72).
+
+    Son las asignadas a la cuadrilla y las de los sectores que cubre. Cada una
+    viaja con sus **CASOS ASOCIADOS**, los datos técnicos y la **RUTA**, para que
+    la ficha MASIVA de la APK funcione sin conexión.
+    """
+    sectores = set(db.scalars(
+        select(CuadrillaSectorDia.id_sector).where(
+            CuadrillaSectorDia.id_cuadrilla == c.id_cuadrilla
+        )
+    ).all())
+    fallas = db.scalars(
+        select(FallaMasiva)
+        .where(
+            FallaMasiva.id_central == c.id_central,
+            FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")),
+        )
+        .order_by(FallaMasiva.id_falla.desc())
+    ).all()
+    nombres_sector = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
+    salida: list[dict[str, Any]] = []
+    for falla in fallas:
+        if falla.id_cuadrilla != c.id_cuadrilla and falla.id_sector not in sectores:
+            continue
+        casos = svc_masivas.casos_asociados(db, falla)
+        ordenes = [
+            {"id_orden": o.id_orden, "estado": o.estado, "observacion": o.observacion,
+             "fecha": o.fecha}
+            for o in db.scalars(
+                select(OrdenMaterial)
+                .where(OrdenMaterial.id_falla == falla.id_falla)
+                .order_by(OrdenMaterial.id_orden.desc())
+            ).all()
+        ]
+        salida.append({
+            "id_falla": falla.id_falla,
+            "descripcion": falla.descripcion,
+            "estado": falla.estado,
+            "origen": falla.origen,
+            "clave_concentracion": falla.clave_concentracion,
+            "id_sector": falla.id_sector,
+            "sector_nombre": nombres_sector.get(falla.id_sector) if falla.id_sector else None,
+            "id_cuadrilla": falla.id_cuadrilla,
+            "odn": falla.odn,
+            "fat": falla.fat,
+            "direccion": falla.direccion,
+            "latitud": float(falla.latitud) if falla.latitud is not None else None,
+            "longitud": float(falla.longitud) if falla.longitud is not None else None,
+            "planificacion": falla.planificacion,
+            "reporte_simple": falla.reporte_simple,
+            "planificada_en": falla.planificada_en,
+            "fecha_deteccion": falla.fecha_deteccion,
+            "evidencias": [s.strip() for s in (falla.evidencias or "").split(",") if s.strip()],
+            "actualizado_en": falla.actualizado_en,
+            "casos_asociados": len(casos),
+            "ordenes": ordenes,
+            "casos": [caso.model_dump() for caso in casos],
+        })
+    return salida
+
+
 def _respuesta(
     catalogos: dict[str, Any],
     casos: list[dict[str, Any]],
@@ -220,6 +303,7 @@ def _respuesta(
     mensaje: str,
     cuadrilla: Cuadrilla | None = None,
     casos_cuadrilla: int = 0,
+    masivas: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Payload de DESCARGA con el motivo explícito (D-83).
 
@@ -227,6 +311,9 @@ def _respuesta(
     APK explica por qué no hay casos en vez de decir siempre «no hay casos
     nuevos» (que era falso cuando el técnico no tenía cuadrilla, estaba en la de
     gestión o su cuadrilla no tenía despacho).
+
+    D-99: `masivas` viaja **siempre**, aunque no haya casos nuevos, porque el
+    bloque MASIVA de la APK es fijo y debe reflejar el estado vigente.
     """
     return {
         "server_ts": datetime.now(UTC),
@@ -236,6 +323,7 @@ def _respuesta(
         "mensaje": mensaje,
         "cuadrilla": _info_cuadrilla(cuadrilla),
         "casos_cuadrilla": casos_cuadrilla,
+        "masivas": masivas or [],
     }
 
 
@@ -276,17 +364,20 @@ def construir_descarga(
         )
 
     ids_cuadrilla = _casos_ids_de_cuadrilla(db, c.id_cuadrilla)
+    # D-99: las masivas se calculan una vez y acompañan a todas las respuestas.
+    masivas = _masivas_de_cuadrilla(db, c)
     if not ids_cuadrilla:
         if c.es_supervisor:
             return _respuesta(
                 catalogos, [], MOTIVO_CUADRILLA_GESTION,
                 f"Su cuadrilla {c.codigo} es de gestión (supervisor) y no recibe "
                 "trabajo de campo: pida a su supervisor una cuadrilla de campo.",
-                c,
+                c, masivas=masivas,
             )
         return _respuesta(
             catalogos, [], MOTIVO_SIN_DESPACHO,
             f"Su cuadrilla {c.codigo} no tiene casos despachados todavía.", c,
+            masivas=masivas,
         )
 
     stmt = (
@@ -319,6 +410,7 @@ def construir_descarga(
         return _respuesta(
             catalogos, [], MOTIVO_SIN_PENDIENTES,
             f"Su cuadrilla {c.codigo} no tiene casos pendientes: todos están cerrados.", c,
+            masivas=masivas,
         )
 
     salida: list[dict[str, Any]] = []
@@ -349,7 +441,7 @@ def construir_descarga(
             f"Su cuadrilla {c.codigo} tiene {len(casos)} caso(s) y el dispositivo "
             "ya los tiene todos: no hay cambios."
         )
-    return _respuesta(catalogos, salida, motivo, mensaje, c, len(casos))
+    return _respuesta(catalogos, salida, motivo, mensaje, c, len(casos), masivas=masivas)
 
 
 def _catalogos(db: Session) -> dict[str, Any]:

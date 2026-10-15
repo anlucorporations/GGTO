@@ -13,7 +13,7 @@ class DatabaseHelper {
   static Database? _database;
 
   /// Versión del esquema local. Al cambiarla hay que ampliar `_upgradeDB`.
-  static const int version = 4;
+  static const int version = 5;
 
   DatabaseHelper._init();
 
@@ -95,6 +95,15 @@ class DatabaseHelper {
         datos_json TEXT NOT NULL
       )
     ''');
+    // D-99: masivas activas de la cuadrilla (bloque MASIVA sin conexión).
+    await db.execute('''
+      CREATE TABLE masiva_local (
+        id TEXT PRIMARY KEY,
+        estado TEXT,
+        datos_json TEXT NOT NULL,
+        actualizado_en INTEGER
+      )
+    ''');
   }
 
   /// Migración no destructiva: **no** borra evidencias ni la cola pendiente.
@@ -136,6 +145,17 @@ class DatabaseHelper {
           leido INTEGER NOT NULL DEFAULT 0,
           creado_en TEXT,
           datos_json TEXT NOT NULL
+        )
+      ''');
+    }
+    if (anterior < 5) {
+      // D-99: caché de masivas activas (bloque MASIVA de la APK).
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS masiva_local (
+          id TEXT PRIMARY KEY,
+          estado TEXT,
+          datos_json TEXT NOT NULL,
+          actualizado_en INTEGER
         )
       ''');
     }
@@ -652,6 +672,89 @@ class DatabaseHelper {
         whereArgs: [id],
       );
     }
+  }
+
+  // ------------------------------------------------------------------------- #
+  // Caché de masivas (D-99): bloque MASIVA sin conexión
+  // ------------------------------------------------------------------------- #
+
+  /// Plan del merge de masivas (D-99): qué se guarda y qué se borra.
+  ///
+  /// Es **puro** (sin base de datos) para poder probarlo aislado, igual que
+  /// `OperacionesService.conCambioLocal`. La caché de masivas refleja **lo que
+  /// el servidor tiene activo ahora**: lo que ya no viene —porque la masiva se
+  /// cerró o dejó de atañer a la cuadrilla— se borra del dispositivo. Un
+  /// elemento sin `id_falla` se ignora (no puede identificarse).
+  static ({List<Map<String, dynamic>> guardar, List<String> eliminar})
+      planMergeMasivas(List<String> idsGuardados, List<dynamic> entrantes) {
+    final guardar = <Map<String, dynamic>>[];
+    for (final elemento in entrantes) {
+      if (elemento is! Map) continue;
+      final masiva = Map<String, dynamic>.from(elemento);
+      if ('${masiva['id_falla'] ?? ''}'.trim().isEmpty) continue;
+      guardar.add(masiva);
+    }
+    final presentes = guardar.map((m) => '${m['id_falla']}').toSet();
+    final eliminar = idsGuardados.where((id) => !presentes.contains(id)).toList();
+    return (guardar: guardar, eliminar: eliminar);
+  }
+
+  /// Guarda las masivas activas: **merge por id** y borra las que ya no vengan.
+  Future<void> guardarMasivas(List<dynamic> masivas) async {
+    final db = await database;
+    final ahora = _ahora();
+    final filas = await db.query('masiva_local', columns: ['id']);
+    final plan = planMergeMasivas(
+      filas.map((f) => '${f['id']}').toList(),
+      masivas,
+    );
+    await db.transaction((txn) async {
+      for (final id in plan.eliminar) {
+        await txn.delete('masiva_local', where: 'id = ?', whereArgs: [id]);
+      }
+      for (final masiva in plan.guardar) {
+        await txn.insert(
+          'masiva_local',
+          {
+            'id': '${masiva['id_falla']}',
+            'estado': '${masiva['estado'] ?? ''}',
+            'datos_json': jsonEncode(masiva),
+            'actualizado_en': ahora,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  /// Lee las masivas guardadas; devuelve una lista vacía si aún no hay datos.
+  Future<List<Map<String, dynamic>>> leerMasivas() async {
+    final db = await database;
+    final filas = await db.query('masiva_local', orderBy: 'actualizado_en DESC, id ASC');
+    final lista = <Map<String, dynamic>>[];
+    for (final fila in filas) {
+      try {
+        final datos = jsonDecode('${fila['datos_json']}');
+        if (datos is Map) lista.add(Map<String, dynamic>.from(datos));
+      } catch (_) {
+        // Registro corrupto: se ignora.
+      }
+    }
+    return lista;
+  }
+
+  /// Vacía la caché de masivas (p. ej. al cerrar sesión).
+  Future<void> borrarMasivas() async {
+    final db = await database;
+    await db.delete('masiva_local');
+  }
+
+  /// Cuántas masivas activas hay guardadas en el dispositivo.
+  Future<int> contarMasivas() async {
+    final db = await database;
+    final filas = await db.rawQuery('SELECT COUNT(*) AS total FROM masiva_local');
+    final valor = filas.isNotEmpty ? filas.first['total'] : 0;
+    return valor is int ? valor : 0;
   }
 
   // Metadatos (D-81): identificador de dispositivo y último checklist
