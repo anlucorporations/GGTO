@@ -15,7 +15,8 @@ import type {
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import EstadoChips from '../components/EstadoChips';
-import { CeldaActividad, CeldaClase, CeldaPrioridad } from '../components/CeldasIcono';
+import { CeldaPrioridad, CeldaReporte, aspectoActividad, aspectoClase } from '../components/CeldasIcono';
+import CeldaSector from '../components/CeldaSector';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
@@ -417,8 +418,9 @@ export default function Especiales() {
             <table className="tabla-resumen">
               <thead>
                 <tr>
-                  <th>Tipo</th>
-                  <th>Actividad</th>
+                  {/* D-103: Tipo y Actividad se unen en REPORTE (solo iconos)
+                      para dar más ancho a Dirección. */}
+                  <th>Reporte</th>
                   <th>Prioridad</th>
                   <th>Sector</th>
                   <th>Dirección</th>
@@ -442,15 +444,19 @@ export default function Especiales() {
                     }}
                   >
                     <td>
-                      <CeldaClase valor={c.clasificacion} />
-                    </td>
-                    <td>
-                      <CeldaActividad valor={c.tipo_actividad} />
+                      <CeldaReporte
+                        aspectos={[
+                          aspectoClase(c.clasificacion),
+                          aspectoActividad(c.tipo_actividad),
+                        ]}
+                      />
                     </td>
                     <td>
                       <CeldaPrioridad valor={c.prioridad} />
                     </td>
-                    <td>{c.sector_nombre ?? '—'}</td>
+                    <td>
+                      <CeldaSector sector={c.sector_nombre} fat={c.fat} />
+                    </td>
                     <td>{c.direccion ?? '—'}</td>
                     <td>{c.nombre_cliente ?? c.solicitante_nombre ?? '—'}</td>
                     <td>

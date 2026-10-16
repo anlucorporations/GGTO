@@ -440,6 +440,8 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             # D-72: columnas Dirección y Nombre del listado de ESPECIALES.
             direccion=(caso.direccion if caso else None),
             nombre_cliente=(caso.nombre_cliente if caso else None),
+            # D-103: el FAT del caso asociado acompaña al sector en el listado.
+            fat=(caso.fat if caso else None),
             # RN-AL-01: contacto, identificador de pago y tipo de problema del caso.
             contacto_cliente=(caso.contacto_cliente if caso else None),
             telefono=(caso.telefono if caso else None),

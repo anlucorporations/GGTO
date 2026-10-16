@@ -14,7 +14,8 @@ import type {
   TipoCaso,
 } from '../api/types';
 import FichaCaso, { type Pestana as PestanaFicha } from '../components/FichaCaso';
-import { CeldaClase, CeldaTipoCaso } from '../components/CeldasIcono';
+import { CeldaReporte, aspectoClase, aspectoTipoCaso } from '../components/CeldasIcono';
+import CeldaSector from '../components/CeldaSector';
 import { IconoEditar } from '../components/Iconos';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
@@ -174,7 +175,7 @@ function construirPayload(original: CasoOut, form: EdicionForm): CasoUpdate {
   return p;
 }
 
-/** Listado resumido: ID, iconos de Tipo/Clase, Sector, Dirección, Nombre y estado. */
+/** Listado resumido: ID, iconos del reporte, Sector (con FAT), Dirección, Nombre y estado. */
 function TablaCasos({
   items,
   onVer,
@@ -188,8 +189,9 @@ function TablaCasos({
         <thead>
           <tr>
             <th>ID avería</th>
-            <th>Tipo</th>
-            <th>Clase</th>
+            {/* D-103: Tipo y Clase se unen en REPORTE (solo iconos) para dar
+                más ancho a Dirección. */}
+            <th>Reporte</th>
             <th>Sector</th>
             <th>Dirección</th>
             <th>Nombre</th>
@@ -212,12 +214,13 @@ function TablaCasos({
             >
               <td className="mono">{c.id_averia}</td>
               <td>
-                <CeldaTipoCaso valor={c.tipo_caso} />
+                <CeldaReporte
+                  aspectos={[aspectoTipoCaso(c.tipo_caso), aspectoClase(c.categoria)]}
+                />
               </td>
               <td>
-                <CeldaClase valor={c.categoria} />
+                <CeldaSector sector={c.sector_nombre} fat={c.fat} />
               </td>
-              <td>{c.sector_nombre ?? '—'}</td>
               <td>{c.direccion ?? '—'}</td>
               <td>{c.nombre_cliente ?? '—'}</td>
               <td>

@@ -2173,47 +2173,69 @@ input[type='file'] {
   margin-top: 0;
 }
 
-/* ------------- Página OPERACIÓN: pestañas por sub-sección (D-72) --- */
+/* ------------- Página OPERACIÓN: tablero de fichas (D-103) ---------- */
 
-.operacion-pestanas {
+/* Cada sub-sección es un widget dentro de su ficha, todas en la misma página. */
+.ficha-operacion {
+  position: relative;
+  background: var(--superficie);
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  margin-bottom: 20px;
+  overflow: hidden;
+  scroll-margin-top: 84px; /* deja libre la barra superior al saltar a la ficha */
+}
+
+.ficha-operacion::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--grad-franja);
+}
+
+.ficha-operacion-cabecera {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 18px;
-  border-bottom: 2px solid var(--azul);
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--gris-borde);
+  background: linear-gradient(180deg, #fbfcff, #f6f8fe);
 }
 
-.operacion-pestana {
-  appearance: none;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  padding: 9px 16px;
+.ficha-operacion-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--grad-cubierta);
+  color: #fff;
+  box-shadow: var(--sombra);
+}
+
+.ficha-operacion-titulo h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ficha-operacion-titulo p {
+  margin: 2px 0 0;
   font-size: 13px;
-  font-weight: 700;
   color: var(--gris-texto);
-  cursor: pointer;
-  margin-bottom: -2px;
-  border-radius: 8px 8px 0 0;
 }
 
-.operacion-pestana:hover {
-  color: var(--azul);
-  background: var(--azul-claro);
+.ficha-operacion-cuerpo {
+  padding: 16px 18px 4px;
 }
 
-.operacion-pestana.activa {
-  color: var(--azul);
-  border-bottom-color: var(--azul);
-  background: var(--azul-claro);
-}
-
-.operacion-panel {
-  min-height: 50vh;
-}
-
-.operacion-panel > * + .panel-bloque {
-  margin-top: 18px;
+/* Los bloques internos ya traen su propio margen inferior. */
+.ficha-operacion-cuerpo > .panel-bloque:last-child,
+.ficha-operacion-cuerpo > *:last-child {
+  margin-bottom: 14px;
 }
 
 /* Iconos en celdas de tablas (Tipo, Clase, Prioridad, Actividad) — D-72 */
@@ -2270,6 +2292,65 @@ input[type='file'] {
 }
 .ci-actividad-CONSTRUCCION svg {
   color: #5b21b6;
+}
+
+/* ------------- Columna REPORTE y Sector con FAT (D-103) -------------- */
+
+/* Texto disponible solo para lectores de pantalla (el icono no lleva etiqueta). */
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Los iconos del reporte, juntos y sin texto: el ancho va a Dirección. */
+.celda-reporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.celda-icono-solo {
+  gap: 0;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--superficie-2);
+}
+
+.celda-icono-solo svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Sector (y el FAT debajo, cuando la API lo entrega). */
+.celda-sector {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sector-fat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--gris-texto);
+}
+
+.sector-fat-etiqueta {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--azul);
 }
 
 /* ------------- Perfil y Cuenta (D-72) ------------------------------ */

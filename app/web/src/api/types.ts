@@ -946,6 +946,8 @@ export interface CasoEspecialOut {
 
   /* Resumen del listado (RF-35): los calcula la API. */
   sector_nombre: string | null;
+  /** D-103: FAT del caso asociado (acompaña al sector en el listado). */
+  fat: string | null;
   solicitante_nombre: string | null;
   solicitante_unidad: string | null;
   /* D-72: Dirección y Nombre tomados del caso asociado. */

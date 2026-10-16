@@ -1,14 +1,15 @@
 /**
- * GGTO · CANTV — Verificación visual de la propuesta aplicada.
+ * GGTO · CANTV — Verificación visual de la propuesta aplicada y de los cambios
+ * de interfaz (D-103).
  *
  * Levanta un servidor estático sobre `app/web/dist` (el paquete ya compilado),
- * responde los endpoints de la API con datos de muestra y captura con
- * Playwright las pantallas reales de la aplicación:
+ * responde los endpoints de la API con datos de muestra y captura con Playwright
+ * las pantallas reales de la aplicación:
  *
- *   aplicado-login-escritorio.png   · /login a 1440 px
- *   aplicado-login-movil.png        · /login a 390 px
- *   aplicado-casos-escritorio.png   · /casos a 1440 px (sesión simulada)
- *   aplicado-casos-movil.png        · /casos a 390 px
+ *   aplicado-login-{escritorio,movil}.png       · /login
+ *   aplicado-casos-{escritorio,movil}.png       · /casos (columna REPORTE y FAT)
+ *   aplicado-especiales-escritorio.png          · /especiales
+ *   aplicado-operacion-{escritorio,completo}.png · / (fichas del Panel)
  *
  * Uso (desde la raíz del repositorio):
  *   node docs/propuesta-visual/scripts/verificar_aplicacion.js
@@ -71,6 +72,8 @@ const CASO = (i, extra = {}) => ({
   direccion: 'Av. Principal, Res. Los Chaguaramos, piso 3',
   persona_reporta: 'Titular',
   contacto_cliente: null,
+  // D-103: el FAT acompaña al sector en los listados.
+  fat: '2324-04-04.1-20-FAT60 EG8245H5',
   id_pago: 704821,
   marcado_reclasificar: false,
   motivo_marca: null,
@@ -101,6 +104,7 @@ const CASOS = [
     cuadrilla_codigo: null,
     cuadrilla_nombre: null,
     sector_nombre: 'Santa Mónica',
+    fat: '2324-04-04.1-20.1-FAT133 EG8145V5',
     problema_reporte: 'FALLA FIBRA',
     ultimo_comentario: 'caja terminal 12',
   }),
@@ -115,12 +119,80 @@ const CASOS = [
   }),
 ];
 
+/** Casos especiales de muestra (D-103: incluyen el FAT del caso asociado). */
+const ESPECIALES = [
+  {
+    id_caso_especial: 91,
+    id_caso: 48213,
+    id_solicitante: 3,
+    clasificacion: 'RESIDENCIAL',
+    tipo_actividad: 'REPARACION',
+    prioridad: 'ALTA',
+    tiene_id_averia: true,
+    descripcion: 'Reubicación de ONT solicitada por el suscriptor.',
+    requiere_informe: true,
+    estado: 'ABIERTO',
+    creado_en: '2026-10-11T09:00:00',
+    actualizado_en: '2026-10-12T10:30:00',
+    sector_nombre: 'Los Chaguaramos',
+    fat: '2324-04-04.1-20-FAT60 EG8245H5',
+    solicitante_nombre: 'Unidad de Masivos',
+    solicitante_unidad: 'Masivos',
+    direccion: 'Av. Principal, Res. Los Chaguaramos, piso 3',
+    nombre_cliente: 'Cliente enmascarado',
+    contacto_cliente: '04141234567',
+    telefono: '70*4821',
+    tipo_problema: 'NAVEGACION LENTA',
+    pendiente: true,
+    asignado: false,
+    citado: false,
+    gestion: false,
+    id_cuadrilla: null,
+    cuadrilla_codigo: null,
+    cuadrilla_nombre: null,
+  },
+  {
+    id_caso_especial: 92,
+    id_caso: null,
+    id_solicitante: 4,
+    clasificacion: 'GOBIERNO',
+    tipo_actividad: 'CONSTRUCCION',
+    prioridad: 'MEDIA',
+    tiene_id_averia: false,
+    descripcion: 'Construcción de punto óptico en sede administrativa.',
+    requiere_informe: false,
+    estado: 'EN_PROCESO',
+    creado_en: '2026-10-10T08:15:00',
+    actualizado_en: '2026-10-12T11:00:00',
+    sector_nombre: 'El Valle',
+    fat: '2324-04-04.1-20.3-FAT133 EG8145V5',
+    solicitante_nombre: 'Alcaldía',
+    solicitante_unidad: 'Institucional',
+    direccion: 'Calle 5, edificio administrativo',
+    nombre_cliente: 'Institución',
+    contacto_cliente: null,
+    telefono: null,
+    tipo_problema: 'CONSTRUCCION',
+    pendiente: true,
+    asignado: true,
+    citado: false,
+    gestion: false,
+    id_cuadrilla: 3,
+    cuadrilla_codigo: 'C-03',
+    cuadrilla_nombre: 'Cuadrilla 3',
+  },
+];
+
 /** Respuestas de la API para la sesión simulada. */
 function respuestaApi(ruta) {
   if (ruta.startsWith('/api/v1/auth/me')) return USUARIO;
   if (ruta.startsWith('/api/v1/mensajes/no-leidos')) return { total: 2 };
   if (ruta.startsWith('/api/v1/mensajes/bandeja')) return { items: [], total: 0 };
   if (ruta.startsWith('/api/v1/mensajes')) return [];
+  if (ruta.startsWith('/api/v1/casos-especiales')) return ESPECIALES;
+  if (ruta.startsWith('/api/v1/solicitantes')) {
+    return [{ id_solicitante: 3, nombre: 'Unidad de Masivos', unidad: 'Masivos' }];
+  }
   if (ruta.startsWith('/api/v1/casos/buscar')) return CASOS;
   if (ruta.startsWith('/api/v1/casos')) {
     return { items: CASOS, total: CASOS.length, page: 1, page_size: 25, pages: 1 };
@@ -136,6 +208,119 @@ function respuestaApi(ruta) {
   if (ruta.startsWith('/api/v1/tecnicos')) return [];
   if (ruta.startsWith('/api/v1/configuracion')) return {};
   if (ruta.startsWith('/api/v1/seguimiento')) return { cuadrillas: [], total: 0 };
+
+  // --- Panel/Operación (D-103): formas completas para que las fichas pinten ---
+  if (ruta.startsWith('/api/v1/panel/gestion-diaria')) {
+    return {
+      fecha: '2026-10-15',
+      modo: 'COMUN',
+      cuadrillas: [],
+      totales: { asignadas: 0, cerradas: 0, porcentaje: 0 },
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/diario')) {
+    return {
+      fecha: '2026-10-15',
+      ingresos_nuevos: 0,
+      resueltos_residencial: 0,
+      resueltos_empresarial: 0,
+      resueltos_referidos: 0,
+      citados: 0,
+      diferidos: 0,
+      gestionados: 0,
+      pendientes_total: 0,
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/semanal')) return { desde: '', hasta: '', dias: [] };
+  if (ruta.startsWith('/api/v1/monitoreo/cuadrilla')) {
+    return { desde: '', hasta: '', dias: [], cuadrillas: [] };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/globales')) {
+    return {
+      desde: '',
+      hasta: '',
+      pendientes: 0,
+      resueltos: 0,
+      total: 0,
+      por_estado: {},
+      por_categoria: {},
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/reparacion')) {
+    return {
+      residenciales_comunes: 0,
+      residenciales_referidos: 0,
+      empresariales: 0,
+      total: 0,
+      cuadrillas: [],
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/construccion')) {
+    return {
+      residenciales: 0,
+      empresariales: 0,
+      total: 0,
+      asignados: 0,
+      cerrados: 0,
+      gestionados: 0,
+      cuadrillas: [],
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/capacidad')) {
+    return {
+      cuadrillas_activas: 0,
+      cuadrillas: [],
+      tecnicos_activos: 0,
+      flota_disponible: 0,
+      herramientas_disponibles: 0,
+      sectores_activos: 0,
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/identificadores')) {
+    return {
+      ventana_dias: 30,
+      con_casos: 0,
+      casos_con_identificador: 0,
+      casos_sin_identificador: 0,
+      media_casos: 0,
+      max_casos: 0,
+      reincidentes: 0,
+      top: [],
+      reparaciones_validas: 0,
+      referidos: 0,
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo/reclasificaciones')) {
+    return {
+      reparaciones_validas: 0,
+      referidos: 0,
+      reclasificadas: 0,
+      pendientes_historicos: 0,
+      pendientes_historicos_en_terminal: 0,
+      referidos_sin_ficha: 0,
+      referidos_por_clasificacion: {},
+    };
+  }
+  if (ruta.startsWith('/api/v1/monitoreo')) return { total: 0, filas: [], por_estado: {} };
+  if (ruta.startsWith('/api/v1/metricas')) {
+    return {
+      casos_total: 0,
+      casos_por_estado: {},
+      casos_por_categoria: {},
+      lotes_ingesta: 0,
+      casos_ingeridos: 0,
+      fallas_activas: 0,
+      notificaciones_pendientes: 0,
+      notificaciones_enviadas: 0,
+      notificaciones_fallidas: 0,
+      canales_configurados: {},
+    };
+  }
+  if (ruta.startsWith('/api/v1/fallas-masivas')) return [];
+  if (ruta.startsWith('/api/v1/notificaciones')) return [];
+  if (ruta.startsWith('/api/v1/ingesta/lotes')) return [];
+  if (ruta.startsWith('/api/v1/ingesta')) return {};
+
   // Resto: lista vacía (es la forma que mejor toleran las vistas: `.map`,
   // `.length` y accesos a propiedades devuelven valores válidos o vacíos).
   return [];
@@ -212,14 +397,13 @@ function servir() {
     await contexto.close();
   }
 
-  // --- Sesión simulada: listado de casos ---------------------------
-  // Nota: la pantalla de OPERACIÓN no se captura aquí porque agrega gráficos
-  // de varios endpoints (`/monitoreo/*`, `/panel/gestion-diaria`); con datos de
-  // muestra incompletos revienta por forma de dato, no por la interfaz. Para
-  // esa pantalla hace falta la API real.
-  for (const [nombre, ancho, alto, ruta] of [
+  // --- Sesión simulada: listados y Panel ---------------------------
+  for (const [nombre, ancho, alto, ruta, completa] of [
     ['aplicado-casos-escritorio', 1440, 900, '/casos'],
     ['aplicado-casos-movil', 390, 844, '/casos'],
+    ['aplicado-especiales-escritorio', 1440, 900, '/especiales'],
+    ['aplicado-operacion-escritorio', 1440, 1200, '/'],
+    ['aplicado-operacion-completo', 1440, 1000, '/', true],
   ]) {
     const contexto = await navegador.newContext({
       viewport: { width: ancho, height: alto },
@@ -234,15 +418,18 @@ function servir() {
       [USUARIO],
     );
     const pagina = await contexto.newPage();
-    // Los errores de la página se reportan: permiten distinguir un fallo real
-    // de una respuesta de muestra incompleta.
+    // Los errores de la página se reportan: permiten distinguir un fallo real de
+    // una respuesta de muestra incompleta.
     pagina.on('pageerror', (e) => console.log(`    error en ${ruta}: ${e.message}`));
     pagina.on('console', (m) => {
       if (m.type() === 'error') console.log(`    consola ${ruta}: ${m.text().slice(0, 200)}`);
     });
     await pagina.goto(`${base}${ruta}`, { waitUntil: 'load' });
     await pagina.waitForTimeout(1500);
-    await pagina.screenshot({ path: path.join(SALIDA, `${nombre}.png`) });
+    await pagina.screenshot({
+      path: path.join(SALIDA, `${nombre}.png`),
+      fullPage: completa === true,
+    });
     console.log(`OK  ${nombre}.png (${ancho}px)`);
     await contexto.close();
   }

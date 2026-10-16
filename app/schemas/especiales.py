@@ -178,6 +178,8 @@ class CasoEspecialOut(BaseModel):
     id_cuadrilla: int | None = None
     cuadrilla_codigo: str | None = None
     cuadrilla_nombre: str | None = None
+    # D-103: FAT del caso asociado, para acompañar al sector en el listado.
+    fat: str | None = None
 
 
 # --------------------------------------------------------------------------- #
