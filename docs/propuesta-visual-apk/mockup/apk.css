@@ -594,7 +594,8 @@ p { margin: 0 0 8px; }
 .fab {
   position: absolute;
   right: 18px;
-  bottom: 96px;
+  /* D-104: el técnico ya no tiene barra inferior; el botón baja al borde. */
+  bottom: 22px;
   min-height: 56px;
   padding: 0 22px;
   border-radius: 18px;

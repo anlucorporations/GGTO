@@ -237,6 +237,78 @@ class DatabaseHelper {
     return filas.map((f) => f['id_caso'] as int).toList();
   }
 
+  // ------------------------------------------------------------------ //
+  // D-104 · purga de los casos no atendidos de despachos anteriores     //
+  // ------------------------------------------------------------------ //
+
+  /// Filas mínimas de la caché para decidir la purga (avería, id y estado).
+  Future<List<Map<String, dynamic>>> casosParaPurga() async {
+    final db = await database;
+    return db.query('caso_local', columns: ['id', 'id_caso', 'estado']);
+  }
+
+  /// Claves de los casos con **trabajo sin enviar**: acciones en la cola
+  /// (`accion_pendiente`) o fotografías pendientes de subir (`evidencia_local`).
+  ///
+  /// Se devuelven las dos formas posibles de la clave —la avería (`id`) y el
+  /// identificador numérico (`id_caso`)— porque la evidencia guarda una y el
+  /// caso local la otra. Un caso con trabajo sin enviar **nunca** se purga.
+  Future<Set<String>> clavesConTrabajoPendiente() async {
+    final db = await database;
+    final claves = <String>{};
+
+    void anotar(dynamic valor) {
+      final texto = '${valor ?? ''}'.trim();
+      if (texto.isNotEmpty) claves.add(texto);
+    }
+
+    for (final fila in await db.query('accion_pendiente', columns: ['payload'])) {
+      try {
+        final datos = jsonDecode('${fila['payload']}');
+        if (datos is Map) {
+          anotar(datos['id_caso']);
+          anotar(datos['id_averia']);
+        }
+      } catch (_) {
+        // Payload ilegible: se ignora (la acción sigue en la cola y el caso se
+        // protege igual por la evidencia o por su estado).
+      }
+    }
+
+    for (final fila in await db.query(
+      'evidencia_local',
+      columns: ['id_caso', 'id_averia'],
+      where: 'subida = 0',
+    )) {
+      anotar(fila['id_caso']);
+      anotar(fila['id_averia']);
+    }
+
+    return claves;
+  }
+
+  /// Borra de la caché los casos indicados (por avería) y limpia las evidencias
+  /// ya subidas que quedaran huérfanas. **No** toca la cola de acciones.
+  Future<int> borrarCasos(List<String> ids) async {
+    if (ids.isEmpty) return 0;
+    final db = await database;
+    final marcas = List.filled(ids.length, '?').join(',');
+    var borrados = 0;
+    await db.transaction((txn) async {
+      borrados = await txn.delete(
+        'caso_local',
+        where: 'id IN ($marcas)',
+        whereArgs: ids,
+      );
+      await txn.delete(
+        'evidencia_local',
+        where: 'id_caso IN ($marcas) AND subida = 1',
+        whereArgs: ids,
+      );
+    });
+    return borrados;
+  }
+
   /// Lee la caché de casos; devuelve una lista vacía si aún no hay datos.
   Future<List<Map<String, dynamic>>> leerCasos({String? consulta}) async {
     final db = await database;

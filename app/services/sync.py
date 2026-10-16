@@ -35,6 +35,7 @@ from ..models import (
     Usuario,
 )
 from . import masivas as svc_masivas
+from .tiempo import hoy_operativo
 
 logger = logging.getLogger(__name__)
 
@@ -180,8 +181,58 @@ def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
     return filas
 
 
-def _caso_sync(caso: Caso, sector_nombre: str | None, dc: DespachoCasos | None) -> dict[str, Any]:
-    return {
+def _despacho_del_dia(db: Session, id_cuadrilla: int, dia: date) -> Despacho | None:
+    """Despacho **de hoy** de la cuadrilla, si existe (D-104).
+
+    Es la condición que la APK exige antes de borrar los casos no atendidos de
+    despachos anteriores: si la cuadrilla no tiene despacho del día, la app **no
+    borra nada** (el técnico podría estar trabajando con el de ayer).
+    """
+    return db.scalars(
+        select(Despacho)
+        .where(Despacho.id_cuadrilla == id_cuadrilla, Despacho.fecha == dia)
+        .order_by(Despacho.id_despacho.desc())
+        .limit(1)
+    ).first()
+
+
+def _casos_del_dia(db: Session, id_cuadrilla: int, dia: date) -> list[int]:
+    """IDs de los casos cuyo **último despacho es el de hoy** de esta cuadrilla.
+
+    Se aplica el mismo criterio que `_casos_ids_de_cuadrilla` (último despacho por
+    caso, `fecha` e `id_despacho` descendentes): un caso reasignado hoy a otra
+    cuadrilla no cuenta como del día para la anterior.
+    """
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=DespachoCasos.id_caso,
+            order_by=(Despacho.fecha.desc(), Despacho.id_despacho.desc()),
+        )
+        .label("rn")
+    )
+    por_caso = (
+        select(
+            DespachoCasos.id_caso.label("id_caso"),
+            Despacho.id_cuadrilla.label("id_cuadrilla"),
+            Despacho.fecha.label("fecha"),
+            rn,
+        )
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .subquery()
+    )
+    return list(
+        db.scalars(
+            select(por_caso.c.id_caso).where(
+                por_caso.c.id_cuadrilla == id_cuadrilla,
+                por_caso.c.fecha == dia,
+                por_caso.c.rn == 1,
+            )
+        ).all()
+    )
+
+
+def _caso_sync(caso: Caso, sector_nombre: str | None, dc: DespachoCasos | None) -> dict[str, Any]:    return {
         "id_caso": caso.id_caso,
         "id_averia": caso.id_averia,
         "estado_actual": caso.estado_actual,
@@ -304,6 +355,8 @@ def _respuesta(
     cuadrilla: Cuadrilla | None = None,
     casos_cuadrilla: int = 0,
     masivas: list[dict[str, Any]] | None = None,
+    despacho_del_dia: Despacho | None = None,
+    ids_del_dia: list[int] | None = None,
 ) -> dict[str, Any]:
     """Payload de DESCARGA con el motivo explícito (D-83).
 
@@ -314,6 +367,11 @@ def _respuesta(
 
     D-99: `masivas` viaja **siempre**, aunque no haya casos nuevos, porque el
     bloque MASIVA de la APK es fijo y debe reflejar el estado vigente.
+
+    D-104: `despacho_del_dia` (**null** si la cuadrilla no tiene despacho hoy) e
+    `ids_del_dia` (los casos del despacho de hoy) permiten a la APK verificar que
+    hay jornada del día y, solo entonces, borrar los casos no atendidos que
+    arrastra de despachos anteriores.
     """
     return {
         "server_ts": datetime.now(UTC),
@@ -324,6 +382,12 @@ def _respuesta(
         "cuadrilla": _info_cuadrilla(cuadrilla),
         "casos_cuadrilla": casos_cuadrilla,
         "masivas": masivas or [],
+        "despacho_del_dia": (
+            {"id_despacho": despacho_del_dia.id_despacho, "fecha": despacho_del_dia.fecha}
+            if despacho_del_dia is not None
+            else None
+        ),
+        "ids_del_dia": ids_del_dia or [],
     }
 
 
@@ -364,6 +428,10 @@ def construir_descarga(
         )
 
     ids_cuadrilla = _casos_ids_de_cuadrilla(db, c.id_cuadrilla)
+    # D-104: jornada del día de la cuadrilla. Si no la hay, la APK no borra nada.
+    dia = hoy_operativo()
+    despacho_hoy = _despacho_del_dia(db, c.id_cuadrilla, dia)
+    ids_dia = _casos_del_dia(db, c.id_cuadrilla, dia) if despacho_hoy else []
     # D-99: las masivas se calculan una vez y acompañan a todas las respuestas.
     masivas = _masivas_de_cuadrilla(db, c)
     if not ids_cuadrilla:
@@ -377,7 +445,7 @@ def construir_descarga(
         return _respuesta(
             catalogos, [], MOTIVO_SIN_DESPACHO,
             f"Su cuadrilla {c.codigo} no tiene casos despachados todavía.", c,
-            masivas=masivas,
+            masivas=masivas, despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia,
         )
 
     stmt = (
@@ -410,7 +478,7 @@ def construir_descarga(
         return _respuesta(
             catalogos, [], MOTIVO_SIN_PENDIENTES,
             f"Su cuadrilla {c.codigo} no tiene casos pendientes: todos están cerrados.", c,
-            masivas=masivas,
+            masivas=masivas, despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia,
         )
 
     salida: list[dict[str, Any]] = []
@@ -441,7 +509,10 @@ def construir_descarga(
             f"Su cuadrilla {c.codigo} tiene {len(casos)} caso(s) y el dispositivo "
             "ya los tiene todos: no hay cambios."
         )
-    return _respuesta(catalogos, salida, motivo, mensaje, c, len(casos), masivas=masivas)
+    return _respuesta(
+        catalogos, salida, motivo, mensaje, c, len(casos), masivas=masivas,
+        despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia,
+    )
 
 
 def _catalogos(db: Session) -> dict[str, Any]:

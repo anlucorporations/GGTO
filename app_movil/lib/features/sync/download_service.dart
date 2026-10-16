@@ -1,5 +1,6 @@
 import '../../core/api_client.dart';
 import '../../core/database.dart';
+import 'purga_despachos.dart';
 import 'sync_sesion.dart';
 
 /// Resultado de una operación DESCARGA (D-73).
@@ -18,6 +19,8 @@ class ResultadoDescarga {
     this.cuadrillaCodigo,
     this.casosCuadrilla = 0,
     this.masivas = 0,
+    this.descartados = 0,
+    this.despachoDelDia,
   });
 
   final int nuevos;
@@ -42,16 +45,25 @@ class ResultadoDescarga {
   /// bloque MASIVA de la APK es fijo y debe reflejar el estado vigente.
   final int masivas;
 
+  /// D-104: casos **no atendidos** de despachos anteriores que se borraron del
+  /// dispositivo después de que el servidor confirmara el despacho del día.
+  final int descartados;
+
+  /// D-104: fecha del despacho del día (`null` si la cuadrilla no tiene jornada,
+  /// y entonces no se borró nada).
+  final DateTime? despachoDelDia;
+
   /// ¿La descarga no trajo nada **porque no hay nada** (y no por un fallo)?
   bool get sinNovedades => nuevos == 0 && actualizados == 0;
 
   String get resumen {
-    if (sinNovedades) {
+    if (sinNovedades && descartados == 0) {
       return mensaje.isNotEmpty ? mensaje : 'No hay casos nuevos ni cambios.';
     }
     final partes = <String>[];
     if (nuevos > 0) partes.add('$nuevos nuevos');
     if (actualizados > 0) partes.add('$actualizados actualizados');
+    if (descartados > 0) partes.add('$descartados descartados de jornadas anteriores');
     final conteo = partes.join(' · ');
     if (cuadrillaCodigo == null || cuadrillaCodigo!.isEmpty) return conteo;
     return '$conteo · cuadrilla $cuadrillaCodigo';
@@ -115,6 +127,27 @@ class DownloadService {
       avisar(0.8, 'Guardando las fallas masivas…');
       await DatabaseHelper.instance.guardarMasivas(masivas);
 
+      // D-104: si el servidor confirma que la cuadrilla tiene **despacho del
+      // día**, se borran los casos no atendidos que arrastra de jornadas
+      // anteriores. Si no lo confirma, no se borra nada: el técnico podría estar
+      // trabajando con el despacho de ayer.
+      final despachoDia = datos['despacho_del_dia'];
+      DateTime? fechaDespacho;
+      var descartados = 0;
+      final idsDia = <int>{};
+      if (despachoDia is Map) {
+        final fecha = despachoDia['fecha'];
+        if (fecha is String) fechaDespacho = DateTime.tryParse(fecha);
+        final ids = datos['ids_del_dia'];
+        if (ids is List) {
+          for (final id in ids) {
+            if (id is int) idsDia.add(id);
+          }
+        }
+        avisar(0.9, 'Descartando los casos de jornadas anteriores…');
+        descartados = await PurgaDespachos.ejecutar(idsDelDia: idsDia);
+      }
+
       DateTime? serverTs;
       final ts = datos['server_ts'];
       if (ts is String) {
@@ -152,6 +185,8 @@ class DownloadService {
         cuadrillaCodigo: codigo.isEmpty ? null : codigo,
         casosCuadrilla: casosCuadrilla,
         masivas: masivas.length,
+        descartados: descartados,
+        despachoDelDia: fechaDespacho,
       );
     } catch (e) {
       if (sesion.idSesion != null) {

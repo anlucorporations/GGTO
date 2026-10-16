@@ -120,7 +120,11 @@ class CasosProvider extends ChangeNotifier {
       final resultado = await DownloadService.descargar(onProgreso: onProgreso);
       _actualizadoEn = resultado.serverTs ?? DateTime.now();
       _motivo = resultado.motivo;
-      _mensajeServidor = resultado.mensaje;
+      // D-104: si la purga descartó casos de jornadas anteriores, se dice.
+      _mensajeServidor = resultado.descartados > 0
+          ? '${resultado.mensaje} Se descartaron ${resultado.descartados} '
+              'caso(s) no atendidos de jornadas anteriores.'
+          : resultado.mensaje;
       _cuadrillaCodigo = resultado.cuadrillaCodigo;
       _casosCuadrilla = resultado.casosCuadrilla;
       _desdeCache = false;

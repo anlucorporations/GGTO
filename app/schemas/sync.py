@@ -37,6 +37,17 @@ class CuadrillaSyncOut(BaseModel):
     es_supervisor: bool = False
 
 
+class DespachoDelDiaOut(BaseModel):
+    """Despacho de **hoy** de la cuadrilla (D-104).
+
+    Si no viene (`null`), la cuadrilla **no tiene jornada del día** y la APK no
+    debe borrar ningún caso: el técnico puede estar trabajando con el de ayer.
+    """
+
+    id_despacho: int
+    fecha: date
+
+
 class CasoSyncOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,6 +105,11 @@ class SyncDescargaOut(BaseModel):
     # D-99 (RF-72): masivas activas que atañen a la cuadrilla, con sus CASOS
     # ASOCIADOS y la RUTA, para el bloque MASIVA fijo de la APK.
     masivas: list[dict] = Field(default_factory=list)
+    # D-104: jornada del día. `despacho_del_dia` es `null` si la cuadrilla no
+    # tiene despacho hoy, y en ese caso la APK **no borra** casos; `ids_del_dia`
+    # son los casos del despacho de hoy, que la APK conserva siempre.
+    despacho_del_dia: DespachoDelDiaOut | None = None
+    ids_del_dia: list[int] = Field(default_factory=list)
 
 
 class EvidenciaUploadOut(BaseModel):
