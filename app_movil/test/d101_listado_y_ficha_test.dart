@@ -6,8 +6,11 @@
 //      que aparezca en el texto de «Información» cuando no hay contacto propio;
 //   3. el estado va como icono y las acciones del pie son iconos, no botones.
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ggto_tecnico/core/theme.dart';
 import 'package:ggto_tecnico/features/casos/acciones_caso.dart';
 import 'package:ggto_tecnico/widgets/caso_card.dart';
 import 'package:ggto_tecnico/widgets/estado_chip.dart';
@@ -129,9 +132,44 @@ void main() {
       expect(nuevo.$1, isNot(cerrado.$1));
       expect(cerrado.$1, Icons.check_circle);
       expect(enrutado.$1, Icons.alt_route);
-      expect(cerrado.$2, Colors.green);
+      // Propuesta visual v2: la tinta es la de marca (RNF-APK-05 exige 4,5:1;
+      // `Colors.green` daba 2,78:1 sobre blanco).
+      expect(cerrado.$2, Marca.exito);
+      expect(cerrado.$3, Marca.exitoClaro);
       // Un estado desconocido no rompe: cae en el icono genérico.
       expect(EstadoIcono.aspecto('LO QUE SEA').$1, Icons.help_outline);
+    });
+
+    test('cada tinta de estado supera el 4,5:1 que exige RNF-APK-05', () {
+      // Luminancia relativa de la WCAG 2.2 sobre el fondo claro del chip.
+      double luminancia(Color c) {
+        double canal(double v) =>
+            v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+        return 0.2126 * canal(c.red / 255) +
+            0.7152 * canal(c.green / 255) +
+            0.0722 * canal(c.blue / 255);
+      }
+
+      double contraste(Color a, Color b) {
+        final la = luminancia(a);
+        final lb = luminancia(b);
+        final alto = la > lb ? la : lb;
+        final bajo = la > lb ? lb : la;
+        return (alto + 0.05) / (bajo + 0.05);
+      }
+
+      const estados = [
+        'NUEVO', 'ASIGNADO', 'CONTACTADO', 'CITADO',
+        'DIFERIDO', 'ENRUTADO', 'CERRADO', 'CANCELADO', 'EN_GESTION', 'OTRO',
+      ];
+      for (final estado in estados) {
+        final (_, tinta, fondo) = EstadoIcono.aspecto(estado);
+        expect(
+          contraste(tinta, fondo),
+          greaterThanOrEqualTo(4.5),
+          reason: 'El estado $estado no llega a 4,5:1',
+        );
+      }
     });
 
     testWidgets('la tarjeta de la lista usa el icono y no el chip de texto',

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"
+     role="img" aria-label="Icono de la aplicación GGTO Técnico">
+  <title>Icono de la aplicación (vista compuesta)</title>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#021FBE"/>
+      <stop offset="16%" stop-color="#0B20BC"/>
+      <stop offset="34%" stop-color="#3B1CAD"/>
+      <stop offset="52%" stop-color="#7C12AF"/>
+      <stop offset="70%" stop-color="#9D0BAC"/>
+      <stop offset="86%" stop-color="#C905A5"/>
+      <stop offset="100%" stop-color="#E003A0"/>
+    </linearGradient>
+    <radialGradient id="glow-izq" cx="0.08" cy="0.06" r="0.55">
+      <stop offset="0%" stop-color="#3F5BFF" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#3F5BFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-der" cx="0.92" cy="0.98" r="0.6">
+      <stop offset="0%" stop-color="#D003C2" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#D003C2" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="trama" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.6" fill="#E5DDF8" opacity="0.5"/>
+    </pattern>
+    <filter id="suave" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="38"/>
+    </filter>
+    <filter id="suave2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+  </defs>
+  <defs>
+    <clipPath id="redondeo"><rect width="1024" height="1024" rx="224" ry="224"/></clipPath>
+  </defs>
+  <g clip-path="url(#redondeo)">
+    <rect width="1024" height="1024" fill="url(#fondo)"/>
+    <rect width="1024" height="1024" fill="url(#glow-izq)"/>
+    <rect width="1024" height="1024" fill="url(#glow-der)"/>
+    <rect x="640" y="96" width="260" height="200" fill="url(#trama)"/>
+    <g transform="translate(512,500) scale(1.02) translate(-333,-125)">
+      <g fill="#FFFFFF">
+  <path d="M75.62,214.39s136.13-43.07,265.85-56.84c129.72-13.77,249.77,1.72,249.77,1.72,0,0-146.99-48.81-288.24-23.54-141.25,25.26-227.38,78.66-227.38,78.66Z"/>
+  <path d="M76.76,249.99s129.81-47.66,259.53-61.44c129.72-13.78,254.94.57,254.94.57,0,0-146.99-46.51-288.24-21.25-141.25,25.27-226.23,82.11-226.23,82.11Z"/>
+  <path d="M76.76,233.34s129.81-47.66,259.53-61.44c129.72-13.77,254.94.57,254.94.57,0,0-146.99-46.51-288.24-21.24-141.25,25.26-226.23,82.11-226.23,82.11Z"/>
+  <polygon points="228.91 186.27 224.48 183.81 220.78 187.26 221.75 182.29 217.32 179.83 222.35 179.22 223.32 174.25 225.45 178.84 230.48 178.23 226.77 181.68 228.91 186.27"/>
+  <polygon points="257.83 179.4 253.41 176.94 249.7 180.4 250.67 175.42 246.24 172.96 251.27 172.35 252.24 167.38 254.37 171.97 259.4 171.36 255.7 174.81 257.83 179.4"/>
+  <polygon points="286.72 173.36 282.29 170.91 278.59 174.36 279.56 169.39 275.13 166.93 280.16 166.31 281.13 161.34 283.26 165.93 288.29 165.32 284.59 168.77 286.72 173.36"/>
+  <polygon points="315.76 168.48 311.33 166.02 307.62 169.47 308.59 164.5 304.16 162.04 309.19 161.43 310.16 156.45 312.3 161.05 317.33 160.43 313.62 163.88 315.76 168.48"/>
+  <polygon points="344.63 165.23 340.2 162.78 336.49 166.23 337.46 161.26 333.04 158.8 338.06 158.18 339.03 153.21 341.17 157.8 346.2 157.19 342.49 160.64 344.63 165.23"/>
+  <polygon points="373.72 162.85 369.29 160.39 365.59 163.85 366.56 158.88 362.13 156.42 367.16 155.8 368.13 150.83 370.26 155.42 375.29 154.81 371.58 158.26 373.72 162.85"/>
+  <polygon points="402.59 161.43 398.16 158.97 394.45 162.42 395.42 157.45 390.99 154.99 396.02 154.38 396.99 149.4 399.13 154 404.15 153.38 400.45 156.83 402.59 161.43"/>
+  <polygon points="431.25 160.9 426.82 158.44 423.12 161.9 424.09 156.92 419.66 154.47 424.68 153.85 425.66 148.88 427.79 153.47 432.82 152.86 429.11 156.31 431.25 160.9"/>
+
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GGTO Técnico · CANTV — Propuesta de UI para la APK</title>
+<link rel="stylesheet" href="apk.css" />
+</head>
+<body>
+
+<!-- ================== Sprite de iconos (trazo 1.8) ================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-buscar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="ic-sync" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-13.6-5.7L4 7.5"/><path d="M4 4v3.5h3.5"/><path d="M4 13a8 8 0 0 0 13.6 5.7L20 16.5"/><path d="M20 20v-3.5h-3.5"/></symbol>
+  <symbol id="ic-alerta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 21 20H3z"/><path d="M12 10v4.5"/><path d="M12 17.4h.01"/></symbol>
+  <symbol id="ic-masiva" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 12h.01"/><path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8"/><path d="M15.4 15.4a4.8 4.8 0 0 0 0-6.8"/><path d="M6 6a8.5 8.5 0 0 0 0 12"/><path d="M18 18a8.5 8.5 0 0 0 0-12"/></symbol>
+  <symbol id="ic-mensaje" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a7 7 0 0 1-7 7H8l-4 3v-5.4A7 7 0 0 1 11 5h2a7 7 0 0 1 7 7z"/></symbol>
+  <symbol id="ic-usuario" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="ic-mas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="ic-mas-opciones" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></symbol>
+  <symbol id="ic-camara" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3L8.5 6h7L17 8.5h3v10.5H4z"/><circle cx="12" cy="13.5" r="3.2"/></symbol>
+  <symbol id="ic-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="ic-cloud-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h9.5a4 4 0 0 0 .4-8A5.6 5.6 0 0 0 6.2 11.3A3.7 3.7 0 0 0 7 18.5z"/><path d="m9.6 13.6 1.9 1.9 3.4-3.9"/></symbol>
+  <symbol id="ic-subir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V8"/><path d="m8 12 4-4 4 4"/><path d="M5 4h14"/></symbol>
+  <symbol id="ic-descargar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m8 12 4 4 4-4"/><path d="M5 20h14"/></symbol>
+  <symbol id="ic-reloj" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="ic-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></symbol>
+  <symbol id="ic-wifi-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4l18 18"/><path d="M8.5 12.5a5 5 0 0 1 3-1.4"/><path d="M5.5 9.5A10 10 0 0 1 9 7.4"/><path d="M14.5 7.6a10 10 0 0 1 4 1.9"/><path d="M12 17.5h.01"/></symbol>
+  <symbol id="ic-llamar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3.5l1.8 4.4-2.2 1.4a11 11 0 0 0 5.1 5.1l1.4-2.2L19 15.5V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="ic-evento" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M8 3.5v4M16 3.5v4M3.5 11h17"/></symbol>
+  <symbol id="ic-ubicacion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+  <symbol id="ic-gestion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h4"/></symbol>
+  <symbol id="ic-carpeta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h6l2 2.5h9v9h-17z"/></symbol>
+  <symbol id="ic-camion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/></symbol>
+  <symbol id="ic-analitica" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 19.5V5"/><path d="M4.5 19.5h15"/><path d="M8.5 16v-5M12.5 16V7.5M16.5 16v-3.5"/></symbol>
+  <symbol id="ic-estrella" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></symbol>
+  <symbol id="ic-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+  <symbol id="ic-escudo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5.5 6v5.3c0 4.1 2.8 7.2 6.5 9.2 3.7-2 6.5-5.1 6.5-9.2V6z"/><path d="m9.3 12 1.9 1.9 3.5-3.9"/></symbol>
+  <symbol id="ic-foto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.2 4.3 3.6 2.6-2.2 3.4 3"/></symbol>
+  <symbol id="ic-cuadrilla" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5a3 3 0 0 1 0 6"/><path d="M17.5 19a5.5 5.5 0 0 0-2-4.2"/></symbol>
+</svg>
+
+<!-- ================================================================== -->
+<!-- 1. HOJA DE SISTEMA DE DISEÑO                                       -->
+<!-- ================================================================== -->
+<section class="hoja" id="hoja-sistema">
+
+  <div class="hoja-cabecera">
+    <div>
+      <p class="etiqueta">Propuesta de interfaz · APK</p>
+      <h1 style="font-size:30px">GGTO Técnico · lenguaje visual CANTV para Android</h1>
+      <p class="lead">Mismo sistema de marca que la web (degradado azul eléctrico → violeta → magenta,
+        trama de puntos y logotipo monocromo blanco), traducido a <b>Material 3</b> y a las condiciones
+        reales de campo: una mano, guantes, sol directo y trabajo sin conexión.</p>
+    </div>
+    <div class="fila" style="gap:8px">
+      <span class="chip chip--activo">RNF-APK-05</span>
+      <span class="chip chip--exito">48 dp táctil</span>
+      <span class="chip">16 sp base</span>
+    </div>
+  </div>
+
+  <!-- 1 · Marca -->
+  <div class="bloque">
+    <h3>1 · Marca: arranque, icono y cabeceras <span class="mini tenue">desde el SVG oficial</span></h3>
+    <div class="bloque-cuerpo">
+      <div class="rejilla rejilla-3">
+        <figure style="margin:0">
+          <img src="../assets/icono-app.svg" alt="Icono de la aplicación: cinta CANTV en blanco sobre el degradado de marca" style="width:100%;display:block;border-radius:20px" />
+          <figcaption class="mini tenue" style="margin-top:8px">Icono adaptativo (fondo + símbolo) · la cinta de estrellas, sin el logotipo completo, para que se lea a 48 dp</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <img src="../assets/splash-nativo.svg" alt="Pantalla de arranque con el símbolo CANTV centrado sobre el degradado" style="width:100%;display:block;border-radius:20px" />
+          <figcaption class="mini tenue" style="margin-top:8px">Arranque (Android 12+): símbolo en la zona segura sobre el degradado de marca</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <img src="../assets/banda-acceso.svg" alt="Banda de marca del acceso con el logotipo CANTV en blanco" style="width:100%;display:block;border-radius:20px" />
+          <figcaption class="mini tenue" style="margin-top:8px">Banda del acceso: sustituye al logo suelto sobre tarjeta blanca</figcaption>
+        </figure>
+      </div>
+      <div class="aviso aviso--marca" style="margin-top:18px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-alerta"/></svg>
+        <div>
+          <b>Flutter no dibuja SVG</b>
+          <p>La app usa hoy <code>assets/logo_CANTV.webp</code>. La propuesta rasteriza estos vectores a
+            <b>WebP por densidad</b> (1x/2x/3x) en vez de añadir <code>flutter_svg</code>: mismo resultado visible,
+            cero dependencias nuevas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · Color -->
+  <div class="bloque">
+    <h3>2 · Color: marca y estados accesibles</h3>
+    <div class="bloque-cuerpo">
+      <div class="rejilla rejilla-4" style="margin-bottom:20px">
+        <div class="muestra"><div class="parche" style="background:#021FBE"></div><div class="datos"><b>Azul eléctrico</b><code>#021FBE</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#0B1BB4"></div><div class="datos"><b>Azul GGTO (primary)</b><code>#0B1BB4</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#6A13A1"></div><div class="datos"><b>Violeta</b><code>#6A13A1</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#C905A5"></div><div class="datos"><b>Magenta</b><code>#C905A5</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#00B8C4"></div><div class="datos"><b>Turquesa (acento)</b><code>#00B8C4</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#050B3D"></div><div class="datos"><b>Azul profundo</b><code>#050B3D</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#F4F7FC;border-bottom:1px solid #DCE3F0"></div><div class="datos"><b>Fondo</b><code>#F4F7FC</code></div></div>
+        <div class="muestra"><div class="parche" style="background:#131A2A"></div><div class="datos"><b>Texto</b><code>#131A2A · 16,2:1</code></div></div>
+      </div>
+
+      <p class="mini tenue" style="margin-bottom:8px">
+        <b>Estados del caso.</b> Los iconos de hoy usan constantes de Material que no alcanzan el 4,5:1 que
+        exige RNF-APK-05. La propuesta conserva el icono (D-101) y cambia la tinta:
+      </p>
+      <table class="tabla">
+        <thead>
+          <tr><th>Estado</th><th>Hoy (icono sobre blanco)</th><th>Propuesta (tinta sobre fondo)</th><th>Veredicto</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Nuevo / Asignado</td><td><code>#2196F3</code> · 3,12:1</td><td><code>#0B1BB4</code> sobre <code>#E7ECFF</code> · <b>9,75:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+          <tr><td>Contactado</td><td><code>#FF9800</code> · <b>2,16:1</b></td><td><code>#8A6100</code> sobre <code>#FFF4D6</code> · <b>5,06:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+          <tr><td>Citado</td><td><code>#9C27B0</code> · 6,30:1</td><td><code>#6A13A1</code> sobre <code>#F3E9FB</code> · <b>8,04:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+          <tr><td>Diferido</td><td><code>#F44336</code> · 3,68:1</td><td><code>#B3261E</code> sobre <code>#FDECEA</code> · <b>5,72:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+          <tr><td>Cerrado</td><td><code>#4CAF50</code> · <b>2,78:1</b></td><td><code>#1F7A4D</code> sobre <code>#E6F5EC</code> · <b>4,72:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+          <tr><td>Desconocido</td><td><code>#9E9E9E</code> · <b>2,68:1</b></td><td><code>#5A6684</code> sobre <code>#EEF3FD</code> · <b>5,14:1</b></td><td><span class="chip chip--exito">AA</span></td></tr>
+        </tbody>
+      </table>
+      <p class="mini tenue" style="margin:10px 0 0">
+        3 de los 10 colores actuales incumplen RNF-APK-05 y 4 más quedan en el límite. Los 10 propuestos pasan
+        (4,72:1 – 9,75:1). Verificación reproducible en <code>scripts/contraste_apk.py</code>.
+      </p>
+    </div>
+  </div>
+
+  <!-- 3 · Tipografía y medidas -->
+  <div class="bloque">
+    <h3>3 · Tipografía, medidas y forma</h3>
+    <div class="bloque-cuerpo rejilla rejilla-2">
+      <div>
+        <table class="tabla tabla-tokens">
+          <thead><tr><th>Token</th><th>Valor</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr><td>displaySmall</td><td>36 / 44 · 700</td><td>Cifra grande de la cubierta</td></tr>
+            <tr><td>headlineSmall</td><td>24 / 32 · 700</td><td>Título de pantalla</td></tr>
+            <tr><td>titleLarge</td><td>22 / 28 · 700</td><td>Barra de aplicación</td></tr>
+            <tr><td>titleMedium</td><td>16 / 24 · 600</td><td>Título de tarjeta</td></tr>
+            <tr><td>bodyLarge</td><td>16 / 24 · 400</td><td><b>Cuerpo mínimo</b> (RNF-APK-05)</td></tr>
+            <tr><td>bodyMedium</td><td>14 / 20 · 400</td><td>Secundario</td></tr>
+            <tr><td>labelSmall</td><td>11.5 / 16 · 700</td><td>Solo chips y pestañas</td></tr>
+            <tr><td>—</td><td>48 dp</td><td>Objetivo táctil mínimo</td></tr>
+            <tr><td>—</td><td>16 / 12 / 8 dp</td><td>Radios (tarjeta / control / chip)</td></tr>
+            <tr><td>—</td><td>150 ms</td><td>Micro-interacciones</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <ul class="lista-reglas">
+          <li><b>16 sp de cuerpo mínimo</b> en toda pantalla nueva (RNF-APK-05); se sube desde los 13–14 sp actuales de las tarjetas de caso.</li>
+          <li><b>Números tabulares</b> en identificadores de avería, teléfonos y contadores: evita el baile de anchos al actualizar.</li>
+          <li><b>Una sola tinta de marca</b> (azul GGTO) para acciones; el degradado se reserva a superficies de marca (arranque, acceso, cubiertas, insignias).</li>
+          <li><b>Nada de rojo puro</b> para «sin conexión»: es el estado normal del técnico, no una falla.</li>
+          <li><b>Wayfinding por rol</b>: el técnico ve trabajo; la gestión ve tablero. Nunca los siete destinos a la vez.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · Navegación -->
+  <div class="bloque">
+    <h3>4 · Navegación: de 7 destinos a 5 + «Más»</h3>
+    <div class="bloque-cuerpo rejilla rejilla-2">
+      <div>
+        <p class="mini"><b>Hoy</b> — <code>inicio_gestion_screen.dart:55-100</code></p>
+        <div class="marco-tabla">
+          <table>
+            <thead><tr><th>Rol</th><th>Destinos en la barra inferior</th></tr></thead>
+            <tbody>
+              <tr><td>SUPER / ADMIN / SUPERVISOR</td><td>Monitoreo · Especiales · GESTIÓN · Casos · Despacho <b>(5)</b></td></tr>
+              <tr><td>COORDINADOR</td><td>Monitoreo · Especiales · Alertas · Mensajes <b>(4)</b></td></tr>
+              <tr><td>TECNICO</td><td><i>Sin barra inferior</i>: 5 acciones en la barra de título</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="aviso aviso--alerta" style="margin-top:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-alerta"/></svg>
+          <div><b>Riesgo real</b><p>Si en el próximo incremento el Coordinador gana «GESTIÓN», la barra llega a
+            <b>7 destinos</b>: por debajo de 48 dp de ancho, etiquetas ilegibles en 360 dp.</p></div>
+        </div>
+      </div>
+      <div>
+        <p class="mini"><b>Propuesta</b> — máximo 5, el resto en «Más» (hoja inferior)</p>
+        <div class="marco-tabla">
+          <table>
+            <thead><tr><th>Rol</th><th>Barra inferior</th><th>En «Más»</th></tr></thead>
+            <tbody>
+              <tr><td>TECNICO</td><td>Casos · Alertas · Mensajes · Perfil</td><td>Sincronización · Masivas · Cuenta</td></tr>
+              <tr><td>SUPERVISOR / ADMIN / SUPER</td><td>Monitoreo · Especiales · Casos · Despacho</td><td>Gestión · Masivas · Mensajes · Ajustes</td></tr>
+              <tr><td>COORDINADOR</td><td>Monitoreo · Especiales · Coordinación · Mensajes</td><td>Alertas · Casos · Ajustes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="aviso aviso--exito" style="margin-top:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-check"/></svg>
+          <div><b>Beneficio</b><p>Cada destino conserva ≥ 74 dp de ancho en un equipo de 360 dp, el pulgar alcanza
+            todo sin cambiar de mano y las acciones de la barra de título bajan de 5 a 2 (sincronizar + perfil).</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · Componentes -->
+  <div class="bloque">
+    <h3>5 · Componentes</h3>
+    <div class="bloque-cuerpo rejilla rejilla-3">
+      <div>
+        <p class="mini tenue">Botones · 48 dp de alto</p>
+        <div style="display:grid;gap:10px">
+          <span class="boton boton--marca"><svg><use href="#ic-descargar"/></svg>Descargar casos</span>
+          <span class="boton boton--lleno"><svg><use href="#ic-check"/></svg>Marcar atendido</span>
+          <span class="boton boton--contorno"><svg><use href="#ic-llamar"/></svg>Contactar cliente</span>
+          <span class="fila" style="gap:10px"><span class="boton boton--texto">Reintentar</span><span class="boton boton--peligro">Eliminar</span></span>
+          <span class="boton boton--deshabilitado">Sin conexión</span>
+        </div>
+      </div>
+      <div>
+        <p class="mini tenue">Conexión y sincronización</p>
+        <div style="display:grid;gap:10px">
+          <div class="conexion conexion--offline" style="border:0;border-radius:12px"><svg><use href="#ic-wifi-off"/></svg><span><b>Sin conexión</b> · 3 cambios guardados aquí</span></div>
+          <div class="conexion conexion--online" style="border:0;border-radius:12px"><svg><use href="#ic-cloud-ok"/></svg><span><b>Todo sincronizado</b> · hace 2 min</span></div>
+          <div class="franja-sync" style="border:0;border-radius:12px">
+            <div class="linea" style="color:var(--m-azul)"><svg><use href="#ic-sync"/></svg>Enviando 2 de 3 acciones…</div>
+            <div class="progreso"><i style="width:62%"></i></div>
+          </div>
+          <div class="franja-sync" style="border:0;border-radius:12px">
+            <div class="linea" style="color:var(--exito)"><svg><use href="#ic-cloud-ok"/></svg>Cola al día</div>
+            <div class="progreso progreso--ok"><i style="width:100%"></i></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="mini tenue">Chispas de estado, campos y hoja inferior</p>
+        <div style="display:grid;gap:10px">
+          <div class="fila" style="flex-wrap:wrap;gap:8px">
+            <span class="chip chip--activo">Pendiente 12</span>
+            <span class="chip chip--alerta">Citado 3</span>
+            <span class="chip chip--exito">Cerrado 8</span>
+            <span class="chip chip--error">Error 1</span>
+            <span class="chip chip--especial">Supervisor</span>
+          </div>
+          <div class="campo"><span class="etiqueta-campo">P00</span><span class="valor">TSTCDPB</span></div>
+          <div class="pestanas"><span class="pestana pestana--activa">Actual</span><span class="pestana">Estado</span><span class="pestana">Contacto</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 · Accesibilidad -->
+  <div class="bloque">
+    <h3>6 · Accesibilidad y uso en campo</h3>
+    <div class="bloque-cuerpo rejilla rejilla-2">
+      <ul class="lista-reglas">
+        <li><b>Contraste ≥ 4,5:1</b> en texto e iconos con significado (RNF-APK-05) — hoy 3 colores de estado no lo cumplen.</li>
+        <li><b>Objetivos ≥ 48 dp</b> con 8 dp de separación; los actuales <code>IconButton</code> ya cumplen (48 dp), los chips deben subir de 32 a 34–40 dp.</li>
+        <li><b>Texto ≥ 16 sp</b> en pantallas nuevas; la tarjeta de caso sube de 13 a 16 sp en el identificador y 14,5 sp en el detalle.</li>
+        <li><b>El estado nunca solo por color</b>: icono + <code>semanticsLabel</code> (D-101) y, en la ficha, la etiqueta textual.</li>
+        <li><b>Área del pulgar</b>: la acción primaria (Descargar / Atender) va abajo, no en la barra de título.</li>
+        <li><b>Sol directo</b>: el aviso de conexión usa tinte claro con texto oscuro, no blanco sobre rojo saturado.</li>
+        <li><b>Guantes y lluvia</b>: nada de gestos de deslizamiento como única vía para acciones críticas.</li>
+        <li><b>PIN sin conexión</b>: teclado de 6 dígitos con dígitos de 48 dp y vibración de error (hoy pantalla de PIN).</li>
+      </ul>
+      <div>
+        <div class="aviso aviso--alerta">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-escudo"/></svg>
+          <div>
+            <b>Privacidad en la pantalla (RA-02 / RNF-18)</b>
+            <p>El teléfono muestra teléfonos, direcciones y seriales. La propuesta añade una máscara visual
+              («70••••21») y el sello «datos protegidos» en la cabecera, para que la captura de pantalla y el
+              préstamo del equipo sean evidentemente riesgosos. <code>FLAG_SECURE</code> ya está decidido.</p>
+          </div>
+        </div>
+        <div class="aviso aviso--exito" style="margin-top:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-check"/></svg>
+          <div>
+            <b>Rendimiento</b>
+            <p>El degradado y la trama se dibujan con <code>LinearGradient</code> y
+              <code>CustomPaint</code>: 0 KB de imágenes de fondo. Los únicos recursos nuevos son el icono del
+              arranque (≈ 40 KB en WebP) y el logotipo monocromo (≈ 12 KB por densidad).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- 2. TABLERO DE PANTALLAS                                            -->
+<!-- ================================================================== -->
+<div class="tablero" id="tablero">
+
+  <!-- ---------- 1. Acceso ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-acceso">
+      <div class="barra-estado" style="background:var(--m-azul)"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <img src="../assets/banda-acceso.svg" alt="" style="display:block;width:100%" />
+      <div class="cuerpo" style="background:#fff;border-radius:28px 28px 0 0;margin-top:-26px;position:relative">
+        <div class="contenido" style="overflow-y:auto">
+          <div class="campos" style="margin-top:6px">
+            <div class="campo"><span class="etiqueta-campo">P00</span><span class="valor">TSTCDPB</span></div>
+            <div class="campo">
+              <span class="etiqueta-campo">Clave</span>
+              <span class="valor">••••••••</span>
+              <span class="sufijo"><svg><use href="#ic-escudo"/></svg></span>
+            </div>
+          </div>
+
+          <div class="aviso aviso--exito" style="border-radius:12px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-candado"/></svg>
+            <div>
+              <b>Acceso sin conexión disponible</b>
+              <p>Hay credencial guardada para este P00. PIN de fábrica <b>824605</b>: cámbielo al entrar.</p>
+            </div>
+          </div>
+
+          <span class="boton boton--lleno boton--ancho" style="margin-top:2px">Iniciar sesión</span>
+
+          <div class="fila entre" style="margin-top:6px">
+            <span class="boton boton--texto">Primer acceso</span>
+            <span class="boton boton--texto">Desbloquear con 3 palabras</span>
+          </div>
+
+          <p class="mini tenue centro" style="margin-top:10px">
+            Aviso de uso restringido aceptado · versión 1.4.0+13<br />Central Francisco Salias · Área 4
+          </p>
+        </div>
+      </div>
+    </div>
+    <figcaption>1. Acceso <span>· banda de marca, PIN sin conexión y versión visible</span></figcaption>
+  </figure>
+
+  <!-- ---------- 2. Mis casos (técnico) ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-casos">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="avatar">LM</span>
+        <div class="appbar-titulo" style="margin-left:10px">
+          <b>Mis casos</b>
+          <span>Luis Marcano · Cuadrilla 3</span>
+        </div>
+        <span class="icono-boton"><svg><use href="#ic-sync"/></svg><span class="insignia">2</span></span>
+        <span class="icono-boton"><svg><use href="#ic-mas-opciones"/></svg></span>
+      </div>
+
+      <div class="franja-sync">
+        <div class="linea" style="color:var(--m-azul)"><svg><use href="#ic-sync"/></svg>2 cambios por enviar · última descarga hoy 06:12</div>
+        <div class="progreso"><i style="width:62%"></i></div>
+      </div>
+
+      <div class="conexion conexion--offline">
+        <svg><use href="#ic-wifi-off"/></svg>
+        <span><b>Sin conexión</b> — trabaje normal: sus cambios quedan guardados aquí.</span>
+      </div>
+
+      <div class="contenido contenido--scroll">
+        <div class="campo-busqueda"><svg><use href="#ic-buscar"/></svg>Buscar avería, teléfono o sector</div>
+        <div class="fila-chips">
+          <span class="chip chip--activo">Pendientes 12</span>
+          <span class="chip">Citados 3</span>
+          <span class="chip">Hoy 5</span>
+        </div>
+
+        <div class="tarjeta tarjeta--caso">
+          <div class="principal">
+            <div class="cabecera-caso">
+              <span class="id mono">202610148313</span>
+              <span class="chip chip--activo">Asignado</span>
+            </div>
+            <dl>
+              <div><dt>Sector</dt><dd>Los Chaguaramos</dd></div>
+              <div><dt>Reporta</dt><dd>Navegación lenta</dd></div>
+              <div><dt>Contacto</dt><dd class="mono">70••••21 · 0414-•••-45-67</dd></div>
+            </dl>
+            <div class="nota-sync"><svg><use href="#ic-reloj"/></svg>Cambio guardado, pendiente de enviar</div>
+          </div>
+          <span class="estado-icono" style="background:var(--info-claro);color:var(--info)"><svg><use href="#ic-gestion"/></svg></span>
+        </div>
+
+        <div class="tarjeta tarjeta--caso">
+          <div class="principal">
+            <div class="cabecera-caso">
+              <span class="id mono">202610148307</span>
+              <span class="chip chip--alerta">Contactado</span>
+            </div>
+            <dl>
+              <div><dt>Sector</dt><dd>Santa Mónica</dd></div>
+              <div><dt>Reporta</dt><dd>Falla fibra · caja 12</dd></div>
+              <div><dt>Contacto</dt><dd class="mono">70••••90 · 0424-•••-11-08</dd></div>
+            </dl>
+          </div>
+          <span class="estado-icono" style="background:var(--alerta-claro);color:var(--alerta)"><svg><use href="#ic-llamar"/></svg></span>
+        </div>
+
+        <div class="tarjeta tarjeta--caso">
+          <div class="principal">
+            <div class="cabecera-caso">
+              <span class="id mono">202610148290</span>
+              <span class="chip chip--exito">Cerrado</span>
+            </div>
+            <dl>
+              <div><dt>Sector</dt><dd>El Valle</dd></div>
+              <div><dt>Reporta</dt><dd>Loss rojo · ONT sustituida</dd></div>
+            </dl>
+          </div>
+          <span class="estado-icono" style="background:var(--exito-claro);color:var(--exito)"><svg><use href="#ic-check"/></svg></span>
+        </div>
+        <div style="height:104px"></div>
+      </div>
+
+      <span class="fab"><svg><use href="#ic-descargar"/></svg>Descargar</span>
+
+      <div class="nav-inferior">
+        <span class="nav-item nav-item--activo"><span class="pildora"></span><svg><use href="#ic-carpeta"/></svg>Casos</span>
+        <span class="nav-item"><svg><use href="#ic-alerta"/></svg>Alertas</span>
+        <span class="nav-item"><svg><use href="#ic-mensaje"/></svg>Mensajes</span>
+        <span class="nav-item"><svg><use href="#ic-usuario"/></svg>Perfil</span>
+      </div>
+    </div>
+    <figcaption>2. Mis casos <span>· técnico: sin conexión, cola a la vista y acción al pulgar</span></figcaption>
+  </figure>
+
+  <!-- ---------- 3. Ficha del caso ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-ficha">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="icono-boton"><svg style="transform:rotate(180deg)"><use href="#ic-chevron"/></svg></span>
+        <div class="appbar-titulo">
+          <b class="mono">202610148313</b>
+          <span>Los Chaguaramos · Avería residencial</span>
+        </div>
+        <span class="icono-boton"><svg><use href="#ic-mas-opciones"/></svg></span>
+      </div>
+
+      <div class="contenido contenido--scroll" style="padding-top:12px">
+        <div class="fila" style="gap:8px;flex-wrap:wrap">
+          <span class="chip chip--activo">Asignado</span>
+          <span class="chip chip--alerta">Citado 12/10 14:00</span>
+          <span class="chip chip--especial">Supervisor</span>
+        </div>
+
+        <div class="pestanas">
+          <span class="pestana pestana--activa">Actual</span>
+          <span class="pestana">Estado</span>
+          <span class="pestana">Contacto</span>
+          <span class="pestana">Técnico</span>
+        </div>
+
+        <div class="tarjeta">
+          <p class="mini tenue" style="margin:0 0 6px">Falla reportada</p>
+          <p style="margin:0;font-weight:700;font-size:17px">NAVEGACION LENTA</p>
+          <p class="mini" style="margin:6px 0 0">ONT intermitente. El suscriptor reporta cortes desde el 09/10.</p>
+          <hr style="border:0;border-top:1px solid var(--borde);margin:12px 0" />
+          <div class="fila entre"><span class="mini tenue">Identificador de pago</span><span class="mono">70••••21</span></div>
+          <div class="fila entre mt-8"><span class="mini tenue">Serial ONT</span><span class="mono">4857••••A1B2</span></div>
+          <div class="fila entre mt-8"><span class="mini tenue">Dirección</span><span style="text-align:right;max-width:60%">Av. Principal, Res. Los Chaguaramos, piso 3</span></div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="fila entre" style="margin-bottom:10px">
+            <b style="font-size:15px">Evidencias</b>
+            <span class="chip chip--activo">2 de 5</span>
+          </div>
+          <div class="rejilla-fotos">
+            <div class="foto" style="background:linear-gradient(140deg,#4a5568,#2d3748)"><span class="sello sello--ok">Subida</span></div>
+            <div class="foto" style="background:linear-gradient(140deg,#5b6b84,#33405a)"><span class="sello sello--pendiente">En cola</span></div>
+            <div class="foto foto--vacia"><svg><use href="#ic-camara"/></svg></div>
+          </div>
+        </div>
+
+        <div class="aviso aviso--alerta" style="border-radius:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-escudo"/></svg>
+          <div><b>Datos personales protegidos</b>
+            <p>Lo que ve depende de su rol. Capture pantallas solo si el procedimiento lo exige.</p></div>
+        </div>
+        <div style="height:4px"></div>
+      </div>
+
+      <div class="barra-acciones">
+        <span class="boton boton--contorno" style="padding:0 16px"><svg><use href="#ic-camara"/></svg></span>
+        <span class="boton boton--contorno boton--ancho"><svg><use href="#ic-llamar"/></svg>Contactar</span>
+        <span class="boton boton--lleno boton--ancho"><svg><use href="#ic-check"/></svg>Atender</span>
+      </div>
+    </div>
+    <figcaption>3. Ficha del caso <span>· pestañas, datos enmascarados y acciones al pie</span></figcaption>
+  </figure>
+
+  <!-- ---------- 4. Evidencias ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-evidencias">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="icono-boton"><svg style="transform:rotate(180deg)"><use href="#ic-chevron"/></svg></span>
+        <div class="appbar-titulo"><b>Evidencias</b><span>202610148313 · máximo 5 fotos</span></div>
+        <span class="chip chip--activo" style="margin-right:8px">2 de 5</span>
+      </div>
+
+      <div class="conexion conexion--offline">
+        <svg><use href="#ic-wifi-off"/></svg>
+        <span><b>Sin conexión</b> — las fotos se envían cuando vuelva la señal.</span>
+      </div>
+
+      <div class="contenido contenido--scroll">
+        <div class="rejilla-fotos">
+          <div class="foto" style="background:linear-gradient(140deg,#4a5568,#2d3748)">
+            <span class="sello sello--ok">Subida · 412 KB</span>
+          </div>
+          <div class="foto" style="background:linear-gradient(140deg,#5b6b84,#33405a)">
+            <span class="sello sello--pendiente">En cola</span>
+          </div>
+          <div class="foto foto--vacia"><svg><use href="#ic-camara"/></svg></div>
+          <div class="foto foto--vacia"><svg><use href="#ic-camara"/></svg></div>
+          <div class="foto foto--vacia"><svg><use href="#ic-camara"/></svg></div>
+          <div class="punto-bloque"><svg><use href="#ic-mas"/></svg>Agregar</div>
+        </div>
+
+        <div class="tarjeta" style="margin-top:2px">
+          <div class="fila entre"><span class="mini tenue">Calidad de envío</span><b class="mini">1280 px · JPEG 70 · ≤ 3 MB</b></div>
+          <div class="fila entre mt-8"><span class="mini tenue">Ubicación</span><span class="mini">Se adjunta al reporte</span></div>
+          <div class="fila entre mt-8"><span class="mini tenue">Sello de tiempo</span><span class="mini">12/10/2026 · 09:47</span></div>
+        </div>
+
+        <div class="aviso aviso--error" style="border-radius:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-error"/></svg>
+          <div><b>Reintento agotado en una foto</b>
+            <p>La foto 1 del caso 202610148290 falló 5 veces. Reintentar manualmente o volver a tomarla.</p></div>
+        </div>
+      </div>
+
+      <div class="barra-acciones">
+        <span class="boton boton--contorno" style="padding:0 16px"><svg><use href="#ic-foto"/></svg></span>
+        <span class="boton boton--marca boton--ancho"><svg><use href="#ic-camara"/></svg>Tomar foto</span>
+      </div>
+    </div>
+    <figcaption>4. Evidencias <span>· rejilla de 5, estado por foto y reintento claro</span></figcaption>
+  </figure>
+
+  <!-- ---------- 5. Sincronización ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-sync">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="icono-boton"><svg style="transform:rotate(180deg)"><use href="#ic-chevron"/></svg></span>
+        <div class="appbar-titulo"><b>Sincronización</b><span>Cola del dispositivo y credencial</span></div>
+      </div>
+
+      <div class="contenido contenido--scroll">
+        <div class="cubierta">
+          <p class="titulo-min">POR ENVIAR</p>
+          <p class="valor-grande">3 acciones</p>
+          <p class="detalle">Última descarga hoy 06:12 · credencial sin conexión vigente 11 h</p>
+        </div>
+
+        <div class="marco-tabla">
+          <table>
+            <thead><tr><th>Acción</th><th>Caso</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td>Cambio de estado</td><td class="mono">…148313</td><td><span class="chip chip--alerta">En cola</span></td></tr>
+              <tr><td>Evidencia</td><td class="mono">…148290</td><td><span class="chip chip--error">Error · 5/5</span></td></tr>
+              <tr><td>Cierre de caso</td><td class="mono">…148307</td><td><span class="chip chip--activo">Enviando</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tarjeta">
+          <p class="mini tenue" style="margin:0 0 8px">Progreso del lote en curso</p>
+          <div class="progreso"><i style="width:62%"></i></div>
+          <div class="fila entre" style="margin-top:8px"><span class="mini">2 de 3 completadas</span><b class="mini">62 %</b></div>
+        </div>
+
+        <div class="fila" style="gap:10px">
+          <span class="boton boton--contorno boton--ancho"><svg><use href="#ic-descargar"/></svg>Descargar</span>
+          <span class="boton boton--marca boton--ancho"><svg><use href="#ic-subir"/></svg>Cargar</span>
+        </div>
+        <span class="boton boton--texto" style="align-self:center">Reintentar fallidos</span>
+
+        <div class="aviso aviso--info" style="border-radius:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-escudo"/></svg>
+          <div><b>Sin conexión: puedo seguir trabajando</b>
+            <p>Tras 24 h sin renovar la credencial, la app pedirá señal para volver a validar el PIN.</p></div>
+        </div>
+      </div>
+
+      <div class="nav-inferior">
+        <span class="nav-item"><svg><use href="#ic-carpeta"/></svg>Casos</span>
+        <span class="nav-item nav-item--activo"><span class="pildora"></span><svg><use href="#ic-sync"/></svg>Sync</span>
+        <span class="nav-item"><svg><use href="#ic-alerta"/></svg>Alertas</span>
+        <span class="nav-item"><svg><use href="#ic-usuario"/></svg>Perfil</span>
+      </div>
+    </div>
+    <figcaption>5. Sincronización <span>· la cola como primer ciudadano, no un icono escondido</span></figcaption>
+  </figure>
+
+  <!-- ---------- 6. Inicio de gestión ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-gestion">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="avatar">AR</span>
+        <div class="appbar-titulo" style="margin-left:10px">
+          <b>Monitoreo</b>
+          <span>Ana Rodríguez · Supervisora</span>
+        </div>
+        <span class="icono-boton"><svg><use href="#ic-mas-opciones"/></svg></span>
+      </div>
+
+      <div class="franja-sync">
+        <div class="linea" style="color:var(--exito)"><svg><use href="#ic-cloud-ok"/></svg>Datos al día · se actualizan cada 5 min</div>
+        <div class="progreso progreso--ok"><i style="width:100%"></i></div>
+      </div>
+
+      <div class="contenido contenido--scroll">
+        <div class="rejilla rejilla-2" style="gap:12px">
+          <div class="cubierta">
+            <p class="titulo-min">CASOS ACTIVOS</p>
+            <p class="valor-grande">1 284</p>
+            <p class="detalle">▼ 4,2 % vs. ayer</p>
+          </div>
+          <div class="kpi-mini">
+            <p class="titulo-min">Sin asignar</p>
+            <p class="valor">216</p>
+            <p class="mini tenue" style="margin:0">12 más que ayer</p>
+          </div>
+          <div class="kpi-mini">
+            <p class="titulo-min">Cuadrilla 0</p>
+            <p class="valor">87</p>
+            <p class="mini tenue" style="margin:0">Modo supervisor</p>
+          </div>
+          <div class="kpi-mini">
+            <p class="titulo-min">Cumplimiento SLO</p>
+            <p class="valor">93,6 %</p>
+            <p class="mini tenue" style="margin:0">meta 95 %</p>
+          </div>
+        </div>
+
+        <div class="aviso aviso--alerta" style="border-radius:12px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-alerta"/></svg>
+          <div><b>18 casos superan las 48 h</b><p>Sectores Los Chaguaramos y Santa Mónica.</p></div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="fila entre" style="margin-bottom:10px">
+            <b style="font-size:15px">Producción por cuadrilla</b>
+            <span class="mini tenue">Hoy</span>
+          </div>
+          <div class="fila entre mt-8"><span class="fila mini" style="gap:8px"><svg width="18" height="18"><use href="#ic-cuadrilla"/></svg>C-03</span><b class="mini">32 / 40</b></div>
+          <div class="progreso mt-8"><i style="width:80%"></i></div>
+          <div class="fila entre mt-12"><span class="fila mini" style="gap:8px"><svg width="18" height="18"><use href="#ic-cuadrilla"/></svg>C-07</span><b class="mini">21 / 40</b></div>
+          <div class="progreso progreso--alerta mt-8"><i style="width:52%"></i></div>
+        </div>
+      </div>
+
+      <div class="nav-inferior">
+        <span class="nav-item nav-item--activo"><span class="pildora"></span><svg><use href="#ic-analitica"/></svg>Monitoreo</span>
+        <span class="nav-item"><svg><use href="#ic-estrella"/></svg>Especiales</span>
+        <span class="nav-item"><svg><use href="#ic-carpeta"/></svg>Casos</span>
+        <span class="nav-item"><svg><use href="#ic-camion"/></svg>Despacho</span>
+        <span class="nav-item"><svg><use href="#ic-mas-opciones"/></svg>Más</span>
+      </div>
+    </div>
+    <figcaption>6. Inicio de gestión <span>· 5 destinos, KPIs de marca y aviso operativo</span></figcaption>
+  </figure>
+
+  <!-- ---------- 7. Más (hoja inferior) ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-monitoreo">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="avatar">AR</span>
+        <div class="appbar-titulo" style="margin-left:10px">
+          <b>Monitoreo</b>
+          <span>Ana Rodríguez · Supervisora</span>
+        </div>
+        <span class="icono-boton"><svg><use href="#ic-mas-opciones"/></svg></span>
+      </div>
+
+      <div class="contenido contenido--scroll" style="opacity:.45">
+        <div class="marco-tabla">
+          <table>
+            <thead><tr><th>Cuadrilla</th><th>Asignados</th><th>Cerrados</th></tr></thead>
+            <tbody>
+              <tr><td>C-03 · Zona norte</td><td>32</td><td>28</td></tr>
+              <tr><td>C-07 · Zona sur</td><td>21</td><td>11</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tarjeta"><p class="mini tenue" style="margin:0">Producción semanal…</p></div>
+      </div>
+
+      <div class="hoja-modal">
+        <span class="asa"></span>
+        <h4>Más secciones</h4>
+        <p>Las pantallas que no caben en la barra inferior, sin apilar iconos en la barra de título.</p>
+        <div class="lista" style="border:1px solid var(--borde);border-radius:12px;overflow:hidden">
+          <div class="item">
+            <span class="icono-circulo"><svg><use href="#ic-gestion"/></svg></span>
+            <span class="principal"><b>Gestión de casos</b><span>Altas, reclasificaciones y cierres</span></span>
+            <svg width="20" height="20" class="tenue"><use href="#ic-chevron"/></svg>
+          </div>
+          <div class="item">
+            <span class="icono-circulo" style="background:var(--especial-claro);color:var(--especial)"><svg><use href="#ic-masiva"/></svg></span>
+            <span class="principal"><b>Fallas masivas</b><span>3 activas · bloque prioritario</span></span>
+            <span class="chip chip--especial">3</span>
+          </div>
+          <div class="item">
+            <span class="icono-circulo" style="background:var(--alerta-claro);color:var(--alerta)"><svg><use href="#ic-mensaje"/></svg></span>
+            <span class="principal"><b>Mensajes</b><span>2 sin leer</span></span>
+            <span class="chip chip--alerta">2</span>
+          </div>
+          <div class="item">
+            <span class="icono-circulo"><svg><use href="#ic-sync"/></svg></span>
+            <span class="principal"><b>Sincronización</b><span>Estado del dispositivo</span></span>
+            <svg width="20" height="20" class="tenue"><use href="#ic-chevron"/></svg>
+          </div>
+          <div class="item">
+            <span class="icono-circulo" style="background:var(--exito-claro);color:var(--exito)"><svg><use href="#ic-escudo"/></svg></span>
+            <span class="principal"><b>Perfil y seguridad</b><span>Clave, PIN y aviso legal</span></span>
+            <svg width="20" height="20" class="tenue"><use href="#ic-chevron"/></svg>
+          </div>
+        </div>
+        <div class="acciones mt-12">
+          <span class="boton boton--contorno boton--ancho">Cerrar sesión</span>
+          <span class="boton boton--lleno boton--ancho">Cerrar</span>
+        </div>
+      </div>
+    </div>
+    <figcaption>7. Hoja «Más» <span>· descarga la barra inferior sin esconder funciones</span></figcaption>
+  </figure>
+</div>
+
+</body>
+</html>

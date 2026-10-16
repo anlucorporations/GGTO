@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme.dart';
 import 'estado_icono.dart';
 
 /// Tarjeta de resumen de un caso en la lista de trabajo del técnico (RF-11).
+///
+/// Tipografía de la propuesta visual: el identificador de avería a 16 sp con
+/// cifras tabulares y el detalle a 14 sp con interlineado 1,4. El formato del
+/// texto (una línea por dato, «Etiqueta: valor») se conserva tal cual, porque
+/// es lo que verifican las pruebas del listado.
 class CasoCard extends StatelessWidget {
   const CasoCard({super.key, required this.caso, required this.onTap});
 
@@ -32,26 +38,32 @@ class CasoCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        contentPadding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
         title: Text(
           idAveria.isEmpty ? 'Caso sin identificador' : idAveria,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
         ),
         subtitle: Text(
           detalles.join('\n'),
           style: TextStyle(
-            fontSize: 13,
-            color: pendienteSync ? Colors.orange.shade900 : null,
+            fontSize: 14,
+            height: 1.4,
+            color: pendienteSync ? Marca.alerta : Marca.textoSuave,
+            fontWeight: pendienteSync ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
-        trailing: Column(
+        trailing: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // D-101: el estado va como **icono**, no como chip de texto.
             EstadoIcono(estado: estado),
-            const SizedBox(height: 2),
-            const Icon(Icons.chevron_right, size: 18),
+            const SizedBox(width: 2),
+            const Icon(Icons.chevron_right, size: 18, color: Marca.textoSuave),
           ],
         ),
         isThreeLine: detalles.length > 1,

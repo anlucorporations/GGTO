@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 import '../../core/credencial_local.dart';
+import '../../core/theme.dart';
 import 'auth_provider.dart';
 
 /// Pantalla de acceso (§4.0): P00 + clave, con bloqueo a los 3 intentos.
@@ -111,25 +112,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Marca institucional centrada (D-73).
-                  Image.asset(
-                    'assets/logo_CANTV.webp',
-                    height: 96,
-                    fit: BoxFit.contain,
+                  // Banda de marca (propuesta visual v2 · D-73): el degradado
+                  // medido sobre la pieza «autogestión» con el logotipo CANTV
+                  // monocromo blanco y el nombre del producto.
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/marca/banda_acceso.webp',
+                      fit: BoxFit.fitWidth,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'PLANTA EXTERNA GPON',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 18),
                   const Text(
                     'Ingrese su P00 y su clave',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   if (_error != null) ...[
                     _AvisoError(mensaje: _error!),
@@ -182,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Intentos restantes: ${auth.intentosRestantes} de ${AppConstants.maxIntentos}',
                       style: const TextStyle(
-                          color: Colors.orange, fontWeight: FontWeight.w600),
+                          color: Marca.alerta, fontWeight: FontWeight.w600),
                     ),
                   ],
 

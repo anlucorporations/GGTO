@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores de marca para el arranque de Android 12+ (color plano). -->
+    <color name="splash_fondo">#0B1BB4</color>
+    <color name="marca_azul">#0B1BB4</color>
+    <color name="marca_magenta">#C905A5</color>
+</resources>

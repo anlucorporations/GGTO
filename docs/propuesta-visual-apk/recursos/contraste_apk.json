@@ -1,0 +1,197 @@
+{
+  "actuales_estado_icono_dart": [
+    {
+      "estado": "NUEVO · indigo",
+      "hex": "#3F51B5",
+      "sobre_blanco": 6.87,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "ASIGNADO · blue",
+      "hex": "#2196F3",
+      "sobre_blanco": 3.12,
+      "veredicto": "solo texto grande / gráficos"
+    },
+    {
+      "estado": "CONTACTADO · orange",
+      "hex": "#FF9800",
+      "sobre_blanco": 2.16,
+      "veredicto": "NO APTO (RNF-APK-05 exige 4.5:1)"
+    },
+    {
+      "estado": "CITADO · purple",
+      "hex": "#9C27B0",
+      "sobre_blanco": 6.3,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "DIFERIDO · red",
+      "hex": "#F44336",
+      "sobre_blanco": 3.68,
+      "veredicto": "solo texto grande / gráficos"
+    },
+    {
+      "estado": "ENRUTADO · teal",
+      "hex": "#009688",
+      "sobre_blanco": 3.67,
+      "veredicto": "solo texto grande / gráficos"
+    },
+    {
+      "estado": "CERRADO · green",
+      "hex": "#4CAF50",
+      "sobre_blanco": 2.78,
+      "veredicto": "NO APTO (RNF-APK-05 exige 4.5:1)"
+    },
+    {
+      "estado": "CANCELADO · blueGrey",
+      "hex": "#607D8B",
+      "sobre_blanco": 4.37,
+      "veredicto": "solo texto grande / gráficos"
+    },
+    {
+      "estado": "EN_GESTION · brown",
+      "hex": "#795548",
+      "sobre_blanco": 6.55,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "DESCONOCIDO · grey",
+      "hex": "#9E9E9E",
+      "sobre_blanco": 2.68,
+      "veredicto": "NO APTO (RNF-APK-05 exige 4.5:1)"
+    }
+  ],
+  "propuesta_estado": [
+    {
+      "estado": "Nuevo",
+      "tinta": "#0B1BB4",
+      "fondo": "#E7ECFF",
+      "tinta_sobre_fondo": 9.75,
+      "tinta_sobre_blanco": 11.48,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Asignado",
+      "tinta": "#0B1BB4",
+      "fondo": "#E7ECFF",
+      "tinta_sobre_fondo": 9.75,
+      "tinta_sobre_blanco": 11.48,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Contactado",
+      "tinta": "#8A6100",
+      "fondo": "#FFF4D6",
+      "tinta_sobre_fondo": 5.06,
+      "tinta_sobre_blanco": 5.54,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Citado",
+      "tinta": "#6A13A1",
+      "fondo": "#F3E9FB",
+      "tinta_sobre_fondo": 8.04,
+      "tinta_sobre_blanco": 9.46,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Diferido",
+      "tinta": "#B3261E",
+      "fondo": "#FDECEA",
+      "tinta_sobre_fondo": 5.72,
+      "tinta_sobre_blanco": 6.54,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Enrutado",
+      "tinta": "#0F6F7A",
+      "fondo": "#E0F5F7",
+      "tinta_sobre_fondo": 5.2,
+      "tinta_sobre_blanco": 5.87,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Cerrado",
+      "tinta": "#1F7A4D",
+      "fondo": "#E6F5EC",
+      "tinta_sobre_fondo": 4.72,
+      "tinta_sobre_blanco": 5.32,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Cancelado",
+      "tinta": "#5A6684",
+      "fondo": "#EEF3FD",
+      "tinta_sobre_fondo": 5.14,
+      "tinta_sobre_blanco": 5.72,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "En gestión",
+      "tinta": "#7A4C0B",
+      "fondo": "#FBEEDC",
+      "tinta_sobre_fondo": 6.41,
+      "tinta_sobre_blanco": 7.33,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "estado": "Desconocido",
+      "tinta": "#5A6684",
+      "fondo": "#EEF3FD",
+      "tinta_sobre_fondo": 5.14,
+      "tinta_sobre_blanco": 5.72,
+      "veredicto": "AA texto normal"
+    }
+  ],
+  "propuesta_otros": [
+    {
+      "par": "Texto principal sobre fondo",
+      "a": "#131A2A",
+      "b": "#F4F7FC",
+      "ratio": 16.18,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Texto suave sobre blanco",
+      "a": "#5A6684",
+      "b": "#FFFFFF",
+      "ratio": 5.72,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Blanco sobre azul GGTO",
+      "a": "#FFFFFF",
+      "b": "#0B1BB4",
+      "ratio": 11.48,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Blanco sobre la barra de marca",
+      "a": "#FFFFFF",
+      "b": "#050B3D",
+      "ratio": 18.72,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Turquesa claro sobre azul profundo",
+      "a": "#5CE1E6",
+      "b": "#050B3D",
+      "ratio": 11.92,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Blanco sobre magenta del degradado",
+      "a": "#FFFFFF",
+      "b": "#C905A5",
+      "ratio": 5.19,
+      "veredicto": "AA texto normal"
+    },
+    {
+      "par": "Blanco sobre fucsia del degradado",
+      "a": "#FFFFFF",
+      "b": "#E003A0",
+      "ratio": 4.48,
+      "veredicto": "solo texto grande / gráficos"
+    }
+  ]
+}

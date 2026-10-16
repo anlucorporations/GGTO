@@ -45,3 +45,6 @@ flutter:
     - assets/disclaimer.txt
     # Logo institucional CANTV (WebP generado desde docs/imagenes/CANTV_logo.svg)
     - assets/logo_CANTV.webp
+    # Activos de marca v2 (propuesta visual aplicada). Se regeneran con:
+    #   python docs/propuesta-visual-apk/scripts/preparar_apk.py
+    - assets/marca/

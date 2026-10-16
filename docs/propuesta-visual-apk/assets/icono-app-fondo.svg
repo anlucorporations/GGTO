@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Icono adaptativo — capa de fondo</title>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#021FBE"/>
+      <stop offset="16%" stop-color="#0B20BC"/>
+      <stop offset="34%" stop-color="#3B1CAD"/>
+      <stop offset="52%" stop-color="#7C12AF"/>
+      <stop offset="70%" stop-color="#9D0BAC"/>
+      <stop offset="86%" stop-color="#C905A5"/>
+      <stop offset="100%" stop-color="#E003A0"/>
+    </linearGradient>
+    <radialGradient id="glow-izq" cx="0.08" cy="0.06" r="0.55">
+      <stop offset="0%" stop-color="#3F5BFF" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#3F5BFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-der" cx="0.92" cy="0.98" r="0.6">
+      <stop offset="0%" stop-color="#D003C2" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#D003C2" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="trama" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.6" fill="#E5DDF8" opacity="0.5"/>
+    </pattern>
+    <filter id="suave" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="38"/>
+    </filter>
+    <filter id="suave2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#fondo)"/>
+  <rect width="1024" height="1024" fill="url(#glow-izq)"/>
+  <rect width="1024" height="1024" fill="url(#glow-der)"/>
+  <rect x="640" y="96" width="260" height="200" fill="url(#trama)"/>
+</svg>

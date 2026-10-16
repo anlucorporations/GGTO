@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme.dart';
 import '../features/sync/sync_provider.dart';
 
 /// Barra con el **progreso de la sincronización de los datos** (D-82 · requisito 2).
@@ -12,6 +13,10 @@ import '../features/sync/sync_provider.dart';
 ///
 /// Es un widget de sólo lectura: se alimenta de `SyncProvider`, así que aparece
 /// actualizada en cualquier pantalla donde se coloque.
+///
+/// Propuesta visual: la franja sube de 11 a 13 sp en negrita y la barra de 5 a
+/// 6 px para que se lea al sol; los colores pasan a los tokens de marca (el
+/// ámbar y el rojo de Material no alcanzaban el 4,5:1 sobre blanco).
 class BarraProgresoSync extends StatelessWidget {
   const BarraProgresoSync({super.key, this.compacta = true});
 
@@ -28,16 +33,16 @@ class BarraProgresoSync extends StatelessWidget {
     final Color color;
     final IconData icono;
     if (activo) {
-      color = Theme.of(context).colorScheme.primary;
+      color = Marca.azul;
       icono = Icons.sync;
     } else if (sync.conError > 0) {
-      color = Colors.red.shade700;
+      color = Marca.error;
       icono = Icons.error_outline;
     } else if (sync.pendientesSinError > 0) {
-      color = Colors.orange.shade800;
+      color = Marca.alerta;
       icono = Icons.schedule;
     } else {
-      color = Colors.green.shade700;
+      color = Marca.exito;
       icono = Icons.cloud_done;
     }
 
@@ -45,7 +50,7 @@ class BarraProgresoSync extends StatelessWidget {
       borderRadius: BorderRadius.circular(4),
       child: LinearProgressIndicator(
         value: valor.clamp(0, 1),
-        minHeight: compacta ? 5 : 8,
+        minHeight: compacta ? 6 : 8,
         backgroundColor: color.withOpacity(0.15),
         valueColor: AlwaysStoppedAnimation<Color>(color),
       ),
@@ -54,26 +59,26 @@ class BarraProgresoSync extends StatelessWidget {
     if (compacta) {
       return Container(
         color: Theme.of(context).colorScheme.surface,
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        padding: const EdgeInsets.fromLTRB(12, 7, 12, 7),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icono, size: 13, color: color),
+                Icon(icono, size: 15, color: color),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     sync.resumenBarra,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 13, color: color, fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             barra,
           ],
         ),
@@ -88,7 +93,7 @@ class BarraProgresoSync extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icono, size: 18, color: color),
+                Icon(icono, size: 20, color: color),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -108,7 +113,7 @@ class BarraProgresoSync extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               sync.enLinea ? 'Con conexión' : 'Sin conexión: el contenido local sigue disponible',
-              style: const TextStyle(fontSize: 11, color: Colors.black54),
+              style: const TextStyle(fontSize: 12.5, color: Marca.textoSuave),
             ),
           ],
         ),
