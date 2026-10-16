@@ -1,7 +1,7 @@
-/**
- * GGTO Técnico · CANTV — Rasteriza los activos y captura las pantallas de la APK.
+﻿/**
+ * GGTO TÃ©cnico Â· CANTV â€” Rasteriza los activos y captura las pantallas de la APK.
  *
- * Uso (desde la raíz del repositorio):
+ * Uso (desde la raÃ­z del repositorio):
  *   node docs/propuesta-visual-apk/scripts/capturar_apk.js svg    -> PNG de assets/
  *   node docs/propuesta-visual-apk/scripts/capturar_apk.js web    -> PNG de mockup/
  *   node docs/propuesta-visual-apk/scripts/capturar_apk.js        -> ambos
@@ -37,7 +37,7 @@ const SVG = [
   { archivo: 'icono-app-primer-plano.svg', ancho: 432, alto: 432, transparente: true, salida: 'icono-app-primer-plano-alpha.png' },
 ];
 
-/** Pantallas: cada teléfono es un nodo con id dentro del tablero. */
+/** Pantallas: cada telÃ©fono es un nodo con id dentro del tablero. */
 const PANTALLAS = [
   { id: 'p-acceso', nombre: 'apk-acceso' },
   { id: 'p-casos', nombre: 'apk-casos' },
@@ -46,6 +46,7 @@ const PANTALLAS = [
   { id: 'p-sync', nombre: 'apk-sincronizacion' },
   { id: 'p-gestion', nombre: 'apk-inicio-gestion' },
   { id: 'p-monitoreo', nombre: 'apk-monitoreo' },
+  { id: 'p-panel', nombre: 'apk-panel-usuario-version' },
 ];
 
 const HOJAS = [

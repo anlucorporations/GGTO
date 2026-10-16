@@ -39,6 +39,7 @@
   <symbol id="ic-escudo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5.5 6v5.3c0 4.1 2.8 7.2 6.5 9.2 3.7-2 6.5-5.1 6.5-9.2V6z"/><path d="m9.3 12 1.9 1.9 3.5-3.9"/></symbol>
   <symbol id="ic-foto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.2 4.3 3.6 2.6-2.2 3.4 3"/></symbol>
   <symbol id="ic-cuadrilla" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 7.5a3 3 0 0 1 0 6"/><path d="M17.5 19a5.5 5.5 0 0 0-2-4.2"/></symbol>
+  <symbol id="ic-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1 1"/><path d="M14.5 9.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1-1"/></symbol>
 </svg>
 
 <!-- ================================================================== -->
@@ -732,6 +733,79 @@
       </div>
     </div>
     <figcaption>7. Hoja «Más» <span>· descarga la barra inferior sin esconder funciones</span></figcaption>
+  <!-- ---------- 8. Panel de usuario: chequeo de versión (D-102) ---------- -->
+  <figure class="pantalla" style="margin:0">
+    <div class="telefono" id="p-panel">
+      <div class="barra-estado" style="background:#050B3D"><span>09:41</span><span class="iconos"><span>4G</span><span class="bateria"></span></span></div>
+      <div class="appbar">
+        <span class="avatar">LM</span>
+        <div class="appbar-titulo" style="margin-left:10px">
+          <b>Usuario</b>
+          <span>Perfil, seguridad y dispositivo</span>
+        </div>
+        <span class="icono-boton"><svg><use href="#ic-sync"/></svg></span>
+      </div>
+
+      <div class="contenido contenido--scroll">
+        <div class="tarjeta">
+          <div class="fila" style="gap:12px">
+            <span class="avatar" style="width:52px;height:52px;font-size:20px">LM</span>
+            <div class="crece">
+              <b style="font-size:16px">Luis Marcano</b>
+              <p class="mini tenue" style="margin:0">TSTCDPB · TÉCNICO</p>
+              <p class="mini tenue" style="margin:0">Cuadrilla 3 · Los Chaguaramos</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="fila entre"><span class="mini tenue">Dispositivo</span><span class="mini">Telefono-Campo-07</span></div>
+          <div class="fila entre mt-8"><span class="mini tenue">Versión de la app</span><b class="mini mono">1.4.0+13</b></div>
+        </div>
+
+        <!-- D-102: tarjeta nueva del panel de usuario -->
+        <div class="tarjeta" style="border-color:#F0DFAE">
+          <div class="fila" style="gap:8px">
+            <span class="icono-circulo" style="background:var(--alerta-claro);color:var(--alerta)"><svg><use href="#ic-descargar"/></svg></span>
+            <b style="font-size:16px">Versión de la aplicación</b>
+          </div>
+          <div class="mt-12">
+            <div class="fila entre"><span class="mini tenue">Instalada</span><span class="mini mono">1.4.0+13</span></div>
+            <div class="fila entre mt-8"><span class="mini tenue">Publicada</span><span class="mini mono">1.4.0+13</span></div>
+            <div class="fila entre mt-8"><span class="mini tenue">Tamaño</span><span class="mini">23,5 MB</span></div>
+            <div class="fila entre mt-8"><span class="mini tenue">Compilada el</span><span class="mini">15/10/2026</span></div>
+          </div>
+          <div class="aviso aviso--exito" style="border-radius:12px;margin-top:12px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-check"/></svg>
+            <div><b>Tiene la última versión</b><p>Su versión es igual o más reciente que la publicada.</p></div>
+          </div>
+          <span class="boton boton--contorno boton--ancho" style="margin-top:12px"><svg><use href="#ic-sync"/></svg>Buscar actualización</span>
+        </div>
+
+        <!-- Mismo estado cuando el servidor publica una versión más nueva -->
+        <div class="tarjeta" style="border-color:#C3CFE4">
+          <div class="fila" style="gap:8px">
+            <span class="icono-circulo"><svg><use href="#ic-descargar"/></svg></span>
+            <b style="font-size:16px">Versión de la aplicación</b>
+          </div>
+          <div class="mt-12">
+            <div class="fila entre"><span class="mini tenue">Instalada</span><span class="mini mono">1.3.0+12</span></div>
+            <div class="fila entre mt-8"><span class="mini tenue">Publicada</span><b class="mini mono">1.4.0+13</b></div>
+          </div>
+          <div class="aviso aviso--alerta" style="border-radius:12px;margin-top:12px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><use href="#ic-alerta"/></svg>
+            <div><b>Hay una actualización disponible</b><p>Hay una versión más reciente (compilación 13 &gt; 12).</p></div>
+          </div>
+          <span class="boton boton--marca boton--ancho" style="margin-top:12px"><svg><use href="#ic-descargar"/></svg>Descargar actualización</span>
+          <div class="fila mt-8" style="gap:8px">
+            <span class="boton boton--contorno boton--ancho"><svg><use href="#ic-link"/></svg>Copiar enlace</span>
+            <span class="boton boton--texto boton--ancho">Volver a comprobar</span>
+          </div>
+          <p class="mini tenue mono" style="margin:10px 0 0;word-break:break-all">SHA-256: 7120b5a004cc94b8a92f5b7166ca5d864e0150c09a1fb97405b442e89a152f51</p>
+        </div>
+      </div>
+    </div>
+    <figcaption>8. Panel de usuario <span>· chequeo de la última versión (D-102), al día y con actualización</span></figcaption>
   </figure>
 </div>
 

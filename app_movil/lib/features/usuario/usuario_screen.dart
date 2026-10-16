@@ -11,6 +11,7 @@ import '../auth/auth_provider.dart';
 import '../auth/credencial_service.dart';
 import '../sync/sync_provider.dart';
 import 'usuario_service.dart';
+import 'tarjeta_version.dart';
 
 /// Sección **Usuario** de la APK (D-82 · requisitos 3 y 4).
 ///
@@ -318,6 +319,8 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
               _dato('Versión de la app', AppConstants.version),
             ],
           ),
+          // D-102: comprobación de la última versión publicada de la APK.
+          const TarjetaVersion(),
           _seccion(
             titulo: 'Cambiar la contraseña',
             icono: Icons.lock_reset,

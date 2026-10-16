@@ -761,6 +761,21 @@ p { margin: 0 0 8px; }
 
 /* --- Listas de cola / datos ---------------------------------------- */
 
+/* Pastilla de icono reutilizable (cabeceras de tarjeta, listas). */
+.icono-circulo {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--radio-medio);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--superficie-2);
+  color: var(--m-azul);
+}
+
+.icono-circulo svg { width: 22px; height: 22px; }
+
 .lista { display: grid; gap: 0; }
 .item {
   display: flex;
