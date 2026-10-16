@@ -457,6 +457,15 @@ export function IconoCerrado(props: Props) {
 
 /* --- Descarga de la APK (D-72 · enlace desde el acceso) --- */
 
+/** Palomita suelta: viñetas de ventajas y listas de confirmación. */
+export function IconoCheck(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
 /** Descargar: flecha hacia la bandeja. */
 export function IconoDescargar(props: Props) {
   return (

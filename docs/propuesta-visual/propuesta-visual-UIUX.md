@@ -328,13 +328,12 @@ de CSS y son accesibles: cambiarlos generaría riesgo sin beneficio.
 
 ### 6.3 Fases
 
-1. **Tokens y cabecera** (bajo riesgo): variables, `.franja-marca`, `.barra-superior` con logotipo,
-   `.chip` con variantes. Sin cambios de estructura en las vistas.
-2. **Acceso**: migrar `Login.tsx` al reparto 55/45 con la superficie de marca (aquí sí se toca una
-   pantalla completa, con prueba de teclado y de contraste).
-3. **Componentes de datos**: `.tarjeta-kpi` con cubierta, tabla densa, avisos, estados vacíos y de carga.
-4. **Piezas de marca**: publicar `hero-autogestion-vertical` (APK y difusión) y `hero-web` (portada del
-   `Widget` y ayuda).
+| Fase | Estado | Contenido |
+|---|---|---|
+| 1. Tokens y cabecera | ✅ **Aplicada** | Variables v2 con alias de compatibilidad, franja de marca, cabecera con logotipo, botones, campos, chips, avisos, tarjetas y tablas |
+| 2. Acceso | ✅ **Aplicada** | `Login.tsx` en dos superficies con el logotipo, trama, ventajas y pestañas segmentadas |
+| 3. Componentes de datos | ✅ **Aplicada** | Cubierta de marca de las tarjetas, barra de SLA, cabecera de tabla fija y cifras tabulares |
+| 4. Piezas de marca | ✅ **Aplicada** | `banda-widget.svg` (portada del Widget) y `hero-web.svg` / `hero-autogestion-vertical.svg` publicados en `app/web/public/marca/`; la pieza vertical se usa en la APK (banda del acceso y arranque) |
 
 ### 6.4 Riesgos y mitigaciones
 
@@ -360,7 +359,7 @@ docs/propuesta-visual/
 │  ├─ patron-trama.svg             Baldosa de trama de puntos
 │  ├─ hero-autogestion-vertical.svg  Imagen visual 1080 × 1920
 │  └─ hero-web.svg                 Cabecera de marca 1920 × 600
-├─ capturas/                       Rasterizaciones (PNG + WebP)
+├─ capturas/                       Rasterizaciones (PNG + WebP) y capturas de la aplicación real
 ├─ mockup/                         Sistema de diseño y pantallas
 │  ├─ ggto-v2.css                  Tokens y componentes propuestos
 │  ├─ 01-sistema.html              Sistema de diseño (color, tipografía, componentes, accesibilidad)
@@ -377,7 +376,8 @@ docs/propuesta-visual/
    ├─ contraste.py                 Verificación WCAG
    ├─ generar_assets.py            Genera los SVG con el logotipo
    ├─ capturar.js                  Rasteriza los SVG y captura los mockups (Playwright)
-   └─ optimizar.py                 Exporta a WebP y genera la vista previa del sistema
+   ├─ optimizar.py                 Exporta a WebP y genera la vista previa del sistema
+   └─ verificar_aplicacion.js      Sirve app/web/dist con API simulada y captura la app real
 ```
 
 **Regenerar todo:**
@@ -390,6 +390,10 @@ python docs\propuesta-visual\scripts\generar_assets.py
 $env:NODE_PATH="RepoTecnico\pruebas\e2e\node_modules"
 node docs\propuesta-visual\scripts\capturar.js
 python docs\propuesta-visual\scripts\optimizar.py
+
+# Verificación de la propuesta aplicada (requiere haber compilado la web)
+cd app\web; npm run build; cd ..\..
+node docs\propuesta-visual\scripts\verificar_aplicacion.js
 ```
 
 ---
@@ -398,7 +402,67 @@ python docs\propuesta-visual\scripts\optimizar.py
 
 1. **Aprobar la separación de superficies** (marca vs. datos) y el uso del logotipo monocromo blanco
    sobre el degradado.
-2. **Decidir la tipografía**: autoalojar Archivo + Inter (≈ 180 KB) o mantener la pila del sistema.
+2. **Decidir la tipografía**: autoalojar Archivo + Inter (≈ 180 KB) o mantener la pila del sistema
+   —tal como quedó aplicada—.
 3. **Aprobar el cambio de tokens** de la sección 6.2, incluido el paso de `--radio` a 14 px.
-4. **Autorizar la fase 1** (tokens y cabecera) como primer incremento verificable, con regeneración de
-   las capturas de los manuales.
+4. **Revisar las capturas de la aplicación real** de la sección 9 y, si procede, autorizar la fase 4
+   (publicar las piezas de marca en el `Widget` y en la ayuda).
+
+---
+
+## 9. Aplicación en el código
+
+La propuesta queda **aplicada en `app/web`** (fases 1 a 3). No se modificó ningún endpoint, modelo ni
+regla de negocio: el cambio es de presentación.
+
+### 9.1 Archivos modificados
+
+| Archivo | Cambio |
+|---|---|
+| `app/web/src/styles.css` | Tokens v2 en `:root` **con alias de compatibilidad** (`--azul`, `--gris-*`, `--radio`…) para que las reglas existentes adopten la paleta nueva; sección final «PROPUESTA VISUAL v2 — capa de marca aplicada» con franja, cabecera, acceso en dos superficies, botones, campos, chips, avisos, tarjetas, tablas y reglas de accesibilidad; se retiró el bloque muerto `.login-fondo` |
+| `app/web/src/components/Layout.tsx` | La cabecera usa el degradado oscuro de marca, el logotipo CANTV monocromo blanco y el lockup «GGTO · Francisco Salias · Área 4» |
+| `app/web/src/pages/Login.tsx` | Acceso en dos superficies: `login__marca` (logotipo, trama, claims y ventajas) + `login__panel` (tarjeta de trabajo). Se conservó íntegra la lógica: aviso legal, dos pestañas, desbloqueo por 3 palabras y descarga de la APK |
+| `app/web/src/components/Iconos.tsx` | Nuevo `IconoCheck` (trazo 2 px, `currentColor`) para las listas de ventajas |
+| `app/web/src/pages/Widget.tsx` | **Fase 4**: portada de marca (`banda-widget.svg`) al inicio del Widget, antes del encabezado de página |
+| `app/web/public/marca/*.svg` | Logotipo institucional, monocromo blanco, monocromo tinta, trama, banda del Widget y las dos piezas de marca, generados desde el vector oficial |
+| `docs/propuesta-visual/scripts/generar_assets.py` | Ahora publica además los activos en `app/web/public/marca/`: una sola fuente de verdad para el logotipo |
+
+### 9.2 Cómo se verificó
+
+1. `npx tsc --noEmit` sin errores y `npm run build` correcto (97 módulos, CSS 64,4 KB / 16,7 KB gzip).
+2. `node docs/propuesta-visual/scripts/verificar_aplicacion.js`: levanta el **paquete compilado**
+   (`app/web/dist`) en local, responde la API con datos de muestra, simula la sesión y captura con
+   Playwright las pantallas **reales** de la aplicación. El registro de la corrida queda en
+   `recursos/verificacion.log` (sin errores de página).
+3. Alcance del arnés: cubre las pantallas cuya API se puede simular con datos de muestra
+   (**acceso** y **listado de casos**). La pantalla de OPERACIÓN agrega gráficos de varios endpoints
+   (`/monitoreo/*`, `/panel/gestion-diaria`) y necesita la API real para renderizar; su verificación
+   queda para el entorno con base de datos.
+
+### 9.3 Evidencia sobre la aplicación real
+
+**Acceso (1440 px)** — superficie de marca con el logotipo, trama de puntos y ventajas; tarjeta de
+trabajo con pestañas segmentadas y la descarga de la APK en el degradado de marca:
+
+![Acceso real de la aplicación con la propuesta aplicada](capturas/aplicado-login-escritorio.png)
+
+**Listado de casos (1440 px)** — cabecera con logotipo, franja de marca de 3 px, navegación en
+píldoras, tabla con cabecera fija y tinte azul, botones y campos con el radio y los bordes nuevos:
+
+![Listado de casos real con la propuesta aplicada](capturas/aplicado-casos-escritorio.png)
+
+**Acceso en móvil (390 px)** y **listado en móvil (390 px)**:
+
+![Acceso real en móvil](capturas/aplicado-login-movil.png)
+
+![Listado real en móvil](capturas/aplicado-casos-movil.png)
+
+### 9.4 Pendiente
+
+- **Verificar la pantalla de OPERACIÓN** contra la API real (el arnés no puede simular sus gráficos).
+  La portada de marca del Widget se añadió al inicio de esa pantalla y se validó con `npm run build`,
+  pero su captura sigue pendiente de la API real.
+- **Tipografía**: mientras la Dirección no decida, la aplicación usa la pila del sistema
+  (`Segoe UI`), sin descargar fuentes externas.
+- **Capturas de los manuales**: `docs/Manuales` y `RepoTecnico/Manuales` describen la barra superior
+  anterior; conviene regenerar sus capturas en la próxima pasada de manuales.

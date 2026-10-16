@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920"
+     role="img" aria-label="Autogestion de averias CANTV — imagen de marca vertical">
+  <title>GGTO · CANTV — Autogestion de averias (vertical 9:16)</title>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#021FBE"/>
+      <stop offset="16%" stop-color="#0B20BC"/>
+      <stop offset="34%" stop-color="#3B1CAD"/>
+      <stop offset="52%" stop-color="#7C12AF"/>
+      <stop offset="70%" stop-color="#9D0BAC"/>
+      <stop offset="86%" stop-color="#C905A5"/>
+      <stop offset="100%" stop-color="#E003A0"/>
+    </linearGradient>
+    <radialGradient id="glow-izq" cx="0.08" cy="0.06" r="0.55">
+      <stop offset="0%" stop-color="#3F5BFF" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#3F5BFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-der" cx="0.92" cy="0.98" r="0.6">
+      <stop offset="0%" stop-color="#D003C2" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#D003C2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-punto" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FF5BD6" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#FF5BD6" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="trama" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.6" fill="#E5DDF8" opacity="0.55"/>
+    </pattern>
+    <filter id="suave" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="38"/>
+    </filter>
+    <filter id="suave2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="ribete" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#fondo)"/>
+  <rect width="1080" height="1920" fill="url(#glow-izq)"/>
+  <rect width="1080" height="1920" fill="url(#glow-der)"/>
+
+  <!-- Capas organicas: el mismo lenguaje fluido de la referencia -->
+  <g filter="url(#suave)">
+    <path d="M-120 300 C 220 120, 520 470, 900 250 C 1040 172, 1140 210, 1220 160 L 1220 -120 L -120 -120 Z"
+          fill="#2B4BFF" opacity="0.55"/>
+    <path d="M-120 880 C 180 640, 470 1000, 780 770 C 960 640, 1090 710, 1220 630 L 1220 1220 L -120 1220 Z"
+          fill="#7C12AF" opacity="0.55"/>
+    <path d="M-120 1440 C 240 1210, 520 1580, 860 1320 C 1010 1210, 1140 1270, 1220 1210 L 1220 1800 L -120 1800 Z"
+          fill="#C905A5" opacity="0.5"/>
+  </g>
+  <g filter="url(#suave2)">
+    <path d="M1080 1580 C 880 1520, 760 1370, 620 1430 C 480 1490, 420 1630, 260 1670 L 260 1920 L 1080 1920 Z"
+          fill="#FF3FC0" opacity="0.45"/>
+    <path d="M-60 1200 C 140 1160, 300 1060, 470 1110 C 560 1136, 600 1200, 700 1210 L 700 1320 L -60 1320 Z"
+          fill="#5B2BE0" opacity="0.45"/>
+  </g>
+
+  <!-- Cintas de contorno: los pliegues definidos de la referencia -->
+  <g filter="url(#ribete)" fill="none" stroke-linecap="round">
+    <path d="M-80 470 C 260 250, 560 640, 900 420 C 1030 336, 1130 372, 1200 330"
+          stroke="#FFFFFF" stroke-width="3" opacity="0.16"/>
+    <path d="M-80 1050 C 260 830, 560 1220, 900 1000 C 1030 916, 1130 952, 1200 910"
+          stroke="#FFFFFF" stroke-width="3" opacity="0.13"/>
+    <path d="M-80 1620 C 260 1400, 560 1790, 900 1570 C 1030 1486, 1130 1522, 1200 1480"
+          stroke="#FFD9F4" stroke-width="4" opacity="0.2"/>
+  </g>
+  <circle cx="1080" cy="1700" r="360" fill="url(#glow-punto)"/>
+
+  <!-- Trama de puntos: bloque superior y bloque inferior izquierdo -->
+  <rect x="300" y="118" width="312" height="260" fill="url(#trama)"/>
+  <rect x="-44" y="1478" width="208" height="234" fill="url(#trama)"/>
+
+  <!-- Hairline diagonal de marca -->
+  <path d="M-40 1246 L 210 1010" stroke="#FFFFFF" stroke-width="2" opacity="0.55" fill="none"/>
+
+  <!-- Logotipo institucional (monocromo blanco) -->
+<g transform="translate(262.0,776.0) scale(0.92667)" fill="#FFFFFF">
+<!-- Generator: Adobe Illustrator 29.6.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 207)  -->
+  <path d="M75.62,214.39s136.13-43.07,265.85-56.84c129.72-13.77,249.77,1.72,249.77,1.72,0,0-146.99-48.81-288.24-23.54-141.25,25.26-227.38,78.66-227.38,78.66Z"/>
+  <path d="M76.76,249.99s129.81-47.66,259.53-61.44c129.72-13.78,254.94.57,254.94.57,0,0-146.99-46.51-288.24-21.25-141.25,25.27-226.23,82.11-226.23,82.11Z"/>
+  <path d="M76.76,233.34s129.81-47.66,259.53-61.44c129.72-13.77,254.94.57,254.94.57,0,0-146.99-46.51-288.24-21.24-141.25,25.26-226.23,82.11-226.23,82.11Z"/>
+  <polygon points="228.91 186.27 224.48 183.81 220.78 187.26 221.75 182.29 217.32 179.83 222.35 179.22 223.32 174.25 225.45 178.84 230.48 178.23 226.77 181.68 228.91 186.27"/>
+  <polygon points="371.9 31.23 408.64 31.23 412.66 97.26 440.8 31.23 474.1 31.23 422.43 139.17 388.55 139.17 371.9 31.23"/>
+  <path d="M367.88,31.23h-17.8L354.81,0l-34.45,4.02s-13.34,66.24-15.64,80.6c-2.3,14.36-7.65,39.63,4.31,49.95,6.32,5.46,16.66,5.83,26.7,4.6,10.04-1.24,21.25-5.17,21.25-5.17l4.02-19.52s-10.6,7.26-19.24,2.58c-8.76-4.74-2.01-31.29.29-43.92,2.29-12.63,2.87-16.08,2.87-16.08h18.95l4.02-25.84Z"/>
+  <polygon points="257.83 179.4 253.41 176.94 249.7 180.4 250.67 175.42 246.24 172.96 251.27 172.35 252.24 167.38 254.37 171.97 259.4 171.36 255.7 174.81 257.83 179.4"/>
+  <polygon points="286.72 173.36 282.29 170.91 278.59 174.36 279.56 169.39 275.13 166.93 280.16 166.31 281.13 161.34 283.26 165.93 288.29 165.32 284.59 168.77 286.72 173.36"/>
+  <polygon points="315.76 168.48 311.33 166.02 307.62 169.47 308.59 164.5 304.16 162.04 309.19 161.43 310.16 156.45 312.3 161.05 317.33 160.43 313.62 163.88 315.76 168.48"/>
+  <polygon points="344.63 165.23 340.2 162.78 336.49 166.23 337.46 161.26 333.04 158.8 338.06 158.18 339.03 153.21 341.17 157.8 346.2 157.19 342.49 160.64 344.63 165.23"/>
+  <polygon points="373.72 162.85 369.29 160.39 365.59 163.85 366.56 158.88 362.13 156.42 367.16 155.8 368.13 150.83 370.26 155.42 375.29 154.81 371.58 158.26 373.72 162.85"/>
+  <polygon points="402.59 161.43 398.16 158.97 394.45 162.42 395.42 157.45 390.99 154.99 396.02 154.38 396.99 149.4 399.13 154 404.15 153.38 400.45 156.83 402.59 161.43"/>
+  <polygon points="431.25 160.9 426.82 158.44 423.12 161.9 424.09 156.92 419.66 154.47 424.68 153.85 425.66 148.88 427.79 153.47 432.82 152.86 429.11 156.31 431.25 160.9"/>
+  <path d="M87.56,138.67l3.88-27.74c-8.13,3.85-16.42,6.3-24.95,6.12-17.68-.37-23.71-13.85-20.05-34.47,4.01-22.45,16.8-30.12,32.89-30.16,8.96-.02,14.49,2.05,19.53,4.78l8.06-26.18c-8.21-3.1-18.21-4.2-29.02-4.2-32.33,0-59.77,18.05-66.07,54.09-6.27,35.62,10.55,60.62,44.25,61.75,13.07.47,22.63-1.43,31.48-3.99h0Z"/>
+  <path d="M165.27,66.5c-29.35,2.79-62.41,6.27-67.1,37.2-4.47,29.34,14.97,40.02,41.88,40.02,18.14,0,35.6-3.39,46.65-8.76l11.62-65.83c2.31-13.36.86-23.27-5.51-30.91-6.36-7.57-17.32-11.38-32.5-11.38s-32.49,2.49-46.52,7.16l2.86,23.31c9.29-4.34,22.19-7.02,34.3-7.02,7,0,11.1,1.03,13.56,3.8,1.96,2.2,2,5.22,1.41,8.72l-.64,3.7h0ZM155.65,120.73c-2.8,1.1-6.39,1.74-10.35,1.74-13.58-.06-15.63-9.46-14.36-17.94,2.12-13.8,13.12-17.61,31.11-19.55l-6.4,35.75h0Z"/>
+  <path d="M228.37,139.62l15.3-86.67c2.86-.9,6.74-1.7,11.73-1.76,4.65-.02,8.03,1.06,9.78,3.26,1.83,2.31,2.24,5.2,1.54,9.31l-13.39,75.85h34.15l.84-4.76h0l12.46-70.66c1.85-10.52-.24-18.03-4.87-23.82-6.3-7.94-18.87-13.56-36.48-13.56s-32.61,3.76-47.11,10.13l-18.1,102.66h34.15Z"/>
+</g>
+
+  <!-- Lockup tipografico -->
+  <g text-anchor="middle" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+    <text x="540" y="1148" font-size="46" font-weight="700" letter-spacing="14"
+          fill="#FFFFFF" opacity="0.96">AUTOGESTIÓN</text>
+    <text x="540" y="1214" font-size="31" font-weight="400" letter-spacing="1.5"
+          fill="#FFFFFF" opacity="0.86">Reportes de avería y puntos ópticos</text>
+    <text x="540" y="1272" font-size="24" font-weight="600" letter-spacing="3"
+          fill="#5CE1E6" opacity="0.95">GGTO · FRANCISCO SALIAS · ÁREA 4</text>
+  </g>
+</svg>

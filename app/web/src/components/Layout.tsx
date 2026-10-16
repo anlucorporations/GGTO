@@ -239,10 +239,19 @@ export default function Layout() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <header className="topbar sobre-marca">
         <Link to="/" className="marca" aria-label="GGTO — CANTV, ir al panel">
-          <span className="marca-nombre">GGTO</span>
-          <span className="marca-sub">— CANTV</span>
+          <img
+            className="marca-logo"
+            src="/marca/cantv-logo-blanco.svg"
+            alt=""
+            width={145}
+            height={60}
+          />
+          <span className="marca-lockup">
+            <span className="marca-nombre">GGTO</span>
+            <span className="marca-sub">Francisco Salias · Área 4</span>
+          </span>
         </Link>
 
         <BuscadorGlobal onAbrirCaso={setFichaGlobal} />

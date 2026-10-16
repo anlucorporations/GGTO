@@ -35,6 +35,16 @@ export default function Widget() {
 
   return (
     <>
+      {/* Portada de marca (fase 4 de la propuesta visual): la banda lleva el
+          logotipo CANTV y la trama; el titular lo sigue poniendo la página. */}
+      <img
+        className="banda-marca"
+        src="/marca/banda-widget.svg"
+        alt="GGTO · CANTV — gestión de averías y puntos ópticos de la Central Francisco Salias"
+        width={1920}
+        height={220}
+      />
+
       <div className="pagina-cabecera">
         <div>
           <h1>Widget</h1>

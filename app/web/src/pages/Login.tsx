@@ -15,6 +15,7 @@ import type { PrimerAccesoOut } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import AvisoLegal from '../components/AvisoLegal';
 import { DescargaApk, SugerenciaApk } from '../components/DescargaApk';
+import { IconoCheck } from '../components/Iconos';
 import Mensaje from '../components/Mensaje';
 import { aceptacionPrevia, registrarAceptacion } from '../disclaimer';
 
@@ -204,10 +205,57 @@ export default function Login() {
   }
 
   return (
-    <div className="login-fondo">
-      <div className="login-caja">
-        <h1>GGTO</h1>
-        <p className="subtitulo">Plataforma de gestión de averías — CANTV</p>
+    <div className="login-envoltura">
+      <div className="franja-marca" aria-hidden="true" />
+      <div className="login">
+        {/* Superficie de marca (propuesta visual v2): degradado medido sobre
+            la pieza «autogestión», trama de puntos y logotipo CANTV blanco. */}
+        <section className="login__marca sobre-marca" aria-labelledby="titulo-plataforma">
+          <span className="login__trama login__trama--arriba" aria-hidden="true" />
+          <span className="login__trama login__trama--abajo" aria-hidden="true" />
+
+          <img
+            className="login__logo"
+            src="/marca/cantv-logo-blanco.svg"
+            alt="CANTV"
+            width={340}
+            height={142}
+          />
+
+          <div className="login__claims">
+            <p className="login__etiqueta">Autogestión</p>
+            <h2 id="titulo-plataforma">Un solo tablero para la avería y el punto óptico</h2>
+            <p>
+              Ingesta diaria del CSV, despacho por cuadrilla, seguimiento de casos especiales y métricas
+              de la Central Francisco Salias (Área 4), desde la web y desde la APK.
+            </p>
+            <ul className="login__ventajas">
+              <li>
+                <IconoCheck aria-hidden="true" />
+                Ingesta y depuración del archivo diario de averías GPON.
+              </li>
+              <li>
+                <IconoCheck aria-hidden="true" />
+                Despacho con criterio de cuadrilla 0 y modo supervisor.
+              </li>
+              <li>
+                <IconoCheck aria-hidden="true" />
+                Trazabilidad por rol: técnico, supervisor, coordinador y administrador.
+              </li>
+            </ul>
+          </div>
+
+          <p className="login__pie">
+            Uso confidencial de CANTV C.A. · GGTO 2026 · Central Francisco Salias · Área 4
+          </p>
+        </section>
+
+        {/* Superficie de trabajo: tarjeta sobria y accesible. */}
+        <section className="login__panel">
+          <div className="login__caja">
+            <div className="login-caja">
+              <h1>GGTO</h1>
+              <p className="subtitulo">Plataforma de gestión de averías — CANTV</p>
 
         {!aceptado ? (
           <AvisoLegal
@@ -443,6 +491,9 @@ export default function Login() {
             <DescargaApk compacto />
           </>
         )}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

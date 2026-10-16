@@ -22,6 +22,8 @@ RAIZ = Path(__file__).resolve().parents[2]          # docs/propuesta-visual -> d
 DOCS = RAIZ.parent
 LOGO = DOCS / "docs" / "imagenes" / "CANTV_logo.svg"
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
+# Destino real de la aplicación web: los mismos SVG, servidos como estáticos.
+PUBLICO = DOCS / "app" / "web" / "public" / "marca"
 
 # --------------------------------------------------------------------------- #
 # Paleta real medida sobre docs/propuesta-visual/recursos/referencia-autogestion.jpg
@@ -140,6 +142,49 @@ def patron_trama() -> str:
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" width="26" height="26">
   <title>Trama de puntos de marca (baldosa repetible)</title>
   <circle cx="4" cy="4" r="2.6" fill="{G['punto']}" opacity="0.55"/>
+</svg>
+"""
+
+
+# --------------------------------------------------------------------------- #
+# 5. Banda de marca para la web (portada del Widget y cabeceras de página)
+# --------------------------------------------------------------------------- #
+def banda_web() -> str:
+    """Banda apaisada 1920x220: logotipo a la izquierda y trama a la derecha.
+
+    Pensada como portada de una página de la web: no lleva titular ni botones
+    (el titular lo pone la propia página), así que no se recorta.
+    """
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 220" width="1920" height="220"
+     role="img" aria-label="GGTO · CANTV">
+  <title>Banda de marca para la web (1920 x 220)</title>
+{defs_comunes()}
+  <rect width="1920" height="220" fill="url(#fondo)"/>
+  <rect width="1920" height="220" fill="url(#glow-izq)"/>
+  <rect width="1920" height="220" fill="url(#glow-der)"/>
+  <g filter="url(#suave)">
+    <path d="M-100 60 C 320 10, 640 190, 1040 90 C 1320 20, 1560 120, 2020 40 L 2020 -160 L -100 -160 Z"
+          fill="#2B4BFF" opacity="0.5"/>
+  </g>
+  <g filter="url(#suave2)">
+    <path d="M900 220 C 1060 140, 1300 190, 1460 110 C 1640 20, 1820 60, 2060 -10 L 2060 260 L 900 260 Z"
+          fill="#FF3FC0" opacity="0.38"/>
+  </g>
+  <g filter="url(#ribete)" fill="none" stroke-linecap="round">
+    <path d="M-80 190 C 420 90, 900 230, 1400 120 C 1640 70, 1800 100, 2000 60"
+          stroke="#FFFFFF" stroke-width="3" opacity="0.14"/>
+  </g>
+  <rect x="1560" y="34" width="234" height="130" fill="url(#trama)"/>
+{marca("#FFFFFF", 72, 48, 300)}
+  <g font-family="{FUENTE}" fill="#FFFFFF">
+    <text x="410" y="120" font-size="34" font-weight="700" font-family="{FUENTE_TITULAR}">
+      Gestión de averías y puntos ópticos
+    </text>
+    <text x="412" y="158" font-size="21" opacity="0.9">
+      CANTV · Central Francisco Salias (Área 4) — plataforma interna
+    </text>
+  </g>
 </svg>
 """
 
@@ -272,14 +317,31 @@ def main() -> None:
     salidas = {
         "cantv-logo-blanco.svg": logo_blanco(),
         "cantv-logo-tinta.svg": logo_tinta(),
+        "cantv-logo-color.svg": LOGO.read_text(encoding="utf-8"),
         "patron-trama.svg": patron_trama(),
         "hero-autogestion-vertical.svg": hero_vertical(),
         "hero-web.svg": hero_web(),
+        "banda-widget.svg": banda_web(),
     }
     for nombre, contenido in salidas.items():
         destino = ASSETS / nombre
         destino.write_text(contenido, encoding="utf-8")
         print(f"OK  {nombre:<34} {len(contenido):>7} bytes")
+
+    # Publica los activos que consume la aplicación web (app/web/public/marca).
+    PUBLICO.mkdir(parents=True, exist_ok=True)
+    publicables = [
+        "cantv-logo-color.svg",
+        "cantv-logo-blanco.svg",
+        "cantv-logo-tinta.svg",
+        "patron-trama.svg",
+        "banda-widget.svg",
+        "hero-web.svg",
+        "hero-autogestion-vertical.svg",
+    ]
+    for nombre in publicables:
+        (PUBLICO / nombre).write_text(salidas[nombre], encoding="utf-8")
+    print(f"OK  app/web/public/marca/             {len(publicables)} activos publicados")
 
 
 if __name__ == "__main__":

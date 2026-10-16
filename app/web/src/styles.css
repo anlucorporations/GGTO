@@ -2,22 +2,83 @@
 /* GGTO — CANTV · Hoja de estilos única                                */
 /* ================================================================== */
 
+/* ------------------------------------------------------------------ */
+/* Tokens v2 (propuesta visual aplicada)                               */
+/*                                                                     */
+/* Los nombres «--m-*» son los nuevos; los nombres antiguos se         */
+/* conservan como ALIAS para que las ~2 900 líneas de reglas ya        */
+/* escritas adopten la paleta nueva sin reescribirse.                  */
+/* Documento: docs/propuesta-visual/propuesta-visual-UIUX.md           */
+/* ------------------------------------------------------------------ */
+
 :root {
-  --azul: #0b4f9c;
-  --azul-oscuro: #08396f;
-  --azul-claro: #e8f0fa;
-  --gris-fondo: #f4f6f9;
-  --gris-borde: #d7dde6;
-  --gris-texto: #4a5568;
-  --texto: #1f2933;
+  /* --- Marca (medida sobre la imagen de referencia «autogestión») -- */
+  --m-electrico: #021fbe;
+  --m-azul: #0b1bb4;
+  --m-violeta: #3b1cad;
+  --m-violeta-2: #7c12af;
+  --m-purpura: #9d0bac;
+  --m-magenta: #c905a5;
+  --m-fucsia: #e003a0;
+  --m-turquesa: #00b8c4;
+  --m-turquesa-claro: #5ce1e6;
+  --m-profundo: #050b3d;
+
+  /* Colores oficiales del logotipo (solo para el lockup). */
+  --logo-azul: #0033aa;
+  --logo-amarillo: #ffdd00;
+  --logo-rojo: #ec2e38;
+
+  /* --- Alias de compatibilidad con las reglas existentes ---------- */
+  --azul: var(--m-azul);
+  --azul-oscuro: var(--m-profundo);
+  --azul-claro: #eef3fd;
+  --gris-fondo: #f4f7fc;
+  --gris-borde: #dce3f0;
+  --gris-texto: #5a6684;
+  --texto: #131a2a;
   --verde: #1f7a4d;
   --verde-claro: #e6f5ec;
   --rojo: #b3261e;
   --rojo-claro: #fdecea;
   --ambar: #8a6100;
   --ambar-claro: #fff4d6;
-  --radio: 8px;
-  --sombra: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --info: #0b1bb4;
+  --info-claro: #e7ecff;
+  --especial: #6a13a1;
+  --especial-claro: #f3e9fb;
+  --borde-fuerte: #c3cfe4;
+  --superficie-2: #eef3fd;
+
+  /* --- Degradados de marca ---------------------------------------- */
+  --grad-marca: linear-gradient(
+    160deg,
+    #021fbe 0%,
+    #0b20bc 16%,
+    #3b1cad 34%,
+    #7c12af 52%,
+    #9d0bac 70%,
+    #c905a5 86%,
+    #e003a0 100%
+  );
+  --grad-franja: linear-gradient(90deg, #021fbe, #7c12af 45%, #c905a5 72%, #e003a0);
+  --grad-cubierta: linear-gradient(135deg, #0b1bb4, #6a13a1 52%, #c905a5);
+  --grad-oscuro: linear-gradient(150deg, #050b3d, #1a1a9e 55%, #3b1cad);
+  --trama-marca: radial-gradient(circle, rgba(229, 221, 248, 0.5) 2.6px, transparent 2.7px);
+
+  /* --- Forma, sombra y movimiento --------------------------------- */
+  --radio: 14px;
+  --radio-medio: 10px;
+  --radio-pill: 999px;
+  --sombra: 0 1px 2px rgba(9, 18, 51, 0.06), 0 1px 3px rgba(9, 18, 51, 0.08);
+  --sombra-2: 0 6px 18px rgba(9, 18, 51, 0.1);
+  --t-micro: 150ms;
+  --t-transicion: 300ms;
+  --curva: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* --- Tipografía -------------------------------------------------- */
+  --fuente-ui: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --fuente-titular: 'Archivo', 'Inter', 'Segoe UI Semibold', 'Segoe UI', Arial, sans-serif;
 }
 
 * {
@@ -819,14 +880,10 @@ tbody tr:hover {
 
 /* ------------------------------ Login ----------------------------- */
 
-.login-fondo {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: linear-gradient(150deg, var(--azul-oscuro), var(--azul) 55%, #1a6fc4);
-}
+/* v2: el antiguo fondo de una sola pieza (`.login-fondo`) se sustituyó por
+   dos superficies —`.login__marca` (degradado de marca) y `.login__panel`
+   (trabajo)— definidas en la sección «PROPUESTA VISUAL v2» al final del
+   archivo. `.login-caja` sigue siendo la tarjeta blanca del formulario. */
 
 .login-caja {
   width: 100%;
@@ -2887,4 +2944,653 @@ input[type='file'] {
   border-left: 3px solid var(--azul, #1565c0);
   background: #f4f8fd;
   border-radius: 0 6px 6px 0;
+}
+
+/* ================================================================== */
+/* PROPUESTA VISUAL v2 — capa de marca aplicada                       */
+/*                                                                    */
+/* Reglas añadidas al final a propósito: así ganan por cascada sin    */
+/* tocar el resto del archivo. Orden: base, marca, acceso,            */
+/* componentes y accesibilidad.                                       */
+/* ================================================================== */
+
+/* ------------------------------ 1. Base --------------------------- */
+
+html {
+  font-size: 100%;
+}
+
+body {
+  font-family: var(--fuente-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--gris-fondo);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-titular);
+  letter-spacing: -0.01em;
+}
+
+/* Anillo de foco único para toda la aplicación (WCAG 2.2 · 2.4.11). */
+:focus-visible {
+  outline: 3px solid var(--m-turquesa);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Sobre superficies de marca el turquesa pierde fuerza: anillo blanco. */
+.sobre-marca :focus-visible,
+.sobre-marca:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ------------------------- 2. Marca y cabecera -------------------- */
+
+/* Firma de marca: 3 px de degradado entre la cabecera y el contenido. */
+.franja-marca {
+  height: 3px;
+  background: var(--grad-franja);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  background: var(--grad-oscuro);
+  box-shadow: var(--sombra-2);
+  padding: 8px 20px;
+  min-height: 62px;
+}
+
+/* La franja viaja pegada a la cabecera (que es sticky). */
+.topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: var(--grad-franja);
+}
+
+.marca {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.marca-logo {
+  height: 30px;
+  width: auto;
+  display: block;
+}
+
+.marca-lockup {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+  padding-left: 12px;
+}
+
+.marca-nombre {
+  font-family: var(--fuente-titular);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.marca-sub {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.nav-item.activo {
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--m-azul);
+  box-shadow: inset 0 -3px 0 var(--m-turquesa);
+}
+
+.nav-item {
+  border-radius: var(--radio-pill);
+  transition:
+    background var(--t-micro) var(--curva),
+    color var(--t-micro) var(--curva);
+}
+
+/* El campo de búsqueda global, en formato píldora translúcida. */
+.buscador-global .buscador-form,
+.buscador-global .buscador-campo {
+  border-radius: var(--radio-pill);
+}
+
+/* ------------------------------ 3. Acceso ------------------------- */
+
+.login-envoltura {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.login {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--gris-fondo);
+}
+
+/* Superficie de marca: el lenguaje de la imagen de referencia. */
+.login__marca {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 52px 56px;
+  color: #fff;
+  background: var(--grad-marca);
+  overflow: hidden;
+}
+
+.login__marca::before {
+  content: '';
+  position: absolute;
+  inset: -30% -20% auto -20%;
+  height: 70%;
+  background: radial-gradient(60% 60% at 30% 40%, rgba(63, 91, 255, 0.75), transparent 70%);
+  pointer-events: none;
+}
+
+.login__marca::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% -30% -20%;
+  height: 70%;
+  background: radial-gradient(50% 60% at 70% 60%, rgba(255, 91, 214, 0.55), transparent 70%);
+  pointer-events: none;
+}
+
+.login__marca > * {
+  position: relative;
+  z-index: 1;
+}
+
+.login__trama {
+  position: absolute;
+  width: 230px;
+  height: 190px;
+  background-image: var(--trama-marca);
+  background-size: 26px 26px;
+  opacity: 0.75;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.login__trama--arriba {
+  top: 40px;
+  right: 56px;
+}
+
+.login__trama--abajo {
+  bottom: 26px;
+  right: 120px;
+  width: 176px;
+  height: 126px;
+}
+
+.login__logo {
+  width: min(340px, 62%);
+  height: auto;
+  display: block;
+}
+
+.login__claims {
+  max-width: 48ch;
+}
+
+.login__claims h2 {
+  font-size: clamp(22px, 1.4vw + 16px, 30px);
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.login__claims p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.login__etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--m-turquesa-claro);
+}
+
+.login__etiqueta::before {
+  content: '';
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--grad-franja);
+}
+
+.login__ventajas {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.login__ventajas li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.login__ventajas svg {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--m-turquesa-claro);
+}
+
+.login__pie {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+}
+
+.login__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 32px;
+}
+
+.login__caja {
+  width: 100%;
+  max-width: 440px;
+}
+
+/* La tarjeta blanca del acceso, ahora dentro de la columna de trabajo. */
+.login-caja {
+  border-radius: 18px;
+  box-shadow: 0 18px 46px rgba(9, 18, 51, 0.18);
+  padding: 28px;
+}
+
+/* Pestañas del acceso en formato «segmented control» (propuesta v2). */
+.login-pestanas {
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radio-pill);
+  background: var(--superficie-2);
+}
+
+.login-pestana {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radio-pill);
+  margin-bottom: 0;
+  background: transparent;
+  color: var(--gris-texto);
+}
+
+.login-pestana:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--m-azul);
+}
+
+.login-pestana.activa {
+  background: #fff;
+  color: var(--m-azul);
+  border-bottom-color: transparent;
+  box-shadow: var(--sombra);
+}
+
+/* La descarga de la APK pertenece a la marca, no al color de «éxito». */
+.btn-apk {
+  background: var(--grad-cubierta);
+  color: #fff;
+  border-radius: var(--radio-medio);
+}
+
+.btn-apk:hover {
+  background: var(--grad-cubierta);
+  filter: brightness(1.08);
+}
+
+/* --------------------------- 4. Componentes ----------------------- */
+
+/* Portada de marca de una página (banda apaisada 1920 x 220). */
+.banda-marca {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-2);
+  margin-bottom: 18px;
+}
+
+/* Botones: radio medio y transición breve (150 ms). */
+.btn {
+  border-radius: var(--radio-medio);
+  transition:
+    background var(--t-micro) var(--curva),
+    border-color var(--t-micro) var(--curva),
+    box-shadow var(--t-micro) var(--curva),
+    transform var(--t-micro) var(--curva);
+}
+
+.btn:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.btn-secundario {
+  border-color: var(--borde-fuerte);
+  color: var(--m-azul);
+  font-weight: 600;
+}
+
+.btn-secundario:hover {
+  background: var(--superficie-2);
+}
+
+/* Campos: borde reforzado, radio medio y anillo de foco azul. */
+.campo input,
+.campo select,
+.campo textarea {
+  border: 1.5px solid var(--borde-fuerte);
+  border-radius: var(--radio-medio);
+  transition:
+    border-color var(--t-micro) var(--curva),
+    box-shadow var(--t-micro) var(--curva);
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--m-azul);
+  box-shadow: 0 0 0 3px rgba(11, 27, 180, 0.16);
+}
+
+/* Chips: variantes semánticas y de estado especial (cuadrilla 0). */
+.chip,
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  border-radius: var(--radio-pill);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip-info {
+  background: var(--info-claro);
+  border: 1px solid #c7d2ff;
+  color: var(--info);
+}
+
+.chip-exito {
+  background: var(--verde-claro);
+  border: 1px solid #c3e6d3;
+  color: var(--verde);
+}
+
+.chip-alerta {
+  background: var(--ambar-claro);
+  border: 1px solid #f0dfae;
+  color: var(--ambar);
+}
+
+.chip-error {
+  background: var(--rojo-claro);
+  border: 1px solid #f5cdc9;
+  color: var(--rojo);
+}
+
+.chip-especial {
+  background: var(--especial-claro);
+  border: 1px solid #ddc6f2;
+  color: var(--especial);
+}
+
+.chip-neutro {
+  background: var(--superficie-2);
+  border: 1px solid var(--gris-borde);
+  color: var(--gris-texto);
+}
+
+/* Avisos: se conserva el tinte semántico y se añade el filete de acento. */
+.aviso {
+  border-radius: var(--radio);
+  border-left-width: 5px;
+  border-left-style: solid;
+  align-items: flex-start;
+  padding: 12px 16px;
+}
+
+.aviso-error {
+  border-left-color: var(--rojo);
+}
+
+.aviso-ok {
+  border-left-color: var(--verde);
+}
+
+.aviso-info {
+  border-left-color: #e08b00;
+}
+
+/* Tarjetas e indicadores. */
+.rejilla-tarjetas {
+  gap: 18px;
+}
+
+.tarjeta {
+  position: relative;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+.tarjeta::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--grad-franja);
+}
+
+.tarjeta .valor {
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--m-azul);
+}
+
+.tarjeta .etiqueta {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* Tarjeta de marca (cubierta con degradado y trama). */
+.tarjeta-marca {
+  position: relative;
+  color: #fff;
+  border: 0;
+  background: var(--grad-cubierta);
+  padding: 20px;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-2);
+  overflow: hidden;
+}
+
+.tarjeta-marca::before {
+  height: 0;
+}
+
+.tarjeta-marca::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--trama-marca);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(120% 90% at 88% 8%, #000 0%, transparent 62%);
+  mask-image: radial-gradient(120% 90% at 88% 8%, #000 0%, transparent 62%);
+  pointer-events: none;
+}
+
+.tarjeta-marca > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tarjeta-marca .etiqueta,
+.tarjeta-marca .texto-pequeno {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.tarjeta-marca .valor {
+  color: #fff;
+  font-size: 26px;
+}
+
+/* Panel-bloque: cabecera de sección con degradado muy leve. */
+.panel-bloque {
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.pagina-cabecera h1 {
+  font-family: var(--fuente-titular);
+  font-size: 26px;
+}
+
+/* Tablas: cabecera con tinte azul y cifras tabulares. */
+table {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--superficie-2);
+  color: #26314d;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 11px 12px;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f9;
+}
+
+tbody tr:hover {
+  background: #f7faff;
+}
+
+/* Barra de progreso del SLA: color y texto, nunca solo color. */
+.barra-sla {
+  width: 118px;
+  height: 8px;
+  border-radius: var(--radio-pill);
+  background: #e7ecf6;
+  overflow: hidden;
+}
+
+.barra-sla > span,
+.barra-sla > i {
+  display: block;
+  height: 100%;
+  border-radius: var(--radio-pill);
+  background: var(--grad-franja);
+}
+
+.barra-sla.es-riesgo > span,
+.barra-sla.es-riesgo > i {
+  background: linear-gradient(90deg, #e08b00, #b3261e);
+}
+
+/* ------------------------- 5. Accesibilidad ----------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* --------------------------- 6. Responsivo ------------------------ */
+
+@media (max-width: 1024px) {
+  .login {
+    grid-template-columns: 1fr;
+  }
+
+  .login__marca {
+    padding: 36px 32px 44px;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 8px 14px;
+  }
+
+  .marca-logo {
+    height: 26px;
+  }
+
+  .marca-sub {
+    display: none;
+  }
+
+  .login__panel {
+    padding: 28px 16px 40px;
+  }
+
+  .login__trama--abajo {
+    display: none;
+  }
+
+  .login__trama--arriba {
+    top: 26px;
+    right: 12px;
+    width: 140px;
+    height: 120px;
+  }
 }
