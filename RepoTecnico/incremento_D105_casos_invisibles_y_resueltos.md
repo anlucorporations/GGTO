@@ -125,8 +125,9 @@ marca de agua válida y la descarga debe ser completa (era la otra mitad del mis
 
 ## 7. Pendiente
 
-- **Desplegar** la API (imagen nueva de Cloud Run) y **publicar la APK `1.7.0+16`**: sin las dos
-  piezas, el dispositivo sigue con el comportamiento anterior.
+- ~~**Desplegar** la API y **publicar la APK `1.7.0+16`**~~ → **hecho el 2026-10-17**: imagen **`v36`**,
+  revisión **`ggto-web-00049-txp`** (100 % del tráfico) y **`apk.json` sirviendo `1.7.0+16`** con el
+  SHA-256 `1ee1147e…`, idéntico al binario local.
 - Prueba **en dispositivo**: tras sincronizar, el listado debe mostrar los casos de la cuadrilla
   y el chip «Resueltos (N)» debe estar visible siempre.
 - Cuando se **publique** un despacho del día, la purga de D-104 vuelve a aplicar: los casos de

@@ -99,5 +99,8 @@
 
 ## 7. Pendiente
 
-- **Desplegar** la web (imagen nueva de Cloud Run) para que los dos cambios lleguen al navegador.
+- ~~**Desplegar** la web~~ → **hecho el 2026-10-17**: imagen **`v36`**, revisión
+  **`ggto-web-00049-txp`** (100 % del tráfico). El bundle servido es `index-B38eAe_X.js`, idéntico
+  al de la compilación local, con la pestaña GESTIÓN y el panel de direcciones; contrato en
+  **132 paths** con `POST /casos/{id_caso}/reactivar` y `GET /ingesta/direcciones-sin-sector`.
 - Prueba de aceptación en la web: cargar el archivo diario, asignar el sector de una dirección desde el panel permanente, cerrar un caso y **reactivarlo** desde GESTIÓN.
