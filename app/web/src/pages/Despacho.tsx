@@ -17,6 +17,12 @@ import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import ProcesarDespacho from '../components/ProcesarDespacho';
+import {
+  IconoConstruccion,
+  IconoEmpresa,
+  IconoReferido,
+  IconoReparacion,
+} from '../components/Iconos';
 import { GraficoTorta, type PorcionTorta } from '../components/graficos';
 import { IconoMasiva } from '../masivas/registro';
 import { useAuth } from '../auth/AuthContext';
@@ -49,6 +55,94 @@ const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
   { clave: 'referidos', etiqueta: 'Referidos' },
   { clave: 'empresas', etiqueta: 'Empresas' },
 ];
+
+/**
+ * Desglose de los casos de un despacho por tipo de asignación (D-110).
+ *
+ * La columna **Casos** de la ficha del día muestra el total de
+ * **Reparaciones Comunes + Reparaciones Referidas + Construcciones** con un icono
+ * por tipo; los casos empresariales y de falla masiva, si los hay, se informan
+ * aparte para que el total del despacho nunca oculte trabajo.
+ */
+export interface ConteoCasosTipo {
+  comunes: number;
+  referidos: number;
+  construcciones: number;
+  empresas: number;
+  masivas: number;
+  /** Total de los tres tipos que pide la operación. */
+  total: number;
+  /** Total real del despacho (incluye empresas y masivas). */
+  totalDespacho: number;
+}
+
+export function conteoPorTipo(casos: DespachoDetalleOut['casos']): ConteoCasosTipo {
+  const contar = (tipo: TipoAsignacionDespacho) =>
+    casos.filter((c) => c.tipo_asignacion === tipo).length;
+  const comunes = contar('REPARACION');
+  const referidos = contar('REFERIDO');
+  const construcciones = contar('CONSTRUCCION');
+  const empresas = contar('EMPRESA');
+  const masivas = contar('FALLA_MASIVA');
+  return {
+    comunes,
+    referidos,
+    construcciones,
+    empresas,
+    masivas,
+    total: comunes + referidos + construcciones,
+    totalDespacho: casos.length,
+  };
+}
+
+/**
+ * Celda de la columna **Casos**: total de comunes, referidos y construcciones,
+ * cada uno con su icono (y los «otros» aparte).
+ */
+export function CeldaCasosPorTipo({ casos }: { casos: DespachoDetalleOut['casos'] }) {
+  const conteo = conteoPorTipo(casos);
+  const otros = conteo.empresas + conteo.masivas;
+  return (
+    <div className="celda-casos-tipo" id="celda-casos-tipo">
+      <span
+        className="caso-tipo caso-tipo-reparacion"
+        title={`Reparaciones comunes: ${conteo.comunes}`}
+        aria-label={`Reparaciones comunes: ${conteo.comunes}`}
+      >
+        <IconoReparacion />
+        {conteo.comunes}
+      </span>
+      <span
+        className="caso-tipo caso-tipo-referido"
+        title={`Reparaciones referidas: ${conteo.referidos}`}
+        aria-label={`Reparaciones referidas: ${conteo.referidos}`}
+      >
+        <IconoReferido />
+        {conteo.referidos}
+      </span>
+      <span
+        className="caso-tipo caso-tipo-construccion"
+        title={`Construcciones: ${conteo.construcciones}`}
+        aria-label={`Construcciones: ${conteo.construcciones}`}
+      >
+        <IconoConstruccion />
+        {conteo.construcciones}
+      </span>
+      <strong className="caso-total" title={`Total: ${conteo.total}`}>
+        {conteo.total}
+      </strong>
+      {otros > 0 && (
+        <span
+          className="caso-tipo caso-tipo-otros"
+          title={`Otros: ${conteo.empresas} empresa(s), ${conteo.masivas} de falla masiva`}
+        >
+          <IconoEmpresa />
+          {otros}
+        </span>
+      )}
+    </div>
+  );
+}
 
 /**
  * Cumplimiento del despacho en un aro (D-99 · RF-70).
@@ -283,17 +377,18 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
  * principal, que ahora se dispone en rejilla de datos.
  */
 function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
-  const conteo = (estado: EstadoDespachoCaso) =>
+  const contarEstado = (estado: EstadoDespachoCaso) =>
     despacho.casos.filter((c) => c.estado === estado).length;
   const total = despacho.casos.length;
-  const cerrados = conteo('CERRADO');
-  const citados = conteo('CITADO');
-  const diferidos = conteo('DIFERIDO');
-  const gestionados = conteo('GESTIONADO');
+  const cerrados = contarEstado('CERRADO');
+  const citados = contarEstado('CITADO');
+  const diferidos = contarEstado('DIFERIDO');
+  const gestionados = contarEstado('GESTIONADO');
   const abiertos = total - cerrados - citados - diferidos - gestionados;
   const cumplimiento = total ? Math.round((cerrados / total) * 100) : 0;
   const masivos = despacho.casos.filter((c) => c.tipo_asignacion === 'FALLA_MASIVA').length;
 
+  const conteo = conteoPorTipo(despacho.casos);
   const cajas: { etiqueta: string; valor: number; clase: string }[] = [
     { etiqueta: 'Casos', valor: total, clase: '' },
     { etiqueta: 'Abiertos', valor: abiertos, clase: 'box-info-abierto' },
@@ -323,6 +418,13 @@ function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
           <span className="box-info-etiqueta">Casos de masiva</span>
         </div>
       )}
+      {/* D-110: el reparto por tipo, con los mismos iconos que la columna Casos. */}
+      <div className="box-info box-info-tipos" id="box-info-tipos">
+        <span className="box-info-valor">
+          <CeldaCasosPorTipo casos={despacho.casos} />
+        </span>
+        <span className="box-info-etiqueta">Comunes · referidos · construcciones</span>
+      </div>
     </div>
   );
 }
@@ -800,7 +902,11 @@ export default function Despacho() {
                 <th>Despacho</th>
                 <th>Cuadrilla</th>
                 <th>Estado</th>
-                <th>Casos</th>
+                <th
+                  title="Total de reparaciones comunes, reparaciones referidas y construcciones (los demás tipos se informan aparte)"
+                >
+                  Casos
+                </th>
                 <th>Canal de envío</th>
                 <th>Generado</th>
                 <th>Acciones</th>
@@ -828,7 +934,9 @@ export default function Despacho() {
                       {d.cuadrilla_nombre ? ` — ${d.cuadrilla_nombre}` : ''}
                     </td>
                     <td>{d.estado}</td>
-                    <td>{d.casos.length}</td>
+                    <td>
+                      <CeldaCasosPorTipo casos={d.casos} />
+                    </td>
                     <td>{d.enviado_canal ?? '—'}</td>
                     <td>{d.generado_auto ? 'Automático' : 'Manual'}</td>
                     <td>

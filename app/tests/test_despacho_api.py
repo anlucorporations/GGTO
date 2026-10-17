@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
-from app.models import Caso, Cuadrilla
+from app.models import Caso, Cuadrilla, DespachoCasos
 
 BASE = "/api/v1/despachos"
 HOY = date.today().isoformat()
@@ -697,3 +697,58 @@ def test_tecnico_no_asigna_casos(client, entorno, admin_token, db_session):
                           "ids_caso": [_id_caso(db_session, "TSTD-A0")], "fecha": HOY},
                     headers=admin_token["tecnico"])
     assert r.status_code == 403
+
+
+# --------------------------------------------------------------------------- #
+# Verificación D-110: la asignación al procesar y el aviso a la APK
+# --------------------------------------------------------------------------- #
+def test_procesar_asigna_a_su_cuadrilla_y_avisa_a_la_apk(client, entorno, admin_token,
+                                                          db_session):
+    """RF-67/RF-69: al procesar, cada caso queda en SU cuadrilla y el técnico de
+    esa cuadrilla recibe el aviso en la bandeja que sondea la APK.
+
+    Se comprueba de extremo a extremo: el despacho creado contiene el caso de su
+    sector, el técnico inscrito en la cuadrilla ve «DESPACHO DEL DÍA» en
+    `/api/v1/mensajes` (lo que la APK consulta cada 60 s) y el aviso lleva el
+    código de su cuadrilla y el número de casos.
+    """
+    from app.models import Tecnico
+
+    # Técnico de prueba dentro de la cuadrilla TCD1.
+    cuadrillas = client.get("/api/v1/cuadrillas", params={"id_central": entorno["id_central"]},
+                            headers=entorno["headers"]).json()
+    cuad1 = next(c for c in cuadrillas if c["codigo"] == "TCD1")
+    id_tecnico = db_session.scalar(select(Tecnico.id_tecnico).where(Tecnico.p00 == "TESTTEC"))
+    assert id_tecnico is not None
+    alta = client.post(f"/api/v1/cuadrillas/{cuad1['id_cuadrilla']}/integrantes",
+                       json={"id_tecnico": id_tecnico}, headers=entorno["headers"])
+    assert alta.status_code == 201, alta.text
+
+    r = client.post(f"{BASE}/procesar",
+                    json={"fecha": HOY, "reemplazar": True, "asignaciones": []},
+                    headers=entorno["headers"])
+    assert r.status_code == 201, r.text
+    despachos = r.json()
+    assert despachos, "no se creó ningún despacho"
+
+    # El despacho de TCD1 contiene casos y son de los sectores que le tocan.
+    detalle = client.get(f"{BASE}/{despachos[0]['id_despacho']}",
+                         headers=entorno["headers"]).json()
+    assert detalle["cuadrilla_codigo"] == "TCD1"
+    assert len(detalle["casos"]) > 0
+    ids_asignados = {c["id_caso"] for c in detalle["casos"]}
+    en_la_cuadrilla = db_session.scalars(
+        select(DespachoCasos.id_caso).where(
+            DespachoCasos.id_despacho == detalle["id_despacho"]
+        )
+    ).all()
+    assert ids_asignados == set(en_la_cuadrilla)
+
+    # El aviso llega a la bandeja del técnico (lo que ve la APK).
+    mensajes = client.get("/api/v1/mensajes", params={"ultimos": 20},
+                          headers=admin_token["tecnico"]).json()
+    avisos = [m for m in mensajes if "DESPACHO DEL" in (m.get("cuerpo") or "")]
+    assert avisos, "el técnico de la cuadrilla no recibió el aviso del despacho"
+    propios = [m for m in avisos if "Cuadrilla TCD1" in (m["cuerpo"] or "")]
+    assert propios, "el aviso no identifica la cuadrilla del técnico"
+    assert "caso(s) asignado(s)" in propios[0]["cuerpo"]

@@ -1,0 +1,4 @@
+[2026-10-17T19:50:41+00:00] D-95 · modo=SIMULACIÓN · estado=(1, 1, 2, 2, 0)
+[2026-10-17T19:50:41+00:00] Simulación: se crearán/ajustarán el rol y los contratos de destinatarios.
+[2026-10-17T19:50:46+00:00] D-95 · modo=APLICAR · estado=(1, 1, 2, 2, 0)
+[2026-10-17T19:50:47+00:00] Migración D-95 aplicada y verificada: (1, 1, 3, 2, 2)
