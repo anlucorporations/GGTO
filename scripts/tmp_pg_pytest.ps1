@@ -1,8 +1,8 @@
 # Levanta el clúster PostgreSQL temporal de pruebas (si hace falta) y ejecuta la
 # suite de integración contra él.
 #
-#   pwsh -File scripts/tmp_pg_pytest.ps1                 # suite completa
-#   pwsh -File scripts/tmp_pg_pytest.ps1 app/tests/x.py  # subset
+#   .\scripts\tmp_pg_pytest.ps1                  # suite completa
+#   .\scripts\tmp_pg_pytest.ps1 app/tests/x.py   # subset (la ruta va primero)
 #
 # Notas de Windows (por qué el script está escrito así):
 #   · `pg_ctl start` se lanza con `Start-Process` y la salida redirigida a
@@ -11,10 +11,13 @@
 #   · La salida de `pytest` va a un archivo y luego se muestra el final: pasar la
 #     salida por una tubería de PowerShell vuelve a colgarse por el mismo motivo.
 #   · El clúster se recrea solo si falta el directorio de datos (`initdb`).
+#   · La ruta es el **primer** parámetro posicional: en Windows PowerShell,
+#     `-File script.ps1 app/tests/x.py` con `$Puerto` delante la habría intentado
+#     convertir a entero.
 param(
+  [string[]]$Rutas = @(),
   [int]$Puerto = 5599,
-  [string]$Raiz = 'C:\GGTO\pgtmp',
-  [string[]]$Rutas = @()
+  [string]$Raiz = 'C:\GGTO\pgtmp'
 )
 $ErrorActionPreference = 'Continue'
 $pg = 'C:\Program Files\PostgreSQL\18\bin'
@@ -78,9 +81,13 @@ if ("$existe".Trim() -ne '1') {
 
 $env:GGTO_TEST_DB_URL = "postgresql+psycopg2://ggto@127.0.0.1:$Puerto/ggto_test"
 $env:GGTO_TEST_SCHEMA = 'ggto_test'
-$destino = if ($Rutas.Count -gt 0) { $Rutas } else { @() }
+# `@argumentos` es el operador de *splatting*: pasa cada ruta como un argumento
+# distinto. Se fuerza el arreglo con `@(...)`: con una sola ruta, `$Rutas` puede
+# venir como cadena y el splat la habría partido en caracteres.
+$destino = @($Rutas | Where-Object { $_ })
+$argumentos = @('-m', 'pytest', '-q') + $destino
 
-python -m pytest -q @destino > $logPytest 2>&1
+python @argumentos > $logPytest 2>&1
 $codigo = $LASTEXITCODE
 Get-Content $logPytest -Tail 25
 exit $codigo
