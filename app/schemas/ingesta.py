@@ -57,6 +57,19 @@ class SectorizacionPendientesOut(BaseModel):
     sin_sector: int = 0
 
 
+class DireccionesSinSectorOut(BaseModel):
+    """Direcciones **del sistema** (no solo del último archivo) sin sector (D-106).
+
+    Permite volver a la gestión de direcciones sin sector en cualquier momento y
+    no solo al terminar una ingesta: la pantalla INGESTA muestra el total y abre
+    el mismo cuadro de asignación.
+    """
+
+    total_direcciones: int = 0
+    total_casos: int = 0
+    direcciones: list[DireccionSinSector] = Field(default_factory=list)
+
+
 class IngestaLoteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

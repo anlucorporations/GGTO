@@ -2,7 +2,8 @@
 # suite de integración contra él.
 #
 #   .\scripts\tmp_pg_pytest.ps1                  # suite completa
-#   .\scripts\tmp_pg_pytest.ps1 app/tests/x.py   # subset (la ruta va primero)
+#   .\scripts\tmp_pg_pytest.ps1 app/tests/x.py   # subset (una ruta, posicional)
+#   .\scripts\tmp_pg_pytest.ps1 -Rutas a.py,b.py # varios archivos a la vez
 #
 # Notas de Windows (por qué el script está escrito así):
 #   · `pg_ctl start` se lanza con `Start-Process` y la salida redirigida a

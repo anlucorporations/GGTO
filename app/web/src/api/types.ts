@@ -362,6 +362,13 @@ export interface SectorizacionPendientesOut {
   sin_sector: number;
 }
 
+/** Direcciones del sistema sin sector (D-106): vista permanente de la ingesta. */
+export interface DireccionesSinSectorOut {
+  total_direcciones: number;
+  total_casos: number;
+  direcciones: DireccionSinSector[];
+}
+
 export interface IngestaLoteOut {
   id_lote: number;
   archivo: string;
@@ -540,6 +547,12 @@ export interface CasoEstadoHistOut {
   motivo: string | null;
   usuario: string | null;
   fecha_hora: string | null;
+}
+
+/** Cuerpo de `POST /casos/{id}/reactivar` (D-106): motivo obligatorio. */
+export interface ReactivarCaso {
+  motivo: string;
+  estado?: Extract<EstadoCaso, 'NUEVO' | 'ASIGNADO' | 'EN_GESTION'>;
 }
 
 /** Parámetros del listado paginado de casos (RF-33). */

@@ -182,3 +182,55 @@ def test_direcciones_sin_sector_se_reportan_y_se_gestionan(client, admin_token, 
 def test_sectorizar_pendientes_requiere_escritura(client, admin_token):
     r = client.post("/api/v1/ingesta/sectorizar-pendientes", headers=admin_token["tecnico"])
     assert r.status_code == 403
+
+# --------------------------------------------------------------------------- #
+# Direcciones sin sector del sistema (D-106)
+# --------------------------------------------------------------------------- #
+def test_direcciones_sin_sector_se_consultan_en_cualquier_momento(client, admin_token):
+    """La vista permanente lista las direcciones sin sector de los casos vigentes.
+
+    Antes solo se podían gestionar desde el resumen de la ingesta; si el usuario
+    cerraba el cuadro no había forma de volver a ellas (D-106).
+    """
+    assert _subir(client, admin_token["admin"]).status_code == 201
+
+    r = client.get("/api/v1/ingesta/direcciones-sin-sector", headers=admin_token["admin"])
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["total_direcciones"] >= 1
+    assert cuerpo["total_casos"] >= 1
+    assert sum(d["total"] for d in cuerpo["direcciones"]) == cuerpo["total_casos"]
+    primera = cuerpo["direcciones"][0]
+    assert primera["direccion"]
+    assert primera["ejemplo_id_averia"]
+
+    # El TECNICO no puede consultarlas (requiere escritura).
+    assert client.get("/api/v1/ingesta/direcciones-sin-sector",
+                      headers=admin_token["tecnico"]).status_code == 403
+
+
+def test_direcciones_sin_sector_baja_cuando_se_asigna_el_sector(client, admin_token):
+    """Al asignar el sector a la dirección, la lista se queda sin pendientes."""
+    assert _subir(client, admin_token["admin"]).status_code == 201
+    antes = client.get("/api/v1/ingesta/direcciones-sin-sector",
+                       headers=admin_token["admin"]).json()
+    assert antes["total_direcciones"] >= 1
+    direccion = antes["direcciones"][0]["direccion"]
+
+    r = client.post(
+        "/api/v1/sectores",
+        json={
+            "id_central": admin_token["id_central"],
+            "nombre": "Sector D106",
+            "codigo": "TSTD6",
+            "direcciones": [{"patron": direccion}],
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    assert client.post("/api/v1/ingesta/sectorizar-pendientes",
+                       headers=admin_token["admin"]).status_code == 200
+
+    despues = client.get("/api/v1/ingesta/direcciones-sin-sector",
+                         headers=admin_token["admin"]).json()
+    assert despues["total_casos"] < antes["total_casos"]

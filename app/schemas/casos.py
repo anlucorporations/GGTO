@@ -356,3 +356,23 @@ class CasoRelacionado(BaseModel):
     justificacion_cierre: str | None = None
     direccion: str | None = None
     nombre_cliente: str | None = None
+
+
+#: Estados desde los que se puede **reactivar** un caso (D-106). Son los
+#: terminales: mientras esté cerrado, cancelado o enrutado, la gestión web no
+#: puede volver a trabajarlo.
+ESTADOS_REACTIVABLES = ("CERRADO", "CANCELADO", "ENRUTADO")
+
+
+class ReactivarCaso(BaseModel):
+    """Reapertura de un caso terminal (D-106 · RF-88).
+
+    La operación devuelve el caso a la cola abierta con su motivo en la bitácora;
+    por defecto queda `ASIGNADO` (trabajo vigente de la cuadrilla).
+    """
+
+    motivo: str = Field(min_length=5, max_length=200,
+                        description="Por qué se reabre el caso (queda en la bitácora)")
+    estado: Literal["NUEVO", "ASIGNADO", "EN_GESTION"] = Field(
+        default="ASIGNADO", description="Estado abierto al que vuelve el caso"
+    )

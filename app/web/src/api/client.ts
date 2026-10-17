@@ -52,6 +52,7 @@ import type {
   CuadrillaUpdate,
   DespachoDetalleOut,
   DespachoUpdate,
+  DireccionesSinSectorOut,
   DominioMetodo,
   EnvioOut,
   GestionDiaria,
@@ -69,6 +70,7 @@ import type {
   ProcesarOutboxOut,
   ProcesoDespachoOut,
   PropuestaOut,
+  ReactivarCaso,
   RegenerarPalabrasResponse,
   ReporteProduccionOut,
   Flota,
@@ -457,6 +459,11 @@ export function cambiarEstadoCaso(
   return conCuerpo<CasoOut>(`/casos/${idCaso}/estado`, 'POST', datos);
 }
 
+/** Reactiva un caso terminal (CERRADO, CANCELADO o ENRUTADO) con su motivo (D-106). */
+export function reactivarCaso(idCaso: number, datos: ReactivarCaso): Promise<CasoOut> {
+  return conCuerpo<CasoOut>(`/casos/${idCaso}/reactivar`, 'POST', datos);
+}
+
 /* ------------------------------------------------------------------ */
 /* FLOTA                                                               */
 /* ------------------------------------------------------------------ */
@@ -594,6 +601,15 @@ export function sectorizarPendientes(idCentral: number | null = null): Promise<S
   return request<SectorizacionPendientesOut>(
     `/ingesta/sectorizar-pendientes${construirQuery({ id_central: idCentral })}`,
     { method: 'POST' },
+  );
+}
+
+/** Direcciones del sistema sin sector (D-106): vista permanente de la ingesta. */
+export function direccionesSinSector(
+  idCentral: number | null = null,
+): Promise<DireccionesSinSectorOut> {
+  return request<DireccionesSinSectorOut>(
+    `/ingesta/direcciones-sin-sector${construirQuery({ id_central: idCentral })}`,
   );
 }
 

@@ -25,6 +25,7 @@ from ..models import (
     Usuario,
 )
 from ..schemas.casos import (
+    ESTADOS_REACTIVABLES,
     ESTADOS_TERMINALES,
     CasoEstadoHistOut,
     CasoGestionEstado,
@@ -38,6 +39,7 @@ from ..schemas.casos import (
     EnrutadoCaso,
     NoContestaIn,
     PaginaCasos,
+    ReactivarCaso,
     ResolucionOut,
 )
 from ..services import clasificacion, pagos, resolucion
@@ -560,6 +562,39 @@ def cambiar_estado(
         raise HTTPException(status_code=409, detail="El caso ya está en ese estado")
     _registrar_estado(db, caso, datos.estado_actual, datos.motivo_estado, usuario.p00)
     clasificacion.aplicar_en_cambio(db, caso, "CAMBIO_ESTADO", usuario.p00)
+    db.commit()
+    db.refresh(caso)
+    return _resumen(db, [caso])[0]
+
+
+@router.post("/{id_caso}/reactivar", response_model=CasoOut,
+             summary="Reactivar un caso cerrado, cancelado o enrutado")
+def reactivar_caso(
+    id_caso: int,
+    datos: ReactivarCaso,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_escritura),
+) -> CasoOut:
+    """Devuelve el caso a la cola abierta con su motivo en la bitácora (D-106).
+
+    Solo aplica a estados terminales (CERRADO, CANCELADO, ENRUTADO): un caso que
+    ya está abierto se mueve con `POST /casos/{id}/estado`, no se «reactiva». El
+    motivo es obligatorio porque la reapertura tiene que quedar explicada en el
+    histórico (RF-88 / RNF-12).
+    """
+    caso = _o_404(db, id_caso)
+    if caso.estado_actual not in ESTADOS_REACTIVABLES:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"El caso está en {caso.estado_actual}: solo se reactiva un caso "
+                f"{', '.join(ESTADOS_REACTIVABLES)}. Para mover un caso abierto use "
+                "el cambio de estado."
+            ),
+        )
+    motivo = datos.motivo.strip()
+    _registrar_estado(db, caso, datos.estado, f"REACTIVACIÓN: {motivo}", usuario.p00)
+    clasificacion.aplicar_en_cambio(db, caso, "REACTIVACION", usuario.p00)
     db.commit()
     db.refresh(caso)
     return _resumen(db, [caso])[0]

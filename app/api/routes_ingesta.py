@@ -11,7 +11,13 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..models import Central, IngestaLote, Usuario
 from ..models.caso_entities import Caso
-from ..schemas.ingesta import IngestaLoteOut, ResumenIngesta, SectorizacionPendientesOut
+from ..schemas.ingesta import (
+    DireccionesSinSectorOut,
+    DireccionSinSector,
+    IngestaLoteOut,
+    ResumenIngesta,
+    SectorizacionPendientesOut,
+)
 from ..services import cuadrilla0, fallas, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.ingesta import (
@@ -312,6 +318,50 @@ def obtener_lote(
     if lote is None:
         raise HTTPException(status_code=404, detail="Lote no encontrado")
     return lote
+
+
+@router.get("/direcciones-sin-sector", response_model=DireccionesSinSectorOut,
+            summary="Direcciones del sistema que no pertenecen a ningún sector (D-106)")
+def direcciones_sin_sector(
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> DireccionesSinSectorOut:
+    """Agrupa por dirección los casos vigentes que se quedaron sin sector.
+
+    Es la vista **permanente** de la gestión que antes solo aparecía al terminar
+    una ingesta: si el usuario cierra el cuadro, o si los casos sin sector vienen
+    de cargas anteriores, aquí los recupera para asignarles un sector.
+    """
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    casos = db.scalars(
+        select(Caso).where(
+            Caso.id_central == central.id_central,
+            Caso.id_sector.is_(None),
+            Caso.direccion.isnot(None),
+        )
+    ).all()
+
+    pendientes: dict[str, dict[str, Any]] = {}
+    total_casos = 0
+    for caso in casos:
+        direccion = (caso.direccion or "").strip()
+        if not direccion:
+            continue
+        total_casos += 1
+        clave = normalizar(direccion)
+        registro = pendientes.setdefault(
+            clave, {"direccion": direccion, "total": 0, "ejemplo_id_averia": caso.id_averia}
+        )
+        registro["total"] += 1
+
+    ordenadas = sorted(pendientes.values(), key=lambda d: (-d["total"], d["direccion"]))[:200]
+    return DireccionesSinSectorOut(
+        total_direcciones=len(pendientes),
+        total_casos=total_casos,
+        direcciones=[DireccionSinSector(**d) for d in ordenadas],
+    )
 
 
 @router.post("/sectorizar-pendientes", response_model=SectorizacionPendientesOut,

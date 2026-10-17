@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as api from '../api/client';
-import type { IngestaLoteOut, ResumenIngesta } from '../api/types';
+import type { DireccionesSinSectorOut, DireccionSinSector, IngestaLoteOut, ResumenIngesta } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
@@ -32,7 +32,11 @@ export default function Ingesta() {
   const [detalle, setDetalle] = useState<IngestaLoteOut | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [modalCarga, setModalCarga] = useState(false);
-  const [modalDirecciones, setModalDirecciones] = useState(false);
+  // D-106: el cuadro de direcciones sin sector ya no depende del último archivo:
+  // se abre con las direcciones del **sistema** y desde un panel permanente.
+  const [direccionesGestion, setDireccionesGestion] = useState<DireccionSinSector[] | null>(null);
+  const [pendientes, setPendientes] = useState<DireccionesSinSectorOut | null>(null);
+  const [cargandoPendientes, setCargandoPendientes] = useState(true);
 
   const cargarLotes = useCallback(async () => {
     setCargandoLotes(true);
@@ -46,9 +50,30 @@ export default function Ingesta() {
     }
   }, []);
 
+  /** Direcciones sin sector vigentes (D-106). */
+  const cargarPendientes = useCallback(async () => {
+    setCargandoPendientes(true);
+    try {
+      setPendientes(await api.direccionesSinSector(parsearCentral(idCentral).valor));
+    } catch (e) {
+      setPendientes(null);
+      setError(
+        e instanceof api.ApiError
+          ? e.message
+          : 'No se pudieron consultar las direcciones sin sector.',
+      );
+    } finally {
+      setCargandoPendientes(false);
+    }
+  }, [idCentral]);
+
   useEffect(() => {
     void cargarLotes();
   }, [cargarLotes]);
+
+  useEffect(() => {
+    if (!soloLectura) void cargarPendientes();
+  }, [cargarPendientes, soloLectura]);
 
   /** Abre el formulario de carga en ventana flotante (requisito de UI 3). */
   function abrirCarga() {
@@ -90,6 +115,7 @@ export default function Ingesta() {
       setOk('Simulación completada. No se guardó ningún dato.');
       setDetalle(null);
       setModalCarga(false);
+      void cargarPendientes();
     } catch (e) {
       setResumen(null);
       setError(e instanceof api.ApiError ? e.message : 'Error al simular la ingesta.');
@@ -124,6 +150,7 @@ export default function Ingesta() {
       setDetalle(null);
       setModalCarga(false);
       await cargarLotes();
+      void cargarPendientes();
     } catch (e) {
       setResumen(null);
       setError(e instanceof api.ApiError ? e.message : 'Error al cargar el archivo.');
@@ -272,9 +299,9 @@ export default function Ingesta() {
               <button
                 type="button"
                 className="btn btn-mini"
-                onClick={() => setModalDirecciones(true)}
+                onClick={() => setDireccionesGestion(resumen.direcciones_sin_sector ?? [])}
               >
-                Gestionar en SECTOR
+                Asignar sector
               </button>
             </div>
           )}
@@ -315,19 +342,21 @@ export default function Ingesta() {
         </Modal>
       )}
 
-      {/* Gestión de direcciones sin sector (D-66) */}
-      {modalDirecciones && resumen && (
+      {/* Direcciones sin sector: el cuadro se abre con las del **sistema** (D-106),
+          no solo con las del último archivo, y desde el panel permanente. */}
+      {direccionesGestion && (
         <GestionDirecciones
-          direcciones={resumen.direcciones_sin_sector ?? []}
+          direcciones={direccionesGestion}
           idCentral={parsearCentral(idCentral).valor}
-          onCerrar={() => setModalDirecciones(false)}
+          onCerrar={() => setDireccionesGestion(null)}
           onResuelto={(asignados) => {
-            setModalDirecciones(false);
+            setDireccionesGestion(null);
             setOk(
               asignados > 0
                 ? `Direcciones agregadas a un sector y ${asignados} caso(s) re-sectorizado(s).`
                 : 'Direcciones agregadas. Ningún caso pendiente cambió de sector.',
             );
+            void cargarPendientes();
           }}
         />
       )}
@@ -392,6 +421,79 @@ export default function Ingesta() {
             </table>
           </div>
         </Modal>
+      )}
+
+      {/* D-106: gestión **permanente** de las direcciones sin sector. Antes solo
+          se podía llegar a ellas al terminar una ingesta; si el usuario cerraba
+          el cuadro (o los casos venían de cargas anteriores) no había camino. */}
+      {!soloLectura && (
+        <div className="panel-bloque" id="panel-direcciones-sin-sector">
+          <div className="pagina-cabecera">
+            <h2>Direcciones sin sector</h2>
+            <button
+              type="button"
+              className="btn btn-secundario"
+              onClick={() => void cargarPendientes()}
+              disabled={cargandoPendientes}
+            >
+              {cargandoPendientes ? 'Consultando…' : 'Actualizar'}
+            </button>
+          </div>
+          <p className="texto-pequeno">
+            Casos vigentes cuya dirección no pertenece a ningún sector: no entran al despacho hasta
+            asignarles uno.
+          </p>
+          {!pendientes ? (
+            <p className="vacio">No se pudieron consultar las direcciones sin sector.</p>
+          ) : pendientes.total_direcciones === 0 ? (
+            <p className="vacio" id="sin-direcciones-pendientes">
+              Todas las direcciones están asignadas a un sector.
+            </p>
+          ) : (
+            <>
+              <div className="aviso aviso-info" id="aviso-direcciones-pendientes">
+                <span>
+                  {pendientes.total_direcciones} dirección(es) sin sector ·{' '}
+                  {pendientes.total_casos} caso(s) sin sectorizar.
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-mini"
+                  onClick={() => setDireccionesGestion(pendientes.direcciones)}
+                >
+                  Asignar sector
+                </button>
+              </div>
+              <div className="tabla-envoltura">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Dirección</th>
+                      <th>Casos</th>
+                      <th>Ejemplo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendientes.direcciones.slice(0, 10).map((d) => (
+                      <tr key={d.direccion}>
+                        <td>{d.direccion}</td>
+                        <td>{d.total}</td>
+                        <td className="mono">{d.ejemplo_id_averia ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <PieTabla
+                    colSpan={3}
+                    total={pendientes.total_direcciones}
+                    singular="dirección"
+                    plural="direcciones"
+                    cargando={cargandoPendientes}
+                  />
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       <div className="panel-bloque">

@@ -596,3 +596,83 @@ def test_no_se_puede_cerrar_dos_veces_y_los_seriales_no_colisionan(client, admin
     )
     assert tercero.status_code == 409, tercero.text
     assert "cerrado" in tercero.json()["detail"].lower()
+
+# --------------------------------------------------------------------------- #
+# Reactivación del caso (D-106 · RF-88)
+# --------------------------------------------------------------------------- #
+def test_reactivar_un_caso_cerrado_lo_devuelve_a_la_cola_y_deja_bitacora(
+    client, admin_token, db_session
+):
+    """Un caso terminal vuelve a ASIGNADO con su motivo en el histórico."""
+    caso = _caso_con_telefono(client, admin_token, "TSTREAC01", "7014000960")
+    id_caso = caso["id_caso"]
+    cierre = client.patch(
+        f"/api/v1/casos/{id_caso}",
+        json={"estado_actual": "CERRADO", "motivo_estado": "prueba de cierre"},
+        headers=admin_token["admin"],
+    )
+    assert cierre.status_code == 200, cierre.text
+    assert cierre.json()["estado_actual"] == "CERRADO"
+
+    r = client.post(
+        f"/api/v1/casos/{id_caso}/reactivar",
+        json={"motivo": "El cliente volvio a reportar la averia"},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["estado_actual"] == "ASIGNADO"
+
+    historial = client.get(f"/api/v1/casos/{id_caso}/historial",
+                           headers=admin_token["admin"]).json()
+    ultimo = historial[0]
+    assert ultimo["estado_anterior"] == "CERRADO"
+    assert ultimo["estado_nuevo"] == "ASIGNADO"
+    assert "REACTIVACIÓN" in (ultimo["motivo"] or "")
+    assert "volvio a reportar" in (ultimo["motivo"] or "")
+
+
+def test_reactivar_desde_enrutado_y_cancelado(client, admin_token):
+    """Los tres estados terminales se pueden reactivar."""
+    for estado, averia in (("ENRUTADO", "TSTREAC02"), ("CANCELADO", "TSTREAC03")):
+        caso = _caso_con_telefono(client, admin_token, averia, "7014000961")
+        id_caso = caso["id_caso"]
+        assert client.patch(f"/api/v1/casos/{id_caso}", json={"estado_actual": estado},
+                            headers=admin_token["admin"]).status_code == 200
+        r = client.post(f"/api/v1/casos/{id_caso}/reactivar",
+                        json={"motivo": "Se reabre por reclamo del abonado"},
+                        headers=admin_token["admin"])
+        assert r.status_code == 200, r.text
+        assert r.json()["estado_actual"] == "ASIGNADO"
+
+
+def test_reactivar_un_caso_abierto_da_409(client, admin_token):
+    """Un caso abierto se mueve con el cambio de estado, no se «reactiva»."""
+    caso = _caso_con_telefono(client, admin_token, "TSTREAC04", "7014000962")
+    r = client.post(f"/api/v1/casos/{caso['id_caso']}/reactivar",
+                    json={"motivo": "No aplica: el caso esta abierto"},
+                    headers=admin_token["admin"])
+    assert r.status_code == 409, r.text
+    assert "solo se reactiva" in r.json()["detail"]
+
+
+def test_reactivar_exige_motivo_y_es_escritura(client, admin_token):
+    """El motivo es obligatorio (422) y el TECNICO no puede reactivar (403)."""
+    caso = _caso_con_telefono(client, admin_token, "TSTREAC05", "7014000963")
+    id_caso = caso["id_caso"]
+    assert client.patch(f"/api/v1/casos/{id_caso}", json={"estado_actual": "CERRADO"},
+                        headers=admin_token["admin"]).status_code == 200
+
+    corto = client.post(f"/api/v1/casos/{id_caso}/reactivar", json={"motivo": "no"},
+                        headers=admin_token["admin"])
+    assert corto.status_code == 422, corto.text
+
+    tecnico = client.post(f"/api/v1/casos/{id_caso}/reactivar",
+                          json={"motivo": "El tecnico intenta reabrir el caso"},
+                          headers=admin_token["tecnico"])
+    assert tecnico.status_code == 403, tecnico.text
+
+    supervisor = client.post(f"/api/v1/casos/{id_caso}/reactivar",
+                             json={"motivo": "El supervisor reabre el caso", "estado": "EN_GESTION"},
+                             headers=admin_token["supervisor"])
+    assert supervisor.status_code == 200, supervisor.text
+    assert supervisor.json()["estado_actual"] == "EN_GESTION"

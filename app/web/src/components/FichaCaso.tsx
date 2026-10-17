@@ -2,7 +2,7 @@
  * Ficha de detalle del caso en pestañas (D-70, reorganizada en D-76 y D-78).
  *
  * - Los datos se reparten por naturaleza: RESUMEN, CONTACTO, DATOS TÉCNICOS,
- *   CLASIFICACIÓN, DESPACHO, TEXTOS, RESOLUCIÓN e HISTÓRICO.
+ *   CLASIFICACIÓN, DESPACHO, TEXTOS, GESTIÓN, RESOLUCIÓN e HISTÓRICO.
  * - En PC cada pestaña muestra hasta **3 datos por línea**; en móvil cae a 1.
  * - La edición la activa el **icono de edición del título** y solo la ven
  *   ADMIN, SUPERVISOR y Super Usuario; se limita a **Sector** (el Supervisor
@@ -10,12 +10,22 @@
  *   El bloque vive en CLASIFICACIÓN: la pestaña GESTIÓN se eliminó.
  * - DESPACHO (D-78) concentra la **asignación manual del caso a una cuadrilla**
  *   y su retirada del despacho; sustituye a la selección múltiple del listado.
- * - RESOLUCIÓN permite elegir CERRAR / CITA / ENRUTAR con su formulario.
+ * - GESTIÓN (D-106) devuelve el **gobierno del caso** que la web había perdido:
+ *   cambiar el estado con bitácora y **reactivar** un caso cerrado, cancelado o
+ *   enrutado con su motivo. No edita campos: para eso está el icono del título.
+ * - RESOLUCIÓN permite elegir CERRAR / CITA / ENRRUTAR con su formulario.
  * - HISTÓRICO lista los casos relacionados por el teléfono del caso.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as api from '../api/client';
-import type { CasoOut, CasoRelacionado, Cuadrilla, ModoCierre, Sector } from '../api/types';
+import type {
+  CasoOut,
+  CasoRelacionado,
+  Cuadrilla,
+  EstadoCaso,
+  ModoCierre,
+  Sector,
+} from '../api/types';
 import Mensaje from '../components/Mensaje';
 import PieTabla from '../components/PieTabla';
 import { fechaHora, nv } from '../utils';
@@ -27,6 +37,7 @@ export type Pestana =
   | 'clasificacion'
   | 'despacho'
   | 'texto'
+  | 'gestion'
   | 'resolucion'
   | 'historico';
 
@@ -37,9 +48,26 @@ const PESTANAS: { id: Pestana; etiqueta: string }[] = [
   { id: 'clasificacion', etiqueta: 'Clasificación' },
   { id: 'despacho', etiqueta: 'Despacho' },
   { id: 'texto', etiqueta: 'Textos' },
+  { id: 'gestion', etiqueta: 'Gestión' },
   { id: 'resolucion', etiqueta: 'Resolución' },
   { id: 'historico', etiqueta: 'Histórico' },
 ];
+
+/** Estados a los que se puede mover un caso desde GESTIÓN (D-106). */
+const ESTADOS_CASO: EstadoCaso[] = [
+  'NUEVO',
+  'ASIGNADO',
+  'CONTACTADO',
+  'CITADO',
+  'DIFERIDO',
+  'EN_GESTION',
+  'ENRUTADO',
+  'CERRADO',
+  'CANCELADO',
+];
+
+/** Estados terminales: desde ellos se puede **reactivar** el caso. */
+const ESTADOS_TERMINALES = ['CERRADO', 'CANCELADO', 'ENRUTADO'];
 
 const MODOS_CIERRE: { valor: ModoCierre; etiqueta: string }[] = [
   { valor: 'IVR', etiqueta: 'Con IVR' },
@@ -129,6 +157,12 @@ export default function FichaCaso({
   const [motivoEnrutado, setMotivoEnrutado] = useState('');
   const [ejecutando, setEjecutando] = useState(false);
 
+  // Gestión del caso (D-106): cambio de estado y reactivación.
+  const [estadoDestino, setEstadoDestino] = useState<string>('');
+  const [motivoEstado, setMotivoEstado] = useState('');
+  const [motivoReactivar, setMotivoReactivar] = useState('');
+  const [gestionando, setGestionando] = useState(false);
+
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
@@ -142,6 +176,9 @@ export default function FichaCaso({
     setInformacion((caso.informacion ?? '').slice(0, 200));
     setCuadrillaDestino('');
     setEditando(false);
+    setEstadoDestino(caso.estado_actual);
+    setMotivoEstado('');
+    setMotivoReactivar('');
   }, [caso]);
 
   // El icono «Editar» del título abre CLASIFICACIÓN y habilita la edición.
@@ -174,6 +211,9 @@ export default function FichaCaso({
   // D-92/CU-D89-03: el histórico se construye alrededor del **identificador de
   // pago** (70*); el número de contacto no agrupa antecedentes.
   const identificadorPago = useMemo(() => caso.telefono ?? '', [caso.telefono]);
+
+  /** D-106: ¿el caso está en un estado del que se puede reactivar? */
+  const reactivable = ESTADOS_TERMINALES.includes(caso.estado_actual);
 
   async function guardarEdicion() {
     setError('');
@@ -229,6 +269,55 @@ export default function FichaCaso({
       setError(e instanceof api.ApiError ? e.message : 'No se pudo quitar el caso del despacho.');
     } finally {
       setAsignando(false);
+    }
+  }
+
+  /** D-106: mueve el caso a otro estado y lo deja en la bitácora. */
+  async function cambiarEstadoGestion() {
+    setError('');
+    setOk('');
+    if (!estadoDestino || estadoDestino === caso.estado_actual) {
+      setError('Elija un estado distinto al actual.');
+      return;
+    }
+    setGestionando(true);
+    try {
+      const actualizado = await api.cambiarEstadoCaso(caso.id_caso, {
+        estado_actual: estadoDestino,
+        motivo_estado: nv(motivoEstado),
+      });
+      onActualizar(actualizado);
+      setOk(`Estado actualizado: ${actualizado.estado_actual}.`);
+      setMotivoEstado('');
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo cambiar el estado.');
+    } finally {
+      setGestionando(false);
+    }
+  }
+
+  /** D-106: reabre un caso terminal con su motivo (queda en la bitácora). */
+  async function reactivarCasoGestion() {
+    setError('');
+    setOk('');
+    const motivo = motivoReactivar.trim();
+    if (motivo.length < 5) {
+      setError('Explique con al menos 5 caracteres por qué reabre el caso.');
+      return;
+    }
+    setGestionando(true);
+    try {
+      const actualizado = await api.reactivarCaso(caso.id_caso, {
+        motivo,
+        estado: 'ASIGNADO',
+      });
+      onActualizar(actualizado);
+      setOk('Caso reactivado: vuelve a la cola abierta como ASIGNADO.');
+      setMotivoReactivar('');
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo reactivar el caso.');
+    } finally {
+      setGestionando(false);
     }
   }
 
@@ -554,6 +643,104 @@ export default function FichaCaso({
           <Dato etiqueta="Results" valor={caso.results} />
           <Dato etiqueta="Estatus de origen" valor={caso.estatus_origen} />
           <Dato etiqueta="Información" valor={caso.informacion} />
+        </div>
+      )}
+
+      {/* ------------------------------- GESTIÓN ----------------------------- */}
+      {/* D-106: gobierno del caso desde la web. La pestaña se había eliminado en
+          D-76; vuelve sin edición de campos (eso sigue en el icono del título),
+          con lo que faltaba para «gestionar completamente» el caso. */}
+      {pestana === 'gestion' && (
+        <div className="datos-columna">
+          <div className="datos-grid">
+            <Dato etiqueta="Estado actual" valor={caso.estado_actual} />
+            <Dato etiqueta="Fecha de cita" valor={fechaHora(caso.fecha_cita)} />
+            <Dato etiqueta="Actualizado en" valor={fechaHora(caso.actualizado_en)} />
+          </div>
+
+          {!puedeResolver ? (
+            <p className="vacio">
+              Solo el Supervisor, el Administrador o el Super Usuario pueden gobernar el estado
+              del caso.
+            </p>
+          ) : (
+            <>
+              <div className="formulario modal-formulario">
+                <h3 className="subtitulo-seccion">Cambiar el estado</h3>
+                <div className="fila-campos">
+                  <div className="campo">
+                    <label htmlFor="gestion-estado">Estado destino</label>
+                    <select
+                      id="gestion-estado"
+                      value={estadoDestino}
+                      onChange={(e) => setEstadoDestino(e.target.value)}
+                    >
+                      {ESTADOS_CASO.map((estado) => (
+                        <option key={estado} value={estado}>
+                          {estado}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="gestion-motivo">Motivo (queda en la bitácora)</label>
+                    <input
+                      id="gestion-motivo"
+                      value={motivoEstado}
+                      maxLength={200}
+                      placeholder="Por qué cambia de estado…"
+                      onChange={(e) => setMotivoEstado(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="acciones-form">
+                  <button
+                    className="btn"
+                    type="button"
+                    disabled={gestionando || estadoDestino === caso.estado_actual}
+                    onClick={() => void cambiarEstadoGestion()}
+                  >
+                    {gestionando ? 'Aplicando…' : 'Aplicar cambio de estado'}
+                  </button>
+                </div>
+              </div>
+
+              {reactivable ? (
+                <div className="formulario modal-formulario" id="gestion-reactivar">
+                  <h3 className="subtitulo-seccion">Reactivar el caso</h3>
+                  <p className="texto-pequeno">
+                    El caso está <strong>{caso.estado_actual}</strong>: al reactivarlo vuelve a la
+                    cola abierta como <strong>ASIGNADO</strong> y el motivo queda en la bitácora.
+                  </p>
+                  <div className="campo campo-ancho">
+                    <label htmlFor="reactivar-motivo">Motivo de la reactivación *</label>
+                    <textarea
+                      id="reactivar-motivo"
+                      rows={2}
+                      maxLength={200}
+                      value={motivoReactivar}
+                      placeholder="El cliente volvió a reportar la avería…"
+                      onChange={(e) => setMotivoReactivar(e.target.value)}
+                    />
+                  </div>
+                  <div className="acciones-form">
+                    <button
+                      className="btn"
+                      type="button"
+                      disabled={gestionando || motivoReactivar.trim().length < 5}
+                      onClick={() => void reactivarCasoGestion()}
+                    >
+                      {gestionando ? 'Reactivando…' : 'Reactivar caso'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="texto-pequeno" id="gestion-sin-reactivar">
+                  La reactivación aparece cuando el caso está CERRADO, CANCELADO o ENRUTADO.
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 
