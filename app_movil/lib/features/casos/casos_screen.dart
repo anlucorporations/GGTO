@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../widgets/barra_progreso_sync.dart';
 import '../../widgets/boton_usuario.dart';
 import '../../widgets/caso_card.dart';
+import '../../widgets/chip_resueltos.dart';
 import '../../widgets/offline_banner.dart';
 import '../auth/auth_provider.dart';
 import '../masivas/banner_masiva.dart';
@@ -174,24 +175,14 @@ class _CasosScreenState extends State<CasosScreen> {
               onSubmitted: (texto) => casosProv.buscar(texto),
             ),
           ),
-          // D-101: los casos ya gestionados se ocultan del listado; el técnico
-          // puede volver a verlos con este conmutador.
-          if (casosProv.gestionados > 0)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FilterChip(
-                  selected: casosProv.verGestionados,
-                  avatar: Icon(
-                    casosProv.verGestionados ? Icons.visibility : Icons.visibility_off,
-                    size: 18,
-                  ),
-                  label: Text('Ver gestionados (${casosProv.gestionados})'),
-                  onSelected: (_) => casosProv.alternarGestionados(),
-                ),
-              ),
-            ),
+          // D-101/D-105: los casos ya resueltos se ocultan del listado, pero el
+          // botón para verlos es **permanente**: se pinta siempre, aunque el
+          // conteo sea 0 o el listado esté vacío.
+          ChipResueltos(
+            resueltos: casosProv.gestionados,
+            viendoResueltos: casosProv.verGestionados,
+            onTap: casosProv.alternarGestionados,
+          ),
           Expanded(child: _cuerpo(casosProv)),
         ],
       ),
@@ -219,7 +210,7 @@ class _CasosScreenState extends State<CasosScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Text(
                 'No le quedan casos pendientes: los ${casosProv.gestionados} de este '
-                'dispositivo ya están gestionados.',
+                'dispositivo ya están resueltos.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 15),
               ),
@@ -228,7 +219,7 @@ class _CasosScreenState extends State<CasosScreen> {
             Center(
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.visibility),
-                label: const Text('Ver gestionados'),
+                label: const Text('Ver resueltos'),
                 onPressed: casosProv.alternarGestionados,
               ),
             ),
@@ -292,7 +283,7 @@ class _CasosScreenState extends State<CasosScreen> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 '${visibles.length} de ${casosProv.total} casos'
-                '${casosProv.gestionados > 0 && !casosProv.verGestionados ? ' · ${casosProv.gestionados} gestionado(s) oculto(s)' : ''}'
+                '${casosProv.gestionados > 0 && !casosProv.verGestionados ? ' · ${casosProv.gestionados} resuelto(s) oculto(s)' : ''}'
                 ' · contenido local del dispositivo',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 12, color: Colors.black54),

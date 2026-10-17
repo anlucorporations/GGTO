@@ -67,7 +67,11 @@ def sync_descarga(
     usuario: Usuario = Depends(get_current_user),
 ) -> SyncDescargaOut:
     dt = _parsear_datetime(desde)
-    payload = svc.construir_descarga(db, usuario, desde=dt, ids_conocidos=set(ids_conocidos or []))
+    # D-105: `None` (parámetro ausente) significa «el dispositivo no declara lo que
+    # tiene» y se aplica el diferencial puro por fecha; una lista —aunque venga
+    # vacía— significa «esto es lo que tengo y lo que falte, mándalo».
+    conocidos = None if ids_conocidos is None else set(ids_conocidos)
+    payload = svc.construir_descarga(db, usuario, desde=dt, ids_conocidos=conocidos)
     return SyncDescargaOut(**payload)
 
 

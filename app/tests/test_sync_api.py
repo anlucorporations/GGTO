@@ -22,7 +22,15 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos, Tecnico, Usuario
+from app.models import (
+    Caso,
+    Cuadrilla,
+    CuadrillaTecnico,
+    Despacho,
+    DespachoCasos,
+    Tecnico,
+    Usuario,
+)
 from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1"
@@ -749,4 +757,70 @@ def test_la_jornada_viaja_aunque_no_queden_casos_pendientes(client, entorno_sync
         "fecha": hoy_operativo().isoformat(),
     }
     assert cuerpo["ids_del_dia"] == [id_caso]
+
+
+# --------------------------------------------------------------------------- #
+# DESCARGA · el diferencial no puede perder casos (D-105)
+# --------------------------------------------------------------------------- #
+def test_la_descarga_envia_un_caso_desconocido_aunque_no_haya_cambiado(client, entorno_sync,
+                                                                       admin_token, db_session):
+    """Un caso que el dispositivo NO tiene viaja siempre, aunque sea «viejo».
+
+    Era el defecto reportado: el despacho **no** toca `caso.actualizado_en`, así
+    que un caso antiguo recién asignado quedaba por detrás de la marca `desde` y
+    el servidor lo descartaba por «no modificado». El técnico descargaba, la APK
+    decía «ya los tiene todos» y el caso no aparecía nunca.
+    """
+    headers = admin_token["admin"]
+    id_caso = _crear_caso(client, headers, "TSTSYNC-VIEJO")
+    db_session.add(DespachoCasos(id_despacho=entorno_sync["despacho_hoy_a"], id_caso=id_caso,
+                                 estado="ASIGNADO", orden_visita=6,
+                                 tipo_asignacion="REPARACION"))
+    # El caso es más antiguo que la marca de agua del dispositivo.
+    caso = db_session.get(Caso, id_caso)
+    assert caso is not None
+    caso.actualizado_en = datetime.now(UTC) - timedelta(days=2)
+    db_session.commit()
+
+    desde = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+    cuerpo = client.get(f"{SYNC}/descarga", params={"desde": desde},
+                        headers=entorno_sync["tecnico"]).json()
+
+    ids = {c["id_caso"] for c in cuerpo["casos"]}
+    assert id_caso in ids, "un caso que el dispositivo no tiene no puede descartarse por «desde»"
+    # Y viaja igual cuando el dispositivo informa de los que sí tiene.
+    cuerpo = client.get(
+        f"{SYNC}/descarga",
+        params={"desde": desde, "ids_conocidos": [entorno_sync["c_a"]["id_caso"]]},
+        headers=entorno_sync["tecnico"],
+    ).json()
+    assert id_caso in {c["id_caso"] for c in cuerpo["casos"]}
+
+
+def test_un_despacho_en_borrador_no_es_la_jornada_del_dia(client, entorno_sync, admin_token,
+                                                          db_session):
+    """Un `BORRADOR` es la propuesta del supervisor, no la jornada del técnico (D-105).
+
+    Contaba como despacho del día y disparaba la purga del dispositivo: en cuanto
+    se procesaba el despacho (BORRADOR), la APK borraba el trabajo del técnico.
+    """
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    id_borrador = _cuadrilla(client, headers, admin_token["id_central"], "TCS6", "En borrador")
+    _mover_tecnico(client, headers, entorno_sync["id_cuadrilla_a"], id_borrador, id_tecnico)
+    id_caso = _crear_caso(client, headers, "TSTSYNC-BORRADOR")
+    despacho = Despacho(id_central=admin_token["id_central"], fecha=hoy_operativo(),
+                        id_cuadrilla=id_borrador, estado="BORRADOR")
+    db_session.add(despacho)
+    db_session.flush()
+    db_session.add(DespachoCasos(id_despacho=despacho.id_despacho, id_caso=id_caso,
+                                 estado="ASIGNADO", orden_visita=1,
+                                 tipo_asignacion="REPARACION"))
+    db_session.commit()
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert {c["id_caso"] for c in cuerpo["casos"]} == {id_caso}
+    assert cuerpo["despacho_del_dia"] is None, "un despacho en BORRADOR no es la jornada"
+    assert cuerpo["ids_del_dia"] == [], "sin jornada publicada no se marca nada como del día"
+
 

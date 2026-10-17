@@ -45,6 +45,11 @@ logger = logging.getLogger(__name__)
 #: dejaría al técnico sin nada que descargar.
 ESTADOS_TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 
+#: Estados de un despacho que **ya son la jornada** de la cuadrilla (D-105).
+#: `BORRADOR` queda fuera a propósito: es la propuesta que el supervisor todavía
+#: está armando y no puede disparar la purga del dispositivo (DEC-104-3).
+ESTADOS_DESPACHO_VIGENTE = ("PUBLICADO", "CERRADO")
+
 #: Motivos de una DESCARGA vacía (D-83). Antes, los cuatro casos devolvían
 #: `casos: []` y la APK los anunciaba igual («No hay casos nuevos ni cambios»),
 #: de modo que un técnico sin cuadrilla, uno en la cuadrilla de gestión
@@ -182,15 +187,24 @@ def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
 
 
 def _despacho_del_dia(db: Session, id_cuadrilla: int, dia: date) -> Despacho | None:
-    """Despacho **de hoy** de la cuadrilla, si existe (D-104).
+    """Despacho **de hoy** de la cuadrilla, si existe (D-104/D-105).
 
     Es la condición que la APK exige antes de borrar los casos no atendidos de
     despachos anteriores: si la cuadrilla no tiene despacho del día, la app **no
     borra nada** (el técnico podría estar trabajando con el de ayer).
+
+    D-105: solo cuentan los despachos **PUBLICADO** o **CERRADO**. Un
+    `BORRADOR` es la propuesta que el supervisor todavía está armando: no es la
+    jornada del técnico y no puede disparar la purga del dispositivo (era el
+    defecto que vaciaba la APK en cuanto se procesaba el despacho del día).
     """
     return db.scalars(
         select(Despacho)
-        .where(Despacho.id_cuadrilla == id_cuadrilla, Despacho.fecha == dia)
+        .where(
+            Despacho.id_cuadrilla == id_cuadrilla,
+            Despacho.fecha == dia,
+            Despacho.estado.in_(ESTADOS_DESPACHO_VIGENTE),
+        )
         .order_by(Despacho.id_despacho.desc())
         .limit(1)
     ).first()
@@ -399,9 +413,11 @@ def construir_descarga(
 ) -> dict[str, Any]:
     """Arma el payload de DESCARGA diferencial.
 
-    - Si `ids_conocidos` se envía, solo retorna los casos que faltan en local o
-      que cambiaron desde `desde`.
-    - Si no se envía, retorna todos los operables de la cuadrilla.
+    - Con `ids_conocidos` (lo que el dispositivo declara tener) se envía **lo que
+      falta en local** y lo que cambió desde `desde`. Un caso desconocido viaja
+      siempre (D-105): el diferencial no puede dejar trabajo inaccesible.
+    - Sin `ids_conocidos` (modo «solo `desde`») se envía lo modificado después de
+      la marca, o todo si no hay marca.
     - D-83: siempre acompaña `motivo`/`mensaje`/`cuadrilla` para que la APK
       distinga «no hay nada despachado» de «ya tiene todo».
     """
@@ -483,20 +499,29 @@ def construir_descarga(
 
     salida: list[dict[str, Any]] = []
     for caso in casos:
-        # DESCARGA diferencial (D-73):
+        # DESCARGA diferencial (D-73/D-105):
         #   `desde`         → solo lo modificado después de esa marca.
         #   `ids_conocidos` → lo que la APK ya tiene no se reenvía, salvo que
         #                     haya cambiado después de `desde`.
+        # D-105: un caso que el dispositivo **no tiene** se envía siempre, aunque
+        # no haya cambiado desde la marca. Antes se descartaba por «no modificado»
+        # y el técnico no recibía nunca un caso despachado con posterioridad a su
+        # última actualización (el despacho no toca `caso.actualizado_en`), que es
+        # el caso normal de un caso viejo recién asignado; y tras una purga del
+        # dispositivo el caso quedaba perdido para siempre.
         modificado = (
             desde is None
             or caso.actualizado_en is None
             or caso.actualizado_en > desde
         )
         conocido = ids_conocidos is not None and caso.id_caso in ids_conocidos
-        if conocido and (desde is None or not modificado):
-            continue
-        if not modificado:
-            continue
+        if conocido:
+            if desde is None or not modificado:
+                continue
+        elif ids_conocidos is None:
+            # Modo diferencial puro (sin `ids_conocidos`): lo que no cambió no viaja.
+            if not modificado:
+                continue
         sector_nombre = sectores.get(caso.id_sector) if caso.id_sector else None
         salida.append(_caso_sync(caso, sector_nombre, dc_map.get(caso.id_caso)))
 

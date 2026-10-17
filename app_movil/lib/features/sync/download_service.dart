@@ -96,7 +96,12 @@ class DownloadService {
     final sesion = await SyncSesionService.abrir('DESCARGA');
     try {
       final idsConocidos = await DatabaseHelper.instance.idsCasosConocidos();
-      final ultima = await _marcaDescarga();
+      // D-105: sin casos en el dispositivo no hay marca de agua válida que enviar.
+      // Si se mandaba `desde` con la caché vacía, el servidor entendía que el
+      // dispositivo estaba al día y no enviaba lo que no tenía: la descarga
+      // respondía «ya los tiene todos» y el listado quedaba vacío para siempre
+      // (pasaba tras una purga de D-104 o tras borrar los datos de la app).
+      final ultima = idsConocidos.isEmpty ? null : await _marcaDescarga();
 
       final query = <String, dynamic>{
         if (idsConocidos.isNotEmpty) 'ids_conocidos': idsConocidos,
