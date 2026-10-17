@@ -149,7 +149,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hay una actualización disponible'), findsOneWidget);
-      expect(find.text('Descargar actualización'), findsOneWidget);
+      // D-107: la acción principal actualiza sin reinstalar; la descarga por el
+      // navegador queda como alternativa.
+      expect(find.text('Actualizar ahora'), findsOneWidget);
+      expect(find.text('Descargar en el navegador'), findsOneWidget);
       expect(find.textContaining('1.5.0+14'), findsWidgets);
     });
 
@@ -165,7 +168,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tiene la última versión'), findsOneWidget);
-      expect(find.text('Descargar actualización'), findsNothing);
+      expect(find.text('Actualizar ahora'), findsNothing);
       expect(find.text('Buscar actualización'), findsOneWidget);
     });
 

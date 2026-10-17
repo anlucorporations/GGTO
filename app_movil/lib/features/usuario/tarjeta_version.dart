@@ -5,19 +5,36 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../core/version_app.dart';
+import 'actualizador_apk.dart';
 import 'version_service.dart';
 
 /// Tarjeta del panel de usuario que **comprueba la última versión publicada** de
-/// la APK (D-102).
+/// la APK (D-102) y **actualiza la app sin reinstalarla** (D-107).
 ///
 /// Muestra la versión instalada, la publicada en el servidor y, si hay una más
-/// reciente, ofrece descargarla. La consulta se puede inyectar
-/// (`consultar`) para poder probar los cuatro estados sin red ni dispositivo.
+/// reciente, ofrece **«Actualizar ahora»**: descarga la APK con progreso, verifica
+/// el SHA-256 publicado y abre el instalador de Android, que reemplaza la app en
+/// su sitio (conserva la sesión y los datos). Como alternativa queda la descarga
+/// por el navegador y el enlace copiable.
+///
+/// La consulta y la actualización se pueden **inyectar** (`consultar`,
+/// `actualizar`) para poder probar los estados sin red ni dispositivo.
 class TarjetaVersion extends StatefulWidget {
-  const TarjetaVersion({super.key, this.consultar, this.versionInstalada});
+  const TarjetaVersion({
+    super.key,
+    this.consultar,
+    this.actualizar,
+    this.versionInstalada,
+  });
 
   /// Consulta inyectable; por defecto usa [VersionService].
   final Future<MetaApk> Function()? consultar;
+
+  /// Actualización inyectable; por defecto usa [ActualizadorApk].
+  final Future<ResultadoActualizacion> Function(
+    MetaApk meta,
+    void Function(double progreso, String fase)? onProgreso,
+  )? actualizar;
 
   /// Versión instalada (por defecto, la del `pubspec.yaml`).
   final String? versionInstalada;
@@ -33,6 +50,14 @@ class _TarjetaVersionState extends State<TarjetaVersion> {
   MetaApk? _meta;
   ComparacionVersion? _comparacion;
   String _error = '';
+
+  // D-107: descarga e instalación dentro de la app.
+  bool _actualizando = false;
+  double _progreso = 0;
+  String _fase = '';
+  ResultadoActualizacion? _resultado;
+
+  final _actualizador = ActualizadorApk();
 
   String get _instalada => widget.versionInstalada ?? AppConstants.version;
 
@@ -85,6 +110,49 @@ class _TarjetaVersionState extends State<TarjetaVersion> {
     final abierto = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     if (!abierto && mounted) {
       _avisar('No se pudo abrir el navegador. Copie el enlace.');
+    }
+  }
+
+  /// D-107: descarga la APK publicada y abre el instalador del sistema.
+  Future<void> _actualizar() async {
+    final meta = _meta;
+    if (meta == null || _actualizando) return;
+    setState(() {
+      _actualizando = true;
+      _progreso = 0;
+      _fase = 'Preparando la descarga…';
+      _resultado = null;
+    });
+
+    void progreso(double valor, String fase) {
+      if (!mounted) return;
+      setState(() {
+        _progreso = valor;
+        _fase = fase;
+      });
+    }
+
+    try {
+      // La limpieza de entregas anteriores la hace el propio actualizador.
+      final resultado = widget.actualizar != null
+          ? await widget.actualizar!(meta, progreso)
+          : await _actualizador.actualizar(meta, onProgreso: progreso);
+      if (!mounted) return;
+      setState(() {
+        _resultado = resultado;
+        _actualizando = false;
+        _progreso = resultado.ok ? 1 : 0;
+      });
+      _avisar(resultado.mensaje);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _actualizando = false;
+        _resultado = const ResultadoActualizacion(
+          EstadoActualizacion.errorDescarga,
+          'No se pudo actualizar. Use «Descargar en el navegador».',
+        );
+      });
     }
   }
 
@@ -252,33 +320,67 @@ class _TarjetaVersionState extends State<TarjetaVersion> {
     if (_estado == _Estado.hayActualizacion) {
       return Column(
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.download),
-              label: const Text('Descargar actualización'),
-              onPressed: _abrirDescarga,
+          if (_actualizando) ...[
+            LinearProgressIndicator(value: _progreso > 0 ? _progreso : null),
+            const SizedBox(height: 6),
+            Text(
+              _fase,
+              style: const TextStyle(fontSize: 12.5, color: Marca.textoSuave),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: 8),
+          ] else
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.system_update),
+                label: const Text('Actualizar ahora'),
+                onPressed: _actualizar,
+              ),
+            ),
+          if (_resultado != null && !_actualizando) ...[
+            const SizedBox(height: 8),
+            _aviso(
+              icono: _resultado!.ok
+                  ? Icons.check_circle_outline
+                  : Icons.info_outline,
+              color: _resultado!.ok ? Marca.exito : Marca.alerta,
+              fondo: _resultado!.ok ? Marca.exitoClaro : Marca.alertaClaro,
+              titulo: _resultado!.ok ? 'Instalación en curso' : 'No se pudo actualizar',
+              detalle: _resultado!.mensaje,
+            ),
+          ],
           const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  icon: const Icon(Icons.link),
-                  label: const Text('Copiar enlace'),
-                  onPressed: _copiarEnlace,
+                  icon: const Icon(Icons.open_in_browser),
+                  label: const Text('Descargar en el navegador'),
+                  onPressed: _actualizando ? null : _abrirDescarga,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Volver a comprobar'),
-                  onPressed: comprobando ? null : _comprobar,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.link),
+                  label: const Text('Copiar enlace'),
+                  onPressed: _actualizando ? null : _copiarEnlace,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            icon: const Icon(Icons.refresh),
+            label: const Text('Volver a comprobar'),
+            onPressed: (comprobando || _actualizando) ? null : _comprobar,
+          ),
+          const Text(
+            'La actualización se instala sobre esta misma app: no hace falta '
+            'desinstalarla y se conservan la sesión y los datos.',
+            style: TextStyle(fontSize: 11.5, color: Marca.textoSuave),
+            textAlign: TextAlign.center,
           ),
         ],
       );

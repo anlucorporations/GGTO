@@ -17,6 +17,11 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Actualización en la propia app (D-107): descarga la APK y abre el
+         instalador del sistema, que reemplaza la app sin desinstalarla. El
+         usuario concede «instalar apps desconocidas» desde los ajustes. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <application
         android:label="GGTO Técnico"
         android:name="${applicationName}"
@@ -56,10 +61,14 @@
             android:value="2" />
     </application>
 
-    <!-- Para geolocator en API 31+ -->
+    <!-- Para geolocator en API 31+ y para resolver el instalador del sistema (D-107) -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSTALL_PACKAGE" />
+            <data android:mimeType="application/vnd.android.package-archive" />
         </intent>
     </queries>
 </manifest>

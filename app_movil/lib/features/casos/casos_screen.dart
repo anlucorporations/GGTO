@@ -13,6 +13,7 @@ import '../masivas/banner_masiva.dart';
 import '../masivas/masivas_provider.dart';
 import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
+import '../usuario/banner_actualizacion.dart';
 import 'caso_detalle_screen.dart';
 import 'casos_provider.dart';
 
@@ -135,6 +136,9 @@ class _CasosScreenState extends State<CasosScreen> {
       body: Column(
         children: [
           const OfflineBanner(),
+          // D-107: si hay una entrega más nueva, la franja aparece aquí mismo y
+          // actualiza la app sin desinstalarla.
+          const BannerActualizacion(),
           _BannerContenidoLocal(
             casos: casosProv,
             // D-84/DEC-3: la sincronización es explícita; la franja informa
