@@ -32,6 +32,7 @@ class BannerActualizacion extends StatefulWidget {
 class _BannerActualizacionState extends State<BannerActualizacion> {
   MetaApk? _meta;
   bool _actualizando = false;
+  bool _descargada = false;
   double _progreso = 0;
 
   @override
@@ -77,9 +78,12 @@ class _BannerActualizacionState extends State<BannerActualizacion> {
       );
       setState(() {
         _actualizando = false;
+        // D-108: si la descarga terminó en segundo plano, la franja cambia a
+        // «Instalar» (la APK ya está en caché y se abre el instalador al tocar).
+        _descargada = resultado.estado == EstadoActualizacion.descargadaEnSegundoPlano;
         // Tras abrir el instalador o si falta el permiso, la franja se queda
         // para poder reintentar; si ya no aplica, desaparece.
-        if (!resultado.ok &&
+        if (!resultado.esExito &&
             resultado.estado == EstadoActualizacion.huellaIncorrecta) {
           _meta = null;
         }
@@ -118,7 +122,11 @@ class _BannerActualizacionState extends State<BannerActualizacion> {
               ),
               TextButton(
                 onPressed: _actualizando ? null : _actualizar,
-                child: Text(_actualizando ? 'Actualizando…' : 'Actualizar'),
+                child: Text(
+                  _actualizando
+                      ? 'Actualizando…'
+                      : (_descargada ? 'Instalar' : 'Actualizar'),
+                ),
               ),
             ],
           ),

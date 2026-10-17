@@ -133,7 +133,7 @@ void main() {
           body: Column(
             children: [
               BannerActualizacion(
-                consultar: () async => _meta('1.9.0+18'),
+                consultar: () async => _meta('2.0.0+99'),
                 actualizar: (meta, onProgreso) async => const ResultadoActualizacion(
                   EstadoActualizacion.instaladorAbierto,
                   'Confirme la instalación.',
@@ -145,7 +145,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Actualización 1.9.0+18 disponible'), findsOneWidget);
+      expect(find.text('Actualización 2.0.0+99 disponible'), findsOneWidget);
       expect(find.text('Actualizar'), findsOneWidget);
     });
 
@@ -172,7 +172,7 @@ void main() {
           body: Column(
             children: [
               BannerActualizacion(
-                consultar: () async => _meta('1.9.0+18'),
+                consultar: () async => _meta('2.0.0+99'),
                 actualizar: (meta, onProgreso) async {
                   llamadas++;
                   onProgreso?.call(1, 'Abriendo el instalador…');
@@ -193,6 +193,72 @@ void main() {
 
       expect(llamadas, 1);
       expect(find.textContaining('Confirme la instalación'), findsWidgets);
+    });
+  });
+
+  group('D-108 · aviso cuando la descarga termina en segundo plano', () {
+    test('descargar en segundo plano es un éxito, pero no abre el instalador', () {
+      const resultado = ResultadoActualizacion(
+        EstadoActualizacion.descargadaEnSegundoPlano,
+        'Toque la notificación para instalar.',
+      );
+      expect(resultado.esExito, isTrue);
+      expect(resultado.ok, isFalse, reason: 'la instalación aún no se abrió');
+    });
+
+    testWidgets('la tarjeta muestra «Actualización descargada» y ofrece instalar',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: TarjetaVersion(
+            versionInstalada: '1.8.0+17',
+            consultar: () async => _meta('2.0.0+99'),
+            actualizar: (meta, onProgreso) async => const ResultadoActualizacion(
+              EstadoActualizacion.descargadaEnSegundoPlano,
+              'La actualización 1.9.0+18 ya está descargada: toque la notificación para instalarla.',
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Actualizar ahora'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Actualización descargada'), findsOneWidget);
+      expect(find.text('Instalar actualización'), findsOneWidget);
+      expect(find.textContaining('toque la notificación'), findsWidgets);
+    });
+
+    testWidgets('la franja cambia a «Instalar» tras la descarga en segundo plano',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              BannerActualizacion(
+                consultar: () async => _meta('2.0.0+99'),
+                actualizar: (meta, onProgreso) async => const ResultadoActualizacion(
+                  EstadoActualizacion.descargadaEnSegundoPlano,
+                  'La actualización 2.0.0+99 ya está descargada: toque la notificación.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Actualizar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Instalar'), findsOneWidget);
+      expect(find.textContaining('ya está descargada'), findsWidgets);
     });
   });
 }

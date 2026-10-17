@@ -334,19 +334,25 @@ class _TarjetaVersionState extends State<TarjetaVersion> {
               width: double.infinity,
               child: FilledButton.icon(
                 icon: const Icon(Icons.system_update),
-                label: const Text('Actualizar ahora'),
+                label: Text(
+                  _resultado?.estado == EstadoActualizacion.descargadaEnSegundoPlano
+                      ? 'Instalar actualización'
+                      : 'Actualizar ahora',
+                ),
                 onPressed: _actualizar,
               ),
             ),
           if (_resultado != null && !_actualizando) ...[
             const SizedBox(height: 8),
             _aviso(
-              icono: _resultado!.ok
-                  ? Icons.check_circle_outline
+              icono: _resultado!.esExito
+                  ? (_resultado!.ok ? Icons.check_circle_outline : Icons.download_done)
                   : Icons.info_outline,
-              color: _resultado!.ok ? Marca.exito : Marca.alerta,
-              fondo: _resultado!.ok ? Marca.exitoClaro : Marca.alertaClaro,
-              titulo: _resultado!.ok ? 'Instalación en curso' : 'No se pudo actualizar',
+              color: _resultado!.esExito ? Marca.exito : Marca.alerta,
+              fondo: _resultado!.esExito ? Marca.exitoClaro : Marca.alertaClaro,
+              titulo: _resultado!.esExito
+                  ? (_resultado!.ok ? 'Instalación en curso' : 'Actualización descargada')
+                  : 'No se pudo actualizar',
               detalle: _resultado!.mensaje,
             ),
           ],

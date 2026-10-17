@@ -22,6 +22,10 @@
          usuario concede «instalar apps desconocidas» desde los ajustes. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Aviso cuando la descarga termina con la app en segundo plano (D-108);
+         en Android 13+ se pide en tiempo de ejecución. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:label="GGTO Técnico"
         android:name="${applicationName}"

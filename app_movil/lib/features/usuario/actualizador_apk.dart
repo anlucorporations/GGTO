@@ -3,15 +3,20 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'version_service.dart';
 
-/// Resultado de un intento de actualización en la propia app (D-107).
+/// Resultado de un intento de actualización en la propia app (D-107/D-108).
 enum EstadoActualizacion {
   /// La APK quedó descargada y se abrió el instalador del sistema.
   instaladorAbierto,
+
+  /// La descarga terminó con la app en segundo plano: se avisó por notificación
+  /// y la instalación se hace al tocar el aviso (D-108).
+  descargadaEnSegundoPlano,
 
   /// Falta permitir «instalar apps desconocidas» para esta app.
   requierePermiso,
@@ -34,7 +39,13 @@ class ResultadoActualizacion {
   final String mensaje;
   final int bytes;
 
+  /// La instalación se abrió (o quedó lista y avisada) sin errores.
   bool get ok => estado == EstadoActualizacion.instaladorAbierto;
+
+  /// El trabajo terminó bien, aunque la instalación quede pendiente de un toque.
+  bool get esExito =>
+      estado == EstadoActualizacion.instaladorAbierto ||
+      estado == EstadoActualizacion.descargadaEnSegundoPlano;
 }
 
 /// **Actualización dentro de la propia app** (D-107).
@@ -62,12 +73,16 @@ class ActualizadorApk {
   final MethodChannel _canal;
   final Dio? _dio;
 
-  /// Nombre del archivo de la APK descargada (p. ej. `ggto-1.8.0+17.apk`).
+  /// Nombre del archivo de la APK descargada (p. ej. `ggto-1.8.0-17.apk`).
   static String nombreArchivo(String version) => 'ggto-${version.replaceAll('+', '-')}.apk';
 
   /// Descarga (si hace falta) la APK de [meta] y abre el instalador.
   ///
   /// [onProgreso] recibe de 0 a 1 mientras descarga y la fase en texto.
+  ///
+  /// D-108: si al terminar la descarga la app **no está en primer plano**, no se
+  /// intenta abrir el instalador (Android bloquea abrir actividades desde el
+  /// fondo): se publica una **notificación** y la instalación se hace al tocarla.
   Future<ResultadoActualizacion> actualizar(
     MetaApk meta, {
     void Function(double progreso, String fase)? onProgreso,
@@ -81,6 +96,10 @@ class ActualizadorApk {
         '«Actualizar ahora». Se abrió la pantalla de ajustes.',
       );
     }
+
+    // Android 13+ pide permiso para notificar: se solicita al empezar, para poder
+    // avisar si el técnico sale de la app mientras descarga.
+    await solicitarPermisoNotificaciones();
 
     final destino = await _rutaDestino(meta);
     // Se libera el espacio de entregas anteriores antes de descargar (best-effort:
@@ -122,8 +141,26 @@ class ActualizadorApk {
       }
     }
 
+    final bytes = destino.lengthSync();
+    final ruta = destino.path;
+
+    // D-108: con la app en segundo plano no se puede abrir el instalador; se avisa
+    // con una notificación (tocarla abre la app y lanza el instalador).
+    if (_enSegundoPlano) {
+      final avisado = await avisarDescargaCompletada(version: meta.version, ruta: ruta);
+      return ResultadoActualizacion(
+        EstadoActualizacion.descargadaEnSegundoPlano,
+        avisado
+            ? 'La actualización ${meta.version} ya está descargada: toque la '
+                'notificación para instalarla.'
+            : 'La actualización ${meta.version} ya está descargada. Vuelva a la app '
+                'y pulse «Actualizar ahora» para instalarla.',
+        bytes: bytes,
+      );
+    }
+
     onProgreso?.call(1, 'Abriendo el instalador…');
-    final abierto = await _invocar<bool>('instalar', {'ruta': destino.path});
+    final abierto = await _invocar<bool>('instalar', {'ruta': ruta});
     if (abierto != true) {
       return const ResultadoActualizacion(
         EstadoActualizacion.instaladorNoDisponible,
@@ -134,9 +171,46 @@ class ActualizadorApk {
       EstadoActualizacion.instaladorAbierto,
       'Confirme la instalación en la ventana del sistema. La app se actualizará '
       'sobre esta misma y conservará su sesión y sus datos.',
-      bytes: destino.lengthSync(),
+      bytes: bytes,
     );
   }
+
+  /// Publica el aviso de «actualización descargada» (D-108).
+  ///
+  /// Tocar la notificación abre la app y lanza el instalador de Android. Devuelve
+  /// `false` si el sistema no permite notificar (permiso denegado o sin canal).
+  Future<bool> avisarDescargaCompletada({
+    required String version,
+    required String ruta,
+  }) async {
+    return await _invocar<bool>('notificar', {
+          'titulo': 'Actualización $version descargada',
+          'texto': 'Toque para instalar. La app se actualizará sin desinstalarla '
+              'y conservará su sesión y sus datos.',
+          'ruta': ruta,
+        }) ??
+        false;
+  }
+
+  /// ¿La app está en segundo plano de verdad? (`inactive` es transitorio).
+  bool get _enSegundoPlano {
+    try {
+      final estado = WidgetsBinding.instance.lifecycleState;
+      return estado == AppLifecycleState.paused ||
+          estado == AppLifecycleState.hidden ||
+          estado == AppLifecycleState.detached;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// ¿El sistema permite notificar? (Android < 13: siempre).
+  Future<bool> permisoNotificaciones() async =>
+      await _invocar<bool>('permisoNotificaciones') ?? false;
+
+  /// Pide el permiso de notificaciones (Android 13+); devuelve si quedó concedido.
+  Future<bool> solicitarPermisoNotificaciones() async =>
+      await _invocar<bool>('solicitarPermisoNotificaciones') ?? false;
 
   /// Borra las APK descargadas de versiones anteriores (no ocupan espacio).
   Future<void> limpiarAnteriores(String versionActual) async {
