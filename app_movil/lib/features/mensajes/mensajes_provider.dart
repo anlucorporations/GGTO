@@ -7,9 +7,12 @@ import '../../core/database.dart';
 
 /// Mensajería interna (D-81 · RF-41) en la APK.
 ///
-/// D-84 (RF-APK-02): sondeo **cada 60 s** y **solo con la app en primer plano**.
-/// Es la única pieza que se sincroniza sola: los casos dependen de CARGA y
-/// DESCARGA (DEC-3).
+/// D-84 (RF-APK-02): sondeo **cada 60 s**.
+///
+/// D-109: el sondeo **no se detiene** cuando la app pasa a segundo plano (antes
+/// solo corría en primer plano): el técnico recibe los mensajes del supervisor y
+/// los recordatorios de cita aunque esté trabajando fuera de la app; al volver a
+/// ella se refresca al instante.
 ///
 /// D-86 (RF-APK-04/05): la **primera carga** pide los **últimos 50** (antes pedía
 /// `desde=0` y traía los 50 **más antiguos**, de modo que los recién llegados
@@ -37,7 +40,6 @@ class MensajesProvider extends ChangeNotifier with WidgetsBindingObserver {
   int _noLeidos = 0;
   int _ultimoId = 0;
   bool _enCurso = false;
-  bool _enPrimerPlano = true;
 
   /// Bandeja **del más reciente al más antiguo** (DEC-4).
   List<Map<String, dynamic>> get mensajes => ordenarMasRecientePrimero(_mensajes);
@@ -47,21 +49,15 @@ class MensajesProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// Arranca el sondeo (idempotente): primero lo guardado, después la red.
   void iniciar() {
     WidgetsBinding.instance.addObserver(this);
-    _timer ??= Timer.periodic(intervaloSondeo, (_) => _sondearSiAplica());
-    cargarLocal().then((_) => _sondearSiAplica());
+    _timer ??= Timer.periodic(intervaloSondeo, (_) => sondear());
+    cargarLocal().then((_) => sondear());
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _enPrimerPlano = state == AppLifecycleState.resumed;
-    // Al volver a la app no se espera el minuto completo.
-    if (_enPrimerPlano) _sondearSiAplica();
-  }
-
-  /// Sondea solo si la app está en primer plano (ahorro de batería y datos).
-  void _sondearSiAplica() {
-    if (!_enPrimerPlano) return;
-    sondear();
+    // Al volver a la app no se espera el minuto completo (D-109: el sondeo sigue
+    // activo también en segundo plano).
+    if (state == AppLifecycleState.resumed) sondear();
   }
 
   /// Carga la bandeja guardada en el dispositivo (sin red).

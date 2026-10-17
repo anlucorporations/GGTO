@@ -43,8 +43,12 @@ class ResultadoSync {
 /// (no había estados ni reintentos) y añade el vaciado automático al recuperar
 /// la conexión (RNF-06).
 class SyncProvider extends ChangeNotifier {
+  /// D-109: cada cuánto se envían solos los datos de los casos atendidos.
+  static const Duration intervaloAutoEnvio = Duration(minutes: 5);
+
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _suscripcion;
+  Timer? _autoEnvio;
 
   Map<String, int> _resumen = {'PENDIENTE': 0, 'REINTENTO': 0, 'ERROR': 0, 'TOTAL': 0};
   List<Map<String, dynamic>> _acciones = [];
@@ -52,6 +56,7 @@ class SyncProvider extends ChangeNotifier {
   bool _enLinea = true;
   ResultadoSync? _ultimoResultado;
   DateTime? _ultimaSync;
+  DateTime? _ultimoEnvioAuto;
   int _evidencias = 0;
   List<Map<String, dynamic>> _ultimoChecklist = [];
   double _progreso = 1;
@@ -67,6 +72,9 @@ class SyncProvider extends ChangeNotifier {
   bool get enLinea => _enLinea;
   ResultadoSync? get ultimoResultado => _ultimoResultado;
   DateTime? get ultimaSync => _ultimaSync;
+
+  /// D-109: momento del último envío automático de los casos atendidos.
+  DateTime? get ultimoEnvioAuto => _ultimoEnvioAuto;
   int get evidencias => _evidencias;
   List<Map<String, dynamic>> get ultimoChecklist => _ultimoChecklist;
 
@@ -125,16 +133,20 @@ class SyncProvider extends ChangeNotifier {
   }
 
 
-  /// Arranca la vigilancia de conectividad (solo para el indicador).
+  /// Arranca la vigilancia de conectividad (solo para el indicador) y el
+  /// **envío automático** de los datos de los casos atendidos (D-109).
   ///
-  /// D-84 (DEC-3): **no** se vacía la cola al recuperar la red. La CARGA la
-  /// decide el técnico; la conectividad solo actualiza el indicador y la
-  /// disponibilidad de los botones.
+  /// D-84 (DEC-3): **no** se descarga nada al recuperar la red. La DESCARGA la
+  /// decide el técnico; lo que sí ocurre solo es el envío **ligero** de lo ya
+  /// atendido (la cola de acciones), para que las métricas y el monitoreo de la
+  /// web no se queden atrás cuando el técnico trabaja sin pulsar «Cargar».
   void iniciar() {
     _suscripcion ??= _connectivity.onConnectivityChanged.listen((resultados) {
       final conectado = resultados.any((r) => r != ConnectivityResult.none);
       _enLinea = conectado;
       notifyListeners();
+      // Al recuperar la red se intenta el envío ligero sin esperar los 5 min.
+      if (conectado) _enviarAtendidosSiAplica();
     });
 
     _connectivity.checkConnectivity().then((resultados) {
@@ -145,7 +157,31 @@ class SyncProvider extends ChangeNotifier {
       _enLinea = true;
     });
 
+    // D-109: cada 5 minutos se suben **solo** los datos de los casos atendidos
+    // (la cola de acciones). No descarga casos ni sube fotos: es la información
+    // mínima que mantiene al día las métricas y el monitoreo de la web.
+    _autoEnvio ??= Timer.periodic(intervaloAutoEnvio, (_) {
+      _enviarAtendidosSiAplica();
+    });
+
     refrescar();
+  }
+
+  /// Envía la cola de acciones (casos atendidos) si hay algo pendiente y red.
+  ///
+  /// Público para poder forzarlo (y probarlo) sin depender del temporizador.
+  Future<void> enviarAtendidos() async {
+    if (_sincronizando) return;
+    await refrescar();
+    if (pendientesSinError == 0) return;
+    if (!_enLinea) return;
+    await sincronizar(silencioso: true);
+    _ultimoEnvioAuto = DateTime.now();
+    notifyListeners();
+  }
+
+  void _enviarAtendidosSiAplica() {
+    unawaited(enviarAtendidos());
   }
 
   /// Recuenta la cola y las evidencias de la jornada.
@@ -332,6 +368,7 @@ class SyncProvider extends ChangeNotifier {
   @override
   void dispose() {
     _suscripcion?.cancel();
+    _autoEnvio?.cancel();
     super.dispose();
   }
 }
