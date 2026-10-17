@@ -94,21 +94,34 @@ La decisión es una **función pura** (`PurgaDespachos.planificar`), igual que `
 | `flutter test` | **157/157 en verde** (150 previos + **7 nuevos** de D-104) |
 | `ruff check` / `mypy` en los archivos tocados | **limpios** (los 6 avisos de ruff y el de mypy que quedan en el repositorio son **preexistentes**, en `app/tests`) |
 | `pytest` (pruebas sin base de datos) | **44/44** |
+| `pytest` de integración (PostgreSQL 18, esquema aislado `ggto_test`) | **388/388 en verde** (384 previos + **4 nuevos** de D-104 en `app/tests/test_sync_api.py`) |
 
-**Pruebas de D-104:** se conserva lo del despacho del día aunque siga pendiente · se borra lo no
+**Pruebas de D-104 (APK):** se conserva lo del despacho del día aunque siga pendiente · se borra lo no
 atendido de jornadas anteriores · se conservan los cinco estados gestionados · `CONTACTADO` **sí** se
 borra (decisión del director) · nunca se borra un caso con acción en cola o foto sin subir · filas sin
 identificador y listas vacías no rompen.
 
+**Pruebas de integración de D-104 (API):** la jornada viaja en el **día operativo** (`hoy_operativo`,
+RNF-13), no en el del servidor · un caso reasignado **hoy** a otra cuadrilla no entra en `ids_del_dia` de
+la cuadrilla anterior · lo despachado **ayer** se descarga pero **no** se marca como del día (es lo que
+la APK purga si sigue sin atender) · una cuadrilla **sin despacho de hoy** recibe `despacho_del_dia: null`
+e `ids_del_dia: []` aunque tenga casos (DEC-104-3: no se borra nada) · la jornada viaja también en las
+respuestas **sin casos** (`SIN_PENDIENTES`), para que la purga no espere a que haya novedades.
+
 ---
 
-## 6. Pendiente
+## 6. Estado de los pendientes
 
-- **Prueba en dispositivo** del ciclo completo: con despacho del día debe verse «N descartados», y sin
-  despacho del día (o sin conexión) no debe desaparecer ningún caso.
-- **Prueba de integración del backend** (requiere PostgreSQL): comprobar `despacho_del_dia`/`ids_del_dia`
-  con una cuadrilla con despacho y con otra sin él.
-- **Tablero de la propuesta** (`docs/propuesta-visual-apk/mockup/apk.html`): muestra la barra inferior
-  del técnico, que ya no existe; conviene actualizarlo.
-- **Publicar la APK** (`versionCode` +15) para que el cambio llegue a los equipos, y **redesplegar** la
-  web para que la API sirva los campos nuevos.
+- **Prueba en dispositivo** del ciclo completo: **pendiente** (requiere un teléfono con la APK instalada).
+  Con despacho del día debe verse «N descartados»; sin despacho del día (o sin conexión) no debe
+  desaparecer ningún caso.
+- **Prueba de integración del backend**: **hecha** (2026-10-17). Cuatro pruebas en
+  `app/tests/test_sync_api.py` (véase §5) contra PostgreSQL 18 y el esquema aislado `ggto_test`; el
+  entorno se recrea desde `RepoTecnico/db/schema.sql` en cada corrida. La suite completa queda en
+  **388/388**.
+- **Tablero de la propuesta** (`docs/propuesta-visual-apk/mockup/apk.html`): **hecho** en el commit
+  `ab2d96f`, que retira la barra inferior del tablero del técnico.
+- **Publicar la APK y redesplegar la web**: **hecho** en el commit `ab2d96f` y la publicación posterior:
+  **APK `1.6.0+15`** firmada con el keystore oficial (SHA-256 `b27505e4…`) y Cloud Run revisión
+  **`ggto-web-00048-fk6`** (imagen `v35`, 100 % del tráfico).
+

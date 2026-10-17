@@ -5,7 +5,9 @@ Cubren la cadena que usa la APK:
 - `GET /api/v1/sync/cuadrilla`: cuadrilla vigente del técnico logueado.
 - `GET /api/v1/sync/descarga`: casos **de su cuadrilla**, con los **últimos**
   despachos como criterio (un caso reasignado a otra cuadrilla no debe seguir
-  llegando), y el modo diferencial (`desde` / `ids_conocidos`).
+  llegando), el modo diferencial (`desde` / `ids_conocidos`) y la **jornada del
+  día** (`despacho_del_dia` / `ids_del_dia`, D-104) con la que la APK decide si
+  puede purgar los despachos anteriores.
 - `POST /api/v1/sync/carga`: alta de la actividad, cambio de estado y bitácora;
   rechazo de casos ajenos a la cuadrilla del técnico.
 - `POST /api/v1/evidencias/upload`: foto de campo (multipart) y sus validaciones.
@@ -21,6 +23,7 @@ import pytest
 from sqlalchemy import select
 
 from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos, Tecnico, Usuario
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1"
 SYNC = f"{BASE}/sync"
@@ -93,7 +96,10 @@ def entorno_sync(client, admin_token, db_session):
     # Caso recién despachado que sigue NUEVO (estado real tras generar despacho).
     c_nuevo = crear("TSTSYNC-N", _conservar_nuevo=True)
 
-    hoy = date.today()
+    # El «día» de la descarga es el día **operativo** de la central (D-104, RNF-13),
+    # no el del servidor: la jornada se marca con `hoy_operativo()` para que la
+    # prueba no dependa de la zona horaria de la máquina que la ejecuta.
+    hoy = hoy_operativo()
     d_ayer_a = Despacho(id_central=id_central, fecha=hoy - timedelta(days=1),
                         id_cuadrilla=id_a, estado="PUBLICADO")
     d_hoy_a = Despacho(id_central=id_central, fecha=hoy, id_cuadrilla=id_a, estado="PUBLICADO")
@@ -120,6 +126,9 @@ def entorno_sync(client, admin_token, db_session):
         "supervisor": admin_token["supervisor"],
         "id_cuadrilla_a": id_a,
         "id_cuadrilla_b": id_b,
+        "despacho_hoy_a": d_hoy_a.id_despacho,
+        "despacho_ayer_a": d_ayer_a.id_despacho,
+        "despacho_hoy_b": d_hoy_b.id_despacho,
         "c_a": c_a,
         "c_b": c_b,
         "c_mov": c_mov,
@@ -606,3 +615,138 @@ def test_upload_rechaza_foto_demasiado_grande(client, entorno_sync, tmp_path, mo
                     data={"id_caso": str(entorno_sync["c_a"]["id_caso"])},
                     headers=entorno_sync["tecnico"])
     assert r.status_code == 413, r.text
+
+
+# --------------------------------------------------------------------------- #
+# DESCARGA · jornada del día y purga de despachos anteriores (D-104)
+# --------------------------------------------------------------------------- #
+# La APK borra los casos **no atendidos** de jornadas anteriores solo si el
+# servidor confirma la jornada del día (`despacho_del_dia`, DEC-104-3) y conserva
+# siempre lo que viaja en `ids_del_dia`. Estas pruebas fijan ese contrato contra
+# PostgreSQL real, que era el pendiente de verificación de D-104.
+def _crear_caso(client, headers, id_averia: str) -> int:
+    """Caso de prueba en estado ASIGNADO (como lo deja el despacho real)."""
+    r = client.post(
+        CASOS,
+        json={"id_averia": id_averia, "direccion": "SECTOR SYNC 1",
+              "nombre_cliente": f"CLIENTE {id_averia}",
+              "contacto_cliente": "04142223344", "id_pago": "7007000000",
+              "tipo_reporte": "REPARACION", "tipo_problema": "SIN_SERVICIO"},
+        headers=headers,
+    )
+    assert r.status_code == 201, r.text
+    id_caso = r.json()["id_caso"]
+    p = client.patch(f"{CASOS}/{id_caso}", json={"estado_actual": "ASIGNADO"}, headers=headers)
+    assert p.status_code == 200, p.text
+    return id_caso
+
+
+def _despachar(db_session, id_central: int, id_cuadrilla: int, fecha: date,
+               ids_caso: list[int]) -> int:
+    """Crea un despacho publicado de esa cuadrilla y fecha con los casos dados."""
+    despacho = Despacho(id_central=id_central, fecha=fecha, id_cuadrilla=id_cuadrilla,
+                        estado="PUBLICADO")
+    db_session.add(despacho)
+    db_session.flush()
+    db_session.add_all([
+        DespachoCasos(id_despacho=despacho.id_despacho, id_caso=id_caso, estado="ASIGNADO",
+                      orden_visita=orden, tipo_asignacion="REPARACION")
+        for orden, id_caso in enumerate(ids_caso, start=1)
+    ])
+    db_session.commit()
+    return despacho.id_despacho
+
+
+def _mover_tecnico(client, headers, id_origen: int, id_destino: int, id_tecnico: int) -> None:
+    """Cambia al técnico de cuadrilla (cierra la pertenencia de origen)."""
+    retiro = client.delete(f"{BASE}/cuadrillas/{id_origen}/integrantes/{id_tecnico}",
+                           headers=headers)
+    assert retiro.status_code == 204, retiro.text
+    _agregar_a_cuadrilla(client, headers, id_destino, id_tecnico)
+
+
+def test_descarga_informa_la_jornada_del_dia(client, entorno_sync):
+    """`despacho_del_dia` e `ids_del_dia` describen el despacho de hoy de la cuadrilla."""
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+
+    jornada = cuerpo["despacho_del_dia"]
+    assert jornada is not None, "la cuadrilla tiene despacho de hoy y la descarga no lo dice"
+    assert jornada["id_despacho"] == entorno_sync["despacho_hoy_a"]
+    assert jornada["fecha"] == hoy_operativo().isoformat(), "la jornada debe ir en el día operativo"
+
+    ids_del_dia = set(cuerpo["ids_del_dia"])
+    assert entorno_sync["c_a"]["id_caso"] in ids_del_dia
+    assert entorno_sync["c_nuevo"]["id_caso"] in ids_del_dia
+    # Un caso reasignado HOY a otra cuadrilla no es «del día» para la anterior: si
+    # se colara, la APK del técnico anterior podría conservarlo como si fuera suyo.
+    assert entorno_sync["c_mov"]["id_caso"] not in ids_del_dia
+
+
+def test_descarga_no_marca_como_del_dia_lo_despachado_ayer(client, entorno_sync, admin_token,
+                                                           db_session):
+    """Lo pendiente de una jornada anterior se descarga, pero NO entra en `ids_del_dia`.
+
+    Es la condición que permite al técnico ver solo lo atendido y lo nuevo del día
+    (RF-85): la APK conserva `ids_del_dia` y descarta el resto si no se atendió.
+    """
+    id_caso = _crear_caso(client, admin_token["admin"], "TSTSYNC-AYER")
+    # Se reutiliza el despacho de AYER de la cuadrilla A que crea el entorno: no se
+    # puede insertar otro para la misma (fecha, cuadrilla) por el índice único.
+    db_session.add(DespachoCasos(id_despacho=entorno_sync["despacho_ayer_a"], id_caso=id_caso,
+                                 estado="ASIGNADO", orden_visita=5,
+                                 tipo_asignacion="REPARACION"))
+    db_session.commit()
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    ids = {c["id_caso"] for c in cuerpo["casos"]}
+    assert id_caso in ids, "el caso pendiente de ayer sigue siendo trabajo de la cuadrilla"
+    assert id_caso not in set(cuerpo["ids_del_dia"]), (
+        "un caso de una jornada anterior no puede figurar como del día"
+    )
+    assert cuerpo["despacho_del_dia"]["id_despacho"] == entorno_sync["despacho_hoy_a"]
+
+
+def test_sin_despacho_de_hoy_la_descarga_no_invita_a_purgar(client, entorno_sync, admin_token,
+                                                            db_session):
+    """DEC-104-3: sin jornada del día no se informa `despacho_del_dia` y la APK no borra.
+
+    El técnico podría estar trabajando con el despacho de ayer; si el servidor no
+    confirma la jornada, su caché completa debe sobrevivir.
+    """
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    id_solo_ayer = _cuadrilla(client, headers, admin_token["id_central"], "TCS4", "Solo ayer")
+    _mover_tecnico(client, headers, entorno_sync["id_cuadrilla_a"], id_solo_ayer, id_tecnico)
+    id_caso = _crear_caso(client, headers, "TSTSYNC-SINJORNADA")
+    _despachar(db_session, admin_token["id_central"], id_solo_ayer,
+               hoy_operativo() - timedelta(days=1), [id_caso])
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["motivo"] == "OK"
+    assert {c["id_caso"] for c in cuerpo["casos"]} == {id_caso}
+    assert cuerpo["despacho_del_dia"] is None, "sin despacho de hoy no hay jornada que confirmar"
+    assert cuerpo["ids_del_dia"] == [], "sin jornada no se puede marcar nada como del día"
+
+
+def test_la_jornada_viaja_aunque_no_queden_casos_pendientes(client, entorno_sync, admin_token,
+                                                            db_session):
+    """La jornada llega también en las respuestas vacías: la purga no espera novedades."""
+    headers = admin_token["admin"]
+    id_tecnico = _id_tecnico_de_prueba(db_session)
+    id_todo = _cuadrilla(client, headers, admin_token["id_central"], "TCS5", "Todo cerrado")
+    _mover_tecnico(client, headers, entorno_sync["id_cuadrilla_a"], id_todo, id_tecnico)
+    id_caso = _crear_caso(client, headers, "TSTSYNC-CERRADO")
+    p = client.patch(f"{CASOS}/{id_caso}", json={"estado_actual": "CERRADO"}, headers=headers)
+    assert p.status_code == 200, p.text
+    id_despacho = _despachar(db_session, admin_token["id_central"], id_todo,
+                             hoy_operativo(), [id_caso])
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    assert cuerpo["motivo"] == "SIN_PENDIENTES"
+    assert cuerpo["casos"] == []
+    assert cuerpo["despacho_del_dia"] == {
+        "id_despacho": id_despacho,
+        "fecha": hoy_operativo().isoformat(),
+    }
+    assert cuerpo["ids_del_dia"] == [id_caso]
+
