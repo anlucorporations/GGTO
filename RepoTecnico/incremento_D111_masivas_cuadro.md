@@ -186,14 +186,26 @@ de marca, activa en azul claro) en `styles.css`, con una nota que explica por qu
 | Bundle servido | `index-BfEI_xw3.js` + `index-CwYlSn18.css`, **idénticos a la compilación local**, con `celda-indicadores`, `indicador-planificacion`, `indicador-off`, `btn-icono`, `celda-estado-masiva` y `operacion-pestanas`; y **ya sin** el texto de explicación |
 | `/apk/apk.json` | sirve **`1.11.0+20`** con el **mismo SHA-256** que el binario local; `/apk/ggto-tecnico.apk` responde **200** (23,85 MB) |
 
+**Push y redespliegue de confirmación (orden del usuario: «/push y despliegue»):**
+
+| Dato | Valor |
+|---|---|
+| Commit | **`8c60ffe`** `feat(masivas): D-111 cuadro estilo CASOS, indicadores y acciones con icono (web y APK)` — **18 archivos, +1413/−155** |
+| Remotos | **GitHub** (`anlucorporations/GGTO`) y **GitLab** (`anlucorporations/ggto`) en **`8c60ffe`** = HEAD local, verificado con `git ls-remote` |
+| Seguridad previa | barrido del diff sin coincidencias de secretos; **ningún** `.apk`, keystore, `key.properties`, `credenciales/`, CSV con PII ni `node_modules`/`dist`; **`.agents/` excluido** como siempre |
+| Redespliegue | imagen **`v43`** (Cloud Build **SUCCESS**, 1M45S, digest `sha256:abeaabc0…`) → revisión **`ggto-web-00056-nd7`** con **100 % del tráfico** |
+| Verificación | `/health` `/ready` `/` `/manual/` y un manual → **200**; bundle `index-BfEI_xw3.js` + `index-CwYlSn18.css` y `apk.json` `1.11.0+20` **idénticos** a la entrega `v42` |
+
 ---
 
 ## 10. Pendiente
 
-- **Push a GitHub y GitLab**: los cambios de este incremento están **sin commitear** (el despliegue se
-  hizo desde el árbol de trabajo, como en las entregas anteriores).
 - **Prueba en dispositivo**: comprobar en campo que los indicadores se leen a la primera, que las
   acciones abren la ficha en su pestaña y que la APK se actualiza sola desde la franja de D-107.
 - **E2E de la web** (`RepoTecnico/pruebas/e2e/tests/26-masivas.spec.js`): las siete pestañas siguen
   existiendo y la detección no cambia, pero estas pruebas **no se han ejecutado** en esta sesión
   (requieren PostgreSQL y el backend en marcha).
+- **Observación de reproducibilidad**: `app/requirements.txt` **no fija versiones**; el `v43`
+  resolvió `fastapi 0.145.0` donde el `v42` había tomado `0.143.3`. La aplicación funciona igual
+  (`/ready` en verde y 43 tablas), pero conviene **pinnear** las dependencias del backend para que
+  dos compilaciones del mismo commit den la misma imagen.
