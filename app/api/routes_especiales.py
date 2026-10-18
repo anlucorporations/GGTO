@@ -43,6 +43,9 @@ from .deps import ROL_SUPER, _especial_alta, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["seguimiento y especiales"])
 _escritura = require_roles("ADMIN", "SUPERVISOR")
+# D-112: el TÉCNICO agenda desde la APK (RF-APK-06/RF-12); sin esto, «Agendar»
+# recibía un 403 y la cita se quedaba en la cola del dispositivo sin aplicarse.
+_campo = require_roles("ADMIN", "SUPERVISOR", "TECNICO")
 
 DURACION_POR_DEFECTO = 60
 ESTADOS_BLOQUEANTES_POR_DEFECTO = ("PROPUESTA", "CONFIRMADA")
@@ -527,7 +530,7 @@ def listar_citas(
 def crear_cita(
     datos: CitaCreate,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_campo),
 ) -> Cita:
     if datos.id_caso is None and datos.id_caso_especial is None:
         raise HTTPException(status_code=422, detail="La cita requiere `id_caso` o `id_caso_especial`")

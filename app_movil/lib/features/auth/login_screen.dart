@@ -107,8 +107,13 @@ class _LoginScreenState extends State<LoginScreen> {
               constraints:
                   BoxConstraints(minHeight: constraints.maxHeight - 40),
               child: Column(
-                // El Spacer() del pie exige `start`; el centrado vertical se
-                // logra con los SizedBox superiores.
+                // D-112: `Spacer()` dentro de un `SingleChildScrollView` no es
+                // válido (el alto llega sin límite y RenderFlex aborta en
+                // depuración: «non-zero flex but incoming height constraints are
+                // unbounded»). El pie se separa con un hueco fijo y la columna
+                // toma su altura natural, que el ConstrainedBox ya estira hasta
+                // el mínimo de la pantalla.
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -213,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: Colors.black54),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 24),
                   const Padding(
                     padding: EdgeInsets.only(top: 24),
                     child: Text(

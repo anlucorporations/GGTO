@@ -55,6 +55,11 @@ _escritura = require_roles("ADMIN", "SUPERVISOR")
 # fallas masivas; no puede leer el universo ni las fichas de /casos (DEC-G20).
 _lectura = require_roles("TECNICO", "ADMIN", "SUPERVISOR")
 # Gestión del estado del caso: se suma el rol TECNICO (D-68).
+#
+# D-112: **también la resolución en campo** —cierre, enrutado y cita rápida— usa
+# `_gestion`, porque es el TÉCNICO quien cierra, enruta y cita desde la APK
+# (RF-APK-06/07/08). Antes exigían `_escritura` y el técnico recibía un 403: la
+# acción quedaba en la cola del dispositivo y no llegaba a actualizar el caso.
 _gestion = require_roles("ADMIN", "SUPERVISOR", "TECNICO")
 
 
@@ -634,7 +639,7 @@ def cerrar_caso(
     id_caso: int,
     datos: CierreCaso,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_gestion),
 ) -> ResolucionOut:
     """Registra la actividad de cierre (tipo CIERRE) y pasa el caso a CERRADO.
 
@@ -668,7 +673,7 @@ def agendar_cita(
     id_caso: int,
     datos: CitaRapida,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_gestion),
 ) -> ResolucionOut:
     """Crea la cita vinculada al caso y deja constancia de la fecha comprometida."""
     caso = _o_404(db, id_caso)
@@ -834,7 +839,7 @@ def enrutar_caso(
     id_caso: int,
     datos: EnrutadoCaso,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(_gestion),
 ) -> ResolucionOut:
     """Registra la actividad de enrutado, el seguimiento y pasa el caso a ENRUTADO."""
     caso = _o_404(db, id_caso)

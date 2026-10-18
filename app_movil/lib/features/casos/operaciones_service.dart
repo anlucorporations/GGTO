@@ -126,8 +126,9 @@ class OperacionesService {
       tipo: 'DIFERIDO',
       exito: 'Caso diferido con su justificación.',
     );
-    // D-73: si el diferido quedó encolado, sus evidencias viajan con la acción
-    // de estado (UploadService sube los archivos antes del batch).
+    // D-73/D-112: las evidencias **nunca** se marcan como subidas aquí. El
+    // archivo lo sube `UploadService` en la CARGA (`subida = 0`); marcarlas sin
+    // subirlas dejaba al servidor con el serial y sin la foto.
     if (evidencias.isNotEmpty && resultado.encolada) {
       await DatabaseHelper.instance.encolarAccion(
         tipo: 'DIFERIDO_EVIDENCIAS',
@@ -135,8 +136,6 @@ class OperacionesService {
         metodo: 'POST',
         payload: {'evidencias': evidencias},
       );
-    } else if (evidencias.isNotEmpty) {
-      await _marcarEvidencias(evidencias);
     }
     return resultado;
   }
@@ -215,7 +214,9 @@ class OperacionesService {
     try {
       final datos = await ApiClient.post(endpoint, data: payload);
       final caso = await _refrescarCaso(idCaso);
-      await _marcarEvidencias(evidencias);
+      // D-112: las evidencias quedan con `subida = 0` para que la CARGA suba los
+      // archivos (`UploadService`); marcarlas aquí sin subirlas dejaba el cierre
+      // con los seriales pero sin las fotos en el servidor.
       final mensaje = datos is Map && datos['mensaje'] != null
           ? '${datos['mensaje']}'
           : 'Caso cerrado con $modo.';
@@ -260,9 +261,9 @@ class OperacionesService {
     try {
       final datos = await ApiClient.post(endpoint, data: payload);
       final caso = await _refrescarCaso(idCaso);
-      if (evidencias.isNotEmpty) {
-        await _encolarEvidencias(idCaso, idAveria, evidencias);
-      }
+      // D-112: las fotos quedan con `subida = 0` y las sube la CARGA; el serial
+      // viaja en la propia acción de enrutado. Antes se encolaba además una
+      // acción EVIDENCIA contra `/casos/{id}/cierre` (endpoint equivocado, 422).
       final mensaje = datos is Map && datos['mensaje'] != null
           ? '${datos['mensaje']}'
           : 'Caso enrutado a $destino.';
@@ -288,16 +289,15 @@ class OperacionesService {
     }
   }
 
-  /// ¿El error se resuelve reintentando (red, servidor caído o **rol** que el
-  /// endpoint directo no admite)?
+  /// ¿El error se resuelve reintentando (red o servidor caído)?
   ///
-  /// D-88: `cerrar`, `enrutar` y `agendarCita` exigen ADMIN/SUPERVISOR, así que un
-  /// **TECNICO** recibía un 403 y la acción se perdía. Ahora se **encola** y viaja
-  /// en la CARGA (que sí lo admite): el trabajo de campo nunca se descarta.
+  /// D-112: un **403 no se encola**. Hasta D-112 se encolaba porque `cerrar`,
+  /// `enrutar` y la cita exigían ADMIN/SUPERVISOR y el TÉCNICO recibía 403: la
+  /// acción se quedaba en la cola, el envío automático la marcaba `ERROR` y el
+  /// lote entero dejaba de aplicarse. La API ya admite al TÉCNICO en la
+  /// resolución de campo, así que un permiso denegado se muestra en el acto.
   static bool _convieneEncolar(ApiError error) =>
-      error.esDeRed ||
-      error.status == 403 ||
-      (error.status != null && error.status! >= 500);
+      error.esDeRed || (error.status != null && error.status! >= 500);
 
   /// «No Contesta» (D-88 · RF-APK-12).
   ///
@@ -494,35 +494,6 @@ class OperacionesService {
         );
       }
       return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
-  }
-
-  /// Encola las evidencias de un caso para subirlas al sincronizar.
-  static Future<void> _encolarEvidencias(
-    int idCaso,
-    String idAveria,
-    List<String> seriales,
-  ) async {
-    if (seriales.isEmpty) return;
-    await DatabaseHelper.instance.encolarAccion(
-      tipo: 'EVIDENCIA',
-      endpoint: '/casos/$idCaso/cierre',
-      metodo: 'POST',
-      payload: {'evidencias': seriales},
-    );
-    await _marcarEvidencias(seriales);
-  }
-
-  static Future<void> _marcarEvidencias(List<String> seriales) async {
-    if (seriales.isEmpty) return;
-    final db = await DatabaseHelper.instance.database;
-    for (final serial in seriales) {
-      await db.update(
-        'evidencia_local',
-        {'subida': 1},
-        where: 'serial_imagen = ?',
-        whereArgs: [serial],
-      );
     }
   }
 
