@@ -211,3 +211,16 @@ botón funciona (se usó en las corridas previas de DESCARGA y en el uso normal)
 - **Prueba en dispositivo físico** con un técnico real: el emulador valida el código, no la cámara ni
   el GPS del teléfono.
 - **Push a GitHub/GitLab** de este incremento (el árbol queda con los cambios sin commitear).
+
+---
+
+## 10. Push y despliegue en GCP (2026-10-18)
+
+| Dato | Valor |
+|---|---|
+| Commit | **`8186afc`** `feat(campo): D-112 prueba de campo de la APK (RBAC de campo, cola y evidencias)` — **17 archivos, +2301/−59** |
+| Remotos | **GitHub** (`anlucorporations/GGTO`) y **GitLab** (`anlucorporations/ggto`) en **`8186afc`** = HEAD local (`git ls-remote`) |
+| Seguridad previa | barrido del diff sin secretos; **ningún** `.apk`, keystore, `key.properties`, `credenciales/`, PII, `node_modules` ni `dist`; **`.agents/` excluido** |
+| Despliegue | imagen **`v46`** → revisión **`ggto-web-00059-qw8`** con **100 % del tráfico** (`/health` `/ready` `/` `/manual/` **200**; 43 tablas; `/apk/apk.json` → **`1.12.0+21`**) |
+| RBAC en producción | login `990001` (TECNICO) → `POST /casos/432/cierre` → **200 · CERRADO**; `POST /citas` → **201 · cita 20** |
+| Limpieza | cita #20 cancelada y los 4 casos `TEST` devueltos a `NUEVO` (pool listo para repetir) |
