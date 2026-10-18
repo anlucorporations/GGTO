@@ -1,7 +1,12 @@
 /**
  * Página MASIVAS (D-99 · RF-59 a RF-63).
  *
- * Reúne en pestañas todo el ciclo de una falla masiva, con la API de
+ * Encima de las pestañas, el **cuadro de las masivas** (D-111) muestra el
+ * listado completo con el estilo de CASOS: filas clicables, columna de
+ * **indicadores** (Planificación · Materiales · Asignación) y **acciones con
+ * icono**.
+ *
+ * Debajo, las pestañas reúnen todo el ciclo de una falla masiva, con la API de
  * `/fallas-masivas`:
  *
  *  1. BÚSQUEDA AUTOMÁTICA : dispara la detección por concentración.
@@ -13,7 +18,7 @@
  *  7. PERSONAL EXTERNO    : catálogo de solicitantes y validadores del CRASS.
  *
  * Los estilos propios viven en `../masivas/masivas.css` (no se toca
- * `styles.css`).
+ * `styles.css`, salvo las pestañas compartidas que se restauran aquí).
  */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
@@ -28,12 +33,22 @@ import type {
   UbicacionMasivaOut,
 } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import {
+  IconoGestion,
+  IconoReporte,
+  IconoUbicacion,
+  IconoVer,
+} from '../components/Iconos';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import { fechaHora } from '../utils';
+import BotonIcono from '../masivas/AccionesMasiva';
 import CatalogoPersonalExterno from '../masivas/CatalogoPersonalExterno';
-import FichaMasiva, { IndicadoresMasiva } from '../masivas/FichaMasiva';
+import CeldaIndicadores from '../masivas/CeldaIndicadores';
+import CuadroMasivas from '../masivas/CuadroMasivas';
+import { claseEstadoMasiva } from '../masivas/estado';
+import FichaMasiva from '../masivas/FichaMasiva';
 import ListaEvidencias from '../masivas/ListaEvidencias';
 import MapaFat from '../masivas/MapaFat';
 import '../masivas/masivas.css';
@@ -84,12 +99,6 @@ function txt(valor: unknown): string {
 
 function truncar(texto: string, largo = 60): string {
   return texto.length <= largo ? texto : `${texto.slice(0, largo - 1)}…`;
-}
-
-function claseEstado(estado: string): string {
-  if (estado === 'CERRADA' || estado === 'ATENDIDA') return 'chip-estado chip-estado-ok';
-  if (estado === 'DETECTADA') return 'chip-estado chip-estado-alerta';
-  return 'chip-estado';
 }
 
 export default function Masivas() {
@@ -260,10 +269,6 @@ export default function Masivas() {
       <div className="pagina-cabecera">
         <div>
           <h1>Masivas</h1>
-          <p>
-            Fallas por concentración: detección, casos asociados, planificación, materiales,
-            cierre con validación del CRASS y reporte.
-          </p>
         </div>
         <div className="acciones-form">
           <button
@@ -297,6 +302,26 @@ export default function Masivas() {
         </div>
       )}
 
+      {/* ---------------- CUADRO DE LAS MASIVAS (D-111) ---------------- */}
+      <div className="panel-bloque">
+        <h2>Listado de masivas</h2>
+        {items.length === 0 ? (
+          <p className="vacio">
+            {cargando ? 'Cargando…' : 'No hay masivas registradas.'}
+          </p>
+        ) : (
+          <CuadroMasivas
+            items={items}
+            cargando={cargando}
+            ocupado={ocupado}
+            onGestionar={abrirGestion}
+            onReporte={(idFalla) => void generarReporte(idFalla)}
+            onUbicacion={irAUbicacion}
+            onVer={(masiva) => setDetalle(masiva)}
+          />
+        )}
+      </div>
+
       <nav className="operacion-pestanas" role="tablist" aria-label="Secciones de Masivas">
         {PESTANAS.map((p) => (
           <button
@@ -321,14 +346,6 @@ export default function Masivas() {
           <div className="panel-bloque">
             <h2>Búsqueda automática de masivas</h2>
             <div className="masiva-intro">
-              <div className="masiva-nota">
-                La detección recorre los casos abiertos y los agrupa por{' '}
-                <strong>concentración</strong>: mismo FAT, misma OLT o mismo sector. Cuando el
-                grupo supera el <strong>umbral</strong> de casos dentro de la{' '}
-                <strong>ventana</strong> de tiempo configurada en PARÁMETROS, se crea una falla
-                masiva con esa clave de concentración. La operación es idempotente: las
-                concentraciones ya registradas no se duplican.
-              </div>
               <div className="acciones-form">
                 <button
                   type="button"
@@ -366,13 +383,12 @@ export default function Masivas() {
                               <td>{txt(m.sector_nombre)}</td>
                               <td className="mono">{txt(m.ruta)}</td>
                               <td>
-                                <button
-                                  type="button"
-                                  className="btn btn-mini btn-secundario"
+                                <BotonIcono
+                                  Icono={IconoGestion}
+                                  etiqueta="Gestionar"
+                                  tono="primario"
                                   onClick={() => abrirGestion(m)}
-                                >
-                                  Gestionar
-                                </button>
+                                />
                               </td>
                             </tr>
                           ))}
@@ -390,12 +406,6 @@ export default function Masivas() {
         {pestana === 'manual' && (
           <div className="panel-bloque">
             <h2>Agregar masiva manual</h2>
-            <div className="masiva-nota">
-              El reporte manual registra una masiva que no proviene de la detección automática:
-              una llamada del CRASS, un reporte de campo o una interrupción conocida. Queda con
-              origen <span className="mono">REPORTE_TECNICO</span> y admite hasta{' '}
-              {MAX_EVIDENCIAS_REPORTE} seriales de evidencia.
-            </div>
             <div className="acciones-form">
               <button
                 type="button"
@@ -413,10 +423,6 @@ export default function Masivas() {
         {pestana === 'gestion' && (
           <div className="panel-bloque">
             <h2>Gestionar masiva</h2>
-            <p className="texto-pequeno">
-              Masivas activas (DETECTADA / PLANIFICADA / ATENDIDA). La ficha permite editar,
-              asociar casos, planificar, solicitar material y cerrar.
-            </p>
             <div className="acciones-form">
               <button
                 type="button"
@@ -451,7 +457,7 @@ export default function Masivas() {
                       <tr key={m.id_falla}>
                         <td className="mono">{m.id_falla}</td>
                         <td>
-                          <span className={claseEstado(m.estado)}>{m.estado}</span>
+                          <span className={claseEstadoMasiva(m.estado)}>{m.estado}</span>
                         </td>
                         <td>{m.origen}</td>
                         <td>
@@ -464,25 +470,22 @@ export default function Masivas() {
                         <td className="mono">{txt(m.ruta)}</td>
                         <td>{fechaHora(m.fecha_deteccion)}</td>
                         <td>
-                          <IndicadoresMasiva falla={m} />
+                          <CeldaIndicadores falla={m} />
                         </td>
                         <td>
-                          <div className="masiva-personal-acciones">
-                            <button
-                              type="button"
-                              className="btn btn-mini"
+                          <div className="masiva-personal-acciones masiva-acciones-iconos">
+                            <BotonIcono
+                              Icono={IconoGestion}
+                              etiqueta="Gestionar"
+                              tono="primario"
                               onClick={() => abrirGestion(m)}
-                            >
-                              Gestionar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-mini btn-secundario"
+                            />
+                            <BotonIcono
+                              Icono={IconoReporte}
+                              etiqueta="Reporte"
                               onClick={() => void generarReporte(m.id_falla)}
                               disabled={ocupado === `reporte-${m.id_falla}`}
-                            >
-                              Reporte
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>
@@ -505,11 +508,6 @@ export default function Masivas() {
         {pestana === 'reporte' && (
           <div className="panel-bloque">
             <h2>Generar reporte</h2>
-            <div className="masiva-nota">
-              El reporte es el HTML que devuelve la API de la masiva; se abre en una pestaña nueva
-              del navegador, lista para imprimir o guardar como PDF. Permita las ventanas
-              emergentes para este sitio.
-            </div>
             {items.length === 0 ? (
               <p className="vacio">No hay masivas que coincidan con los filtros del histórico.</p>
             ) : (
@@ -531,21 +529,21 @@ export default function Masivas() {
                       <tr key={m.id_falla}>
                         <td className="mono">{m.id_falla}</td>
                         <td>
-                          <span className={claseEstado(m.estado)}>{m.estado}</span>
+                          <span className={claseEstadoMasiva(m.estado)}>{m.estado}</span>
                         </td>
                         <td className="mono">{txt(m.clave_concentracion)}</td>
                         <td>{truncar(m.descripcion)}</td>
                         <td>{txt(m.sector_nombre)}</td>
                         <td>{fechaHora(m.fecha_deteccion)}</td>
                         <td>
-                          <button
-                            type="button"
-                            className="btn btn-mini"
-                            onClick={() => void generarReporte(m.id_falla)}
-                            disabled={ocupado === `reporte-${m.id_falla}`}
-                          >
-                            {ocupado === `reporte-${m.id_falla}` ? 'Generando…' : 'Generar reporte'}
-                          </button>
+                          <div className="masiva-personal-acciones masiva-acciones-iconos">
+                            <BotonIcono
+                              Icono={IconoReporte}
+                              etiqueta="Generar reporte"
+                              onClick={() => void generarReporte(m.id_falla)}
+                              disabled={ocupado === `reporte-${m.id_falla}`}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -651,6 +649,7 @@ export default function Masivas() {
                       <th>RUTA</th>
                       <th>Detección</th>
                       <th>Casos</th>
+                      <th>Indicadores</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -659,7 +658,7 @@ export default function Masivas() {
                       <tr key={m.id_falla}>
                         <td className="mono">{m.id_falla}</td>
                         <td>
-                          <span className={claseEstado(m.estado)}>{m.estado}</span>
+                          <span className={claseEstadoMasiva(m.estado)}>{m.estado}</span>
                         </td>
                         <td>{m.origen}</td>
                         <td>
@@ -678,43 +677,39 @@ export default function Masivas() {
                         <td>{fechaHora(m.fecha_deteccion)}</td>
                         <td>{txt(m.casos_asociados)}</td>
                         <td>
-                          <div className="masiva-personal-acciones">
-                            <button
-                              type="button"
-                              className="btn btn-mini"
+                          <CeldaIndicadores falla={m} />
+                        </td>
+                        <td>
+                          <div className="masiva-personal-acciones masiva-acciones-iconos">
+                            <BotonIcono
+                              Icono={IconoGestion}
+                              etiqueta="Gestionar"
+                              tono="primario"
                               onClick={() => abrirGestion(m)}
-                            >
-                              Gestionar
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-mini btn-secundario"
+                            />
+                            <BotonIcono
+                              Icono={IconoReporte}
+                              etiqueta="Reporte"
                               onClick={() => void generarReporte(m.id_falla)}
                               disabled={ocupado === `reporte-${m.id_falla}`}
-                            >
-                              Reporte
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-mini btn-secundario"
+                            />
+                            <BotonIcono
+                              Icono={IconoUbicacion}
+                              etiqueta="Ubicación"
                               onClick={() => irAUbicacion(m.id_falla)}
-                            >
-                              Ubicación
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-mini btn-secundario"
+                            />
+                            <BotonIcono
+                              Icono={IconoVer}
+                              etiqueta="Ver"
                               onClick={() => setDetalle(m)}
-                            >
-                              Ver
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <PieTabla
-                    colSpan={10}
+                    colSpan={11}
                     total={items.length}
                     singular="masiva"
                     plural="masivas"

@@ -19,13 +19,25 @@ import 'masivas_service.dart';
 /// El rol decide qué se puede hacer: TECNICO la ve en **solo lectura** (sin
 /// PLANIFICAR ni CERRAR) y MATERIALES solo deja consultar las órdenes.
 class FichaMasivaScreen extends StatefulWidget {
-  const FichaMasivaScreen({super.key, required this.masiva, this.rol});
+  const FichaMasivaScreen({
+    super.key,
+    required this.masiva,
+    this.rol,
+    this.pestanaInicial,
+  });
 
   /// Ficha de la masiva tal como la entrega la DESCARGA (o `GET /fallas-masivas`).
   final Map<String, dynamic> masiva;
 
   /// Rol del usuario. Si es `null` se lee de `AuthProvider`.
   final String? rol;
+
+  /// Pestaña con la que abre la ficha (D-111).
+  ///
+  /// Las acciones con icono del cuadro de masivas abren la ficha directamente en
+  /// PLANIFICAR, MATERIALES o CERRAR. Si el rol no tiene esa pestaña —o el valor
+  /// no es una pestaña conocida— se abre la primera, sin fallar.
+  final String? pestanaInicial;
 
   /// Pestañas de la ficha según el rol.
   ///
@@ -38,6 +50,13 @@ class FichaMasivaScreen extends StatefulWidget {
         'MATERIALES',
         if (MasivasProvider.puedeCerrar(rol)) 'CERRAR',
       ];
+
+  /// Índice de la pestaña pedida; **0** si el rol no la tiene o no existe.
+  static int indicePestana(List<String> etiquetas, String? pestana) {
+    if (pestana == null) return 0;
+    final indice = etiquetas.indexOf(pestana);
+    return indice < 0 ? 0 : indice;
+  }
 
   @override
   State<FichaMasivaScreen> createState() => _FichaMasivaScreenState();
@@ -146,6 +165,11 @@ class _FichaMasivaScreenState extends State<FichaMasivaScreen> {
 
     return DefaultTabController(
       length: etiquetas.length,
+      // D-111: la acción con icono del cuadro abre la ficha en su pestaña.
+      initialIndex: FichaMasivaScreen.indicePestana(
+        etiquetas,
+        widget.pestanaInicial,
+      ),
       child: Scaffold(
         appBar: AppBar(
           title: Text('Masiva #$_idFalla'),

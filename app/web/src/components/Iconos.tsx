@@ -455,6 +455,39 @@ export function IconoCerrado(props: Props) {
   );
 }
 
+/* --- Acciones con icono de los listados de MASIVAS (D-111) ---------- */
+
+/** Reporte: hoja con líneas (el HTML imprimible de la masiva). */
+export function IconoReporte(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z" />
+      <path d="M14 3v4.5h4.5" />
+      <path d="M9 12.5h6M9 16h6" />
+    </svg>
+  );
+}
+
+/** Ubicación: chincheta del mapa (mapa del FAT de la masiva). */
+export function IconoUbicacion(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.6" />
+    </svg>
+  );
+}
+
+/** Ver: ojo (detalle de solo lectura de la masiva). */
+export function IconoVer(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 /* --- Descarga de la APK (D-72 · enlace desde el acceso) --- */
 
 /** Palomita suelta: viñetas de ventajas y listas de confirmación. */

@@ -199,6 +199,40 @@ class MasivasProvider extends ChangeNotifier {
   static bool puedeCerrar(String rol) =>
       rolesCierre.contains(rol.trim().toUpperCase());
 
+  // ------------------------------------------------------------------------- #
+  // Indicadores del cuadro de MASIVAS (D-111)
+  // ------------------------------------------------------------------------- #
+
+  /// **Planificación**: la masiva ya tiene plan de atención (RF-17).
+  static bool tienePlanificacion(Map<String, dynamic> masiva) =>
+      '${masiva['planificacion'] ?? ''}'.trim().isNotEmpty;
+
+  /// **Materiales**: cuántas órdenes de material tiene la masiva.
+  ///
+  /// La DESCARGA manda la lista `ordenes`; el listado de la API manda el
+  /// contador `ordenes_count`. Se admiten las dos formas para que el indicador
+  /// funcione con y sin conexión.
+  static int ordenesDe(Map<String, dynamic> masiva) {
+    final ordenes = masiva['ordenes'];
+    if (ordenes is List) return ordenes.length;
+    final contador = masiva['ordenes_count'];
+    if (contador is int) return contador;
+    return int.tryParse('${contador ?? ''}') ?? 0;
+  }
+
+  /// **Materiales**: ¿tiene al menos una orden solicitada? (RF-18)
+  static bool tieneMateriales(Map<String, dynamic> masiva) =>
+      ordenesDe(masiva) > 0;
+
+  /// **Asignación**: ¿la masiva ya tiene cuadrilla asignada?
+  static bool tieneAsignacion(Map<String, dynamic> masiva) {
+    final id = masiva['id_cuadrilla'];
+    final idCuadrilla = id is int ? id : int.tryParse('${id ?? ''}') ?? 0;
+    final codigo =
+        '${masiva['cuadrilla_codigo'] ?? masiva['cuadrilla_nombre'] ?? ''}'.trim();
+    return idCuadrilla > 0 || codigo.isNotEmpty;
+  }
+
   /// Busca el proveedor de masivas **si** está registrado en el árbol.
   ///
   /// La pantalla de casos lo usa para el banner fijo y el contador de la barra:

@@ -2173,6 +2173,54 @@ input[type='file'] {
   margin-top: 0;
 }
 
+/* ------------- Pestañas de sub-sección (D-72 · restauradas D-111) ---- */
+
+/* D-72 las estrenó en OPERACIÓN y D-103 borró estas reglas al sustituir esa
+   página por un tablero de fichas. Pero MENSAJES, MASIVAS, SISTEMAS y el panel
+   de GESTIÓN DIARIA siguen usando las clases `operacion-pestanas` /
+   `operacion-pestana`: sin estas reglas se pintaban como botones del navegador
+   (D-111 restaura el diseño original). */
+.operacion-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid var(--azul);
+}
+
+.operacion-pestana {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-texto);
+  cursor: pointer;
+  margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
+}
+
+.operacion-pestana:hover {
+  color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.operacion-pestana.activa {
+  color: var(--azul);
+  border-bottom-color: var(--azul);
+  background: var(--azul-claro);
+}
+
+.operacion-panel {
+  min-height: 50vh;
+}
+
+.operacion-panel > * + .panel-bloque {
+  margin-top: 18px;
+}
+
 /* ------------- Página OPERACIÓN: tablero de fichas (D-103) ---------- */
 
 /* Cada sub-sección es un widget dentro de su ficha, todas en la misma página. */

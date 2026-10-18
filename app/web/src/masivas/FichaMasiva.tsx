@@ -1078,38 +1078,3 @@ export default function FichaMasiva({
     </Modal>
   );
 }
-
-/**
- * Chips compactos de una masiva para la columna de indicadores de las tablas.
- * Resumen: estado, nº de casos asociados, órdenes de material y validador.
- */
-export function IndicadoresMasiva({ falla }: { falla: FallaMasivaOut }) {
-  const casos = falla.casos_asociados ?? 0;
-  const ordenes = falla.ordenes_count ?? 0;
-  return (
-    <span className="masiva-chips">
-      <span className={`masiva-chip ${falla.estado === 'CERRADA' ? 'masiva-chip-ok' : 'masiva-chip-info'}`}>
-        {falla.estado}
-      </span>
-      <span className="masiva-chip" title={`${casos} caso(s) asociado(s)`}>
-        {casos} caso(s)
-      </span>
-      <span
-        className={`masiva-chip ${ordenes > 0 ? 'masiva-chip-ambar' : ''}`}
-        title={ordenes > 0 ? `${ordenes} orden(es) de material` : 'Sin órdenes de material'}
-      >
-        {ordenes > 0 ? `${ordenes} material(es)` : 'sin material'}
-      </span>
-      <span
-        className={`masiva-chip ${falla.validador_crass ? 'masiva-chip-ok' : ''}`}
-        title={
-          falla.validador_crass
-            ? `Valida: ${falla.validador_crass.nombre} — ${falla.validador_crass.unidad}`
-            : 'Sin validador del CRASS'
-        }
-      >
-        {falla.validador_crass ? 'validada CRASS' : 'sin validador'}
-      </span>
-    </span>
-  );
-}

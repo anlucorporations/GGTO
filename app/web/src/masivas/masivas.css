@@ -277,6 +277,123 @@
   gap: 6px;
 }
 
+/* ================================================================== */
+/* CUADRO DE LAS MASIVAS (D-111) — el listado con el estilo de CASOS   */
+/* ================================================================== */
+
+/* Celda de dos líneas: el valor principal y, debajo, el dato secundario
+   (origen de la masiva, dirección corta del sector). */
+.celda-estado-masiva {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.celda-secundaria {
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: var(--gris-texto);
+}
+
+/* Columna INDICADORES: Planificación · Materiales · Asignación. */
+.celda-indicadores {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.indicador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 9px;
+  background: var(--superficie-2);
+  color: var(--gris-texto);
+}
+
+/* Encendido: el color semántico de cada indicador sobre su fondo claro. */
+.indicador-on {
+  font-weight: 700;
+}
+
+.indicador-planificacion.indicador-on {
+  border-color: #bcd4ef;
+  background: var(--azul-claro);
+  color: var(--azul);
+}
+
+.indicador-materiales.indicador-on {
+  border-color: #efdca6;
+  background: var(--ambar-claro);
+  color: var(--ambar);
+}
+
+.indicador-asignacion.indicador-on {
+  border-color: #b7e0c7;
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+
+/* Apagado: gris y con el borde punteado, para que no compita con los activos. */
+.indicador-off {
+  border-style: dashed;
+  background: transparent;
+  color: #8c96a6;
+}
+
+/* Columna ACCIONES: botones cuadrados de icono (D-111). */
+.btn.btn-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #fff;
+  border-color: var(--gris-borde);
+  color: var(--azul);
+}
+
+.btn.btn-icono:hover:not(:disabled) {
+  background: var(--gris-fondo);
+}
+
+.btn.btn-icono svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* La acción principal (Gestionar) se tiñe para distinguirse del resto. */
+.btn.btn-icono-primario {
+  border-color: #bcd4ef;
+  background: var(--azul-claro);
+  color: var(--azul);
+}
+
+.btn.btn-icono-primario:hover:not(:disabled) {
+  background: #e2eafc;
+}
+
+.btn.btn-icono-peligro {
+  border-color: #e3b4b0;
+  background: #fff;
+  color: var(--rojo);
+}
+
+.btn.btn-icono-peligro:hover:not(:disabled) {
+  background: var(--rojo-claro);
+}
+
+/* En las tablas las acciones van en UNA sola fila: si la tabla no cabe,
+   `tabla-envoltura` ya desplaza horizontalmente. */
+.masiva-acciones-iconos {
+  flex-wrap: nowrap;
+}
+
 .masiva-form-personal {
   display: flex;
   flex-direction: column;

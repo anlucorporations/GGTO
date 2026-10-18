@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme.dart';
+import '../../widgets/estado_icono.dart';
+import '../auth/auth_provider.dart';
 import 'ficha_masiva_screen.dart';
+import 'indicador_masiva.dart';
 import 'masivas_provider.dart';
 
 /// Pantalla **MASIVAS** (D-99): las fallas masivas activas de la cuadrilla.
@@ -11,6 +15,11 @@ import 'masivas_provider.dart';
 /// La lista sale del `MasivasProvider` (caché local del dispositivo) y se
 /// refresca **cada 5 minutos** con la app en primer plano y al volver del
 /// segundo plano, como el resto de pantallas del proyecto.
+///
+/// **D-111**: el cuadro de masivas usa el **estilo de CASOS** (`CasoCard`) —la
+/// cabecera con la avería, las líneas de detalle y el estado como icono— y añade,
+/// debajo, la **columna de indicadores** (Planificación · Materiales ·
+/// Asignación) y las **acciones como iconos** que abren la ficha en su pestaña.
 class MasivasScreen extends StatefulWidget {
   const MasivasScreen({super.key});
 
@@ -61,6 +70,25 @@ class _MasivasScreenState extends State<MasivasScreen> with WidgetsBindingObserv
       await context.read<MasivasProvider>().cargar(silencioso: true);
       if (mounted) _programar();
     });
+  }
+
+  /// Rol efectivo (el más restrictivo si no se puede resolver).
+  String _rol() {
+    try {
+      return context.read<AuthProvider>().rol;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Abre la ficha de la masiva; `pestana` la abre en PLANIFICAR/MATERIALES/CERRAR.
+  void _abrir(Map<String, dynamic> masiva, {String? pestana}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FichaMasivaScreen(masiva: masiva, pestanaInicial: pestana),
+      ),
+    );
   }
 
   @override
@@ -125,6 +153,7 @@ class _MasivasScreenState extends State<MasivasScreen> with WidgetsBindingObserv
       );
     }
 
+    final rol = _rol();
     return RefreshIndicator(
       onRefresh: () => masivas.cargar(),
       child: ListView.builder(
@@ -145,12 +174,9 @@ class _MasivasScreenState extends State<MasivasScreen> with WidgetsBindingObserv
           final masiva = masivas.masivas[indice];
           return TarjetaMasiva(
             masiva: masiva,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FichaMasivaScreen(masiva: masiva),
-              ),
-            ),
+            rol: rol,
+            onTap: () => _abrir(masiva),
+            alAbrirPestana: (pestana) => _abrir(masiva, pestana: pestana),
           );
         },
       ),
@@ -158,12 +184,30 @@ class _MasivasScreenState extends State<MasivasScreen> with WidgetsBindingObserv
   }
 }
 
-/// Tarjeta de una masiva activa: identificación, ubicación técnica y **RUTA**.
+/// Tarjeta de una masiva activa con el **estilo de CASOS** (D-111).
+///
+/// Arriba, como `CasoCard`: identificador, líneas de detalle (sector, FAT, ODN,
+/// **RUTA**, casos, detección) y el estado como **icono**. Abajo, separada por
+/// una línea: la **columna de indicadores** —Planificación · Materiales ·
+/// Asignación— y las **acciones como iconos**, que abren la ficha de la masiva
+/// en su pestaña (PLANIFICAR · MATERIALES · CERRAR).
 class TarjetaMasiva extends StatelessWidget {
-  const TarjetaMasiva({super.key, required this.masiva, required this.onTap});
+  const TarjetaMasiva({
+    super.key,
+    required this.masiva,
+    required this.onTap,
+    this.rol = '',
+    this.alAbrirPestana,
+  });
 
   final Map<String, dynamic> masiva;
   final VoidCallback onTap;
+
+  /// Rol del usuario: decide qué acciones de icono se ofrecen (D-111).
+  final String rol;
+
+  /// Abre la ficha en una pestaña: 'PLANIFICAR', 'MATERIALES' o 'CERRAR'.
+  final void Function(String pestana)? alAbrirPestana;
 
   /// Líneas de la tarjeta (puras: se pueden probar sin dispositivo).
   static List<String> lineas(Map<String, dynamic> masiva) {
@@ -191,30 +235,121 @@ class TarjetaMasiva extends StatelessWidget {
     ];
   }
 
+  /// Acciones de icono de la tarjeta, en el orden en que se pintan.
+  ///
+  /// El rol manda, igual que en las pestañas de la ficha: TECNICO solo puede
+  /// consultar MATERIALES y no ve PLANIFICAR ni CERRAR (D-99).
+  static List<String> accionesDe(String rol) => [
+        if (MasivasProvider.puedePlanificar(rol)) 'PLANIFICAR',
+        'MATERIALES',
+        if (MasivasProvider.puedeCerrar(rol)) 'CERRAR',
+      ];
+
+  /// Icono y nombre accesible de cada acción.
+  static (IconData, String) iconoDeAccion(String pestana) => switch (pestana) {
+        'PLANIFICAR' => (Icons.event_available, 'Planificar'),
+        'CERRAR' => (Icons.task_alt, 'Cerrar'),
+        _ => (Icons.inventory_2_outlined, 'Materiales'),
+      };
+
   @override
   Widget build(BuildContext context) {
     final idFalla = MasivasProvider.idDe(masiva);
     final estado = '${masiva['estado'] ?? ''}'.trim();
     final lineas = TarjetaMasiva.lineas(masiva);
-    final alerta = Theme.of(context).colorScheme.error;
+    final planificacion = '${masiva['planificacion'] ?? ''}'.trim();
+    final ordenes = MasivasProvider.ordenesDe(masiva);
+    final cuadrilla =
+        '${masiva['cuadrilla_codigo'] ?? masiva['cuadrilla_nombre'] ?? ''}'.trim();
+    final acciones = TarjetaMasiva.accionesDe(rol);
+
+    void abrir(String pestana) {
+      if (alAbrirPestana != null) {
+        alAbrirPestana!(pestana);
+      } else {
+        onTap();
+      }
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: alerta.withOpacity(0.6), width: 2),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        leading: Icon(Icons.crisis_alert, color: alerta),
-        title: Text(
-          'Masiva #$idFalla · $estado',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(lineas.join('\n'), style: const TextStyle(fontSize: 13)),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+            title: Text(
+              'Masiva #$idFalla',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            subtitle: Text(
+              lineas.join('\n'),
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: Marca.textoSuave,
+              ),
+            ),
+            isThreeLine: lineas.length > 1,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (estado.isNotEmpty) EstadoIcono(estado: estado),
+                const SizedBox(width: 2),
+                const Icon(Icons.chevron_right, size: 18, color: Marca.textoSuave),
+              ],
+            ),
+            onTap: onTap,
+          ),
+          const Divider(height: 1, indent: 14, endIndent: 14),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 6, 4, 6),
+            child: Row(
+              children: [
+                IndicadorMasiva(
+                  icono: Icons.event_available,
+                  activa: MasivasProvider.tienePlanificacion(masiva),
+                  etiqueta: 'Planificación',
+                  detalle: planificacion.isEmpty ? 'sin planificar' : planificacion,
+                  onTap: () => abrir('PLANIFICAR'),
+                ),
+                const SizedBox(width: 6),
+                IndicadorMasiva(
+                  icono: Icons.inventory_2_outlined,
+                  activa: MasivasProvider.tieneMateriales(masiva),
+                  etiqueta: 'Materiales',
+                  detalle:
+                      ordenes > 0 ? '$ordenes orden(es) de material' : 'sin órdenes',
+                  onTap: () => abrir('MATERIALES'),
+                ),
+                const SizedBox(width: 6),
+                IndicadorMasiva(
+                  icono: Icons.groups_outlined,
+                  activa: MasivasProvider.tieneAsignacion(masiva),
+                  etiqueta: 'Asignación',
+                  detalle: cuadrilla.isEmpty ? 'sin cuadrilla' : cuadrilla,
+                  onTap: onTap,
+                ),
+                const Spacer(),
+                for (final accion in acciones)
+                  IconButton(
+                    tooltip: TarjetaMasiva.iconoDeAccion(accion).$2,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => abrir(accion),
+                    icon: Icon(
+                      TarjetaMasiva.iconoDeAccion(accion).$1,
+                      color: Marca.azul,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
