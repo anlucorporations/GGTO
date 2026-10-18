@@ -205,7 +205,7 @@ botón funciona (se usó en las corridas previas de DESCARGA y en el uso normal)
 
 ## 9. Pendiente
 
-- **Limpieza de los datos de prueba** (a demanda): sectores `TEST-*`, cuadrillas `C-99x`, técnicos
+- ~~**Limpieza de los datos de prueba**~~ ✅ **hecha** el 2026-10-18 (§11). Original: sectores `TEST-*`, cuadrillas `C-99x`, técnicos
   `990001…990003`, casos `TEST-CAMPO-*`, `TEST-MASIVA-*`, `TEST-ESP-*` y la masiva #30. Se dejan para
   que el director pueda revisarlos en la web.
 - **Prueba en dispositivo físico** con un técnico real: el emulador valida el código, no la cámara ni
@@ -224,3 +224,36 @@ botón funciona (se usó en las corridas previas de DESCARGA y en el uso normal)
 | Despliegue | imagen **`v46`** → revisión **`ggto-web-00059-qw8`** con **100 % del tráfico** (`/health` `/ready` `/` `/manual/` **200**; 43 tablas; `/apk/apk.json` → **`1.12.0+21`**) |
 | RBAC en producción | login `990001` (TECNICO) → `POST /casos/432/cierre` → **200 · CERRADO**; `POST /citas` → **201 · cita 20** |
 | Limpieza | cita #20 cancelada y los 4 casos `TEST` devueltos a `NUEVO` (pool listo para repetir) |
+
+---
+
+## 11. Limpieza definitiva de los datos `TEST` (2026-10-18)
+
+`scripts/limpiar_datos_test.py` (simula por defecto; borra con `--aplicar --si`, todo en **una
+transacción**) eliminó el escenario completo de la prueba:
+
+| Borrado | Filas |
+|---|---|
+| Casos `TEST-CAMPO/MASIVA/ESP-*` | **30** |
+| Actividades (con sus evidencias) | 15 (17 evidencias) |
+| Historial de estados · seguimiento | 90 · 1 |
+| Citas | 8 |
+| Casos especiales | 10 |
+| Asociaciones caso ↔ masiva · falla masiva | 10 · 1 |
+| Casos de los despachos · despachos | 30 · 4 |
+| Asignación diaria de sectores | 4 |
+| Cuadrillas `C-99x` · sectores `TEST-*` | 4 · 4 |
+| Técnicos `9900xx` · usuarios · dispositivos | 3 · 3 |
+| Sincronizaciones (`sync_log`) | 20 |
+| Mensajes (cuadrillas y técnicos de prueba) | 4 + 20 |
+| Identificadores de pago de los teléfonos de prueba | 30 |
+| Solicitantes de prueba | 10 |
+
+**Resultado verificado** (la API, después): **100 casos** (antes 130: se fueron exactamente los 30 de
+la prueba) · **0** casos `TEST` · 5 sectores reales · 4 cuadrillas reales (`C-00`, `C-001`, `C-002`,
+`C-003`) · 10 técnicos reales · 10 masivas reales · despachos de hoy solo `C-00` · `/ready` en verde
+(43 tablas).
+
+**Respaldo previo** de las filas borradas (casos, actividades, evidencias, citas, masiva, cuadrillas,
+sectores, técnicos y usuarios sin hash) en `RepoTecnico/BaseOperaciones/respaldo_test_d112/`
+(**ignorado por git**); la bitácora en `RepoTecnico/BaseOperaciones/limpieza_datos_test.log`.

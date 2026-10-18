@@ -55,3 +55,9 @@ __pycache__/
 RepoTecnico/pruebas/e2e/test-results/
 RepoTecnico/pruebas/logs/e2e-reporte/
 RepoTecnico/pruebas/logs/*.log
+
+# ---------------------------------------------------------------------------
+# Respaldos de la limpieza de datos de prueba (D-112): llevan datos sembrados y
+# no deben versionarse. La bitácora de la limpieza tampoco.
+RepoTecnico/BaseOperaciones/respaldo_test_d112/
+RepoTecnico/BaseOperaciones/limpieza_datos_test.log
