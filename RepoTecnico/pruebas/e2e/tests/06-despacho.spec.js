@@ -20,7 +20,11 @@ test.describe('Despacho', () => {
     await page.getByRole('button', { name: 'Procesar despacho' }).click();
     const modal = page.getByRole('dialog', { name: /Procesar despacho/ });
     await expect(modal).toBeVisible();
-    await expect(modal.getByText('Universo de casos')).toBeVisible({ timeout: 30_000 });
+    // D-114: la sección «Universo de casos» se eliminó; el formulario se apoya
+    // en el cuadro de sectores y cuadrillas.
+    await expect(
+      modal.getByRole('heading', { name: 'Sectores y cuadrilla asignada' }),
+    ).toBeVisible({ timeout: 30_000 });
     // D-99: el formulario distingue el primer procesamiento del reproceso.
     await expect(
       modal.getByText(/Primer procesamiento de la jornada|Reproceso de la jornada/),

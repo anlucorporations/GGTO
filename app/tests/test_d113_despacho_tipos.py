@@ -7,8 +7,9 @@ Cubren los tres puntos de la petición sobre el **procesamiento del despacho**:
    despacho ya CERRADO);
 2. que la **cuadrilla de una falla masiva** se pueda cambiar desde el formulario
    de proceso y que sus casos se despachen a esa cuadrilla;
-3. que el **checklist de tipos** (Comunes, Referidos, Construcciones, Empresas y
-   Masivas) limite lo que se distribuye, con **Comunes y Referidos** por defecto.
+3. que el **checklist de tipos** (Comunes, Especiales Reparación, Especiales
+   Construcción, Especiales Gobierno y Masivas) limite lo que se distribuye, con
+   **Comunes y Especiales Reparación** por defecto.
 
 Los identificadores de prueba empiezan por `TST`/`TCD`/`TSD` para que el aseo de
 `conftest` los barra entre pruebas.
@@ -188,8 +189,9 @@ def test_el_proceso_incluye_los_pendientes_del_cierre(client, entorno, db_sessio
     procesamiento debe volver a despacharlos.
     """
     _asignar(client, entorno, {"Alfa": "TCD13A", "Beta": "TCD13B", "Gamma": "TCD13A"}, AYER)
-    _procesar(client, entorno, AYER, tipos=["COMUNES", "REFERIDOS", "CONSTRUCCIONES",
-                                           "EMPRESAS", "MASIVAS"])
+    _procesar(client, entorno, AYER, tipos=["COMUNES", "ESPECIALES_REPARACION",
+                                           "ESPECIALES_CONSTRUCCION",
+                                           "ESPECIALES_GOBIERNO", "MASIVAS"])
 
     r = client.post(f"{BASE}/cierre-jornada", params={"solo_vencidos": "true"},
                     headers=entorno["headers"])
@@ -210,7 +212,8 @@ def test_el_proceso_incluye_los_pendientes_del_cierre(client, entorno, db_sessio
 
     # Y el procesamiento de hoy los vuelve a despachar.
     _procesar(client, entorno, HOY,
-              tipos=["COMUNES", "REFERIDOS", "CONSTRUCCIONES", "EMPRESAS", "MASIVAS"])
+              tipos=["COMUNES", "ESPECIALES_REPARACION", "ESPECIALES_CONSTRUCCION",
+                     "ESPECIALES_GOBIERNO", "MASIVAS"])
     grupos = _despachos_del_dia(db_session, HOY)
     asignados = {averia for averias in grupos.values() for averia in averias}
     assert len(asignados) == 9, asignados
@@ -220,37 +223,57 @@ def test_el_proceso_incluye_los_pendientes_del_cierre(client, entorno, db_sessio
 # --------------------------------------------------------------------------- #
 # 2. Checklist de tipos (punto 3 de la petición)
 # --------------------------------------------------------------------------- #
-def test_el_proceso_expone_el_checklist_con_comunes_y_referidos_por_defecto(
+def test_el_proceso_expone_el_checklist_con_comunes_y_especiales_reparacion_por_defecto(
     client, entorno
 ):
-    """D-113: cinco tipos con su total y solo Comunes/Referidos por defecto."""
+    """D-113 · D-114: cinco tipos con su total y Comunes/Especiales Reparación por defecto."""
     p = _proceso(client, entorno)
     tipos = {t["clave"]: t for t in p["tipos"]}
 
-    assert list(tipos) == ["COMUNES", "REFERIDOS", "CONSTRUCCIONES", "EMPRESAS", "MASIVAS"]
+    assert list(tipos) == [
+        "COMUNES",
+        "ESPECIALES_REPARACION",
+        "ESPECIALES_CONSTRUCCION",
+        "ESPECIALES_GOBIERNO",
+        "MASIVAS",
+    ]
     assert tipos["COMUNES"]["total"] == 3
-    assert tipos["REFERIDOS"]["total"] == 2
-    assert tipos["CONSTRUCCIONES"]["total"] == 1
-    assert tipos["EMPRESAS"]["total"] == 1
+    assert tipos["ESPECIALES_REPARACION"]["total"] == 3  # 2 referidos + 1 empresa
+    assert tipos["ESPECIALES_CONSTRUCCION"]["total"] == 1
+    assert tipos["ESPECIALES_GOBIERNO"]["total"] == 0
     assert tipos["MASIVAS"]["total"] == 2
-    assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == ["COMUNES", "REFERIDOS"]
+    assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == [
+        "COMUNES",
+        "ESPECIALES_REPARACION",
+    ]
 
     assert p["universo"]["por_tipo"] == {
-        "COMUNES": 3, "REFERIDOS": 2, "CONSTRUCCIONES": 1, "EMPRESAS": 1, "MASIVAS": 2,
+        "COMUNES": 3,
+        "ESPECIALES_REPARACION": 3,
+        "ESPECIALES_CONSTRUCCION": 1,
+        "ESPECIALES_GOBIERNO": 0,
+        "MASIVAS": 2,
     }
-    # Cada caso del universo informa su tipo de distribución.
-    assert {c["tipo_distribucion"] for c in p["universo"]["casos"]} == {
-        "COMUNES", "REFERIDOS", "CONSTRUCCIONES", "EMPRESAS", "MASIVAS",
+    # Cada caso del universo informa sus tipos de distribución.
+    assert {
+        tipo
+        for c in p["universo"]["casos"]
+        for tipo in c["tipos_distribucion"]
+    } == {
+        "COMUNES",
+        "ESPECIALES_REPARACION",
+        "ESPECIALES_CONSTRUCCION",
+        "MASIVAS",
     }
 
 
 def test_procesar_solo_distribuye_los_tipos_marcados(client, entorno, db_session):
-    """D-113: con Comunes y Referidos solo se despachan esos casos."""
+    """D-113 · D-114: con Comunes y Especiales Reparación solo se despachan esos casos."""
     _asignar(client, entorno, {"Alfa": "TCD13A", "Beta": "TCD13B", "Gamma": "TCD13A"})
     crear = entorno["crear"]
     crear("TSTD13-Z0", "SECTOR D113 ALFA CASA 9")  # un común más
 
-    _procesar(client, entorno, HOY, tipos=["COMUNES", "REFERIDOS"])
+    _procesar(client, entorno, HOY, tipos=["COMUNES", "ESPECIALES_REPARACION"])
 
     filas = db_session.execute(
         select(DespachoCasos, Caso).join(Caso, Caso.id_caso == DespachoCasos.id_caso)
@@ -258,10 +281,11 @@ def test_procesar_solo_distribuye_los_tipos_marcados(client, entorno, db_session
     tipos = {dc.tipo_asignacion for dc, _caso in filas}
     averias = {caso.id_averia for _dc, caso in filas}
 
-    assert tipos == {"REPARACION", "REFERIDO"}
-    assert len(averias) == 6  # 4 comunes + 2 referidos
-    # Empresa, construcción y masivas quedan fuera del despacho.
-    assert not {"TSTD13-E0", "TSTD13-C0", "TSTD13-M0", "TSTD13-M1"} & averias
+    # 4 comunes + 2 referidos + 1 empresa; la construcción y las masivas quedan fuera.
+    assert tipos == {"REPARACION", "REFERIDO", "EMPRESA"}
+    assert len(averias) == 7
+    assert {"TSTD13-E0"} <= averias
+    assert not {"TSTD13-C0", "TSTD13-M0", "TSTD13-M1"} & averias
 
 
 def test_procesar_sin_tipos_mantiene_el_comportamiento_anterior(client, entorno,
@@ -284,7 +308,7 @@ def test_el_proceso_no_reofrece_los_casos_de_un_despacho_publicado(client, entor
     jornada ya publicada no se reprocesa: sus casos no aparecen como disponibles.
     """
     _asignar(client, entorno, {"Alfa": "TCD13A", "Beta": "TCD13B", "Gamma": "TCD13A"})
-    creados = _procesar(client, entorno, HOY, tipos=["COMUNES", "REFERIDOS"])
+    creados = _procesar(client, entorno, HOY, tipos=["COMUNES", "ESPECIALES_REPARACION"])
     id_cuadrilla_a = _codigo_a_id(_proceso(client, entorno), "TCD13A")
     despacho_a = next(d for d in creados if d["id_cuadrilla"] == id_cuadrilla_a)
     assert client.patch(
@@ -324,7 +348,8 @@ def test_la_masiva_reasignada_arrastra_sus_casos_a_la_nueva_cuadrilla(
 
     _procesar(
         client, entorno, HOY,
-        tipos=["COMUNES", "REFERIDOS", "CONSTRUCCIONES", "EMPRESAS", "MASIVAS"],
+        tipos=["COMUNES", "ESPECIALES_REPARACION", "ESPECIALES_CONSTRUCCION",
+               "ESPECIALES_GOBIERNO", "MASIVAS"],
         masivas=[{"id_falla": id_falla, "id_cuadrilla": id_cuadrilla_b}],
     )
 

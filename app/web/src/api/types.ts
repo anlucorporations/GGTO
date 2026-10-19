@@ -619,8 +619,10 @@ export interface CasoAsignadoOut {
   tipo_caso: string;
   es_cita: boolean;
   especial?: boolean;
-  /** D-113: tipo del checklist de distribución (COMUNES, REFERIDOS, …). */
+  /** D-113 · D-114: tipo principal del checklist de distribución. */
   tipo_distribucion?: string;
+  /** D-114: todos los tipos del checklist a los que pertenece el caso. */
+  tipos_distribucion?: string[];
   /** D-77: el caso va a la cuadrilla 0 (gestión), no a la de su sector. */
   en_gestion?: boolean;
 }
@@ -631,7 +633,11 @@ export interface SectorProcesoOut {
   id_sector: number;
   nombre: string | null;
   total: number;
+  /** D-114: los especiales separados por concepto. */
   especiales: number;
+  especiales_reparacion: number;
+  especiales_construccion: number;
+  especiales_gobierno: number;
   citados: number;
   id_cuadrilla: number | null;
 }
@@ -650,6 +656,10 @@ export interface UniversoOut {
   total: number;
   comunes: number;
   especiales: number;
+  /** D-114: los especiales separados en sus tres conceptos. */
+  especiales_reparacion: number;
+  especiales_construccion: number;
+  especiales_gobierno: number;
   sin_sector: number;
   /** D-113: total por tipo del checklist. */
   por_tipo?: Record<string, number>;
@@ -681,12 +691,18 @@ export interface MasivaProcesoOut {
   /** D-113: casos asociados que se despachan con la masiva. */
   casos?: number;
   ids_caso?: number[];
+  /** D-114: sector de la masiva (o el de sus casos si no lo declara). */
+  id_sector?: number | null;
+  sector_nombre?: string | null;
+  /** D-114: incluida en el despacho (arranca en `true`). */
+  incluida?: boolean;
 }
 
-/** D-113: cuadrilla que atiende una falla masiva. */
+/** D-113 · D-114: cuadrilla que atiende una falla masiva y si entra al despacho. */
 export interface AsignacionMasiva {
   id_falla: number;
   id_cuadrilla: number | null;
+  incluida?: boolean;
 }
 
 export interface ProcesoDespachoOut {
@@ -700,7 +716,7 @@ export interface ProcesoDespachoOut {
   primera_vez: boolean;
   /** D-99 (RF-68): `true` si la jornada ya tiene despachos (es un reproceso). */
   reproceso: boolean;
-  /** D-113: checklist de tipos a distribuir (Comunes y Referidos por defecto). */
+  /** D-113 · D-114: checklist de tipos (Comunes y Especiales Reparación por defecto). */
   tipos?: TipoDespachoOut[];
   masivas: MasivaProcesoOut[];
   universo: UniversoOut;

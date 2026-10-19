@@ -23,13 +23,22 @@ Reglas aplicadas (ciclo D-66, ampliadas en D-113):
    la cuadrilla del supervisor, que puede publicarlos y enviarlos como
    cualquier otra. El supervisor también puede **asignar y quitar** casos
    (comunes y especiales) a una cuadrilla a mano.
-8. **Tipos a distribuir (D-113)**: el checklist del formulario elige qué tipos
-   de caso se reparten —COMUNES, REFERIDOS, CONSTRUCCIONES, EMPRESAS y
-   MASIVAS—. Por defecto solo **Comunes y Referidos**. Los tipos no marcados
-   quedan fuera de la propuesta (y por tanto del despacho).
-9. **Fallas masivas (D-113)**: la cuadrilla de la masiva se puede **cambiar**
-   desde el formulario de proceso. Sus casos asociados se despachan a esa
-   cuadrilla aunque su sector esté asignado a otra.
+8. **Tipos a distribuir (D-113 · D-114)**: el checklist del formulario elige
+   qué tipos de caso se reparten —COMUNES, ESPECIALES_REPARACION,
+   ESPECIALES_CONSTRUCCION, ESPECIALES_GOBIERNO y MASIVAS—. Por defecto solo
+   **Comunes y Especiales Reparación**. Los tipos no marcados quedan fuera de
+   la propuesta (y por tanto del despacho).
+9. **Especiales separados (D-114)**: el antiguo concepto único «Especiales» se
+   separa en **Especiales Reparación**, **Especiales Construcción** y
+   **Especiales Gobierno**. Reparación/Construcción se deciden por la
+   actividad del caso y Gobierno por su clasificación, así que un especial de
+   gobierno pertenece a su actividad **y** a Gobierno (las tres categorías no
+   son una partición).
+10. **Fallas masivas (D-113 · D-114)**: la cuadrilla de la masiva se puede
+    **cambiar** desde el formulario de proceso y, además, cada sector elige con
+    una lista desplegable **qué masivas suyas entran** en el despacho. Sus
+    casos asociados se despachan a la cuadrilla de la masiva aunque su sector
+    esté asignado a otra; las masivas no incluidas quedan fuera del proceso.
 """
 
 from __future__ import annotations
@@ -60,25 +69,23 @@ CATEGORIAS_ESPECIALES = ("REFERIDO", "EMPRESA", "GOBIERNO")
 MIN_REFERIDOS = 2
 MIN_EMPRESAS = 1
 
-#: D-113: tipos del checklist «Casos a distribuir».
-TIPOS_DISTRIBUCION = ("COMUNES", "REFERIDOS", "CONSTRUCCIONES", "EMPRESAS", "MASIVAS")
+#: D-113 · D-114: tipos del checklist «Casos a distribuir».
+TIPOS_DISTRIBUCION = (
+    "COMUNES",
+    "ESPECIALES_REPARACION",
+    "ESPECIALES_CONSTRUCCION",
+    "ESPECIALES_GOBIERNO",
+    "MASIVAS",
+)
 ETIQUETAS_DISTRIBUCION = {
     "COMUNES": "Comunes",
-    "REFERIDOS": "Referidos",
-    "CONSTRUCCIONES": "Construcciones",
-    "EMPRESAS": "Empresas",
+    "ESPECIALES_REPARACION": "Especiales Reparación",
+    "ESPECIALES_CONSTRUCCION": "Especiales Construcción",
+    "ESPECIALES_GOBIERNO": "Especiales Gobierno",
     "MASIVAS": "Masivas",
 }
-#: D-113: selección predeterminada de la checklist (Comunes y Referidos).
-TIPOS_DISTRIBUCION_POR_DEFECTO = ("COMUNES", "REFERIDOS")
-#: Tipo del checklist que corresponde a cada `tipo_asignacion` del despacho.
-TIPO_DISTRIBUCION_POR_ASIGNACION = {
-    "REPARACION": "COMUNES",
-    "REFERIDO": "REFERIDOS",
-    "CONSTRUCCION": "CONSTRUCCIONES",
-    "EMPRESA": "EMPRESAS",
-    "FALLA_MASIVA": "MASIVAS",
-}
+#: D-113 · D-114: selección predeterminada (Comunes y Especiales Reparación).
+TIPOS_DISTRIBUCION_POR_DEFECTO = ("COMUNES", "ESPECIALES_REPARACION")
 
 
 @dataclass
@@ -98,8 +105,11 @@ class CasoAsignado:
     tipo_caso: str
     es_cita: bool
     especial: bool = False
-    #: D-113: tipo del checklist de distribución (COMUNES, REFERIDOS, …).
+    #: D-113 · D-114: tipo **principal** del checklist de distribución.
     tipo_distribucion: str = "COMUNES"
+    #: D-114: todos los tipos del checklist a los que pertenece (Gobierno suma
+    #: a su actividad; el resto tiene uno solo).
+    tipos_distribucion: list[str] = field(default_factory=list)
     #: D-77/D-113: el caso va a la cuadrilla 0 (gestión), no a la de su sector.
     en_gestion: bool = False
 
@@ -165,9 +175,33 @@ def _tipo_asignacion(caso: Caso) -> str:
     return "REPARACION"
 
 
+def tipos_distribucion(caso: Caso) -> tuple[str, ...]:
+    """Tipos del checklist a los que pertenece el caso (D-113 · D-114).
+
+    **Especiales Reparación/Construcción** se deciden por la actividad del caso
+    (`tipo_caso`) y **Especiales Gobierno** por su clasificación (`categoria`),
+    como pidió el usuario: un especial de gobierno pertenece a su actividad
+    **y** a Gobierno, de modo que las tres categorías pueden solaparse.
+    """
+    if caso.categoria == "GOBIERNO":
+        actividad = (
+            "ESPECIALES_CONSTRUCCION"
+            if caso.tipo_caso == "CONSTRUCCION"
+            else "ESPECIALES_REPARACION"
+        )
+        return (actividad, "ESPECIALES_GOBIERNO")
+    if caso.tipo_caso == "CONSTRUCCION":
+        return ("ESPECIALES_CONSTRUCCION",) if es_especial(caso) else ("COMUNES",)
+    if caso.categoria in ("REFERIDO", "EMPRESA"):
+        return ("ESPECIALES_REPARACION",)
+    if caso.es_falla_masiva:
+        return ("MASIVAS",)
+    return ("COMUNES",)
+
+
 def tipo_distribucion(caso: Caso) -> str:
-    """Tipo del checklist de distribución al que pertenece el caso (D-113)."""
-    return TIPO_DISTRIBUCION_POR_ASIGNACION[_tipo_asignacion(caso)]
+    """Tipo **principal** del checklist (el primero de `tipos_distribucion`)."""
+    return tipos_distribucion(caso)[0]
 
 
 def normalizar_tipos(tipos: Iterable[object] | str | None) -> tuple[str, ...] | None:
@@ -207,10 +241,11 @@ def normalizar_tipos(tipos: Iterable[object] | str | None) -> tuple[str, ...] | 
 
 
 def tipos_disponibles(casos: list[Caso]) -> list[dict]:
-    """Checklist de tipos con su total en el universo (D-113)."""
+    """Checklist de tipos con su total en el universo (D-113 · D-114)."""
     conteo = dict.fromkeys(TIPOS_DISTRIBUCION, 0)
     for caso in casos:
-        conteo[tipo_distribucion(caso)] += 1
+        for clave in tipos_distribucion(caso):
+            conteo[clave] += 1
     return [
         {
             "clave": clave,
@@ -359,20 +394,29 @@ def casos_por_masiva(db: Session, ids_falla: list[int]) -> dict[int, list[int]]:
     return salida
 
 
-def overrides_de_masivas(db: Session, id_central: int) -> dict[int, int]:
+def overrides_de_masivas(
+    db: Session, id_central: int, incluidas: set[int] | None = None
+) -> dict[int, int]:
     """`id_caso -> id_cuadrilla` de la masiva que lo atiende (D-113).
 
     Un caso asociado a una falla masiva con cuadrilla asignada se despacha a
     esa cuadrilla, **aunque su sector** esté asignado a otra: es la forma de
     «cambiar la asignación de la masiva» desde el formulario de proceso.
+
+    D-114: `incluidas` limita las masivas que el sector marcó en su lista
+    desplegable; las no incluidas no fuerzan la cuadrilla (sus casos quedan
+    fuera del proceso, ver `excluir_casos_de_masivas`).
     """
-    fallas = db.scalars(
-        select(FallaMasiva).where(
-            FallaMasiva.id_central == id_central,
-            FallaMasiva.estado != "CERRADA",
-            FallaMasiva.id_cuadrilla.is_not(None),
-        )
-    ).all()
+    stmt = select(FallaMasiva).where(
+        FallaMasiva.id_central == id_central,
+        FallaMasiva.estado != "CERRADA",
+        FallaMasiva.id_cuadrilla.is_not(None),
+    )
+    if incluidas is not None:
+        if not incluidas:
+            return {}
+        stmt = stmt.where(FallaMasiva.id_falla.in_(incluidas))
+    fallas = db.scalars(stmt).all()
     destinos = {f.id_falla: f.id_cuadrilla for f in fallas if f.id_cuadrilla is not None}
     if not destinos:
         return {}
@@ -380,6 +424,33 @@ def overrides_de_masivas(db: Session, id_central: int) -> dict[int, int]:
         select(FallaMasivaCaso).where(FallaMasivaCaso.id_falla.in_(destinos))
     ).all()
     return {v.id_caso: int(destinos[v.id_falla]) for v in vinculos}
+
+
+def excluir_casos_de_masivas(
+    db: Session, id_central: int, casos: list[Caso], incluidas: set[int]
+) -> tuple[list[Caso], list[Caso]]:
+    """D-114: separa los casos de las masivas que el sector no incluyó.
+
+    Un caso que pertenece a varias masivas se conserva si **alguna** de ellas
+    está incluida; solo se excluye cuando todas sus masivas quedaron fuera.
+    Devuelve `(casos_que_quedan, casos_excluidos)`.
+    """
+    ids_falla = [f.id_falla for f in masivas_asignables(db, id_central)]
+    if not ids_falla:
+        return casos, []
+    fallas_por_caso: dict[int, set[int]] = {}
+    for id_falla, ids_caso in casos_por_masiva(db, ids_falla).items():
+        for id_caso in ids_caso:
+            fallas_por_caso.setdefault(id_caso, set()).add(id_falla)
+    quedan: list[Caso] = []
+    excluidos: list[Caso] = []
+    for caso in casos:
+        fallas = fallas_por_caso.get(caso.id_caso)
+        if fallas and fallas.isdisjoint(incluidas):
+            excluidos.append(caso)
+        else:
+            quedan.append(caso)
+    return quedan, excluidos
 
 
 def asignar_masivas(
@@ -539,6 +610,7 @@ def _envolver(caso: Caso, tipo: str, orden: int, nombres: dict[int, str], fecha:
         es_cita=bool(caso.fecha_cita and caso.fecha_cita.date() == fecha),
         especial=es_especial(caso),
         tipo_distribucion=tipo_distribucion(caso),
+        tipos_distribucion=list(tipos_distribucion(caso)),
         en_gestion=en_gestion(caso),
     )
 
@@ -550,12 +622,17 @@ def construir_propuesta(
     asignacion: dict[int, int] | None = None,
     casos: list[Caso] | None = None,
     tipos: Iterable[object] | str | None = None,
+    masivas_incluidas: set[int] | None = None,
 ) -> Propuesta:
     """Reparte el universo según la asignación de sectores del día.
 
     `casos` permite pasar un universo ya calculado (p. ej. el del formulario de
     proceso, que incluye los borradores del día). `tipos` es la selección del
-    checklist de D-113; `None` distribuye todos los tipos (compatibilidad).
+    checklist de D-113/D-114; `None` distribuye todos los tipos (compatibilidad).
+
+    `masivas_incluidas` son las fallas masivas que el sector dejó marcadas en su
+    lista desplegable (D-114); `None` = todas incluidas (compatibilidad) y un
+    conjunto vacío = ninguna masiva entra al despacho.
     """
     cuadrillas = cuadrillas_activas(db, id_central)
     supervisor = cuadrilla_supervisor(db, id_central)
@@ -564,26 +641,48 @@ def construir_propuesta(
     nombres = nombres_de_sector(db, id_central)
 
     tipos_sel = normalizar_tipos(tipos)
+    # D-114: totales del universo completo (Gobierno suma a su actividad).
     por_tipo_universo = dict.fromkeys(TIPOS_DISTRIBUCION, 0)
     for caso in casos:
-        por_tipo_universo[tipo_distribucion(caso)] += 1
+        for clave in tipos_distribucion(caso):
+            por_tipo_universo[clave] += 1
+
+    # D-114: primero se quitan los casos de las masivas no incluidas; después se
+    # aplica el checklist de tipos sobre lo que queda.
+    excluidos_masiva: list[Caso] = []
+    if masivas_incluidas is not None:
+        casos, excluidos_masiva = excluir_casos_de_masivas(
+            db, id_central, casos, masivas_incluidas
+        )
+
     if tipos_sel is not None:
+        seleccion = set(tipos_sel)
+        casos_tipados = [
+            c for c in casos if set(tipos_distribucion(c)) & seleccion
+        ]
         excluidos_por_tipo = {
-            clave: total for clave, total in por_tipo_universo.items()
-            if clave not in tipos_sel
+            clave: sum(
+                1
+                for c in casos
+                if clave in tipos_distribucion(c)
+                and not (set(tipos_distribucion(c)) & seleccion)
+            )
+            for clave in TIPOS_DISTRIBUCION
+            if clave not in seleccion
         }
-        casos = [c for c in casos if tipo_distribucion(c) in tipos_sel]
+        excluidos = len(casos) - len(casos_tipados)
+        casos = casos_tipados
     else:
         excluidos_por_tipo = {}
-    excluidos = sum(excluidos_por_tipo.values())
+        excluidos = 0
     distribuibles = len(casos)
 
     if asignacion is None:
         asignacion = asignacion_guardada(db, fecha, id_central=id_central)
         if not asignacion and cuadrillas:
             asignacion = propuesta_asignacion(cuadrillas, casos)
-    # D-113: la cuadrilla de la masiva manda sobre el sector del caso.
-    overrides = overrides_de_masivas(db, id_central)
+    # D-113 · D-114: la cuadrilla de la masiva incluida manda sobre el sector.
+    overrides = overrides_de_masivas(db, id_central, incluidas=masivas_incluidas)
 
     # D-77: los casos en GESTIÓN no se reparten por sector — se agrupan en la
     # cuadrilla 0 (la del supervisor). Si no hay cuadrilla 0 vuelven al reparto.
@@ -605,6 +704,17 @@ def construir_propuesta(
 
     comunes = sum(1 for c in casos if not es_especial(c))
     especiales = len(casos) - comunes
+    # D-114: especiales separados por concepto. Gobierno suma a su actividad
+    # (reparación o construcción), por eso las tres cifras pueden solaparse.
+    especiales_reparacion = sum(
+        1 for c in casos if "ESPECIALES_REPARACION" in tipos_distribucion(c)
+    )
+    especiales_construccion = sum(
+        1 for c in casos if "ESPECIALES_CONSTRUCCION" in tipos_distribucion(c)
+    )
+    especiales_gobierno = sum(
+        1 for c in casos if "ESPECIALES_GOBIERNO" in tipos_distribucion(c)
+    )
     asignados_gestion = supervisor_grupo.total if supervisor_grupo else 0
 
     if not cuadrillas:
@@ -617,11 +727,20 @@ def construir_propuesta(
             reglas={"cuadrillas_activas": 0, "motivo": "No hay cuadrillas activas de calle",
                     "gestion_cuadrilla0": asignados_gestion,
                     "tipos": list(tipos_sel) if tipos_sel else list(TIPOS_DISTRIBUCION),
-                    "casos_excluidos_por_tipo": excluidos},
+                    "casos_excluidos_por_tipo": excluidos,
+                    "masivas_incluidas": (
+                        sorted(masivas_incluidas) if masivas_incluidas is not None else None
+                    ),
+                    "casos_excluidos_por_masiva": len(excluidos_masiva)},
             resumen={"total_casos": len(casos) + asignados_gestion, "comunes": comunes,
-                     "especiales": especiales, "asignados": asignados_gestion,
+                     "especiales": especiales,
+                     "especiales_reparacion": especiales_reparacion,
+                     "especiales_construccion": especiales_construccion,
+                     "especiales_gobierno": especiales_gobierno,
+                     "asignados": asignados_gestion,
                      "sin_asignar": len(pendientes),
-                     "por_tipo": por_tipo_universo, "excluidos": excluidos},
+                     "por_tipo": por_tipo_universo, "excluidos": excluidos,
+                     "excluidos_por_masiva": len(excluidos_masiva)},
         )
 
     # --- Reparto por sector según la asignación del día ---
@@ -740,17 +859,27 @@ def construir_propuesta(
             "casos_excluidos_por_tipo": excluidos,
             "excluidos_por_tipo": excluidos_por_tipo,
             "masiva_reasignados": masiva_reasignados,
+            # D-114: masivas que cada sector dejó marcadas y casos que quedan
+            # fuera del proceso por no estar incluidas.
+            "masivas_incluidas": (
+                sorted(masivas_incluidas) if masivas_incluidas is not None else None
+            ),
+            "casos_excluidos_por_masiva": len(excluidos_masiva),
         },
         resumen={
             "total_casos": len(casos) + asignados_gestion,
             "comunes": comunes,
             "especiales": especiales,
+            "especiales_reparacion": especiales_reparacion,
+            "especiales_construccion": especiales_construccion,
+            "especiales_gobierno": especiales_gobierno,
             "asignados": total_asignados,
             "sin_asignar": len(sin_asignar),
             "por_cuadrilla": {g.codigo: g.total for g in resultado},
             "distribuibles": distribuibles,
             "por_tipo": por_tipo_universo,
             "excluidos": excluidos,
+            "excluidos_por_masiva": len(excluidos_masiva),
         },
     )
 
@@ -798,7 +927,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
     # universo completo); el checklist de D-113 decide después qué se distribuye.
     propuesta = construir_propuesta(db, id_central, fecha, asignacion=asignacion, casos=casos)
 
-    # Sectores con su total de casos (comunes y especiales).
+    # Sectores con su total de casos (especiales separados, D-114).
     sectores: dict[int, dict] = {}
     sin_sector = 0
     for caso in casos:
@@ -807,12 +936,28 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             continue
         fila = sectores.setdefault(
             caso.id_sector,
-            {"id_sector": caso.id_sector, "nombre": nombres.get(caso.id_sector),
-             "total": 0, "especiales": 0, "citados": 0, "id_cuadrilla": asignacion.get(caso.id_sector)},
+            {
+                "id_sector": caso.id_sector,
+                "nombre": nombres.get(caso.id_sector),
+                "total": 0,
+                "especiales": 0,
+                "especiales_reparacion": 0,
+                "especiales_construccion": 0,
+                "especiales_gobierno": 0,
+                "citados": 0,
+                "id_cuadrilla": asignacion.get(caso.id_sector),
+            },
         )
         fila["total"] += 1
+        claves = tipos_distribucion(caso)
         if es_especial(caso):
             fila["especiales"] += 1
+        if "ESPECIALES_REPARACION" in claves:
+            fila["especiales_reparacion"] += 1
+        if "ESPECIALES_CONSTRUCCION" in claves:
+            fila["especiales_construccion"] += 1
+        if "ESPECIALES_GOBIERNO" in claves:
+            fila["especiales_gobierno"] += 1
         if caso.fecha_cita and caso.fecha_cita.date() == fecha:
             fila["citados"] += 1
 
@@ -831,9 +976,21 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             Despacho.id_central == id_central, Despacho.fecha == fecha
         )
     ) or 0
-    # D-113: masivas activas con su cuadrilla y sus casos, para poder reasignarlas.
+    # D-113 · D-114: masivas activas con su cuadrilla, su sector y sus casos,
+    # para poder reasignarlas y para que el sector elija cuáles entran.
     fallas = masivas_asignables(db, id_central)
     vinculadas = casos_por_masiva(db, [f.id_falla for f in fallas])
+    ids_asociados = [id_caso for ids in vinculadas.values() for id_caso in ids]
+    casos_asociados = (
+        {
+            c.id_caso: c
+            for c in db.scalars(
+                select(Caso).where(Caso.id_caso.in_(ids_asociados))
+            ).all()
+        }
+        if ids_asociados
+        else {}
+    )
     ids_cuadrilla = {c.id_cuadrilla: c for c in cuadrillas}
     if supervisor is not None:
         ids_cuadrilla.setdefault(supervisor.id_cuadrilla, supervisor)
@@ -841,6 +998,15 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
     for falla in fallas:
         cuadrilla = ids_cuadrilla.get(falla.id_cuadrilla) if falla.id_cuadrilla else None
         ids_caso = vinculadas.get(falla.id_falla, [])
+        # D-114: si la masiva no declara sector, se usa el de sus casos para que
+        # aparezca en la lista desplegable del sector correcto.
+        sector_falla = falla.id_sector
+        if sector_falla is None:
+            for id_caso in ids_caso:
+                caso_asociado = casos_asociados.get(id_caso)
+                if caso_asociado is not None and caso_asociado.id_sector is not None:
+                    sector_falla = caso_asociado.id_sector
+                    break
         masivas.append({
             "id_falla": falla.id_falla,
             "id_cuadrilla": falla.id_cuadrilla,
@@ -851,11 +1017,26 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             "es_activa": falla.estado in ("DETECTADA", "PLANIFICADA"),
             "casos": len(ids_caso),
             "ids_caso": ids_caso,
+            "id_sector": sector_falla,
+            "sector_nombre": nombres.get(sector_falla) if sector_falla else None,
+            # D-114: el formulario arranca con todas las masivas incluidas.
+            "incluida": True,
         })
 
     por_tipo = dict.fromkeys(TIPOS_DISTRIBUCION, 0)
     for caso in casos:
-        por_tipo[tipo_distribucion(caso)] += 1
+        for clave in tipos_distribucion(caso):
+            por_tipo[clave] += 1
+
+    especiales_reparacion = sum(
+        1 for c in casos if "ESPECIALES_REPARACION" in tipos_distribucion(c)
+    )
+    especiales_construccion = sum(
+        1 for c in casos if "ESPECIALES_CONSTRUCCION" in tipos_distribucion(c)
+    )
+    especiales_gobierno = sum(
+        1 for c in casos if "ESPECIALES_GOBIERNO" in tipos_distribucion(c)
+    )
 
     retorno = {
         "fecha": fecha.isoformat(),
@@ -872,6 +1053,10 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             "total": len(casos),
             "comunes": sum(1 for c in casos if not es_especial(c)),
             "especiales": sum(1 for c in casos if es_especial(c)),
+            # D-114: los especiales separados en sus tres conceptos.
+            "especiales_reparacion": especiales_reparacion,
+            "especiales_construccion": especiales_construccion,
+            "especiales_gobierno": especiales_gobierno,
             "sin_sector": sin_sector,
             "por_tipo": por_tipo,
             "casos": [

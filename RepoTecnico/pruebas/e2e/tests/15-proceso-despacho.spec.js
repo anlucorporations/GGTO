@@ -15,22 +15,30 @@ test.describe('Proceso de despacho', () => {
     await expect(page.getByRole('dialog', { name: /Procesar despacho/ })).toBeVisible();
   });
 
-  test('muestra el universo (comunes y especiales), los sectores y las cuadrillas', async ({
+  test('muestra los especiales separados, los sectores y las cuadrillas', async ({
     page,
   }) => {
     const modal = page.getByRole('dialog', { name: /Procesar despacho/ });
-    await expect(modal.getByText('Universo de casos')).toBeVisible({ timeout: 30_000 });
-    await expect(modal.getByText('Comunes', { exact: true }).first()).toBeVisible();
-    await expect(modal.getByText('Especiales', { exact: true }).first()).toBeVisible();
+    // D-114: la sección «Universo de casos» ya no existe; el formulario arranca
+    // en el checklist y el cuadro de sectores.
     await expect(
       modal.getByRole('heading', { name: 'Sectores y cuadrilla asignada' }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // D-114: el resumen principal separa los tres conceptos de especiales.
+    await expect(modal.getByText('Especiales Reparación', { exact: true }).first()).toBeVisible();
+    await expect(modal.getByText('Especiales Construcción', { exact: true }).first()).toBeVisible();
+    await expect(modal.getByText('Especiales Gobierno', { exact: true }).first()).toBeVisible();
+
+    // D-114: la tabla de sectores trae la lista desplegable de masivas del sector.
+    await expect(
+      modal.getByRole('columnheader', { name: 'Masivas del sector' }),
     ).toBeVisible();
     await expect(
       modal.getByRole('heading', { name: 'Cuadrillas y sectores asignados' }),
     ).toBeVisible();
 
-    // El sector con casos aparece con su total (la columna Sector del universo
-    // repite el nombre, por eso se toma la primera coincidencia)
+    // El sector con casos aparece con su total.
     await expect(modal.getByRole('cell', { name: 'SECTOR E2E' }).first()).toBeVisible();
     // Las dos cuadrillas de calle están disponibles (tarjetas, no los <option>)
     await expect(modal.locator('.ficha-tarjeta', { hasText: 'E2E-C1' })).toBeVisible();
@@ -39,12 +47,6 @@ test.describe('Proceso de despacho', () => {
     const tarjetaC0 = modal.locator('.ficha-tarjeta', { hasText: 'C-00' });
     await expect(tarjetaC0).toBeVisible();
     await expect(tarjetaC0).toContainText('Cuadrilla 0');
-
-    // Filtro del universo: los especiales son REFERIDO/EMPRESA/GOBIERNO
-    await modal.getByRole('button', { name: 'Especiales' }).click();
-    await expect(modal.getByRole('cell', { name: 'E2E-0006' })).toBeVisible();
-    await expect(modal.getByRole('cell', { name: 'E2E-0008' })).toBeVisible();
-    await expect(modal.getByRole('cell', { name: 'E2E-0001' })).toHaveCount(0);
   });
 
   test('permite cambiar la asignación de sector y procesar el despacho', async ({ page }) => {

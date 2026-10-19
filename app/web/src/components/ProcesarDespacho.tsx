@@ -2,15 +2,17 @@
  * Formulario flotante para PROCESAR el despacho (requisito de UI 6, ciclo D-66).
  *
  * Muestra, para la fecha elegida:
- *  - el **universo de casos** (comunes y especiales),
- *  - el **checklist de tipos a distribuir** (D-113): Comunes y Referidos por
- *    defecto; Construcciones, Empresas y Masivas se marcan si se quieren,
+ *  - el **checklist de tipos a distribuir** (D-113 · D-114): Comunes y
+ *    Especiales Reparación por defecto; Especiales Construcción, Especiales
+ *    Gobierno y Masivas se marcan si se quieren,
  *  - las **fallas masivas** con la cuadrilla que las atiende, reasignable
  *    (D-113): sus casos se despachan a esa cuadrilla aunque el sector esté en
  *    otra,
- *  - los **sectores** con su total de casos,
- *  - las **cuadrillas** con los sectores asignados, con la opción de modificar
- *    la asignación (selector por sector),
+ *  - los **sectores** con su total de casos, los **especiales separados** en
+ *    Reparación, Construcción y Gobierno (D-114) y una lista desplegable con
+ *    las **masivas del sector** para decidir cuáles entran al despacho,
+ *  - las **cuadrillas** con los sectores asignados y el desglose de
+ *    especiales, con la opción de modificar la asignación (selector por sector),
  *  - los botones **Procesar despacho** y **Cancelar**.
  *
  * D-99 (RF-67 · RF-68): distingue el **primer procesamiento de la jornada** —en el
@@ -19,8 +21,15 @@
  * los técnicos con el DESPACHO ACTUALIZADO.
  *
  * D-113: los **casos PENDIENTES** que devolvió el cierre de jornada también
- * entran en el universo (el backend los incluye aunque sigan vinculados a un
+ * entran en el proceso (el backend los incluye aunque sigan vinculados a un
  * despacho ya cerrado).
+ *
+ * D-114: se elimina la sección «Universo de casos» —el detalle de casos ya no
+ * se lista aquí— y los **especiales** dejan de ser un concepto único: el
+ * resumen, la tabla de sectores y las tarjetas de cuadrillas muestran
+ * Especiales Reparación, Construcción y Gobierno por separado. Cada sector
+ * elige con una lista desplegable qué **masivas suyas** se incluyen en el
+ * despacho; las no marcadas quedan fuera del proceso.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as api from '../api/client';
@@ -40,14 +49,27 @@ interface Props {
   onProcesado: (creados: DespachoDetalleOut[]) => void;
 }
 
-type Filtro = 'TODOS' | 'COMUNES' | 'ESPECIALES';
-
 /** D-113: selección del checklist cuando la API no la informa. */
-const TIPOS_POR_DEFECTO = ['COMUNES', 'REFERIDOS'];
+const TIPOS_POR_DEFECTO = ['COMUNES', 'ESPECIALES_REPARACION'];
 
-/** D-113: tipo del checklist al que pertenece un caso del universo. */
-function tipoDe(caso: CasoAsignadoOut): string {
-  return caso.tipo_distribucion ?? 'COMUNES';
+/** D-114: tipos del checklist del caso (Gobierno suma a su actividad). */
+function tiposDe(caso: CasoAsignadoOut): string[] {
+  if (caso.tipos_distribucion?.length) return caso.tipos_distribucion;
+  return [caso.tipo_distribucion ?? 'COMUNES'];
+}
+
+/** D-114: conteo de especiales por concepto en un conjunto de casos. */
+function contarEspeciales(casos: CasoAsignadoOut[]) {
+  let reparacion = 0;
+  let construccion = 0;
+  let gobierno = 0;
+  for (const caso of casos) {
+    const tipos = tiposDe(caso);
+    if (tipos.includes('ESPECIALES_REPARACION')) reparacion += 1;
+    if (tipos.includes('ESPECIALES_CONSTRUCCION')) construccion += 1;
+    if (tipos.includes('ESPECIALES_GOBIERNO')) gobierno += 1;
+  }
+  return { reparacion, construccion, gobierno };
 }
 
 export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props) {
@@ -57,7 +79,8 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const [tipos, setTipos] = useState<string[]>(TIPOS_POR_DEFECTO);
   /** D-113: `id_falla -> id_cuadrilla` elegido para cada masiva. */
   const [masivas, setMasivas] = useState<Record<number, number | null>>({});
-  const [filtro, setFiltro] = useState<Filtro>('TODOS');
+  /** D-114: `id_falla -> incluida`; lo controla la lista desplegable del sector. */
+  const [masivasIncluidas, setMasivasIncluidas] = useState<Record<number, boolean>>({});
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
@@ -70,7 +93,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
       setAsignacion(
         Object.fromEntries(datos.sectores.map((s) => [s.id_sector, s.id_cuadrilla ?? null])),
       );
-      // D-113: el predeterminado (Comunes y Referidos) lo declara la API.
+      // D-113: el predeterminado (Comunes y Especiales Reparación) lo declara la API.
       const meta = datos.tipos ?? [];
       setTipos(
         meta.length
@@ -80,9 +103,13 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
       setMasivas(
         Object.fromEntries(datos.masivas.map((m) => [m.id_falla, m.id_cuadrilla ?? null])),
       );
+      // D-114: todas las masivas del sector arrancan incluidas en el despacho.
+      setMasivasIncluidas(
+        Object.fromEntries(datos.masivas.map((m) => [m.id_falla, m.incluida ?? true])),
+      );
       setError('');
     } catch (e) {
-      setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el universo de casos.');
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el proceso de despacho.');
     } finally {
       setCargando(false);
     }
@@ -101,28 +128,53 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const masivasActivas = proceso?.masivas ?? [];
   const casosUniverso = proceso?.universo.casos ?? [];
 
-  const etiquetaTipo = useCallback(
-    (clave: string) =>
-      (proceso?.tipos ?? []).find((t) => t.clave === clave)?.etiqueta ?? clave,
-    [proceso],
+  /** D-114: masivas asociadas a un sector (por `id_sector` del backend). */
+  const masivasDelSector = useCallback(
+    (idSector: number) => masivasActivas.filter((m) => m.id_sector === idSector),
+    [masivasActivas],
   );
 
-  /** D-113: casos del universo que el checklist manda distribuir. */
+  /** D-114: `id_caso -> [id_falla]` para saber si su masiva quedó incluida. */
+  const masivasPorCaso = useMemo(() => {
+    const mapa: Record<number, number[]> = {};
+    for (const m of masivasActivas) {
+      for (const idCaso of m.ids_caso ?? []) (mapa[idCaso] ??= []).push(m.id_falla);
+    }
+    return mapa;
+  }, [masivasActivas]);
+
+  /** D-114: un caso entra si su masiva está incluida (o no pertenece a ninguna). */
+  const incluidoPorMasiva = useCallback(
+    (caso: CasoAsignadoOut) => {
+      const fallas = masivasPorCaso[caso.id_caso];
+      if (!fallas?.length) return true;
+      return fallas.some((idFalla) => masivasIncluidas[idFalla] !== false);
+    },
+    [masivasPorCaso, masivasIncluidas],
+  );
+
+  /** D-113: casos del universo que el checklist manda distribuir (D-114: y cuya
+   * masiva el sector no dejó fuera). */
   const casosSeleccionados = useMemo(
-    () => casosUniverso.filter((c) => tipos.includes(tipoDe(c))),
-    [casosUniverso, tipos],
+    () =>
+      casosUniverso.filter(
+        (c) => tiposDe(c).some((t) => tipos.includes(t)) && incluidoPorMasiva(c),
+      ),
+    [casosUniverso, tipos, incluidoPorMasiva],
   );
 
   /** D-113: cuadrilla forzada por la masiva de cada caso asociado. */
   const cuadrillaPorCaso = useMemo(() => {
     const mapa: Record<number, number> = {};
     for (const m of masivasActivas) {
+      // D-114: una masiva que el sector no incluyó no fuerza la cuadrilla.
+      if (masivasIncluidas[m.id_falla] === false) continue;
       const destino = masivas[m.id_falla];
       if (destino === null || destino === undefined) continue;
       for (const idCaso of m.ids_caso ?? []) mapa[idCaso] = destino;
     }
     return mapa;
-  }, [masivasActivas, masivas]);
+  }, [masivasActivas, masivas, masivasIncluidas]);
 
   /** Cuadrilla que atenderá el caso: gestión, la de su masiva o la de su sector. */
   const destinoDe = useCallback(
@@ -138,9 +190,9 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   );
 
   /**
-   * D-113: los sectores se recalculan con los tipos marcados (la API informa el
-   * universo completo). `asignables` excluye los casos que ya van con su masiva,
-   * porque esos no dependen del sector.
+   * D-113 · D-114: los sectores se recalculan con los tipos marcados y con las
+   * masivas incluidas (la API informa el universo completo). `asignables`
+   * excluye los casos que ya van con su masiva, porque esos no dependen del sector.
    */
   const sectores = useMemo(
     () =>
@@ -150,16 +202,20 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
           const asignables = propios.filter(
             (c) => !c.en_gestion && cuadrillaPorCaso[c.id_caso] === undefined,
           ).length;
+          const especiales = contarEspeciales(propios);
           return {
             ...s,
             total: propios.length,
             asignables,
             especiales: propios.filter((c) => c.especial).length,
+            especiales_reparacion: especiales.reparacion,
+            especiales_construccion: especiales.construccion,
+            especiales_gobierno: especiales.gobierno,
             citados: propios.filter((c) => c.es_cita).length,
           };
         })
-        .filter((s) => s.total > 0),
-    [sectoresBase, casosSeleccionados, cuadrillaPorCaso],
+        .filter((s) => s.total > 0 || masivasDelSector(s.id_sector).length > 0),
+    [sectoresBase, casosSeleccionados, cuadrillaPorCaso, masivasDelSector],
   );
 
   const bloques: AsignacionBloque[] = useMemo(
@@ -182,9 +238,21 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
     return mapa;
   }, [casosSeleccionados, destinoDe]);
 
-  const visibles = casosUniverso.filter((c) =>
-    filtro === 'TODOS' ? true : filtro === 'ESPECIALES' ? c.especial : !c.especial,
-  );
+  /** D-114: resumen principal con los especiales separados. */
+  const resumenPrincipal = useMemo(() => {
+    const especiales = contarEspeciales(casosSeleccionados);
+    return {
+      // D-114: «Comunes» es el tipo del checklist (los casos de masiva van a
+      // MASIVAS), no simplemente «todo lo que no es especial».
+      comunes: casosSeleccionados.filter((c) => tiposDe(c).includes('COMUNES')).length,
+      ...especiales,
+      sinSector: casosSeleccionados.filter(
+        (c) => c.id_sector === null || c.id_sector === undefined,
+      ).length,
+      total: casosSeleccionados.length,
+    };
+  }, [casosSeleccionados]);
+
   // Un sector solo es obligatorio si tiene casos que dependen de él.
   const sectoresQueFaltan = sectores.filter(
     (s) => s.asignables > 0 && (asignacion[s.id_sector] === null || asignacion[s.id_sector] === undefined),
@@ -198,12 +266,13 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const masivasPorCuadrilla = useMemo(() => {
     const mapa: Record<number, { id_falla: number; descripcion: string }[]> = {};
     for (const m of masivasActivas) {
+      if (masivasIncluidas[m.id_falla] === false) continue;
       const destino = masivas[m.id_falla];
       if (destino === null || destino === undefined) continue;
       (mapa[destino] ??= []).push({ id_falla: m.id_falla, descripcion: m.descripcion });
     }
     return mapa;
-  }, [masivasActivas, masivas]);
+  }, [masivasActivas, masivas, masivasIncluidas]);
 
   /** D-113: alterna un tipo conservando el orden canónico del checklist. */
   function alternarTipo(clave: string, marcado: boolean) {
@@ -225,6 +294,24 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
     }));
   }
 
+  /** D-114: incluye o excluye del despacho las masivas marcadas en un sector. */
+  function cambiarMasivasDelSector(idSector: number, valores: string[]) {
+    const opciones = masivasDelSector(idSector);
+    const elegidas = new Set(valores.map(Number));
+    setMasivasIncluidas((previo) => {
+      const nuevo = { ...previo };
+      for (const m of opciones) nuevo[m.id_falla] = elegidas.has(m.id_falla);
+      return nuevo;
+    });
+  }
+
+  /** D-114: total de un tipo en el universo, descontando las masivas excluidas. */
+  function totalTipo(clave: string) {
+    return casosUniverso.filter(
+      (c) => incluidoPorMasiva(c) && tiposDe(c).includes(clave),
+    ).length;
+  }
+
   const sinTipos = tipos.length === 0;
   const sinCasos = !cargando && casosSeleccionados.length === 0;
   const puedeProcesar =
@@ -237,6 +324,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
       const masivasPayload: AsignacionMasiva[] = masivasActivas.map((m) => ({
         id_falla: m.id_falla,
         id_cuadrilla: masivas[m.id_falla] ?? null,
+        incluida: masivasIncluidas[m.id_falla] !== false,
       }));
       const creados = await api.procesarDespacho({
         fecha,
@@ -267,7 +355,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
     >
       {error && <p className="aviso aviso-error">{error}</p>}
       {cargando ? (
-        <p className="texto-pequeno">Cargando universo de casos…</p>
+        <p className="texto-pequeno">Cargando el proceso de despacho…</p>
       ) : (
         <>
           {/* D-99 (RF-67/RF-68): el paso que toca en esta jornada. */}
@@ -290,31 +378,36 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
             </span>
           </div>
 
+          {/* D-114: resumen principal con los especiales separados. */}
           <div className="ficha-tarjetas">
             <div className="ficha-tarjeta">
-              <div className="etiqueta">Universo de casos</div>
-              <div className="valor">{proceso?.universo.total ?? 0}</div>
-            </div>
-            <div className="ficha-tarjeta">
               <div className="etiqueta">Comunes</div>
-              <div className="valor">{proceso?.universo.comunes ?? 0}</div>
+              <div className="valor">{resumenPrincipal.comunes}</div>
             </div>
             <div className="ficha-tarjeta">
-              <div className="etiqueta">Especiales</div>
-              <div className="valor">{proceso?.universo.especiales ?? 0}</div>
+              <div className="etiqueta">Especiales Reparación</div>
+              <div className="valor">{resumenPrincipal.reparacion}</div>
+            </div>
+            <div className="ficha-tarjeta">
+              <div className="etiqueta">Especiales Construcción</div>
+              <div className="valor">{resumenPrincipal.construccion}</div>
+            </div>
+            <div className="ficha-tarjeta">
+              <div className="etiqueta">Especiales Gobierno</div>
+              <div className="valor">{resumenPrincipal.gobierno}</div>
             </div>
             <div className="ficha-tarjeta">
               <div className="etiqueta">Sin sector</div>
-              <div className="valor">{proceso?.universo.sin_sector ?? 0}</div>
+              <div className="valor">{resumenPrincipal.sinSector}</div>
             </div>
             {/* D-113: cuántos de esos casos se van a distribuir con el checklist. */}
             <div className="ficha-tarjeta">
               <div className="etiqueta">A distribuir</div>
-              <div className="valor">{casosSeleccionados.length}</div>
+              <div className="valor">{resumenPrincipal.total}</div>
             </div>
           </div>
 
-          {/* D-113: checklist de tipos a distribuir */}
+          {/* D-113 · D-114: checklist de tipos a distribuir */}
           <h3 className="subtitulo-seccion">Tipos de casos a distribuir</h3>
           <div className="lista-casillas" id="tipos-a-distribuir">
             {(proceso?.tipos ?? []).map((t) => (
@@ -326,14 +419,20 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                   onChange={(e) => alternarTipo(t.clave, e.target.checked)}
                 />
                 {t.etiqueta}
-                <span className="chip">{t.total} caso(s)</span>
+                <span className="chip">{totalTipo(t.clave)} caso(s)</span>
                 {t.por_defecto && <span className="texto-pequeno">predeterminado</span>}
               </label>
             ))}
           </div>
           <p className="texto-pequeno">
-            Predeterminado: <strong>Comunes y Referidos</strong>. Los tipos sin marcar no se
-            distribuyen (quedan para otro procesamiento).
+            Predeterminado:{' '}
+            <strong>
+              {(proceso?.tipos ?? [])
+                .filter((t) => t.por_defecto)
+                .map((t) => t.etiqueta)
+                .join(' y ') || 'Comunes y Especiales Reparación'}
+            </strong>
+            . Los tipos sin marcar no se distribuyen (quedan para otro procesamiento).
           </p>
 
           {sinTipos && (
@@ -343,7 +442,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
           )}
           {sinCasos && !sinTipos && casosUniverso.length > 0 && (
             <div className="aviso aviso-info">
-              <span>No hay casos en el universo para los tipos marcados.</span>
+              <span>No hay casos para los tipos marcados.</span>
             </div>
           )}
           {casosUniverso.length === 0 && (
@@ -365,6 +464,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                     <tr>
                       <th>Masiva</th>
                       <th>Descripción</th>
+                      <th>Sector</th>
                       <th>Casos</th>
                       <th>Cuadrilla asignada</th>
                     </tr>
@@ -378,8 +478,14 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                             <IconoMasiva className="icono-masiva" />
                             MASIVA
                           </span>
+                          {masivasIncluidas[m.id_falla] === false && (
+                            <span className="chip" title="Su sector la dejó fuera del despacho">
+                              fuera
+                            </span>
+                          )}
                         </td>
                         <td>{m.descripcion}</td>
+                        <td>{m.sector_nombre ?? '—'}</td>
                         <td>{m.casos ?? m.ids_caso?.length ?? 0}</td>
                         <td>
                           <select
@@ -402,120 +508,105 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
               </div>
               <p className="texto-pequeno">
                 Al cambiar la cuadrilla de una masiva, sus casos se despachan a esa
-                cuadrilla aunque su sector esté asignado a otra.
+                cuadrilla aunque su sector esté asignado a otra. Las masivas que el
+                sector no marque en la tabla de abajo quedan fuera del despacho.
               </p>
             </>
           )}
 
-          {/* Universo de casos (comunes y especiales) */}
-          <h3 className="subtitulo-seccion">Universo de casos</h3>
-          <div className="acciones-form">
-            {(['TODOS', 'COMUNES', 'ESPECIALES'] as Filtro[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={`btn btn-mini${filtro === f ? '' : ' btn-secundario'}`}
-                onClick={() => setFiltro(f)}
-              >
-                {f === 'TODOS' ? 'Todos' : f === 'COMUNES' ? 'Comunes' : 'Especiales'}
-              </button>
-            ))}
-          </div>
-          <div className="tabla-envoltura">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID avería</th>
-                  <th>Cliente</th>
-                  <th>Sector</th>
-                  <th>Tipo</th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th>Cita</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibles.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="vacio">
-                      Sin casos en este filtro.
-                    </td>
-                  </tr>
-                ) : (
-                  visibles.map((c) => (
-                    <tr key={c.id_caso}>
-                      <td className="mono">{c.id_averia}</td>
-                      <td>{c.nombre_cliente ?? '—'}</td>
-                      <td>{c.sector_nombre ?? 'Sin sector'}</td>
-                      <td>
-                        <span className="chip">{etiquetaTipo(tipoDe(c))}</span>
-                        {!tipos.includes(tipoDe(c)) && (
-                          <span className="texto-pequeno"> · no se distribuye</span>
-                        )}
-                      </td>
-                      <td>
-                        {c.categoria}
-                        {c.especial ? ' · especial' : ''}
-                      </td>
-                      <td>{c.estado_actual}{c.en_gestion ? ' · gestión' : ''}</td>
-                      <td>{c.es_cita ? 'Sí' : '—'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Sectores con su total y la cuadrilla asignada (editable) */}
+          {/* D-114: sectores con sus especiales separados y sus masivas */}
           <h3 className="subtitulo-seccion">Sectores y cuadrilla asignada</h3>
           {sectores.length === 0 ? (
             <p className="vacio">No hay sectores con casos para los tipos marcados.</p>
           ) : (
-            <div className="tabla-envoltura">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Sector</th>
-                    <th>Casos</th>
-                    <th>Especiales</th>
-                    <th>Citados</th>
-                    <th>Cuadrilla asignada</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectores.map((s) => (
-                    <tr key={s.id_sector}>
-                      <td>{s.nombre ?? `Sector #${s.id_sector}`}</td>
-                      <td>{s.total}</td>
-                      <td>{s.especiales}</td>
-                      <td>{s.citados}</td>
-                      <td>
-                        <select
-                          aria-label={`Cuadrilla para ${s.nombre ?? `sector ${s.id_sector}`}`}
-                          value={asignacion[s.id_sector] ?? ''}
-                          onChange={(e) =>
-                            setAsignacion({
-                              ...asignacion,
-                              [s.id_sector]: e.target.value ? Number(e.target.value) : null,
-                            })
-                          }
-                        >
-                          <option value="">— Sin asignar —</option>
-                          {cuadrillasCalle.map((c) => (
-                            <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
-                              {c.codigo} — {c.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+            <>
+              <div className="tabla-envoltura">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Sector</th>
+                      <th>Casos</th>
+                      <th>Esp. Reparación</th>
+                      <th>Esp. Construcción</th>
+                      <th>Esp. Gobierno</th>
+                      <th>Citados</th>
+                      <th>Cuadrilla asignada</th>
+                      <th>Masivas del sector</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sectores.map((s) => {
+                      const opciones = masivasDelSector(s.id_sector);
+                      const elegidas = opciones
+                        .filter((m) => masivasIncluidas[m.id_falla] !== false)
+                        .map((m) => String(m.id_falla));
+                      return (
+                        <tr key={s.id_sector}>
+                          <td>{s.nombre ?? `Sector #${s.id_sector}`}</td>
+                          <td>{s.total}</td>
+                          <td>{s.especiales_reparacion}</td>
+                          <td>{s.especiales_construccion}</td>
+                          <td>{s.especiales_gobierno}</td>
+                          <td>{s.citados}</td>
+                          <td>
+                            <select
+                              aria-label={`Cuadrilla para ${s.nombre ?? `sector ${s.id_sector}`}`}
+                              value={asignacion[s.id_sector] ?? ''}
+                              onChange={(e) =>
+                                setAsignacion({
+                                  ...asignacion,
+                                  [s.id_sector]: e.target.value ? Number(e.target.value) : null,
+                                })
+                              }
+                            >
+                              <option value="">— Sin asignar —</option>
+                              {cuadrillasCalle.map((c) => (
+                                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                                  {c.codigo} — {c.nombre}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            {opciones.length === 0 ? (
+                              <span className="texto-pequeno">—</span>
+                            ) : (
+                              <select
+                                className="selector-masivas"
+                                multiple
+                                size={Math.min(Math.max(opciones.length, 2), 4)}
+                                aria-label={`Masivas para ${s.nombre ?? `sector ${s.id_sector}`}`}
+                                value={elegidas}
+                                onChange={(e) =>
+                                  cambiarMasivasDelSector(
+                                    s.id_sector,
+                                    Array.from(e.target.selectedOptions, (o) => o.value),
+                                  )
+                                }
+                              >
+                                {opciones.map((m) => (
+                                  <option key={m.id_falla} value={m.id_falla}>
+                                    {m.id_falla} — {m.descripcion} ({m.casos ?? 0})
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="texto-pequeno">
+                En <strong>Masivas del sector</strong>, use Ctrl (o ⌘ en Mac) para marcar
+                varias: las masivas marcadas entran al despacho; las demás quedan fuera
+                de este procesamiento.
+              </p>
+            </>
           )}
 
-          {/* Cuadrillas con sus sectores asignados */}
+          {/* Cuadrillas con sus sectores asignados y el desglose de especiales */}
           <h3 className="subtitulo-seccion">Cuadrillas y sectores asignados</h3>
           {cuadrillas.length === 0 ? (
             <p className="vacio">No hay cuadrillas activas de calle.</p>
@@ -523,6 +614,14 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
             <div className="ficha-tarjetas">
               {cuadrillas.map((c) => {
                 const suyos = sectores.filter((s) => asignacion[s.id_sector] === c.id_cuadrilla);
+                const desglose = suyos.reduce(
+                  (total, s) => ({
+                    reparacion: total.reparacion + s.especiales_reparacion,
+                    construccion: total.construccion + s.especiales_construccion,
+                    gobierno: total.gobierno + s.especiales_gobierno,
+                  }),
+                  { reparacion: 0, construccion: 0, gobierno: 0 },
+                );
                 return (
                   <div className="ficha-tarjeta" key={c.id_cuadrilla}>
                     <div className="etiqueta">
@@ -542,6 +641,10 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                         : suyos.length === 0
                           ? 'Sin sectores asignados'
                           : suyos.map((s) => s.nombre ?? `#${s.id_sector}`).join(' · ')}
+                    </p>
+                    <p className="texto-pequeno">
+                      Especiales: {desglose.reparacion} reparación ·{' '}
+                      {desglose.construccion} construcción · {desglose.gobierno} gobierno
                     </p>
                     {/* D-99 (RF-71) · D-113: la masiva asignada se marca y se
                         puede cambiar desde la tabla de arriba. */}

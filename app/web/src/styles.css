@@ -767,6 +767,19 @@ textarea {
   background: #fff;
 }
 
+/* D-114: lista desplegable de masivas por sector en el proceso de despacho.
+   Es un `select` múltiple: se ve como una lista corta dentro de la celda. */
+.selector-masivas {
+  min-width: 180px;
+  max-width: 260px;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.selector-masivas option {
+  padding: 2px 4px;
+}
+
 /* Pie de tabla con el conteo total de registros (requisito de UI 4). */
 .tabla-pie {
   padding: 10px 12px;

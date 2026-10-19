@@ -29,8 +29,11 @@ class CasoAsignadoOut(BaseModel):
     tipo_caso: str
     es_cita: bool
     especial: bool = False
-    #: D-113: tipo del checklist de distribución (COMUNES, REFERIDOS, …).
+    #: D-113 · D-114: tipo principal del checklist de distribución.
     tipo_distribucion: str = "COMUNES"
+    #: D-114: todos los tipos del checklist a los que pertenece el caso (un
+    #: especial de gobierno suma a su actividad y a gobierno).
+    tipos_distribucion: list[str] = Field(default_factory=list)
     #: D-77: el caso se despacha a la cuadrilla 0 (gestión), no a la de su sector.
     en_gestion: bool = False
 
@@ -105,7 +108,11 @@ class SectorProcesoOut(BaseModel):
     id_sector: int
     nombre: str | None = None
     total: int = 0
+    #: D-114: los especiales separados por concepto (Gobierno suma a su actividad).
     especiales: int = 0
+    especiales_reparacion: int = 0
+    especiales_construccion: int = 0
+    especiales_gobierno: int = 0
     citados: int = 0
     id_cuadrilla: int | None = None
 
@@ -123,6 +130,10 @@ class UniversoOut(BaseModel):
     total: int = 0
     comunes: int = 0
     especiales: int = 0
+    #: D-114: los especiales separados en sus tres conceptos.
+    especiales_reparacion: int = 0
+    especiales_construccion: int = 0
+    especiales_gobierno: int = 0
     sin_sector: int = 0
     #: D-113: total por tipo del checklist.
     por_tipo: dict[str, int] = Field(default_factory=dict)
@@ -153,7 +164,10 @@ class MasivaProcesoOut(BaseModel):
     """Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71).
 
     D-113 añade la cuadrilla (reasignable desde el formulario de proceso) y los
-    casos asociados, que se despachan a esa cuadrilla.
+    casos asociados, que se despachan a esa cuadrilla. D-114 añade el **sector**
+    al que pertenece (para la lista desplegable de la tabla de sectores) y la
+    marca `incluida`, que el formulario usa para dejar la masiva dentro o fuera
+    del despacho.
     """
 
     id_falla: int
@@ -165,6 +179,11 @@ class MasivaProcesoOut(BaseModel):
     es_activa: bool = True
     casos: int = 0
     ids_caso: list[int] = Field(default_factory=list)
+    #: D-114: sector de la masiva (o el de sus casos si no lo declara).
+    id_sector: int | None = None
+    sector_nombre: str | None = None
+    #: D-114: incluida en el despacho (el formulario arranca con todas dentro).
+    incluida: bool = True
 
 
 class ProcesoDespachoOut(BaseModel):
@@ -176,7 +195,7 @@ class ProcesoDespachoOut(BaseModel):
     primera_vez: bool = True
     #: D-99 (RF-68): True si la jornada ya tiene despachos (reproceso por sector).
     reproceso: bool = False
-    #: D-113: checklist de tipos a distribuir (Comunes y Referidos por defecto).
+    #: D-113 · D-114: checklist de tipos (Comunes y Especiales Reparación por defecto).
     tipos: list[TipoDespachoOut] = Field(default_factory=list)
     masivas: list[MasivaProcesoOut] = Field(default_factory=list)
     universo: UniversoOut
@@ -190,22 +209,30 @@ class ProcesoDespachoOut(BaseModel):
 
 
 class AsignacionMasiva(BaseModel):
-    """D-113: cuadrilla que atiende una falla masiva (nulo = sin cuadrilla)."""
+    """D-113 · D-114: cuadrilla que atiende una falla masiva y si entra al despacho.
+
+    `incluida=False` deja la masiva **fuera** del proceso: sus casos no se
+    despachan en esa jornada.
+    """
 
     id_falla: int
     id_cuadrilla: int | None = None
+    incluida: bool = True
 
 
 class ProcesarDespacho(BaseModel):
     fecha: date
     id_central: int | None = None
     asignaciones: list[AsignacionBloque] = Field(default_factory=list)
-    #: D-113: tipos marcados en el checklist. `None` = todos (compatibilidad).
+    #: D-113 · D-114: tipos marcados en el checklist. `None` = todos (compatibilidad).
     tipos: list[str] | None = Field(
         default=None,
-        description="Tipos a distribuir: COMUNES, REFERIDOS, CONSTRUCCIONES, EMPRESAS, MASIVAS",
+        description=(
+            "Tipos a distribuir: COMUNES, ESPECIALES_REPARACION, "
+            "ESPECIALES_CONSTRUCCION, ESPECIALES_GOBIERNO, MASIVAS"
+        ),
     )
-    #: D-113: reasignación de las fallas masivas a otra cuadrilla.
+    #: D-113 · D-114: reasignación de las fallas masivas y su inclusión.
     masivas: list[AsignacionMasiva] = Field(default_factory=list)
     reemplazar: bool = True
 

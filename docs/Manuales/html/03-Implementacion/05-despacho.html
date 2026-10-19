@@ -813,7 +813,7 @@ jornada. La central de esta versión es <strong>FRANCISCO SALIAS</strong> (códi
 reparto entre las cuadrillas activas. Revisa los chips de reglas: citados del día, casos
 especiales (referidos, empresas y gobierno) y construcción en una sola cuadrilla.</li>
 <li><strong>Procesa el despacho.</strong> Pulsa <strong>«Procesar despacho»</strong>. Se abre una <strong>ventana grande</strong> (90 %
-de la pantalla) con el universo de casos, los sectores con su total y las cuadrillas con sus
+de la pantalla) con el resumen de especiales, los sectores con su total y las cuadrillas con sus
 sectores asignados. Revisa la asignación, cámbiala si hace falta y pulsa <strong>«Procesar
 despacho»</strong>. El sistema guarda un despacho en estado <code>BORRADOR</code> por cada cuadrilla con casos.</li>
 <li><strong>Publica o cierra.</strong> Cuando el despacho esté listo, publícalo (<code>PUBLICADO</code>). Si el día
@@ -1354,22 +1354,31 @@ con <code>generado_auto=True</code> por cada cuadrilla <strong>con casos</strong
 <code>ASIGNADO</code>.</p>
 <h3 id="proceso-formulario-flotante"><span class="sec-num">4.5</span>proceso (formulario flotante)</h3>
 <p>El botón <strong>«Procesar despacho»</strong> de la jornada abre una <strong>ventana grande</strong> que ocupa el <strong>90 % de
-la pantalla</strong>. Desde ahí se revisa y se confirma el trabajo del día. Tiene cuatro partes:</p>
+la pantalla</strong>. Desde ahí se revisa y se confirma el trabajo del día. Desde <strong>D-114</strong> tiene estas
+partes:</p>
 <ol>
-<li><strong>Datos generales.</strong> Arriba se ven cuatro tarjetas: <strong>universo de casos</strong>, <strong>comunes</strong>,
-<strong>especiales</strong> y <strong>sin sector</strong>. En la cabecera se indica si la asignación es la <strong>guardada</strong>
-por el supervisor o una <strong>propuesta automática</strong> del sistema.</li>
-<li><strong>Universo de casos.</strong> Una tabla con los casos que se van a repartir (ID de avería, cliente,
-sector, tipo, categoría, estado y si tiene cita). Tres botones filtran la lista: <strong>Todos</strong>,
-<strong>Comunes</strong> y <strong>Especiales</strong>.</li>
-<li><strong>Sectores y cuadrilla asignada.</strong> Una tabla con cada sector, su <strong>total de casos</strong>, cuántos
-son <strong>especiales</strong> y cuántos <strong>citados</strong>, y un <strong>selector</strong> para elegir la cuadrilla. La opción
-«— Sin asignar —» deja el sector sin cuadrilla: sus casos no se despacharán (salvo los
-citados).</li>
+<li><strong>Resumen principal.</strong> Arriba se ven las tarjetas de <strong>comunes</strong>, <strong>especiales reparación</strong>,
+<strong>especiales construcción</strong>, <strong>especiales gobierno</strong>, <strong>sin sector</strong> y <strong>a distribuir</strong>.
+Los especiales ya no son una cifra única: Gobierno suma a la actividad del caso. En la cabecera se
+indica si la asignación es la <strong>guardada</strong> por el supervisor o una <strong>propuesta automática</strong> del
+sistema.</li>
+<li><strong>Tipos de casos a distribuir.</strong> Un checklist con <strong>Comunes</strong>, <strong>Especiales Reparación</strong>,
+<strong>Especiales Construcción</strong>, <strong>Especiales Gobierno</strong> y <strong>Masivas</strong>, cada uno con su total. Por defecto
+vienen marcados <strong>Comunes</strong> y <strong>Especiales Reparación</strong>.</li>
+<li><strong>Fallas masivas y su cuadrilla.</strong> Una tabla con cada masiva activa, su descripción, su <strong>sector</strong>,
+sus casos y un <strong>selector de cuadrilla</strong>. Al cambiar la cuadrilla, los casos de la masiva se despachan
+a esa cuadrilla aunque el sector esté en otra.</li>
+<li><strong>Sectores y cuadrilla asignada.</strong> Una tabla con cada sector, su <strong>total de casos</strong>, las tres
+columnas de especiales (<strong>reparación</strong>, <strong>construcción</strong> y <strong>gobierno</strong>), los <strong>citados</strong>, un
+<strong>selector de cuadrilla</strong> y una <strong>lista desplegable de las masivas del sector</strong>. Las masivas marcadas
+entran al despacho; las que se dejan sin marcar quedan fuera de ese procesamiento. La opción
+«— Sin asignar —» deja el sector sin cuadrilla: sus casos no se despacharán (salvo los citados).</li>
 <li><strong>Cuadrillas y sectores asignados.</strong> Tarjetas con cada cuadrilla activa, los <strong>sectores que
-tiene asignados</strong> y el <strong>total de casos</strong> que le tocarían. Si algún sector quedó sin cuadrilla,
-aparece un aviso en pantalla.</li>
+tiene asignados</strong>, el <strong>total de casos</strong> y el desglose de <strong>especiales reparación, construcción y
+gobierno</strong>. Si algún sector quedó sin cuadrilla, aparece un aviso en pantalla.</li>
 </ol>
+<p>La sección <strong>«Universo de casos»</strong> —el listado de casos con sus filtros— se eliminó en D-114: el
+detalle de casos ya no se muestra en el formulario de proceso.</p>
 <p>Al final están los botones <strong>«Procesar despacho»</strong> (guarda y cierra la ventana) y <strong>«Cancelar»</strong>
 (no guarda nada). La asignación guardada queda registrada con el usuario que la hizo y la fecha.</p>
 <hr />
@@ -1393,7 +1402,7 @@ aparece un aviso en pantalla.</li>
 <tr>
 <td><code>GET /proceso</code></td>
 <td>Lectura</td>
-<td>Universo de casos, sectores y asignación del día (D-66).</td>
+<td>Sectores, especiales separados, masivas y asignación del día (D-66 · D-114).</td>
 </tr>
 <tr>
 <td><code>PUT /asignacion</code></td>
@@ -1916,13 +1925,16 @@ sector aparezca una sola vez por fecha.</p>
 la pantalla) que se abre con el botón «Procesar despacho»:</p>
 <ul>
 <li>Al abrirse pide el proceso del día y arma la asignación local a partir de los sectores.</li>
-<li>Muestra cuatro tarjetas con el <strong>universo de casos</strong>, los comunes, los especiales y los que
-están <strong>sin sector</strong>.</li>
-<li>Muestra la tabla del universo con los filtros <strong>Todos / Comunes / Especiales</strong>.</li>
-<li>Muestra la tabla de <strong>sectores</strong> con su total, sus especiales, sus citados y un <strong>selector de
-cuadrilla por sector</strong> (la asignación es modificable).</li>
-<li>Muestra las <strong>cuadrillas</strong> con sus sectores y su total de casos, y avisa cuántos sectores
-quedaron sin cuadrilla.</li>
+<li>Muestra el <strong>resumen principal</strong> con los comunes, los <strong>especiales separados</strong> en reparación,
+construcción y gobierno, los que están <strong>sin sector</strong> y los que se van a distribuir (D-114).</li>
+<li>Muestra el <strong>checklist de tipos</strong> (Comunes, Especiales Reparación, Especiales Construcción,
+Especiales Gobierno y Masivas) y la tabla de <strong>fallas masivas con su cuadrilla</strong> (D-113).</li>
+<li>Muestra la tabla de <strong>sectores</strong> con su total, las tres columnas de especiales, sus citados, un
+<strong>selector de cuadrilla por sector</strong> y una <strong>lista desplegable con las masivas del sector</strong> para
+decidir cuáles entran al despacho (D-114).</li>
+<li>Muestra las <strong>cuadrillas</strong> con sus sectores, su total de casos y el desglose de especiales, y
+avisa cuántos sectores quedaron sin cuadrilla.</li>
+<li>Ya <strong>no</strong> muestra la tabla del universo de casos: esa sección se eliminó en D-114.</li>
 <li>Al pie están los botones <strong>«Procesar despacho»</strong> y <strong>«Cancelar»</strong>; procesar envía la asignación
 con <code>reemplazar=true</code>.</li>
 </ul>

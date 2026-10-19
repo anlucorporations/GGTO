@@ -15,7 +15,7 @@ Si es tu primer día con el DESPACHO, con estos cinco pasos ya puedes armar el d
    reparto entre las cuadrillas activas. Revisa los chips de reglas: citados del día, casos
    especiales (referidos, empresas y gobierno) y construcción en una sola cuadrilla.
 3. **Procesa el despacho.** Pulsa **«Procesar despacho»**. Se abre una **ventana grande** (90 %
-   de la pantalla) con el universo de casos, los sectores con su total y las cuadrillas con sus
+   de la pantalla) con el resumen de especiales, los sectores con su total y las cuadrillas con sus
    sectores asignados. Revisa la asignación, cámbiala si hace falta y pulsa **«Procesar
    despacho»**. El sistema guarda un despacho en estado `BORRADOR` por cada cuadrilla con casos.
 4. **Publica o cierra.** Cuando el despacho esté listo, publícalo (`PUBLICADO`). Si el día
@@ -335,21 +335,33 @@ con `generado_auto=True` por cada cuadrilla **con casos**, y sus filas de detall
 ### proceso (formulario flotante)
 
 El botón **«Procesar despacho»** de la jornada abre una **ventana grande** que ocupa el **90 % de
-la pantalla**. Desde ahí se revisa y se confirma el trabajo del día. Tiene cuatro partes:
+la pantalla**. Desde ahí se revisa y se confirma el trabajo del día. Desde **D-114** tiene estas
+partes:
 
-1. **Datos generales.** Arriba se ven cuatro tarjetas: **universo de casos**, **comunes**,
-   **especiales** y **sin sector**. En la cabecera se indica si la asignación es la **guardada**
-   por el supervisor o una **propuesta automática** del sistema.
-2. **Universo de casos.** Una tabla con los casos que se van a repartir (ID de avería, cliente,
-   sector, tipo, categoría, estado y si tiene cita). Tres botones filtran la lista: **Todos**,
-   **Comunes** y **Especiales**.
-3. **Sectores y cuadrilla asignada.** Una tabla con cada sector, su **total de casos**, cuántos
-   son **especiales** y cuántos **citados**, y un **selector** para elegir la cuadrilla. La opción
-   «— Sin asignar —» deja el sector sin cuadrilla: sus casos no se despacharán (salvo los
-   citados).
-4. **Cuadrillas y sectores asignados.** Tarjetas con cada cuadrilla activa, los **sectores que
-   tiene asignados** y el **total de casos** que le tocarían. Si algún sector quedó sin cuadrilla,
-   aparece un aviso en pantalla.
+1. **Resumen principal.** Arriba se ven las tarjetas de **comunes**, **especiales reparación**,
+   **especiales construcción**, **especiales gobierno**, **sin sector** y **a distribuir**. Los
+   especiales ya no son una cifra única: Gobierno suma a la actividad del caso, así que un
+   gobierno de reparación cuenta en las dos tarjetas. En la cabecera se indica si la asignación
+   es la **guardada** por el supervisor o una **propuesta automática** del sistema.
+2. **Tipos de casos a distribuir.** Un checklist con **Comunes**, **Especiales Reparación**,
+   **Especiales Construcción**, **Especiales Gobierno** y **Masivas**, cada uno con su total. Por
+   defecto vienen marcados **Comunes** y **Especiales Reparación**; lo que no se marca queda para
+   otro procesamiento.
+3. **Fallas masivas y su cuadrilla.** Una tabla con cada masiva activa, su descripción, su
+   **sector**, sus casos y un **selector de cuadrilla**. Al cambiar la cuadrilla, los casos de la
+   masiva se despachan a esa cuadrilla aunque el sector esté en otra.
+4. **Sectores y cuadrilla asignada.** Una tabla con cada sector, su **total de casos**, las tres
+   columnas de especiales (**reparación**, **construcción** y **gobierno**), los **citados**, un
+   **selector de cuadrilla** y una **lista desplegable de las masivas del sector**. Las masivas
+   marcadas entran al despacho; las que se dejan sin marcar quedan fuera de ese procesamiento.
+   La opción «— Sin asignar —» del selector de cuadrilla deja el sector sin cuadrilla: sus casos
+   no se despacharán (salvo los citados).
+5. **Cuadrillas y sectores asignados.** Tarjetas con cada cuadrilla activa, los **sectores que
+   tiene asignados**, el **total de casos** y el desglose de **especiales reparación,
+   construcción y gobierno**. Si algún sector quedó sin cuadrilla, aparece un aviso en pantalla.
+
+La sección **«Universo de casos»** —el listado de casos con sus filtros— se eliminó en D-114: el
+detalle de casos ya no se muestra en el formulario de proceso.
 
 Al final están los botones **«Procesar despacho»** (guarda y cierra la ventana) y **«Cancelar»**
 (no guarda nada). La asignación guardada queda registrada con el usuario que la hizo y la fecha.
@@ -364,7 +376,7 @@ Todas las rutas cuelgan de `/api/v1/despachos`. En la columna «Rol», **Escritu
 | Método y ruta | Rol | Resumen |
 |---|---|---|
 | `POST /propuesta` | Escritura | Simula el despacho del día (no guarda nada). |
-| `GET /proceso` | Lectura | Universo de casos, sectores y asignación del día (D-66). |
+| `GET /proceso` | Lectura | Sectores, especiales separados, masivas y asignación del día (D-66 · D-114). |
 | `PUT /asignacion` | Escritura | Guarda la asignación de sectores por cuadrilla del día. |
 | `POST /procesar` | Escritura | Procesa y guarda los despachos con esa asignación. |
 | `POST ""` | Escritura | Genera y guarda los despachos (ruta anterior, todavía disponible). |
@@ -617,9 +629,9 @@ Los esquemas definen los literales de estado y canal, y estos modelos de entrada
 | `CasoAsignadoOut` | Un caso dentro de una propuesta (marca si es especial). |
 | `GrupoCuadrillaOut` | Un grupo de casos por cuadrilla. |
 | `PropuestaOut` | Respuesta de la simulación de propuesta. |
-| `SectorProcesoOut` | Un sector con su total de casos, especiales y citados (D-66). |
+| `SectorProcesoOut` | Un sector con su total, sus especiales separados (reparación, construcción y gobierno) y citados (D-66 · D-114). |
 | `CuadrillaProcesoOut` | Una cuadrilla con los sectores que tiene asignados (D-66). |
-| `UniversoOut` | El universo de casos del formulario de proceso (D-66). |
+| `UniversoOut` | El universo del formulario de proceso, con los especiales separados (D-66 · D-114). |
 | `AsignacionBloque` | Un bloque «cuadrilla → sectores» (D-66). |
 | `AsignacionUpdate` | Cuerpo para guardar la asignación del día (D-66). |
 | `ProcesoDespachoOut` | Respuesta completa del formulario de proceso (D-66). |
@@ -679,13 +691,16 @@ El componente implementa el requisito de UI 6 del ciclo **D-66** y es la ventana
 la pantalla) que se abre con el botón «Procesar despacho»:
 
 - Al abrirse pide el proceso del día y arma la asignación local a partir de los sectores.
-- Muestra cuatro tarjetas con el **universo de casos**, los comunes, los especiales y los que
-  están **sin sector**.
-- Muestra la tabla del universo con los filtros **Todos / Comunes / Especiales**.
-- Muestra la tabla de **sectores** con su total, sus especiales, sus citados y un **selector de
-  cuadrilla por sector** (la asignación es modificable).
-- Muestra las **cuadrillas** con sus sectores y su total de casos, y avisa cuántos sectores
-  quedaron sin cuadrilla.
+- Muestra el **resumen principal** con los comunes, los **especiales separados** en reparación,
+  construcción y gobierno, los que están **sin sector** y los que se van a distribuir (D-114).
+- Muestra el **checklist de tipos** (Comunes, Especiales Reparación, Especiales Construcción,
+  Especiales Gobierno y Masivas) y la tabla de **fallas masivas con su cuadrilla** (D-113).
+- Muestra la tabla de **sectores** con su total, las tres columnas de especiales, sus citados, un
+  **selector de cuadrilla por sector** y una **lista desplegable con las masivas del sector** para
+  decidir cuáles entran al despacho (D-114).
+- Muestra las **cuadrillas** con sus sectores, su total de casos y el desglose de especiales, y
+  avisa cuántos sectores quedaron sin cuadrilla.
+- Ya **no** muestra la tabla del universo de casos: esa sección se eliminó en D-114.
 - Al pie están los botones **«Procesar despacho»** y **«Cancelar»**; procesar envía la asignación
   con `reemplazar=true`.
 

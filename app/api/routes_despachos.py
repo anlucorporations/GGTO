@@ -196,7 +196,7 @@ def listar_fallas(
 
 
 @router.get("/proceso", response_model=ProcesoDespachoOut,
-            summary="Universo de casos, sectores y asignación por cuadrilla del día (D-66)")
+            summary="Sectores, cuadrillas, especiales separados y masivas del proceso (D-66/D-114)")
 def proceso_despacho(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
@@ -288,16 +288,25 @@ def procesar(
 
     # D-113: la cuadrilla elegida para cada masiva se guarda y manda sobre el
     # sector al repartir sus casos.
+    masivas_incluidas: set[int] | None = None
     if datos.masivas:
         svc.asignar_masivas(
             db, central.id_central, [bloque.model_dump() for bloque in datos.masivas]
         )
+        # D-114: si el formulario desmarcó alguna masiva en la lista desplegable
+        # de su sector, sus casos quedan fuera del proceso; si vienen todas
+        # marcadas, se mantiene el comportamiento anterior (todas incluidas).
+        if not all(bloque.incluida for bloque in datos.masivas):
+            masivas_incluidas = {
+                bloque.id_falla for bloque in datos.masivas if bloque.incluida
+            }
 
     # El universo es el mismo del formulario de proceso: incluye los borradores
     # del día y los casos PENDIENTES que devolvió el cierre de jornada (D-113).
     casos = svc.universo_casos(db, central.id_central, dia)
     resultado = svc.construir_propuesta(
-        db, central.id_central, dia, casos=casos, tipos=tipos
+        db, central.id_central, dia, casos=casos, tipos=tipos,
+        masivas_incluidas=masivas_incluidas,
     )
     creados = svc.guardar_propuesta(db, resultado, usuario.p00)
     if reproceso:

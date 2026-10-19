@@ -704,7 +704,7 @@ export function obtenerDespacho(idDespacho: number): Promise<DespachoDetalleOut>
 /* Proceso de despacho con asignación de sectores (D-66)               */
 /* ------------------------------------------------------------------ */
 
-/** Universo de casos, sectores y asignación por cuadrilla del día. */
+/** Sectores, especiales separados, masivas y asignación por cuadrilla del día. */
 export function obtenerProcesoDespacho(
   params: { fecha?: string; id_central?: number } = {},
 ): Promise<ProcesoDespachoOut> {
@@ -725,9 +725,9 @@ export function procesarDespacho(datos: {
   fecha: string;
   id_central?: number;
   asignaciones: AsignacionBloque[];
-  /** D-113: tipos marcados en el checklist (Comunes y Referidos por defecto). */
+  /** D-113 · D-114: tipos marcados en el checklist (Comunes y Especiales Reparación por defecto). */
   tipos?: string[];
-  /** D-113: reasignación de las fallas masivas a otra cuadrilla. */
+  /** D-113 · D-114: reasignación de las fallas masivas y su inclusión en el despacho. */
   masivas?: AsignacionMasiva[];
   reemplazar?: boolean;
 }): Promise<DespachoDetalleOut[]> {

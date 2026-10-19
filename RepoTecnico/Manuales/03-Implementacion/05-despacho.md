@@ -645,18 +645,22 @@ modal genérico, que ocupa el **90 % de la ventana** del navegador
 (`app/web/src/components/Modal.tsx:4-7`):
 
 - Carga el proceso con `api.obtenerProcesoDespacho({ fecha })` y siembra el estado local de
-  asignación a partir de `datos.sectores`
-  (`app/web/src/components/ProcesarDespacho.tsx:32-50`).
-- Muestra cuatro tarjetas con el **universo de casos**, comunes, especiales y sin sector
-  (`:113-130`) y una tabla del universo con filtros **Todos / Comunes / Especiales**
-  (`:132-184`).
-- Muestra la tabla de **sectores** con `total`, `especiales`, `citados` y un selector de
-  cuadrilla por sector —la asignación es modificable— (`:186-233`), y las **cuadrillas**
-  con sus sectores y su total (`:235-258`).
+  asignación a partir de `datos.sectores`, el de las masivas a partir de `datos.masivas` y el de
+  los tipos con la selección predeterminada de la API
+  (`app/web/src/components/ProcesarDespacho.tsx`).
+- Muestra el **resumen principal** con las tarjetas de comunes, **especiales reparación**,
+  **especiales construcción**, **especiales gobierno**, sin sector y a distribuir (D-114). La
+  sección **«Universo de casos»** —tarjetas del universo y tabla con filtros— se eliminó en D-114.
+- Muestra el **checklist de tipos** (Comunes, Especiales Reparación, Especiales Construcción,
+  Especiales Gobierno y Masivas) y la tabla de **fallas masivas y su cuadrilla** (D-113).
+- Muestra la tabla de **sectores** con `total`, las tres columnas de especiales, `citados`, un
+  selector de cuadrilla por sector —la asignación es modificable— y una **lista desplegable con
+  las masivas del sector** (D-114); las masivas sin marcar quedan fuera del proceso. Las
+  **cuadrillas** muestran sus sectores, su total y el desglose de especiales.
 - Advierte cuántos sectores quedan sin cuadrilla y recuerda que sus casos no se despacharán
-  salvo los citados (`:260-267`).
+  salvo los citados.
 - Los botones **«Procesar despacho»** y **«Cancelar»** están al pie; procesar llama a
-  `api.procesarDespacho({ fecha, asignaciones, reemplazar: true })` (`:83-94,269-276`).
+  `api.procesarDespacho({ fecha, asignaciones, tipos, masivas, reemplazar: true })`.
 
 ### Acciones y control por rol
 
