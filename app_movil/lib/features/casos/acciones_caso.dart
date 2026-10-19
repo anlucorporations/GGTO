@@ -6,14 +6,16 @@ library;
 
 /// Acciones que el técnico puede ejecutar desde la ficha.
 enum AccionCaso {
-  /// NUEVO / ASIGNADO / EN_GESTION: registrar el contacto con el cliente (RF-12).
+  /// NUEVO / PENDIENTE / ASIGNADO / EN_GESTION: registrar el contacto con el
+  /// cliente (RF-12).
   marcarContactado,
 
-  /// NUEVO / ASIGNADO / EN_GESTION: el cliente **no contesta** (D-88 · RF-APK-12):
-  /// el caso pasa a `CITADO` con cita de 1ra visita e informado al COS.
+  /// NUEVO / PENDIENTE / ASIGNADO / EN_GESTION: el cliente **no contesta**
+  /// (D-88 · RF-APK-12): el caso pasa a `CITADO` con cita de 1ra visita e
+  /// informado al COS.
   noContesta,
 
-  /// NUEVO / ASIGNADO / EN_GESTION: agendar una cita.
+  /// NUEVO / PENDIENTE / ASIGNADO / EN_GESTION: agendar una cita.
   agendarCita,
 
   /// CONTACTADO / CITADO: atender (cerrar, enrutar o diferir).
@@ -68,6 +70,7 @@ const Map<String, String> notasPorEstado = {
 Set<AccionCaso> accionesDeEstado(String estado) {
   switch (estado.trim().toUpperCase()) {
     case 'NUEVO':
+    case 'PENDIENTE':
     case 'ASIGNADO':
     case 'EN_GESTION':
       return {

@@ -29,7 +29,7 @@ void main() {
     });
 
     test('los estados de trabajo siguen visibles', () {
-      for (final estado in ['NUEVO', 'ASIGNADO', 'CONTACTADO', 'EN_GESTION']) {
+      for (final estado in ['NUEVO', 'PENDIENTE', 'ASIGNADO', 'CONTACTADO', 'EN_GESTION']) {
         expect(estaGestionado(estado), isFalse, reason: estado);
       }
     });
@@ -53,9 +53,11 @@ void main() {
         _caso(estado: 'CITADO', id: 'D'),
         _caso(estado: 'DIFERIDO', id: 'E'),
         _caso(estado: 'ENRUTADO', id: 'F'),
+        _caso(estado: 'PENDIENTE', id: 'G'),
       ];
       final visibles = casosVisiblesDe(casos, verGestionados: false);
-      expect(visibles.map((c) => c['id_averia']), ['A', 'C']);
+      // D-116: un PENDIENTE del cierre de jornada sigue en el listado principal.
+      expect(visibles.map((c) => c['id_averia']), ['A', 'C', 'G']);
     });
 
     test('con el conmutador vuelven todos', () {
@@ -159,7 +161,7 @@ void main() {
       }
 
       const estados = [
-        'NUEVO', 'ASIGNADO', 'CONTACTADO', 'CITADO',
+        'NUEVO', 'PENDIENTE', 'ASIGNADO', 'CONTACTADO', 'CITADO',
         'DIFERIDO', 'ENRUTADO', 'CERRADO', 'CANCELADO', 'EN_GESTION', 'OTRO',
       ];
       for (final estado in estados) {

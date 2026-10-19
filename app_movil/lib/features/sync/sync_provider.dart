@@ -217,12 +217,23 @@ class SyncProvider extends ChangeNotifier {
   ///
   /// Cada acción se intenta de forma independiente: un 4xx **no** detiene la
   /// cola (H-08). Los fallos de red o 5xx se reintentan con backoff.
-  Future<ResultadoSync> sincronizar({bool silencioso = false}) async {
+  ///
+  /// D-115: `progresoDesde`/`progresoHasta` permiten reservar una franja de la
+  /// barra cuando la cola es una fase de la **actualización completa** (CARGA →
+  /// cola → DESCARGA) y no la operación entera.
+  Future<ResultadoSync> sincronizar({
+    bool silencioso = false,
+    double progresoDesde = 0,
+    double progresoHasta = 1,
+  }) async {
     if (_sincronizando) {
       return _ultimoResultado ??
           const ResultadoSync(enviadas: 0, reintentar: 0, fallidas: 0, pendientes: 0);
     }
     _sincronizando = true;
+    final desde = progresoDesde.clamp(0.0, 1.0).toDouble();
+    final hasta = progresoHasta.clamp(0.0, 1.0).toDouble();
+    double escalar(double valor) => desde + (hasta - desde) * valor.clamp(0.0, 1.0);
     if (!silencioso) notifyListeners();
 
     var enviadas = 0;
@@ -234,7 +245,7 @@ class SyncProvider extends ChangeNotifier {
       final total = acciones.length;
       // D-82: la barra avanza acción por acción (progreso determinista).
       _progresoActivo = true;
-      _progreso = total == 0 ? 1 : 0;
+      _progreso = total == 0 ? escalar(1) : escalar(0);
       _fase = total == 0 ? 'No había acciones por sincronizar' : 'Enviando acciones…';
       notifyListeners();
 
@@ -280,7 +291,7 @@ class SyncProvider extends ChangeNotifier {
           fallidas++;
         }
         procesadas++;
-        _progreso = total == 0 ? 1 : procesadas / total;
+        _progreso = total == 0 ? escalar(1) : escalar(procesadas / total);
         _fase = 'Enviando acciones… ($procesadas de $total)';
         notifyListeners();
       }
@@ -296,7 +307,7 @@ class SyncProvider extends ChangeNotifier {
       );
       _ultimoResultado = resultado;
       _progresoActivo = false;
-      _progreso = 1;
+      _progreso = escalar(1);
       _fase = 'Datos sincronizados';
       notifyListeners();
     }

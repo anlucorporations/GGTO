@@ -45,12 +45,12 @@ class ResultadoDescarga {
   /// bloque MASIVA de la APK es fijo y debe reflejar el estado vigente.
   final int masivas;
 
-  /// D-104: casos **no atendidos** de despachos anteriores que se borraron del
-  /// dispositivo después de que el servidor confirmara el despacho del día.
+  /// D-104/D-115: casos **no atendidos** de despachos anteriores que se borraron
+  /// del dispositivo tras una descarga correcta.
   final int descartados;
 
-  /// D-104: fecha del despacho del día (`null` si la cuadrilla no tiene jornada,
-  /// y entonces no se borró nada).
+  /// D-104/D-115: fecha del despacho del día (`null` si la cuadrilla no tiene
+  /// jornada; la purga se aplica igualmente si la cuadrilla está resuelta).
   final DateTime? despachoDelDia;
 
   /// ¿La descarga no trajo nada **porque no hay nada** (y no por un fallo)?
@@ -132,10 +132,8 @@ class DownloadService {
       avisar(0.8, 'Guardando las fallas masivas…');
       await DatabaseHelper.instance.guardarMasivas(masivas);
 
-      // D-104: si el servidor confirma que la cuadrilla tiene **despacho del
-      // día**, se borran los casos no atendidos que arrastra de jornadas
-      // anteriores. Si no lo confirma, no se borra nada: el técnico podría estar
-      // trabajando con el despacho de ayer.
+      // D-104/D-115: la jornada del día aporta los casos que se conservan
+      // siempre; la purga borra los **no atendidos** de jornadas anteriores.
       final despachoDia = datos['despacho_del_dia'];
       DateTime? fechaDespacho;
       var descartados = 0;
@@ -149,7 +147,17 @@ class DownloadService {
             if (id is int) idsDia.add(id);
           }
         }
-        avisar(0.9, 'Descartando los casos de jornadas anteriores…');
+      }
+
+      final motivo = '${datos['motivo'] ?? ''}';
+      final cuadrilla = datos['cuadrilla'];
+      final codigo = cuadrilla is Map ? '${cuadrilla['codigo'] ?? ''}' : '';
+      // D-115: la purga es parte de la actualización. Se ejecuta cuando el
+      // servidor resolvió una cuadrilla de campo, aunque todavía no haya
+      // despacho publicado del día (en ese caso `idsDelDia` viene vacío y se
+      // conservan solo los casos atendidos y el trabajo sin enviar).
+      if (PurgaDespachos.procede(motivo: motivo, cuadrillaResuelta: codigo.isNotEmpty)) {
+        avisar(0.9, 'Descartando los casos no atendidos…');
         descartados = await PurgaDespachos.ejecutar(idsDelDia: idsDia);
       }
 
@@ -164,8 +172,6 @@ class DownloadService {
             .guardarMeta(claveMarcaDescarga, serverTs.toUtc().toIso8601String());
       }
 
-      final cuadrilla = datos['cuadrilla'];
-      final codigo = cuadrilla is Map ? '${cuadrilla['codigo'] ?? ''}' : '';
       final casosCuadrilla = datos['casos_cuadrilla'] is int
           ? datos['casos_cuadrilla'] as int
           : 0;

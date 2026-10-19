@@ -80,6 +80,7 @@ muestra. La lista visible es siempre el contenido del dispositivo.
 
 | Operación | Archivo | Reparto del avance |
 |---|---|---|
+| Actualización completa | `app_movil/lib/features/sync/actualizacion_datos_service.dart` | evidencias 2-40 % → cola 42-55 % → despacho 55-100 %. |
 | DESCARGA | `app_movil/lib/features/sync/download_service.dart:36` | conectando 5 % → descargando 35 % → guardando en el dispositivo 70 % → 100 %. |
 | CARGA | `app_movil/lib/features/sync/upload_service.dart:115` | 5 % apertura → fotos 10-60 % (`subirPendientes`, `:80`) → actividades 65 % → cierre de la jornada 90-100 %. |
 | Cola offline | `sync_provider.dart:189` | acción por acción hasta vaciar la cola. |
@@ -94,11 +95,24 @@ muestra. La lista visible es siempre el contenido del dispositivo.
 - `compacta: false`: tarjeta ancha en **Dispositivo** (`sync_screen.dart:109`), con
   el porcentaje a la derecha y el estado de conexión.
 
-### 3.4 La CARGA también vacía la cola clásica
+### 3.4 Un solo botón: la actualización completa (D-115)
 
-`app_movil/lib/features/sync/sync_screen.dart:55` — tras `UploadService.cargar()`,
-si quedan pendientes y hay red se llama a `sync.sincronizar()`: es lo que envía las
-**fallas masivas** y las **citas**, que el lote de `/sync/carga` no cubre.
+`app_movil/lib/features/sync/actualizacion_datos_service.dart` — `ActualizacionDatosService.ejecutar()`
+une los tres procesos en una sola acción:
+
+1. **CARGA** (`UploadService.cargar`): sube las evidencias (`evidencia_local.subida = 0`)
+   y las actividades por `/sync/carga`.
+2. **Cola clásica** (`SyncProvider.sincronizar`): fallas masivas, citas y evidencias
+   sueltas que el lote no cubre.
+3. **DESCARGA** (`DownloadService.descargar`): trae el despacho del día y ejecuta
+   `PurgaDespachos.ejecutar`, que borra los casos **no atendidos** de jornadas anteriores.
+
+El botón **ACTUALIZAR** de `sync_screen.dart` y el **Actualizar** de la franja de
+`casos_screen.dart` llaman al mismo servicio; ya no hay botones separados de
+DESCARGA/CARGA. La purga se ejecuta cuando el servidor resolvió una cuadrilla de
+campo (`PurgaDespachos.procede`), aunque todavía no haya despacho publicado del día;
+**nunca** borra un caso atendido (cerrado, cancelado, enrutado, diferido o citado)
+ni uno con trabajo sin enviar (cola o foto pendiente).
 
 ---
 

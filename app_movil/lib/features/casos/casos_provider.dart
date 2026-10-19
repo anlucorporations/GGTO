@@ -118,17 +118,7 @@ class CasosProvider extends ChangeNotifier {
     try {
       onProgreso?.call('Descargando los casos de mi cuadrilla…', 0.05);
       final resultado = await DownloadService.descargar(onProgreso: onProgreso);
-      _actualizadoEn = resultado.serverTs ?? DateTime.now();
-      _motivo = resultado.motivo;
-      // D-104: si la purga descartó casos de jornadas anteriores, se dice.
-      _mensajeServidor = resultado.descartados > 0
-          ? '${resultado.mensaje} Se descartaron ${resultado.descartados} '
-              'caso(s) no atendidos de jornadas anteriores.'
-          : resultado.mensaje;
-      _cuadrillaCodigo = resultado.cuadrillaCodigo;
-      _casosCuadrilla = resultado.casosCuadrilla;
-      _desdeCache = false;
-      _error = null;
+      await aplicarDescarga(resultado);
     } on ApiError catch (error) {
       _desdeCache = true;
       _error = error.mensaje;
@@ -143,6 +133,28 @@ class CasosProvider extends ChangeNotifier {
       _cargando = false;
       notifyListeners();
     }
+  }
+
+  /// D-115: aplica a la lista un resultado de DESCARGA ya ejecutado por la
+  /// **actualización completa** (sin volver a descargar).
+  ///
+  /// Deja el mensaje del servidor, la cuadrilla y los casos descartados por la
+  /// purga, y vuelca la caché local actualizada.
+  Future<void> aplicarDescarga(ResultadoDescarga resultado) async {
+    _actualizadoEn = resultado.serverTs ?? DateTime.now();
+    _motivo = resultado.motivo;
+    // D-104/D-115: si la purga descartó casos no atendidos, se dice.
+    _mensajeServidor = resultado.descartados > 0
+        ? '${resultado.mensaje} Se descartaron ${resultado.descartados} '
+            'caso(s) no atendidos de jornadas anteriores.'
+        : resultado.mensaje;
+    _cuadrillaCodigo = resultado.cuadrillaCodigo;
+    _casosCuadrilla = resultado.casosCuadrilla;
+    _desdeCache = false;
+    _error = null;
+    _sincronizadoEn = DateTime.now();
+    await _leerLocal();
+    notifyListeners();
   }
 
   /// Consulta combinada: intenta el servidor y, si falla, filtra la caché local.

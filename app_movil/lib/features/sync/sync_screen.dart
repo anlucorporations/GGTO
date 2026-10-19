@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../../widgets/barra_progreso_sync.dart';
 import '../../widgets/boton_usuario.dart';
-import 'download_service.dart';
+import '../casos/casos_provider.dart';
+import '../masivas/masivas_provider.dart';
+import 'actualizacion_datos_service.dart';
 import 'sync_provider.dart';
-import 'upload_service.dart';
 
-/// Pantalla DISPOSITIVO (§4.3 / D-73): estado de la cola, **DESCARGA** y **CARGA**
-/// directas contra el backend. Ya no se exporta un ZIP manual.
+/// Pantalla DISPOSITIVO (§4.3 / D-73): estado de la cola y **un solo botón**
+/// de actualización (D-115) que sube las evidencias, envía la cola, descarga el
+/// despacho del día y borra los casos no atendidos.
 ///
 /// D-82: la barra superior muestra el **progreso** de la sincronización de los
 /// datos (requisito 2).
@@ -30,55 +32,37 @@ class _SyncScreenState extends State<SyncScreen> {
     });
   }
 
-  Future<void> _descargar() async {
+  /// D-115: una sola acción para todo el proceso del técnico.
+  ///
+  /// 1) CARGA de evidencias y actividades · 2) cola clásica · 3) DESCARGA del
+  /// despacho del día con la purga de los casos no atendidos.
+  Future<void> _actualizarTodo() async {
+    if (_procesando) return;
     setState(() => _procesando = true);
     final sync = context.read<SyncProvider>();
+    final casos = context.read<CasosProvider>();
+    final masivas = MasivasProvider.opcional(context, escuchar: false);
     try {
-      final resultado = await DownloadService.descargar(
+      final resultado = await ActualizacionDatosService.ejecutar(
+        sync: sync,
         onProgreso: (fase, valor) => sync.actualizarProgreso(valor, fase: fase),
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('DESCARGA: ${resultado.resumen}')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error en DESCARGA: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      sync.terminarProgreso();
-      if (mounted) setState(() => _procesando = false);
-    }
-  }
-
-  Future<void> _cargar() async {
-    setState(() => _procesando = true);
-    final sync = context.read<SyncProvider>();
-    try {
-      final resultado = await UploadService.cargar(
-        onProgreso: (fase, valor) => sync.actualizarProgreso(valor, fase: fase),
-      );
-      if (!mounted) return;
-      await sync.refrescar();
-      // D-82: el lote de `/sync/carga` no cubre la falla masiva ni las citas, así
-      // que tras la CARGA se vacía la cola clásica (con su barra de progreso).
-      var extra = '';
-      if (sync.pendientesSinError > 0 && sync.enLinea) {
-        final cola = await sync.sincronizar(silencioso: true);
-        if (cola.enviadas > 0) extra = ' · ${cola.enviadas} en cola enviadas';
+      if (resultado.descarga != null) {
+        await casos.aplicarDescarga(resultado.descarga!);
       }
+      await masivas?.refrescarLocal();
+      await sync.refrescar();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('CARGA: ${resultado.resumen}$extra'),
-          backgroundColor: resultado.tuvoErrores ? Colors.orange.shade800 : null,
+          content: Text('ACTUALIZACIÓN: ${resultado.resumen}'),
+          backgroundColor: resultado.huboErrores ? Colors.orange.shade800 : null,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error en CARGA: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error al actualizar: $e'), backgroundColor: Colors.red),
       );
     } finally {
       sync.terminarProgreso();
@@ -158,24 +142,20 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text('DESCARGA'),
-                  onPressed: _procesando ? null : _descargar,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.upload),
-                  label: const Text('CARGA'),
-                  onPressed: _procesando ? null : _cargar,
-                ),
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.sync),
+              label: Text(_procesando ? 'ACTUALIZANDO…' : 'ACTUALIZAR'),
+              onPressed: _procesando ? null : _actualizarTodo,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Sube las evidencias del técnico, borra los casos no atendidos y '
+            'descarga el despacho del día.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
           const SizedBox(height: 18),
           const Text(

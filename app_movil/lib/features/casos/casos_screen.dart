@@ -12,6 +12,7 @@ import '../auth/auth_provider.dart';
 import '../masivas/banner_masiva.dart';
 import '../masivas/masivas_provider.dart';
 import '../mensajes/mensajes_provider.dart';
+import '../sync/actualizacion_datos_service.dart';
 import '../sync/sync_provider.dart';
 import '../usuario/banner_actualizacion.dart';
 import 'caso_detalle_screen.dart';
@@ -33,6 +34,7 @@ class CasosScreen extends StatefulWidget {
 class _CasosScreenState extends State<CasosScreen> {
   final _busquedaController = TextEditingController();
   Timer? _debounce;
+  bool _actualizando = false;
 
   @override
   void initState() {
@@ -43,8 +45,8 @@ class _CasosScreenState extends State<CasosScreen> {
       // D-99: el bloque MASIVA es fijo y prioritario.
       final masivas = MasivasProvider.opcional(context, escuchar: false);
       // D-84: abrir la pantalla **no** sincroniza. Se pinta el contenido local
-      // (instantáneo y válido sin conexión) y el técnico decide cuándo DESCARGAR
-      // o CARGAR desde la franja de estado.
+      // (instantáneo y válido sin conexión) y el técnico decide cuándo
+      // **actualizar** (D-115: sube evidencias, purga y descarga el día).
       await casos.refrescarLocal();
       // El bloque MASIVA se pinta de inmediato desde la caché (sin tocar la red).
       await masivas?.refrescarLocal();
@@ -52,15 +54,43 @@ class _CasosScreenState extends State<CasosScreen> {
     });
   }
 
-  /// Descarga los casos y, con ellos, las masivas activas (D-99).
+  /// D-115: **un solo botón** para todo el proceso de actualización.
   ///
-  /// La descarga es una sola (`GET /sync/descarga` viaja con `masivas`): aquí
-  /// solo hay que volcar la caché recién actualizada en el bloque MASIVA.
-  Future<void> _descargar() async {
+  /// Sube las evidencias y actividades del técnico, envía la cola clásica,
+  /// descarga el despacho del día y borra los casos no atendidos de jornadas
+  /// anteriores. La lista se refresca desde la caché local al terminar.
+  Future<void> _actualizarTodo() async {
+    if (_actualizando) return;
+    setState(() => _actualizando = true);
     final casos = context.read<CasosProvider>();
+    final sync = context.read<SyncProvider>();
     final masivas = MasivasProvider.opcional(context, escuchar: false);
-    await casos.cargar();
-    await masivas?.refrescarLocal();
+    try {
+      final resultado = await ActualizacionDatosService.ejecutar(
+        sync: sync,
+        onProgreso: (fase, valor) => sync.actualizarProgreso(valor, fase: fase),
+      );
+      if (resultado.descarga != null) {
+        await casos.aplicarDescarga(resultado.descarga!);
+      }
+      await masivas?.refrescarLocal();
+      await sync.refrescar();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Actualización: ${resultado.resumen}'),
+          backgroundColor: resultado.huboErrores ? Colors.orange.shade800 : null,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al actualizar: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      sync.terminarProgreso();
+      if (mounted) setState(() => _actualizando = false);
+    }
   }
 
   @override
@@ -141,12 +171,11 @@ class _CasosScreenState extends State<CasosScreen> {
           const BannerActualizacion(),
           _BannerContenidoLocal(
             casos: casosProv,
-            // D-84/DEC-3: la sincronización es explícita; la franja informa
-            // cuántas acciones están guardadas sin enviar y ofrece CARGA.
+            // D-84/DEC-3: la actualización es explícita; la franja informa
+            // cuántas acciones están guardadas sin enviar y ofrece el botón.
             pendientes: sync.pendientesSinError,
-            onCargar: () => Navigator.pushNamed(context, '/sync'),
-            // D-99: DESCARGAR también refresca el bloque MASIVA.
-            onDescargar: _descargar,
+            onActualizar: _actualizarTodo,
+            actualizando: _actualizando,
           ),
           // D-99 · MASIVA fija y priorizada: vive **fuera** del ListView (la
           // lista va debajo, en el Expanded), así que no desaparece al desplazar.
@@ -204,7 +233,7 @@ class _CasosScreenState extends State<CasosScreen> {
     // listado queda vacío solo porque el conmutador está apagado.
     if (casosProv.todoGestionado) {
       return RefreshIndicator(
-        onRefresh: _descargar,
+        onRefresh: _actualizarTodo,
         child: ListView(
           children: [
             const SizedBox(height: 80),
@@ -234,7 +263,7 @@ class _CasosScreenState extends State<CasosScreen> {
 
     if (visibles.isEmpty) {
       return RefreshIndicator(
-        onRefresh: _descargar,
+        onRefresh: _actualizarTodo,
         child: ListView(
           children: [
             const SizedBox(height: 80),
@@ -278,7 +307,7 @@ class _CasosScreenState extends State<CasosScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _descargar,
+      onRefresh: _actualizarTodo,
       child: ListView.builder(
         itemCount: visibles.length + 1,
         itemBuilder: (context, index) {
@@ -317,13 +346,13 @@ class _CasosScreenState extends State<CasosScreen> {
 }
 
 /// Franja que informa que la lista es el **contenido local** del dispositivo
-/// (D-82 · requisito 1) y avisa cuando la descarga no pudo actualizarla.
+/// (D-82 · requisito 1) y ofrece el **único botón de actualización** (D-115).
 class _BannerContenidoLocal extends StatelessWidget {
   const _BannerContenidoLocal({
     required this.casos,
     required this.pendientes,
-    required this.onCargar,
-    this.onDescargar,
+    required this.onActualizar,
+    this.actualizando = false,
   });
 
   final CasosProvider casos;
@@ -331,11 +360,11 @@ class _BannerContenidoLocal extends StatelessWidget {
   /// Acciones guardadas en el dispositivo que aún no viajaron (D-85).
   final int pendientes;
 
-  /// Abre la CARGA (pantalla Dispositivo) con las acciones pendientes.
-  final VoidCallback onCargar;
+  /// D-115: sube evidencias, envía la cola y descarga el despacho del día.
+  final Future<void> Function() onActualizar;
 
-  /// DESCARGAR: casos **y masivas** (D-99). Si no se informa, solo los casos.
-  final Future<void> Function()? onDescargar;
+  /// `true` mientras la actualización está en curso.
+  final bool actualizando;
 
   @override
   Widget build(BuildContext context) {
@@ -365,18 +394,12 @@ class _BannerContenidoLocal extends StatelessWidget {
           Expanded(
             child: Text(texto, style: const TextStyle(fontSize: 12)),
           ),
-          // D-84 (DEC-3): nada se sincroniza solo; el técnico decide.
+          // D-115: un solo botón para subir evidencias, borrar lo no atendido y
+          // descargar el despacho del día.
           TextButton(
-            onPressed: casos.cargando
-                ? null
-                : () => (onDescargar ?? casos.cargar)(),
-            child: Text(sinRed ? 'Reintentar' : 'Descargar'),
+            onPressed: actualizando ? null : () => onActualizar(),
+            child: Text(actualizando ? 'Actualizando…' : 'Actualizar'),
           ),
-          if (pendientes > 0)
-            TextButton(
-              onPressed: onCargar,
-              child: Text('Cargar ($pendientes)'),
-            ),
         ],
       ),
     );

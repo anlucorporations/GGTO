@@ -43,7 +43,7 @@ Widget _ficha(Map<String, dynamic> caso) => MultiProvider(
 void main() {
   group('D-88 · «No Contesta» (RF-APK-12)', () {
     test('está disponible mientras el caso no esté contactado', () {
-      for (final estado in ['NUEVO', 'ASIGNADO', 'EN_GESTION']) {
+      for (final estado in ['NUEVO', 'PENDIENTE', 'ASIGNADO', 'EN_GESTION']) {
         expect(accionesDeEstado(estado), contains(AccionCaso.noContesta),
             reason: estado);
       }

@@ -27,6 +27,9 @@ class EstadoIcono extends StatelessWidget {
     switch (estado.trim().toUpperCase()) {
       case 'NUEVO':
         return (Icons.fiber_new, Marca.info, Marca.infoClaro);
+      case 'PENDIENTE':
+        // D-116: el caso que devolvió el cierre de jornada y vuelve al despacho.
+        return (Icons.pending_actions, Marca.alerta, Marca.alertaClaro);
       case 'ASIGNADO':
         return (Icons.assignment_ind, Marca.info, Marca.infoClaro);
       case 'CONTACTADO':

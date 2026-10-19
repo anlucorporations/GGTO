@@ -50,9 +50,14 @@ Debajo del título de la pantalla hay una **barra de progreso** con un texto:
 
 Durante una sincronización la barra avanza de verdad:
 
-- **Descarga**: conectando → descargando los casos → guardando en el teléfono.
-- **Carga**: subiendo fotos (una por una) → enviando las actividades → cerrando la
-  jornada.
+- **Actualización completa**: subiendo tus fotos → enviando tus actividades →
+  descargando el despacho del día y borrando los casos no atendidos de días
+  anteriores.
+
+El botón **Actualizar** de la franja de **Casos** y el botón **ACTUALIZAR** de
+**Dispositivo** hacen todo el proceso de una sola vez: suben tus evidencias, envían
+lo pendiente, descargan el despacho del día y retiran del teléfono los casos no
+atendidos que ya no te corresponden.
 
 La misma barra aparece en **Casos**, **Alertas**, **Mensajes** y **Dispositivo**
 (en Dispositivo se ve más grande, con el porcentaje).

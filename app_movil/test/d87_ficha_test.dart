@@ -48,9 +48,9 @@ Widget _ficha(Map<String, dynamic> caso) => MultiProvider(
 
 void main() {
   group('D-87 · acciones por estado (RF-APK-06)', () {
-    test('NUEVO, ASIGNADO y EN_GESTION ofrecen contactar, no contesta y agendar',
+    test('NUEVO, PENDIENTE, ASIGNADO y EN_GESTION ofrecen contactar, no contesta y agendar',
         () {
-      for (final estado in ['NUEVO', 'ASIGNADO', 'EN_GESTION']) {
+      for (final estado in ['NUEVO', 'PENDIENTE', 'ASIGNADO', 'EN_GESTION']) {
         expect(
           accionesDeEstado(estado),
           {
@@ -124,6 +124,19 @@ void main() {
       await tester.pumpAndSettle();
 
       // D-101: las acciones del pie son iconos con etiqueta corta.
+      expect(find.text('Contactado'), findsOneWidget);
+      expect(find.text('No contesta'), findsOneWidget);
+      expect(find.text('Agendar'), findsOneWidget);
+      expect(find.text('Atender'), findsNothing);
+    });
+
+    testWidgets('en PENDIENTE el pie también ofrece gestionar el caso',
+        (tester) async {
+      await tester.pumpWidget(_ficha(_caso('PENDIENTE')));
+      await tester.pumpAndSettle();
+
+      // D-116: un caso devuelto a PENDIENTE por el cierre de jornada sigue
+      // siendo gestionable desde la APK.
       expect(find.text('Contactado'), findsOneWidget);
       expect(find.text('No contesta'), findsOneWidget);
       expect(find.text('Agendar'), findsOneWidget);

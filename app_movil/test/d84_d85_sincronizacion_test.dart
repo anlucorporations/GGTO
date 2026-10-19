@@ -93,7 +93,8 @@ void main() {
       expect(find.byType(CasosScreen), findsOneWidget);
     });
 
-    testWidgets('la franja informa la cola y ofrece Cargar', (tester) async {
+    testWidgets('la franja informa la cola y ofrece un solo botón de actualización',
+        (tester) async {
       final casos = _CasosEspia();
       final sync = _SyncEspia(pendientes: 2);
 
@@ -113,8 +114,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('2 por enviar'), findsOneWidget);
-      expect(find.text('Cargar (2)'), findsOneWidget);
-      expect(find.text('Descargar'), findsOneWidget);
+      // D-115: un solo botón; ya no hay «Cargar» y «Descargar» separados.
+      expect(find.text('Actualizar'), findsOneWidget);
+      expect(find.textContaining('Cargar ('), findsNothing);
+      expect(find.text('Descargar'), findsNothing);
     });
   });
 

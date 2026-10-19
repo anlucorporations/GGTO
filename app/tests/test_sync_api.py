@@ -628,10 +628,9 @@ def test_upload_rechaza_foto_demasiado_grande(client, entorno_sync, tmp_path, mo
 # --------------------------------------------------------------------------- #
 # DESCARGA · jornada del día y purga de despachos anteriores (D-104)
 # --------------------------------------------------------------------------- #
-# La APK borra los casos **no atendidos** de jornadas anteriores solo si el
-# servidor confirma la jornada del día (`despacho_del_dia`, DEC-104-3) y conserva
-# siempre lo que viaja en `ids_del_dia`. Estas pruebas fijan ese contrato contra
-# PostgreSQL real, que era el pendiente de verificación de D-104.
+# La APK conserva lo que viaja en `ids_del_dia` y purga los no atendidos con la
+# condición de D-115 (cuadrilla de campo). El backend sigue informando
+# `despacho_del_dia`/`ids_del_dia` para que la APK sepa qué es del día.
 def _crear_caso(client, headers, id_averia: str) -> int:
     """Caso de prueba en estado ASIGNADO (como lo deja el despacho real)."""
     r = client.post(
@@ -822,5 +821,50 @@ def test_un_despacho_en_borrador_no_es_la_jornada_del_dia(client, entorno_sync, 
     assert {c["id_caso"] for c in cuerpo["casos"]} == {id_caso}
     assert cuerpo["despacho_del_dia"] is None, "un despacho en BORRADOR no es la jornada"
     assert cuerpo["ids_del_dia"] == [], "sin jornada publicada no se marca nada como del día"
+
+
+# --------------------------------------------------------------------------- #
+# APK · un caso PENDIENTE del despacho del día se descarga y se gestiona (D-116)
+# --------------------------------------------------------------------------- #
+def test_el_pendiente_del_despacho_se_descarga_y_el_tecnico_lo_gestiona(
+    client, entorno_sync, db_session
+):
+    """El cierre de jornada deja el caso en PENDIENTE y lo vuelve a despachar.
+
+    La APK debe mostrarlo y permitir las acciones del PIE (contactar y atender);
+    el servidor no lo bloquea por su estado, solo por ser terminal.
+    """
+    headers = entorno_sync["admin"]
+    id_caso = _crear_caso(client, headers, "TSTSYNC-PEND")
+    caso = db_session.get(Caso, id_caso)
+    assert caso is not None
+    caso.estado_actual = "PENDIENTE"  # como lo deja el cierre de jornada
+    db_session.add(DespachoCasos(
+        id_despacho=entorno_sync["despacho_hoy_a"], id_caso=id_caso,
+        estado="ASIGNADO", orden_visita=7, tipo_asignacion="REPARACION",
+    ))
+    db_session.commit()
+
+    descarga = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"])
+    assert descarga.status_code == 200, descarga.text
+    ids = {c["id_caso"] for c in descarga.json()["casos"]}
+    assert id_caso in ids, "el PENDIENTE asignado al despacho del día no se descarga"
+
+    # 1) Contactar (acción del PIE para PENDIENTE) y 2) cerrar.
+    contacto = client.post(
+        f"{CASOS}/{id_caso}/estado",
+        json={"estado_actual": "CONTACTADO"},
+        headers=entorno_sync["tecnico"],
+    )
+    assert contacto.status_code == 200, contacto.text
+    assert contacto.json()["estado_actual"] == "CONTACTADO"
+
+    cierre = client.post(
+        f"{CASOS}/{id_caso}/cierre",
+        json={"modo": "COS", "descripcion": "Cierre del pendiente del día"},
+        headers=entorno_sync["tecnico"],
+    )
+    assert cierre.status_code == 200, cierre.text
+    assert cierre.json()["estado_actual"] == "CERRADO"
 
 

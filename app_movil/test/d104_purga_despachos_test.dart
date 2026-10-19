@@ -88,15 +88,40 @@ void main() {
       );
     });
 
-    test('sin despacho del día no se borra nada de lo que se conserva', () {
-      // La condición de seguridad (no purgar sin despacho) la aplica la descarga,
-      // pero el plan tampoco borra lo que pertenece al día indicado.
+    test('sin despacho del día se conserva lo que pertenece al día indicado', () {
+      // D-115: la descarga decide si procede purgar (con cuadrilla de campo) y
+      // llama al plan con los ids del día (vacíos si aún no hay despacho).
       final borrar = PurgaDespachos.planificar(
         locales: [fila('AV-1', 101, 'ASIGNADO'), fila('AV-2', 102, 'ASIGNADO')],
         idsDelDia: {102},
         protegidos: const {},
       );
       expect(borrar, ['AV-1']);
+    });
+  });
+
+  group('D-115 · ¿procede purgar en la actualización?', () {
+    test('con cuadrilla de campo, aunque no haya despacho del día', () {
+      expect(
+        PurgaDespachos.procede(motivo: 'SIN_DESPACHO', cuadrillaResuelta: true),
+        isTrue,
+      );
+      expect(PurgaDespachos.procede(motivo: 'OK', cuadrillaResuelta: true), isTrue);
+    });
+
+    test('sin cuadrilla o en la cuadrilla 0 no se purga', () {
+      expect(
+        PurgaDespachos.procede(motivo: 'SIN_CUADRILLA', cuadrillaResuelta: false),
+        isFalse,
+      );
+      expect(
+        PurgaDespachos.procede(motivo: 'SIN_TECNICO', cuadrillaResuelta: false),
+        isFalse,
+      );
+      expect(
+        PurgaDespachos.procede(motivo: 'CUADRILLA_GESTION', cuadrillaResuelta: true),
+        isFalse,
+      );
     });
   });
 }

@@ -15,10 +15,26 @@ import '../casos/acciones_caso.dart';
 ///      sin subir). Esto es innegociable: borrarlo perdería trabajo de campo.
 /// En cualquier otro caso —no atendido y de un despacho anterior— se borra.
 ///
+/// D-115: la **actualización completa** ejecuta esta purga en cuanto el servidor
+/// resuelve una cuadrilla de campo (`procede`), aunque todavía no haya despacho
+/// del día; en ese caso `idsDelDia` viene vacío y se borran todos los no atendidos.
+///
 /// La decisión vive en una **función pura** (RT-29) para poder probarla sin
 /// SQLite, igual que `planMergeMasivas` (D-99).
 class PurgaDespachos {
   const PurgaDespachos._();
+
+  /// D-115: ¿procede purgar en esta descarga?
+  ///
+  /// La actualización purga **siempre** que el servidor haya resuelto una
+  /// cuadrilla de campo, aunque todavía no haya despacho publicado del día: el
+  /// técnico no debe arrastrar casos no atendidos. No se purga cuando no hay
+  /// cuadrilla (`SIN_CUADRILLA`/`SIN_TECNICO`) ni en la **cuadrilla 0** de
+  /// gestión (`CUADRILLA_GESTION`), porque no son trabajo de campo.
+  static bool procede({required String motivo, required bool cuadrillaResuelta}) {
+    if (!cuadrillaResuelta) return false;
+    return motivo != 'CUADRILLA_GESTION';
+  }
 
   /// Averías que deben borrarse de la caché local.
   static List<String> planificar({
@@ -46,9 +62,8 @@ class PurgaDespachos {
   /// Ejecuta la purga contra la caché local.
   ///
   /// Devuelve cuántos casos se borraron. **Solo debe llamarse cuando el servidor
-  /// confirmó que la cuadrilla tiene despacho del día** (D-104): si no lo hay, el
-  /// técnico podría estar trabajando con el de ayer y borrar sería destruir su
-  /// jornada.
+  /// resolvió una cuadrilla de campo** (`PurgaDespachos.procede`, D-115): sin
+  /// cuadrilla no se toca el dispositivo.
   static Future<int> ejecutar({required Set<int> idsDelDia}) async {
     final db = DatabaseHelper.instance;
     final locales = await db.casosParaPurga();
