@@ -203,3 +203,18 @@ Pruebas nuevas:
 - Prueba de aceptación en la web desplegada y regeneración de los manuales (HTML/PDF) que
   describen el formulario de proceso.
 - La APK no cambia: sigue recibiendo el despacho ya procesado por la API.
+
+---
+
+## 8. Entrega
+
+| Paso | Resultado |
+|---|---|
+| Commit | `1913318` · `feat(despacho): D-113 pendientes del cierre, masivas reasignables y checklist de tipos` (12 archivos) |
+| Push | GitHub `anlucorporations/GGTO` y GitLab `anlucorporations/ggto` en `1913318` |
+| Imagen | `ggto-web:v47` · Cloud Build **SUCCESS** en 1M42S (digest `sha256:fbf69ee…`) |
+| Revisión | **`ggto-web-00060-lrm`** con el 100 % del tráfico (sustituye a `00059-qw8`/v46) |
+| Humo | `/health` `/ready` `/` `/manual/` → **200** · PostgreSQL 15.18 · 43 tablas |
+| Bundle | `index-CO2XSR-V.js` + `index-Dmh5MpZP.css` (idéntico al build local) |
+| Contrato | `/openapi.json`: `tipos`, `masivas`, `tipo_distribucion`, `en_gestion` |
+| Datos vivos | `GET /despachos/proceso`: 61 casos · 54 `PENDIENTE` · Comunes 20 / Referidos 4 / Construcciones 30 / Empresas 0 / Masivas 7 · masiva #31 en C-001 con 23 casos |
