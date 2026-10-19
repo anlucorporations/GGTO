@@ -169,10 +169,28 @@ class ErrorSyncItem(BaseModel):
     mensaje: str
 
 
+class ItemCargaOut(BaseModel):
+    """Resultado de **una** acción de la cola del dispositivo (D-121).
+
+    La APK marca cada acción con su propio desenlace en lugar de todo el lote: una
+    acción rechazada (p. ej. un caso reasignado) queda en `ERROR` visible y no
+    arrastra al resto.
+    """
+
+    id_actividad_local: int | None = None
+    id_caso: int | None = None
+    aceptada: bool = False
+    mensaje: str | None = None
+    #: Actividad ya registrada (o recién creada) en el servidor.
+    id_actividad: int | None = None
+
+
 class SyncCargaOut(BaseModel):
     aceptadas: int = 0
     rechazadas: int = 0
     errores: list[ErrorSyncItem] = Field(default_factory=list)
+    #: Desglose por acción de la cola (vacío si el cliente no envía ids locales).
+    items: list[ItemCargaOut] = Field(default_factory=list)
     server_ts: datetime
 
 

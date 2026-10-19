@@ -159,6 +159,11 @@ class Actividad(Base):
     latitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
     longitud: Mapped[float | None] = mapped_column(Numeric(10, 7))
     sincronizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # D-121: identificador de la acción en la cola del dispositivo y dispositivo
+    # de origen. Juntos forman la clave de **idempotencia** de la carga: un
+    # reenvío del mismo lote no vuelve a registrar la actividad.
+    id_actividad_local: Mapped[int | None] = mapped_column(Integer)
+    dispositivo_id: Mapped[str | None] = mapped_column(String(80))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

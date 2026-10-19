@@ -75,11 +75,15 @@ def cerrar_caso(
     usuario: Usuario | None = None,
     p00: str | None = None,
     sincronizado: bool = True,
+    id_actividad_local: int | None = None,
+    dispositivo_id: str | None = None,
 ) -> Actividad:
     """Cierra el caso: actividad CIERRE + evidencias + estado CERRADO.
 
     `usuario` es el usuario de la API; `p00` permite cerrar en nombre del sistema
     (cierre en cascada de una masiva) sin un `Usuario` cargado.
+    `id_actividad_local`/`dispositivo_id` (D-121) identifican la acción de la cola
+    de la APK para que el reenvío del lote no duplique el cierre.
     """
     if caso.estado_actual == "CERRADO":
         raise CierreInvalido(
@@ -99,6 +103,8 @@ def cerrar_caso(
         id_causa=id_causa,
         fecha_hora=datetime.now(UTC),
         sincronizado=sincronizado,
+        id_actividad_local=id_actividad_local,
+        dispositivo_id=dispositivo_id,
     )
     db.add(actividad)
     db.flush()

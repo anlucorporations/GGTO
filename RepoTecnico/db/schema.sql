@@ -562,6 +562,11 @@ CREATE TABLE IF NOT EXISTS actividad (
     latitud         numeric(10,7),
     longitud        numeric(10,7),
     sincronizado    boolean      NOT NULL DEFAULT false,
+    -- D-121: clave de idempotencia de la CARGA de la APK (acción de la cola en
+    -- su dispositivo). Un reenvío del mismo lote no vuelve a registrar la
+    -- actividad; el índice único parcial lo garantiza también en concurrencia.
+    id_actividad_local integer,
+    dispositivo_id  varchar(80),
     creado_en       timestamptz  NOT NULL DEFAULT now()
 );
 
@@ -1131,7 +1136,17 @@ ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cerrado_en     timestamptz;
 ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cierre_auto    boolean NOT NULL DEFAULT false;
 ALTER TABLE despacho ADD COLUMN IF NOT EXISTS reprocesado_en timestamptz;
 
--- 13.6 Parámetros del incremento.
+-- 13.6 Idempotencia de la carga de la APK (D-121).
+--      Cada actividad enviada por la cola del dispositivo conserva el id local de
+--      la acción y el dispositivo de origen: la pareja es única, de modo que un
+--      reenvío del mismo lote (timeout, reintento) no duplica la bitácora.
+ALTER TABLE actividad ADD COLUMN IF NOT EXISTS id_actividad_local integer;
+ALTER TABLE actividad ADD COLUMN IF NOT EXISTS dispositivo_id varchar(80);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_actividad_local
+    ON actividad (dispositivo_id, id_actividad_local)
+    WHERE id_actividad_local IS NOT NULL AND dispositivo_id IS NOT NULL;
+
+-- 13.7 Parámetros del incremento.
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('despacho.hora_cierre_jornada', '"23:50"'::jsonb,
      'Hora del día operativo en que se cierran los despachos; lo no cerrado va a PENDIENTE (D-99)'),

@@ -31,9 +31,50 @@ class ResultadoCarga {
   }
 }
 
+/// Desenlace de **una** acción de la cola según el servidor (D-121).
+class ResultadoItemCarga {
+  const ResultadoItemCarga({
+    required this.idLocal,
+    required this.aceptada,
+    this.idCaso,
+    this.mensaje = '',
+  });
+
+  /// `accion_pendiente.id` en el dispositivo.
+  final int idLocal;
+  final int? idCaso;
+  final bool aceptada;
+  final String mensaje;
+}
+
 /// Servicio de carga directa: sube fotos pendientes y luego las actividades.
 class UploadService {
   const UploadService._();
+
+  /// Resumen del servidor: desenlace por acción (D-121).
+  ///
+  /// Es **puro** (sin red ni base de datos) para poder probarlo aislado: la CARGA
+  /// marca cada acción con su propio resultado en lugar de todo el lote, de modo
+  /// que una rechazada (p. ej. un caso reasignado) no arrastra al resto.
+  static List<ResultadoItemCarga> planificarResultado(dynamic items) {
+    final salida = <ResultadoItemCarga>[];
+    if (items is! List) return salida;
+    for (final crudo in items) {
+      if (crudo is! Map) continue;
+      final local = crudo['id_actividad_local'];
+      if (local is! int) continue;
+      final idCaso = crudo['id_caso'];
+      salida.add(
+        ResultadoItemCarga(
+          idLocal: local,
+          idCaso: idCaso is int ? idCaso : null,
+          aceptada: crudo['aceptada'] == true,
+          mensaje: '${crudo['mensaje'] ?? ''}'.trim(),
+        ),
+      );
+    }
+    return salida;
+  }
 
   /// Sube **una** evidencia local por su identificador.
   ///
@@ -227,6 +268,13 @@ class UploadService {
     }
 
     if (actividades.isNotEmpty || estados.isNotEmpty) {
+      // D-121: intentos previos de cada acción (el contador crece de verdad; antes
+      // se fijaba en 1 y nunca se alcanzaba el máximo de reintentos).
+      final intentosPorAccion = <int, int>{
+        for (final accion in acciones)
+          if (accion['id'] is int)
+            accion['id'] as int: (accion['intentos'] as int?) ?? 0,
+      };
       try {
         final respuesta = await ApiClient.post('/sync/carga', data: {
           'id_sync_log': sesion.idSesion,
@@ -235,37 +283,80 @@ class UploadService {
           'actividades': actividades,
           'estados': estados,
         });
-        if (respuesta is Map && respuesta['aceptadas'] is int) {
-          actividadesEnviadas = respuesta['aceptadas'] as int;
-          final rechazadas = (respuesta['rechazadas'] as int?) ?? 0;
-          final detalle = respuesta['errores'];
-          if (detalle is List) {
-            for (final e in detalle) {
-              errores.add('Servidor: $e');
-            }
-          }
-          if (rechazadas == 0) {
-            for (final id in idsBatch) {
-              await DatabaseHelper.instance.marcarAccionEnviada(id);
-            }
-            // D-85: el servidor confirmó el lote → los casos dejan de estar
-            // «pendiente de sincronizar» en el dispositivo.
-            for (final idCaso in idsCasoBatch) {
-              await DatabaseHelper.instance.limpiarPendienteSync(idCaso);
+        if (respuesta is Map) {
+          final resultado = UploadService.planificarResultado(respuesta['items']);
+          if (resultado.isNotEmpty) {
+            // D-121: se marca **acción por acción** con el desenlace del servidor.
+            for (final item in resultado) {
+              if (item.aceptada) {
+                await DatabaseHelper.instance.marcarAccionEnviada(item.idLocal);
+                if (item.idCaso != null) {
+                  await DatabaseHelper.instance.limpiarPendienteSync(item.idCaso!);
+                }
+                actividadesEnviadas++;
+              } else {
+                final intentos = (intentosPorAccion[item.idLocal] ?? 0) + 1;
+                await DatabaseHelper.instance.marcarAccionError(
+                  item.idLocal,
+                  intentos,
+                  item.mensaje.isEmpty
+                      ? 'Rechazada por el servidor'
+                      : item.mensaje,
+                );
+                errores.add(
+                  'Acción ${item.idLocal} rechazada: '
+                  '${item.mensaje.isEmpty ? 'sin detalle' : item.mensaje}',
+                );
+              }
             }
           } else {
-            for (final id in idsBatch) {
-              await DatabaseHelper.instance.marcarAccionReintento(
-                id,
-                1,
-                DateTime.now().add(const Duration(minutes: 1)).millisecondsSinceEpoch,
-                'Rechazo parcial en /sync/carga',
-              );
+            // Servidor anterior a D-121: comportamiento por lote (compatibilidad).
+            actividadesEnviadas = (respuesta['aceptadas'] as int?) ?? 0;
+            final rechazadas = (respuesta['rechazadas'] as int?) ?? 0;
+            final detalle = respuesta['errores'];
+            if (detalle is List) {
+              for (final e in detalle) {
+                errores.add('Servidor: $e');
+              }
+            }
+            if (rechazadas == 0) {
+              for (final id in idsBatch) {
+                await DatabaseHelper.instance.marcarAccionEnviada(id);
+              }
+              for (final idCaso in idsCasoBatch) {
+                await DatabaseHelper.instance.limpiarPendienteSync(idCaso);
+              }
+            } else {
+              for (final id in idsBatch) {
+                final intentos = (intentosPorAccion[id] ?? 0) + 1;
+                await DatabaseHelper.instance.marcarAccionReintento(
+                  id,
+                  intentos,
+                  DateTime.now()
+                      .add(Duration(minutes: _backoffMinutos(intentos)))
+                      .millisecondsSinceEpoch,
+                  'Rechazo parcial en /sync/carga',
+                );
+              }
             }
           }
         }
       } catch (e) {
         errores.add('Error en /sync/carga: $e');
+        // Sin respuesta no se sabe qué se aplicó: se reintenta con **backoff** y
+        // el contador real. Si el servidor ya lo había aplicado, la idempotencia
+        // (D-121) evita el duplicado en el siguiente intento.
+        for (final id in idsBatch) {
+          final intentos = (intentosPorAccion[id] ?? 0) + 1;
+          await DatabaseHelper.instance.marcarAccionReintento(
+            id,
+            intentos,
+            DateTime.now()
+                .add(Duration(minutes: _backoffMinutos(intentos)))
+                .millisecondsSinceEpoch,
+            'Sin respuesta de /sync/carga',
+          );
+        }
       }
     }
 
@@ -297,6 +388,15 @@ class UploadService {
   static Map<String, dynamic> _payload(dynamic crudo) {
     if (crudo is Map) return Map<String, dynamic>.from(crudo);
     return {};
+  }
+
+  /// Espera antes del siguiente intento: 1, 2, 4, 8… (tope 60 min).
+  ///
+  /// Misma política que `SyncProvider.backoffMinutos`, replicada aquí para no
+  /// arrastrar el proveedor de sincronización al servicio de carga.
+  static int _backoffMinutos(int intentos) {
+    final minutos = 1 << (intentos - 1).clamp(0, 6);
+    return minutos > 60 ? 60 : minutos;
   }
 
   static int? _intentoInt(dynamic valor) {

@@ -619,8 +619,38 @@ def aplicar_carga(
         )
 
     errores: list[dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
     aceptadas = 0
     rechazadas = 0
+    # D-121: clave de idempotencia por acción de la cola del dispositivo.
+    dispositivo = str(payload.get("dispositivo_id") or "").strip()[:80] or None
+
+    def _rechazar(id_caso: int, mensaje: str, local: int | None = None) -> None:
+        errores.append({"id_caso": id_caso, "mensaje": mensaje,
+                        "id_actividad_local": local})
+        items.append({"id_actividad_local": local, "id_caso": id_caso,
+                      "aceptada": False, "mensaje": mensaje, "id_actividad": None})
+
+    def _aceptar(id_caso: int, local: int | None, id_actividad: int | None = None,
+                 duplicada: bool = False) -> None:
+        items.append({
+            "id_actividad_local": local,
+            "id_caso": id_caso,
+            "aceptada": True,
+            "mensaje": "Ya registrada en una carga anterior" if duplicada else None,
+            "id_actividad": id_actividad,
+        })
+
+    def _ya_aplicada(local: int | None) -> Actividad | None:
+        """¿Esa acción de la cola ya se registró en este dispositivo? (D-121)."""
+        if local is None or dispositivo is None:
+            return None
+        return db.scalar(
+            select(Actividad).where(
+                Actividad.dispositivo_id == dispositivo,
+                Actividad.id_actividad_local == local,
+            )
+        )
 
     def _validar_acceso(id_caso: int) -> Caso | None:
         caso = db.get(Caso, id_caso)
@@ -636,10 +666,23 @@ def aplicar_carga(
         return caso
 
     for act in payload.get("actividades", []):
+        local = act.get("id_actividad_local")
+        local = int(local) if isinstance(local, int) else None
         caso = _validar_acceso(int(act["id_caso"]))
         if caso is None:
             rechazadas += 1
+            _rechazar(int(act["id_caso"]), "El caso no se puede gestionar desde su cuadrilla", local)
             continue
+
+        # D-121 · H-01: idempotencia. Si la acción ya se aplicó (reenvío del mismo
+        # lote tras un timeout, reintento o doble emisor), se confirma sin volver
+        # a escribir la actividad ni a mover el caso.
+        previa = _ya_aplicada(local)
+        if previa is not None:
+            aceptadas += 1
+            _aceptar(caso.id_caso, local, previa.id_actividad, duplicada=True)
+            continue
+
         tipo = str(act.get("tipo", "")).upper()
         tipo_db = _tipo_db(tipo)
         if tipo_db is None:
@@ -650,6 +693,7 @@ def aplicar_carga(
                 _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
                                   usuario.p00)
             aceptadas += 1
+            _aceptar(caso.id_caso, local)
             continue
 
         if tipo_db == "CIERRE":
@@ -658,7 +702,7 @@ def aplicar_carga(
             # caso no cerrado, clasificación REPARACIÓN↔REFERIDO y auditoría),
             # en vez de escribir la actividad a mano y dejar `id_metodo` en NULL.
             try:
-                svc_resolucion.cerrar_caso(
+                cierre = svc_resolucion.cerrar_caso(
                     db,
                     caso,
                     modo=str(act.get("modo") or ""),
@@ -671,12 +715,17 @@ def aplicar_carga(
                     id_causa=act.get("id_causa"),
                     usuario=usuario,
                     sincronizado=True,
+                    id_actividad_local=local,
+                    dispositivo_id=dispositivo,
                 )
             except svc_resolucion.CierreInvalido as exc:
-                errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje})
+                errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje,
+                                "id_actividad_local": local})
                 rechazadas += 1
+                _rechazar(caso.id_caso, exc.mensaje, local)
                 continue
             aceptadas += 1
+            _aceptar(caso.id_caso, local, cierre.id_actividad)
             continue
 
         actividad = Actividad(
@@ -692,6 +741,8 @@ def aplicar_carga(
             latitud=act.get("latitud"),
             longitud=act.get("longitud"),
             sincronizado=True,
+            id_actividad_local=local,
+            dispositivo_id=dispositivo,
         )
         db.add(actividad)
         db.flush()
@@ -724,6 +775,7 @@ def aplicar_carga(
         if estado_objetivo:
             _registrar_estado(db, caso, estado_objetivo, act.get("reporte_corto"), usuario.p00)
         aceptadas += 1
+        _aceptar(caso.id_caso, local, actividad.id_actividad)
 
     for est in payload.get("estados", []):
         caso = _validar_acceso(int(est["id_caso"]))
@@ -749,6 +801,9 @@ def aplicar_carga(
         "aceptadas": aceptadas,
         "rechazadas": rechazadas,
         "errores": errores,
+        # D-121: resultado **por acción** de la cola, para que la APK marque cada
+        # una (enviada / con error) en vez del lote completo.
+        "items": items,
         "server_ts": datetime.now(UTC),
     }
 
