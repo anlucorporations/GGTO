@@ -103,6 +103,52 @@ void main() {
     });
   });
 
+  group('D-119 · la purga no borra lo que el servidor entrega', () {
+    test('conserva el trabajo vigente aunque no sea del despacho de hoy', () {
+      // El servidor manda `ids_vigentes` con todo lo que reconoce a la cuadrilla
+      // (incluido lo que viene de una jornada anterior): la purga no lo toca.
+      final borrar = PurgaDespachos.planificar(
+        locales: [
+          fila('AV-VIGENTE', 301, 'ASIGNADO'),
+          fila('AV-AJENO', 302, 'ASIGNADO'),
+        ],
+        idsDelDia: const {},
+        protegidos: const {},
+        idsVigentes: {301},
+      );
+      expect(borrar, ['AV-AJENO']);
+    });
+
+    test('conserva los casos recién descargados (despacho del día en BORRADOR)', () {
+      // Era el defecto reportado: el despacho del día seguía en BORRADOR, así que
+      // `ids_del_dia` venía vacío y la purga borraba en la misma sincronización
+      // los 4 casos que la descarga acababa de entregar.
+      final borrar = PurgaDespachos.planificar(
+        locales: [
+          fila('AV-1', 401, 'ASIGNADO'),
+          fila('AV-2', 402, 'NUEVO'),
+          fila('AV-3', 403, 'PENDIENTE'),
+          fila('AV-4', 404, 'ASIGNADO'),
+        ],
+        idsDelDia: const {},
+        protegidos: const {},
+        idsDescargados: {401, 402, 403, 404},
+      );
+      expect(borrar, isEmpty);
+    });
+
+    test('sin ids del servidor la purga sigue limpiando lo ajeno', () {
+      final borrar = PurgaDespachos.planificar(
+        locales: [fila('AV-VIEJO', 501, 'ASIGNADO')],
+        idsDelDia: const {},
+        protegidos: const {},
+        idsVigentes: const {999},
+        idsDescargados: const {998},
+      );
+      expect(borrar, ['AV-VIEJO']);
+    });
+  });
+
   group('D-115 · ¿procede purgar en la actualización?', () {
     test('con cuadrilla de campo, aunque no haya despacho del día', () {
       expect(

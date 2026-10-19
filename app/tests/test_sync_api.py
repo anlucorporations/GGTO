@@ -626,11 +626,13 @@ def test_upload_rechaza_foto_demasiado_grande(client, entorno_sync, tmp_path, mo
 
 
 # --------------------------------------------------------------------------- #
-# DESCARGA · jornada del día y purga de despachos anteriores (D-104)
+# DESCARGA · jornada del día y purga de despachos anteriores (D-104 / D-119)
 # --------------------------------------------------------------------------- #
-# La APK conserva lo que viaja en `ids_del_dia` y purga los no atendidos con la
-# condición de D-115 (cuadrilla de campo). El backend sigue informando
-# `despacho_del_dia`/`ids_del_dia` para que la APK sepa qué es del día.
+# La APK conserva `ids_del_dia` (el despacho de hoy) y `ids_vigentes` (todo el
+# trabajo de la cuadrilla) y purga los no atendidos con la condición de D-115.
+# D-119: el despacho del día cuenta aunque esté en BORRADOR y lo descargado nunca
+# se purga; antes, un borrador dejaba `ids_del_dia` vacío y la purga borraba en la
+# misma sincronización los casos que se acababan de descargar.
 def _crear_caso(client, headers, id_averia: str) -> int:
     """Caso de prueba en estado ASIGNADO (como lo deja el despacho real)."""
     r = client.post(
@@ -688,6 +690,12 @@ def test_descarga_informa_la_jornada_del_dia(client, entorno_sync):
     # se colara, la APK del técnico anterior podría conservarlo como si fuera suyo.
     assert entorno_sync["c_mov"]["id_caso"] not in ids_del_dia
 
+    # D-119: el trabajo vigente de la cuadrilla también viaja, para que la purga
+    # del dispositivo no borre casos que el servidor sigue reconociéndole.
+    vigentes = set(cuerpo["ids_vigentes"])
+    assert ids_del_dia <= vigentes
+    assert entorno_sync["c_mov"]["id_caso"] not in vigentes
+
 
 def test_descarga_no_marca_como_del_dia_lo_despachado_ayer(client, entorno_sync, admin_token,
                                                            db_session):
@@ -715,10 +723,11 @@ def test_descarga_no_marca_como_del_dia_lo_despachado_ayer(client, entorno_sync,
 
 def test_sin_despacho_de_hoy_la_descarga_no_invita_a_purgar(client, entorno_sync, admin_token,
                                                             db_session):
-    """DEC-104-3: sin jornada del día no se informa `despacho_del_dia` y la APK no borra.
+    """Sin despacho de hoy no hay `despacho_del_dia`, pero el trabajo sigue vigente.
 
-    El técnico podría estar trabajando con el despacho de ayer; si el servidor no
-    confirma la jornada, su caché completa debe sobrevivir.
+    D-119: la cuadrilla no tiene jornada del día (el técnico podría estar
+    trabajando con la de ayer), así que `ids_del_dia` va vacío; sus casos viajan
+    igual y `ids_vigentes` los marca como trabajo que la APK debe conservar.
     """
     headers = admin_token["admin"]
     id_tecnico = _id_tecnico_de_prueba(db_session)
@@ -733,6 +742,9 @@ def test_sin_despacho_de_hoy_la_descarga_no_invita_a_purgar(client, entorno_sync
     assert {c["id_caso"] for c in cuerpo["casos"]} == {id_caso}
     assert cuerpo["despacho_del_dia"] is None, "sin despacho de hoy no hay jornada que confirmar"
     assert cuerpo["ids_del_dia"] == [], "sin jornada no se puede marcar nada como del día"
+    assert cuerpo["ids_vigentes"] == [id_caso], (
+        "el trabajo de la cuadrilla sigue vigente y la APK no puede purgarlo"
+    )
 
 
 def test_la_jornada_viaja_aunque_no_queden_casos_pendientes(client, entorno_sync, admin_token,
@@ -796,12 +808,15 @@ def test_la_descarga_envia_un_caso_desconocido_aunque_no_haya_cambiado(client, e
     assert id_caso in {c["id_caso"] for c in cuerpo["casos"]}
 
 
-def test_un_despacho_en_borrador_no_es_la_jornada_del_dia(client, entorno_sync, admin_token,
-                                                          db_session):
-    """Un `BORRADOR` es la propuesta del supervisor, no la jornada del técnico (D-105).
+def test_un_despacho_en_borrador_es_la_jornada_del_dia(client, entorno_sync, admin_token,
+                                                      db_session):
+    """Un `BORRADOR` del día **sí** es la jornada del técnico (D-119).
 
-    Contaba como despacho del día y disparaba la purga del dispositivo: en cuanto
-    se procesaba el despacho (BORRADOR), la APK borraba el trabajo del técnico.
+    Antes solo contaban los despachos PUBLICADO/CERRADO (D-105). Como el
+    supervisor procesa el despacho y lo deja en BORRADOR, `ids_del_dia` viajaba
+    vacío, la descarga entregaba los casos y la purga del dispositivo los borraba
+    en la misma sincronización: el técnico sincronizaba y no veía nada. Ahora el
+    borrador del día identifica la jornada y sus casos se conservan.
     """
     headers = admin_token["admin"]
     id_tecnico = _id_tecnico_de_prueba(db_session)
@@ -819,8 +834,37 @@ def test_un_despacho_en_borrador_no_es_la_jornada_del_dia(client, entorno_sync, 
 
     cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
     assert {c["id_caso"] for c in cuerpo["casos"]} == {id_caso}
-    assert cuerpo["despacho_del_dia"] is None, "un despacho en BORRADOR no es la jornada"
-    assert cuerpo["ids_del_dia"] == [], "sin jornada publicada no se marca nada como del día"
+    assert cuerpo["despacho_del_dia"] == {
+        "id_despacho": despacho.id_despacho,
+        "fecha": hoy_operativo().isoformat(),
+    }, "el despacho en BORRADOR del día es la jornada que la APK debe conservar"
+    assert cuerpo["ids_del_dia"] == [id_caso], (
+        "los casos del borrador del día deben viajar en `ids_del_dia`: si no, la "
+        "purga del dispositivo los borra en la misma sincronización"
+    )
+    assert cuerpo["ids_vigentes"] == [id_caso]
+
+
+def test_ids_vigentes_lleva_todo_el_trabajo_de_la_cuadrilla(client, entorno_sync, admin_token,
+                                                            db_session):
+    """`ids_vigentes` describe el trabajo vigente completo, no solo el del día (D-119).
+
+    La APK conserva estos ids al purgar: un caso que el servidor sigue
+    considerando de la cuadrilla (aunque venga de una jornada anterior) no puede
+    borrarse del dispositivo, porque volvería a descargarse en la sincronización
+    siguiente.
+    """
+    id_caso_ayer = _crear_caso(client, admin_token["admin"], "TSTSYNC-VIGENTE-AYER")
+    db_session.add(DespachoCasos(id_despacho=entorno_sync["despacho_ayer_a"],
+                                 id_caso=id_caso_ayer, estado="ASIGNADO", orden_visita=9,
+                                 tipo_asignacion="REPARACION"))
+    db_session.commit()
+
+    cuerpo = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"]).json()
+    vigentes = set(cuerpo["ids_vigentes"])
+    assert id_caso_ayer in vigentes, "el trabajo de la cuadrilla de ayer sigue vigente"
+    assert entorno_sync["c_a"]["id_caso"] in vigentes
+    assert id_caso_ayer not in set(cuerpo["ids_del_dia"])
 
 
 # --------------------------------------------------------------------------- #

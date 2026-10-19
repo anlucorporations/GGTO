@@ -118,11 +118,29 @@ class DownloadService {
       final lista = datos['casos'];
       var nuevos = 0;
       var actualizados = 0;
+      // D-119: los casos que llegan en **esta** descarga no se purgan nunca.
+      final idsDescargados = <int>{};
       if (lista is List && lista.isNotEmpty) {
         avisar(0.7, 'Guardando el contenido en el dispositivo…');
+        for (final caso in lista) {
+          if (caso is Map && caso['id_caso'] is int) {
+            idsDescargados.add(caso['id_caso'] as int);
+          }
+        }
         final r = await DatabaseHelper.instance.mergearCasos(lista);
         nuevos = r.$1;
         actualizados = r.$2;
+      }
+
+      // D-119: todo el trabajo vigente que el servidor reconoce a la cuadrilla.
+      // Se conserva al purgar junto con `ids_del_dia`; sin él, un despacho del día
+      // en BORRADOR (o de una jornada anterior) dejaba la lista vacía.
+      final idsVigentes = <int>{};
+      final listaVigentes = datos['ids_vigentes'];
+      if (listaVigentes is List) {
+        for (final id in listaVigentes) {
+          if (id is int) idsVigentes.add(id);
+        }
       }
 
       // D-99: las masivas activas acompañan a la descarga. Un servidor antiguo
@@ -156,9 +174,16 @@ class DownloadService {
       // servidor resolvió una cuadrilla de campo, aunque todavía no haya
       // despacho publicado del día (en ese caso `idsDelDia` viene vacío y se
       // conservan solo los casos atendidos y el trabajo sin enviar).
+      // D-119: además se conservan los casos vigentes de la cuadrilla y los que
+      // acaban de llegar en esta descarga: la purga nunca borra lo que el
+      // servidor considera trabajo del técnico.
       if (PurgaDespachos.procede(motivo: motivo, cuadrillaResuelta: codigo.isNotEmpty)) {
         avisar(0.9, 'Descartando los casos no atendidos…');
-        descartados = await PurgaDespachos.ejecutar(idsDelDia: idsDia);
+        descartados = await PurgaDespachos.ejecutar(
+          idsDelDia: idsDia,
+          idsVigentes: idsVigentes,
+          idsDescargados: idsDescargados,
+        );
       }
 
       DateTime? serverTs;

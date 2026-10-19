@@ -25,6 +25,15 @@ import '../casos/acciones_caso.dart';
 /// resuelve una cuadrilla de campo (`procede`), aunque todavía no haya despacho
 /// del día; en ese caso `idsDelDia` viene vacío y se borran todos los no atendidos.
 ///
+/// D-119: **la purga nunca borra lo que el servidor considera vigente ni lo que
+/// acaba de descargar**. El defecto reportado era justo lo contrario: con el
+/// despacho del día en `BORRADOR` el servidor no informaba `ids_del_dia`, la
+/// descarga traía los casos y esta purga los borraba en la misma sincronización;
+/// el técnico sincronizaba y no veía nada. Ahora se conservan además:
+///   - `idsVigentes`: todo el trabajo que el servidor reconoce a la cuadrilla
+///     (viaja en la descarga como `ids_vigentes`), esté o no en el despacho de hoy;
+///   - `idsDescargados`: los casos que llegaron en **esta** descarga.
+///
 /// La decisión vive en una **función pura** (RT-29) para poder probarla sin
 /// SQLite, igual que `planMergeMasivas` (D-99).
 class PurgaDespachos {
@@ -43,10 +52,16 @@ class PurgaDespachos {
   }
 
   /// Averías que deben borrarse de la caché local.
+  ///
+  /// `idsVigentes` e `idsDescargados` (D-119) son conjuntos de `id_caso` que
+  /// **nunca** se borran: son el trabajo que el servidor reconoce y lo que esta
+  /// misma descarga acaba de entregar.
   static List<String> planificar({
     required List<Map<String, dynamic>> locales,
     required Set<int> idsDelDia,
     required Set<String> protegidos,
+    Set<int> idsVigentes = const {},
+    Set<int> idsDescargados = const {},
   }) {
     final borrar = <String>[];
     for (final fila in locales) {
@@ -56,8 +71,13 @@ class PurgaDespachos {
       if (protegidos.contains(clave)) continue;
       final idCaso = fila['id_caso'];
       if (idCaso != null && protegidos.contains('$idCaso')) continue;
-      // Del despacho de hoy: se queda.
-      if (idCaso is int && idsDelDia.contains(idCaso)) continue;
+      if (idCaso is int) {
+        // Del despacho de hoy: se queda.
+        if (idsDelDia.contains(idCaso)) continue;
+        // D-119: trabajo vigente de la cuadrilla o recién descargado: se queda.
+        if (idsVigentes.contains(idCaso)) continue;
+        if (idsDescargados.contains(idCaso)) continue;
+      }
       // Ya atendido por la cuadrilla: se queda.
       if (estaGestionado('${fila['estado'] ?? ''}')) continue;
       borrar.add(clave);
@@ -70,7 +90,11 @@ class PurgaDespachos {
   /// Devuelve cuántos casos se borraron. **Solo debe llamarse cuando el servidor
   /// resolvió una cuadrilla de campo** (`PurgaDespachos.procede`, D-115): sin
   /// cuadrilla no se toca el dispositivo.
-  static Future<int> ejecutar({required Set<int> idsDelDia}) async {
+  static Future<int> ejecutar({
+    required Set<int> idsDelDia,
+    Set<int> idsVigentes = const {},
+    Set<int> idsDescargados = const {},
+  }) async {
     final db = DatabaseHelper.instance;
     final locales = await db.casosParaPurga();
     final protegidos = await db.clavesConTrabajoPendiente();
@@ -78,6 +102,8 @@ class PurgaDespachos {
       locales: locales,
       idsDelDia: idsDelDia,
       protegidos: protegidos,
+      idsVigentes: idsVigentes,
+      idsDescargados: idsDescargados,
     );
     if (borrar.isEmpty) return 0;
     return db.borrarCasos(borrar);

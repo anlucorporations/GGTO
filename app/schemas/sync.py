@@ -110,6 +110,11 @@ class SyncDescargaOut(BaseModel):
     # son los casos del despacho de hoy, que la APK conserva siempre.
     despacho_del_dia: DespachoDelDiaOut | None = None
     ids_del_dia: list[int] = Field(default_factory=list)
+    # D-119: todo el trabajo vigente de la cuadrilla (los casos que el servidor le
+    # reconoce, estén o no en el despacho de hoy). La purga del dispositivo
+    # conserva estos ids: sin ellos se borraba lo que la descarga acababa de
+    # entregar cuando el despacho del día seguía en BORRADOR.
+    ids_vigentes: list[int] = Field(default_factory=list)
 
 
 class EvidenciaUploadOut(BaseModel):

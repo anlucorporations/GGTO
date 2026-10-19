@@ -45,10 +45,16 @@ logger = logging.getLogger(__name__)
 #: dejaría al técnico sin nada que descargar.
 ESTADOS_TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 
-#: Estados de un despacho que **ya son la jornada** de la cuadrilla (D-105).
-#: `BORRADOR` queda fuera a propósito: es la propuesta que el supervisor todavía
-#: está armando y no puede disparar la purga del dispositivo (DEC-104-3).
-ESTADOS_DESPACHO_VIGENTE = ("PUBLICADO", "CERRADO")
+#: Estados de un despacho que **son la jornada** de la cuadrilla para su APK.
+#:
+#: D-119: `BORRADOR` **sí** cuenta. El supervisor ya procesó el despacho y esos
+#: casos son el trabajo real del técnico; excluirlo hacía que `ids_del_dia`
+#: viajara vacío y que la purga del dispositivo borrara en la misma descarga los
+#: casos que acababa de recibir (el técnico sincronizaba y no veía nada).
+#: La decisión de D-104/DEC-104-3 («un borrador no dispara la purga») queda
+#: cubierta de otra forma: la APK conserva lo vigente y lo descargado
+#: (`ids_vigentes` + `ids_del_dia`) y solo descarta lo que ya no es suyo.
+ESTADOS_JORNADA_DIA = ("BORRADOR", "PUBLICADO", "CERRADO")
 
 #: Motivos de una DESCARGA vacía (D-83). Antes, los cuatro casos devolvían
 #: `casos: []` y la APK los anunciaba igual («No hay casos nuevos ni cambios»),
@@ -187,23 +193,22 @@ def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
 
 
 def _despacho_del_dia(db: Session, id_cuadrilla: int, dia: date) -> Despacho | None:
-    """Despacho **de hoy** de la cuadrilla, si existe (D-104/D-105).
+    """Despacho **de hoy** de la cuadrilla, si existe (D-104/D-105/D-119).
 
-    Es la condición que la APK exige antes de borrar los casos no atendidos de
-    despachos anteriores: si la cuadrilla no tiene despacho del día, la app **no
-    borra nada** (el técnico podría estar trabajando con el de ayer).
+    Identifica la jornada cuyos casos la APK conserva siempre (`ids_del_dia`).
 
-    D-105: solo cuentan los despachos **PUBLICADO** o **CERRADO**. Un
-    `BORRADOR` es la propuesta que el supervisor todavía está armando: no es la
-    jornada del técnico y no puede disparar la purga del dispositivo (era el
-    defecto que vaciaba la APK en cuanto se procesaba el despacho del día).
+    D-119: cuentan los despachos en estado **BORRADOR**, **PUBLICADO** o
+    **CERRADO**. Mientras solo contaban los publicados, un despacho recién
+    procesado por el supervisor (BORRADOR, el estado normal antes de publicar)
+    hacía que `ids_del_dia` viajara vacío: la APK descargaba los casos y la purga
+    los borraba en la misma sincronización, así que el técnico no veía nada.
     """
     return db.scalars(
         select(Despacho)
         .where(
             Despacho.id_cuadrilla == id_cuadrilla,
             Despacho.fecha == dia,
-            Despacho.estado.in_(ESTADOS_DESPACHO_VIGENTE),
+            Despacho.estado.in_(ESTADOS_JORNADA_DIA),
         )
         .order_by(Despacho.id_despacho.desc())
         .limit(1)
@@ -374,6 +379,7 @@ def _respuesta(
     masivas: list[dict[str, Any]] | None = None,
     despacho_del_dia: Despacho | None = None,
     ids_del_dia: list[int] | None = None,
+    ids_vigentes: list[int] | None = None,
 ) -> dict[str, Any]:
     """Payload de DESCARGA con el motivo explícito (D-83).
 
@@ -389,6 +395,11 @@ def _respuesta(
     `ids_del_dia` (los casos del despacho de hoy) permiten a la APK verificar que
     hay jornada del día y, solo entonces, borrar los casos no atendidos que
     arrastra de despachos anteriores.
+
+    D-119: `ids_vigentes` es **todo** el trabajo vigente de la cuadrilla (los
+    casos que el servidor le reconoce ahora, estén o no en el despacho de hoy).
+    La purga del dispositivo conserva esos ids además de `ids_del_dia`, de modo
+    que una descarga nunca puede borrar lo que el servidor acaba de enviar.
     """
     return {
         "server_ts": datetime.now(UTC),
@@ -405,6 +416,7 @@ def _respuesta(
             else None
         ),
         "ids_del_dia": ids_del_dia or [],
+        "ids_vigentes": ids_vigentes or [],
     }
 
 
@@ -500,6 +512,12 @@ def construir_descarga(
             masivas=masivas, despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia,
         )
 
+    # D-119: todo el trabajo vigente de la cuadrilla (no terminal). La APK lo
+    # conserva en la purga junto con `ids_del_dia`: si solo conservara el despacho
+    # del día, los casos de una jornada anterior —que el servidor sigue
+    # enviando— se borrarían en cada sincronización y volverían a bajar.
+    ids_vigentes = [caso.id_caso for caso in casos]
+
     salida: list[dict[str, Any]] = []
     for caso in casos:
         # DESCARGA diferencial (D-73/D-105):
@@ -539,7 +557,7 @@ def construir_descarga(
         )
     return _respuesta(
         catalogos, salida, motivo, mensaje, c, len(casos), masivas=masivas,
-        despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia,
+        despacho_del_dia=despacho_hoy, ids_del_dia=ids_dia, ids_vigentes=ids_vigentes,
     )
 
 
