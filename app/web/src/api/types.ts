@@ -914,6 +914,10 @@ export interface FallaMasivaOut {
   odn?: string | null;
   direccion?: string | null;
   fat?: string | null;
+  /* D-118: identidad técnica del FAT (OLT + slot + puerto + FAT). */
+  olt?: string | null;
+  slot?: string | null;
+  puerto?: string | null;
   evidencias?: string[];
   /* D-99 · MASIVAS: asociación explícita, cierre y ubicación del FAT. */
   casos_asociados?: number;
@@ -1294,15 +1298,52 @@ export type EstadoFallaMasiva = 'DETECTADA' | 'PLANIFICADA' | 'ATENDIDA' | 'CERR
 
 export type EstadoNotificacion = 'PENDIENTE' | 'ENVIADO' | 'FALLIDO';
 
-/** Reporte manual de falla (`POST /fallas-masivas`). */
+/** Reporte manual de falla (`POST /fallas-masivas` · D-118). */
 export interface FallaMasivaManual {
   descripcion: string;
+  olt: string;
+  slot: string;
+  puerto: string;
+  fat: string;
+  direccion: string;
   id_sector?: number | null;
   id_cuadrilla?: number | null;
   origen?: OrigenFallaMasiva;
   odn?: string | null;
-  direccion?: string | null;
-  fat?: string | null;
+  evidencias?: string[];
+  /** Casos del mismo FAT que se asocian en el alta (mínimo 1). */
+  ids_caso: number[];
+}
+
+/** Caso candidato del mismo FAT para el alta/asociación (D-118). */
+export interface CasoCandidatoOut {
+  id_caso: number;
+  id_averia: string;
+  estado_actual: string;
+  nombre_cliente: string | null;
+  direccion: string | null;
+  olt: string | null;
+  slot: string | null;
+  puerto: string | null;
+  fat: string | null;
+  id_sector: number | null;
+  sector_nombre: string | null;
+  id_cuadrilla?: number | null;
+  cuadrilla_codigo?: string | null;
+  cuadrilla_nombre?: string | null;
+}
+
+/** Reporte de campo (`POST /fallas-masivas/reporte-campo` · D-118). */
+export interface FallaMasivaCampo {
+  descripcion: string;
+  olt: string;
+  slot: string;
+  puerto: string;
+  fat: string;
+  direccion: string;
+  odn: string;
+  id_sector?: number | null;
+  id_cuadrilla?: number | null;
   evidencias?: string[];
 }
 

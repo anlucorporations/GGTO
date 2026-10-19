@@ -409,14 +409,17 @@ class OperacionesService {
     }
   }
 
-  /// Reporta una falla masiva desde el campo (RF-16 · D-82).
+  /// Reporta una falla masiva desde el campo (RF-16 · D-82 · D-118).
   ///
-  /// El reporte indica la **ODN**, la **dirección**, la **FAT** y la
-  /// **descripción**, con **hasta 2 fotos** de evidencia. Las fotos se suben con
-  /// `POST /evidencias/upload` y sus seriales viajan en el reporte; si no hay
-  /// conexión, la acción queda en la cola con los seriales locales (el servidor
-  /// acepta el mismo serial al subir el archivo, así que no se duplica).
+  /// El reporte indica la **OLT, slot, puerto, FAT, dirección y descripción**,
+  /// con **hasta 2 fotos** de evidencia. La tupla identifica el FAT: el servidor
+  /// asocia automáticamente los casos de ese mismo FAT y rechaza el reporte si no
+  /// hay ninguno. Las fotos se suben con `POST /evidencias/upload` y sus seriales
+  /// viajan en el reporte; sin conexión, la acción queda en la cola.
   static Future<ResultadoOperacion> reportarFallaMasiva({
+    required String olt,
+    required String slot,
+    required String puerto,
     required String odn,
     required String direccion,
     required String fat,
@@ -425,10 +428,34 @@ class OperacionesService {
     int? idSector,
     int? idCuadrilla,
   }) async {
+    final oltLimpia = olt.trim();
+    final slotLimpio = slot.trim();
+    final puertoLimpio = puerto.trim();
     final odnLimpia = odn.trim();
     final direccionLimpia = direccion.trim();
     final fatLimpia = fat.trim();
     final texto = _recortar(descripcion.trim(), 500);
+    if (oltLimpia.isEmpty) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique la OLT del reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
+    if (slotLimpio.isEmpty) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique el SLOT del reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
+    if (puertoLimpio.isEmpty) {
+      return const ResultadoOperacion(
+        mensaje: 'Indique el PUERTO del reporte.',
+        enviada: true,
+        valida: false,
+      );
+    }
     if (odnLimpia.length < 3) {
       return const ResultadoOperacion(
         mensaje: 'Indique la ODN del reporte.',
@@ -466,6 +493,9 @@ class OperacionesService {
     }
 
     final payload = <String, dynamic>{
+      'olt': _recortar(oltLimpia, 60),
+      'slot': _recortar(slotLimpio, 20),
+      'puerto': _recortar(puertoLimpio, 20),
       'odn': _recortar(odnLimpia, 60),
       'direccion': _recortar(direccionLimpia, 200),
       'fat': _recortar(fatLimpia, 60),

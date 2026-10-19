@@ -193,6 +193,21 @@ EvaluacionPin evaluarPin({
   );
 }
 
+/// D-117: ficha con el **PIN de fábrica** (restablecimiento).
+///
+/// El restablecimiento no borra la credencial: la deja con el PIN por defecto y
+/// `pinPorDefecto = true`, de modo que el próximo uso del acceso sin conexión
+/// exija cambiarlo (DEC-PIN-2). Función pura para poder probarla sin almacén.
+CredencialLocal fichaConPinPorDefecto(CredencialLocal ficha) {
+  final sal = generarSal();
+  return ficha.copyWith(
+    sal: sal,
+    verificador: derivarPin(AppConstants.pinPorDefecto, sal),
+    pinPorDefecto: true,
+    intentosFallidos: 0,
+  );
+}
+
 /// Operaciones sobre el documento de credencial del dispositivo.
 class CredencialService {
   CredencialService._();
@@ -286,6 +301,20 @@ class CredencialService {
         intentosFallidos: 0,
       )),
     );
+    return null;
+  }
+
+  /// Restablece el PIN de la ficha al **PIN de fábrica** (D-117).
+  ///
+  /// La credencial se conserva (el acceso sin conexión sigue existiendo), pero
+  /// queda marcada como `pinPorDefecto`: al usarla se pedirá cambiarla.
+  static Future<String?> restablecerPin(String p00) async {
+    final documento = await CredencialStore.leer();
+    final ficha = documento.buscar(p00);
+    if (ficha == null) {
+      return 'No hay acceso sin conexión para ese P00 en este dispositivo.';
+    }
+    await CredencialStore.guardar(documento.con(fichaConPinPorDefecto(ficha)));
     return null;
   }
 

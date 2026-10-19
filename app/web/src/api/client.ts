@@ -27,6 +27,7 @@ import type {
   CanalDespacho,
   CasoAgregar,
   CasoAsociadoOut,
+  CasoCandidatoOut,
   CasoEspecialCreate,
   CasoEspecialOut,
   CasoEspecialUpdate,
@@ -58,6 +59,7 @@ import type {
   EnvioOut,
   GestionDiaria,
   FallaMasivaCreate,
+  FallaMasivaCampo,
   FallaMasivaManual,
   FallaMasivaOut,
   FallaMasivaUpdate,
@@ -1029,6 +1031,11 @@ export function reportarFallaManual(data: FallaMasivaManual): Promise<FallaMasiv
   return conCuerpo<FallaMasivaOut>('/fallas-masivas', 'POST', data);
 }
 
+/** D-118: reporte de campo; el servidor asocia los casos del mismo FAT. */
+export function reportarFallaCampo(data: FallaMasivaCampo): Promise<FallaMasivaOut> {
+  return conCuerpo<FallaMasivaOut>('/fallas-masivas/reporte-campo', 'POST', data);
+}
+
 /** Cambia estado o cuadrilla de la falla (RF-09). */
 export function actualizarFallaMasiva(
   idFalla: number,
@@ -1073,6 +1080,18 @@ export function listarMasivas(filtros: MasivasFiltros = {}): Promise<FallaMasiva
 }
 
 /** CASOS ASOCIADOS de la masiva, con datos técnicos y RUTA (RF-59). */
+/** D-118: casos del mismo FAT (OLT + slot + puerto + FAT) para asociar. */
+export function buscarCasosCandidatos(datos: {
+  olt: string;
+  slot: string;
+  puerto: string;
+  fat: string;
+}): Promise<CasoCandidatoOut[]> {
+  return request<CasoCandidatoOut[]>(
+    `/fallas-masivas/casos-candidatos${construirQuery(datos)}`,
+  );
+}
+
 export function casosAsociadosMasiva(idFalla: number): Promise<CasoAsociadoOut[]> {
   return request<CasoAsociadoOut[]>(`/fallas-masivas/${idFalla}/casos`);
 }

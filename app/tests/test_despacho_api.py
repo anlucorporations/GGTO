@@ -55,7 +55,7 @@ def entorno(client, admin_token):
     crear("TSTD-C0", "SECTOR ALFA TORRE 1", tipo_reporte="CONSTRUCCION",
           tipo_problema=None, categoria="EMPRESA")
 
-    yield {"headers": headers, "id_central": id_central}
+    yield {"headers": headers, "id_central": id_central, "crear": crear}
 
 
 def _propuesta(client, entorno, fecha=HOY):
@@ -425,9 +425,24 @@ def test_envio_queda_pendiente_sin_credenciales(client, entorno):
 # --------------------------------------------------------------------------- #
 # Fallas masivas
 # --------------------------------------------------------------------------- #
-def test_fallas_masivas(client, entorno):
-    r = client.post(f"{BASE}/fallas-masivas", json={"descripcion": "Corte de fibra sector Alfa"},
-                    headers=entorno["headers"])
+def test_fallas_masivas(client, entorno, db_session):
+    caso = entorno["crear"]("TSTD-FM1", "SECTOR ALFA CASA 9")
+    fila = db_session.get(Caso, caso["id_caso"])
+    fila.olt, fila.slot, fila.puerto, fila.fat = "OLT-1", "3", "7", "FAT-1"
+    db_session.commit()
+    r = client.post(
+        f"{BASE}/fallas-masivas",
+        json={
+            "descripcion": "Corte de fibra sector Alfa",
+            "olt": "OLT-1",
+            "slot": "3",
+            "puerto": "7",
+            "fat": "FAT-1",
+            "direccion": "SECTOR ALFA CASA 9",
+            "ids_caso": [caso["id_caso"]],
+        },
+        headers=entorno["headers"],
+    )
     assert r.status_code == 201, r.text
     assert r.json()["estado"] == "DETECTADA"
 

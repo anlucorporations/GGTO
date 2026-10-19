@@ -13,7 +13,7 @@ NOTIF = "/api/v1/notificaciones"
 
 @pytest.fixture()
 def entorno(client, admin_token, db_session):
-    """Seis casos pendientes en el mismo OLT (supera el umbral de 5)."""
+    """Seis casos del mismo FAT (OLT + slot + puerto + FAT), sobre el umbral."""
     headers = admin_token["admin"]
     casos = []
     for i in range(6):
@@ -26,12 +26,34 @@ def entorno(client, admin_token, db_session):
                               "tipo_problema": "SIN_SERVICIO"}, headers=headers)
         assert r.status_code == 201, r.text
         casos.append(r.json()["id_caso"])
-    # El OLT no se carga por la vía manual: se fija directamente para simular la ingesta
+    # La tupla técnica no se carga por la vía manual: se fija para simular la ingesta.
     for id_caso in casos:
         caso = db_session.get(Caso, id_caso)
         caso.olt = "pde-olt-99"
+        caso.slot = "3"
+        caso.puerto = "7"
+        caso.fat = "pde-fat-99"
     db_session.commit()
     yield {"headers": headers, "casos": casos}
+
+
+def _masiva(client, entorno, descripcion: str, ids_caso: list[int] | None = None):
+    """Alta manual D-118 con la tupla del entorno y al menos un caso."""
+    r = client.post(
+        FALLAS,
+        json={
+            "descripcion": descripcion,
+            "olt": "pde-olt-99",
+            "slot": "3",
+            "puerto": "7",
+            "fat": "pde-fat-99",
+            "direccion": "SECTOR ALFA CASA 1",
+            "ids_caso": ids_caso or [entorno["casos"][0]],
+        },
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 201, r.text
+    return r
 
 
 # --------------------------------------------------------------------------- #
@@ -44,7 +66,9 @@ def test_deteccion_por_concentracion(client, entorno, db_session):
     assert len(creadas) == 1
     falla = creadas[0]
     assert falla["origen"] == "AUTOMATICA"
-    assert falla["clave_concentracion"] == "olt:pde-olt-99"
+    assert falla["clave_concentracion"] == "fat:pde-fat-99"
+    assert falla["olt"] == "pde-olt-99" and falla["slot"] == "3"
+    assert falla["puerto"] == "7" and falla["fat"] == "pde-fat-99"
     assert falla["estado"] == "DETECTADA"
 
     # Idempotente: una segunda detección no duplica
@@ -52,7 +76,7 @@ def test_deteccion_por_concentracion(client, entorno, db_session):
     assert otra.status_code == 200
     assert otra.json() == []
     assert db_session.scalar(select(FallaMasiva).where(
-        FallaMasiva.clave_concentracion == "olt:pde-olt-99")) is not None
+        FallaMasiva.clave_concentracion == "fat:pde-fat-99")) is not None
 
 
 def test_deteccion_encola_alerta(client, entorno, db_session):
@@ -85,8 +109,7 @@ def test_deteccion_desactivada(client, entorno, db_session):
 # Reporte manual, planificación y material (RF-16, RF-17, RF-18)
 # --------------------------------------------------------------------------- #
 def test_reporte_manual_y_planificacion(client, entorno):
-    r = client.post(FALLAS, json={"descripcion": "Corte de fibra sector Alfa"},
-                    headers=entorno["headers"])
+    r = _masiva(client, entorno, "Corte de fibra sector Alfa")
     assert r.status_code == 201, r.text
     id_falla = r.json()["id_falla"]
     assert r.json()["origen"] == "REPORTE_TECNICO"
@@ -104,8 +127,7 @@ def test_reporte_manual_y_planificacion(client, entorno):
 
 
 def test_solicitud_de_material(client, entorno):
-    falla = client.post(FALLAS, json={"descripcion": "Falla con material"},
-                        headers=entorno["headers"]).json()
+    falla = _masiva(client, entorno, "Falla con material").json()
     r = client.post(f"{FALLAS}/{falla['id_falla']}/material",
                     json={"descripcion": "50 m de fibra y 4 conectores"},
                     headers=entorno["headers"])
@@ -115,8 +137,7 @@ def test_solicitud_de_material(client, entorno):
 
 
 def test_actualizar_estado_de_falla(client, entorno):
-    falla = client.post(FALLAS, json={"descripcion": "Falla para cerrar"},
-                        headers=entorno["headers"]).json()
+    falla = _masiva(client, entorno, "Falla para cerrar").json()
     r = client.patch(f"{FALLAS}/{falla['id_falla']}", json={"estado": "CERRADA"},
                      headers=entorno["headers"])
     assert r.status_code == 200
@@ -124,7 +145,7 @@ def test_actualizar_estado_de_falla(client, entorno):
 
 
 def test_filtros_de_fallas(client, entorno):
-    client.post(FALLAS, json={"descripcion": "Falla filtro"}, headers=entorno["headers"])
+    _masiva(client, entorno, "Falla filtro")
     todas = client.get(FALLAS, headers=entorno["headers"]).json()
     assert len(todas) >= 1
     activas = client.get(FALLAS, params={"solo_activas": True}, headers=entorno["headers"]).json()
@@ -135,7 +156,7 @@ def test_filtros_de_fallas(client, entorno):
 # Outbox (RNF-20)
 # --------------------------------------------------------------------------- #
 def test_procesar_outbox_sin_credenciales(client, entorno, db_session):
-    client.post(FALLAS, json={"descripcion": "Falla para outbox"}, headers=entorno["headers"])
+    _masiva(client, entorno, "Falla para outbox")
     r = client.post(f"{NOTIF}/procesar", headers=entorno["headers"])
     assert r.status_code == 200, r.text
     resumen = r.json()
@@ -306,8 +327,7 @@ def test_sin_token(client):
 def test_ficha_y_ordenes_por_falla(client, entorno):
     """La ficha GET devuelve la falla; sus órdenes se listan por `id_falla`."""
     headers = entorno["headers"]
-    falla = client.post(FALLAS, json={"descripcion": "Falla para la ficha"},
-                        headers=headers).json()
+    falla = _masiva(client, entorno, "Falla para la ficha").json()
     id_falla = falla["id_falla"]
 
     ficha = client.get(f"{FALLAS}/{id_falla}", headers=headers)
@@ -340,8 +360,7 @@ def test_404_en_ficha_y_ordenes(client, entorno):
 def test_editar_descripcion_sector_y_cuadrilla(client, entorno, admin_token):
     """La pestaña MASIVA de la ficha edita descripción/sector/cuadrilla (D-75)."""
     headers = entorno["headers"]
-    falla = client.post(FALLAS, json={"descripcion": "Descripción original larga"},
-                        headers=headers).json()
+    falla = _masiva(client, entorno, "Descripción original larga").json()
     cuad = client.post("/api/v1/cuadrillas",
                        json={"id_central": admin_token["id_central"], "codigo": "TCF7",
                              "nombre": "Cuadrilla ficha"}, headers=headers)

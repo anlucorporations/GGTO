@@ -135,6 +135,11 @@ class FallaMasiva(Base):
     odn: Mapped[str | None] = mapped_column(String(60))
     direccion: Mapped[str | None] = mapped_column(String(200))
     fat: Mapped[str | None] = mapped_column(String(60))
+    # D-118: identidad técnica del FAT (OLT + slot + puerto + FAT). La detección,
+    # la asociación manual y el cierre comparan esta tupla completa.
+    olt: Mapped[str | None] = mapped_column(String(60))
+    slot: Mapped[str | None] = mapped_column(String(20))
+    puerto: Mapped[str | None] = mapped_column(String(20))
     evidencias: Mapped[str | None] = mapped_column(Text)
     planificacion: Mapped[str | None] = mapped_column(Text)
     reporte_simple: Mapped[str | None] = mapped_column(Text)

@@ -157,12 +157,20 @@ class CasosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Consulta combinada: intenta el servidor y, si falla, filtra la caché local.
-  Future<void> buscar(String consulta) => cargar(consulta: consulta);
+  /// Búsqueda **local** sobre la caché del dispositivo (D-117).
+  ///
+  /// El panel principal no toca la red: filtra lo que ya está guardado. La
+  /// descarga de casos se hace en la sección **Sincronizar**.
+  Future<void> buscar(String consulta) async {
+    _consulta = consulta;
+    await _leerLocal();
+    notifyListeners();
+  }
 
   Future<void> limpiarBusqueda() async {
     _consulta = '';
-    await cargar();
+    await _leerLocal();
+    notifyListeners();
   }
 
   /// Casos de la caché local sin tocar la red ni marcar «sin conexión» (D-84).

@@ -259,7 +259,7 @@ void main() {
       expect(MasivasService.modosCierre, ['IVR', 'COS', 'SACAS']);
     });
 
-    testWidgets('el aviso previo dice que se cierran TODOS los casos asociados',
+    testWidgets('el aviso previo dice que solo se cierran los casos asociados',
         (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -273,9 +273,10 @@ void main() {
       );
 
       expect(
-        find.textContaining('Se cerrarán TODOS los 8 casos asociados'),
+        find.textContaining('Se cerrarán solo los 8 casos asociados'),
         findsOneWidget,
       );
+      expect(find.textContaining('OLT + SLOT + PUERTO + FAT'), findsOneWidget);
       expect(find.textContaining('«Reparado en FDT»'), findsOneWidget);
       expect(find.textContaining('no se puede deshacer'), findsOneWidget);
       expect(find.text('Cerrar la masiva'), findsOneWidget);

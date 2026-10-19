@@ -18,8 +18,11 @@ void main() {
   group('D-104 · plan de purga', () {
     test('conserva los casos del despacho del día aunque sigan pendientes', () {
       final borrar = PurgaDespachos.planificar(
-        locales: [fila('AV-1', 101, 'ASIGNADO')],
-        idsDelDia: {101},
+        locales: [
+          fila('AV-1', 101, 'ASIGNADO'),
+          fila('AV-PEND', 102, 'PENDIENTE'),
+        ],
+        idsDelDia: {101, 102},
         protegidos: {},
       );
       expect(borrar, isEmpty);

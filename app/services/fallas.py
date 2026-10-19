@@ -51,60 +51,84 @@ def cuadrilla_cercana(db: Session, id_central: int, id_sector: int | None) -> in
 
 
 def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
-    """Crea fallas masivas para los grupos que superan el umbral (idempotente)."""
+    """Crea fallas masivas para los grupos que superan el umbral (idempotente).
+
+    D-118: la concentración se agrupa por la **tupla completa del FAT**
+    (OLT + slot + puerto + FAT). Un grupo con el mismo OLT pero otro slot,
+    puerto o FAT **no** es la misma masiva, y sus casos no se mezclan.
+    """
     activo = str(_config(db, "fallas.activo", True)).strip('"').lower()
     if activo in ("false", "0", "no"):
         return []
 
     umbral = int(_config(db, "fallas.umbral_casos", UMBRAL_POR_DEFECTO))
     horas = int(_config(db, "fallas.ventana_horas", VENTANA_POR_DEFECTO))
-    campo = str(_config(db, "fallas.campo_concentracion", "olt")).strip('"')
-    if campo not in CAMPOS_VALIDOS:
-        campo = "olt"
-
-    columna = getattr(Caso, campo)
     desde = datetime.now(UTC) - timedelta(hours=horas)
     grupos = db.execute(
-        select(columna, func.count())
+        select(Caso.olt, Caso.slot, Caso.puerto, Caso.fat, func.count())
         .where(
             Caso.id_central == id_central,
             Caso.estado_actual.notin_(("CERRADO", "CANCELADO")),
             Caso.creado_en >= desde,
-            columna.is_not(None),
+            Caso.olt.is_not(None),
+            Caso.slot.is_not(None),
+            Caso.puerto.is_not(None),
+            Caso.fat.is_not(None),
         )
-        .group_by(columna)
+        .group_by(Caso.olt, Caso.slot, Caso.puerto, Caso.fat)
         .having(func.count() >= umbral)
     ).all()
 
     creadas: list[FallaMasiva] = []
-    for valor, total in grupos:
-        clave = f"{campo}:{valor}"[:120]
+    for olt, slot, puerto, fat, total in grupos:
+        olt, slot, puerto, fat = (
+            "" if valor is None else str(valor).strip()
+            for valor in (olt, slot, puerto, fat)
+        )
+        if not (olt and slot and puerto and fat):
+            continue
         existente = db.scalar(
             select(FallaMasiva).where(
                 FallaMasiva.id_central == id_central,
-                FallaMasiva.clave_concentracion == clave,
+                func.lower(func.trim(FallaMasiva.olt)) == olt.casefold(),
+                func.lower(func.trim(FallaMasiva.slot)) == slot.casefold(),
+                func.lower(func.trim(FallaMasiva.puerto)) == puerto.casefold(),
+                func.lower(func.trim(FallaMasiva.fat)) == fat.casefold(),
                 FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")),
             )
         )
         if existente:
             continue
 
-        if campo == "id_sector":
-            id_sector = int(valor)
-        else:
-            id_sector = db.scalar(
-                select(Caso.id_sector)
-                .where(Caso.id_central == id_central, columna == valor, Caso.id_sector.is_not(None))
-                .limit(1)
+        representativo = db.scalar(
+            select(Caso)
+            .where(
+                Caso.id_central == id_central,
+                func.lower(func.trim(Caso.olt)) == olt.casefold(),
+                func.lower(func.trim(Caso.slot)) == slot.casefold(),
+                func.lower(func.trim(Caso.puerto)) == puerto.casefold(),
+                func.lower(func.trim(Caso.fat)) == fat.casefold(),
             )
+            .order_by(Caso.id_caso.desc())
+            .limit(1)
+        )
+        id_sector = representativo.id_sector if representativo else None
         falla = FallaMasiva(
             id_central=id_central,
-            clave_concentracion=clave,
-            descripcion=f"Concentración de {total} casos en {campo} {valor} (últimas {horas} h)",
+            clave_concentracion=f"fat:{fat}"[:120],
+            descripcion=(
+                f"Concentración de {total} casos en OLT {olt} · slot {slot} · "
+                f"puerto {puerto} · FAT {fat} (últimas {horas} h)"
+            ),
             origen="AUTOMATICA",
             id_sector=id_sector,
             id_cuadrilla=cuadrilla_cercana(db, id_central, id_sector),
             estado="DETECTADA",
+            olt=olt,
+            slot=slot,
+            puerto=puerto,
+            fat=fat,
+            direccion=(representativo.direccion if representativo else None),
         )
         db.add(falla)
         creadas.append(falla)

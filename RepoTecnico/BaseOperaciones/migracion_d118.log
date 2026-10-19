@@ -1,0 +1,24 @@
+[2026-10-19T19:08:22+00:00] ==============================================================================
+[2026-10-19T19:08:22+00:00] MIGRACIÓN D-118 (falla_masiva: olt, slot, puerto)
+[2026-10-19T19:08:22+00:00] modo=SIMULACIÓN
+[2026-10-19T19:08:22+00:00] estado actual: {'olt': 0, 'slot': 0, 'puerto': 0}
+[2026-10-19T19:08:22+00:00] Cambios pendientes:
+[2026-10-19T19:08:22+00:00]   · ALTER TABLE falla_masiva ADD COLUMN olt
+[2026-10-19T19:08:22+00:00]   · ALTER TABLE falla_masiva ADD COLUMN slot
+[2026-10-19T19:08:22+00:00]   · ALTER TABLE falla_masiva ADD COLUMN puerto
+[2026-10-19T19:08:22+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-19T19:08:33+00:00] ==============================================================================
+[2026-10-19T19:08:33+00:00] MIGRACIÓN D-118 (falla_masiva: olt, slot, puerto)
+[2026-10-19T19:08:33+00:00] modo=APLICAR
+[2026-10-19T19:08:33+00:00] estado actual: {'olt': 0, 'slot': 0, 'puerto': 0}
+[2026-10-19T19:08:33+00:00] Cambios pendientes:
+[2026-10-19T19:08:33+00:00]   · ALTER TABLE falla_masiva ADD COLUMN olt
+[2026-10-19T19:08:33+00:00]   · ALTER TABLE falla_masiva ADD COLUMN slot
+[2026-10-19T19:08:33+00:00]   · ALTER TABLE falla_masiva ADD COLUMN puerto
+[2026-10-19T19:08:33+00:00] verificación post-migración: {'olt': 1, 'slot': 1, 'puerto': 1}
+[2026-10-19T19:08:33+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-19T19:08:42+00:00] ==============================================================================
+[2026-10-19T19:08:42+00:00] MIGRACIÓN D-118 (falla_masiva: olt, slot, puerto)
+[2026-10-19T19:08:42+00:00] modo=SIMULACIÓN
+[2026-10-19T19:08:42+00:00] estado actual: {'olt': 1, 'slot': 1, 'puerto': 1}
+[2026-10-19T19:08:42+00:00] ✓ La base YA está migrada: no hay cambios pendientes.

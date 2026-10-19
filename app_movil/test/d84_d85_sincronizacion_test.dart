@@ -93,7 +93,7 @@ void main() {
       expect(find.byType(CasosScreen), findsOneWidget);
     });
 
-    testWidgets('la franja informa la cola y ofrece un solo botón de actualización',
+    testWidgets('la franja informa la cola y ofrece el refresco local',
         (tester) async {
       final casos = _CasosEspia();
       final sync = _SyncEspia(pendientes: 2);
@@ -114,10 +114,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('2 por enviar'), findsOneWidget);
-      // D-115: un solo botón; ya no hay «Cargar» y «Descargar» separados.
-      expect(find.text('Actualizar'), findsOneWidget);
+      // D-117: el panel principal solo relee el dispositivo; la sincronización
+      // completa vive en la sección SINCRONIZAR.
+      expect(find.text('Refrescar'), findsOneWidget);
       expect(find.textContaining('Cargar ('), findsNothing);
       expect(find.text('Descargar'), findsNothing);
+      expect(find.text('Actualizar'), findsNothing);
     });
   });
 

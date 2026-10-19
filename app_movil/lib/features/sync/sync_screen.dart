@@ -8,9 +8,9 @@ import '../masivas/masivas_provider.dart';
 import 'actualizacion_datos_service.dart';
 import 'sync_provider.dart';
 
-/// Pantalla DISPOSITIVO (§4.3 / D-73): estado de la cola y **un solo botón**
-/// de actualización (D-115) que sube las evidencias, envía la cola, descarga el
-/// despacho del día y borra los casos no atendidos.
+/// Pantalla SINCRONIZAR (§4.3 / D-73 · D-117): estado de la cola y **un solo
+/// botón** que sube los casos resueltos y contactados y descarga los casos
+/// asignados por el despacho del día.
 ///
 /// D-82: la barra superior muestra el **progreso** de la sincronización de los
 /// datos (requisito 2).
@@ -77,7 +77,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dispositivo'),
+        title: const Text('Sincronizar'),
         actions: [
           IconButton(
             tooltip: 'Actualizar',
@@ -110,6 +110,13 @@ class _SyncScreenState extends State<SyncScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Sube los casos resueltos (cerrados, citados, enrutados, '
+                    'diferidos) y los contactados; descarga los casos asignados '
+                    'por el despacho del día.',
+                    style: TextStyle(fontSize: 12.5, color: Colors.black54),
                   ),
                   const SizedBox(height: 10),
                   _Metrica('Acciones pendientes', '${sync.resumen['PENDIENTE'] ?? 0}'),
@@ -146,7 +153,7 @@ class _SyncScreenState extends State<SyncScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.sync),
-              label: Text(_procesando ? 'ACTUALIZANDO…' : 'ACTUALIZAR'),
+              label: Text(_procesando ? 'SINCRONIZANDO…' : 'SINCRONIZAR'),
               onPressed: _procesando ? null : _actualizarTodo,
             ),
           ),

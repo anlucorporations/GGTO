@@ -329,9 +329,9 @@ class TabDatosTecnicos extends StatelessWidget {
             ('RUTA', ruta.trim().isEmpty ? '—' : ruta),
             ('Dirección', _texto(masiva['direccion'])),
             ('Sector', _texto(masiva['sector_nombre'])),
-            ('OLT', _texto(representativo['olt'])),
-            ('Tarjeta (slot)', _texto(representativo['slot'])),
-            ('Puerto', _texto(representativo['puerto'])),
+            ('OLT', _texto(masiva['olt'] ?? representativo['olt'])),
+            ('Tarjeta (slot)', _texto(masiva['slot'] ?? representativo['slot'])),
+            ('Puerto', _texto(masiva['puerto'] ?? representativo['puerto'])),
             ('Concentración', _texto(masiva['clave_concentracion'])),
             ('Coordenadas', _coordenadas(masiva['latitud'], masiva['longitud'])),
           ],
@@ -976,14 +976,16 @@ class DialogoConfirmacionCierreMasiva extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Se cerrarán TODOS los $cantidadCasos casos asociados a esta masiva.',
+              'Se cerrarán solo los $cantidadCasos casos asociados a esta masiva que '
+              'coincidan con OLT + SLOT + PUERTO + FAT.',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Modo de cierre: $modo\n'
               'Texto que quedará en cada caso: «$descripcionCaso»\n'
-              'Los casos que ya estén cerrados se omitirán y se informarán al final.',
+              'Los casos ya cerrados o que no coincidan con la tupla se omitirán y se '
+              'informarán al final. Los casos de la cuadrilla no asociados NO se tocan.',
             ),
             const SizedBox(height: 10),
             Text(

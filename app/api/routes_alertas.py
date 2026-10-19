@@ -17,6 +17,7 @@ from ..models import (
     Cuadrilla,
     Evidencia,
     FallaMasiva,
+    FallaMasivaCaso,
     IngestaLote,
     Notificacion,
     OrdenMaterial,
@@ -27,6 +28,7 @@ from ..models import (
 from ..schemas.alertas import (
     AsociarCasosRequest,
     CasoAsociadoOut,
+    CasoCandidatoOut,
     CierreMasivaOut,
     CierreMasivaRequest,
     FallaMasivaCampo,
@@ -101,33 +103,25 @@ def _ruta_desde_caso(caso: Caso | None) -> tuple[str | None, str | None]:
 
 
 def _caso_representativo(db: Session, falla: FallaMasiva) -> tuple[Caso | None, int | None]:
-    """Caso más reciente de la concentración + nº de casos afectados (D-75).
+    """Caso más reciente de la concentración + nº de casos afectados (D-75 · D-118).
 
-    Con `clave_concentracion` «campo:valor» se filtra por ese campo; si la falla
-    es manual (sin clave) se usa el sector. Devuelve también el conteo.
+    Usa la tupla OLT + slot + puerto + FAT de la masiva. Si la masiva es histórica
+    y no tiene tupla, cae al criterio de `clave_concentracion`; si tampoco lo
+    tiene, usa el primer caso **asociado** (nunca todos los de la cuadrilla).
     """
-    campo = valor = None
-    if falla.clave_concentracion and ":" in falla.clave_concentracion:
-        campo, valor = falla.clave_concentracion.split(":", 1)
-    columna = {"olt": Caso.olt, "fat": Caso.fat, "id_sector": Caso.id_sector}.get(campo or "")
-    if columna is None:
-        if falla.id_sector is None:
-            return None, None
-        columna, valor = Caso.id_sector, str(falla.id_sector)
-    condiciones = [Caso.id_central == falla.id_central]
-    if columna is Caso.id_sector:
-        try:
-            valor_num = int(str(valor))
-        except ValueError:
-            return None, None
-        condiciones.append(columna == valor_num)
-    else:
-        condiciones.append(columna == valor)
-    total = db.scalar(select(func.count()).select_from(Caso).where(*condiciones)) or 0
-    caso = db.scalar(
-        select(Caso).where(*condiciones).order_by(Caso.id_caso.desc()).limit(1)
-    )
-    return caso, total
+    casos = svc_masivas.concentracion(db, falla)
+    if not casos:
+        vinculado = db.scalar(
+            select(Caso)
+            .join(FallaMasivaCaso, FallaMasivaCaso.id_caso == Caso.id_caso)
+            .where(FallaMasivaCaso.id_falla == falla.id_falla)
+            .order_by(Caso.id_caso.desc())
+            .limit(1)
+        )
+        casos = [vinculado] if vinculado is not None else []
+    if not casos:
+        return None, 0
+    return max(casos, key=lambda c: c.id_caso), len(casos)
 
 
 def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
@@ -238,27 +232,49 @@ def reportar_falla(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
 ) -> FallaMasivaOut:
+    """Alta manual de una masiva (D-118).
+
+    Exige OLT + slot + puerto + FAT + dirección y **al menos un caso** asociado en
+    la misma operación. Los casos se validan contra la tupla antes de crear los
+    vínculos: no se puede mezclar otro FAT ni arrastrar la cuadrilla completa.
+    """
+    ids_caso = list(dict.fromkeys(datos.ids_caso))
+    if not ids_caso:
+        raise HTTPException(
+            status_code=422,
+            detail="El alta manual debe asociar al menos un caso de ese FAT",
+        )
     central = resolver_central(db, None, cargar_config(db))
     id_cuadrilla = datos.id_cuadrilla or svc_fallas.cuadrilla_cercana(
         db, central.id_central, datos.id_sector)
     falla = FallaMasiva(
         id_central=central.id_central,
-        descripcion=datos.descripcion,
+        descripcion=datos.descripcion.strip(),
         origen=datos.origen,
         id_sector=datos.id_sector,
         id_cuadrilla=id_cuadrilla,
-        # D-82: ODN/dirección/FAT/evidencias (opcionales en el alta administrativa).
         odn=(datos.odn or None),
-        direccion=(datos.direccion or None),
-        fat=(datos.fat or None),
+        direccion=datos.direccion.strip(),
+        olt=datos.olt.strip(),
+        slot=datos.slot.strip(),
+        puerto=datos.puerto.strip(),
+        fat=datos.fat.strip(),
         evidencias=_texto_evidencias(datos.evidencias),
         estado="DETECTADA",
     )
     db.add(falla)
     db.flush()
-    # D-99: materializa la asociación de la concentración (o del sector, si el
-    # alta es manual) para que la ficha tenga CASOS ASOCIADOS desde el minuto cero.
-    svc_masivas.sincronizar_asociacion(db, falla, usuario.p00)
+    try:
+        creados = svc_masivas.asociar(db, falla, ids_caso, usuario.p00)
+    except svc_masivas.MasivaInvalida as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=exc.mensaje) from exc
+    if not creados:
+        db.rollback()
+        raise HTTPException(
+            status_code=422,
+            detail="No se pudo asociar ningún caso de ese FAT a la masiva",
+        )
     svc_fallas.alertar(db, falla)
     db.commit()
     db.refresh(falla)
@@ -297,12 +313,32 @@ def reportar_falla_campo(
         id_cuadrilla=id_cuadrilla,
         odn=datos.odn.strip(),
         direccion=datos.direccion.strip(),
+        olt=datos.olt.strip(),
+        slot=datos.slot.strip(),
+        puerto=datos.puerto.strip(),
         fat=datos.fat.strip(),
         evidencias=_texto_evidencias(datos.evidencias),
         estado="DETECTADA",
     )
     db.add(falla)
     db.flush()
+    # D-118: el reporte de campo asocia automáticamente los casos de **ese FAT**
+    # (OLT + slot + puerto + FAT). Si no hay ninguno, el reporte no se registra:
+    # una masiva sin casos no se puede cerrar ni sirve para nada.
+    casos = svc_masivas.concentracion(db, falla)
+    if not casos:
+        db.rollback()
+        raise HTTPException(
+            status_code=422,
+            detail="No hay casos que coincidan con OLT/slot/puerto/FAT indicados",
+        )
+    try:
+        svc_masivas.asociar(
+            db, falla, [c.id_caso for c in casos], usuario.p00, origen="AUTO"
+        )
+    except svc_masivas.MasivaInvalida as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=exc.mensaje) from exc
     # D-99 (RF-60): si las evidencias del reporte traen GPS, se guarda la posición
     # del FAT afectado para el mapa de la sección MASIVAS.
     seriales = [s.strip() for s in (falla.evidencias or "").split(",") if s.strip()]
@@ -317,7 +353,6 @@ def reportar_falla_campo(
         if punto is not None:
             falla.latitud = punto.latitud
             falla.longitud = punto.longitud
-    svc_masivas.sincronizar_asociacion(db, falla, usuario.p00)
     svc_fallas.alertar(db, falla)
     db.commit()
     db.refresh(falla)
@@ -376,6 +411,58 @@ def planificar_falla(
     db.commit()
     db.refresh(falla)
     return _salida1(db, falla)
+
+
+@router.get("/fallas-masivas/casos-candidatos", response_model=list[CasoCandidatoOut],
+            summary="Casos candidatos por OLT + slot + puerto + FAT (D-118)")
+def casos_candidatos(
+    olt: str = Query(min_length=1, max_length=60),
+    slot: str = Query(min_length=1, max_length=20),
+    puerto: str = Query(min_length=1, max_length=20),
+    fat: str = Query(min_length=1, max_length=60),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(_escritura),
+) -> list[CasoCandidatoOut]:
+    """Candidatos del **mismo FAT** para el alta manual o la asociación.
+
+    Filtra por la tupla completa (OLT + slot + puerto + FAT) y excluye los casos
+    terminales. Es la búsqueda que usa la web para elegir al menos un caso.
+    """
+    central = resolver_central(db, None, cargar_config(db))
+
+    def norm(valor: str) -> str:
+        return valor.strip().casefold()
+
+    casos = db.scalars(
+        select(Caso)
+        .where(
+            Caso.id_central == central.id_central,
+            Caso.estado_actual.notin_(("CERRADO", "CANCELADO", "ENRUTADO")),
+            func.lower(func.trim(Caso.olt)) == norm(olt),
+            func.lower(func.trim(Caso.slot)) == norm(slot),
+            func.lower(func.trim(Caso.puerto)) == norm(puerto),
+            func.lower(func.trim(Caso.fat)) == norm(fat),
+        )
+        .order_by(Caso.id_caso.desc())
+        .limit(200)
+    ).all()
+    sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
+    return [
+        CasoCandidatoOut(
+            id_caso=c.id_caso,
+            id_averia=c.id_averia,
+            estado_actual=c.estado_actual,
+            nombre_cliente=c.nombre_cliente,
+            direccion=c.direccion,
+            olt=c.olt,
+            slot=c.slot,
+            puerto=c.puerto,
+            fat=c.fat,
+            id_sector=c.id_sector,
+            sector_nombre=(sectores.get(c.id_sector) if c.id_sector else None),
+        )
+        for c in casos
+    ]
 
 
 @router.get("/fallas-masivas/{id_falla}", response_model=FallaMasivaOut,

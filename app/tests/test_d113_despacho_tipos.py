@@ -31,7 +31,7 @@ AYER = (date.today() - timedelta(days=1)).isoformat()
 
 
 @pytest.fixture()
-def entorno(client, admin_token):
+def entorno(client, admin_token, db_session):
     """Tres sectores, dos cuadrillas y los cinco tipos de caso del checklist."""
     headers = admin_token["admin"]
     id_central = admin_token["id_central"]
@@ -93,8 +93,13 @@ def entorno(client, admin_token):
         categoria="EMPRESA",
     )
     # Comunes de la masiva (Gamma)
-    for i in range(2):
-        crear(f"TSTD13-M{i}", f"SECTOR D113 GAMMA CASA {i}")
+    masiva_casos = [crear(f"TSTD13-M{i}", f"SECTOR D113 GAMMA CASA {i}") for i in range(2)]
+    for caso in masiva_casos:
+        fila = db_session.get(Caso, caso["id_caso"])
+        fila.olt, fila.slot, fila.puerto, fila.fat = (
+            "OLT-D113", "3", "7", "FAT-D113",
+        )
+    db_session.commit()
 
     id_cuadrilla_a = {
         c["codigo"]: c["id_cuadrilla"]
@@ -104,19 +109,25 @@ def entorno(client, admin_token):
             headers=headers,
         ).json()
     }["TCD13A"]
-    # La masiva del sector Gamma nace asignada a la cuadrilla A.
+    # La masiva del FAT Gamma nace asignada a la cuadrilla A.
     r = client.post(
         MASIVAS,
         json={
-            "descripcion": "Masiva D113 del sector Gamma",
+            "descripcion": "Masiva D113 del FAT Gamma",
             "id_sector": gamma,
             "id_cuadrilla": id_cuadrilla_a,
+            "olt": "OLT-D113",
+            "slot": "3",
+            "puerto": "7",
+            "fat": "FAT-D113",
+            "direccion": "SECTOR D113 GAMMA CASA 0",
+            "ids_caso": [c["id_caso"] for c in masiva_casos],
         },
         headers=headers,
     )
     assert r.status_code == 201, r.text
     falla = r.json()
-    assert falla["casos_asociados"] == 2, "la masiva debe asociar los 2 casos del sector"
+    assert falla["casos_asociados"] == 2, "la masiva debe asociar los 2 casos del FAT"
 
     yield {
         "headers": headers,

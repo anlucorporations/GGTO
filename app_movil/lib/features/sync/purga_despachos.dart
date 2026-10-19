@@ -15,6 +15,12 @@ import '../casos/acciones_caso.dart';
 ///      sin subir). Esto es innegociable: borrarlo perdería trabajo de campo.
 /// En cualquier otro caso —no atendido y de un despacho anterior— se borra.
 ///
+/// D-117: un **PENDIENTE** que pertenece al **despacho del día** se conserva
+/// (`idsDelDia`). Los pendientes de despachos anteriores que ya no están en el
+/// despacho se retiran del **dispositivo**, pero **no se borran del servidor**:
+/// el backend los mantiene en la bolsa para reasignarlos. Así el técnico no
+/// acumula casos viejos y el trabajo pendiente no se pierde.
+///
 /// D-115: la **actualización completa** ejecuta esta purga en cuanto el servidor
 /// resuelve una cuadrilla de campo (`procede`), aunque todavía no haya despacho
 /// del día; en ese caso `idsDelDia` viene vacío y se borran todos los no atendidos.

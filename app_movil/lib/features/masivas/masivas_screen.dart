@@ -227,6 +227,8 @@ class TarjetaMasiva extends StatelessWidget {
     return [
       if (v('descripcion').isNotEmpty) v('descripcion'),
       'Sector: ${v('sector_nombre').isEmpty ? '—' : v('sector_nombre')}',
+      'OLT: ${v('olt').isEmpty ? '—' : v('olt')} · '
+          'Slot/Puerto: ${v('slot').isEmpty ? '—' : v('slot')}/${v('puerto').isEmpty ? '—' : v('puerto')}',
       'FAT: ${v('fat').isEmpty ? '—' : v('fat')}',
       'ODN: ${v('odn').isEmpty ? '—' : v('odn')}',
       'RUTA: ${ruta.isEmpty ? '—' : ruta}',

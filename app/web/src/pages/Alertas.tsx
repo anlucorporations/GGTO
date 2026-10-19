@@ -419,6 +419,12 @@ function ModalManual({
   onListo: (texto: string) => void;
 }) {
   const [descripcion, setDescripcion] = useState('');
+  const [olt, setOlt] = useState('');
+  const [slot, setSlot] = useState('');
+  const [puerto, setPuerto] = useState('');
+  const [odn, setOdn] = useState('');
+  const [fat, setFat] = useState('');
+  const [direccion, setDireccion] = useState('');
   const [idSector, setIdSector] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -428,10 +434,15 @@ function ModalManual({
     setError('');
     setEnviando(true);
     try {
-      const falla = await api.reportarFallaManual({
+      const falla = await api.reportarFallaCampo({
         descripcion: descripcion.trim(),
+        olt: olt.trim(),
+        slot: slot.trim(),
+        puerto: puerto.trim(),
+        odn: odn.trim(),
+        fat: fat.trim(),
+        direccion: direccion.trim(),
         id_sector: idSector === '' ? null : Number(idSector),
-        origen: 'REPORTE_TECNICO',
       });
       onListo(`Falla masiva #${falla.id_falla} registrada y alerta encolada.`);
     } catch (e) {
@@ -445,6 +456,74 @@ function ModalManual({
     <Modal titulo="Reportar falla masiva" onCerrar={onCerrar}>
       <form className="formulario modal-formulario" onSubmit={(e) => void enviar(e)}>
         <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+        <div className="campo">
+          <label htmlFor="falla-olt">OLT *</label>
+          <input
+            id="falla-olt"
+            value={olt}
+            onChange={(e) => setOlt(e.target.value)}
+            required
+            maxLength={60}
+            placeholder="Ej.: OLT-NORTE-01"
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="falla-slot">SLOT *</label>
+          <input
+            id="falla-slot"
+            value={slot}
+            onChange={(e) => setSlot(e.target.value)}
+            required
+            maxLength={20}
+            placeholder="Ej.: 3"
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="falla-puerto">PUERTO *</label>
+          <input
+            id="falla-puerto"
+            value={puerto}
+            onChange={(e) => setPuerto(e.target.value)}
+            required
+            maxLength={20}
+            placeholder="Ej.: 7"
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="falla-fat">FAT *</label>
+          <input
+            id="falla-fat"
+            value={fat}
+            onChange={(e) => setFat(e.target.value)}
+            required
+            maxLength={60}
+            placeholder="Ej.: F-12"
+          />
+        </div>
+        <div className="campo campo-ancho">
+          <label htmlFor="falla-direccion">Dirección * (mín. 5)</label>
+          <input
+            id="falla-direccion"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            required
+            minLength={5}
+            maxLength={200}
+            placeholder="Ej.: Av. Bolívar, entre calle 3 y 4"
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="falla-odn">ODN *</label>
+          <input
+            id="falla-odn"
+            value={odn}
+            onChange={(e) => setOdn(e.target.value)}
+            required
+            minLength={3}
+            maxLength={60}
+            placeholder="Ej.: ODN-2324X-0451"
+          />
+        </div>
         <div className="campo campo-ancho">
           <label htmlFor="falla-descripcion">Descripción *</label>
           <textarea

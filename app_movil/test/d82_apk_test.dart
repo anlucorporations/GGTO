@@ -20,6 +20,9 @@ void main() {
   group('reporte de falla masiva (requisito 5)', () {
     test('exige la ODN', () async {
       final r = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '7',
         odn: 'AB',
         direccion: 'Calle 4 con Av. Principal',
         fat: 'FAT-04',
@@ -31,6 +34,9 @@ void main() {
 
     test('exige la dirección', () async {
       final r = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '7',
         odn: 'ODN-2324X-0451',
         direccion: 'Casa',
         fat: 'FAT-04',
@@ -42,6 +48,9 @@ void main() {
 
     test('exige la FAT', () async {
       final r = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '7',
         odn: 'ODN-2324X-0451',
         direccion: 'Calle 4 con Av. Principal',
         fat: '  ',
@@ -51,8 +60,49 @@ void main() {
       expect(r.mensaje, contains('FAT'));
     });
 
+    test('exige la OLT, el SLOT y el PUERTO (D-118)', () async {
+      final sinOlt = await OperacionesService.reportarFallaMasiva(
+        olt: '',
+        slot: '3',
+        puerto: '7',
+        odn: 'ODN-2324X-0451',
+        direccion: 'Calle 4 con Av. Principal',
+        fat: 'FAT-04',
+        descripcion: 'Sin servicio en la zona',
+      );
+      expect(sinOlt.valida, isFalse);
+      expect(sinOlt.mensaje, contains('OLT'));
+
+      final sinSlot = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '',
+        puerto: '7',
+        odn: 'ODN-2324X-0451',
+        direccion: 'Calle 4 con Av. Principal',
+        fat: 'FAT-04',
+        descripcion: 'Sin servicio en la zona',
+      );
+      expect(sinSlot.valida, isFalse);
+      expect(sinSlot.mensaje, contains('SLOT'));
+
+      final sinPuerto = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '',
+        odn: 'ODN-2324X-0451',
+        direccion: 'Calle 4 con Av. Principal',
+        fat: 'FAT-04',
+        descripcion: 'Sin servicio en la zona',
+      );
+      expect(sinPuerto.valida, isFalse);
+      expect(sinPuerto.mensaje, contains('PUERTO'));
+    });
+
     test('exige la descripción', () async {
       final r = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '7',
         odn: 'ODN-2324X-0451',
         direccion: 'Calle 4 con Av. Principal',
         fat: 'FAT-04',
@@ -64,6 +114,9 @@ void main() {
 
     test('admite como máximo 2 fotos de evidencia', () async {
       final r = await OperacionesService.reportarFallaMasiva(
+        olt: 'OLT-1',
+        slot: '3',
+        puerto: '7',
         odn: 'ODN-2324X-0451',
         direccion: 'Calle 4 con Av. Principal',
         fat: 'FAT-04',

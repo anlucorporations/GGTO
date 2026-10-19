@@ -530,6 +530,10 @@ CREATE TABLE IF NOT EXISTS falla_masiva (
     odn                 varchar(60),
     direccion           varchar(200),
     fat                 varchar(60),
+    -- D-118: identidad técnica del FAT (OLT + slot + puerto + FAT).
+    olt                 varchar(60),
+    slot                varchar(20),
+    puerto              varchar(20),
     evidencias          text,          -- seriales de hasta 2 fotos, separados por coma
     planificacion       text,
     reporte_simple      text,
@@ -1112,6 +1116,11 @@ ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS cerrada_en          timestampt
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS casos_cerrados      integer NOT NULL DEFAULT 0;
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS latitud             numeric(10,7);
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS longitud            numeric(10,7);
+-- D-118: identidad técnica del FAT (OLT + slot + puerto + FAT) para la detección,
+-- la asociación manual y el cierre en cascada.
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS olt                 varchar(60);
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS slot                varchar(20);
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS puerto              varchar(20);
 CREATE INDEX IF NOT EXISTS ix_falla_masiva_estado
     ON falla_masiva (id_central, estado, fecha_deteccion DESC);
 

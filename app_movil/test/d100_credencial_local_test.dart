@@ -161,6 +161,22 @@ void main() {
       expect(AppConstants.pinPorDefecto.length, AppConstants.pinLongitud);
       expect(validarFormatoPin(AppConstants.pinPorDefecto), isNull);
     });
+
+    test('restablecer deja el PIN de fábrica y exige cambiarlo (D-117)', () {
+      final restablecida = fichaConPinPorDefecto(_ficha(pin: '135790'));
+      expect(restablecida.pinPorDefecto, isTrue);
+      expect(restablecida.intentosFallidos, 0);
+      expect(restablecida.comprobarPin(AppConstants.pinPorDefecto), isTrue);
+      expect(restablecida.comprobarPin('135790'), isFalse);
+
+      final r = evaluarPin(
+        documento: DocumentoCredencial(credenciales: [restablecida]),
+        p00: 'TSTTEC',
+        pin: AppConstants.pinPorDefecto,
+        ahora: _ahora,
+      );
+      expect(r.resultado.estado, EstadoPin.requiereCambio);
+    });
   });
 
   group('D-100 · vigencia de 24 h', () {

@@ -378,9 +378,10 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
             hijos: [
               const Text(
                 'La APK puede abrirse sin internet con un PIN de '
-                '${AppConstants.pinLongitud} dígitos. Solo el rol TÉCNICO tiene ese '
-                'acceso, y la credencial caduca a las '
-                '${AppConstants.credencialOfflineHoras} h sin conectarse.',
+                '${AppConstants.pinLongitud} dígitos y lo usa para desbloquear la '
+                'pantalla tras ${AppConstants.bloqueoInactividadMinutos} minutos de '
+                'inactividad. Solo el rol TÉCNICO tiene ese acceso, y la credencial '
+                'caduca a las ${AppConstants.credencialOfflineHoras} h sin conectarse.',
                 style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
               const SizedBox(height: 8),
@@ -412,8 +413,8 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextButton.icon(
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Restablecer'),
+                        icon: const Icon(Icons.lock_reset),
+                        label: const Text('Restablecer PIN'),
                         onPressed: _restablecerCredencial,
                       ),
                     ),
@@ -597,15 +598,15 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     );
   }
 
-  /// Descarta el acceso sin conexión de este dispositivo.
+  /// Restablece el PIN al de fábrica conservando la credencial (D-117).
   Future<void> _restablecerCredencial() async {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (contexto) => AlertDialog(
-        title: const Text('Restablecer acceso sin conexión'),
+        title: const Text('Restablecer PIN'),
         content: const Text(
-          'Se descartará el PIN de este dispositivo. Para volver a entrar sin '
-          'conexión habrá que iniciar sesión con internet una vez.\n\n¿Continuar?',
+          'El PIN del acceso sin conexión volverá al de fábrica. La próxima vez '
+          'que lo use se le pedirá cambiarlo.\n\n¿Continuar?',
         ),
         actions: [
           TextButton(
@@ -621,11 +622,22 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     );
     if (confirmado != true || !mounted) return;
     final auth = context.read<AuthProvider>();
-    await auth.olvidarCredencial(auth.p00 ?? _credencial?.p00 ?? '');
+    final p00 = auth.p00 ?? _credencial?.p00 ?? '';
+    final fallo = await auth.restablecerPinLocal(p00);
     if (!mounted) return;
-    setState(() => _credencial = null);
+    if (fallo != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(fallo), backgroundColor: Colors.red.shade800),
+      );
+      return;
+    }
+    final ficha = await CredencialService.ficha(p00);
+    if (!mounted) return;
+    setState(() => _credencial = ficha);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Acceso sin conexión restablecido.')),
+      const SnackBar(
+        content: Text('PIN restablecido al de fábrica. Se pedirá cambiarlo al usarlo.'),
+      ),
     );
   }
 

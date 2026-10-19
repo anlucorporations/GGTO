@@ -9,6 +9,7 @@ import 'features/auth/auth_provider.dart';
 import 'features/auth/disclaimer_screen.dart';
 import 'features/auth/disclaimer_storage.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/lock_controller.dart';
 import 'features/auth/pin_screen.dart';
 import 'features/auth/primer_acceso_screen.dart';
 import 'features/auth/unlock_screen.dart';
@@ -24,6 +25,7 @@ import 'features/monitoreo/monitoreo_screen.dart';
 import 'features/sync/sync_provider.dart';
 import 'features/sync/sync_screen.dart';
 import 'features/usuario/usuario_screen.dart';
+import 'widgets/bloqueo_inactividad.dart';
 
 /// Clave global de navegación: permite volver al acceso cuando la sesión expira.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -57,6 +59,8 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => MasivasProvider()),
         ChangeNotifierProvider(create: (_) => SyncProvider()..iniciar()),
         ChangeNotifierProvider(create: (_) => MensajesProvider()..iniciar()),
+        // D-117: bloqueo de pantalla por inactividad (no cierra la sesión).
+        ChangeNotifierProvider(create: (_) => LockController()),
       ],
       child: const GGTOApp(),
     ),
@@ -120,6 +124,9 @@ class _GGTOAppState extends State<GGTOApp> {
       theme: appTheme,
       navigatorKey: navigatorKey,
       initialRoute: '/login',
+      // D-117: la capa de bloqueo cubre todas las rutas sin cerrar la sesión.
+      builder: (context, child) =>
+          BloqueoInactividad(child: child ?? const SizedBox.shrink()),
       routes: {
         '/login': (context) => const LoginScreen(),
         // D-100: acceso sin conexión con PIN local (solo rol TÉCNICO).

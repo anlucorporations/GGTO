@@ -84,6 +84,36 @@ def _crear_personal(client, headers, nombre="VALIDADOR CRASS", tipo="CRASS"):
     return r.json()
 
 
+def _tupla(db_session, ids_caso, *, olt="OLT-D99", slot="3", puerto="7",
+           fat="FAT-D99", **campos) -> None:
+    """Fija la tupla OLT/slot/puerto/FAT de los casos (D-118)."""
+    _marcar_tecnico(
+        db_session, ids_caso, olt=olt, slot=slot, puerto=puerto, fat=fat, **campos
+    )
+
+
+def _crear_masiva(client, headers, *, descripcion: str, ids_caso: list[int],
+                  id_sector: int | None = None, olt: str = "OLT-D99",
+                  slot: str = "3", puerto: str = "7", fat: str = "FAT-D99",
+                  direccion: str = "SECTOR D99 ALFA CASA 1", **extra):
+    """Alta manual D-118: tupla completa + al menos un caso asociado."""
+    cuerpo = {
+        "descripcion": descripcion,
+        "olt": olt,
+        "slot": slot,
+        "puerto": puerto,
+        "fat": fat,
+        "direccion": direccion,
+        "ids_caso": ids_caso,
+    }
+    if id_sector is not None:
+        cuerpo["id_sector"] = id_sector
+    cuerpo.update(extra)
+    r = client.post(MASIVAS, json=cuerpo, headers=headers)
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
 def _procesar(client, entorno, fecha: str):
     r = client.post(f"{DESPACHOS}/procesar",
                     json={"fecha": fecha, "reemplazar": True, "asignaciones": []},
@@ -96,19 +126,23 @@ def _procesar(client, entorno, fecha: str):
 # 1. Asociación explícita y CASOS ASOCIADOS
 # --------------------------------------------------------------------------- #
 def test_alta_manual_asocia_los_casos_del_sector_y_expone_la_ruta(client, entorno,
-                                                                  db_session):
+                                                                   db_session):
     """RF-58/RF-59: el alta manual asocia los casos y la RUTA sale de EXTRA."""
     headers, id_sector = entorno["headers"], entorno["id_sector"]
     casos = [entorno["crear"](f"TSTD99-M{i}") for i in range(3)]
     # La RUTA viaja en la columna EXTRA del archivo de ingesta.
-    _marcar_tecnico(db_session, [c["id_caso"] for c in casos],
-                    extra="TARJETA 3 / PUERTO 7 / FAT C-01", olt="OLT-D99")
+    _tupla(db_session, [c["id_caso"] for c in casos],
+           extra="TARJETA 3 / PUERTO 7 / FAT C-01")
 
-    r = client.post(MASIVAS, json={"descripcion": "Masiva manual del sector Alfa",
-                                   "id_sector": id_sector}, headers=headers)
-    assert r.status_code == 201, r.text
-    falla = r.json()
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva manual del FAT C-01",
+        ids_caso=[c["id_caso"] for c in casos],
+        id_sector=id_sector,
+    )
     assert falla["casos_asociados"] == 3
+    assert falla["olt"] == "OLT-D99" and falla["slot"] == "3"
+    assert falla["puerto"] == "7" and falla["fat"] == "FAT-D99"
 
     r = client.get(f"{MASIVAS}/{falla['id_falla']}/casos", headers=headers)
     assert r.status_code == 200, r.text
@@ -116,41 +150,98 @@ def test_alta_manual_asocia_los_casos_del_sector_y_expone_la_ruta(client, entorn
     assert len(asociados) == 3
     assert {a["id_caso"] for a in asociados} == {c["id_caso"] for c in casos}
     assert all(a["ruta"] == "TARJETA 3 / PUERTO 7 / FAT C-01" for a in asociados)
-    assert all(a["origen_asociacion"] == "AUTO" for a in asociados)
+    assert all(a["origen_asociacion"] == "MANUAL" for a in asociados)
     # La marca del caso queda sincronizada con la asociación.
     assert all(db_session.get(Caso, c["id_caso"]).es_falla_masiva for c in casos)
+
+    # Un caso del mismo sector pero de OTRO FAT no entra ni se puede asociar.
+    fuera = entorno["crear"]("TSTD99-M9")
+    _tupla(db_session, [fuera["id_caso"]], fat="FAT-OTRO")
+    r = client.post(f"{MASIVAS}/{falla['id_falla']}/casos",
+                    json={"ids_caso": [fuera["id_caso"]]}, headers=headers)
+    assert r.status_code == 409, r.text
+
+
+def test_busqueda_de_candidatos_por_tupla(client, entorno, db_session):
+    """D-118: el buscador devuelve solo casos del mismo OLT+slot+puerto+FAT."""
+    headers = entorno["headers"]
+    uno = entorno["crear"]("TSTD99-BC1")
+    dos = entorno["crear"]("TSTD99-BC2")
+    otro = entorno["crear"]("TSTD99-BC3")
+    _tupla(db_session, [uno["id_caso"], dos["id_caso"]],
+           olt="OLT-CAND", fat="FAT-CAND")
+    _tupla(db_session, [otro["id_caso"]], olt="OLT-CAND", fat="FAT-OTRO")
+
+    r = client.get(
+        f"{MASIVAS}/casos-candidatos",
+        params={"olt": "OLT-CAND", "slot": "3", "puerto": "7", "fat": "FAT-CAND"},
+        headers=headers,
+    )
+    assert r.status_code == 200, r.text
+    ids = {c["id_caso"] for c in r.json()}
+    assert ids == {uno["id_caso"], dos["id_caso"]}
+    assert otro["id_caso"] not in ids
+
+
+def test_el_alta_manual_exige_al_menos_un_caso(client, entorno):
+    """D-118: una masiva manual sin casos no se registra."""
+    headers = entorno["headers"]
+    r = client.post(
+        MASIVAS,
+        json={
+            "descripcion": "Masiva sin casos asociados",
+            "olt": "OLT-X",
+            "slot": "3",
+            "puerto": "7",
+            "fat": "FAT-X",
+            "direccion": "SECTOR D99 ALFA CASA 1",
+            "ids_caso": [],
+        },
+        headers=headers,
+    )
+    assert r.status_code == 422, r.text
 
 
 def test_la_deteccion_automatica_materializa_la_concentracion(client, entorno,
                                                               db_session):
-    """RF-58: la detección por concentración crea la falla y sus asociaciones."""
+    """RF-58/D-118: la detección agrupa por OLT + slot + puerto + FAT."""
     headers = entorno["headers"]
     casos = [entorno["crear"](f"TSTD99-D{i}") for i in range(5)]
-    _marcar_tecnico(db_session, [c["id_caso"] for c in casos], olt="OLT-CONCENTRADA")
+    _tupla(db_session, [c["id_caso"] for c in casos],
+           olt="OLT-CONCENTRADA", fat="FAT-CONC")
+    # Mismo OLT, pero otro FAT: no se mezclan en la misma masiva.
+    otros = [entorno["crear"](f"TSTD99-DX{i}") for i in range(2)]
+    _tupla(db_session, [c["id_caso"] for c in otros],
+           olt="OLT-CONCENTRADA", fat="FAT-OTRA")
 
     r = client.post(f"{MASIVAS}/detectar", headers=headers)
     assert r.status_code == 200, r.text
-    creadas = [f for f in r.json() if f["clave_concentracion"] == "olt:OLT-CONCENTRADA"]
+    creadas = [f for f in r.json() if f["clave_concentracion"] == "fat:FAT-CONC"]
     assert creadas, r.text
     falla = creadas[0]
     assert falla["casos_asociados"] == 5
+    assert falla["olt"] == "OLT-CONCENTRADA" and falla["fat"] == "FAT-CONC"
 
     filas = db_session.scalars(
         select(FallaMasivaCaso).where(FallaMasivaCaso.id_falla == falla["id_falla"])
     ).all()
     assert len(filas) == 5
     assert {f.origen for f in filas} == {"AUTO"}
+    assert not {f.id_caso for f in filas} & {c["id_caso"] for c in otros}
 
 
-def test_asociar_y_quitar_casos_a_mano(client, entorno):
+def test_asociar_y_quitar_casos_a_mano(client, entorno, db_session):
     """RF-59: el usuario puede agregar y quitar casos de la masiva."""
     headers, id_sector = entorno["headers"], entorno["id_sector"]
     dentro = entorno["crear"]("TSTD99-AS1")
     fuera = entorno["crear"]("TSTD99-AS2")
-    r = client.post(MASIVAS, json={"descripcion": "Masiva para asociar a mano",
-                                   "id_sector": id_sector}, headers=headers)
-    falla = r.json()
-    # El alta asoció los dos casos del sector.
+    _tupla(db_session, [dentro["id_caso"], fuera["id_caso"]])
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva para asociar a mano",
+        ids_caso=[dentro["id_caso"], fuera["id_caso"]],
+        id_sector=id_sector,
+    )
     assert falla["casos_asociados"] == 2
 
     r = client.request("DELETE", f"{MASIVAS}/{falla['id_falla']}/casos",
@@ -163,13 +254,13 @@ def test_asociar_y_quitar_casos_a_mano(client, entorno):
     assert r.status_code == 201, r.text
     restantes = r.json()
     assert {a["id_caso"] for a in restantes} == {dentro["id_caso"], fuera["id_caso"]}
-    assert {a["origen_asociacion"] for a in restantes} == {"AUTO", "MANUAL"}
+    assert {a["origen_asociacion"] for a in restantes} == {"MANUAL"}
 
 
 # --------------------------------------------------------------------------- #
 # 2. Personal externo (solicitantes y CRASS)
 # --------------------------------------------------------------------------- #
-def test_catalogo_de_personal_externo(client, entorno):
+def test_catalogo_de_personal_externo(client, entorno, db_session):
     """RF-63: alta, filtro por tipo, edición y baja lógica si está en uso."""
     headers = entorno["headers"]
     creado = _crear_personal(client, headers, nombre="ANA CRASS", tipo="CRASS")
@@ -188,10 +279,14 @@ def test_catalogo_de_personal_externo(client, entorno):
 
     # En uso por una masiva cerrada: la baja desactiva en vez de borrar.
     id_sector = entorno["id_sector"]
-    entorno["crear"]("TSTD99-P1")
-    r = client.post(MASIVAS, json={"descripcion": "Masiva con validador del CRASS",
-                                   "id_sector": id_sector}, headers=headers)
-    falla = r.json()
+    caso = entorno["crear"]("TSTD99-P1")
+    _tupla(db_session, [caso["id_caso"]])
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva con validador del CRASS",
+        ids_caso=[caso["id_caso"]],
+        id_sector=id_sector,
+    )
     r = client.post(f"{MASIVAS}/{falla['id_falla']}/cierre",
                     json={"descripcion": "Se reparó el tramo y se validó en sitio",
                           "id_validador_crass": creado["id_solicitante"]},
@@ -208,17 +303,24 @@ def test_catalogo_de_personal_externo(client, entorno):
 # --------------------------------------------------------------------------- #
 # 3. Cierre de la masiva (RF-61 / RF-62)
 # --------------------------------------------------------------------------- #
-def test_cierre_en_cascada_cierra_todos_los_casos(client, entorno, db_session):
-    """RF-62: al cerrar la masiva se cierran los casos con IVR y «Reparado en FDT»."""
+def test_cierre_en_cascada_cierra_solo_los_asociados(client, entorno, db_session):
+    """RF-62/D-118: al cerrar la masiva se cierran **solo** sus casos asociados."""
     headers, id_sector = entorno["headers"], entorno["id_sector"]
     casos = [entorno["crear"](f"TSTD99-C{i}") for i in range(3)]
+    _tupla(db_session, [c["id_caso"] for c in casos])
     # Uno ya estaba cerrado: debe omitirse, no fallar.
     _marcar_tecnico(db_session, [casos[0]["id_caso"]], estado_actual="CERRADO")
+    # Caso de la misma cuadrilla/sector pero de otro FAT: NO está asociado.
+    ajeno = entorno["crear"]("TSTD99-C9")
+    _tupla(db_session, [ajeno["id_caso"]], fat="FAT-AJENO")
     validador = _crear_personal(client, headers)
 
-    r = client.post(MASIVAS, json={"descripcion": "Masiva para cerrar en cascada",
-                                   "id_sector": id_sector}, headers=headers)
-    falla = r.json()
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva para cerrar en cascada",
+        ids_caso=[c["id_caso"] for c in casos],
+        id_sector=id_sector,
+    )
     assert falla["casos_asociados"] == 3
 
     r = client.post(f"{MASIVAS}/{falla['id_falla']}/cierre",
@@ -237,6 +339,8 @@ def test_cierre_en_cascada_cierra_todos_los_casos(client, entorno, db_session):
     for caso in casos[1:]:
         vivo = db_session.get(Caso, caso["id_caso"])
         assert vivo.estado_actual == "CERRADO", vivo.id_averia
+    # El caso de la cuadrilla que no está en la masiva no se toca.
+    assert db_session.get(Caso, ajeno["id_caso"]).estado_actual != "CERRADO"
 
     falla_db = db_session.get(FallaMasiva, falla["id_falla"])
     assert falla_db.estado == "CERRADA"
@@ -259,13 +363,54 @@ def test_cierre_en_cascada_cierra_todos_los_casos(client, entorno, db_session):
     assert r.status_code == 409, r.text
 
 
-def test_el_cierre_exige_validador_del_crass_activo(client, entorno):
+def test_el_cierre_omite_un_caso_que_no_coincide_con_la_tupla(client, entorno,
+                                                              db_session):
+    """D-118: aunque exista el vínculo, un caso de otro FAT no se cierra."""
+    headers, id_sector = entorno["headers"], entorno["id_sector"]
+    bueno = entorno["crear"]("TSTD99-OK1")
+    ajeno = entorno["crear"]("TSTD99-NO1")
+    _tupla(db_session, [bueno["id_caso"]])
+    _tupla(db_session, [ajeno["id_caso"]], fat="FAT-AJENO")
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva con un vínculo incoherente",
+        ids_caso=[bueno["id_caso"]],
+        id_sector=id_sector,
+    )
+    # Se simula un dato viejo/incoherente: vínculo directo a un caso de otro FAT.
+    db_session.add(FallaMasivaCaso(
+        id_falla=falla["id_falla"], id_caso=ajeno["id_caso"], origen="MANUAL",
+    ))
+    db_session.commit()
+    validador = _crear_personal(client, headers, nombre="CRASS D118")
+
+    r = client.post(f"{MASIVAS}/{falla['id_falla']}/cierre",
+                    json={"descripcion": "Se reparó el FAT afectado en sitio",
+                          "id_validador_crass": validador["id_solicitante"]},
+                    headers=headers)
+    assert r.status_code == 200, r.text
+    resultado = r.json()
+    assert resultado["casos_cerrados"] == 1
+    assert resultado["casos_omitidos"] == 1
+    assert any("no coincide" in (d.get("motivo") or "") for d in resultado["detalle"])
+
+    db_session.expire_all()
+    assert db_session.get(Caso, bueno["id_caso"]).estado_actual == "CERRADO"
+    assert db_session.get(Caso, ajeno["id_caso"]).estado_actual != "CERRADO"
+
+
+def test_el_cierre_exige_validador_del_crass_activo(client, entorno, db_session):
     """RF-61: sin validador del CRASS válido el cierre no procede."""
     headers, id_sector = entorno["headers"], entorno["id_sector"]
-    entorno["crear"]("TSTD99-V1")
-    r = client.post(MASIVAS, json={"descripcion": "Masiva sin validador válido",
-                                   "id_sector": id_sector}, headers=headers)
-    id_falla = r.json()["id_falla"]
+    caso = entorno["crear"]("TSTD99-V1")
+    _tupla(db_session, [caso["id_caso"]])
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva sin validador válido",
+        ids_caso=[caso["id_caso"]],
+        id_sector=id_sector,
+    )
+    id_falla = falla["id_falla"]
 
     cuerpo = {"descripcion": "Trabajo realizado y verificado en sitio",
               "id_validador_crass": 999999}
@@ -327,13 +472,18 @@ def test_reporte_de_produccion_con_abiertos_y_marca_de_masiva(client, entorno,
     """RF-70/RF-71: el aro necesita ABIERTOS y ENRUTADO, y el icono MASIVA."""
     headers, id_sector = entorno["headers"], entorno["id_sector"]
     casos = [entorno["crear"](f"TSTD99-R{i}") for i in range(3)]
+    _tupla(db_session, [c["id_caso"] for c in casos])
     _procesar(client, entorno, HOY)
     _marcar_tecnico(db_session, [casos[0]["id_caso"]], estado_actual="CERRADO")
     _marcar_tecnico(db_session, [casos[1]["id_caso"]], estado_actual="ENRUTADO")
 
-    r = client.post(MASIVAS, json={"descripcion": "Masiva con cuadrilla asignada",
-                                   "id_sector": id_sector}, headers=headers)
-    id_falla = r.json()["id_falla"]
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva con cuadrilla asignada",
+        ids_caso=[c["id_caso"] for c in casos],
+        id_sector=id_sector,
+    )
+    id_falla = falla["id_falla"]
     falla = db_session.get(FallaMasiva, id_falla)
     if falla.id_cuadrilla is None:
         from app.models import Cuadrilla
@@ -411,6 +561,7 @@ def test_la_descarga_entrega_masivas_y_datos_tecnicos(client, entorno, admin_tok
     caso = entorno["crear"]("TSTD99-SY1")
     _marcar_tecnico(db_session, [caso["id_caso"]],
                     extra="RUTA EXTRA 9/2/1", olt="OLT-SYNC")
+    _tupla(db_session, [caso["id_caso"]], olt="OLT-SYNC")
     _procesar(client, entorno, HOY)
 
     # La cuadrilla que recibió el caso en el despacho de hoy.
@@ -422,11 +573,15 @@ def test_la_descarga_entrega_masivas_y_datos_tecnicos(client, entorno, admin_tok
     assert cuadrilla is not None, "el caso no quedó despachado"
 
     # La masiva se asigna a esa misma cuadrilla.
-    r = client.post(MASIVAS, json={"descripcion": "Masiva que debe viajar a la APK",
-                                   "id_sector": id_sector, "id_cuadrilla": cuadrilla},
-                    headers=headers)
-    assert r.status_code == 201, r.text
-    id_falla = r.json()["id_falla"]
+    falla = _crear_masiva(
+        client, headers,
+        descripcion="Masiva que debe viajar a la APK",
+        ids_caso=[caso["id_caso"]],
+        id_sector=id_sector,
+        olt="OLT-SYNC",
+        id_cuadrilla=cuadrilla,
+    )
+    id_falla = falla["id_falla"]
 
     tecnico = db_session.scalar(select(Tecnico).where(Tecnico.p00 == "TESTTEC"))
     db_session.add(CuadrillaTecnico(id_cuadrilla=cuadrilla,

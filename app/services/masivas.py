@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import ColumnElement, or_, select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from ..models import (
@@ -72,28 +72,84 @@ def _texto_evidencias(seriales: list[str]) -> str | None:
 # --------------------------------------------------------------------------- #
 # Asociación caso ↔ masiva
 # --------------------------------------------------------------------------- #
+def _norm(valor: object) -> str:
+    """Normaliza OLT/slot/puerto/FAT para comparar sin espacios ni mayúsculas."""
+    return "" if valor is None else str(valor).strip().casefold()
+
+
+def _tupla_completa(falla: FallaMasiva) -> bool:
+    return all(
+        _norm(getattr(falla, campo))
+        for campo in ("olt", "slot", "puerto", "fat")
+    )
+
+
+def coincide(caso: Caso, falla: FallaMasiva) -> bool:
+    """D-118: ¿el caso pertenece al FAT de la masiva?
+
+    Con la tupla completa (OLT + slot + puerto + FAT) se exigen **los cuatro**
+    valores. En masivas históricas sin la tupla se comparan solo los campos que
+    la falla tenga (FAT/OLT), para no bloquear el cierre de datos viejos.
+    """
+    if _tupla_completa(falla):
+        return all(
+            _norm(getattr(caso, campo)) == _norm(getattr(falla, campo))
+            for campo in ("olt", "slot", "puerto", "fat")
+        )
+    comparables = [
+        campo for campo in ("olt", "slot", "puerto", "fat")
+        if _norm(getattr(falla, campo))
+    ]
+    if not comparables:
+        return True
+    return all(
+        _norm(getattr(caso, campo)) == _norm(getattr(falla, campo))
+        for campo in comparables
+    )
+
+
+def _condicion_tupla(falla: FallaMasiva) -> ColumnElement[bool] | None:
+    """Condición SQL de la tupla OLT+slot+puerto+FAT (D-118)."""
+    if _tupla_completa(falla):
+        return and_(
+            func.lower(func.trim(Caso.olt)) == _norm(falla.olt),
+            func.lower(func.trim(Caso.slot)) == _norm(falla.slot),
+            func.lower(func.trim(Caso.puerto)) == _norm(falla.puerto),
+            func.lower(func.trim(Caso.fat)) == _norm(falla.fat),
+        )
+    if _norm(falla.fat):
+        return func.lower(func.trim(Caso.fat)) == _norm(falla.fat)
+    if _norm(falla.olt):
+        return func.lower(func.trim(Caso.olt)) == _norm(falla.olt)
+    return None
+
+
 def concentracion(db: Session, falla: FallaMasiva) -> list[Caso]:
     """Casos que alcanza la concentración que originó la falla.
 
-    Reutiliza el criterio histórico —`clave_concentracion` «campo:valor» y, si la
-    falla es manual, el sector— para poder **materializar** la asociación.
+    D-118: la identidad es la tupla **OLT + slot + puerto + FAT**. Solo se cae al
+    criterio histórico `clave_concentracion` cuando la masiva no tiene tupla
+    (datos anteriores a D-118). **Nunca** se usa el sector: una masiva no puede
+    arrastrar todos los casos de la cuadrilla.
     """
     condiciones = [Caso.id_central == falla.id_central]
-    campo = valor = None
-    if falla.clave_concentracion and ":" in falla.clave_concentracion:
+    tupla = _condicion_tupla(falla)
+    if tupla is not None:
+        condiciones.append(tupla)
+    elif falla.clave_concentracion and ":" in falla.clave_concentracion:
         campo, valor = falla.clave_concentracion.split(":", 1)
-    columna = CAMPOS_CONCENTRACION.get(campo or "")
-    if columna is None:
-        if falla.id_sector is None:
+        columna = CAMPOS_CONCENTRACION.get(campo or "")
+        if columna is None:
             return []
-        columna, valor = Caso.id_sector, str(falla.id_sector)
-    if columna is Caso.id_sector:
-        try:
-            condiciones.append(columna == int(str(valor)))
-        except ValueError:
-            return []
+        if columna is Caso.id_sector:
+            try:
+                condiciones.append(columna == int(str(valor)))
+            except ValueError:
+                return []
+        else:
+            condiciones.append(columna == valor)
     else:
-        condiciones.append(columna == valor)
+        return []
     return list(db.scalars(select(Caso).where(*condiciones).order_by(Caso.id_caso)).all())
 
 
@@ -136,10 +192,15 @@ def asociar(db: Session, falla: FallaMasiva, ids_caso: list[int],
         caso = db.get(Caso, id_caso)
         if caso is None or caso.id_central != falla.id_central:
             raise MasivaInvalida(f"El caso {id_caso} no existe en la central de la masiva")
+        if not coincide(caso, falla):
+            raise MasivaInvalida(
+                f"El caso {caso.id_averia} no coincide con OLT/slot/puerto/FAT de la masiva"
+            )
         db.add(FallaMasivaCaso(
             id_falla=falla.id_falla, id_caso=id_caso, origen=origen, agregado_por=usuario_p00,
         ))
         caso.es_falla_masiva = True
+        ya.add(id_caso)
         creados += 1
     db.flush()
     return creados
@@ -252,11 +313,13 @@ def contar_asociados(db: Session, ids_falla: list[int]) -> dict[int, int]:
 # Cierre en cascada
 # --------------------------------------------------------------------------- #
 def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
-    """Cierra la masiva y todos sus casos asociados (RF-61 · RF-62).
+    """Cierra la masiva y **solo sus casos asociados** (RF-61 · RF-62 · D-118).
 
     Exige descripción del trabajo, validador del CRASS y evidencias. Cada caso
     asociado se cierra con `CERRAR` + el modo indicado (IVR por defecto) y la
-    descripción «Reparado en FDT», salvo los que ya estén cerrados, que se omiten.
+    descripción «Reparado en FDT», salvo los que ya estén cerrados o **no
+    coincidan con OLT + slot + puerto + FAT**, que se omiten. **Nunca** se cierran
+    los casos de la cuadrilla que no estén asociados a la masiva.
 
     **No hace `commit`**: la operación completa es una sola transacción.
     """
@@ -269,10 +332,13 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
     if not validador.activo:
         raise MasivaInvalida("El validador del CRASS indicado está inactivo")
 
-    sincronizar_asociacion(db, falla, usuario_p00=usuario.p00)
     ids = list(db.scalars(
         select(FallaMasivaCaso.id_caso).where(FallaMasivaCaso.id_falla == falla.id_falla)
     ).all())
+    if not ids:
+        raise MasivaInvalida(
+            "La masiva no tiene casos asociados: asocie al menos uno antes de cerrar"
+        )
 
     cerrados = omitidos = 0
     detalle: list[dict] = []
@@ -282,6 +348,17 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
             omitidos += 1
             detalle.append({"id_caso": id_caso, "resultado": "OMITIDO",
                             "motivo": "El caso ya no existe"})
+            continue
+        # D-118: solo se cierran los casos que coinciden con la tupla de la
+        # masiva. Nunca se tocan los casos de la cuadrilla que no estén asociados.
+        if not coincide(caso, falla):
+            omitidos += 1
+            detalle.append({
+                "id_caso": caso.id_caso,
+                "id_averia": caso.id_averia,
+                "resultado": "OMITIDO",
+                "motivo": "El caso no coincide con OLT/slot/puerto/FAT de la masiva",
+            })
             continue
         try:
             resolucion.cerrar_caso(

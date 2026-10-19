@@ -6,8 +6,8 @@
 > la sincronización**; (3) un **menú de usuario** (icono de Usuario); (4) una
 > **sección Usuario** con cambio de contraseña, palabras de seguridad (mostradas
 > con la contraseña actual), datos personales y datos administrativos; y (5) el
-> **reporte de falla masiva** con ODN · dirección · FAT · descripción y **máximo 2
-> fotos** de evidencia.
+> **reporte de falla masiva** con OLT · SLOT · PUERTO · FAT · dirección · ODN ·
+> descripción y **máximo 2 fotos** de evidencia.
 >
 > El incremento **D-93** (versión `1.1.0+9`) lleva a la ficha de campo la
 > separación **identificador de pago (70\*) / número de contacto** que el backend
@@ -92,13 +92,14 @@ muestra. La lista visible es siempre el contenido del dispositivo.
 - `compacta: true`: franja bajo la barra de título; se usa en **Casos**
   (`casos_screen.dart:74`), **Alertas** (`alertas_screen.dart:195`) y **Mensajes**
   (`mensajes_screen.dart:29`).
-- `compacta: false`: tarjeta ancha en **Dispositivo** (`sync_screen.dart:109`), con
+- `compacta: false`: tarjeta ancha en **Sincronizar** (`sync_screen.dart`), con
   el porcentaje a la derecha y el estado de conexión.
 
-### 3.4 Un solo botón: la actualización completa (D-115)
+### 3.4 Un solo botón en SINCRONIZAR (D-115 · D-117)
 
 `app_movil/lib/features/sync/actualizacion_datos_service.dart` — `ActualizacionDatosService.ejecutar()`
-une los tres procesos en una sola acción:
+une los tres procesos en una sola acción, ejecutada **solo** desde la sección
+**Sincronizar**:
 
 1. **CARGA** (`UploadService.cargar`): sube las evidencias (`evidencia_local.subida = 0`)
    y las actividades por `/sync/carga`.
@@ -107,12 +108,26 @@ une los tres procesos en una sola acción:
 3. **DESCARGA** (`DownloadService.descargar`): trae el despacho del día y ejecuta
    `PurgaDespachos.ejecutar`, que borra los casos **no atendidos** de jornadas anteriores.
 
-El botón **ACTUALIZAR** de `sync_screen.dart` y el **Actualizar** de la franja de
-`casos_screen.dart` llaman al mismo servicio; ya no hay botones separados de
-DESCARGA/CARGA. La purga se ejecuta cuando el servidor resolvió una cuadrilla de
-campo (`PurgaDespachos.procede`), aunque todavía no haya despacho publicado del día;
-**nunca** borra un caso atendido (cerrado, cancelado, enrutado, diferido o citado)
-ni uno con trabajo sin enviar (cola o foto pendiente).
+El botón **SINCRONIZAR** de `sync_screen.dart` es el único que toca la red. El
+panel **Casos** solo lee el dispositivo (`CasosProvider.refrescarLocal`,
+`MasivasProvider.refrescarLocal`, `SyncProvider.refrescar`) y su botón es
+**Refrescar**. La purga se ejecuta cuando el servidor resolvió una cuadrilla de
+campo (`PurgaDespachos.procede`); **nunca** borra un caso atendido (cerrado,
+cancelado, enrutado, diferido o citado), uno con trabajo sin enviar (cola o foto
+pendiente) ni uno del **despacho del día**.
+
+### 3.5 Bloqueo por inactividad y PIN (D-117)
+
+| Pieza | Detalle |
+|---|---|
+| `app_movil/lib/widgets/bloqueo_inactividad.dart` | Temporizador de **2 minutos** (`AppConstants.bloqueoInactividadMinutos`); se reinicia con cualquier toque y comprueba el tiempo al volver del segundo plano. Envuelve la app desde `MaterialApp.builder` (`main.dart`) y solo se arma con `AuthProvider.sesionActiva` (sesión abierta en esta ejecución, no el acceso). |
+| `app_movil/lib/features/auth/lock_controller.dart` | `LockController`: `bloquear()`/`desbloquear()`; **no** toca `AuthProvider` ni cierra la sesión. |
+| `app_movil/lib/features/auth/lock_screen.dart` | Pantalla de bloqueo: pide el PIN, muestra el nombre del técnico y, si el PIN es el de fábrica, obliga a cambiarlo antes de desbloquear. |
+| `CredencialService.restablecerPin` | «Restablecer PIN» deja la credencial con el PIN de fábrica y `pinPorDefecto = true`; el primer uso pide cambiarlo. |
+
+El PIN solo se usa para **abrir sin internet** y **desbloquear la pantalla**; no
+se envía al servidor. El bloqueo aplica a la sesión **TÉCNICO**, que es la que
+tiene credencial local.
 
 ---
 
@@ -122,7 +137,7 @@ ni uno con trabajo sin enviar (cola o foto pendiente).
 |---|---|
 | `app_movil/lib/widgets/boton_usuario.dart:8` | `BotonUsuario`: `Icons.account_circle` que abre la ruta `/usuario`. |
 | `app_movil/lib/main.dart:119` | Ruta protegida `/usuario` → `UsuarioScreen`, dentro del mismo guard `_RutaProtegida` que el resto de pantallas de campo. |
-| Casos / Alertas / Dispositivo / Mensajes | El icono está en la barra superior de las cuatro pantallas. El **cierre de sesión** ya no es un candado suelto: vive dentro de la sección Usuario. |
+| Casos / Alertas / Sincronizar / Mensajes | El icono está en la barra superior de las cuatro pantallas. El **cierre de sesión** ya no es un candado suelto: vive dentro de la sección Usuario. |
 
 ---
 
@@ -159,35 +174,40 @@ el resto del módulo (`routes_auth.py:512-526`).
 
 `app_movil/lib/features/alertas/alertas_screen.dart`:
 
-| Campo | Línea | Validación en el cliente |
-|---|---|---|
-| **ODN\*** | `:218` | ≥ 3 caracteres. |
-| **Dirección\*** | `:228` | ≥ 5 caracteres. |
-| **FAT\*** | `:239` | Obligatoria. |
-| **Descripción\*** | `:251` | ≥ 5 (máximo 400 en el campo, 500 en el servidor). |
-| Sector (opcional) | `:262` | Numérico. |
-| **Fotos de evidencia** | `:311` | **Máximo 2** (`AppConstants.maxEvidenciasFallaMasiva`), cámara + GPS, ≤ 3 MB, miniatura con botón para quitarla. |
+| Campo | Validación en el cliente |
+|---|---|
+| **OLT\*** | Obligatoria (D-118). |
+| **SLOT\*** | Obligatorio (D-118). |
+| **PUERTO\*** | Obligatorio (D-118). |
+| **ODN\*** | ≥ 3 caracteres. |
+| **Dirección\*** | ≥ 5 caracteres. |
+| **FAT\*** | Obligatoria. |
+| **Descripción\*** | ≥ 5 (máximo 400 en el campo, 500 en el servidor). |
+| Sector (opcional) | Numérico. |
+| **Fotos de evidencia** | **Máximo 2** (`AppConstants.maxEvidenciasFallaMasiva`), cámara + GPS, ≤ 3 MB, miniatura con botón para quitarla. |
 
-Flujo (`_reportarFalla`, `:96`): 1) validación **previa** (no se sube ninguna foto
+Flujo (`_reportarFalla`): 1) validación **previa** (no se sube ninguna foto
 si faltan datos); 2) se suben las fotos del reporte con
-`POST /evidencias/upload` (`upload_service.dart:43`); 3) se registra la falla en
-`POST /fallas-masivas/reporte-campo` (`operaciones_service.dart:253`, endpoint en
-`:312`). **Sin conexión** la acción queda en la cola con los seriales locales y las
-fotos en `evidencia_local`; la CARGA sube los archivos y la cola envía la acción.
+`POST /evidencias/upload`; 3) se registra la falla en
+`POST /fallas-masivas/reporte-campo`. **Sin conexión** la acción queda en la cola
+con los seriales locales y las fotos en `evidencia_local`; la CARGA sube los
+archivos y la cola envía la acción.
 
 ### 6.2 Endpoint de campo
 
-`app/api/routes_alertas.py:206` — `POST /api/v1/fallas-masivas/reporte-campo`:
+`POST /api/v1/fallas-masivas/reporte-campo`:
 
-- Cuerpo `FallaMasivaCampo` (`app/schemas/alertas.py:70`): `odn`, `direccion`,
-  `fat`, `descripcion` obligatorios; `id_sector`/`id_cuadrilla` opcionales;
-  `evidencias` con **máximo 2** (`MAX_EVIDENCIAS_CAMPO`, `routes_alertas.py:54`).
+- Cuerpo `FallaMasivaCampo`: `olt`, `slot`, `puerto`, `fat`, `direccion`, `odn` y
+  `descripcion` obligatorios; `id_sector`/`id_cuadrilla` opcionales; `evidencias`
+  con **máximo 2**.
+- **D-118:** el servidor asocia automáticamente **todos los casos del mismo FAT**
+  (OLT + slot + puerto + FAT). Si no hay ninguno, responde **422** y no registra
+  la masiva: una masiva sin casos no se puede cerrar.
 - **Cualquier usuario autenticado** puede usarlo (el TECNICO es quien detecta la
   concentración); el alta administrativa `POST /fallas-masivas` conserva su RBAC
   de ADMIN/SUPERVISOR.
 - `origen` se fija a `REPORTE_TECNICO` y la cuadrilla se toma de la activa del
-  reportante y, si no tiene, de la más cercana al sector
-  (`app/services/fallas.py:26`).
+  reportante y, si no tiene, de la más cercana al sector.
 - Las evidencias se guardan en `falla_masiva.evidencias` (seriales separados por
   coma) y `FallaMasivaOut.evidencias` las devuelve como lista
   (`app/schemas/alertas.py:11`, validador `_evidencias_sin_nulos`).

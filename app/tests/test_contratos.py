@@ -125,9 +125,37 @@ def test_error_de_validacion_422(client, admin_token):
     assert isinstance(respuesta.json()["detail"], list)
 
 
-def test_rbac_matriz_de_escritura(client, admin_token):
+def test_rbac_matriz_de_escritura(client, admin_token, db_session):
     """TECNICO no escribe; ADMIN y SUPERVISOR sí (por el rol, no por la ruta)."""
-    cuerpo = {"descripcion": "Falla de contrato para RBAC"}
+    from app.models import Caso
+
+    r = client.post(
+        "/api/v1/casos",
+        json={
+            "id_averia": "TSTC-RBAC1",
+            "direccion": "SECTOR CONTRATO CASA 1",
+            "nombre_cliente": "CLIENTE RBAC",
+            "contacto_cliente": "04140000000",
+            "id_pago": "7000000000",
+            "tipo_reporte": "REPARACION",
+            "tipo_problema": "SIN_SERVICIO",
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    id_caso = r.json()["id_caso"]
+    caso = db_session.get(Caso, id_caso)
+    caso.olt, caso.slot, caso.puerto, caso.fat = "OLT-1", "3", "7", "FAT-1"
+    db_session.commit()
+    cuerpo = {
+        "descripcion": "Falla de contrato para RBAC",
+        "olt": "OLT-1",
+        "slot": "3",
+        "puerto": "7",
+        "fat": "FAT-1",
+        "direccion": "SECTOR CONTRATO CASA 1",
+        "ids_caso": [id_caso],
+    }
     for rol in ("admin", "super"):
         respuesta = client.post("/api/v1/fallas-masivas", json=cuerpo,
                                 headers=admin_token[rol])

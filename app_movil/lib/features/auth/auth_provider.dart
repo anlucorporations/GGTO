@@ -24,6 +24,10 @@ class AuthProvider extends ChangeNotifier {
   bool _cargando = false;
   String? _ultimoError;
   bool _offline = false;
+  /// D-117: `true` solo cuando el usuario abrió la sesión en esta ejecución
+  /// (login o PIN); no cuando `restaurarSesion` recupera un token al arrancar.
+  /// El bloqueo por inactividad no debe cubrir la pantalla de acceso.
+  bool _sesionActiva = false;
 
   SesionUsuario? get usuario => _usuario;
   String? get p00 => _usuario?.p00;
@@ -40,6 +44,10 @@ class AuthProvider extends ChangeNotifier {
 
   /// `true` si la sesión actual se abrió **sin conexión** (D-100).
   bool get offline => _offline;
+
+  /// D-117: `true` si el usuario abrió la sesión en esta ejecución. Es la
+  /// condición para armar el bloqueo por inactividad (no en el acceso).
+  bool get sesionActiva => _sesionActiva;
 
   /// Recupera la sesión guardada al arrancar (permite entrar **sin conexión**).
   Future<void> restaurarSesion() async {
@@ -102,6 +110,7 @@ class AuthProvider extends ChangeNotifier {
       _intentosFallidos = 0;
       _bloqueado = false;
       _offline = false;
+      _sesionActiva = true;
       await AuthStorage.guardarSesion(token, _usuario!);
       // D-100: el acceso con red emite (o renueva) la credencial local del
       // técnico, con su PIN y la vigencia de 24 h.
@@ -285,6 +294,7 @@ class AuthProvider extends ChangeNotifier {
     _intentosFallidos = 0;
     _bloqueado = false;
     _offline = true;
+    _sesionActiva = true;
     notifyListeners();
     return const ResultadoPin(EstadoPin.ok, 'Sesión abierta sin conexión.');
   }
@@ -292,6 +302,13 @@ class AuthProvider extends ChangeNotifier {
   /// Cambia el PIN del acceso sin conexión. Devuelve `null` si se guardó.
   Future<String?> cambiarPinLocal(String p00, String nuevoPin) =>
       CredencialService.cambiarPin(p00: p00, nuevoPin: nuevoPin);
+
+  /// D-117: restablece el PIN al de **fábrica** conservando la credencial.
+  ///
+  /// El próximo uso del acceso sin conexión exigirá cambiarlo. Devuelve `null`
+  /// si se guardó, o el motivo del rechazo.
+  Future<String?> restablecerPinLocal(String p00) =>
+      CredencialService.restablecerPin(p00);
 
   /// Descarta la credencial del P00 (olvido del PIN).
   Future<void> olvidarCredencial(String p00) async {
@@ -311,6 +328,7 @@ class AuthProvider extends ChangeNotifier {
     _intentosFallidos = 0;
     _bloqueado = false;
     _offline = false;
+    _sesionActiva = false;
     notifyListeners();
   }
 

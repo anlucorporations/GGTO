@@ -135,8 +135,8 @@ void main() {
     });
   });
 
-  group('D-115 · pantalla Dispositivo', () {
-    testWidgets('tiene un solo botón ACTUALIZAR y ya no DESCARGA/CARGA',
+  group('D-115 · pantalla Sincronizar', () {
+    testWidgets('tiene un solo botón SINCRONIZAR y ya no DESCARGA/CARGA',
         (tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<SyncProvider>.value(
@@ -146,7 +146,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('ACTUALIZAR'), findsOneWidget);
+      expect(find.text('SINCRONIZAR'), findsOneWidget);
       expect(find.text('DESCARGA'), findsNothing);
       expect(find.text('CARGA'), findsNothing);
     });

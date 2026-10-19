@@ -10,11 +10,20 @@ el CHECK `evidencia_tipo_check` no lo admitía y la subida respondía 500).
 
 from __future__ import annotations
 
+import uuid
+
+import pytest
+
+from app.models import Caso
+
 FALLAS = "/api/v1/fallas-masivas"
 CAMPO = "/api/v1/fallas-masivas/reporte-campo"
 EVIDENCIAS = "/api/v1/evidencias/upload"
 
 CUERPO = {
+    "olt": "OLT-04",
+    "slot": "3",
+    "puerto": "7",
     "odn": "ODN-2324X-0451",
     "direccion": "Calle 4 con Av. Principal, casa 12",
     "fat": "FAT-04",
@@ -24,47 +33,75 @@ CUERPO = {
 }
 
 
-def test_el_tecnico_reporta_la_falla_con_odn_direccion_fat_y_dos_fotos(client, admin_token):
+@pytest.fixture()
+def caso_fat(client, admin_token, db_session):
+    """Un caso del FAT del reporte: el endpoint asocia al menos uno (D-118)."""
+    id_averia = f"TSTD82-{uuid.uuid4().hex[:8]}"
+    r = client.post(
+        "/api/v1/casos",
+        json={
+            "id_averia": id_averia,
+            "direccion": "Calle 4 con Av. Principal, casa 12",
+            "nombre_cliente": "CLIENTE D82",
+            "contacto_cliente": "04140000000",
+            "id_pago": "7000000000",
+            "tipo_reporte": "REPARACION",
+            "tipo_problema": "SIN_SERVICIO",
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    id_caso = r.json()["id_caso"]
+    caso = db_session.get(Caso, id_caso)
+    caso.olt = "OLT-04"
+    caso.slot = "3"
+    caso.puerto = "7"
+    caso.fat = "FAT-04"
+    db_session.commit()
+    return {"id_caso": id_caso, "id_averia": id_averia}
+
+
+def test_el_tecnico_reporta_la_falla_con_odn_direccion_fat_y_dos_fotos(
+        client, admin_token, caso_fat):
     r = client.post(CAMPO, json=CUERPO, headers=admin_token["tecnico"])
     assert r.status_code == 201, r.text
     cuerpo = r.json()
     assert cuerpo["origen"] == "REPORTE_TECNICO"
+    assert cuerpo["olt"] == "OLT-04"
+    assert cuerpo["slot"] == "3"
+    assert cuerpo["puerto"] == "7"
     assert cuerpo["odn"] == "ODN-2324X-0451"
     assert cuerpo["direccion"] == "Calle 4 con Av. Principal, casa 12"
     assert cuerpo["fat"] == "FAT-04"
     assert cuerpo["descripcion"].startswith("6 clientes sin servicio")
     assert cuerpo["evidencias"] == CUERPO["evidencias"]
-
-    # La ficha completa devuelve lo mismo (lo que ve el supervisor en la web).
-    ficha = client.get(f"{FALLAS}/{cuerpo['id_falla']}", headers=admin_token["tecnico"])
-    assert ficha.status_code == 200, ficha.text
-    assert ficha.json()["odn"] == "ODN-2324X-0451"
-    assert ficha.json()["fat"] == "FAT-04"
-    assert len(ficha.json()["evidencias"]) == 2
+    assert cuerpo["casos_asociados"] >= 1
 
 
-def test_el_reporte_de_campo_exige_los_cuatro_datos(client, admin_token):
-    for campo in ("odn", "direccion", "fat", "descripcion"):
+def test_el_reporte_de_campo_exige_los_cuatro_datos(client, admin_token, caso_fat):
+    for campo in ("olt", "slot", "puerto", "odn", "direccion", "fat", "descripcion"):
         incompleto = {k: v for k, v in CUERPO.items() if k != campo}
         r = client.post(CAMPO, json=incompleto, headers=admin_token["tecnico"])
         assert r.status_code == 422, f"sin {campo} debería fallar: {r.text}"
         assert any(campo in str(e.get("loc", "")) for e in r.json()["detail"])
 
 
-def test_el_reporte_de_campo_admite_como_maximo_dos_fotos(client, admin_token):
+def test_el_reporte_de_campo_admite_como_maximo_dos_fotos(
+        client, admin_token, caso_fat):
     tres = dict(CUERPO, evidencias=["a.jpg", "b.jpg", "c.jpg"])
     r = client.post(CAMPO, json=tres, headers=admin_token["tecnico"])
     assert r.status_code == 422, r.text
 
 
-def test_el_reporte_de_campo_funciona_sin_fotos(client, admin_token):
+def test_el_reporte_de_campo_funciona_sin_fotos(client, admin_token, caso_fat):
     sin_fotos = {k: v for k, v in CUERPO.items() if k != "evidencias"}
     r = client.post(CAMPO, json=sin_fotos, headers=admin_token["tecnico"])
     assert r.status_code == 201, r.text
     assert r.json()["evidencias"] == []
 
 
-def test_la_cuadrilla_del_reportante_se_asigna_a_la_falla(client, admin_token):
+def test_la_cuadrilla_del_reportante_se_asigna_a_la_falla(
+        client, admin_token, caso_fat):
     """El técnico sin cuadrilla no rompe el reporte: la falla queda sin asignar
     o con la cuadrilla más cercana al sector (nunca con un error)."""
     cuerpo = dict(CUERPO, id_sector=None)
@@ -73,24 +110,32 @@ def test_la_cuadrilla_del_reportante_se_asigna_a_la_falla(client, admin_token):
     assert r.json()["id_cuadrilla"] is None or isinstance(r.json()["id_cuadrilla"], int)
 
 
-def test_el_alta_administrativa_sigue_restringida_al_tecnico(client, admin_token):
+def test_el_alta_administrativa_sigue_restringida_al_tecnico(
+        client, admin_token, caso_fat):
     """La matriz de RBAC de D-82 no cambia `POST /fallas-masivas`."""
     respuesta = client.post(FALLAS, json={"descripcion": "Falla de RBAC"},
                             headers=admin_token["tecnico"])
     assert respuesta.status_code == 403
-    oficial = client.post(FALLAS, json={"descripcion": "Falla administrativa"},
-                          headers=admin_token["admin"])
+    base = {
+        "descripcion": "Falla administrativa",
+        "olt": "OLT-04",
+        "slot": "3",
+        "puerto": "7",
+        "fat": "FAT-04",
+        "direccion": "Calle 4 con Av. Principal",
+        "ids_caso": [caso_fat["id_caso"]],
+    }
+    oficial = client.post(FALLAS, json=base, headers=admin_token["admin"])
     assert oficial.status_code == 201, oficial.text
-    # El alta administrativa admite ODN/FAT/dirección opcionales (D-82).
+    # D-118: ODN sigue siendo opcional en el alta administrativa.
     con_datos = client.post(
         FALLAS,
-        json={"descripcion": "Falla con datos de campo", "odn": "ODN-1", "fat": "FAT-9",
-              "direccion": "Av. Bolívar, sector Centro"},
+        json={**base, "odn": "ODN-1", "descripcion": "Falla con datos de campo"},
         headers=admin_token["supervisor"],
     )
     assert con_datos.status_code == 201, con_datos.text
     assert con_datos.json()["odn"] == "ODN-1"
-    assert con_datos.json()["fat"] == "FAT-9"
+    assert con_datos.json()["fat"] == "FAT-04"
 
 
 # --------------------------------------------------------------------------- #

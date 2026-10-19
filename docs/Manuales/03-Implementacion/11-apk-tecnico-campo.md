@@ -54,10 +54,16 @@ Durante una sincronización la barra avanza de verdad:
   descargando el despacho del día y borrando los casos no atendidos de días
   anteriores.
 
-El botón **Actualizar** de la franja de **Casos** y el botón **ACTUALIZAR** de
-**Dispositivo** hacen todo el proceso de una sola vez: suben tus evidencias, envían
-lo pendiente, descargan el despacho del día y retiran del teléfono los casos no
-atendidos que ya no te corresponden.
+El botón **SINCRONIZAR** de la sección **Sincronizar** hace todo el proceso de una
+sola vez: sube tus evidencias, envía lo pendiente (casos gestionados y contactados)
+y descarga el despacho del día. El panel **Casos** ya **no** sincroniza: su botón
+**Refrescar** solo vuelve a leer los casos que están guardados en el teléfono.
+
+La app se **bloquea a los 2 minutos** sin actividad. El bloqueo **no cierra la
+sesión**: aparece una pantalla que pide tu PIN y te devuelve a la misma pantalla.
+El PIN solo sirve para abrir la app sin internet o desbloquearla; no sustituye la
+clave. Si lo restableces desde **Usuario**, vuelve al PIN de fábrica y la próxima
+vez se te pedirá cambiarlo.
 
 La misma barra aparece en **Casos**, **Alertas**, **Mensajes** y **Dispositivo**
 (en Dispositivo se ve más grande, con el porcentaje).
@@ -117,12 +123,20 @@ exactamente estos datos:
 
 | Campo | ¿Obligatorio? | Ejemplo |
 |---|---|---|
-| **ODN** | Sí | `ODN-2324X-0451` |
-| **Dirección** | Sí | `Calle 4 con Av. Principal, casa 12` |
+| **OLT** | Sí | `OLT-NORTE-01` |
+| **SLOT** | Sí | `3` |
+| **PUERTO** | Sí | `7` |
 | **FAT** | Sí | `FAT-04` |
+| **Dirección** | Sí | `Calle 4 con Av. Principal, casa 12` |
+| **ODN** | Sí | `ODN-2324X-0451` |
 | **Descripción** | Sí | `6 clientes sin servicio en la FAT 4 del sector Norte 2` |
 | Sector | No | `12` |
 | **Fotos de evidencia** | No, **máximo 2** | foto de la FAT, foto del equipo |
+
+La **OLT + SLOT + PUERTO + FAT** identifican el FAT afectado. El servidor asocia
+automáticamente los casos de ese mismo FAT; si no encuentra ninguno, el reporte
+no se registra y la app avisa. Así una masiva nunca queda vacía y al cerrarla
+solo se cierran sus casos asociados, no los de la cuadrilla.
 
 Cómo se usan las fotos:
 
@@ -140,8 +154,9 @@ Al pulsar **«Reportar falla masiva»**:
 ### ¿Y si no hay señal?
 
 No se pierde nada: el reporte y sus fotos **quedan guardados** en el teléfono. La
-app lo avisa con un mensaje naranja. Cuando haya internet (o al pulsar **Cargar**
-en la pantalla Dispositivo), se suben las fotos y se envía el reporte.
+app lo avisa con un mensaje naranja. Cuando haya internet (o al pulsar
+**Sincronizar** en la pantalla Sincronizar), se suben las fotos y se envía el
+reporte.
 
 ---
 

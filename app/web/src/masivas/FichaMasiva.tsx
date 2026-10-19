@@ -372,12 +372,13 @@ export default function FichaMasiva({
 
   const sinValidadores = !cargandoValidadores && validadores.length === 0;
   const casosAsociados = falla.casos_asociados ?? casos.length;
-  const resumenOlt = unicos(casos.map((c) => c.olt));
-  const resumenFat = unicos(casos.map((c) => c.fat));
+  const resumenOlt = unicos([falla.olt ?? null, ...casos.map((c) => c.olt)]);
+  const resumenFat = unicos([falla.fat ?? null, ...casos.map((c) => c.fat)]);
   const resumenRuta = unicos(casos.map((c) => c.ruta));
-  const resumenSlotPuerto = unicos(
-    casos.map((c) => [c.slot, c.puerto].filter(Boolean).join('/')),
-  );
+  const resumenSlotPuerto = unicos([
+    [falla.slot, falla.puerto].filter(Boolean).join('/'),
+    ...casos.map((c) => [c.slot, c.puerto].filter(Boolean).join('/')),
+  ]);
 
   return (
     <Modal
@@ -910,9 +911,9 @@ export default function FichaMasiva({
       {pestana === 'cerrar' && (
         <div className="falla-panel" role="tabpanel">
           <div className="masiva-aviso-cierre">
-            <strong>Atención:</strong> cerrar la masiva cierra <strong>TODOS</strong> los casos
-            asociados con el mismo modo y la misma descripción. Verifique el listado de CASOS
-            ASOCIADOS antes de continuar; la operación no se deshace caso por caso.
+            <strong>Atención:</strong> solo se cierran los casos <strong>asociados</strong> a
+            esta masiva que coincidan con <strong>OLT + SLOT + PUERTO + FAT</strong>. Los casos
+            de la cuadrilla que no estén asociados <strong>no se tocan</strong>.
           </div>
 
           {sinValidadores && (
@@ -1021,7 +1022,7 @@ export default function FichaMasiva({
                   idValidador === ''
                 }
               >
-                {ocupado === 'cerrar' ? 'Cerrando…' : 'Cerrar masiva y todos sus casos'}
+                {ocupado === 'cerrar' ? 'Cerrando…' : 'Cerrar masiva y sus casos asociados'}
               </button>
             </div>
           </form>

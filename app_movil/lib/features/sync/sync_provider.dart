@@ -101,7 +101,7 @@ class SyncProvider extends ChangeNotifier {
   /// Texto del estado en reposo.
   String get resumenBarra {
     if (_progresoActivo) return '$progresoPorcentaje % · $_fase';
-    if (conError > 0) return '$conError acciones con error · revíselas en Dispositivo';
+    if (conError > 0) return '$conError acciones con error · revíselas en Sincronizar';
     if (pendientesSinError > 0) {
       return '$pendientesSinError acciones pendientes de envío';
     }

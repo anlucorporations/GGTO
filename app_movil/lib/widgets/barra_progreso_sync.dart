@@ -21,7 +21,7 @@ class BarraProgresoSync extends StatelessWidget {
   const BarraProgresoSync({super.key, this.compacta = true});
 
   /// `true` para la franja bajo la barra de título; `false` para la tarjeta
-  /// ancha de la pantalla «Dispositivo».
+  /// ancha de la pantalla «Sincronizar».
   final bool compacta;
 
   @override

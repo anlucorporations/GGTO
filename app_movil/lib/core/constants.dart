@@ -12,7 +12,7 @@ class AppConstants {
   /// Debe coincidir **exactamente** con `version:` de `pubspec.yaml` (nombre y
   /// versionCode). Hay una prueba que lo verifica (`test/version_visible_test.dart`):
   /// al subir el versionCode de cada entrega a CANTV hay que actualizar ambos.
-  static const String version = '1.13.0+22';
+  static const String version = '1.14.0+23';
 
   /// Máximo de intentos de login antes del bloqueo (RF-20).
   static const int maxIntentos = 3;
@@ -32,6 +32,10 @@ class AppConstants {
   /// Vigencia del acceso sin conexión: pasadas estas horas sin conectarse, la
   /// app exige red para renovar la credencial.
   static const int credencialOfflineHoras = 24;
+
+  /// D-117: minutos de inactividad antes de bloquear la pantalla. El bloqueo
+  /// **no cierra la sesión**: solo pide el PIN para volver a la misma pantalla.
+  static const int bloqueoInactividadMinutos = 2;
 
   /// Intentos de sincronización antes de marcar una acción como fallida.
   static const int maxIntentosSync = 5;

@@ -28,6 +28,9 @@ class AlertasScreen extends StatefulWidget {
 
 class _AlertasScreenState extends State<AlertasScreen> {
   final _odnController = TextEditingController();
+  final _oltController = TextEditingController();
+  final _slotController = TextEditingController();
+  final _puertoController = TextEditingController();
   final _direccionController = TextEditingController();
   final _fatController = TextEditingController();
   final _descController = TextEditingController();
@@ -42,6 +45,9 @@ class _AlertasScreenState extends State<AlertasScreen> {
   @override
   void dispose() {
     _odnController.dispose();
+    _oltController.dispose();
+    _slotController.dispose();
+    _puertoController.dispose();
     _direccionController.dispose();
     _fatController.dispose();
     _descController.dispose();
@@ -95,6 +101,18 @@ class _AlertasScreenState extends State<AlertasScreen> {
 
   Future<void> _reportarFalla() async {
     // Validación previa: no se sube ninguna foto si faltan datos del reporte.
+    if (_oltController.text.trim().isEmpty) {
+      _avisar('Indique la OLT del reporte.', error: true);
+      return;
+    }
+    if (_slotController.text.trim().isEmpty) {
+      _avisar('Indique el SLOT del reporte.', error: true);
+      return;
+    }
+    if (_puertoController.text.trim().isEmpty) {
+      _avisar('Indique el PUERTO del reporte.', error: true);
+      return;
+    }
     if (_odnController.text.trim().length < 3) {
       _avisar('Indique la ODN del reporte.', error: true);
       return;
@@ -135,6 +153,9 @@ class _AlertasScreenState extends State<AlertasScreen> {
 
       // 2) Se registra la falla con sus datos y sus seriales.
       final resultado = await OperacionesService.reportarFallaMasiva(
+        olt: _oltController.text,
+        slot: _slotController.text,
+        puerto: _puertoController.text,
         odn: _odnController.text,
         direccion: _direccionController.text,
         fat: _fatController.text,
@@ -156,6 +177,9 @@ class _AlertasScreenState extends State<AlertasScreen> {
 
       if (resultado.enviada && resultado.valida) {
         _odnController.clear();
+        _oltController.clear();
+        _slotController.clear();
+        _puertoController.clear();
         _direccionController.clear();
         _fatController.clear();
         _descController.clear();
@@ -206,11 +230,50 @@ class _AlertasScreenState extends State<AlertasScreen> {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Reporte una concentración de averías indicando la ODN, la dirección, la FAT '
-              'y la descripción, con hasta 2 fotos de evidencia.',
+              'Reporte una concentración de averías indicando OLT, SLOT, PUERTO, FAT, '
+              'dirección, ODN y descripción, con hasta 2 fotos de evidencia.',
               style: TextStyle(fontSize: 13, color: Colors.black54),
             ),
             const SizedBox(height: 14),
+            TextField(
+              controller: _oltController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'OLT *',
+                hintText: 'Ej. OLT-NORTE-01',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _slotController,
+                    decoration: const InputDecoration(
+                      labelText: 'SLOT *',
+                      hintText: 'Ej. 3',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _puertoController,
+                    decoration: const InputDecoration(
+                      labelText: 'PUERTO *',
+                      hintText: 'Ej. 7',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _odnController,
               textCapitalization: TextCapitalization.characters,

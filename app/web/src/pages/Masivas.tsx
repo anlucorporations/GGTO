@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
 import type {
+  CasoCandidatoOut,
   Cuadrilla,
   EstadoFallaMasiva,
   FallaMasivaManual,
@@ -996,6 +997,9 @@ function FormularioMasivaManual({
 }) {
   const [descripcion, setDescripcion] = useState('');
   const [odn, setOdn] = useState('');
+  const [olt, setOlt] = useState('');
+  const [slot, setSlot] = useState('');
+  const [puerto, setPuerto] = useState('');
   const [direccion, setDireccion] = useState('');
   const [fat, setFat] = useState('');
   const [idSector, setIdSector] = useState('');
@@ -1004,6 +1008,9 @@ function FormularioMasivaManual({
   const [evidencias, setEvidencias] = useState<string[]>([]);
   const [sectores, setSectores] = useState<Sector[]>([]);
   const [cuadrillas, setCuadrillas] = useState<Cuadrilla[]>([]);
+  const [candidatos, setCandidatos] = useState<CasoCandidatoOut[]>([]);
+  const [seleccionados, setSeleccionados] = useState<number[]>([]);
+  const [buscando, setBuscando] = useState(false);
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -1024,10 +1031,56 @@ function FormularioMasivaManual({
     };
   }, []);
 
+  async function buscarCandidatos() {
+    if (!olt.trim() || !slot.trim() || !puerto.trim() || !fat.trim()) {
+      setError('Complete OLT, SLOT, PUERTO y FAT para buscar los casos.');
+      return;
+    }
+    setError('');
+    setBuscando(true);
+    try {
+      const casos = await api.buscarCasosCandidatos({
+        olt: olt.trim(),
+        slot: slot.trim(),
+        puerto: puerto.trim(),
+        fat: fat.trim(),
+      });
+      setCandidatos(casos);
+      setSeleccionados([]);
+      if (casos.length === 0) {
+        setError('No hay casos de ese FAT. Verifique OLT, SLOT, PUERTO y FAT.');
+      }
+    } catch (e) {
+      setError(detalleDe(e, 'No se pudieron buscar los casos de ese FAT.'));
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  function alternarCaso(idCaso: number) {
+    setSeleccionados((previo) =>
+      previo.includes(idCaso)
+        ? previo.filter((id) => id !== idCaso)
+        : [...previo, idCaso],
+    );
+  }
+
   async function enviar(evento: FormEvent) {
     evento.preventDefault();
     if (descripcion.trim().length < 5) {
       setError('La descripción es obligatoria y debe tener al menos 5 caracteres.');
+      return;
+    }
+    if (!olt.trim() || !slot.trim() || !puerto.trim() || !fat.trim()) {
+      setError('OLT, SLOT, PUERTO y FAT son obligatorios.');
+      return;
+    }
+    if (direccion.trim().length < 5) {
+      setError('Indique la dirección (mínimo 5 caracteres).');
+      return;
+    }
+    if (seleccionados.length === 0) {
+      setError('Asocie al menos un caso del FAT a la masiva.');
       return;
     }
     setError('');
@@ -1035,13 +1088,17 @@ function FormularioMasivaManual({
     try {
       const datos: FallaMasivaManual = {
         descripcion: descripcion.trim(),
+        olt: olt.trim(),
+        slot: slot.trim(),
+        puerto: puerto.trim(),
+        fat: fat.trim(),
+        direccion: direccion.trim(),
         origen,
         odn: odn.trim() === '' ? null : odn.trim(),
-        direccion: direccion.trim() === '' ? null : direccion.trim(),
-        fat: fat.trim() === '' ? null : fat.trim(),
         id_sector: idSector === '' ? null : Number(idSector),
         id_cuadrilla: idCuadrilla === '' ? null : Number(idCuadrilla),
         evidencias,
+        ids_caso: seleccionados,
       };
       const creada = await api.reportarFallaManual(datos);
       onCreada(creada, `Masiva #${creada.id_falla} registrada manualmente.`);
@@ -1071,34 +1128,125 @@ function FormularioMasivaManual({
       </div>
 
       <div className="campo">
-        <label htmlFor="mas-manual-odn">ODN</label>
+        <label htmlFor="mas-manual-olt">OLT *</label>
         <input
-          id="mas-manual-odn"
-          value={odn}
-          onChange={(e) => setOdn(e.target.value)}
-          maxLength={120}
-          placeholder="Ej.: ODN-01-02-03"
+          id="mas-manual-olt"
+          value={olt}
+          onChange={(e) => setOlt(e.target.value)}
+          required
+          maxLength={60}
+          placeholder="Ej.: OLT-NORTE-01"
         />
       </div>
       <div className="campo">
-        <label htmlFor="mas-manual-fat">FAT</label>
+        <label htmlFor="mas-manual-slot">SLOT *</label>
+        <input
+          id="mas-manual-slot"
+          value={slot}
+          onChange={(e) => setSlot(e.target.value)}
+          required
+          maxLength={20}
+          placeholder="Ej.: 3"
+        />
+      </div>
+      <div className="campo">
+        <label htmlFor="mas-manual-puerto">PUERTO *</label>
+        <input
+          id="mas-manual-puerto"
+          value={puerto}
+          onChange={(e) => setPuerto(e.target.value)}
+          required
+          maxLength={20}
+          placeholder="Ej.: 7"
+        />
+      </div>
+      <div className="campo">
+        <label htmlFor="mas-manual-fat">FAT *</label>
         <input
           id="mas-manual-fat"
           value={fat}
           onChange={(e) => setFat(e.target.value)}
-          maxLength={120}
+          required
+          maxLength={60}
           placeholder="Ej.: F-12"
         />
       </div>
       <div className="campo campo-ancho">
-        <label htmlFor="mas-manual-direccion">Dirección</label>
+        <label htmlFor="mas-manual-direccion">Dirección * (mín. 5)</label>
         <input
           id="mas-manual-direccion"
           value={direccion}
           onChange={(e) => setDireccion(e.target.value)}
-          maxLength={250}
+          required
+          minLength={5}
+          maxLength={200}
           placeholder="Ej.: Av. Bolívar, entre calle 3 y 4"
         />
+      </div>
+      <div className="campo">
+        <label htmlFor="mas-manual-odn">ODN (opcional)</label>
+        <input
+          id="mas-manual-odn"
+          value={odn}
+          onChange={(e) => setOdn(e.target.value)}
+          maxLength={60}
+          placeholder="Ej.: ODN-01-02-03"
+        />
+      </div>
+
+      <div className="campo campo-ancho">
+        <div className="acciones-form">
+          <button
+            type="button"
+            className="btn btn-secundario"
+            onClick={() => void buscarCandidatos()}
+            disabled={buscando || !olt.trim() || !slot.trim() || !puerto.trim() || !fat.trim()}
+          >
+            {buscando ? 'Buscando…' : 'Buscar casos de ese FAT'}
+          </button>
+          <span className="texto-pequeno">
+            {seleccionados.length} caso(s) seleccionado(s)
+          </span>
+        </div>
+        {candidatos.length > 0 && (
+          <div className="tabla-envoltura">
+            <table className="masiva-tabla-densa">
+              <thead>
+                <tr>
+                  <th>Asociar</th>
+                  <th>Avería</th>
+                  <th>Estado</th>
+                  <th>OLT</th>
+                  <th>Slot/Puerto</th>
+                  <th>FAT</th>
+                  <th>Dirección</th>
+                </tr>
+              </thead>
+              <tbody>
+                {candidatos.map((c) => (
+                  <tr key={c.id_caso}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={seleccionados.includes(c.id_caso)}
+                        onChange={() => alternarCaso(c.id_caso)}
+                        aria-label={`Asociar el caso ${c.id_averia}`}
+                      />
+                    </td>
+                    <td className="mono">{c.id_averia}</td>
+                    <td>{c.estado_actual}</td>
+                    <td className="mono">{c.olt ?? '—'}</td>
+                    <td className="mono">
+                      {[c.slot, c.puerto].filter(Boolean).join('/') || '—'}
+                    </td>
+                    <td className="mono">{c.fat ?? '—'}</td>
+                    <td>{c.direccion ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="campo">
@@ -1158,7 +1306,20 @@ function FormularioMasivaManual({
       />
 
       <div className="acciones-form">
-        <button type="submit" className="btn" disabled={enviando || descripcion.trim().length < 5}>
+        <button
+          type="submit"
+          className="btn"
+          disabled={
+            enviando ||
+            descripcion.trim().length < 5 ||
+            !olt.trim() ||
+            !slot.trim() ||
+            !puerto.trim() ||
+            !fat.trim() ||
+            direccion.trim().length < 5 ||
+            seleccionados.length === 0
+          }
+        >
           {enviando ? 'Registrando…' : 'Registrar masiva'}
         </button>
         <button type="button" className="btn btn-secundario" onClick={onCancelar} disabled={enviando}>

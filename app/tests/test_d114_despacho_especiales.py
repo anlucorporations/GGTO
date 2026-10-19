@@ -30,7 +30,7 @@ HOY = date.today().isoformat()
 
 
 @pytest.fixture()
-def entorno(client, admin_token):
+def entorno(client, admin_token, db_session):
     """Dos sectores, dos cuadrillas y especiales de las tres categorías."""
     headers = admin_token["admin"]
     id_central = admin_token["id_central"]
@@ -97,8 +97,13 @@ def entorno(client, admin_token):
         categoria="GOBIERNO",
     )
     # Beta: los dos casos de la masiva (comunes).
-    for i in range(2):
-        crear(f"TSTD14-M{i}", f"SECTOR D114 BETA CASA {i}")
+    masiva_casos = [crear(f"TSTD14-M{i}", f"SECTOR D114 BETA CASA {i}") for i in range(2)]
+    for caso in masiva_casos:
+        fila = db_session.get(Caso, caso["id_caso"])
+        fila.olt, fila.slot, fila.puerto, fila.fat = (
+            "OLT-D114", "3", "7", "FAT-D114",
+        )
+    db_session.commit()
 
     id_cuadrilla_a = {
         c["codigo"]: c["id_cuadrilla"]
@@ -111,9 +116,15 @@ def entorno(client, admin_token):
     r = client.post(
         MASIVAS,
         json={
-            "descripcion": "Masiva D114 del sector Beta",
+            "descripcion": "Masiva D114 del FAT Beta",
             "id_sector": beta,
             "id_cuadrilla": id_cuadrilla_a,
+            "olt": "OLT-D114",
+            "slot": "3",
+            "puerto": "7",
+            "fat": "FAT-D114",
+            "direccion": "SECTOR D114 BETA CASA 0",
+            "ids_caso": [c["id_caso"] for c in masiva_casos],
         },
         headers=headers,
     )

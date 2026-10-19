@@ -83,7 +83,7 @@ class _InicioGestionScreenState extends State<InicioGestionScreen> {
           const SeccionMas('Gestión de casos', 'Altas, reclasificaciones y cierres', Icons.assignment_outlined, '/gestion'),
         const SeccionMas('Fallas masivas', 'Bloque prioritario de la cuadrilla', Icons.crisis_alert, '/masivas'),
         const SeccionMas('Alertas', 'Avisos diarios y notificaciones', Icons.warning_amber, '/alertas'),
-        const SeccionMas('Sincronización', 'Estado de la cola del dispositivo', Icons.sync, '/sync'),
+        const SeccionMas('Sincronizar', 'Subir resueltos y bajar el despacho del día', Icons.sync, '/sync'),
         const SeccionMas('Perfil y seguridad', 'Clave, PIN y aviso legal', Icons.person_outline, '/usuario'),
       ];
 
