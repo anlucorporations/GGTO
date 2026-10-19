@@ -23,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   bool _bloqueado = false;
   bool _cargando = false;
   String? _ultimoError;
+  bool _ultimoErrorEsDeRed = false;
   bool _offline = false;
   /// D-117: `true` solo cuando el usuario abrió la sesión en esta ejecución
   /// (login o PIN); no cuando `restaurarSesion` recupera un token al arrancar.
@@ -41,6 +42,11 @@ class AuthProvider extends ChangeNotifier {
       (AppConstants.maxIntentos - _intentosFallidos).clamp(0, AppConstants.maxIntentos);
   bool get bloqueado => _bloqueado;
   String? get ultimoError => _ultimoError;
+
+  /// D-120: `true` si el último intento de acceso falló por **falta de red**
+  /// (no por credenciales). La pantalla de bloqueo lo usa para decirle al técnico
+  /// que sin conexión solo puede entrar con el PIN.
+  bool get ultimoErrorEsDeRed => _ultimoErrorEsDeRed;
 
   /// `true` si la sesión actual se abrió **sin conexión** (D-100).
   bool get offline => _offline;
@@ -82,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
   /// Inicia sesión con P00 y clave. Devuelve `null` si tuvo éxito, o el motivo.
   Future<String?> login(String p00, String clave) async {
     _ultimoError = null;
+    _ultimoErrorEsDeRed = false;
     _cargando = true;
     notifyListeners();
 
@@ -118,6 +125,7 @@ class AuthProvider extends ChangeNotifier {
       return null;
     } on ApiError catch (error) {
       // Un fallo de red NO consume intentos (H-15).
+      _ultimoErrorEsDeRed = error.esDeRed;
       if (!error.esDeRed) {
         if (error.estaBloqueado) {
           _bloqueado = true;

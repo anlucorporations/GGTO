@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import case, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
@@ -213,6 +213,24 @@ def _crear_caso_asociado(db: Session, datos: CasoEspecialCreate, usuario: Usuari
     return caso
 
 
+def estado_efectivo_sql():
+    """Expresión SQL del estado **visible** del especial (D-120).
+
+    Reproduce en SQL `clasificacion.estado_especial_visible`: el estado del caso
+    manda —caso cerrado → `CERRADO`; caso con gestión → `EN_PROCESO`— salvo que la
+    ficha ya esté `ATENDIDO`/`CERRADO`, que no se reabre sola.
+    """
+    return case(
+        (Caso.estado_actual.in_(("CERRADO", "CANCELADO", "ENRUTADO")), "CERRADO"),
+        (CasoEspecial.estado.in_(("ATENDIDO", "CERRADO")), CasoEspecial.estado),
+        (
+            Caso.estado_actual.in_(("CONTACTADO", "CITADO", "EN_GESTION", "DIFERIDO")),
+            "EN_PROCESO",
+        ),
+        else_=CasoEspecial.estado,
+    )
+
+
 @router.get("/casos-especiales", response_model=list[CasoEspecialOut])
 def listar_especiales(
     db: Session = Depends(get_db),
@@ -229,7 +247,11 @@ def listar_especiales(
     ),
     solo_pendientes: bool = Query(default=False),
 ) -> list[CasoEspecialOut]:
-    stmt = select(CasoEspecial).order_by(CasoEspecial.id_caso_especial.desc())
+    stmt = (
+        select(CasoEspecial)
+        .outerjoin(Caso, Caso.id_caso == CasoEspecial.id_caso)
+        .order_by(CasoEspecial.id_caso_especial.desc())
+    )
     if usuario.rol.codigo != "SUPER":
         central = resolver_central(db, None, cargar_config(db), usuario)
         stmt = stmt.where(
@@ -239,8 +261,11 @@ def listar_especiales(
         )
     if clasificacion:
         stmt = stmt.where(CasoEspecial.clasificacion == clasificacion)
+    # D-120: los filtros de estado se aplican sobre el estado **efectivo** (el
+    # caso manda). Antes leían la columna cruda y un referido con el caso cerrado
+    # seguía apareciendo en «Solo pendientes».
     if estado:
-        stmt = stmt.where(CasoEspecial.estado == estado)
+        stmt = stmt.where(estado_efectivo_sql() == estado)
     if prioridad:
         stmt = stmt.where(CasoEspecial.prioridad == prioridad)
     if tipo_actividad:
@@ -248,7 +273,7 @@ def listar_especiales(
     if id_solicitante is not None:
         stmt = stmt.where(CasoEspecial.id_solicitante == id_solicitante)
     if solo_pendientes:
-        stmt = stmt.where(CasoEspecial.estado.in_(("ABIERTO", "EN_PROCESO")))
+        stmt = stmt.where(estado_efectivo_sql().in_(("ABIERTO", "EN_PROCESO")))
     if q:
         patron = f"%{q.strip()}%"
         # subconsultas sobre el caso asociado (dirección, nombre, sector y avería)
@@ -436,7 +461,15 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
         id_cuadrilla = ultima_cuadrilla.get(esp.id_caso) if esp.id_caso else None
         cuadrilla = cuadrillas.get(id_cuadrilla) if id_cuadrilla else None
         datos = CasoEspecialOut.model_validate(esp).model_dump()
+        # D-120: el caso manda. Si el técnico lo cerró (o lo enrutó/canceló), el
+        # especial se muestra CERRADO aunque su fila siga en ABIERTO; si ya hubo
+        # gestión, EN_PROCESO. Así la lista de ESPECIALES de la web y de la APK
+        # coincide con la realidad del trabajo de campo.
+        estado_visible = clasificacion.estado_especial_visible(
+            esp.estado, caso.estado_actual if caso else None
+        )
         datos.update(
+            estado=estado_visible,
             sector_nombre=(sectores.get(caso.id_sector) if caso and caso.id_sector else None),
             solicitante_nombre=(sol.nombre if sol else None),
             solicitante_unidad=(sol.unidad if sol else None),
@@ -445,11 +478,14 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             nombre_cliente=(caso.nombre_cliente if caso else None),
             # D-103: el FAT del caso asociado acompaña al sector en el listado.
             fat=(caso.fat if caso else None),
+            # D-120: el caso asociado, para abrirlo o cerrarlo desde el especial.
+            id_averia=(caso.id_averia if caso else None),
+            estado_caso=(caso.estado_actual if caso else None),
             # RN-AL-01: contacto, identificador de pago y tipo de problema del caso.
             contacto_cliente=(caso.contacto_cliente if caso else None),
             telefono=(caso.telefono if caso else None),
             tipo_problema=(caso.tipo_problema if caso else None),
-            pendiente=esp.estado in ("ABIERTO", "EN_PROCESO"),
+            pendiente=estado_visible in ("ABIERTO", "EN_PROCESO"),
             asignado=(esp.id_caso in asignados) if esp.id_caso else False,
             citado=esp.id_caso_especial in citados
             or (esp.id_caso is not None and esp.id_caso in citados),

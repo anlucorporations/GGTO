@@ -72,18 +72,15 @@ def _o_404(db: Session, id_caso: int) -> Caso:
 
 def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
                       usuario: str | None) -> None:
-    if nuevo == caso.estado_actual:
-        return
-    db.add(
-        CasoEstadoHist(
-            id_caso=caso.id_caso,
-            estado_anterior=caso.estado_actual,
-            estado_nuevo=nuevo,
-            motivo=motivo,
-            usuario=usuario,
-        )
-    )
-    caso.estado_actual = nuevo
+    """Bitácora + estado del caso (delegado, D-120).
+
+    Delega en `services.resolucion.registrar_estado` para que **todos** los
+    cambios de estado —contacto, «no contesta», enrutado, reactivación, cierre y
+    cierre de jornada— pasen por el mismo punto. Ese camino sincroniza además la
+    ficha del caso especial: cerrar un referido desde la APK antes dejaba su
+    `caso_especial.estado` en `ABIERTO` para siempre.
+    """
+    resolucion.registrar_estado(db, caso, nuevo, motivo, usuario)
 
 
 def _sectorizar(db: Session, id_central: int, direccion: str | None) -> int | None:

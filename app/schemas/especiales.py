@@ -180,6 +180,10 @@ class CasoEspecialOut(BaseModel):
     cuadrilla_nombre: str | None = None
     # D-103: FAT del caso asociado, para acompañar al sector en el listado.
     fat: str | None = None
+    # D-120: identificación del caso asociado (id de avería real o REF-…) y su
+    # estado, para que la APK pueda abrir/cerrar el caso desde el especial.
+    id_averia: str | None = None
+    estado_caso: str | None = None
 
 
 # --------------------------------------------------------------------------- #

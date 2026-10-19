@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../casos/operaciones_service.dart';
 
 /// Bandeja de casos especiales para coordinación y supervisión.
 class EspecialesScreen extends StatefulWidget {
@@ -119,6 +120,29 @@ class _EspecialesScreenState extends State<EspecialesScreen>
     ));
   }
 
+  /// D-120: **cierra el caso asociado** al especial desde la APK.
+  ///
+  /// El especial no tiene cierre propio: el trabajo se cierra en su caso (el
+  /// servidor alinea `caso_especial.estado` con el del caso). Se pide el modo de
+  /// cierre del catálogo y una descripción, igual que en la ficha del técnico.
+  Future<void> _cerrarCaso(Map<String, dynamic> especial, int idCaso) async {
+    final datos = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (_) => _CerrarCasoEspecialDialog(
+        titulo: 'Cerrar el caso del especial #${especial['id_caso_especial']}',
+      ),
+    );
+    if (datos == null || !mounted) return;
+    final resultado = await OperacionesService.cerrar(
+      idCaso: idCaso,
+      idAveria: '${especial['id_averia'] ?? ''}',
+      modo: datos['modo'] ?? 'IVR',
+      descripcion: datos['descripcion'] ?? '',
+    );
+    await _cargar(silencioso: true);
+    if (mounted) _avisar(resultado.mensaje, error: !resultado.valida);
+  }
+
   Future<void> _editar(Map<String, dynamic> caso) async {
     final cambios = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -217,6 +241,14 @@ class _EspecialesScreenState extends State<EspecialesScreen>
       caso['prioridad'],
       caso['estado'],
     ].where((v) => v != null).join(' · ');
+    // D-120: el cierre real se hace sobre el **caso asociado**; aquí solo se
+    // ofrece cuando el caso todavía admite gestión.
+    final idCaso = caso['id_caso'] is int ? caso['id_caso'] as int : null;
+    final estadoCaso = '${caso['estado_caso'] ?? ''}'.toUpperCase();
+    final cerrado = estadoCaso == 'CERRADO' ||
+        estadoCaso == 'CANCELADO' ||
+        estadoCaso == 'ENRUTADO' ||
+        '${caso['estado']}'.toUpperCase() == 'CERRADO';
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       child: ListTile(
@@ -224,15 +256,28 @@ class _EspecialesScreenState extends State<EspecialesScreen>
         title: Text('$titulo'),
         subtitle: Text([
           subtitulo,
+          if (estadoCaso.isNotEmpty) 'Caso: $estadoCaso',
           if (caso['direccion'] != null) '${caso['direccion']}',
           if (caso['descripcion'] != null &&
               '${caso['descripcion']}'.isNotEmpty)
             '${caso['descripcion']}',
         ].join('\n')),
         isThreeLine: true,
-        trailing: Icon(caso['requiere_informe'] == true
-            ? Icons.description
-            : Icons.description_outlined),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.puedeGestionar && idCaso != null && !cerrado)
+              IconButton(
+                key: Key('especial-cerrar-$id'),
+                tooltip: 'Cerrar el caso',
+                icon: const Icon(Icons.task_alt, color: Colors.green),
+                onPressed: () => _cerrarCaso(caso, idCaso),
+              ),
+            Icon(caso['requiere_informe'] == true
+                ? Icons.description
+                : Icons.description_outlined),
+          ],
+        ),
         onTap: () => widget.puedeGestionar
             ? _editar(caso)
             : showDialog<void>(
@@ -547,4 +592,90 @@ class _CrearEspecialDialogState extends State<_CrearEspecialDialog> {
       'direccion': _direccion.text.trim(),
     });
   }
+}
+
+/// D-120 · Diálogo para **cerrar el caso** de un especial desde la APK.
+///
+/// Pide el modo de cierre del catálogo (IVR · COS · SACAS) y una descripción de
+/// lo realizado (mínimo 10 caracteres, la misma regla que la ficha del técnico).
+class _CerrarCasoEspecialDialog extends StatefulWidget {
+  const _CerrarCasoEspecialDialog({required this.titulo});
+
+  final String titulo;
+
+  @override
+  State<_CerrarCasoEspecialDialog> createState() =>
+      _CerrarCasoEspecialDialogState();
+}
+
+class _CerrarCasoEspecialDialogState extends State<_CerrarCasoEspecialDialog> {
+  String _modo = 'IVR';
+  final _descripcion = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _descripcion.dispose();
+    super.dispose();
+  }
+
+  void _confirmar() {
+    final texto = _descripcion.text.trim();
+    if (texto.length < 10) {
+      setState(() => _error = 'Describa lo realizado (mínimo 10 caracteres).');
+      return;
+    }
+    Navigator.pop(context, {'modo': _modo, 'descripcion': texto});
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text(widget.titulo),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            DropdownButtonFormField<String>(
+              value: _modo,
+              decoration: const InputDecoration(labelText: 'Método de cierre'),
+              items: const [
+                DropdownMenuItem(value: 'IVR', child: Text('Cierre con IVR')),
+                DropdownMenuItem(value: 'COS', child: Text('Cierre con COS')),
+                DropdownMenuItem(value: 'SACAS', child: Text('Cierre con SACAS')),
+              ],
+              onChanged: (v) => setState(() => _modo = v ?? 'IVR'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              key: const Key('especial-descripcion-cierre'),
+              controller: _descripcion,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Descripción de lo realizado',
+                helperText: 'Mínimo 10 caracteres.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            key: const Key('especial-confirmar-cierre'),
+            onPressed: _confirmar,
+            child: const Text('Cerrar el caso'),
+          ),
+        ],
+      );
 }

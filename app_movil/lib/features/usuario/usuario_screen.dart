@@ -10,6 +10,7 @@ import '../../core/sesion.dart';
 import '../auth/auth_provider.dart';
 import '../auth/credencial_service.dart';
 import '../sync/sync_provider.dart';
+import 'reset_app_service.dart';
 import 'usuario_service.dart';
 import 'tarjeta_version.dart';
 
@@ -54,6 +55,11 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
   /// D-100: ficha del acceso sin conexión de este dispositivo, si existe.
   CredencialLocal? _credencial;
 
+  /// D-120: contenido local del dispositivo (para la zona de borrado).
+  int _casosLocales = 0;
+  int _fotosLocales = 0;
+  bool _borrando = false;
+
   @override
   void initState() {
     super.initState();
@@ -80,12 +86,17 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
     final dispositivo = await DatabaseHelper.instance.dispositivoId();
     // D-100: el documento de credencial es local, así que se lee sin red.
     final credencial = await CredencialService.ficha(auth.p00 ?? '');
+    // D-120: cuánto hay guardado en el dispositivo (zona de borrado).
+    final casosLocales = (await DatabaseHelper.instance.leerCasos()).length;
+    final fotosLocales = await ResetAppService.fotografiasEnDispositivo();
     if (!mounted) return;
     setState(() {
       _perfil = local ?? _perfilDesdeSesion(auth.usuario);
       _cuadrilla = localCuadrilla ?? _cuadrilla;
       _dispositivo = dispositivo;
       _credencial = credencial;
+      _casosLocales = casosLocales;
+      _fotosLocales = fotosLocales;
       _correoController.text = _perfil?.correo ?? '';
       _cargando = false;
     });
@@ -501,6 +512,55 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
               ],
             ],
           ),
+          _seccion(
+            titulo: 'Datos en el dispositivo',
+            icono: Icons.cleaning_services_outlined,
+            clave: 'borrado',
+            hijos: [
+              _dato('Casos descargados', '$_casosLocales'),
+              _dato('Fotos guardadas', '$_fotosLocales'),
+              _dato(
+                'Acciones sin enviar',
+                '${context.watch<SyncProvider>().pendientesSinError}',
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Borrar los casos descargados deja el despacho vacío en el '
+                'teléfono: se vuelve a bajar al sincronizar. Restablecer la '
+                'aplicación la deja como recién instalada (borra también la '
+                'cola sin enviar, las fotos, el PIN y la sesión).',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('usuario-borrar-casos'),
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  label: Text(_borrando
+                      ? 'Borrando…'
+                      : 'Borrar los casos descargados'),
+                  onPressed: _borrando ? null : _borrarCasos,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('usuario-restablecer'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                  ),
+                  icon: const Icon(Icons.restart_alt),
+                  label: Text(_borrando
+                      ? 'Restableciendo…'
+                      : 'Restablecer la aplicación'),
+                  onPressed: _borrando ? null : _restablecerApp,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
           SizedBox(
             height: 46,
@@ -639,6 +699,98 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
         content: Text('PIN restablecido al de fábrica. Se pedirá cambiarlo al usarlo.'),
       ),
     );
+  }
+
+  /// D-120: vuelve a contar lo que hay en el dispositivo.
+  Future<void> _recargarContadores() async {
+    final casos = (await DatabaseHelper.instance.leerCasos()).length;
+    final fotos = await ResetAppService.fotografiasEnDispositivo();
+    if (!mounted) return;
+    setState(() {
+      _casosLocales = casos;
+      _fotosLocales = fotos;
+    });
+  }
+
+  /// D-120: borra los casos y las masivas **descargados** (conserva sesión, PIN y
+  /// la cola de trabajo sin enviar).
+  Future<void> _borrarCasos() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text('Borrar los casos del dispositivo'),
+        content: Text(
+          'Se borrarán los $_casosLocales caso(s) descargados y las fallas '
+          'masivas guardadas en este teléfono.\n\n'
+          'Se conservan su sesión, su PIN y las acciones pendientes de enviar. '
+          'El despacho del día se vuelve a descargar en la próxima '
+          'sincronización.\n\n¿Continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(contexto, true),
+            child: const Text('Borrar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+    setState(() => _borrando = true);
+    final resumen = await ResetAppService.borrarCasos();
+    await _recargarContadores();
+    if (!mounted) return;
+    setState(() => _borrando = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(resumen.resumen)),
+    );
+  }
+
+  /// D-120: deja la aplicación **como recién instalada**.
+  ///
+  /// Borra la base local completa, las fotos capturadas, la credencial del PIN y
+  /// la sesión guardada, y devuelve al acceso con P00 y clave. Nada se borra en
+  /// el servidor.
+  Future<void> _restablecerApp() async {
+    final acciones = context.read<SyncProvider>().pendientesSinError;
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: const Text('Restablecer la aplicación'),
+        content: Text(
+          'La aplicación quedará como recién instalada.\n\n'
+          'Se borrarán:\n'
+          '· los $_casosLocales caso(s) y las masivas descargadas,\n'
+          '· las $acciones acción(es) sin enviar,\n'
+          '· las $_fotosLocales foto(s) guardadas,\n'
+          '· el PIN de acceso sin conexión y la sesión.\n\n'
+          'Los casos siguen en la plataforma: al volver a entrar con su P00 y su '
+          'clave se descargan de nuevo.\n\n¿Restablecer?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(contexto, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () => Navigator.pop(contexto, true),
+            child: const Text('Restablecer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    setState(() => _borrando = true);
+    await ResetAppService.restablecerTodo();
+    await auth.cerrarSesion();
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (ruta) => false);
   }
 
   Widget _seccion({

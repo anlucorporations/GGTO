@@ -523,11 +523,14 @@ def test_carga_cierre_con_resultado_de_campo(client, entorno_sync):
 
     El servidor debe normalizarlo (CERRADO) en vez de reventar contra el CHECK,
     que es lo que rompía el cierre desde el móvil.
+
+    D-121: el cierre de la cola exige el `modo` del catálogo (igual que la ficha);
+    la APK lo envía siempre porque es el desplegable del formulario de cierre.
     """
     id_caso = entorno_sync["c_a"]["id_caso"]
     r = client.post(f"{SYNC}/carga",
                     json={"actividades": [_actividad(
-                        id_caso, tipo="CIERRE", resultado="EXITOSO",
+                        id_caso, tipo="CIERRE", resultado="EXITOSO", modo="IVR",
                         reporte_corto="Se reemplazó el conector")], "estados": []},
                     headers=entorno_sync["tecnico"])
     assert r.status_code == 200, r.text
@@ -535,6 +538,32 @@ def test_carga_cierre_con_resultado_de_campo(client, entorno_sync):
 
     caso = client.get(f"{CASOS}/{id_caso}", headers=entorno_sync["tecnico"]).json()
     assert caso["estado_actual"] == "CERRADO"
+
+
+def test_carga_cierre_sin_modo_se_rechaza(client, entorno_sync, db_session):
+    """D-121 · H-03: un cierre sin método del catálogo ya no se acepta en silencio.
+
+    Antes se escribía la actividad con `id_metodo` NULL y el caso quedaba cerrado
+    sin trazabilidad del modo (IVR/COS/SACAS).
+    """
+    from app.models import Actividad, Caso
+
+    id_caso = entorno_sync["c_a"]["id_caso"]
+    r = client.post(f"{SYNC}/carga",
+                    json={"actividades": [_actividad(
+                        id_caso, tipo="CIERRE", resultado="EXITOSO",
+                        reporte_corto="Cierre sin modo")], "estados": []},
+                    headers=entorno_sync["tecnico"])
+    assert r.status_code == 200, r.text
+    assert r.json()["aceptadas"] == 0, r.json()
+    assert r.json()["rechazadas"] == 1, r.json()
+
+    db_session.expire_all()
+    caso = db_session.get(Caso, id_caso)
+    assert caso is not None and caso.estado_actual != "CERRADO"
+    assert db_session.scalar(
+        select(Actividad).where(Actividad.id_caso == id_caso, Actividad.tipo == "CIERRE")
+    ) is None
 
 
 def test_carga_cierre_resuelve_el_modo(client, entorno_sync, db_session):

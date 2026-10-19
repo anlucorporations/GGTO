@@ -42,7 +42,13 @@ def metodo_cierre(db: Session, codigo: str) -> CatalogoMetodo:
 
 def registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
                      usuario: str | None) -> None:
-    """Anota el cambio de estado en la bitácora y lo aplica al caso (RNF-12)."""
+    """Anota el cambio de estado en la bitácora y lo aplica al caso (RNF-12).
+
+    D-120: es el camino **único** de los cambios de estado, así que aquí se
+    sincroniza también la ficha del caso especial (`caso_especial.estado`): sin
+    esto, cerrar un referido desde la APK dejaba su especial en `ABIERTO` para
+    siempre y parecía que «no se cerraba».
+    """
     if nuevo == caso.estado_actual:
         return
     db.add(
@@ -55,6 +61,7 @@ def registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
         )
     )
     caso.estado_actual = nuevo
+    clasificacion.sincronizar_estado_especial(db, caso)
 
 
 def cerrar_caso(

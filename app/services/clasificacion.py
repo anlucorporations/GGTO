@@ -72,6 +72,70 @@ def clasificacion_especial(caso: Caso) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Estado de la ficha del especial (D-120)
+# --------------------------------------------------------------------------- #
+#: Estados del caso que **dan por cerrada** la ficha del especial: el trabajo
+#: terminó (cerrado) o salió de la instancia (cancelado o enrutado).
+ESTADOS_CASO_CIERRAN = ("CERRADO", "CANCELADO", "ENRUTADO")
+#: Estados del caso que dejan el especial **en proceso** (ya hubo gestión).
+ESTADOS_CASO_EN_PROCESO = ("CONTACTADO", "CITADO", "EN_GESTION", "DIFERIDO")
+#: Estados de la ficha del especial que no deben reabrirse solos.
+ESTADOS_ESPECIAL_FINALES = ("ATENDIDO", "CERRADO")
+
+
+def estado_especial_para(estado_caso: str | None) -> str | None:
+    """Estado que le corresponde a `caso_especial` según el del caso.
+
+    Devuelve `None` cuando el estado del caso **no** determina el del especial
+    (NUEVO, ASIGNADO, PENDIENTE…): en ese caso manda lo que tenga la ficha.
+    """
+    estado = (estado_caso or "").strip().upper()
+    if estado in ESTADOS_CASO_CIERRAN:
+        return "CERRADO"
+    if estado in ESTADOS_CASO_EN_PROCESO:
+        return "EN_PROCESO"
+    return None
+
+
+def estado_especial_visible(estado_especial: str, estado_caso: str | None) -> str:
+    """Estado que se **muestra** del especial (función pura, RT-30).
+
+    El caso es la fuente de verdad: si el técnico lo cerró, el especial está
+    `CERRADO` aunque la fila `caso_especial` siguiera en `ABIERTO` (era el
+    defecto reportado: los referidos «no se cerraban» porque nadie movía esa
+    fila). Un `ATENDIDO`/`CERRADO` manual **no se reabre** solo.
+    """
+    derivado = estado_especial_para(estado_caso)
+    if derivado == "CERRADO":
+        return "CERRADO"
+    if estado_especial in ESTADOS_ESPECIAL_FINALES:
+        return estado_especial
+    if derivado == "EN_PROCESO":
+        return "EN_PROCESO"
+    return estado_especial
+
+
+def sincronizar_estado_especial(db: Session, caso: Caso) -> bool:
+    """Alinea `caso_especial.estado` con el estado del caso (D-120).
+
+    Se llama desde `resolucion.registrar_estado`, que es el camino único de los
+    cambios de estado (cierre, contacto, cita, enrutado, diferido y cierre de
+    jornada). Devuelve `True` si la ficha cambió.
+    """
+    objetivo = estado_especial_para(caso.estado_actual)
+    if objetivo is None:
+        return False
+    especial = db.scalar(
+        select(CasoEspecial).where(CasoEspecial.id_caso == caso.id_caso)
+    )
+    if especial is None or especial.estado == objetivo:
+        return False
+    especial.estado = objetivo
+    return True
+
+
+
+# --------------------------------------------------------------------------- #
 # Ficha del caso especial (idempotente)
 # --------------------------------------------------------------------------- #
 def asegurar_caso_especial(

@@ -309,9 +309,55 @@ class DatabaseHelper {
     return borrados;
   }
 
-  /// Lee la caché de casos; devuelve una lista vacía si aún no hay datos.
-  Future<List<Map<String, dynamic>>> leerCasos({String? consulta}) async {
+  // ------------------------------------------------------------------------- #
+  // D-120 · Borrado local: casos descargados y restablecimiento completo
+  // ------------------------------------------------------------------------- #
+
+  /// Borra los **casos y las fallas masivas descargados** del dispositivo.
+  ///
+  /// No toca la sesión, el PIN ni la **cola de trabajo sin enviar**: el técnico
+  /// sigue dentro de la app y puede volver a descargar el despacho del día. La
+  /// marca de agua del diferencial se conserva a propósito: sin casos conocidos
+  /// la descarga ya pide el universo completo (D-105).
+  ///
+  /// Devuelve cuántas filas se borraron por tabla.
+  Future<Map<String, int>> borrarCasosDescargados() async {
     final db = await database;
+    var casos = 0;
+    var masivas = 0;
+    await db.transaction((txn) async {
+      casos = await txn.delete('caso_local');
+      masivas = await txn.delete('masiva_local');
+    });
+    return {'casos': casos, 'masivas': masivas};
+  }
+
+  /// Borra **todo** el contenido local (D-120): casos, masivas, cola de acciones,
+  /// evidencias, mensajes y metadatos.
+  ///
+  /// Deja la base del dispositivo como la de una **instalación nueva**. No toca
+  /// el almacenamiento seguro (sesión, PIN): de eso se encarga
+  /// `ResetAppService.restablecerTodo`.
+  Future<Map<String, int>> reiniciarTodo() async {
+    final db = await database;
+    final resumen = <String, int>{};
+    await db.transaction((txn) async {
+      for (final tabla in const [
+        'caso_local',
+        'masiva_local',
+        'accion_pendiente',
+        'evidencia_local',
+        'mensaje_local',
+        'app_meta',
+      ]) {
+        resumen[tabla] = await txn.delete(tabla);
+      }
+    });
+    return resumen;
+  }
+
+  /// Lee la caché de casos; devuelve una lista vacía si aún no hay datos.
+  Future<List<Map<String, dynamic>>> leerCasos({String? consulta}) async {    final db = await database;
     final filas = await db.query('caso_local', orderBy: 'actualizado_en DESC, id ASC');
     final casos = <Map<String, dynamic>>[];
     for (final fila in filas) {

@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 from ..models import (
     Actividad,
     Caso,
-    CasoEstadoHist,
     CatalogoMetodo,
     Causa,
     Cuadrilla,
@@ -35,6 +34,7 @@ from ..models import (
     Usuario,
 )
 from . import masivas as svc_masivas
+from . import resolucion as svc_resolucion
 from .tiempo import hoy_operativo
 
 logger = logging.getLogger(__name__)
@@ -579,18 +579,14 @@ def _catalogos(db: Session) -> dict[str, Any]:
 
 
 def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None, usuario_p00: str) -> None:
-    if nuevo == caso.estado_actual:
-        return
-    db.add(
-        CasoEstadoHist(
-            id_caso=caso.id_caso,
-            estado_anterior=caso.estado_actual,
-            estado_nuevo=nuevo,
-            motivo=motivo,
-            usuario=usuario_p00,
-        )
-    )
-    caso.estado_actual = nuevo
+    """Bitácora + estado del caso para la CARGA de la APK.
+
+    D-120: delega en `resolucion.registrar_estado` para que un caso cerrado **en
+    la cola offline** también cierre su ficha de caso especial. Antes esta copia
+    no tocaba `caso_especial` y el referido seguía «pendiente» en la web y en la
+    APK aunque el trabajo de campo estuviera terminado.
+    """
+    svc_resolucion.registrar_estado(db, caso, nuevo, motivo, usuario_p00)
 
 
 def aplicar_carga(
@@ -600,8 +596,12 @@ def aplicar_carga(
 ) -> dict[str, Any]:
     """Aplica actividades y estados enviados por la APK.
 
-    Regla: un TECNICO solo puede tocar casos asignados actualmente a su cuadrilla.
-    SUPERVISOR/ADMIN/SUPER pueden tocar cualquier caso.
+    Regla (D-121 · H-02 de la auditoría V3): un TECNICO solo puede tocar casos
+    asignados **actualmente** a su cuadrilla y, si **no tiene cuadrilla vigente**,
+    la carga se rechaza con 403 en lugar de aceptar cualquier caso. Antes el
+    filtro quedaba en `None` (fail-open) y un técnico retirado de su cuadrilla
+    podía mover estados de cualquier caso de la central.
+    SUPERVISOR/ADMIN/SUPER pueden tocar cualquier caso de su central.
     """
     rol = usuario.rol.codigo if usuario.rol else ""
     es_gestor = rol in {"ADMIN", "SUPERVISOR", "SUPER"}
@@ -609,6 +609,14 @@ def aplicar_carga(
     ids_permitidos: set[int] | None = None
     if c is not None:
         ids_permitidos = set(_casos_ids_de_cuadrilla(db, c.id_cuadrilla))
+    elif not es_gestor:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Su cuenta no tiene una cuadrilla vigente: no puede cargar trabajo "
+                "de campo. Pida a su supervisor que lo asigne a una cuadrilla."
+            ),
+        )
 
     errores: list[dict[str, Any]] = []
     aceptadas = 0
@@ -618,6 +626,9 @@ def aplicar_carga(
         caso = db.get(Caso, id_caso)
         if caso is None:
             errores.append({"id_caso": id_caso, "mensaje": "Caso no encontrado"})
+            return None
+        if usuario.id_central is not None and caso.id_central != usuario.id_central:
+            errores.append({"id_caso": id_caso, "mensaje": "El caso es de otra central"})
             return None
         if ids_permitidos is not None and id_caso not in ids_permitidos:
             errores.append({"id_caso": id_caso, "mensaje": "El caso no está asignado a tu cuadrilla"})
@@ -638,6 +649,33 @@ def aplicar_carga(
             if estado_sin_fila:
                 _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
                                   usuario.p00)
+            aceptadas += 1
+            continue
+
+        if tipo_db == "CIERRE":
+            # D-121 · H-03: el cierre que llega de la cola offline pasa por las
+            # **mismas reglas** que el cierre de la ficha (método del catálogo,
+            # caso no cerrado, clasificación REPARACIÓN↔REFERIDO y auditoría),
+            # en vez de escribir la actividad a mano y dejar `id_metodo` en NULL.
+            try:
+                svc_resolucion.cerrar_caso(
+                    db,
+                    caso,
+                    modo=str(act.get("modo") or ""),
+                    descripcion=str(act.get("reporte_corto") or ""),
+                    evidencias=[
+                        str(s).strip()
+                        for s in (act.get("evidencias") or [])
+                        if str(s).strip()
+                    ],
+                    id_causa=act.get("id_causa"),
+                    usuario=usuario,
+                    sincronizado=True,
+                )
+            except svc_resolucion.CierreInvalido as exc:
+                errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje})
+                rechazadas += 1
+                continue
             aceptadas += 1
             continue
 

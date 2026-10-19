@@ -52,7 +52,9 @@ class _InicioGestionScreenState extends State<InicioGestionScreen> {
             EspecialesScreen(
               key: const ValueKey('especiales'),
               puedeCrear: _puedeCrearEspecial,
-              puedeGestionar: widget.rol == 'ADMIN' || widget.rol == 'SUPERVISOR',
+              puedeGestionar: widget.rol == 'SUPER' ||
+                  widget.rol == 'ADMIN' ||
+                  widget.rol == 'SUPERVISOR',
             ),
           ),
         if (_puedeGestion)
