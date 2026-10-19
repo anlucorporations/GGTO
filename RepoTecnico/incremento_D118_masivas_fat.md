@@ -4,7 +4,7 @@
 |---|---|
 | Petición | 0) OLT, SLOT, PUERTO, FAT y Dirección obligatorios al crear · 1) la detección asocia solo los casos de ese FAT (OLT+SLOT+PUERTO) · 2) el alta manual exige ≥ 1 caso y busca otros por OLT+SLOT+PUERTO · 3) el cierre solo cierra los casos asociados que coincidan en OLT+SLOT+PUERTO+FAT; **no** los de la cuadrilla |
 | Fecha | 2026-10-19 |
-| Alcance | Backend + web + APK · columnas nuevas en `falla_masiva` (migración `scripts/migrar_d118_masivas_fat.py`) · versión APK **`1.14.0+23`** (incluye D-117 y D-118; pendiente de publicar) |
+| Alcance | Backend + web + APK · columnas nuevas en `falla_masiva` (migración `scripts/migrar_d118_masivas_fat.py`) · versión APK **`1.14.0+23`** (incluye D-117 y D-118; **publicada** el 2026-10-19) |
 
 ---
 
@@ -108,7 +108,9 @@ python scripts/migrar_d118_masivas_fat.py --aplicar  # aplica con confirmación
 ```
 
 Sin esas columnas el backend nuevo falla al consultar `falla_masiva.olt/slot/
-puerto`; **aplique la migración antes de desplegar**.
+puerto`; **aplique la migración antes de desplegar**. **Aplicada en producción el
+2026-10-19** (simulación → `--aplicar --si`; `olt/slot/puerto` verificados, 19
+filas de `falla_masiva` intactas, 43 tablas; reejecución idempotente).
 
 ---
 
@@ -149,8 +151,10 @@ puerto`; **aplique la migración antes de desplegar**.
 | Web `vite build` | **OK** |
 | APK `flutter analyze` | **No issues found!** |
 | APK `flutter test` | **209/209 en verde** |
-| Migración | Simulación/verificación; **pendiente aplicar a la base de producción** |
+| Migración | **Aplicada en producción** (2026-10-19), columnas verificadas |
+| APK publicada | **`1.14.0+23`**, SHA-256 `d52b6ebd…`, 25 066 296 bytes |
+| Despliegue | **v50**, revisión **`ggto-web-00063-67g`**, 100 % del tráfico |
+| Humo en vivo | `/health` `/ready` `/` `/manual/` `/apk/apk.json` `/openapi.json` **200**; `/ready` 43 tablas |
 
-**Pendiente:** aplicar `scripts/migrar_d118_masivas_fat.py --aplicar` en la base
-real, compilar/publicar la APK `1.14.0+23` y desplegar la web/backend. Sin la
-migración, el backend nuevo no debe desplegarse.
+**Pendiente:** instalar la APK en un dispositivo, prueba de campo y regenerar los
+manuales HTML/PDF (los `.md` ya están actualizados).

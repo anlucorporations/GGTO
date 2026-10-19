@@ -4,7 +4,7 @@
 |---|---|
 | Petición | 1) la actualización en la sección **Sincronizar** · 2) no descartar los casos pendientes · 3) el panel principal solo lee el dispositivo · 4) restablecer el PIN al de fábrica y pedir cambio en el primer uso · 5) subir gestionados/contactados y retirar los no gestionados del registro local · 6) bloquear a los 2 minutos sin cerrar sesión y con pantalla de bloqueo |
 | Fecha | 2026-10-19 |
-| Alcance | APK (`app_movil`) · sin cambios de API ni de esquema · versión **`1.14.0+23`** (pendiente de publicar) |
+| Alcance | APK (`app_movil`) · sin cambios de API ni de esquema · versión **`1.14.0+23`** (publicada el 2026-10-19 junto con D-118) |
 | Autor | Dirección del proyecto |
 
 ---
@@ -139,6 +139,6 @@ su trabajo ni tiene que volver a iniciar sesión.
 | Backend | Sin cambios; se mantiene la prueba D-116 del pendiente descargable y gestionable |
 | Versión APK | **`1.14.0+23`** (pendiente de compilar y publicar) |
 
-**Pendiente:** compilar y publicar la APK `1.14.0+23`; probar en dispositivo el
-bloqueo a los 2 minutos, el PIN restablecido y la sincronización con una jornada
-real.
+**Pendiente:** probar en dispositivo el bloqueo a los 2 minutos, el PIN restablecido
+y la sincronización con una jornada real. La APK **`1.14.0+23`** ya está compilada,
+firmada y publicada; el backend/web se desplegó como **v50** (`ggto-web-00063-67g`).
