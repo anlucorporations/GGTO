@@ -738,6 +738,22 @@ textarea {
   margin: 0;
 }
 
+/* Checklist de tipos a distribuir del proceso de despacho (D-113). */
+.lista-casillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--gris-fondo);
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+}
+
+.lista-casillas .casilla-fila {
+  gap: 6px;
+}
+
 /* ------------------------------ Tablas ---------------------------- */
 
 .tabla-envoltura {

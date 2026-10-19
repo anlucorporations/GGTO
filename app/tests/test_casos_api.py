@@ -444,10 +444,19 @@ def test_cierre_registra_actividad_evidencias_y_estado(client, admin_token, db_s
     assert len(seriales) == 2
     assert all(s.startswith(f"TSTRES02-A{actividad.id_actividad}-CIERRE-") for s in seriales)
 
-    # El TECNICO no puede cerrar (edición reservada a ADMIN/SUPERVISOR/SUPER)
-    assert client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
-                       json={"modo": "IVR", "descripcion": "intenta cerrar"},
-                       headers=admin_token["tecnico"]).status_code == 403
+    # D-112 (DEC-112-1): el TÉCNICO **sí** cierra en campo; lo que no se puede
+    # es volver a cerrar un caso ya cerrado (409).
+    otro = _caso_con_telefono(client, admin_token, "TSTRES03", id_pago="7014000951")
+    r_tecnico = client.post(f"/api/v1/casos/{otro['id_caso']}/cierre",
+                            json={"modo": "IVR", "descripcion": "cierre desde el campo"},
+                            headers=admin_token["tecnico"])
+    assert r_tecnico.status_code == 200, r_tecnico.text
+    assert r_tecnico.json()["estado_actual"] == "CERRADO"
+
+    repetido = client.post(f"/api/v1/casos/{caso['id_caso']}/cierre",
+                           json={"modo": "IVR", "descripcion": "intenta cerrar otra vez"},
+                           headers=admin_token["admin"])
+    assert repetido.status_code == 409, repetido.text
 
 
 def test_cierre_rechaza_modo_inexistente_y_descripcion_corta(client, admin_token):

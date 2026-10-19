@@ -77,12 +77,18 @@ def _detalle(db: Session, despacho: Despacho) -> DespachoDetalleOut:
 def propuesta(
     fecha: date | None = Query(default=None),
     id_central: int | None = Query(default=None),
+    tipos: str | None = Query(
+        default=None,
+        description="Tipos a distribuir separados por coma (D-113); vacío = todos",
+    ),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
 ) -> PropuestaOut:
     config = cargar_config(db)
     central = resolver_central(db, id_central, config, usuario)
-    resultado = svc.construir_propuesta(db, central.id_central, fecha or date.today())
+    resultado = svc.construir_propuesta(
+        db, central.id_central, fecha or date.today(), tipos=tipos
+    )
     return PropuestaOut(**resultado.como_dict())
 
 
@@ -229,6 +235,9 @@ def procesar(
     config = cargar_config(db)
     central = resolver_central(db, datos.id_central, config, usuario)
     dia = datos.fecha
+    # D-113: valida el checklist antes de tocar la jornada (400 si viene vacío o
+    # con un tipo desconocido).
+    tipos = svc.normalizar_tipos(datos.tipos)
 
     publicados = db.scalar(
         select(func.count()).select_from(Despacho).where(
@@ -277,7 +286,19 @@ def procesar(
             [bloque.model_dump() for bloque in datos.asignaciones], usuario.p00,
         )
 
-    resultado = svc.construir_propuesta(db, central.id_central, dia)
+    # D-113: la cuadrilla elegida para cada masiva se guarda y manda sobre el
+    # sector al repartir sus casos.
+    if datos.masivas:
+        svc.asignar_masivas(
+            db, central.id_central, [bloque.model_dump() for bloque in datos.masivas]
+        )
+
+    # El universo es el mismo del formulario de proceso: incluye los borradores
+    # del día y los casos PENDIENTES que devolvió el cierre de jornada (D-113).
+    casos = svc.universo_casos(db, central.id_central, dia)
+    resultado = svc.construir_propuesta(
+        db, central.id_central, dia, casos=casos, tipos=tipos
+    )
     creados = svc.guardar_propuesta(db, resultado, usuario.p00)
     if reproceso:
         for despacho in creados:

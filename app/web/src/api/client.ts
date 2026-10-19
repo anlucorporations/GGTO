@@ -11,6 +11,7 @@ import type {
   AsignacionBloque,
   AsignacionCasosOut,
   AsignacionCasosRequest,
+  AsignacionMasiva,
   ResolucionOut,
   EnrutadoCaso,
   CasoRelacionado,
@@ -663,9 +664,15 @@ export function obtenerHistorialCaso(idCaso: number): Promise<CasoEstadoHistOut[
 export function simularPropuesta(
   fecha: string,
   idCentral?: number,
+  tipos?: string[],
 ): Promise<PropuestaOut> {
   return request<PropuestaOut>(
-    `/despachos/propuesta${construirQuery({ fecha, id_central: idCentral })}`,
+    `/despachos/propuesta${construirQuery({
+      fecha,
+      id_central: idCentral,
+      // D-113: la simulación puede limitarse a los tipos marcados.
+      tipos: tipos && tipos.length ? tipos.join(',') : undefined,
+    })}`,
     { method: 'POST' },
   );
 }
@@ -718,6 +725,10 @@ export function procesarDespacho(datos: {
   fecha: string;
   id_central?: number;
   asignaciones: AsignacionBloque[];
+  /** D-113: tipos marcados en el checklist (Comunes y Referidos por defecto). */
+  tipos?: string[];
+  /** D-113: reasignación de las fallas masivas a otra cuadrilla. */
+  masivas?: AsignacionMasiva[];
   reemplazar?: boolean;
 }): Promise<DespachoDetalleOut[]> {
   return conCuerpo<DespachoDetalleOut[]>('/despachos/procesar', 'POST', datos);

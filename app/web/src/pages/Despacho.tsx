@@ -815,6 +815,14 @@ export default function Despacho() {
             </button>
           </div>
 
+          {/* D-113: la simulación muestra todos los tipos; el proceso aplica el
+              checklist del formulario (Comunes y Referidos por defecto). */}
+          <p className="texto-pequeno">
+            La simulación incluye <strong>todos los tipos</strong> del universo. Al procesar,
+            el formulario distribuye los tipos marcados en su checklist (por defecto{' '}
+            <strong>Comunes y Referidos</strong>).
+          </p>
+
           {(construccionMultiple || minReferidosIncumplido || minEmpresasIncumplido) && (
             <div className="aviso aviso-info">
               <span>

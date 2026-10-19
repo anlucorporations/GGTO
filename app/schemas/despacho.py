@@ -29,6 +29,10 @@ class CasoAsignadoOut(BaseModel):
     tipo_caso: str
     es_cita: bool
     especial: bool = False
+    #: D-113: tipo del checklist de distribución (COMUNES, REFERIDOS, …).
+    tipo_distribucion: str = "COMUNES"
+    #: D-77: el caso se despacha a la cuadrilla 0 (gestión), no a la de su sector.
+    en_gestion: bool = False
 
 
 class GrupoCuadrillaOut(BaseModel):
@@ -120,7 +124,18 @@ class UniversoOut(BaseModel):
     comunes: int = 0
     especiales: int = 0
     sin_sector: int = 0
+    #: D-113: total por tipo del checklist.
+    por_tipo: dict[str, int] = Field(default_factory=dict)
     casos: list[CasoAsignadoOut] = Field(default_factory=list)
+
+
+class TipoDespachoOut(BaseModel):
+    """Tipo de caso que el supervisor marca en el checklist (D-113)."""
+
+    clave: str
+    etiqueta: str
+    total: int = 0
+    por_defecto: bool = False
 
 
 class AsignacionBloque(BaseModel):
@@ -135,13 +150,21 @@ class AsignacionUpdate(BaseModel):
 
 
 class MasivaProcesoOut(BaseModel):
-    """Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71)."""
+    """Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71).
+
+    D-113 añade la cuadrilla (reasignable desde el formulario de proceso) y los
+    casos asociados, que se despachan a esa cuadrilla.
+    """
 
     id_falla: int
     id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
     estado: str
     descripcion: str
     es_activa: bool = True
+    casos: int = 0
+    ids_caso: list[int] = Field(default_factory=list)
 
 
 class ProcesoDespachoOut(BaseModel):
@@ -153,6 +176,8 @@ class ProcesoDespachoOut(BaseModel):
     primera_vez: bool = True
     #: D-99 (RF-68): True si la jornada ya tiene despachos (reproceso por sector).
     reproceso: bool = False
+    #: D-113: checklist de tipos a distribuir (Comunes y Referidos por defecto).
+    tipos: list[TipoDespachoOut] = Field(default_factory=list)
     masivas: list[MasivaProcesoOut] = Field(default_factory=list)
     universo: UniversoOut
     sectores: list[SectorProcesoOut] = Field(default_factory=list)
@@ -164,10 +189,24 @@ class ProcesoDespachoOut(BaseModel):
     resumen: dict = Field(default_factory=dict)
 
 
+class AsignacionMasiva(BaseModel):
+    """D-113: cuadrilla que atiende una falla masiva (nulo = sin cuadrilla)."""
+
+    id_falla: int
+    id_cuadrilla: int | None = None
+
+
 class ProcesarDespacho(BaseModel):
     fecha: date
     id_central: int | None = None
     asignaciones: list[AsignacionBloque] = Field(default_factory=list)
+    #: D-113: tipos marcados en el checklist. `None` = todos (compatibilidad).
+    tipos: list[str] | None = Field(
+        default=None,
+        description="Tipos a distribuir: COMUNES, REFERIDOS, CONSTRUCCIONES, EMPRESAS, MASIVAS",
+    )
+    #: D-113: reasignación de las fallas masivas a otra cuadrilla.
+    masivas: list[AsignacionMasiva] = Field(default_factory=list)
     reemplazar: bool = True
 
 

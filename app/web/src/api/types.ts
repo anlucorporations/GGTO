@@ -619,6 +619,10 @@ export interface CasoAsignadoOut {
   tipo_caso: string;
   es_cita: boolean;
   especial?: boolean;
+  /** D-113: tipo del checklist de distribución (COMUNES, REFERIDOS, …). */
+  tipo_distribucion?: string;
+  /** D-77: el caso va a la cuadrilla 0 (gestión), no a la de su sector. */
+  en_gestion?: boolean;
 }
 
 /* ------------------ Proceso de despacho (D-66) --------------------- */
@@ -647,6 +651,8 @@ export interface UniversoOut {
   comunes: number;
   especiales: number;
   sin_sector: number;
+  /** D-113: total por tipo del checklist. */
+  por_tipo?: Record<string, number>;
   casos: CasoAsignadoOut[];
 }
 
@@ -655,13 +661,32 @@ export interface AsignacionBloque {
   ids_sector: number[];
 }
 
+/** D-113: tipo de caso que el supervisor marca en el checklist. */
+export interface TipoDespachoOut {
+  clave: string;
+  etiqueta: string;
+  total: number;
+  por_defecto: boolean;
+}
+
 /** Masiva activa del día, para el icono MASIVA del despacho (D-99 · RF-71). */
 export interface MasivaProcesoOut {
   id_falla: number;
   id_cuadrilla: number | null;
+  cuadrilla_codigo?: string | null;
+  cuadrilla_nombre?: string | null;
   estado: string;
   descripcion: string;
   es_activa: boolean;
+  /** D-113: casos asociados que se despachan con la masiva. */
+  casos?: number;
+  ids_caso?: number[];
+}
+
+/** D-113: cuadrilla que atiende una falla masiva. */
+export interface AsignacionMasiva {
+  id_falla: number;
+  id_cuadrilla: number | null;
 }
 
 export interface ProcesoDespachoOut {
@@ -675,6 +700,8 @@ export interface ProcesoDespachoOut {
   primera_vez: boolean;
   /** D-99 (RF-68): `true` si la jornada ya tiene despachos (es un reproceso). */
   reproceso: boolean;
+  /** D-113: checklist de tipos a distribuir (Comunes y Referidos por defecto). */
+  tipos?: TipoDespachoOut[];
   masivas: MasivaProcesoOut[];
   universo: UniversoOut;
   sectores: SectorProcesoOut[];
