@@ -1,0 +1,9 @@
+[2026-10-20T13:57:55+00:00] ==============================================================================
+[2026-10-20T13:57:55+00:00] MIGRACIÓN D-128 (evidencia: id_caso + índice)
+[2026-10-20T13:57:55+00:00] modo=APLICAR
+[2026-10-20T13:57:55+00:00] estado actual: {'id_caso': 0, 'indice': 0}
+[2026-10-20T13:57:55+00:00] Cambios pendientes:
+[2026-10-20T13:57:55+00:00]   · id_caso
+[2026-10-20T13:57:55+00:00]   · indice
+[2026-10-20T13:57:55+00:00] verificación post-migración: {'id_caso': 1, 'indice': 1}
+[2026-10-20T13:57:55+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA

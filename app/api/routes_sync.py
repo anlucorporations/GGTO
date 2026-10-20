@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import Evidencia, SyncLog, Usuario
+from ..models import Caso, Evidencia, SyncLog, Usuario
 from ..schemas.sync import (
     ChecklistIn,
     EvidenciaUploadOut,
@@ -135,6 +135,24 @@ async def upload_evidencia(
     nombre = file.filename or "foto.jpg"
     serial = serial_local or serial_desde_nombre(nombre)
 
+    # D-128 · H-11: la foto se guarda **ligada a su caso** y solo si el usuario
+    # puede gestionarlo (mismo criterio que D-123). `id_caso <= 0` es la firma de
+    # las evidencias de un reporte de falla masiva (`FM-…`), que aún no tienen
+    # caso: se aceptan sin vínculo, como antes.
+    caso = db.get(Caso, id_caso) if id_caso > 0 else None
+    if caso is not None:
+        permitidos = svc.casos_permitidos(db, usuario)
+        if permitidos is not None and caso.id_caso not in permitidos:
+            raise HTTPException(
+                status_code=403,
+                detail="El caso no está asignado a su cuadrilla: no puede subir evidencias.",
+            )
+        if usuario.id_central is not None and caso.id_central != usuario.id_central:
+            raise HTTPException(
+                status_code=403, detail="El caso es de otra central"
+            )
+    id_caso_vinculo = caso.id_caso if caso is not None else None
+
     # Idempotencia: si el serial ya fue subido, se devuelve la fila existente.
     existente = db.query(Evidencia).filter(Evidencia.serial_imagen == serial).first()
     if existente is not None and existente.ruta_remota:
@@ -149,6 +167,8 @@ async def upload_evidencia(
     if existente is not None:
         # Fila huérfana previa (sin archivo): se completa con la ruta remota.
         existente.ruta_remota = ruta_remota[:255]
+        if existente.id_caso is None:
+            existente.id_caso = id_caso_vinculo
         db.commit()
         db.refresh(existente)
         return EvidenciaUploadOut(
@@ -160,6 +180,7 @@ async def upload_evidencia(
 
     ev = Evidencia(
         id_actividad=None,  # se vincula al crear la actividad en /sync/carga
+        id_caso=id_caso_vinculo,
         tipo=tipo[:20],
         serial_imagen=serial,
         ruta_remota=ruta_remota[:255],

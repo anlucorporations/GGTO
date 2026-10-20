@@ -573,6 +573,8 @@ CREATE TABLE IF NOT EXISTS actividad (
 CREATE TABLE IF NOT EXISTS evidencia (
     id_evidencia    bigserial    PRIMARY KEY,
     id_actividad    bigint       REFERENCES actividad(id_actividad) ON DELETE CASCADE,
+    -- D-128: caso al que pertenece la foto, guardado desde la subida (H-11).
+    id_caso         bigint       REFERENCES caso(id_caso) ON DELETE CASCADE,
     tipo            varchar(20)  NOT NULL
                     -- D-82: 'FALLA_MASIVA' es la evidencia del reporte de campo de la APK.
                     CHECK (tipo IN ('POTENCIA','NAVEGACION','DEMO','FALLA_MASIVA')),
@@ -1146,7 +1148,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_actividad_local
     ON actividad (dispositivo_id, id_actividad_local)
     WHERE id_actividad_local IS NOT NULL AND dispositivo_id IS NOT NULL;
 
--- 13.7 Parámetros del incremento.
+-- 13.7 Evidencia ligada a su caso desde la subida (D-128 · H-11).
+ALTER TABLE evidencia ADD COLUMN IF NOT EXISTS id_caso bigint
+    REFERENCES caso(id_caso) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS ix_evidencia_caso ON evidencia (id_caso);
+
+-- 13.8 Parámetros del incremento.
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('despacho.hora_cierre_jornada', '"23:50"'::jsonb,
      'Hora del día operativo en que se cierran los despachos; lo no cerrado va a PENDIENTE (D-99)'),

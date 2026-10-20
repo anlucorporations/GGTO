@@ -176,6 +176,11 @@ class Evidencia(Base):
     id_actividad: Mapped[int | None] = mapped_column(
         ForeignKey("actividad.id_actividad", ondelete="CASCADE")
     )
+    # D-128 · H-11: caso al que pertenece la foto. Se guarda ya en la **subida**
+    # para que no quede huérfana mientras llega la actividad que la vincula.
+    id_caso: Mapped[int | None] = mapped_column(
+        ForeignKey("caso.id_caso", ondelete="CASCADE")
+    )
     tipo: Mapped[str] = mapped_column(String(20), nullable=False)
     serial_imagen: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
     ruta_local: Mapped[str | None] = mapped_column(String(255))
