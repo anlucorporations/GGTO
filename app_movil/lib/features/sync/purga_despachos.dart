@@ -39,6 +39,32 @@ import '../casos/acciones_caso.dart';
 class PurgaDespachos {
   const PurgaDespachos._();
 
+  /// Claves (avería o `id_caso`) que protege **una** acción encolada (D-132).
+  ///
+  /// H-15: la protección de la purga solo miraba `id_caso`/`id_averia` del
+  /// payload. Las acciones de `DIFERIDO_EVIDENCIAS` llevan únicamente
+  /// `evidencias`, así que su caso **no** quedaba protegido y la purga podía
+  /// borrarlo con su trabajo pendiente. Ahora también se deduce del **endpoint**
+  /// (`/casos/{id}/…`), que esa acción sí trae, de modo que las filas ya
+  /// encoladas en los dispositivos quedan cubiertas sin migración.
+  static Set<String> clavesDeAccion({
+    required Map<String, dynamic> payload,
+    required String endpoint,
+  }) {
+    final claves = <String>{};
+
+    void anotar(dynamic valor) {
+      final texto = '${valor ?? ''}'.trim();
+      if (texto.isNotEmpty && texto != '0') claves.add(texto);
+    }
+
+    anotar(payload['id_caso']);
+    anotar(payload['id_averia']);
+    final enRuta = RegExp(r'/casos/(\d+)').firstMatch(endpoint);
+    if (enRuta != null) anotar(enRuta.group(1));
+    return claves;
+  }
+
   /// D-115: ¿procede purgar en esta descarga?
   ///
   /// La actualización purga **siempre** que el servidor haya resuelto una

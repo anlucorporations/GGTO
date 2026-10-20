@@ -134,7 +134,7 @@ class OperacionesService {
         tipo: 'DIFERIDO_EVIDENCIAS',
         endpoint: '/casos/$idCaso/estado',
         metodo: 'POST',
-        payload: {'evidencias': evidencias},
+        payload: {'id_caso': idCaso, 'id_averia': idAveria, 'evidencias': evidencias},
       );
     }
     return resultado;

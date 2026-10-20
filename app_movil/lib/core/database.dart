@@ -5,6 +5,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../features/sync/merge_casos.dart';
+import '../features/sync/purga_despachos.dart';
 
 /// Acceso a la base local (SQLite) de la aplicación.
 ///
@@ -288,17 +289,25 @@ class DatabaseHelper {
       if (texto.isNotEmpty) claves.add(texto);
     }
 
-    for (final fila in await db.query('accion_pendiente', columns: ['payload'])) {
+    for (final fila in await db.query(
+      'accion_pendiente',
+      columns: ['payload', 'endpoint'],
+    )) {
+      Map<String, dynamic> datos = const {};
       try {
-        final datos = jsonDecode('${fila['payload']}');
-        if (datos is Map) {
-          anotar(datos['id_caso']);
-          anotar(datos['id_averia']);
-        }
+        final crudo = jsonDecode('${fila['payload']}');
+        if (crudo is Map) datos = Map<String, dynamic>.from(crudo);
       } catch (_) {
-        // Payload ilegible: se ignora (la acción sigue en la cola y el caso se
-        // protege igual por la evidencia o por su estado).
+        // Payload ilegible: se protege igual por el endpoint.
       }
+      // D-132 · H-15: se incluye el endpoint (`/casos/{id}/…`) para cubrir las
+      // acciones cuyo payload no trae el caso (p. ej. `DIFERIDO_EVIDENCIAS`).
+      claves.addAll(
+        PurgaDespachos.clavesDeAccion(
+          payload: datos,
+          endpoint: '${fila['endpoint'] ?? ''}',
+        ),
+      );
     }
 
     for (final fila in await db.query(
