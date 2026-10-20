@@ -7,6 +7,7 @@ import '../../core/constants.dart';
 import '../../core/database.dart';
 import '../../core/sync_lock.dart';
 import 'cola_offline.dart';
+import 'detalle_sync.dart';
 import 'sync_sesion.dart';
 
 /// Resultado de una operación CARGA (D-73).
@@ -357,6 +358,14 @@ class UploadService {
         estado: estado,
         pasoEstado: nErrores == 0 ? 'OK' : (procesados > 0 ? 'OK' : 'ERROR'),
         detalleError: nErrores > 0 ? errores.first : null,
+        // D-136 · H-19: resumen de la carga (y los errores) para la auditoría.
+        detalle: detalleCarga(
+          actividades: actividades.length,
+          estados: estados.length,
+          aceptadas: procesados,
+          rechazadas: nErrores,
+          errores: errores,
+        ),
       );
     }
     avisar(1, nErrores == 0 ? 'Carga completada' : 'Carga completada con avisos');

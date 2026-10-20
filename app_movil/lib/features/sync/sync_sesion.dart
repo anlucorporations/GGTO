@@ -78,6 +78,7 @@ class SyncSesionService {
     required String estado,
     required String pasoEstado,
     String? detalleError,
+    Map<String, dynamic>? detalle,
   }) async {
     final propioEsDescarga = tipo == 'DESCARGA';
     sesion.checklist.add(
@@ -93,6 +94,8 @@ class SyncSesionService {
           'errores': errores,
           'estado': estado,
           'checklist': sesion.checklist,
+          // D-136 · H-19: resumen por caso para la auditoría.
+          if (detalle != null) 'detalle': detalle,
         });
       } catch (_) {
         // El checklist ya quedó persistido en local.

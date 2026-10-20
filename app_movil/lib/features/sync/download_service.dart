@@ -1,6 +1,7 @@
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/database.dart';
+import 'detalle_sync.dart';
 import 'purga_despachos.dart';
 import 'reintentos.dart';
 import 'sync_sesion.dart';
@@ -217,6 +218,17 @@ class DownloadService {
           procesados: nuevos + actualizados,
           estado: 'OK',
           pasoEstado: 'OK',
+          // D-136 · H-19: qué llegó y qué se descartó, para la auditoría.
+          detalle: detalleDescarga(
+            idsRecibidos: idsDescargados,
+            nuevos: nuevos,
+            actualizados: actualizados,
+            descartados: descartados,
+            idsDelDia: idsDia,
+            idsVigentes: idsVigentes,
+            motivo: motivo,
+            cuadrilla: codigo,
+          ),
         );
       }
       avisar(1, 'Descarga completada');
@@ -241,6 +253,7 @@ class DownloadService {
           estado: 'ERROR',
           pasoEstado: 'ERROR',
           detalleError: '$e',
+          detalle: const {'error': 'descarga'},
         );
       }
       rethrow;
