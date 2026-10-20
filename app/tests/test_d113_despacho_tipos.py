@@ -23,11 +23,12 @@ import pytest
 from sqlalchemy import select
 
 from app.models import Caso, Cuadrilla, Despacho, DespachoCasos, FallaMasiva
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/despachos"
 MASIVAS = "/api/v1/fallas-masivas"
-HOY = date.today().isoformat()
-AYER = (date.today() - timedelta(days=1)).isoformat()
+HOY = hoy_operativo().isoformat()
+AYER = (hoy_operativo() - timedelta(days=1)).isoformat()
 
 
 @pytest.fixture()

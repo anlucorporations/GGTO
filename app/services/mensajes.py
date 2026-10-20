@@ -31,7 +31,7 @@ from ..models import (
     Tecnico,
     Usuario,
 )
-from .tiempo import dia_operativo
+from .tiempo import dia_operativo, hoy_operativo
 
 
 def _config_int(db: Session, clave: str, defecto: int) -> int:
@@ -65,7 +65,7 @@ def resolver_destinatarios(db: Session, m: Mensaje) -> list[tuple[int | None, st
     if m.destino_tipo == "CUADRILLA":
         if not m.id_cuadrilla:
             return []
-        hoy = date.today()
+        hoy = hoy_operativo()
         miembros = db.scalars(
             select(CuadrillaTecnico.id_tecnico).where(
                 CuadrillaTecnico.id_cuadrilla == m.id_cuadrilla,

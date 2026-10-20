@@ -12,12 +12,13 @@ responde **por acción** (`items`) para que la APK marque cada una.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import func, select
 
 from app.models import Actividad, Caso, Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos, Tecnico
+from app.services.tiempo import hoy_operativo
 
 SYNC = "/api/v1/sync/carga"
 DISPOSITIVO = "DEV-D121-TEST"
@@ -69,12 +70,12 @@ def entorno_carga(client, admin_token, db_session):
     db_session.flush()
     db_session.add(
         CuadrillaTecnico(
-            id_cuadrilla=cuadrilla.id_cuadrilla, id_tecnico=id_tecnico, desde=date.today()
+            id_cuadrilla=cuadrilla.id_cuadrilla, id_tecnico=id_tecnico, desde=hoy_operativo()
         )
     )
     despacho = Despacho(
         id_central=id_central,
-        fecha=date.today(),
+        fecha=hoy_operativo(),
         id_cuadrilla=cuadrilla.id_cuadrilla,
         estado="BORRADOR",
     )

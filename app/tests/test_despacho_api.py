@@ -8,9 +8,10 @@ import pytest
 from sqlalchemy import select
 
 from app.models import Caso, Cuadrilla, DespachoCasos
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/despachos"
-HOY = date.today().isoformat()
+HOY = hoy_operativo().isoformat()
 
 
 @pytest.fixture()

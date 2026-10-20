@@ -44,6 +44,7 @@ from ..services import jornada as svc_jornada
 from ..services import mensajes as svc_mensajes
 from ..services.consultas import cargar_config, resolver_central
 from ..services.notificaciones import enviar
+from ..services.tiempo import hoy_operativo
 from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/despachos", tags=["despacho"])
@@ -87,7 +88,7 @@ def propuesta(
     config = cargar_config(db)
     central = resolver_central(db, id_central, config, usuario)
     resultado = svc.construir_propuesta(
-        db, central.id_central, fecha or date.today(), tipos=tipos
+        db, central.id_central, fecha or hoy_operativo(), tipos=tipos
     )
     return PropuestaOut(**resultado.como_dict())
 
@@ -103,7 +104,7 @@ def generar(
 ) -> list[Despacho]:
     config = cargar_config(db)
     central = resolver_central(db, id_central, config, usuario)
-    dia = fecha or date.today()
+    dia = fecha or hoy_operativo()
 
     if reemplazar:
         for previo in db.scalars(
@@ -205,7 +206,7 @@ def proceso_despacho(
 ) -> ProcesoDespachoOut:
     config = cargar_config(db)
     central = resolver_central(db, id_central, config, usuario)
-    return ProcesoDespachoOut(**svc.proceso(db, central.id_central, fecha or date.today()))
+    return ProcesoDespachoOut(**svc.proceso(db, central.id_central, fecha or hoy_operativo()))
 
 
 @router.put("/asignacion", response_model=ProcesoDespachoOut,
@@ -495,7 +496,7 @@ def asignar_casos(
     config = cargar_config(db)
     central = resolver_central(db, datos.id_central, config, usuario)
     resultado = svc.asignar_casos(
-        db, central.id_central, datos.fecha or date.today(), datos.id_cuadrilla,
+        db, central.id_central, datos.fecha or hoy_operativo(), datos.id_cuadrilla,
         datos.ids_caso, datos.ids_caso_especial, usuario.p00,
     )
     partes = [f"{resultado['agregados']} agregado(s)"]
@@ -519,7 +520,7 @@ def quitar_casos(
     config = cargar_config(db)
     central = resolver_central(db, datos.id_central, config, usuario)
     resultado = svc.quitar_casos(
-        db, central.id_central, datos.fecha or date.today(),
+        db, central.id_central, datos.fecha or hoy_operativo(),
         datos.ids_caso, datos.ids_caso_especial,
     )
     detalle = f"{resultado['quitados']} caso(s) fuera del despacho del día"
@@ -694,7 +695,7 @@ def reporte(
 ) -> ReporteProduccionOut:
     config = cargar_config(db)
     central = resolver_central(db, id_central, config)
-    return _reporte(db, central.id_central, fecha or date.today())
+    return _reporte(db, central.id_central, fecha or hoy_operativo())
 
 
 @router.get("/{id_despacho}/reporte", response_model=ReporteProduccionOut,

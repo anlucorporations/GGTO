@@ -102,7 +102,7 @@ def _cuadrilla_activa(db: Session, usuario: Usuario) -> Cuadrilla | None:
     """
     if usuario.id_tecnico is None:
         return None
-    hoy = date.today()
+    hoy = hoy_operativo()
     return db.scalars(
         select(Cuadrilla)
         .join(CuadrillaTecnico, CuadrillaTecnico.id_cuadrilla == Cuadrilla.id_cuadrilla)

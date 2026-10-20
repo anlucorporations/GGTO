@@ -399,7 +399,7 @@ def test_retirar_integrante_cierra_las_pertenencias_activas(client, entorno_sync
             id_cuadrilla=id_a,
             id_tecnico=id_tecnico,
             rol_cuadrilla="SUPERVISOR",
-            desde=date.today() - timedelta(days=1),
+            desde=hoy_operativo() - timedelta(days=1),
         )
     )
     db_session.commit()

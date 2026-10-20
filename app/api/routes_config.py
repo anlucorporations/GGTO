@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import secrets
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -59,6 +59,7 @@ from ..schemas.config import (
     UsuarioGestionIn,
     UsuarioGestionOut,
 )
+from ..services.tiempo import hoy_operativo
 from .deps import ROL_SUPER, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["configuración"])
@@ -574,7 +575,7 @@ def crear_cuadrilla(
     _o_404(db, Central, datos.id_central, "Central")
     valores = datos.model_dump(exclude={"integrantes", "herramientas"})
     cuadrilla = Cuadrilla(**valores)
-    hoy = date.today()
+    hoy = hoy_operativo()
     cuadrilla.integrantes = [
         CuadrillaTecnico(
             id_tecnico=i.id_tecnico,
@@ -650,7 +651,7 @@ def agregar_integrante(
         id_cuadrilla=id_cuadrilla,
         id_tecnico=datos.id_tecnico,
         rol_cuadrilla=datos.rol_cuadrilla,
-        desde=datos.desde or date.today(),
+        desde=datos.desde or hoy_operativo(),
     )
     db.add(integrante)
     _commit(db, "el técnico ya está en la cuadrilla desde esa fecha")
@@ -667,7 +668,7 @@ def retirar_integrante(
     db: Session = Depends(get_db),
     _: Usuario = Depends(_escritura),
 ):
-    hoy = date.today()
+    hoy = hoy_operativo()
     # D-83: se cierran **todas** las pertenencias activas (antes solo la primera,
     # así que un registro duplicado seguía dejando al técnico en la cuadrilla).
     integrantes = list(

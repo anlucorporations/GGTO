@@ -15,12 +15,13 @@ Cubre los requisitos solicitados por el usuario:
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select
 
 from app.models import Despacho, DespachoCasos, Rol, Tecnico, Usuario
+from app.services.tiempo import hoy_operativo
 
 BASE_MON = "/api/v1/monitoreo"
 CASOS = "/api/v1/casos"
@@ -82,7 +83,7 @@ def entorno_d72(client, admin_token, db_session):
                categoria="GOBIERNO")
     c3 = crear("TSTD72-3")
 
-    hoy = date.today()
+    hoy = hoy_operativo()
     d_ayer_a = Despacho(id_central=id_central, fecha=hoy - timedelta(days=1),
                         id_cuadrilla=id_a, estado="PUBLICADO")
     d_hoy_a = Despacho(id_central=id_central, fecha=hoy, id_cuadrilla=id_a, estado="PUBLICADO")

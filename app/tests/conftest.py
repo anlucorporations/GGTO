@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.security import hash_password
 from app.models import Central, Rol, Tecnico, Usuario
+from app.services.tiempo import hoy_operativo
 
 RAIZ = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA_SQL = RAIZ / "RepoTecnico" / "db" / "schema.sql"
@@ -146,7 +147,6 @@ def asignar_caso_al_tecnico(db_session, admin_token, id_caso: int) -> int:
     ejercitan el camino de campo deben asignarlo. Es idempotente y devuelve el
     `id_cuadrilla` usado.
     """
-    from datetime import date
 
     from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos
 
@@ -178,20 +178,20 @@ def asignar_caso_al_tecnico(db_session, admin_token, id_caso: int) -> int:
             CuadrillaTecnico(
                 id_cuadrilla=cuadrilla.id_cuadrilla,
                 id_tecnico=id_tecnico,
-                desde=date.today(),
+                desde=hoy_operativo(),
             )
         )
     despacho = db_session.scalar(
         select(Despacho).where(
             Despacho.id_central == id_central,
-            Despacho.fecha == date.today(),
+            Despacho.fecha == hoy_operativo(),
             Despacho.id_cuadrilla == cuadrilla.id_cuadrilla,
         )
     )
     if despacho is None:
         despacho = Despacho(
             id_central=id_central,
-            fecha=date.today(),
+            fecha=hoy_operativo(),
             id_cuadrilla=cuadrilla.id_cuadrilla,
             estado="BORRADOR",
         )

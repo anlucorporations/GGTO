@@ -23,10 +23,11 @@ from sqlalchemy import select
 
 from app.models import Caso, Cuadrilla, Despacho, DespachoCasos
 from app.services import despacho as svc
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/despachos"
 MASIVAS = "/api/v1/fallas-masivas"
-HOY = date.today().isoformat()
+HOY = hoy_operativo().isoformat()
 
 
 @pytest.fixture()

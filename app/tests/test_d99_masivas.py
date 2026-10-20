@@ -17,19 +17,20 @@ Los identificadores de prueba empiezan por `TST`/`TCD`/`TSD` para que el aseo de
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select
 
 from app.models import Actividad, Caso, FallaMasiva, FallaMasivaCaso, Mensaje
+from app.services.tiempo import hoy_operativo
 
 MASIVAS = "/api/v1/fallas-masivas"
 DESPACHOS = "/api/v1/despachos"
 PERSONAL = "/api/v1/solicitantes"
 CASOS = "/api/v1/casos"
-AYER = (date.today() - timedelta(days=1)).isoformat()
-HOY = date.today().isoformat()
+AYER = (hoy_operativo() - timedelta(days=1)).isoformat()
+HOY = hoy_operativo().isoformat()
 #: Texto exacto que el cierre deja en cada caso asociado (RF-62).
 CIERRE_CASO = "Reparado en FDT"
 
@@ -586,7 +587,7 @@ def test_la_descarga_entrega_masivas_y_datos_tecnicos(client, entorno, admin_tok
     tecnico = db_session.scalar(select(Tecnico).where(Tecnico.p00 == "TESTTEC"))
     db_session.add(CuadrillaTecnico(id_cuadrilla=cuadrilla,
                                     id_tecnico=tecnico.id_tecnico,
-                                    desde=date.today()))
+                                    desde=hoy_operativo()))
     db_session.commit()
 
     r = client.get("/api/v1/sync/descarga", headers=admin_token["tecnico"])

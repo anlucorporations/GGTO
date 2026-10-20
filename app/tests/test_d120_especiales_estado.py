@@ -18,6 +18,7 @@ from sqlalchemy import select
 
 from app.models import Caso, CasoEspecial
 from app.services import clasificacion
+from app.services.tiempo import hoy_operativo
 
 CASOS = "/api/v1/casos"
 ESPECIALES = "/api/v1/casos-especiales"
@@ -195,7 +196,7 @@ def test_el_cierre_que_llega_por_la_carga_offline_cierra_el_especial(
     La APK encola el cierre y lo envía en `POST /sync/carga` como una actividad
     `CIERRE`; ese camino tiene que dejar la ficha del especial en CERRADO.
     """
-    from datetime import UTC, date, datetime
+    from datetime import UTC, datetime
 
     from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos, Tecnico
 
@@ -212,12 +213,12 @@ def test_el_cierre_que_llega_por_la_carga_offline_cierra_el_especial(
     db_session.flush()
     db_session.add(
         CuadrillaTecnico(
-            id_cuadrilla=cuadrilla.id_cuadrilla, id_tecnico=id_tecnico, desde=date.today()
+            id_cuadrilla=cuadrilla.id_cuadrilla, id_tecnico=id_tecnico, desde=hoy_operativo()
         )
     )
     despacho = Despacho(
         id_central=especial["id_central"],
-        fecha=date.today(),
+        fecha=hoy_operativo(),
         id_cuadrilla=cuadrilla.id_cuadrilla,
         estado="BORRADOR",
     )

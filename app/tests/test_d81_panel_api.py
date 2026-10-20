@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from app.models import Cuadrilla, Despacho, DespachoCasos
+from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1"
 CASOS = f"{BASE}/casos"
@@ -31,7 +30,7 @@ def _entorno(client, admin_token, db_session) -> dict:
     c1 = caso("TSTPAN-1")
     c2 = caso("TSTPAN-2")
     d = Despacho(
-        id_central=id_central, fecha=date.today(), id_cuadrilla=cua.id_cuadrilla, estado="PUBLICADO"
+        id_central=id_central, fecha=hoy_operativo(), id_cuadrilla=cua.id_cuadrilla, estado="PUBLICADO"
     )
     db_session.add(d)
     db_session.flush()

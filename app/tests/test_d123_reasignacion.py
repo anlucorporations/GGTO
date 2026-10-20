@@ -27,6 +27,7 @@ from app.models import (
     Usuario,
 )
 from app.services import sync as svc_sync
+from app.services.tiempo import hoy_operativo
 
 CASOS = "/api/v1/casos"
 SYNC = "/api/v1/sync/carga"
@@ -60,7 +61,7 @@ def _cuadrilla(db_session, id_central: int, codigo: str, id_tecnico: int | None,
             CuadrillaTecnico(
                 id_cuadrilla=c.id_cuadrilla,
                 id_tecnico=id_tecnico,
-                desde=desde or (date.today() - timedelta(days=2)),
+                desde=desde or (hoy_operativo() - timedelta(days=2)),
             )
         )
         db_session.flush()
@@ -97,12 +98,12 @@ def reasignado(client, admin_token, db_session):
     assert id_tecnico is not None
     id_caso = _caso(client, admin_token["admin"], "TSTD123-1", "7014002321")
 
-    ayer = date.today() - timedelta(days=1)
+    ayer = hoy_operativo() - timedelta(days=1)
     a = _cuadrilla(db_session, id_central, "TCD123A", id_tecnico)
     b = _cuadrilla(db_session, id_central, "TCD123B", None)
     # Ayer el caso fue de A; hoy el supervisor lo movió a B.
     _despachar(db_session, id_central, a.id_cuadrilla, ayer, id_caso, estado="CERRADO")
-    _despachar(db_session, id_central, b.id_cuadrilla, date.today(), id_caso)
+    _despachar(db_session, id_central, b.id_cuadrilla, hoy_operativo(), id_caso)
     db_session.commit()
     return {
         "headers": admin_token["tecnico"],
@@ -163,7 +164,7 @@ def test_un_tecnico_no_puede_cerrar_un_caso_ajeno(client, admin_token, db_sessio
     a = _cuadrilla(db_session, id_central, "TCD123C", id_tecnico)
     b = _cuadrilla(db_session, id_central, "TCD123D", None)
     assert a.id_cuadrilla != b.id_cuadrilla
-    _despachar(db_session, id_central, b.id_cuadrilla, date.today(), id_caso)
+    _despachar(db_session, id_central, b.id_cuadrilla, hoy_operativo(), id_caso)
     db_session.commit()
 
     r = client.post(

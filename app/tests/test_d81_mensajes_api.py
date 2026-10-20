@@ -9,8 +9,6 @@ from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 
-from app.services.tiempo import dia_operativo
-
 from app.models import (
     Cuadrilla,
     CuadrillaSectorDia,
@@ -19,6 +17,7 @@ from app.models import (
     Sector,
     Tecnico,
 )
+from app.services.tiempo import dia_operativo
 
 BASE = "/api/v1"
 CASOS = f"{BASE}/casos"

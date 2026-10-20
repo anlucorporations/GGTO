@@ -9,11 +9,10 @@ cuadrilla asignada hoy).
 
 from __future__ import annotations
 
-from datetime import date
-
 import pytest
 
 from app.models import Cuadrilla, CuadrillaSectorDia, Despacho
+from app.services.tiempo import hoy_operativo
 
 ESPECIALES = "/api/v1/casos-especiales"
 
@@ -81,7 +80,7 @@ def test_alta_con_sector_y_cuadrilla_asignada_no_avisa(client, admin_token, sect
             id_central=sector["id_central"],
             id_cuadrilla=cuadrilla.id_cuadrilla,
             id_sector=sector["id"],
-            fecha=date.today(),
+            fecha=hoy_operativo(),
         )
     )
     db_session.commit()
@@ -115,11 +114,11 @@ def test_alta_con_jornada_publicada_avisa(client, admin_token, sector, db_sessio
             id_central=sector["id_central"],
             id_cuadrilla=cuadrilla.id_cuadrilla,
             id_sector=sector["id"],
-            fecha=date.today(),
+            fecha=hoy_operativo(),
         ),
         Despacho(
             id_central=sector["id_central"],
-            fecha=date.today(),
+            fecha=hoy_operativo(),
             id_cuadrilla=cuadrilla.id_cuadrilla,
             estado="PUBLICADO",
         ),
