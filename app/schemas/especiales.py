@@ -141,6 +141,9 @@ class CasoEspecialUpdate(BaseModel):
     prioridad: Prioridad | None = None
     descripcion: str | None = None
     requiere_informe: bool | None = None
+    #: D-133 · H-16: informe de atención (obligatorio al pasar a CERRADO/ATENDIDO
+    #: cuando el caso requiere informe).
+    informe: str | None = Field(default=None, max_length=4000)
     estado: EstadoEspecial | None = None
     id_solicitante: int | None = None
 
@@ -157,6 +160,7 @@ class CasoEspecialOut(BaseModel):
     tiene_id_averia: bool
     descripcion: str | None = None
     requiere_informe: bool
+    informe: str | None = None
     estado: str
     creado_en: datetime | None = None
     actualizado_en: datetime | None = None

@@ -1,0 +1,8 @@
+[2026-10-20T18:37:41+00:00] ==============================================================================
+[2026-10-20T18:37:41+00:00] MIGRACIÓN D-133 (caso_especial: informe)
+[2026-10-20T18:37:41+00:00] modo=APLICAR
+[2026-10-20T18:37:41+00:00] estado actual: {'informe': 0}
+[2026-10-20T18:37:41+00:00] Cambios pendientes:
+[2026-10-20T18:37:41+00:00]   · informe
+[2026-10-20T18:37:41+00:00] verificación post-migración: {'informe': 1}
+[2026-10-20T18:37:41+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA

@@ -146,8 +146,9 @@ class _EspecialesScreenState extends State<EspecialesScreen>
   Future<void> _cerrarCaso(Map<String, dynamic> especial, int idCaso) async {
     final datos = await showDialog<Map<String, String>>(
       context: context,
-      builder: (_) => _CerrarCasoEspecialDialog(
+      builder: (_) => CerrarCasoEspecialDialog(
         titulo: 'Cerrar el caso del especial #${especial['id_caso_especial']}',
+        requiereInforme: especial['requiere_informe'] == true,
       ),
     );
     if (datos == null || !mounted) return;
@@ -157,6 +158,25 @@ class _EspecialesScreenState extends State<EspecialesScreen>
       modo: datos['modo'] ?? 'IVR',
       descripcion: datos['descripcion'] ?? '',
     );
+    // D-133 · H-16: el informe del cierre queda guardado en el especial.
+    final informe = (datos['informe'] ?? '').trim();
+    if (informe.isNotEmpty) {
+      try {
+        await ApiClient.patch(
+          '/casos-especiales/${especial['id_caso_especial']}',
+          data: {'informe': informe},
+        );
+      } catch (error) {
+        if (mounted) {
+          _avisar(
+            error is ApiError
+                ? 'Caso cerrado, pero el informe no se guardó: ${error.mensaje}'
+                : 'Caso cerrado, pero el informe no se guardó.',
+            error: true,
+          );
+        }
+      }
+    }
     await _cargar(silencioso: true);
     if (mounted) _avisar(resultado.mensaje, error: !resultado.valida);
   }
@@ -616,24 +636,32 @@ class _CrearEspecialDialogState extends State<_CrearEspecialDialog> {
 ///
 /// Pide el modo de cierre del catálogo (IVR · COS · SACAS) y una descripción de
 /// lo realizado (mínimo 10 caracteres, la misma regla que la ficha del técnico).
-class _CerrarCasoEspecialDialog extends StatefulWidget {
-  const _CerrarCasoEspecialDialog({required this.titulo});
+class CerrarCasoEspecialDialog extends StatefulWidget {
+  const CerrarCasoEspecialDialog({
+    super.key,
+    required this.titulo,
+    this.requiereInforme = false,
+  });
 
   final String titulo;
+  /// D-133 · H-16: si el especial lo requiere, el informe es obligatorio.
+  final bool requiereInforme;
 
   @override
-  State<_CerrarCasoEspecialDialog> createState() =>
+  State<CerrarCasoEspecialDialog> createState() =>
       _CerrarCasoEspecialDialogState();
 }
 
-class _CerrarCasoEspecialDialogState extends State<_CerrarCasoEspecialDialog> {
+class _CerrarCasoEspecialDialogState extends State<CerrarCasoEspecialDialog> {
   String _modo = 'IVR';
   final _descripcion = TextEditingController();
+  final _informe = TextEditingController();
   String? _error;
 
   @override
   void dispose() {
     _descripcion.dispose();
+    _informe.dispose();
     super.dispose();
   }
 
@@ -643,7 +671,18 @@ class _CerrarCasoEspecialDialogState extends State<_CerrarCasoEspecialDialog> {
       setState(() => _error = 'Describa lo realizado (mínimo 10 caracteres).');
       return;
     }
-    Navigator.pop(context, {'modo': _modo, 'descripcion': texto});
+    // D-133 · H-16: el especial que requiere informe no se cierra sin él.
+    final informe = _informe.text.trim();
+    if (widget.requiereInforme && informe.length < 20) {
+      setState(() => _error =
+          'Este especial requiere un informe de atención (mínimo 20 caracteres).');
+      return;
+    }
+    Navigator.pop(context, {
+      'modo': _modo,
+      'descripcion': texto,
+      'informe': informe,
+    });
   }
 
   @override
@@ -672,6 +711,19 @@ class _CerrarCasoEspecialDialogState extends State<_CerrarCasoEspecialDialog> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (widget.requiereInforme) ...[
+              const SizedBox(height: 10),
+              TextField(
+                key: const Key('especial-informe'),
+                controller: _informe,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Informe de atención',
+                  helperText: 'Obligatorio: mínimo 20 caracteres.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 8),
               Text(

@@ -456,7 +456,23 @@ def actualizar_especial(
         if caso is None:
             raise HTTPException(status_code=404, detail="Caso asociado no encontrado")
         resolver_central(db, caso.id_central, cargar_config(db), usuario)
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+
+    cambios = datos.model_dump(exclude_unset=True)
+    # D-133 · H-16: `requiere_informe` deja de ser decorativo. Un especial que lo
+    # requiere no pasa a ATENDIDO/CERRADO sin un informe de atención.
+    estado_destino = str(cambios.get("estado") or obj.estado or "").upper()
+    requiere = bool(cambios.get("requiere_informe", obj.requiere_informe))
+    informe = str(cambios.get("informe", obj.informe) or "").strip()
+    if requiere and estado_destino in clasificacion.ESTADOS_ESPECIAL_FINALES and len(informe) < 20:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Este caso especial requiere un informe de atención de al menos "
+                "20 caracteres para pasar a "
+                f"{estado_destino}: complete el campo `informe`."
+            ),
+        )
+    for campo, valor in cambios.items():
         setattr(obj, campo, valor)
     db.commit()
     db.refresh(obj)

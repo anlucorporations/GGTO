@@ -413,6 +413,8 @@ CREATE TABLE IF NOT EXISTS caso_especial (
     tiene_id_averia     boolean      NOT NULL DEFAULT false,
     descripcion         text,
     requiere_informe    boolean      NOT NULL DEFAULT true,
+    -- D-133: informe de atención (obligatorio al cerrar si requiere_informe).
+    informe             text,
     estado              varchar(20)  NOT NULL DEFAULT 'ABIERTO'
                         CHECK (estado IN ('ABIERTO','EN_PROCESO','ATENDIDO','CERRADO')),
     creado_en           timestamptz  NOT NULL DEFAULT now(),
@@ -1152,6 +1154,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_actividad_local
 ALTER TABLE evidencia ADD COLUMN IF NOT EXISTS id_caso bigint
     REFERENCES caso(id_caso) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS ix_evidencia_caso ON evidencia (id_caso);
+
+-- 13.9 Informe de atención del especial (D-133 · H-16).
+ALTER TABLE caso_especial ADD COLUMN IF NOT EXISTS informe text;
 
 -- 13.8 Parámetros del incremento.
 INSERT INTO configuracion (clave, valor, descripcion) VALUES

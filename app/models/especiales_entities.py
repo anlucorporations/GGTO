@@ -58,6 +58,8 @@ class CasoEspecial(Base):
     tiene_id_averia: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     descripcion: Mapped[str | None] = mapped_column(Text)
     requiere_informe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    #: D-133 · H-16: informe de atención exigido al cerrar si `requiere_informe`.
+    informe: Mapped[str | None] = mapped_column(Text)
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="ABIERTO")
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

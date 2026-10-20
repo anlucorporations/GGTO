@@ -56,6 +56,8 @@ interface EdicionForm {
   estado: EstadoEspecial;
   descripcion: string;
   requiere_informe: boolean;
+  // D-133 · H-16: informe de atención (obligatorio al cerrar si requiere_informe).
+  informe: string;
 }
 
 function detalleDe(e: unknown, fallback: string): string {
@@ -76,6 +78,7 @@ function aEdicion(c: CasoEspecialOut): EdicionForm {
     estado: c.estado as EstadoEspecial,
     descripcion: c.descripcion ?? '',
     requiere_informe: c.requiere_informe,
+    informe: c.informe ?? '',
   };
 }
 
@@ -109,6 +112,7 @@ export default function Especiales() {
     estado: 'ABIERTO',
     descripcion: '',
     requiere_informe: true,
+    informe: '',
   });
   const [guardando, setGuardando] = useState(false);
   const [crearAbierto, setCrearAbierto] = useState(false);
@@ -269,6 +273,9 @@ export default function Especiales() {
     }
     if (edicion.requiere_informe !== seleccion.requiere_informe) {
       payload.requiere_informe = edicion.requiere_informe;
+    }
+    if (edicion.informe !== (seleccion.informe ?? '')) {
+      payload.informe = nv(edicion.informe);
     }
     if (Object.keys(payload).length === 0) {
       setOk('No hay cambios que guardar.');
@@ -690,6 +697,18 @@ export default function Especiales() {
                     }
                   />
                   <label htmlFor="edit-informe">Requiere informe</label>
+                  {edicion.requiere_informe && (
+                    <div style={{ marginTop: 8 }}>
+                      <label htmlFor="edit-informe-texto">Informe de atención</label>
+                      <textarea
+                        id="edit-informe-texto"
+                        value={edicion.informe}
+                        onChange={(e) => setEdicion({ ...edicion, informe: e.target.value })}
+                        placeholder="Obligatorio al cerrar: mínimo 20 caracteres (D-133)"
+                        rows={3}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="campo campo-ancho">
                   <label htmlFor="edit-descripcion">Descripción</label>

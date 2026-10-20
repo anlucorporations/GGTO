@@ -163,8 +163,18 @@ def test_filtros_y_actualizacion_de_especiales(client, entorno):
                        headers=entorno["headers"]).json()
     assert len(altas) == 1
 
+    # D-133: cerrar un especial que requiere informe exige el informe (H-16).
     r = client.patch(f"{ESPECIALES}/{creados[0]}", json={"estado": "ATENDIDO"},
                      headers=entorno["headers"])
+    assert r.status_code == 422
+    r = client.patch(
+        f"{ESPECIALES}/{creados[0]}",
+        json={
+            "estado": "ATENDIDO",
+            "informe": "Se atendió el referido y se verificó el servicio (D-133).",
+        },
+        headers=entorno["headers"],
+    )
     assert r.status_code == 200
     assert r.json()["estado"] == "ATENDIDO"
 

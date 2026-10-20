@@ -986,6 +986,8 @@ export interface CasoEspecialUpdate {
   prioridad?: PrioridadEspecial;
   descripcion?: string | null;
   requiere_informe?: boolean;
+  /** D-133 · H-16: informe de atención (obligatorio al cerrar si requiere_informe). */
+  informe?: string | null;
   estado?: EstadoEspecial;
   id_solicitante?: number | null;
 }
@@ -1000,6 +1002,7 @@ export interface CasoEspecialOut {
   tiene_id_averia: boolean;
   descripcion: string | null;
   requiere_informe: boolean;
+  informe: string | null;
   estado: string;
   creado_en: string | null;
   actualizado_en: string | null;
