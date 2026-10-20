@@ -37,6 +37,7 @@ void main() {
 
     test('ese tipo NUNCA se traduce en un cambio de estado (causa del 422)', () {
       final estado = estadoDeCarga(
+        idLocal: 41,
         idCaso: 900,
         tipo: 'DIFERIDO_EVIDENCIAS',
         payload: {'evidencias': ['X.jpg']},
@@ -46,6 +47,7 @@ void main() {
 
     test('el diferido en sí sigue siendo un cambio de estado', () {
       final estado = estadoDeCarga(
+        idLocal: 42,
         idCaso: 900,
         tipo: 'DIFERIDO',
         payload: {'estado_actual': 'DIFERIDO', 'motivo_estado': 'Cliente ausente'},
@@ -101,7 +103,9 @@ void main() {
           isNull,
           reason: '$tipo no crea actividad',
         );
-        final estado = estadoDeCarga(idCaso: 5, tipo: tipo, payload: const {});
+        final estado = estadoDeCarga(
+          idLocal: 1, idCaso: 5, tipo: tipo, payload: const {},
+        );
         expect(estado, isNotNull, reason: '$tipo debe cambiar el estado');
         expect(estado!['estado_nuevo'], tipo);
       }
@@ -115,7 +119,10 @@ void main() {
           ),
           isNull,
         );
-        expect(estadoDeCarga(idCaso: 5, tipo: tipo, payload: const {}), isNull);
+        expect(
+          estadoDeCarga(idLocal: 1, idCaso: 5, tipo: tipo, payload: const {}),
+          isNull,
+        );
       }
     });
   });

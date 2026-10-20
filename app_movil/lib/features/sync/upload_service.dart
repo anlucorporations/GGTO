@@ -234,7 +234,12 @@ class UploadService {
         idsCasoBatch.add(idCaso);
         continue;
       }
-      final estado = estadoDeCarga(idCaso: idCaso, tipo: tipo, payload: payload);
+      final estado = estadoDeCarga(
+        idLocal: idLocal,
+        idCaso: idCaso,
+        tipo: tipo,
+        payload: payload,
+      );
       if (estado != null) {
         estados.add(estado);
         idsBatch.add(idLocal);

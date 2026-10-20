@@ -88,10 +88,14 @@ Map<String, dynamic>? actividadDeCarga({
   }
 }
 
-/// Estado objetivo que produce una acción de la cola (D-125).
+/// Estado objetivo que produce una acción de la cola (D-129).
 ///
-/// `null` si la acción no se traduce en un cambio de estado.
+/// `null` si la acción no se traduce en un cambio de estado. Lleva el id local de
+/// la acción para que el servidor pueda aplicar el lote en **orden cronológico**
+/// (D-129 · H-12): sin él, un CONTACTADO encolado antes de un CIERRE se aplicaba
+/// al final y revertía el cierre.
 Map<String, dynamic>? estadoDeCarga({
+  required int idLocal,
   required int idCaso,
   required String tipo,
   required Map<String, dynamic> payload,
@@ -105,6 +109,7 @@ Map<String, dynamic>? estadoDeCarga({
       // antigua), se usa el tipo local como estado objetivo.
       final objetivo = (payload['estado_actual'] ?? tipo).toString();
       return {
+        'id_actividad_local': idLocal,
         'id_caso': idCaso,
         'estado_nuevo': objetivo,
         'motivo': payload['motivo_estado'],

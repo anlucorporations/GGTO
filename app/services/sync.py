@@ -723,136 +723,155 @@ def aplicar_carga(
             return None
         return caso
 
-    for act in payload.get("actividades", []):
+    # D-129 · H-12: el lote se aplica en **orden cronológico**. Antes se hacían
+    # primero todas las actividades y después los estados, así que un CONTACTADO
+    # encolado antes de un CIERRE se aplicaba al final y revertía el cierre.
+    # La clave es el id local de la acción en la cola (su orden real en el
+    # dispositivo); si falta (cliente antiguo), se conserva el orden de llegada.
+    lote: list[tuple[int, int, str, dict[str, Any]]] = []
+    for indice, act in enumerate(payload.get("actividades", [])):
         local = act.get("id_actividad_local")
-        local = int(local) if isinstance(local, int) else None
-        caso = _validar_acceso(int(act["id_caso"]))
-        if caso is None:
-            rechazadas += 1
-            _rechazar(int(act["id_caso"]), "El caso no se puede gestionar desde su cuadrilla", local)
-            continue
+        clave = int(local) if isinstance(local, int) else 1_000_000 + indice
+        lote.append((clave, indice, "actividad", act))
+    for indice, est in enumerate(payload.get("estados", [])):
+        local = est.get("id_actividad_local")
+        clave = int(local) if isinstance(local, int) else 1_100_000 + indice
+        lote.append((clave, indice, "estado", est))
+    lote.sort(key=lambda elemento: (elemento[0], elemento[1]))
 
-        # D-121 · H-01: idempotencia. Si la acción ya se aplicó (reenvío del mismo
-        # lote tras un timeout, reintento o doble emisor), se confirma sin volver
-        # a escribir la actividad ni a mover el caso.
-        previa = _ya_aplicada(local)
-        if previa is not None:
-            aceptadas += 1
-            _aceptar(caso.id_caso, local, previa.id_actividad, duplicada=True)
-            continue
-
-        tipo = str(act.get("tipo", "")).upper()
-        tipo_db = _tipo_db(tipo)
-        if tipo_db is None:
-            # Tipos sin fila en `actividad` (p. ej. CITA, que se registra como
-            # estado): se aplica el cambio de estado y no se escribe actividad.
-            estado_sin_fila = _estado_por_tipo(tipo)
-            if estado_sin_fila:
-                _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
-                                  usuario.p00)
-            aceptadas += 1
-            _aceptar(caso.id_caso, local)
-            continue
-
-        if tipo_db == "CIERRE":
-            # D-121 · H-03: el cierre que llega de la cola offline pasa por las
-            # **mismas reglas** que el cierre de la ficha (método del catálogo,
-            # caso no cerrado, clasificación REPARACIÓN↔REFERIDO y auditoría),
-            # en vez de escribir la actividad a mano y dejar `id_metodo` en NULL.
-            try:
-                cierre = svc_resolucion.cerrar_caso(
-                    db,
-                    caso,
-                    modo=str(act.get("modo") or ""),
-                    descripcion=str(act.get("reporte_corto") or ""),
-                    evidencias=[
-                        str(s).strip()
-                        for s in (act.get("evidencias") or [])
-                        if str(s).strip()
-                    ],
-                    id_causa=act.get("id_causa"),
-                    usuario=usuario,
-                    sincronizado=True,
-                    id_actividad_local=local,
-                    dispositivo_id=dispositivo,
-                )
-            except svc_resolucion.CierreInvalido as exc:
-                errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje,
-                                "id_actividad_local": local})
+    for _clave, _indice, clase, datos in lote:
+        if clase == "actividad":
+            act = datos
+            local = act.get("id_actividad_local")
+            local = int(local) if isinstance(local, int) else None
+            caso = _validar_acceso(int(act["id_caso"]))
+            if caso is None:
                 rechazadas += 1
-                _rechazar(caso.id_caso, exc.mensaje, local)
+                _rechazar(int(act["id_caso"]), "El caso no se puede gestionar desde su cuadrilla", local)
                 continue
-            aceptadas += 1
-            _aceptar(caso.id_caso, local, cierre.id_actividad)
-            continue
 
-        actividad = Actividad(
-            id_caso=caso.id_caso,
-            id_usuario=usuario.id_usuario,
-            id_cuadrilla=c.id_cuadrilla if c else None,
-            tipo=tipo_db,
-            resultado=_resultado_db(tipo_db, act.get("resultado")),
-            reporte_corto=act.get("reporte_corto"),
-            id_metodo=_resolver_metodo(db, tipo_db, act),
-            id_causa=act.get("id_causa"),
-            fecha_hora=act.get("fecha_hora") or datetime.now(UTC),
-            latitud=act.get("latitud"),
-            longitud=act.get("longitud"),
-            sincronizado=True,
-            id_actividad_local=local,
-            dispositivo_id=dispositivo,
-        )
-        db.add(actividad)
-        db.flush()
+            # D-121 · H-01: idempotencia. Si la acción ya se aplicó (reenvío del mismo
+            # lote tras un timeout, reintento o doble emisor), se confirma sin volver
+            # a escribir la actividad ni a mover el caso.
+            previa = _ya_aplicada(local)
+            if previa is not None:
+                aceptadas += 1
+                _aceptar(caso.id_caso, local, previa.id_actividad, duplicada=True)
+                continue
 
-        seriales = act.get("evidencias", [])
-        for idx, serial in enumerate(seriales, start=1):
-            limpio = str(serial).strip()
-            if not limpio:
+            tipo = str(act.get("tipo", "")).upper()
+            tipo_db = _tipo_db(tipo)
+            if tipo_db is None:
+                # Tipos sin fila en `actividad` (p. ej. CITA, que se registra como
+                # estado): se aplica el cambio de estado y no se escribe actividad.
+                estado_sin_fila = _estado_por_tipo(tipo)
+                if estado_sin_fila:
+                    _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
+                                      usuario.p00)
+                aceptadas += 1
+                _aceptar(caso.id_caso, local)
                 continue
-            existente = db.scalar(select(Evidencia).where(Evidencia.serial_imagen == limpio))
-            if existente is not None:
-                # Vincular la evidencia ya subida con esta actividad.
-                if existente.id_actividad is None:
-                    existente.id_actividad = actividad.id_actividad
+
+            if tipo_db == "CIERRE":
+                # D-121 · H-03: el cierre que llega de la cola offline pasa por las
+                # **mismas reglas** que el cierre de la ficha (método del catálogo,
+                # caso no cerrado, clasificación REPARACIÓN↔REFERIDO y auditoría),
+                # en vez de escribir la actividad a mano y dejar `id_metodo` en NULL.
+                try:
+                    cierre = svc_resolucion.cerrar_caso(
+                        db,
+                        caso,
+                        modo=str(act.get("modo") or ""),
+                        descripcion=str(act.get("reporte_corto") or ""),
+                        evidencias=[
+                            str(s).strip()
+                            for s in (act.get("evidencias") or [])
+                            if str(s).strip()
+                        ],
+                        id_causa=act.get("id_causa"),
+                        usuario=usuario,
+                        sincronizado=True,
+                        id_actividad_local=local,
+                        dispositivo_id=dispositivo,
+                    )
+                except svc_resolucion.CierreInvalido as exc:
+                    errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje,
+                                    "id_actividad_local": local})
+                    rechazadas += 1
+                    _rechazar(caso.id_caso, exc.mensaje, local)
+                    continue
+                aceptadas += 1
+                _aceptar(caso.id_caso, local, cierre.id_actividad)
                 continue
-            db.add(
-                Evidencia(
-                    id_actividad=actividad.id_actividad,
-                    tipo="DEMO",
-                    serial_imagen=f"{caso.id_averia}-A{actividad.id_actividad}-{tipo_db}-{idx:02d}"[:160],
-                    ruta_remota=limpio[:255],
-                    latitud=act.get("latitud"),
-                    longitud=act.get("longitud"),
-                    fecha_hora=actividad.fecha_hora,
-                    origen_camara=True,
-                )
+
+            actividad = Actividad(
+                id_caso=caso.id_caso,
+                id_usuario=usuario.id_usuario,
+                id_cuadrilla=c.id_cuadrilla if c else None,
+                tipo=tipo_db,
+                resultado=_resultado_db(tipo_db, act.get("resultado")),
+                reporte_corto=act.get("reporte_corto"),
+                id_metodo=_resolver_metodo(db, tipo_db, act),
+                id_causa=act.get("id_causa"),
+                fecha_hora=act.get("fecha_hora") or datetime.now(UTC),
+                latitud=act.get("latitud"),
+                longitud=act.get("longitud"),
+                sincronizado=True,
+                id_actividad_local=local,
+                dispositivo_id=dispositivo,
             )
+            db.add(actividad)
+            db.flush()
 
-        estado_objetivo = _estado_por_tipo(tipo)
-        if estado_objetivo:
-            _registrar_estado(db, caso, estado_objetivo, act.get("reporte_corto"), usuario.p00)
-        aceptadas += 1
-        _aceptar(caso.id_caso, local, actividad.id_actividad)
+            seriales = act.get("evidencias", [])
+            for idx, serial in enumerate(seriales, start=1):
+                limpio = str(serial).strip()
+                if not limpio:
+                    continue
+                existente = db.scalar(select(Evidencia).where(Evidencia.serial_imagen == limpio))
+                if existente is not None:
+                    # Vincular la evidencia ya subida con esta actividad.
+                    if existente.id_actividad is None:
+                        existente.id_actividad = actividad.id_actividad
+                    continue
+                db.add(
+                    Evidencia(
+                        id_actividad=actividad.id_actividad,
+                        tipo="DEMO",
+                        serial_imagen=f"{caso.id_averia}-A{actividad.id_actividad}-{tipo_db}-{idx:02d}"[:160],
+                        ruta_remota=limpio[:255],
+                        latitud=act.get("latitud"),
+                        longitud=act.get("longitud"),
+                        fecha_hora=actividad.fecha_hora,
+                        origen_camara=True,
+                    )
+                )
 
-    for est in payload.get("estados", []):
-        caso = _validar_acceso(int(est["id_caso"]))
-        if caso is None:
-            rechazadas += 1
-            continue
-        nuevo = str(est.get("estado_nuevo", "")).upper()
-        estados_validos = {
-            "NUEVO", "ASIGNADO", "CONTACTADO", "CITADO", "DIFERIDO",
-            "EN_GESTION", "ENRUTADO", "CERRADO", "CANCELADO",
-        }
-        if nuevo not in estados_validos:
-            errores.append({"id_caso": caso.id_caso, "mensaje": f"Estado inválido: {nuevo}"})
-            rechazadas += 1
-            continue
-        if nuevo == caso.estado_actual:
-            continue
-        _registrar_estado(db, caso, nuevo, est.get("motivo"), usuario.p00)
-        aceptadas += 1
+            estado_objetivo = _estado_por_tipo(tipo)
+            if estado_objetivo:
+                _registrar_estado(db, caso, estado_objetivo, act.get("reporte_corto"), usuario.p00)
+            aceptadas += 1
+            _aceptar(caso.id_caso, local, actividad.id_actividad)
+
+        else:
+            est = datos
+            caso = _validar_acceso(int(est["id_caso"]))
+            if caso is None:
+                rechazadas += 1
+                continue
+            nuevo = str(est.get("estado_nuevo", "")).upper()
+            estados_validos = {
+                "NUEVO", "ASIGNADO", "CONTACTADO", "CITADO", "DIFERIDO",
+                "EN_GESTION", "ENRUTADO", "CERRADO", "CANCELADO",
+            }
+            if nuevo not in estados_validos:
+                errores.append({"id_caso": caso.id_caso, "mensaje": f"Estado inválido: {nuevo}"})
+                rechazadas += 1
+                continue
+            if nuevo == caso.estado_actual:
+                continue
+            _registrar_estado(db, caso, nuevo, est.get("motivo"), usuario.p00)
+            aceptadas += 1
 
     db.commit()
     return {

@@ -167,6 +167,10 @@ class EstadoSyncIn(BaseModel):
     id_caso: int
     estado_nuevo: str
     motivo: str | None = Field(default=None, max_length=200)
+    #: D-129 · H-12: id de la acción en la cola del dispositivo. Ordena el lote
+    #: junto con las actividades (sin él, un CONTACTADO anterior podía aplicarse
+    #: después de un CIERRE y revertirlo).
+    id_actividad_local: int | None = None
 
 
 class SyncCargaIn(BaseModel):
