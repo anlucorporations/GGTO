@@ -6,7 +6,7 @@ import re
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import false, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
@@ -69,6 +69,25 @@ def _o_404(db: Session, id_caso: int) -> Caso:
     if caso is None:
         raise HTTPException(status_code=404, detail="Caso no encontrado")
     return caso
+
+
+def _acotar_a_lo_permitido(
+    condiciones: list, db: Session, usuario: Usuario
+) -> list:
+    """Añade a `condiciones` el alcance de la cuadrilla para el TÉCNICO (D-130).
+
+    Los roles de gestión ven todo el alcance de su central; el TÉCNICO solo los
+    casos que puede gestionar (`sync.casos_permitidos`: su cuadrilla vigente más
+    la ventana de reasignación de D-123). Sin cuadrilla vigente, conjunto vacío.
+    """
+    permitidos = svc_sync.casos_permitidos(db, usuario)
+    if permitidos is None:
+        return condiciones
+    if not permitidos:
+        condiciones.append(false())
+    else:
+        condiciones.append(Caso.id_caso.in_(permitidos))
+    return condiciones
 
 
 def _caso_de_campo(db: Session, usuario: Usuario, id_caso: int) -> Caso:
@@ -287,6 +306,10 @@ def listar(
     if hasta is not None:
         condiciones.append(Caso.fecha_reporte <= hasta)
 
+    # D-130 · H-13: un TÉCNICO solo ve los casos que puede gestionar (su cuadrilla
+    # vigente y la ventana de D-123); los roles de gestión no tienen restricción.
+    _acotar_a_lo_permitido(condiciones, db, usuario)
+
     total = db.scalar(select(func.count()).select_from(Caso).where(*condiciones)) or 0
     items = db.scalars(
         select(Caso)
@@ -311,7 +334,7 @@ def listar(
 @router.get("/buscar", response_model=list[CasoOut], summary="Buscar por id_averia o teléfono")
 def buscar(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_lectura),
+    usuario: Usuario = Depends(_lectura),
     q: str | None = Query(default=None, description="Incidente o número de teléfono"),
     id_averia: str | None = Query(default=None),
     telefono: str | None = Query(default=None),
@@ -322,6 +345,11 @@ def buscar(
             status_code=422,
             detail="Indique `q`, `id_averia` o `telefono` para buscar",
         )
+    # D-130 · H-13: la búsqueda se acota a la **central del usuario** y, para el
+    # TÉCNICO, a los casos que puede gestionar (antes no acotaba ni por central).
+    central = resolver_central(db, None, cargar_config(db), usuario)
+    filtros: list = [Caso.id_central == central.id_central]
+    _acotar_a_lo_permitido(filtros, db, usuario)
     condiciones = []
     if q:
         termino = q.strip()
@@ -351,6 +379,7 @@ def buscar(
     encontrados = list(
         db.scalars(
             select(Caso)
+            .where(*filtros)
             .where(or_(*condiciones) if len(condiciones) > 1 else condiciones[0])
             .order_by(Caso.fecha_reporte.desc().nullslast())
             .limit(limite)

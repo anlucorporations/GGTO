@@ -14,12 +14,7 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy import select
 
-from app.models import (
-    Despacho,
-    DespachoCasos,
-    Evidencia,
-    Tecnico,
-)
+from app.models import Evidencia
 from app.tests.conftest import asignar_caso_al_tecnico
 
 CASOS = "/api/v1/casos"
