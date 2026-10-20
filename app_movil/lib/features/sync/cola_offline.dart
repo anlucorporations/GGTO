@@ -30,3 +30,86 @@ List<Map<String, dynamic>> accionesParaOutbox(
   List<Map<String, dynamic>> acciones,
 ) =>
     acciones.where((accion) => !esTipoDeCarga('${accion['tipo']}')).toList();
+
+/// Cuerpo de la **actividad** de `/sync/carga` para una acción de la cola (D-125).
+///
+/// `null` cuando la acción no viaja en el lote: su dueño es el outbox clásico
+/// (citas, fallas masivas, evidencias sueltas). Es la traducción que fija H-08:
+/// las evidencias de un diferido viajan como actividad `CONTACTO` —con sus
+/// seriales— y **nunca** como un estado contra `/casos/{id}/estado` (que exigía
+/// `estado_actual` y devolvía 422).
+Map<String, dynamic>? actividadDeCarga({
+  required int idLocal,
+  required int idCaso,
+  required String tipo,
+  required Map<String, dynamic> payload,
+  required String fechaHora,
+}) {
+  switch (tipo.trim().toUpperCase()) {
+    case 'CIERRE':
+      return {
+        'id_actividad_local': idLocal,
+        'id_caso': idCaso,
+        'tipo': 'CIERRE',
+        'resultado': 'EXITOSO',
+        'reporte_corto': payload['descripcion'],
+        // El cierre de campo guarda el modo (IVR/COS/SACAS) sin conexión; el
+        // servidor lo traduce al catálogo para no perderlo.
+        'modo': payload['modo'],
+        'id_metodo': payload['id_metodo'],
+        'id_causa': payload['id_causa'],
+        'fecha_hora': fechaHora,
+        'evidencias': payload['evidencias'] ?? [],
+      };
+    case 'ENRUTADO':
+      return {
+        'id_actividad_local': idLocal,
+        'id_caso': idCaso,
+        'tipo': 'ENRUTADO',
+        'reporte_corto': payload['motivo'],
+        'id_metodo': payload['id_metodo'],
+        'fecha_hora': fechaHora,
+        'evidencias': payload['evidencias'] ?? [],
+      };
+    case 'DIFERIDO_EVIDENCIAS':
+      // H-08: la evidencia del diferido viaja como actividad de CONTACTO. Así
+      // queda vinculada a una actividad real y no hay petición al endpoint de
+      // estados (la que devolvía 422 y dejaba la acción en ERROR para siempre).
+      return {
+        'id_actividad_local': idLocal,
+        'id_caso': idCaso,
+        'tipo': 'CONTACTO',
+        'reporte_corto': 'Evidencias del diferido',
+        'fecha_hora': fechaHora,
+        'evidencias': payload['evidencias'] ?? [],
+      };
+    default:
+      return null;
+  }
+}
+
+/// Estado objetivo que produce una acción de la cola (D-125).
+///
+/// `null` si la acción no se traduce en un cambio de estado.
+Map<String, dynamic>? estadoDeCarga({
+  required int idCaso,
+  required String tipo,
+  required Map<String, dynamic> payload,
+}) {
+  switch (tipo.trim().toUpperCase()) {
+    case 'CONTACTADO':
+    case 'CITADO':
+    case 'DIFERIDO':
+    case 'ESTADO':
+      // El payload de `_enviarEstado` trae `estado_actual`; si viene vacío (cola
+      // antigua), se usa el tipo local como estado objetivo.
+      final objetivo = (payload['estado_actual'] ?? tipo).toString();
+      return {
+        'id_caso': idCaso,
+        'estado_nuevo': objetivo,
+        'motivo': payload['motivo_estado'],
+      };
+    default:
+      return null;
+  }
+}

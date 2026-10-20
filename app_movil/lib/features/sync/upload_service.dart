@@ -6,6 +6,7 @@ import '../../core/api_client.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
 import '../../core/sync_lock.dart';
+import 'cola_offline.dart';
 import 'sync_sesion.dart';
 
 /// Resultado de una operación CARGA (D-73).
@@ -215,66 +216,33 @@ class UploadService {
       final endpoint = '${accion['endpoint']}';
       final idCaso = _extraerIdCaso(payload, endpoint);
       if (idCaso == null) continue;
-
-      switch (tipo) {
-        case 'CIERRE':
-          actividades.add({
-            'id_actividad_local': accion['id'],
-            'id_caso': idCaso,
-            'tipo': 'CIERRE',
-            'resultado': 'EXITOSO',
-            'reporte_corto': payload['descripcion'],
-            // El cierre de campo guarda el modo (IVR/COS/SACAS) sin conexión; el
-            // servidor lo traduce al catálogo para no perderlo.
-            'modo': payload['modo'],
-            'id_metodo': payload['id_metodo'],
-            'id_causa': payload['id_causa'],
-            'fecha_hora': DateTime.now().toIso8601String(),
-            'evidencias': payload['evidencias'] ?? [],
-          });
-        case 'CONTACTADO':
-        case 'CITADO':
-        case 'DIFERIDO':
-        case 'ESTADO':
-          // El payload de `_enviarEstado` trae `estado_actual`; si viene vacío
-          // (cola antigua), se usa el tipo local como estado objetivo.
-          final estadoObjetivo = (payload['estado_actual'] ?? tipo).toString();
-          estados.add({
-            'id_caso': idCaso,
-            'estado_nuevo': estadoObjetivo,
-            'motivo': payload['motivo_estado'],
-          });
-        case 'ENRUTADO':
-          actividades.add({
-            'id_actividad_local': accion['id'],
-            'id_caso': idCaso,
-            'tipo': 'ENRUTADO',
-            'reporte_corto': payload['motivo'],
-            'id_metodo': payload['id_metodo'],
-            'fecha_hora': DateTime.now().toIso8601String(),
-            'evidencias': payload['evidencias'] ?? [],
-          });
-        case 'DIFERIDO_EVIDENCIAS':
-          // Evidencias asociadas a un diferido ya encolado (o aplicado): viajan
-          // como actividad de contacto para no perder la foto. La acción se
-          // borra al confirmar el servidor (no tiene endpoint propio).
-          actividades.add({
-            'id_actividad_local': accion['id'],
-            'id_caso': idCaso,
-            'tipo': 'CONTACTO',
-            'reporte_corto': 'Evidencias del diferido',
-            'fecha_hora': DateTime.now().toIso8601String(),
-            'evidencias': payload['evidencias'] ?? [],
-          });
-          // (idsBatch se añade más abajo, fuera del switch)
-          break;
-        default:
-          // FALLA_MASIVA / CITA / EVIDENCIA suelta: las procesa el outbox
-          // clásico (`SyncProvider.sincronizar()`) contra su endpoint original.
-          continue;
+      // D-125 · H-08: la traducción vive en `cola_offline.dart` (función pura,
+      // probada). En particular, las evidencias de un diferido viajan como
+      // actividad CONTACTO y no como un estado contra `/casos/{id}/estado`.
+      final idLocal = accion['id'] as int;
+      final ahora = DateTime.now().toIso8601String();
+      final actividad = actividadDeCarga(
+        idLocal: idLocal,
+        idCaso: idCaso,
+        tipo: tipo,
+        payload: payload,
+        fechaHora: ahora,
+      );
+      if (actividad != null) {
+        actividades.add(actividad);
+        idsBatch.add(idLocal);
+        idsCasoBatch.add(idCaso);
+        continue;
       }
-      idsBatch.add(accion['id'] as int);
-      idsCasoBatch.add(idCaso);
+      final estado = estadoDeCarga(idCaso: idCaso, tipo: tipo, payload: payload);
+      if (estado != null) {
+        estados.add(estado);
+        idsBatch.add(idLocal);
+        idsCasoBatch.add(idCaso);
+        continue;
+      }
+      // FALLA_MASIVA / CITA / EVIDENCIA suelta: las procesa el outbox clásico
+      // (`SyncProvider.sincronizar()`) contra su endpoint original.
     }
 
     if (actividades.isNotEmpty || estados.isNotEmpty) {
