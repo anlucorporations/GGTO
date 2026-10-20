@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../features/sync/merge_casos.dart';
+
 /// Acceso a la base local (SQLite) de la aplicación.
 ///
 /// Guarda: el universo de casos descargado (para operar **sin conexión**),
@@ -191,11 +193,17 @@ class DatabaseHelper {
 
   /// DESCARGA diferencial (D-73): inserta/actualiza solo los casos recibidos,
   /// sin borrar la caché existente. Devuelve `(nuevos, actualizados)`.
+  ///
+  /// D-126 · H-09: si el caso tiene **trabajo sin enviar** (acción en la cola o
+  /// `pendiente_sync`), se refrescan sus datos pero se conserva el estado local;
+  /// la descarga no puede deshacer lo que el técnico acaba de hacer.
   Future<(int nuevos, int actualizados)> mergearCasos(List<dynamic> casos) async {
     final db = await database;
     final ahora = _ahora();
     var nuevos = 0;
     var actualizados = 0;
+    // Claves (avería o id de caso) con acciones o fotos sin enviar.
+    final protegidos = await clavesConTrabajoPendiente();
     await db.transaction((txn) async {
       for (final caso in casos) {
         if (caso is! Map) continue;
@@ -203,18 +211,36 @@ class DatabaseHelper {
         if (idAveria.isEmpty) continue;
         final existentes = await txn.query(
           'caso_local',
-          columns: ['id'],
+          columns: ['id', 'datos_json'],
           where: 'id = ?',
           whereArgs: [idAveria],
           limit: 1,
+        );
+        Map<String, dynamic>? local;
+        if (existentes.isNotEmpty) {
+          try {
+            final crudo = jsonDecode('${existentes.first['datos_json'] ?? ''}');
+            if (crudo is Map) local = Map<String, dynamic>.from(crudo);
+          } catch (_) {
+            // Fila corrupta: se reemplaza por la del servidor.
+          }
+        }
+        final idCaso = caso['id_caso'];
+        final tienePendiente = protegidos.contains(idAveria) ||
+            (idCaso != null && protegidos.contains('$idCaso')) ||
+            local?['pendiente_sync'] == true;
+        final fusionado = fusionarCasoDescargado(
+          entrante: Map<String, dynamic>.from(caso),
+          local: local,
+          tieneTrabajoPendiente: tienePendiente,
         );
         await txn.insert(
           'caso_local',
           {
             'id': idAveria,
-            'id_caso': caso['id_caso'],
-            'estado': '${caso['estado_actual'] ?? ''}',
-            'datos_json': jsonEncode(caso),
+            'id_caso': fusionado['id_caso'],
+            'estado': '${fusionado['estado_actual'] ?? ''}',
+            'datos_json': jsonEncode(fusionado),
             'actualizado_en': ahora,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
