@@ -2,6 +2,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/database.dart';
 import 'purga_despachos.dart';
+import 'reintentos.dart';
 import 'sync_sesion.dart';
 
 /// Resultado de una operación DESCARGA (D-73).
@@ -69,6 +70,7 @@ class ResultadoDescarga {
     if (cuadrillaCodigo == null || cuadrillaCodigo!.isEmpty) return conteo;
     return '$conteo · cuadrilla $cuadrillaCodigo';
   }
+
 }
 
 /// Servicio de descarga diferencial por cuadrilla del técnico logueado.
@@ -114,13 +116,8 @@ class DownloadService {
       // grande, `ids_conocidos` en la query string superaba el límite de URL del
       // proxy. Si el servidor todavía no tiene la ruta (versión anterior), se
       // reintenta por GET para no dejar al técnico sin despacho.
-      dynamic datos;
-      try {
-        datos = await ApiClient.post('/sync/descarga', data: query);
-      } on ApiError catch (error) {
-        if (error.status != 404 && error.status != 405) rethrow;
-        datos = await ApiClient.get('/sync/descarga', query: query);
-      }
+      // D-135 · H-18: además reintenta con backoff ante fallos de red o 5xx.
+      final datos = await _descargar(query);
       if (datos is! Map) {
         avisar(1, 'Descarga completada');
         return const ResultadoDescarga(nuevos: 0, actualizados: 0, serverTs: null);
@@ -257,5 +254,29 @@ class DownloadService {
     final delServidor = guardada == null ? null : DateTime.tryParse(guardada);
     if (delServidor != null) return delServidor;
     return DatabaseHelper.instance.ultimaDescarga();
+  }
+
+  /// Descarga con reintento y caída al GET antiguo (D-135 · H-18).
+  static Future<dynamic> _descargar(Map<String, dynamic> query) async {
+    var intento = 0;
+    while (true) {
+      try {
+        return await ApiClient.post('/sync/descarga', data: query);
+      } on ApiError catch (error) {
+        // Servidor anterior a D-127: se usa la vía GET, sin reintentos.
+        if (error.status == 404 || error.status == 405) {
+          return ApiClient.get('/sync/descarga', query: query);
+        }
+        if (!reintentableDescarga(
+          status: error.status,
+          deRed: error.esDeRed,
+          intento: intento,
+        )) {
+          rethrow;
+        }
+        await Future<void>.delayed(esperasDescarga[intento]);
+        intento++;
+      }
+    }
   }
 }
