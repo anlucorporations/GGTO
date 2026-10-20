@@ -8,6 +8,8 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
+import '../../core/sync_lock.dart';
+import 'cola_offline.dart';
 
 /// Resultado de una pasada de sincronización.
 class ResultadoSync {
@@ -221,7 +223,30 @@ class SyncProvider extends ChangeNotifier {
   /// D-115: `progresoDesde`/`progresoHasta` permiten reservar una franja de la
   /// barra cuando la cola es una fase de la **actualización completa** (CARGA →
   /// cola → DESCARGA) y no la operación entera.
+  ///
+  /// D-124 · H-07: un solo dueño y un cerrojo. Este camino —el del envío
+  /// automático— **no espera** a la CARGA: si hay una operación de
+  /// sincronización en curso se salta esta vuelta. Y solo envía los tipos cuyo
+  /// dueño es el outbox (`accionesParaOutbox`); cierres, enrutados y evidencias
+  /// de un diferido viajan únicamente en la CARGA.
   Future<ResultadoSync> sincronizar({
+    bool silencioso = false,
+    double progresoDesde = 0,
+    double progresoHasta = 1,
+  }) async {
+    final resultado = await SyncLock.instance.intentar(
+      () => _sincronizarInterno(
+        silencioso: silencioso,
+        progresoDesde: progresoDesde,
+        progresoHasta: progresoHasta,
+      ),
+    );
+    return resultado ??
+        _ultimoResultado ??
+        const ResultadoSync(enviadas: 0, reintentar: 0, fallidas: 0, pendientes: 0);
+  }
+
+  Future<ResultadoSync> _sincronizarInterno({
     bool silencioso = false,
     double progresoDesde = 0,
     double progresoHasta = 1,
@@ -241,7 +266,11 @@ class SyncProvider extends ChangeNotifier {
     var fallidas = 0;
 
     try {
-      final acciones = await DatabaseHelper.instance.accionesPendientes();
+      // D-124 · H-07: el outbox solo envía lo que le pertenece; los cierres, los
+      // enrutados y las evidencias de un diferido los manda la CARGA.
+      final acciones = accionesParaOutbox(
+        await DatabaseHelper.instance.accionesPendientes(),
+      );
       final total = acciones.length;
       // D-82: la barra avanza acción por acción (progreso determinista).
       _progresoActivo = true;

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../core/api_client.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
+import '../../core/sync_lock.dart';
 import 'sync_sesion.dart';
 
 /// Resultado de una operación CARGA (D-73).
@@ -153,7 +154,16 @@ class UploadService {
   /// Sube todas las evidencias locales no subidas y después envía la cola de
   /// acciones mediante `POST /sync/carga`. Las acciones que el batch no cubre
   /// (fallas masivas, citas) quedan para `SyncProvider.sincronizar()`.
+  ///
+  /// D-124 · H-07: la CARGA es la **dueña** de los cierres, enrutados y evidencias
+  /// de un diferido, y toma el cerrojo de sincronización para que el envío
+  /// automático no pueda mandar la misma acción a la vez.
   static Future<ResultadoCarga> cargar({
+    void Function(String fase, double valor)? onProgreso,
+  }) =>
+      SyncLock.instance.ejecutar(() => _cargarInterno(onProgreso: onProgreso));
+
+  static Future<ResultadoCarga> _cargarInterno({
     void Function(String fase, double valor)? onProgreso,
   }) async {
     void avisar(double valor, String fase) => onProgreso?.call(fase, valor);

@@ -1,0 +1,19 @@
+[2026-10-19T23:23:56+00:00] ==============================================================================
+[2026-10-19T23:23:56+00:00] MIGRACIÓN D-121 (actividad: id_actividad_local, dispositivo_id, índice único)
+[2026-10-19T23:23:56+00:00] modo=SIMULACIÓN
+[2026-10-19T23:23:56+00:00] estado actual: {'id_actividad_local': 0, 'dispositivo_id': 0, 'indice': 0}
+[2026-10-19T23:23:56+00:00] Cambios pendientes:
+[2026-10-19T23:23:56+00:00]   · id_actividad_local
+[2026-10-19T23:23:56+00:00]   · dispositivo_id
+[2026-10-19T23:23:56+00:00]   · indice
+[2026-10-19T23:23:56+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-19T23:24:12+00:00] ==============================================================================
+[2026-10-19T23:24:12+00:00] MIGRACIÓN D-121 (actividad: id_actividad_local, dispositivo_id, índice único)
+[2026-10-19T23:24:12+00:00] modo=APLICAR
+[2026-10-19T23:24:12+00:00] estado actual: {'id_actividad_local': 0, 'dispositivo_id': 0, 'indice': 0}
+[2026-10-19T23:24:12+00:00] Cambios pendientes:
+[2026-10-19T23:24:12+00:00]   · id_actividad_local
+[2026-10-19T23:24:12+00:00]   · dispositivo_id
+[2026-10-19T23:24:12+00:00]   · indice
+[2026-10-19T23:24:13+00:00] verificación post-migración: {'id_actividad_local': 1, 'dispositivo_id': 1, 'indice': 1}
+[2026-10-19T23:24:13+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
