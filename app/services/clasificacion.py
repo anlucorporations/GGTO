@@ -82,6 +82,22 @@ ESTADOS_CASO_EN_PROCESO = ("CONTACTADO", "CITADO", "EN_GESTION", "DIFERIDO")
 #: Estados de la ficha del especial que no deben reabrirse solos.
 ESTADOS_ESPECIAL_FINALES = ("ATENDIDO", "CERRADO")
 
+#: D-134 · H-17: transiciones permitidas del caso especial.
+#:
+#: Antes el PATCH cambiaba `estado` a cualquier valor: se podía cerrar un caso
+#: saltándose pasos o **reabrir** uno cerrado sin motivo ni rastro. Ahora el flujo
+#: es explícito y el retroceso solo lo autoriza el SUPER con `motivo_reversion`.
+TRANSICIONES_ESPECIAL: dict[str, set[str]] = {
+    "ABIERTO": {"EN_PROCESO", "ATENDIDO", "CERRADO"},
+    "EN_PROCESO": {"ATENDIDO", "CERRADO"},
+    "ATENDIDO": {"CERRADO"},
+    "CERRADO": set(),
+}
+
+#: Estados a los que solo se puede volver con autorización del SUPER.
+RETROCESOS_ESPECIAL = {"ABIERTO", "EN_PROCESO"}
+
+
 
 def estado_especial_para(estado_caso: str | None) -> str | None:
     """Estado que le corresponde a `caso_especial` según el del caso.

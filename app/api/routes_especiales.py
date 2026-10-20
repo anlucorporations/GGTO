@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from ..models import (
+    Auditoria,
     Caso,
     Cita,
     Cuadrilla,
@@ -472,11 +473,82 @@ def actualizar_especial(
                 f"{estado_destino}: complete el campo `informe`."
             ),
         )
+    # D-134 · H-17: el flujo del especial se valida (antes se podía cerrar
+    # saltándose pasos o reabrir sin motivo ni rastro).
+    motivo_reversion = str(cambios.pop("motivo_reversion", "") or "").strip()
+    if "estado" in cambios:
+        _validar_transicion(db, obj, estado_destino, motivo_reversion, usuario)
     for campo, valor in cambios.items():
         setattr(obj, campo, valor)
     db.commit()
     db.refresh(obj)
     return obj
+
+
+def _validar_transicion(
+    db: Session,
+    obj: CasoEspecial,
+    destino: str,
+    motivo_reversion: str,
+    usuario: Usuario,
+) -> None:
+    """Aplica la máquina de estados del especial (D-134 · H-17)."""
+    origen = str(obj.estado or "ABIERTO").upper()
+    permitidos = clasificacion.TRANSICIONES_ESPECIAL
+    if destino not in permitidos:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Estado no válido: {destino}. Use uno de "
+                f"{', '.join(sorted(permitidos))}."
+            ),
+        )
+    if destino == origen:
+        return
+    # Retroceso = venir de un estado final (ATENDIDO/CERRADO) a uno abierto.
+    es_retroceso = (
+        origen in clasificacion.ESTADOS_ESPECIAL_FINALES
+        and destino not in permitidos[origen]
+    )
+    if es_retroceso:
+        rol = usuario.rol.codigo if usuario.rol else ""
+        if rol != "SUPER":
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"El caso especial está {origen} y solo el SUPER puede "
+                    f"devolverlo a {destino} (con `motivo_reversion`)."
+                ),
+            )
+        if len(motivo_reversion) < 10:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Para reabrir el especial indique `motivo_reversion` "
+                    "(mínimo 10 caracteres)."
+                ),
+            )
+        db.add(
+            Auditoria(
+                id_central=usuario.id_central,
+                usuario=usuario.p00,
+                accion="REVERSION_ESPECIAL",
+                entidad="caso_especial",
+                id_entidad=str(obj.id_caso_especial),
+                datos_antes={"estado": origen},
+                datos_despues={"estado": destino, "motivo_reversion": motivo_reversion},
+            )
+        )
+        return
+    if destino not in permitidos[origen]:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Transición no válida: {origen} → {destino}. "
+                f"Desde {origen} solo se puede pasar a "
+                f"{', '.join(sorted(permitidos[origen])) or 'ningún estado'}."
+            ),
+        )
 
 
 def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspecialOut]:

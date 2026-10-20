@@ -144,6 +144,8 @@ class CasoEspecialUpdate(BaseModel):
     #: D-133 · H-16: informe de atención (obligatorio al pasar a CERRADO/ATENDIDO
     #: cuando el caso requiere informe).
     informe: str | None = Field(default=None, max_length=4000)
+    #: D-134 · H-17: motivo obligatorio para que el SUPER reabra un especial.
+    motivo_reversion: str | None = Field(default=None, max_length=200)
     estado: EstadoEspecial | None = None
     id_solicitante: int | None = None
 
