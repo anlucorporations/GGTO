@@ -8,7 +8,7 @@ de `routes_casos` para no duplicar reglas de estado ni bitácora.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
@@ -155,6 +155,59 @@ def resolver_cuadrilla(db: Session, usuario: Usuario) -> dict[str, Any]:
         "desde": ct.desde if ct else None,
         "es_supervisor": c.es_supervisor,
     }
+
+
+#: Días hacia atrás que se acepta el trabajo de un caso que **estuvo** en la
+#: cuadrilla, aunque el supervisor lo haya reasignado a mitad de jornada (D-123).
+#: `despacho.fecha` es una fecha (no tiene hora), así que 1 día cubre «hoy y ayer».
+DIAS_TRABAJO_RECIENTE = 1
+
+
+def _casos_recientes_de_cuadrilla(db: Session, id_cuadrilla: int, desde: date) -> list[int]:
+    """Casos que **estuvieron** en la cuadrilla desde `desde` (D-123 · H-06).
+
+    Es el histórico de `despacho_caso` en los despachos de esa cuadrilla, sin
+    mirar si el último despacho es suyo: el trabajo que el técnico ya había
+    recibido no se le rechaza porque el caso cambie de manos.
+    """
+    return list(
+        db.scalars(
+            select(DespachoCasos.id_caso)
+            .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+            .where(
+                Despacho.id_cuadrilla == id_cuadrilla,
+                Despacho.fecha >= desde,
+            )
+            .distinct()
+        ).all()
+    )
+
+
+def casos_permitidos(db: Session, usuario: Usuario) -> set[int] | None:
+    """Casos que el usuario puede **gestionar por la vía de campo** (D-123).
+
+    - `None` para los roles de gestión (ADMIN, SUPERVISOR, SUPER): sin restricción.
+    - Para un TÉCNICO: los de su cuadrilla vigente **más** los que estuvieron en
+      ella en `DIAS_TRABAJO_RECIENTE` (si el caso se reasignó a mitad de jornada,
+      el trabajo ya hecho se sigue pudiendo subir).
+    - Sin cuadrilla vigente: conjunto **vacío** (fail-closed, H-02).
+
+    Lo usan la carga de la APK (`aplicar_carga`) y los endpoints de resolución de
+    campo, para que **un solo criterio** gobierne las dos vías.
+    """
+    rol = usuario.rol.codigo if usuario.rol else ""
+    if rol in {"ADMIN", "SUPERVISOR", "SUPER"}:
+        return None
+    c = _cuadrilla_activa(db, usuario)
+    if c is None:
+        return set()
+    ids = set(_casos_ids_de_cuadrilla(db, c.id_cuadrilla))
+    ids |= set(
+        _casos_recientes_de_cuadrilla(
+            db, c.id_cuadrilla, hoy_operativo() - timedelta(days=DIAS_TRABAJO_RECIENTE)
+        )
+    )
+    return ids
 
 
 def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
@@ -597,19 +650,24 @@ def aplicar_carga(
     """Aplica actividades y estados enviados por la APK.
 
     Regla (D-121 · H-02 de la auditoría V3): un TECNICO solo puede tocar casos
-    asignados **actualmente** a su cuadrilla y, si **no tiene cuadrilla vigente**,
-    la carga se rechaza con 403 en lugar de aceptar cualquier caso. Antes el
-    filtro quedaba en `None` (fail-open) y un técnico retirado de su cuadrilla
-    podía mover estados de cualquier caso de la central.
+    asignados a su cuadrilla y, si **no tiene cuadrilla vigente**, la carga se
+    rechaza con 403 en lugar de aceptar cualquier caso. Antes el filtro quedaba en
+    `None` (fail-open) y un técnico retirado de su cuadrilla podía mover estados
+    de cualquier caso de la central.
+    D-123 · H-06: se acepta además el trabajo de los casos que **estuvieron** en su
+    cuadrilla en los últimos días (`DIAS_TRABAJO_RECIENTE`), de modo que una
+    reasignación a mitad de jornada no deja el trabajo del técnico rechazado para
+    siempre. El mismo criterio (`casos_permitidos`) aplica a los endpoints de
+    resolución de campo.
     SUPERVISOR/ADMIN/SUPER pueden tocar cualquier caso de su central.
     """
     rol = usuario.rol.codigo if usuario.rol else ""
     es_gestor = rol in {"ADMIN", "SUPERVISOR", "SUPER"}
     c = _cuadrilla_activa(db, usuario) if not es_gestor else None
-    ids_permitidos: set[int] | None = None
-    if c is not None:
-        ids_permitidos = set(_casos_ids_de_cuadrilla(db, c.id_cuadrilla))
-    elif not es_gestor:
+    # D-123 · H-06: se acepta también el trabajo de los casos que estuvieron en la
+    # cuadrilla en los últimos días (un caso reasignado no deja huérfano lo ya hecho).
+    ids_permitidos: set[int] | None = casos_permitidos(db, usuario)
+    if not es_gestor and c is None:
         raise HTTPException(
             status_code=403,
             detail=(

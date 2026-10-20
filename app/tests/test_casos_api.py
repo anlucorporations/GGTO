@@ -338,6 +338,10 @@ def test_tecnico_puede_cambiar_el_estado_desde_la_gestion(client, admin_token, d
     )
     assert creado.status_code == 201, creado.text
     id_caso = creado.json()["id_caso"]
+    # D-123: el caso debe estar en la cuadrilla del TÉCNICO para gestionarlo.
+    from app.tests.conftest import asignar_caso_al_tecnico
+
+    asignar_caso_al_tecnico(db_session, admin_token, id_caso)
 
     # La edición completa sigue vedada para TECNICO
     assert client.patch(f"/api/v1/casos/{id_caso}", json={"nombre_cliente": "X"},
@@ -447,6 +451,10 @@ def test_cierre_registra_actividad_evidencias_y_estado(client, admin_token, db_s
     # D-112 (DEC-112-1): el TÉCNICO **sí** cierra en campo; lo que no se puede
     # es volver a cerrar un caso ya cerrado (409).
     otro = _caso_con_telefono(client, admin_token, "TSTRES03", id_pago="7014000951")
+    # D-123: el cierre de campo exige que el caso sea de su cuadrilla.
+    from app.tests.conftest import asignar_caso_al_tecnico
+
+    asignar_caso_al_tecnico(db_session, admin_token, otro["id_caso"])
     r_tecnico = client.post(f"/api/v1/casos/{otro['id_caso']}/cierre",
                             json={"modo": "IVR", "descripcion": "cierre desde el campo"},
                             headers=admin_token["tecnico"])

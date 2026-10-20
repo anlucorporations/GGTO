@@ -20,7 +20,7 @@ BASE = "/api/v1"
 CASOS = f"{BASE}/casos"
 
 
-def _caso(client, admin_token, id_averia: str) -> dict:
+def _caso(client, admin_token, db_session, id_averia: str) -> dict:
     """Caso abierto con los datos obligatorios (RN-AL-01)."""
     r = client.post(
         CASOS,
@@ -36,6 +36,10 @@ def _caso(client, admin_token, id_averia: str) -> dict:
         headers=admin_token["admin"],
     )
     assert r.status_code == 201, r.text
+    # D-123: el caso debe estar en la cuadrilla del TÉCNICO.
+    from app.tests.conftest import asignar_caso_al_tecnico
+
+    asignar_caso_al_tecnico(db_session, admin_token, r.json()["id_caso"])
     return r.json()
 
 
@@ -49,7 +53,7 @@ def _manana() -> datetime:
 # Cierre en campo (RF-APK-06 · RF-15)
 # --------------------------------------------------------------------------- #
 def test_tecnico_cierra_el_caso(client, admin_token, db_session):
-    caso = _caso(client, admin_token, "TSTD112-C")
+    caso = _caso(client, admin_token, db_session, "TSTD112-C")
 
     r = client.post(
         f"{CASOS}/{caso['id_caso']}/cierre",
@@ -68,8 +72,8 @@ def test_tecnico_cierra_el_caso(client, admin_token, db_session):
     assert db_session.get(Caso, caso["id_caso"]).estado_actual == "CERRADO"
 
 
-def test_admin_sigue_pudiendo_cerrar(client, admin_token):
-    caso = _caso(client, admin_token, "TSTD112-A")
+def test_admin_sigue_pudiendo_cerrar(client, admin_token, db_session):
+    caso = _caso(client, admin_token, db_session, "TSTD112-A")
     r = client.post(
         f"{CASOS}/{caso['id_caso']}/cierre",
         json={"modo": "IVR", "descripcion": "TEST cierre administrativo con IVR"},
@@ -83,7 +87,7 @@ def test_admin_sigue_pudiendo_cerrar(client, admin_token):
 # Enrutado en campo (RF-APK-06 · RF-13)
 # --------------------------------------------------------------------------- #
 def test_tecnico_enruta_el_caso(client, admin_token, db_session):
-    caso = _caso(client, admin_token, "TSTD112-E")
+    caso = _caso(client, admin_token, db_session, "TSTD112-E")
 
     r = client.post(
         f"{CASOS}/{caso['id_caso']}/enrutado",
@@ -101,8 +105,8 @@ def test_tecnico_enruta_el_caso(client, admin_token, db_session):
 # --------------------------------------------------------------------------- #
 # Citas en campo (RF-APK-06 · RF-12)
 # --------------------------------------------------------------------------- #
-def test_tecnico_agenda_cita_desde_la_apk(client, admin_token):
-    caso = _caso(client, admin_token, "TSTD112-T")
+def test_tecnico_agenda_cita_desde_la_apk(client, admin_token, db_session):
+    caso = _caso(client, admin_token, db_session, "TSTD112-T")
     manana = _manana()
 
     r = client.post(
@@ -120,7 +124,7 @@ def test_tecnico_agenda_cita_desde_la_apk(client, admin_token):
 
 
 def test_tecnico_usa_la_cita_rapida_de_la_ficha(client, admin_token, db_session):
-    caso = _caso(client, admin_token, "TSTD112-R")
+    caso = _caso(client, admin_token, db_session, "TSTD112-R")
     manana = _manana()
 
     r = client.post(

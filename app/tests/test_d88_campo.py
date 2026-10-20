@@ -21,7 +21,7 @@ BASE = "/api/v1"
 CASOS = f"{BASE}/casos"
 
 
-def _crear_caso(client, admin_token, id_averia: str = "TSTD88-1") -> dict:
+def _crear_caso(client, admin_token, db_session, id_averia: str = "TSTD88-1") -> dict:
     r = client.post(
         CASOS,
         json={
@@ -37,6 +37,10 @@ def _crear_caso(client, admin_token, id_averia: str = "TSTD88-1") -> dict:
         headers=admin_token["admin"],
     )
     assert r.status_code == 201, r.text
+    # D-123: las acciones de campo exigen que el caso sea de su cuadrilla.
+    from app.tests.conftest import asignar_caso_al_tecnico
+
+    asignar_caso_al_tecnico(db_session, admin_token, r.json()["id_caso"])
     return r.json()
 
 
@@ -44,7 +48,7 @@ def _crear_caso(client, admin_token, id_averia: str = "TSTD88-1") -> dict:
 # No Contesta (RF-APK-12)
 # --------------------------------------------------------------------------- #
 def test_no_contesta_compone_estado_cita_y_cos(client, admin_token, db_session):
-    caso = _crear_caso(client, admin_token)
+    caso = _crear_caso(client, admin_token, db_session)
     manana = (datetime.now(UTC) + timedelta(days=1)).replace(
         hour=12, minute=0, second=0, microsecond=0
     )
@@ -86,7 +90,7 @@ def test_no_contesta_compone_estado_cita_y_cos(client, admin_token, db_session):
 
 
 def test_no_contesta_sin_hora_propone_manana_a_las_ocho(client, admin_token, db_session):
-    caso = _crear_caso(client, admin_token, "TSTD88-2")
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-2")
     r = client.post(
         f"{CASOS}/{caso['id_caso']}/no-contesta",
         json={},
@@ -98,8 +102,8 @@ def test_no_contesta_sin_hora_propone_manana_a_las_ocho(client, admin_token, db_
     assert (cita.fecha_hora.hour, cita.fecha_hora.minute) == (8, 0)
 
 
-def test_no_contesta_rechaza_un_caso_cerrado(client, admin_token):
-    caso = _crear_caso(client, admin_token, "TSTD88-3")
+def test_no_contesta_rechaza_un_caso_cerrado(client, admin_token, db_session):
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-3")
     cierre = client.patch(
         f"{CASOS}/{caso['id_caso']}",
         json={"estado_actual": "CERRADO"},
@@ -120,7 +124,7 @@ def test_no_contesta_rechaza_un_caso_cerrado(client, admin_token):
 # Edición del contacto desde el campo (RF-APK-11)
 # --------------------------------------------------------------------------- #
 def test_el_tecnico_corrige_contacto_y_queda_auditado(client, admin_token, db_session):
-    caso = _crear_caso(client, admin_token, "TSTD88-4")
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-4")
 
     r = client.patch(
         f"{CASOS}/{caso['id_caso']}/contacto",
@@ -144,8 +148,8 @@ def test_el_tecnico_corrige_contacto_y_queda_auditado(client, admin_token, db_se
     assert traza.datos_despues["telefono"] == "7015556677"
 
 
-def test_contacto_valida_la_serie_del_telefono(client, admin_token):
-    caso = _crear_caso(client, admin_token, "TSTD88-5")
+def test_contacto_valida_la_serie_del_telefono(client, admin_token, db_session):
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-5")
     r = client.patch(
         f"{CASOS}/{caso['id_caso']}/contacto",
         json={"telefono": "04121234567"},
@@ -157,7 +161,7 @@ def test_contacto_valida_la_serie_del_telefono(client, admin_token):
 
 def test_contacto_ignora_campos_ajenos(client, admin_token, db_session):
     """El técnico no puede cambiar el estado (ni nada que no sea dirección/teléfono)."""
-    caso = _crear_caso(client, admin_token, "TSTD88-6")
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-6")
     r = client.patch(
         f"{CASOS}/{caso['id_caso']}/contacto",
         json={"direccion": "CALLE 9 CON AVENIDA 10", "estado_actual": "CERRADO"},
@@ -170,8 +174,8 @@ def test_contacto_ignora_campos_ajenos(client, admin_token, db_session):
     assert db_session.get(Caso, caso["id_caso"]).estado_actual != "CERRADO"
 
 
-def test_contacto_en_caso_cerrado_se_rechaza(client, admin_token):
-    caso = _crear_caso(client, admin_token, "TSTD88-7")
+def test_contacto_en_caso_cerrado_se_rechaza(client, admin_token, db_session):
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-7")
     client.patch(
         f"{CASOS}/{caso['id_caso']}",
         json={"estado_actual": "CERRADO"},
@@ -185,8 +189,8 @@ def test_contacto_en_caso_cerrado_se_rechaza(client, admin_token):
     assert r.status_code == 409, r.text
 
 
-def test_contacto_sin_cambios_es_422(client, admin_token):
-    caso = _crear_caso(client, admin_token, "TSTD88-8")
+def test_contacto_sin_cambios_es_422(client, admin_token, db_session):
+    caso = _crear_caso(client, admin_token, db_session, "TSTD88-8")
     r = client.patch(
         f"{CASOS}/{caso['id_caso']}/contacto",
         json={},

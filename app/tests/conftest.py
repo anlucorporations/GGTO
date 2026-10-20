@@ -138,6 +138,85 @@ def _limpiar(db) -> None:
     db.commit()
 
 
+def asignar_caso_al_tecnico(db_session, admin_token, id_caso: int) -> int:
+    """Pone el caso en el despacho de hoy de la cuadrilla del TÉCNICO de prueba.
+
+    D-123: los endpoints de resolución de campo exigen que el caso sea de la
+    cuadrilla del técnico (`sync.casos_permitidos`), así que las pruebas que
+    ejercitan el camino de campo deben asignarlo. Es idempotente y devuelve el
+    `id_cuadrilla` usado.
+    """
+    from datetime import date
+
+    from app.models import Cuadrilla, CuadrillaTecnico, Despacho, DespachoCasos
+
+    id_central = admin_token["id_central"]
+    id_tecnico = db_session.scalar(
+        select(Tecnico.id_tecnico).where(Tecnico.p00 == P00_TEC)
+    )
+    assert id_tecnico is not None, "el TÉCNICO de prueba no existe"
+    cuadrilla = db_session.scalar(
+        select(Cuadrilla).where(
+            Cuadrilla.id_central == id_central, Cuadrilla.codigo == "TCFIELD"
+        )
+    )
+    if cuadrilla is None:
+        cuadrilla = Cuadrilla(
+            id_central=id_central, codigo="TCFIELD", nombre="Cuadrilla de campo (pruebas)"
+        )
+        db_session.add(cuadrilla)
+        db_session.flush()
+    activo = db_session.scalar(
+        select(CuadrillaTecnico).where(
+            CuadrillaTecnico.id_cuadrilla == cuadrilla.id_cuadrilla,
+            CuadrillaTecnico.id_tecnico == id_tecnico,
+            CuadrillaTecnico.hasta.is_(None),
+        )
+    )
+    if activo is None:
+        db_session.add(
+            CuadrillaTecnico(
+                id_cuadrilla=cuadrilla.id_cuadrilla,
+                id_tecnico=id_tecnico,
+                desde=date.today(),
+            )
+        )
+    despacho = db_session.scalar(
+        select(Despacho).where(
+            Despacho.id_central == id_central,
+            Despacho.fecha == date.today(),
+            Despacho.id_cuadrilla == cuadrilla.id_cuadrilla,
+        )
+    )
+    if despacho is None:
+        despacho = Despacho(
+            id_central=id_central,
+            fecha=date.today(),
+            id_cuadrilla=cuadrilla.id_cuadrilla,
+            estado="BORRADOR",
+        )
+        db_session.add(despacho)
+        db_session.flush()
+    ya = db_session.scalar(
+        select(DespachoCasos).where(
+            DespachoCasos.id_despacho == despacho.id_despacho,
+            DespachoCasos.id_caso == id_caso,
+        )
+    )
+    if ya is None:
+        db_session.add(
+            DespachoCasos(
+                id_despacho=despacho.id_despacho,
+                id_caso=id_caso,
+                estado="ASIGNADO",
+                orden_visita=1,
+                tipo_asignacion="REPARACION",
+            )
+        )
+    db_session.commit()
+    return cuadrilla.id_cuadrilla
+
+
 @pytest.fixture()
 def admin_token(client, db_session):
     """Crea un ADMIN y un TECNICO y devuelve sus cabeceras de autenticación."""

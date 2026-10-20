@@ -43,6 +43,7 @@ from ..schemas.casos import (
     ResolucionOut,
 )
 from ..services import clasificacion, pagos, resolucion
+from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
 from .deps import require_roles
@@ -67,6 +68,24 @@ def _o_404(db: Session, id_caso: int) -> Caso:
     caso = db.get(Caso, id_caso)
     if caso is None:
         raise HTTPException(status_code=404, detail="Caso no encontrado")
+    return caso
+
+
+def _caso_de_campo(db: Session, usuario: Usuario, id_caso: int) -> Caso:
+    """Caso que el usuario puede resolver **por la vía de campo** (D-123).
+
+    Aplica el mismo criterio que la carga de la APK (`sync.casos_permitidos`): un
+    TÉCNICO solo actúa sobre casos de su cuadrilla vigente o que estuvieron en ella
+    en los últimos días; los roles de gestión no tienen restricción. Cierra el
+    bypass que tenía el cierre online, que no validaba la cuadrilla.
+    """
+    caso = _o_404(db, id_caso)
+    permitidos = svc_sync.casos_permitidos(db, usuario)
+    if permitidos is not None and caso.id_caso not in permitidos:
+        raise HTTPException(
+            status_code=403,
+            detail="El caso no está asignado a su cuadrilla: no puede gestionarlo.",
+        )
     return caso
 
 
@@ -559,7 +578,7 @@ def cambiar_estado(
     puede usar también el **rol TECNICO**: es la gestión del caso que atiende
     (D-68). No permite modificar ningún otro campo.
     """
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     if datos.estado_actual == caso.estado_actual:
         raise HTTPException(status_code=409, detail="El caso ya está en ese estado")
     _registrar_estado(db, caso, datos.estado_actual, datos.motivo_estado, usuario.p00)
@@ -643,7 +662,7 @@ def cerrar_caso(
     D-99: la lógica vive en `services/resolucion.py` para que el cierre en cascada
     de una masiva cierre los casos asociados por esta misma vía.
     """
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     try:
         actividad = resolucion.cerrar_caso(
             db, caso, modo=datos.modo, descripcion=datos.descripcion,
@@ -673,7 +692,7 @@ def agendar_cita(
     usuario: Usuario = Depends(_gestion),
 ) -> ResolucionOut:
     """Crea la cita vinculada al caso y deja constancia de la fecha comprometida."""
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     cita = Cita(
         id_caso=caso.id_caso,
         fecha_hora=datos.fecha_hora,
@@ -716,7 +735,7 @@ def no_contesta(
     diferencia del cierre o el enrutado, que exigen ADMIN/SUPERVISOR. La APK lo
     encola si no hay red, de modo que llega íntegro en la CARGA.
     """
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     if caso.estado_actual in {"CERRADO", "CANCELADO", "ENRUTADO"}:
         raise HTTPException(
             status_code=409,
@@ -798,7 +817,7 @@ def actualizar_contacto(
     la dirección, se recalcula el sector como en la edición de gestión (RF-23).
     Cualquier otro campo sigue reservado al PATCH de ADMIN/SUPERVISOR.
     """
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     cambios = datos.model_dump(exclude_unset=True, exclude_none=True)
     if not cambios:
         raise HTTPException(
@@ -839,7 +858,7 @@ def enrutar_caso(
     usuario: Usuario = Depends(_gestion),
 ) -> ResolucionOut:
     """Registra la actividad de enrutado, el seguimiento y pasa el caso a ENRUTADO."""
-    caso = _o_404(db, id_caso)
+    caso = _caso_de_campo(db, usuario, id_caso)
     actividad = Actividad(
         id_caso=caso.id_caso,
         id_usuario=usuario.id_usuario,

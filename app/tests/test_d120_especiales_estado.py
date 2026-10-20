@@ -58,7 +58,7 @@ def test_estado_especial_para_ignora_los_estados_sin_decision():
 # Integración: cerrar el caso cierra el especial
 # --------------------------------------------------------------------------- #
 @pytest.fixture()
-def especial(client, admin_token):
+def especial(client, admin_token, db_session):
     """Un caso REFERIDO con su ficha de especial, asignado a la cuadrilla de campo."""
     headers = admin_token["admin"]
     id_central = admin_token["id_central"]
@@ -102,6 +102,10 @@ def especial(client, admin_token):
     )
     assert r.status_code == 201, r.text
     cuerpo = r.json()
+    # D-123: el cierre de campo exige que el caso sea de la cuadrilla del técnico.
+    from app.tests.conftest import asignar_caso_al_tecnico
+
+    asignar_caso_al_tecnico(db_session, admin_token, cuerpo["id_caso"])
     return {
         "headers": headers,
         "id_central": id_central,
