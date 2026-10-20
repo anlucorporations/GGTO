@@ -1,4 +1,5 @@
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/database.dart';
 import 'purga_despachos.dart';
 import 'sync_sesion.dart';
@@ -109,7 +110,17 @@ class DownloadService {
       };
 
       avisar(0.35, 'Descargando los casos de mi cuadrilla…');
-      final datos = await ApiClient.get('/sync/descarga', query: query);
+      // D-127 · H-10: la descarga viaja en el **cuerpo** (POST). Con la caché
+      // grande, `ids_conocidos` en la query string superaba el límite de URL del
+      // proxy. Si el servidor todavía no tiene la ruta (versión anterior), se
+      // reintenta por GET para no dejar al técnico sin despacho.
+      dynamic datos;
+      try {
+        datos = await ApiClient.post('/sync/descarga', data: query);
+      } on ApiError catch (error) {
+        if (error.status != 404 && error.status != 405) rethrow;
+        datos = await ApiClient.get('/sync/descarga', query: query);
+      }
       if (datos is! Map) {
         avisar(1, 'Descarga completada');
         return const ResultadoDescarga(nuevos: 0, actualizados: 0, serverTs: null);

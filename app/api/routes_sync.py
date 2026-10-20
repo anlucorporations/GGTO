@@ -23,6 +23,7 @@ from ..schemas.sync import (
     SyncCargaIn,
     SyncCargaOut,
     SyncCuadrillaOut,
+    SyncDescargaIn,
     SyncDescargaOut,
     SyncSesionCierreIn,
     SyncSesionCierreOut,
@@ -72,6 +73,29 @@ def sync_descarga(
     # vacía— significa «esto es lo que tengo y lo que falte, mándalo».
     conocidos = None if ids_conocidos is None else set(ids_conocidos)
     payload = svc.construir_descarga(db, usuario, desde=dt, ids_conocidos=conocidos)
+    return SyncDescargaOut(**payload)
+
+
+@router.post(
+    "/sync/descarga",
+    response_model=SyncDescargaOut,
+    summary="Descarga diferencial por cuadrilla (cuerpo JSON)",
+)
+def sync_descarga_post(
+    datos: SyncDescargaIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> SyncDescargaOut:
+    """Mismo contrato que el GET, con `desde` e `ids_conocidos` en el cuerpo (D-127).
+
+    H-10 de la auditoría: la query string crecía con toda la caché del dispositivo
+    (~8 KB con 380 casos) y podía superar el límite de URL del proxy. La APK usa
+    esta vía; el GET se mantiene por compatibilidad con versiones anteriores.
+    """
+    conocidos = None if datos.ids_conocidos is None else set(datos.ids_conocidos)
+    payload = svc.construir_descarga(
+        db, usuario, desde=datos.desde, ids_conocidos=conocidos
+    )
     return SyncDescargaOut(**payload)
 
 

@@ -117,6 +117,20 @@ class SyncDescargaOut(BaseModel):
     ids_vigentes: list[int] = Field(default_factory=list)
 
 
+class SyncDescargaIn(BaseModel):
+    """Cuerpo de `POST /sync/descarga` (D-127 · H-10).
+
+    La descarga diferencial llevaba los ids conocidos en la **query string**
+    (`?ids_conocidos=1&ids_conocidos=2…`): con cientos de casos la URL crece sin
+    límite y el proxy o el servidor pueden rechazarla. El mismo contrato viaja
+    ahora en JSON; `ids_conocidos = null` mantiene el significado de la versión
+    GET (el dispositivo no declara lo que tiene).
+    """
+
+    desde: datetime | None = None
+    ids_conocidos: list[int] | None = None
+
+
 class EvidenciaUploadOut(BaseModel):
     id_evidencia: int
     serial_imagen: str
