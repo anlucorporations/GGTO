@@ -5,6 +5,8 @@ import '../../core/api_error.dart';
 import '../../core/auth_storage.dart';
 import '../../core/constants.dart';
 import '../../core/credencial_local.dart';
+import '../../core/database.dart';
+import '../../core/vinculo_dispositivo.dart';
 import '../../core/sesion.dart';
 import 'credencial_service.dart';
 
@@ -106,6 +108,23 @@ class AuthProvider extends ChangeNotifier {
       if (token.isEmpty) {
         _ultimoError = 'El servidor no devolvió un token de sesión.';
         return _ultimoError;
+      }
+
+      // D-138 · H-21: el dispositivo queda vinculado al **primer** P00 que entra.
+      // Otro técnico no puede usar la caché ni la cola del anterior.
+      final vinculado = await DatabaseHelper.instance.leerMeta(claveP00Dispositivo);
+      final p00Normalizado = p00.trim().toUpperCase();
+      if (!vinculoPermite(vinculado: vinculado, p00: p00Normalizado)) {
+        // Se descarta la sesión recién emitida: el dispositivo no es suyo.
+        await AuthStorage.deleteToken();
+        _token = null;
+        _usuario = null;
+        _sesionActiva = false;
+        _ultimoError = mensajeDispositivoVinculado;
+        return _ultimoError;
+      }
+      if ((vinculado ?? '').trim().isEmpty) {
+        await DatabaseHelper.instance.guardarMeta(claveP00Dispositivo, p00Normalizado);
       }
 
       final bruto = datos['usuario'];
