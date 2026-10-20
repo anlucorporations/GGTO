@@ -1026,6 +1026,11 @@ export interface CasoEspecialOut {
   id_cuadrilla: number | null;
   cuadrilla_codigo: string | null;
   cuadrilla_nombre: string | null;
+  /* D-120: caso asociado (para abrirlo o cerrarlo desde el especial). */
+  id_averia: string | null;
+  estado_caso: string | null;
+  /* D-122: aviso del alta (jornada ya publicada, sector sin cuadrilla…). */
+  aviso: string | null;
 }
 
 /** Filtros del listado de casos especiales (RF-06/RF-35). */

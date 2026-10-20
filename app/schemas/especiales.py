@@ -98,6 +98,9 @@ class CasoEspecialCreate(BaseModel):
         default=None, max_length=20,
         description="Obligatorio cuando `tipo_actividad` es REPARACION",
     )
+    #: D-122: sector del caso. Si no se indica, se resuelve por la dirección y, si
+    #: no coincide con ninguno, el alta se rechaza (sin sector no hay despacho).
+    id_sector: int | None = None
 
     @model_validator(mode="after")
     def _validar_datos_obligatorios(self) -> CasoEspecialCreate:
@@ -184,6 +187,9 @@ class CasoEspecialOut(BaseModel):
     # estado, para que la APK pueda abrir/cerrar el caso desde el especial.
     id_averia: str | None = None
     estado_caso: str | None = None
+    #: D-122: aviso del alta (p. ej. la jornada de hoy ya está publicada y el
+    #: especial se despachará en la siguiente). `null` si no hay nada que avisar.
+    aviso: str | None = None
 
 
 # --------------------------------------------------------------------------- #

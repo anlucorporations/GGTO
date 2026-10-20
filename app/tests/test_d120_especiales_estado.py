@@ -63,6 +63,20 @@ def especial(client, admin_token):
     headers = admin_token["admin"]
     id_central = admin_token["id_central"]
 
+    # D-122: el alta de un especial exige que la dirección sectorice.
+    sector = client.post(
+        "/api/v1/sectores",
+        json={
+            "id_central": id_central,
+            "nombre": "Sector D-120",
+            "codigo": "TSD120",
+            "direcciones": [{"patron": "SECTOR D120"}],
+        },
+        headers=headers,
+    )
+    assert sector.status_code == 201, sector.text
+    id_sector = sector.json()["id_sector"]
+
     r = client.post(
         ESPECIALES,
         json={
@@ -71,6 +85,7 @@ def especial(client, admin_token):
             "prioridad": "MEDIA",
             "descripcion": "TEST D-120: referido que se cierra en campo",
             "id_averia": "TSTD120-1",
+            "id_sector": id_sector,
             "crear_solicitante": {
                 "unidad": "Unidad de Referidos",
                 "nombre": "SOLICITANTE D120",

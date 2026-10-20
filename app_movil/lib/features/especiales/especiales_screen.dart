@@ -97,11 +97,29 @@ class _EspecialesScreenState extends State<EspecialesScreen>
     );
     if (datos == null) return;
     try {
-      await ApiClient.post('/casos-especiales', data: datos);
+      final creado = await ApiClient.post('/casos-especiales', data: datos);
       await _cargar(silencioso: true);
-      if (mounted) {
-        _avisar('Caso especial creado.');
+      if (!mounted) return;
+      // D-122: el servidor avisa cuando el especial no llegará hoy a la APK
+      // (jornada ya publicada o sector sin cuadrilla asignada).
+      final aviso = creado is Map ? '${creado['aviso'] ?? ''}'.trim() : '';
+      if (aviso.isNotEmpty) {
+        await showDialog<void>(
+          context: context,
+          builder: (contexto) => AlertDialog(
+            title: const Text('Caso especial creado'),
+            content: Text(aviso),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(contexto),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        );
+        return;
       }
+      _avisar('Caso especial creado.');
     } catch (error) {
       if (mounted) {
         _avisar(

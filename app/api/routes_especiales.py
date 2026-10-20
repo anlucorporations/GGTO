@@ -13,6 +13,7 @@ from ..models import (
     Caso,
     Cita,
     Cuadrilla,
+    CuadrillaSectorDia,
     Despacho,
     DespachoCasos,
     FallaMasiva,
@@ -39,6 +40,7 @@ from ..schemas.especiales import (
 from ..services import clasificacion, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
+from ..services.tiempo import hoy_operativo
 from .deps import ROL_SUPER, _especial_alta, get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1", tags=["seguimiento y especiales"])
@@ -185,6 +187,25 @@ def _crear_caso_asociado(db: Session, datos: CasoEspecialCreate, usuario: Usuari
     )
 
     id_sector = asignar_sector(datos.direccion, cargar_patrones(db, central.id_central))
+    # D-122 · H-04: sin sector el caso no entra en ningún despacho por sector y la
+    # APK nunca lo recibe. Se exige (o se indica explícitamente).
+    if datos.id_sector is not None:
+        sector = db.get(Sector, datos.id_sector)
+        if sector is None or sector.id_central != central.id_central:
+            raise HTTPException(
+                status_code=422,
+                detail="El sector indicado no existe en esta central",
+            )
+        id_sector = sector.id_sector
+    if id_sector is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "La dirección no coincide con ningún sector de la central: corrija "
+                "la dirección o indique `id_sector`. Sin sector, el caso especial no "
+                "se puede despachar a ninguna cuadrilla y no llega a la APK."
+            ),
+        )
     caso = Caso(
         id_central=central.id_central,
         id_averia=id_averia,
@@ -306,6 +327,48 @@ def listar_especiales(
     return _resumen_especiales(db, list(db.scalars(stmt).all()))
 
 
+def _aviso_de_despacho(db: Session, caso: Caso) -> str | None:
+    """Aviso del alta: ¿el especial podrá llegar hoy a una cuadrilla? (D-122).
+
+    - Si la jornada de hoy ya está **publicada** (o cerrada), el caso no entra en
+      el reparto de hoy: se incluirá en la próxima jornada o habrá que asignarlo a
+      mano desde DESPACHO.
+    - Si su sector no tiene cuadrilla asignada hoy, tampoco.
+    """
+    if caso.id_sector is None:
+        return None
+    hoy = hoy_operativo()
+    publicados = db.scalar(
+        select(func.count())
+        .select_from(Despacho)
+        .where(
+            Despacho.id_central == caso.id_central,
+            Despacho.fecha == hoy,
+            Despacho.estado.in_(("PUBLICADO", "CERRADO")),
+        )
+    )
+    if publicados:
+        return (
+            "La jornada de hoy ya está publicada: el caso especial se incluirá en el "
+            "despacho de la próxima jornada. Si debe atenderse hoy, asígnelo a una "
+            "cuadrilla desde DESPACHO."
+        )
+    cubierto = db.scalar(
+        select(CuadrillaSectorDia.id_cuadrilla)
+        .where(
+            CuadrillaSectorDia.id_sector == caso.id_sector,
+            CuadrillaSectorDia.fecha == hoy,
+        )
+        .limit(1)
+    )
+    if cubierto is None:
+        return (
+            "Su sector no tiene cuadrilla asignada en la jornada de hoy: el caso se "
+            "despachará cuando el supervisor asigne el sector a una cuadrilla."
+        )
+    return None
+
+
 @router.post("/casos-especiales", response_model=CasoEspecialOut,
              status_code=status.HTTP_201_CREATED, summary="Ingresar un caso especial")
 def crear_especial(
@@ -353,7 +416,12 @@ def crear_especial(
     db.refresh(especial)
     # D-72: se responde con el resumen enriquecido (sector, solicitante,
     # dirección y nombre del caso asociado), igual que el listado.
-    return _resumen_especiales(db, [especial])[0]
+    resumen = _resumen_especiales(db, [especial])[0]
+    # D-122 · H-04: se dice si el especial podrá despacharse hoy.
+    aviso = _aviso_de_despacho(db, caso)
+    if aviso:
+        resumen.aviso = aviso
+    return resumen
 
 
 @router.get("/casos-especiales/{id_caso_especial}", response_model=CasoEspecialOut)

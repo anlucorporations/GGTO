@@ -251,10 +251,20 @@ def test_la_ficha_del_especial_es_idempotente(client, admin_token, db_session):
 
 
 def test_tiene_id_averia_refleja_la_realidad(client, admin_token, db_session):
+    # D-122: el alta exige que la dirección sectorice.
+    sec = client.post(
+        f"{ESPECIALES.rsplit('/casos-especiales', 1)[0]}/sectores",
+        json={"id_central": admin_token["id_central"], "nombre": "Sector Alfa",
+              "codigo": "TSD90",
+              "direcciones": [{"patron": "SECTOR ALFA"}]},
+        headers=admin_token["admin"],
+    )
+    assert sec.status_code == 201, sec.text
     r = client.post(
         ESPECIALES,
         json={"id_averia": "REF-2324X-999999", "clasificacion": "REFERIDO",
               "tipo_actividad": "REPARACION", "tipo_problema": "SIN_SERVICIO",
+              "id_sector": sec.json()["id_sector"],
               "nombre_cliente": "CLIENTE D90", "contacto_cliente": "04121112233",
               "telefono": "7014000874", "direccion": "SECTOR ALFA CASA 9",
               "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS",

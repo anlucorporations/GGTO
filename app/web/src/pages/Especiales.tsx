@@ -205,9 +205,15 @@ export default function Especiales() {
     setGuardando(true);
     setError('');
     try {
-      await api.crearCasoEspecial(datos);
+      const creado = await api.crearCasoEspecial(datos);
       setCrearAbierto(false);
-      setOk('Caso especial creado.');
+      // D-122: si la jornada ya está publicada (o el sector no tiene cuadrilla),
+      // el especial no llega hoy a la APK: se dice expresamente.
+      setOk(
+        creado.aviso
+          ? `Caso especial creado. ${creado.aviso}`
+          : 'Caso especial creado.',
+      );
       await cargarLista();
     } catch (e) {
       setError(detalleDe(e, 'No se pudo crear el caso especial.'));

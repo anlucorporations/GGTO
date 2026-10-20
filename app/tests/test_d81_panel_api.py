@@ -59,11 +59,21 @@ def test_panel_comun_asignadas_vs_cerradas(client, admin_token, db_session):
 def test_panel_referidos(client, admin_token, db_session):
     e = _entorno(client, admin_token, db_session)
     # Caso especial REFERIDO añadido al despacho del día.
+    # D-122: el alta exige que la dirección sectorice.
+    sec = client.post(
+        f"{BASE}/sectores",
+        json={"id_central": admin_token["id_central"], "nombre": "Sector Panel",
+              "codigo": "TSPANEL",
+              "direcciones": [{"patron": "SECTOR PANEL"}]},
+        headers=admin_token["admin"],
+    )
+    assert sec.status_code == 201, sec.text
     esp = client.post(
         f"{BASE}/casos-especiales",
         json={"clasificacion": "REFERIDO", "tipo_actividad": "REPARACION", "prioridad": "ALTA",
               "nombre_cliente": "CLIENTE PANEL", "contacto_cliente": "04141112233",
               "telefono": "7008000001", "direccion": "SECTOR PANEL 1",
+              "id_sector": sec.json()["id_sector"],
               "id_averia": "REF-2324X-900020", "tipo_problema": "SIN_SERVICIO",
               "crear_solicitante": {"unidad": "Masivos", "nombre": "LUIS",
                                     "contacto": "04141112233"}},
