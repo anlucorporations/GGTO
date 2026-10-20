@@ -1017,6 +1017,15 @@ def cerrar_sesion(db: Session, usuario: Usuario, id_sync_log: int, datos: dict[s
     sesion = db.get(SyncLog, id_sync_log)
     if sesion is None:
         raise HTTPException(status_code=404, detail="Sesión de sincronización no encontrada")
+    # D-137 · H-20: solo el **dueño** de la sesión (o un rol de gestión) puede
+    # cerrarla. Antes cualquier autenticado podía cerrar y falsear los contadores
+    # de la sesión de otro técnico (IDOR).
+    rol = usuario.rol.codigo if usuario.rol else ""
+    if sesion.p00 != usuario.p00 and rol not in {"ADMIN", "SUPERVISOR", "SUPER"}:
+        raise HTTPException(
+            status_code=403,
+            detail="La sesión de sincronización no le pertenece: no puede cerrarla.",
+        )
     if sesion.estado != "EN_PROCESO" or sesion.finalizado_en is not None:
         raise HTTPException(status_code=409, detail="La sesión ya está cerrada")
 
