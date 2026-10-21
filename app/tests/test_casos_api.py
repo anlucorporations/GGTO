@@ -54,13 +54,36 @@ def test_tecnico_puede_leer_pero_no_escribir(client, admin_token):
 # Alta manual (RF-32)
 # --------------------------------------------------------------------------- #
 def test_alta_manual_genera_identificador_ref(client, admin_token):
-    r = client.post(BASE, json=CASO_MANUAL, headers=admin_token["admin"])
+    """D-145: el id se genera solo, con el formato REF-(CONS/REP)-######."""
+    r = client.post(
+        BASE, json={**CASO_MANUAL, "categoria": "REFERIDO"}, headers=admin_token["admin"]
+    )
     assert r.status_code == 201, r.text
     caso = r.json()
-    assert caso["id_averia"].startswith("REF-2324X-")
+    assert caso["id_averia"].startswith("REF-CONS-")
     assert caso["origen"] == "MANUAL"
     assert caso["estado_actual"] == "NUEVO"
     assert caso["en_gestion_supervisor"] is False
+    # D-145: la ingesta manual siempre queda como referido.
+    assert caso["categoria"] == "REFERIDO"
+
+
+def test_alta_manual_de_reparacion_genera_ref_rep(client, admin_token):
+    r = client.post(
+        BASE,
+        json={
+            **CASO_MANUAL,
+            "tipo_reporte": "REPARACION",
+            "tipo_problema": "SIN_SERVICIO",
+            "problema_reporte": "SIN SERVICIO",
+        },
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 201, r.text
+    caso = r.json()
+    assert caso["id_averia"].startswith("REF-REP-")
+    assert caso["tipo_caso"] == "REFERIDO"
+    assert caso["categoria"] == "REFERIDO"
 
 
 def test_alta_manual_exige_los_datos_obligatorios(client, admin_token):

@@ -381,7 +381,7 @@ def test_el_alta_manual_enlaza_el_identificador(client, admin_token, db_session)
     )
     assert r.status_code == 201, r.text
     cuerpo = r.json()
-    assert cuerpo["tipo_caso"] == "REPARACION"  # no se reclasifica: tiene IP
+    assert cuerpo["tipo_caso"] == "REPARACION"  # no se reclasifica: tiene IP y avería real
     assert cuerpo["id_pago"] is not None
     assert cuerpo["telefono"] == "7014000860"
 

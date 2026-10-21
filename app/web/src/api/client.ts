@@ -1143,8 +1143,18 @@ export function cerrarMasiva(
 }
 
 /** Ubicación geográfica y GPS del FAT afectado (RF-60). */
-export function ubicacionMasiva(idFalla: number): Promise<UbicacionMasivaOut> {
-  return request<UbicacionMasivaOut>(`/fallas-masivas/${idFalla}/ubicacion`);
+/**
+ * Ubicación del FAT para el mapa de MASIVAS (RF-60).
+ *
+ * D-145: con `geocodificar`, el servidor resuelve la dirección cuando la masiva
+ * no tiene coordenadas (OpenStreetMap/Nominatim, sin clave).
+ */
+export function ubicacionMasiva(
+  idFalla: number,
+  opciones: { geocodificar?: boolean } = {},
+): Promise<UbicacionMasivaOut> {
+  const query = opciones.geocodificar ? '?geocodificar=true' : '';
+  return request<UbicacionMasivaOut>(`/fallas-masivas/${idFalla}/ubicacion${query}`);
 }
 
 /** HTML del reporte imprimible de la masiva (RF-60). */

@@ -87,15 +87,12 @@ interface Props {
   onCerrar: () => void;
   /** El padre recarga su tabla con la masiva devuelta por la API. */
   onActualizada: (falla: FallaMasivaOut, mensaje: string) => void;
-  /** Salta a la pestaña PERSONAL EXTERNO de la página (alta de validadores). */
-  onIrAPersonalExterno?: () => void;
 }
 
 export default function FichaMasiva({
   falla,
   onCerrar,
   onActualizada,
-  onIrAPersonalExterno,
 }: Props) {
   const { soloLectura } = useAuth();
   const [pestana, setPestana] = useState<PestanaMasiva>('masiva');
@@ -362,11 +359,6 @@ export default function FichaMasiva({
     }
   }
 
-  /** La ficha abandona la pestaña de cierre sin validadores activos. */
-  function irAPersonalExterno() {
-    onCerrar();
-    onIrAPersonalExterno?.();
-  }
 
   /* --------------------------- Derivados -------------------------- */
 
@@ -920,13 +912,9 @@ export default function FichaMasiva({
             <div className="aviso aviso-error">
               <span>
                 No hay personal del CRASS activo en el catálogo, y la API exige un validador para
-                cerrar la masiva. Registre o active un validador en la pestaña PERSONAL EXTERNO.
+                cerrar la masiva. Registre o active un validador en{' '}
+                <strong>Técnicos → Personal externo</strong>.
               </span>
-              {onIrAPersonalExterno && (
-                <button type="button" className="btn btn-mini" onClick={irAPersonalExterno}>
-                  Ir a PERSONAL EXTERNO
-                </button>
-              )}
             </div>
           )}
 

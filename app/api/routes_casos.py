@@ -22,6 +22,7 @@ from ..models import (
     DespachoCasos,
     Sector,
     Seguimiento,
+    Solicitante,
     Usuario,
 )
 from ..schemas.casos import (
@@ -88,6 +89,18 @@ def _acotar_a_lo_permitido(
     else:
         condiciones.append(Caso.id_caso.in_(permitidos))
     return condiciones
+
+
+def _nuevo_id_averia_ref(db: Session, tipo_reporte: str) -> str:
+    """Id automático de un caso manual (D-145).
+
+    Formato: `REF-CONS-######` para una construcción y `REF-REP-######` para una
+    reparación. El correlativo sale de la secuencia `seq_caso_ref`, la misma que
+    usaba `generar_id_averia_ref`, así que dos altas simultáneas nunca chocan.
+    """
+    prefijo = "CONS" if str(tipo_reporte).upper() == "CONSTRUCCION" else "REP"
+    numero = db.execute(text("SELECT nextval('seq_caso_ref')")).scalar_one()
+    return f"REF-{prefijo}-{int(numero):06d}"
 
 
 def _caso_de_campo(db: Session, usuario: Usuario, id_caso: int) -> Caso:
@@ -445,7 +458,11 @@ def crear_manual(
     patron = pagos.compilar_patron(config)
 
     valores = datos.model_dump(
-        exclude={"id_sector", "id_averia", "id_central", "tipo_reporte"}
+        exclude={
+            "id_sector", "id_averia", "id_central", "tipo_reporte",
+            # D-145: el solicitante vive en `caso_especial`, no en `caso`.
+            "id_solicitante",
+        }
     )
     numero_pago = valores.pop("id_pago", None) or valores.get("telefono")
     # RN-AL-01: el teléfono del alta es el **identificador de pago (70*)**; un
@@ -455,11 +472,17 @@ def crear_manual(
             status_code=422,
             detail="El teléfono debe ser el identificador de pago (70*) del caso",
         )
-    id_averia = (datos.id_averia or "").strip()
-    if not id_averia:
-        id_averia = db.execute(
-            text("SELECT generar_id_averia_ref(:c)"), {"c": central.id_central}
-        ).scalar_one()
+    # D-145: el id de avería se genera automáticamente (`REF-CONS/REP-######`).
+    id_averia = (datos.id_averia or "").strip() or _nuevo_id_averia_ref(
+        db, datos.tipo_reporte
+    )
+    # D-145: la ingesta manual siempre es un **referido**: la actividad
+    # (reparación/construcción) se conserva en el tipo de caso y en la ficha.
+    solicitante = None
+    if datos.id_solicitante is not None:
+        solicitante = db.get(Solicitante, datos.id_solicitante)
+        if solicitante is None:
+            raise HTTPException(status_code=404, detail="Solicitante no encontrado")
 
     if db.scalar(select(Caso.id_caso).where(Caso.id_averia == id_averia)) is not None:
         raise HTTPException(status_code=409, detail=f"Ya existe un caso con id_averia {id_averia}")
@@ -487,12 +510,14 @@ def crear_manual(
         valores["fecha_reporte"] = datetime.now().astimezone()
     valores["ayudantes"] = []
 
+    # D-145: la ingesta manual de la web no manda categoría (el esquema la deja en
+    # REFERIDO). Si un consumidor manda una explícita (EMPRESA/GOBIERNO) se respeta.
+    if not (valores.get("persona_reporta") or "").strip() and solicitante is not None:
+        valores["persona_reporta"] = f"{solicitante.unidad} — {solicitante.nombre}"
     caso = Caso(
         **valores,
         id_central=central.id_central,
         id_averia=id_averia,
-        # RN-AL-01: el tipo de reporte del alta fija el `tipo_caso` (la regla de
-        # REPARACIÓN/REFERIDO de D-90 puede reclasificarlo después).
         tipo_caso=datos.tipo_reporte,
         id_pago=id_pago,
         id_sector=id_sector,
@@ -504,9 +529,26 @@ def crear_manual(
     )
     db.add(caso)
     db.flush()
-    # D-90 (RF-49): una REPARACIÓN sin 70* o sin avería real se registra como
-    # caso especial REFERIDO (el trigger de D-89 ya ajusta el `tipo_caso`).
+    # D-90: una REPARACIÓN sin avería real (id sintético `REF-…`) pasa a REFERIDO.
     clasificacion.aplicar_regla_reparacion(db, caso, "ALTA_MANUAL", usuario.p00)
+    # D-145: el alta manual deja su ficha de referido con la actividad y el
+    # solicitante del personal externo (también para las construcciones).
+    es_referido = caso.categoria == "REFERIDO" or caso.tipo_caso == "REFERIDO"
+    if es_referido or solicitante is not None:
+        # La clasificación se deriva del caso (EMPRESA/GOBIERNO se respetan); solo
+        # se fija REFERIDO cuando el caso es de esa categoría.
+        especial = clasificacion.asegurar_caso_especial(
+            db, caso, "REFERIDO" if caso.categoria == "REFERIDO" else None
+        )
+        especial.tipo_actividad = (
+            "CONSTRUCCION" if datos.tipo_reporte == "CONSTRUCCION" else "REPARACION"
+        )
+        if solicitante is not None:
+            especial.id_solicitante = solicitante.id_solicitante
+        if not (especial.descripcion or "").strip():
+            especial.descripcion = (
+                valores.get("problema_reporte") or valores.get("informacion")
+            )
     db.add(
         CasoEstadoHist(
             id_caso=caso.id_caso,

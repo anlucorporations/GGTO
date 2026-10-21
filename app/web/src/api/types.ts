@@ -496,8 +496,10 @@ export interface CasoManualCreate {
   id_central?: number | null;
   /** Tipo de reporte de la alta: sola REPARACIÓN o CONSTRUCCIÓN. */
   tipo_reporte: 'REPARACION' | 'CONSTRUCCION';
-  /** Obligatorio cuando `tipo_reporte` es REPARACION. */
+  /** D-145: el servidor genera `REF-REP-…` / `REF-CONS-…`; no se envía. */
   id_averia?: string | null;
+  /** D-145: personal externo que reporta el caso. */
+  id_solicitante?: number | null;
   categoria?: CategoriaCaso;
   nombre_cliente: string;
   /** Teléfono con el identificador de pago (70*) del caso. */
@@ -1479,7 +1481,11 @@ export interface UbicacionMasivaOut {
   olt: string | null;
   fat: string | null;
   sector_nombre: string | null;
+  /** MASIVA · EVIDENCIA · GEOCODIFICADA (D-145) · SIN_DATOS. */
   origen: string;
+  /** D-145: enlaces del mapa calculados por el servidor. */
+  url_mapa?: string | null;
+  url_busqueda?: string | null;
   puntos: {
     tipo: string;
     serial?: string;

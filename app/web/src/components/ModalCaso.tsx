@@ -1,44 +1,42 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+/**
+ * Modal flotante «Agregar caso» (RF-32) — **ingesta manual = referido** (D-145).
+ *
+ * Cambios de D-145:
+ *  - El **ID de avería ya no se escribe**: el servidor lo genera con el formato
+ *    `REF-(CONS/REP)-######` según el tipo de reporte.
+ *  - Todo caso manual queda **tipo REFERIDO** (la actividad —reparación o
+ *    construcción— se elige con el *tipo de reporte* y se guarda en la ficha).
+ *  - El **solicitante** se elige del catálogo de **personal externo** con tres
+ *    listas en cascada: **Unidad → Nombre → Número**. El número seleccionado es
+ *    el `id_solicitante` que viaja al servidor.
+ *
+ * El seguimiento de empresas y gobierno se hace desde ESPECIALES; este modal ya
+ * no crea casos especiales.
+ */
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
-import type {
-  CanalSolicitante,
-  CasoManualCreate,
-  ClasificacionEspecial,
-  PrioridadEspecial,
-  TipoActividadEspecial,
-} from '../api/types';
+import type { CasoManualCreate, Solicitante, TipoActividadEspecial } from '../api/types';
 import Mensaje from './Mensaje';
 import { IconoCerrar } from './Iconos';
 import { nv } from '../utils';
 
-/** Tipo de reporte del alta (RN-AL-01): solo REPARACIÓN o CONSTRUCCIÓN. */
-type TipoReporte = 'REPARACION' | 'CONSTRUCCION';
-
-const CLASIFICACIONES: ClasificacionEspecial[] = ['REFERIDO', 'EMPRESA', 'GOBIERNO'];
-const TIPOS_REPORTE: TipoReporte[] = ['REPARACION', 'CONSTRUCCION'];
-const PRIORIDADES: PrioridadEspecial[] = ['ALTA', 'MEDIA', 'BAJA'];
-const CANALES: CanalSolicitante[] = ['TELEGRAM', 'MCP_IA', 'MANUAL', 'CORREO'];
+const TIPOS_REPORTE: TipoActividadEspecial[] = ['REPARACION', 'CONSTRUCCION'];
 
 interface Formulario {
-  /** RN-AL-01: datos obligatorios del alta (comunes al caso manual y especial). */
+  /** RN-AL-01: datos obligatorios del alta. */
   nombre_cliente: string;
   contacto_cliente: string;
   telefono: string;
   direccion: string;
   tipo_reporte: TipoActividadEspecial;
-  id_averia: string;
   tipo_problema: string;
   informacion: string;
   problema_reporte: string;
   fecha_reporte: string;
-  es_especial: boolean;
-  clasificacion: ClasificacionEspecial;
-  prioridad: PrioridadEspecial;
-  requiere_informe: boolean;
-  sol_unidad: string;
-  sol_nombre: string;
-  sol_contacto: string;
-  sol_canal: CanalSolicitante;
+  /** D-145: personal externo que reporta (cascada unidad → nombre → número). */
+  unidad: string;
+  nombre_solicitante: string;
+  id_solicitante: number | null;
 }
 
 /** Valor para `datetime-local` con la fecha y hora actuales. */
@@ -59,26 +57,18 @@ function formularioVacio(): Formulario {
     telefono: '',
     direccion: '',
     tipo_reporte: 'REPARACION',
-    id_averia: '',
     tipo_problema: '',
     informacion: '',
     problema_reporte: '',
     fecha_reporte: ahoraLocal(),
-    es_especial: false,
-    clasificacion: 'REFERIDO',
-    prioridad: 'MEDIA',
-    requiere_informe: true,
-    sol_unidad: '',
-    sol_nombre: '',
-    sol_contacto: '',
-    sol_canal: 'MANUAL',
+    unidad: '',
+    nombre_solicitante: '',
+    id_solicitante: null,
   };
 }
 
 interface Resultado {
-  tipo: 'normal' | 'especial';
   id_caso: number | null;
-  id_caso_especial: number | null;
   id_averia: string | null;
 }
 
@@ -86,16 +76,53 @@ interface Props {
   onCerrar: () => void;
 }
 
-/**
- * Modal flotante «Agregar caso» (RF-32/RF-06): da de alta un caso normal o,
- * al marcar «Es un caso especial», un caso especial con solicitante externo.
- */
 export default function ModalCaso({ onCerrar }: Props) {
   const [form, setForm] = useState<Formulario>(formularioVacio);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);
   const cajaRef = useRef<HTMLDivElement>(null);
+
+  // Catálogo de personal externo para la cascada de solicitantes (D-145).
+  useEffect(() => {
+    let vivo = true;
+    api
+      .listarSolicitantes()
+      .then((lista) => vivo && setSolicitantes(lista))
+      .catch(() => vivo && setSolicitantes([]));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  /** Unidades del catálogo, ordenadas y sin repetir. */
+  const unidades = useMemo(
+    () => Array.from(new Set(solicitantes.map((s) => s.unidad.trim()))).filter(Boolean).sort(),
+    [solicitantes],
+  );
+
+  /** Nombres de la unidad elegida. */
+  const nombres = useMemo(() => {
+    if (!form.unidad) return [];
+    return Array.from(
+      new Set(
+        solicitantes
+          .filter((s) => s.unidad.trim() === form.unidad)
+          .map((s) => s.nombre.trim()),
+      ),
+    )
+      .filter(Boolean)
+      .sort();
+  }, [solicitantes, form.unidad]);
+
+  /** Números (contactos) del nombre elegido dentro de la unidad. */
+  const numeros = useMemo(() => {
+    if (!form.unidad || !form.nombre_solicitante) return [];
+    return solicitantes.filter(
+      (s) => s.unidad.trim() === form.unidad && s.nombre.trim() === form.nombre_solicitante,
+    );
+  }, [solicitantes, form.unidad, form.nombre_solicitante]);
 
   // Foco inicial + cierre con Escape + foco encerrado en el modal.
   useEffect(() => {
@@ -136,14 +163,11 @@ export default function ModalCaso({ onCerrar }: Props) {
     evento.preventDefault();
     setError('');
 
-    // RN-AL-01: datos obligatorios del alta, comunes al caso manual y al especial.
     const nombreCliente = form.nombre_cliente.trim();
     const contactoCliente = form.contacto_cliente.trim();
     const telefonoPago = form.telefono.trim();
     const direccion = form.direccion.trim();
-    const idAveria = form.id_averia.trim();
     const tipoProblema = form.tipo_problema.trim();
-    const esReparacion = form.tipo_reporte === 'REPARACION';
 
     if (!nombreCliente || !contactoCliente || !telefonoPago || !direccion) {
       setError(
@@ -152,64 +176,22 @@ export default function ModalCaso({ onCerrar }: Props) {
       );
       return;
     }
-    if (esReparacion && (!idAveria || !tipoProblema)) {
-      setError(
-        'En un reporte de REPARACIÓN son obligatorios el ID de avería y el tipo de problema.',
-      );
+    if (form.tipo_reporte === 'REPARACION' && !tipoProblema) {
+      setError('En un reporte de REPARACIÓN es obligatorio el tipo de problema.');
       return;
     }
-
-    if (form.es_especial) {
-      const unidad = form.sol_unidad.trim();
-      const nombre = form.sol_nombre.trim();
-      const contacto = form.sol_contacto.trim();
-      if (!unidad || !nombre || !contacto) {
-        setError(
-          'Para un caso especial complete los datos del solicitante: unidad, nombre y contacto.',
-        );
-        return;
-      }
-      setGuardando(true);
-      try {
-        const creado = await api.crearCasoEspecial({
-          clasificacion: form.clasificacion,
-          tipo_actividad: form.tipo_reporte,
-          prioridad: form.prioridad,
-          requiere_informe: form.requiere_informe,
-          descripcion: nv(form.informacion),
-          nombre_cliente: nombreCliente,
-          contacto_cliente: contactoCliente,
-          telefono: telefonoPago,
-          direccion,
-          id_averia: idAveria || null,
-          tipo_problema: tipoProblema || null,
-          crear_solicitante: { unidad, nombre, contacto, canal: form.sol_canal },
-        });
-        let idAveriaCaso: string | null = null;
-        if (creado.id_caso !== null) {
-          try {
-            idAveriaCaso = (await api.obtenerCaso(creado.id_caso)).id_averia;
-          } catch {
-            idAveriaCaso = null;
-          }
-        }
-        setResultado({
-          tipo: 'especial',
-          id_caso: creado.id_caso,
-          id_caso_especial: creado.id_caso_especial,
-          id_averia: idAveriaCaso,
-        });
-      } catch (e) {
-        setError(e instanceof api.ApiError ? e.message : 'Error al crear el caso especial.');
-      } finally {
-        setGuardando(false);
-      }
+    if (form.id_solicitante === null) {
+      setError(
+        'Seleccione el solicitante del personal externo: unidad, nombre y número.',
+      );
       return;
     }
 
     const payload: CasoManualCreate = {
       tipo_reporte: form.tipo_reporte,
-      id_averia: idAveria || null,
+      // D-145: toda la ingesta manual es un referido.
+      categoria: 'REFERIDO',
+      // D-145: el servidor genera el ID (`REF-REP-…` / `REF-CONS-…`).
       nombre_cliente: nombreCliente,
       contacto_cliente: contactoCliente,
       id_pago: telefonoPago,
@@ -218,16 +200,12 @@ export default function ModalCaso({ onCerrar }: Props) {
       informacion: nv(form.informacion),
       problema_reporte: nv(form.problema_reporte),
       fecha_reporte: form.fecha_reporte ? form.fecha_reporte : null,
+      id_solicitante: form.id_solicitante,
     };
     setGuardando(true);
     try {
       const creado = await api.crearCaso(payload);
-      setResultado({
-        tipo: 'normal',
-        id_caso: creado.id_caso,
-        id_caso_especial: null,
-        id_averia: creado.id_averia,
-      });
+      setResultado({ id_caso: creado.id_caso, id_averia: creado.id_averia });
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'Error al crear el caso.');
     } finally {
@@ -260,136 +238,115 @@ export default function ModalCaso({ onCerrar }: Props) {
 
         <div className="modal-cuerpo">
           {resultado ? (
-          <div className="modal-resultado">
-            <Mensaje tipo="ok" texto="Registro creado correctamente." />
-            {resultado.tipo === 'normal' ? (
+            <div className="modal-resultado">
+              <Mensaje tipo="ok" texto="Registro creado correctamente." />
               <p>
                 ID de avería:{' '}
                 <strong
-                  className={
-                    resultado.id_averia?.startsWith('REF-') ? 'mono id-ref' : 'mono'
-                  }
+                  className={resultado.id_averia?.startsWith('REF-') ? 'mono id-ref' : 'mono'}
                 >
                   {resultado.id_averia ?? '—'}
                 </strong>
               </p>
-            ) : (
-              <>
-                <p>
-                  Caso especial:{' '}
-                  <strong className="mono">#{resultado.id_caso_especial}</strong>
-                </p>
-                <p>
-                  Caso asociado:{' '}
-                  <strong className="mono">{resultado.id_caso ?? '—'}</strong>
-                </p>
-                <p>
-                  Identificador generado:{' '}
-                  <strong
-                    className={
-                      resultado.id_averia?.startsWith('REF-') ? 'mono id-ref' : 'mono'
-                    }
-                  >
-                    {resultado.id_averia ?? '—'}
-                  </strong>
-                </p>
-              </>
-            )}
-            <div className="acciones-form">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setResultado(null);
-                  setForm(formularioVacio());
-                }}
-              >
-                Agregar otro
-              </button>
-              <button type="button" className="btn btn-secundario" onClick={onCerrar}>
-                Cerrar
-              </button>
+              <p className="texto-pequeno">
+                El caso quedó registrado como <strong>REFERIDO</strong>. Para empresas,
+                gobierno o el seguimiento del referido use la sección{' '}
+                <strong>Especiales</strong>.
+              </p>
+              <div className="acciones-form">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setResultado(null);
+                    setForm(formularioVacio());
+                  }}
+                >
+                  Agregar otro
+                </button>
+                <button type="button" className="btn btn-secundario" onClick={onCerrar}>
+                  Cerrar
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <form className="formulario modal-formulario" onSubmit={(e) => void guardar(e)}>
-            <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
+          ) : (
+            <form className="formulario modal-formulario" onSubmit={(e) => void guardar(e)}>
+              <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
 
-            <div className="campo campo-ancho">
-              <label htmlFor="nc-nombre">Nombre de contacto *</label>
-              <input
-                id="nc-nombre"
-                required
-                value={form.nombre_cliente}
-                onChange={(e) => setForm({ ...form, nombre_cliente: e.target.value })}
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="nc-contacto">Teléfono de contacto *</label>
-              <input
-                id="nc-contacto"
-                required
-                type="tel"
-                value={form.contacto_cliente}
-                onChange={(e) => setForm({ ...form, contacto_cliente: e.target.value })}
-                placeholder="04142223344"
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="nc-telefono">Teléfono — identificador de pago (70*) *</label>
-              <input
-                id="nc-telefono"
-                required
-                value={form.telefono}
-                onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                placeholder="7014000848"
-              />
-            </div>
-            <div className="campo">
-              <label htmlFor="nc-reporte">Tipo de reporte *</label>
-              <select
-                id="nc-reporte"
-                value={form.tipo_reporte}
-                onChange={(e) =>
-                  setForm({ ...form, tipo_reporte: e.target.value as TipoActividadEspecial })
-                }
-              >
-                {TIPOS_REPORTE.map((t) => (
-                  <option key={t} value={t}>
-                    {t === 'REPARACION' ? 'Reparación' : 'Construcción'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="nc-fecha">Fecha de reporte</label>
-              <input
-                id="nc-fecha"
-                type="datetime-local"
-                value={form.fecha_reporte}
-                onChange={(e) => setForm({ ...form, fecha_reporte: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="nc-direccion">Dirección del inmueble *</label>
-              <input
-                id="nc-direccion"
-                required
-                value={form.direccion}
-                onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-              />
-            </div>
-            {form.tipo_reporte === 'REPARACION' && (
-              <>
-                <div className="campo">
-                  <label htmlFor="nc-averia">ID de avería *</label>
-                  <input
-                    id="nc-averia"
-                    required
-                    value={form.id_averia}
-                    onChange={(e) => setForm({ ...form, id_averia: e.target.value })}
-                  />
-                </div>
+              <div className="aviso aviso-info campo-ancho">
+                <span>
+                  El <strong>ID de avería se genera automáticamente</strong> con el formato{' '}
+                  <span className="mono">REF-REP-######</span> (reparación) o{' '}
+                  <span className="mono">REF-CONS-######</span> (construcción). Todos los
+                  casos de ingesta manual quedan como <strong>REFERIDO</strong>.
+                </span>
+              </div>
+
+              <div className="campo campo-ancho">
+                <label htmlFor="nc-nombre">Nombre de contacto *</label>
+                <input
+                  id="nc-nombre"
+                  required
+                  value={form.nombre_cliente}
+                  onChange={(e) => setForm({ ...form, nombre_cliente: e.target.value })}
+                />
+              </div>
+              <div className="campo">
+                <label htmlFor="nc-contacto">Teléfono de contacto *</label>
+                <input
+                  id="nc-contacto"
+                  required
+                  type="tel"
+                  value={form.contacto_cliente}
+                  onChange={(e) => setForm({ ...form, contacto_cliente: e.target.value })}
+                  placeholder="04142223344"
+                />
+              </div>
+              <div className="campo">
+                <label htmlFor="nc-telefono">Teléfono — identificador de pago (70*) *</label>
+                <input
+                  id="nc-telefono"
+                  required
+                  value={form.telefono}
+                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                  placeholder="7014000848"
+                />
+              </div>
+              <div className="campo">
+                <label htmlFor="nc-reporte">Tipo de reporte *</label>
+                <select
+                  id="nc-reporte"
+                  value={form.tipo_reporte}
+                  onChange={(e) =>
+                    setForm({ ...form, tipo_reporte: e.target.value as TipoActividadEspecial })
+                  }
+                >
+                  {TIPOS_REPORTE.map((t) => (
+                    <option key={t} value={t}>
+                      {t === 'REPARACION' ? 'Reparación' : 'Construcción'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="campo">
+                <label htmlFor="nc-fecha">Fecha de reporte</label>
+                <input
+                  id="nc-fecha"
+                  type="datetime-local"
+                  value={form.fecha_reporte}
+                  onChange={(e) => setForm({ ...form, fecha_reporte: e.target.value })}
+                />
+              </div>
+              <div className="campo campo-ancho">
+                <label htmlFor="nc-direccion">Dirección del inmueble *</label>
+                <input
+                  id="nc-direccion"
+                  required
+                  value={form.direccion}
+                  onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+                />
+              </div>
+              {form.tipo_reporte === 'REPARACION' && (
                 <div className="campo">
                   <label htmlFor="nc-tipo-problema">Tipo de problema *</label>
                   <input
@@ -400,136 +357,115 @@ export default function ModalCaso({ onCerrar }: Props) {
                     onChange={(e) => setForm({ ...form, tipo_problema: e.target.value })}
                   />
                 </div>
-              </>
-            )}
-            <div className="campo campo-ancho">
-              <label htmlFor="nc-problema">Problema reportado</label>
-              <textarea
-                id="nc-problema"
-                value={form.problema_reporte}
-                onChange={(e) => setForm({ ...form, problema_reporte: e.target.value })}
-              />
-            </div>
-            <div className="campo campo-ancho">
-              <label htmlFor="nc-informacion">Información adicional</label>
-              <textarea
-                id="nc-informacion"
-                value={form.informacion}
-                onChange={(e) => setForm({ ...form, informacion: e.target.value })}
-              />
-            </div>
+              )}
+              <div className="campo campo-ancho">
+                <label htmlFor="nc-problema">Problema reportado</label>
+                <textarea
+                  id="nc-problema"
+                  value={form.problema_reporte}
+                  onChange={(e) => setForm({ ...form, problema_reporte: e.target.value })}
+                />
+              </div>
+              <div className="campo campo-ancho">
+                <label htmlFor="nc-informacion">Información adicional</label>
+                <textarea
+                  id="nc-informacion"
+                  value={form.informacion}
+                  onChange={(e) => setForm({ ...form, informacion: e.target.value })}
+                />
+              </div>
 
-            <div className="campo campo-check campo-ancho">
-              <input
-                id="nc-especial"
-                type="checkbox"
-                checked={form.es_especial}
-                onChange={(e) => setForm({ ...form, es_especial: e.target.checked })}
-              />
-              <label htmlFor="nc-especial">Es un caso especial</label>
-            </div>
-
-            {form.es_especial && (
+              {/* D-145: solicitante del catálogo de personal externo, en cascada. */}
               <div className="subpanel campo-ancho bloque-especial">
+                <h3 className="subtitulo-seccion">Solicitante (personal externo) *</h3>
                 <div className="formulario">
                   <div className="campo">
-                    <label htmlFor="nc-clasificacion">Clasificación</label>
+                    <label htmlFor="nc-sol-unidad">Unidad que solicita *</label>
                     <select
-                      id="nc-clasificacion"
-                      value={form.clasificacion}
-                      onChange={(e) =>
-                        setForm({ ...form, clasificacion: e.target.value as ClasificacionEspecial })
-                      }
-                    >
-                      {CLASIFICACIONES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="nc-prioridad">Prioridad</label>
-                    <select
-                      id="nc-prioridad"
-                      value={form.prioridad}
-                      onChange={(e) =>
-                        setForm({ ...form, prioridad: e.target.value as PrioridadEspecial })
-                      }
-                    >
-                      {PRIORIDADES.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo campo-check">
-                    <input
-                      id="nc-informe"
-                      type="checkbox"
-                      checked={form.requiere_informe}
-                      onChange={(e) => setForm({ ...form, requiere_informe: e.target.checked })}
-                    />
-                    <label htmlFor="nc-informe">Requiere informe</label>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="nc-sol-unidad">Solicitante — unidad *</label>
-                    <input
                       id="nc-sol-unidad"
                       required
-                      value={form.sol_unidad}
-                      onChange={(e) => setForm({ ...form, sol_unidad: e.target.value })}
-                    />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="nc-sol-nombre">Solicitante — nombre *</label>
-                    <input
-                      id="nc-sol-nombre"
-                      required
-                      value={form.sol_nombre}
-                      onChange={(e) => setForm({ ...form, sol_nombre: e.target.value })}
-                    />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="nc-sol-contacto">Solicitante — contacto *</label>
-                    <input
-                      id="nc-sol-contacto"
-                      required
-                      value={form.sol_contacto}
-                      onChange={(e) => setForm({ ...form, sol_contacto: e.target.value })}
-                    />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="nc-sol-canal">Solicitante — canal</label>
-                    <select
-                      id="nc-sol-canal"
-                      value={form.sol_canal}
+                      value={form.unidad}
                       onChange={(e) =>
-                        setForm({ ...form, sol_canal: e.target.value as CanalSolicitante })
+                        setForm({
+                          ...form,
+                          unidad: e.target.value,
+                          nombre_solicitante: '',
+                          id_solicitante: null,
+                        })
                       }
                     >
-                      {CANALES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      <option value="">— Seleccione la unidad —</option>
+                      {unidades.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                    {unidades.length === 0 && (
+                      <p className="texto-pequeno">
+                        No hay personal externo cargado. Regístrelo en{' '}
+                        <strong>Técnicos → Personal externo</strong>.
+                      </p>
+                    )}
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="nc-sol-nombre">Nombre del solicitante *</label>
+                    <select
+                      id="nc-sol-nombre"
+                      required
+                      value={form.nombre_solicitante}
+                      disabled={!form.unidad}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          nombre_solicitante: e.target.value,
+                          id_solicitante: null,
+                        })
+                      }
+                    >
+                      <option value="">— Seleccione el nombre —</option>
+                      {nombres.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="nc-sol-numero">Número del solicitante *</label>
+                    <select
+                      id="nc-sol-numero"
+                      required
+                      value={form.id_solicitante ?? ''}
+                      disabled={!form.nombre_solicitante}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          id_solicitante: e.target.value ? Number(e.target.value) : null,
+                        })
+                      }
+                    >
+                      <option value="">— Seleccione el número —</option>
+                      {numeros.map((s) => (
+                        <option key={s.id_solicitante} value={s.id_solicitante}>
+                          {s.contacto}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
               </div>
-            )}
 
-            <div className="acciones-form">
-              <button className="btn" type="submit" disabled={guardando}>
-                {guardando ? 'Guardando…' : 'Guardar caso'}
-              </button>
-              <button type="button" className="btn btn-secundario" onClick={onCerrar}>
-                Cancelar
-              </button>
-            </div>
-          </form>
-        )}
+              <div className="acciones-form">
+                <button className="btn" type="submit" disabled={guardando}>
+                  {guardando ? 'Guardando…' : 'Guardar caso'}
+                </button>
+                <button type="button" className="btn btn-secundario" onClick={onCerrar}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

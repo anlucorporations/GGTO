@@ -45,7 +45,6 @@ import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import { fechaHora } from '../utils';
 import BotonIcono from '../masivas/AccionesMasiva';
-import CatalogoPersonalExterno from '../masivas/CatalogoPersonalExterno';
 import CeldaIndicadores from '../masivas/CeldaIndicadores';
 import CuadroMasivas from '../masivas/CuadroMasivas';
 import { claseEstadoMasiva } from '../masivas/estado';
@@ -60,8 +59,7 @@ type PestanaMasivas =
   | 'gestion'
   | 'reporte'
   | 'historico'
-  | 'ubicacion'
-  | 'personal';
+  | 'ubicacion';
 
 const PESTANAS: { id: PestanaMasivas; etiqueta: string }[] = [
   { id: 'automatica', etiqueta: 'Búsqueda automática' },
@@ -70,7 +68,6 @@ const PESTANAS: { id: PestanaMasivas; etiqueta: string }[] = [
   { id: 'reporte', etiqueta: 'Generar reporte' },
   { id: 'historico', etiqueta: 'Histórico' },
   { id: 'ubicacion', etiqueta: 'Ubicación' },
-  { id: 'personal', etiqueta: 'Personal externo' },
 ];
 
 const ESTADOS_MASIVA: EstadoFallaMasiva[] = ['DETECTADA', 'PLANIFICADA', 'ATENDIDA', 'CERRADA'];
@@ -129,6 +126,8 @@ export default function Masivas() {
   const [idUbicacion, setIdUbicacion] = useState('');
   const [ubicacion, setUbicacion] = useState<UbicacionMasivaOut | null>(null);
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+  // D-145: resolución de la dirección para el mapa del FAT.
+  const [geocodificando, setGeocodificando] = useState(false);
 
   const cargarLista = useCallback(async () => {
     setCargando(true);
@@ -223,6 +222,20 @@ export default function Masivas() {
       setError(detalleDe(e, 'No se pudo obtener la ubicación del FAT.'));
     } finally {
       setCargandoUbicacion(false);
+    }
+  }
+
+  /** D-145: ubica el FAT por su dirección cuando no hay coordenadas GPS. */
+  async function ubicarPorDireccion() {
+    if (idUbicacion === '') return;
+    setGeocodificando(true);
+    setError('');
+    try {
+      setUbicacion(await api.ubicacionMasiva(Number(idUbicacion), { geocodificar: true }));
+    } catch (e) {
+      setError(detalleDe(e, 'No se pudo ubicar la dirección del FAT.'));
+    } finally {
+      setGeocodificando(false);
     }
   }
 
@@ -811,16 +824,17 @@ export default function Masivas() {
                   longitud={ubicacion.longitud}
                   etiqueta={`Masiva #${ubicacion.id_falla} · FAT ${ubicacion.fat ?? 'sin identificar'}`}
                   puntos={ubicacion.puntos}
+                  // D-145: si el FAT no tiene GPS, se ubica por su dirección.
+                  direccion={ubicacion.direccion}
+                  urlBusqueda={ubicacion.url_busqueda}
+                  geocodificando={geocodificando}
+                  onGeocodificar={() => void ubicarPorDireccion()}
                 />
               </>
             )}
           </div>
         )}
 
-        {/* ------------------------ PERSONAL EXTERNO -------------------- */}
-        {pestana === 'personal' && (
-          <CatalogoPersonalExterno onCambio={() => void refrescarTodo()} />
-        )}
       </div>
 
       {/* Formulario de reporte manual */}
@@ -848,7 +862,6 @@ export default function Masivas() {
           falla={ficha}
           onCerrar={() => setFicha(null)}
           onActualizada={masivaActualizada}
-          onIrAPersonalExterno={() => setPestana('personal')}
         />
       )}
 

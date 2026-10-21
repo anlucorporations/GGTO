@@ -263,9 +263,15 @@ class UbicacionOut(BaseModel):
     olt: str | None = None
     fat: str | None = None
     sector_nombre: str | None = None
+    #: MASIVA (coordenadas de la masiva) · EVIDENCIA (GPS de una foto) ·
+    #: GEOCODIFICADA (resuelta desde la dirección) · SIN_DATOS.
     origen: str = "SIN_DATOS"
     #: Puntos GPS de las evidencias (actividad/evidencia) y de los casos.
     puntos: list[dict[str, Any]] = Field(default_factory=list)
+    #: D-145: enlaces listos para el mapa (OpenStreetMap) cuando hay coordenadas
+    #: o, al menos, una dirección con la que buscarla.
+    url_mapa: str | None = None
+    url_busqueda: str | None = None
 
 
 class OrdenMaterialOut(BaseModel):

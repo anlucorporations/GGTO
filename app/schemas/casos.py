@@ -145,8 +145,12 @@ class CasoManualCreate(BaseModel):
 
     id_central: int | None = None
     tipo_reporte: TIPO_REPORTE
+    #: D-145: el id de avería se genera solo (`REF-REP-…` / `REF-CONS-…`). Se
+    #: admite uno explícito por compatibilidad (pruebas e importaciones).
     id_averia: str | None = Field(default=None, max_length=30)
     categoria: CATEGORIA = "RESIDENCIAL"
+    #: D-145: personal externo que reporta (catálogo de solicitantes).
+    id_solicitante: int | None = None
     nombre_cliente: str = Field(min_length=1, max_length=160,
                                 description="Nombre de contacto (obligatorio)")
     telefono: str | None = Field(default=None, max_length=30)
@@ -185,20 +189,13 @@ class CasoManualCreate(BaseModel):
                 "El teléfono con el identificador de pago (70*) es obligatorio "
                 "(`id_pago`)"
             )
-        if self.tipo_reporte == "REPARACION":
-            faltan = [
-                nombre
-                for nombre, valor in (
-                    ("id_averia", self.id_averia),
-                    ("tipo_problema", self.tipo_problema),
-                )
-                if not (valor or "").strip()
-            ]
-            if faltan:
-                raise ValueError(
-                    "En un reporte de REPARACIÓN son obligatorios: "
-                    + ", ".join(faltan)
-                )
+        # D-145: el id de avería lo genera el servidor; el tipo de problema sigue
+        # siendo obligatorio en una reparación.
+        if self.tipo_reporte == "REPARACION" and not (self.tipo_problema or "").strip():
+            raise ValueError(
+                "En un reporte de REPARACIÓN es obligatorio el tipo de problema "
+                "(`tipo_problema`)"
+            )
         return self
 
 

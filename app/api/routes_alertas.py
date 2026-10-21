@@ -45,8 +45,8 @@ from ..schemas.alertas import (
     ValidadorCrassOut,
 )
 from ..services import fallas as svc_fallas
+from ..services import geocodificacion, outbox
 from ..services import masivas as svc_masivas
-from ..services import outbox
 from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, resolver_central
 from .deps import _material, get_current_user, require_roles
@@ -595,11 +595,34 @@ def cerrar_masiva(
             summary="Ubicación geográfica y GPS del FAT afectado (D-99 · RF-60)")
 def ubicacion_falla(
     id_falla: int,
+    geocodificar: bool = Query(
+        default=False,
+        description=(
+            "D-145: si la masiva no tiene coordenadas ni evidencias con GPS, "
+            "resuelve la dirección del FAT con OpenStreetMap"
+        ),
+    ),
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> UbicacionOut:
     falla = _falla_de_usuario(db, id_falla, usuario)
-    return svc_masivas.ubicacion(db, falla)
+    datos = svc_masivas.ubicacion(db, falla)
+    # D-145: mapa «según la dirección»: cuando no hay coordenadas se intenta
+    # resolver la dirección (solo si se pide, para no consultar en cada carga).
+    if geocodificar and datos.latitud is None and datos.direccion:
+        consulta = geocodificacion.normalizar_consulta(
+            datos.direccion,
+            datos.sector_nombre,
+            f"FAT {datos.fat}" if datos.fat else None,
+        )
+        encontrada = geocodificacion.geocodificar(consulta)
+        if encontrada is not None:
+            lat, lon = encontrada
+            datos.latitud = lat
+            datos.longitud = lon
+            datos.origen = "GEOCODIFICADA"
+            datos.url_mapa = geocodificacion.url_mapa(lat, lon)
+    return datos
 
 
 @router.get("/fallas-masivas/{id_falla}/reporte",

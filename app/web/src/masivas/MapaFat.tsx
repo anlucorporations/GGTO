@@ -31,6 +31,14 @@ interface Props {
   etiqueta?: string;
   /** Puntos GPS de las evidencias. */
   puntos?: PuntoMasiva[];
+  /** D-145: dirección del FAT (se usa cuando no hay coordenadas). */
+  direccion?: string | null;
+  /** D-145: enlace de búsqueda en OpenStreetMap calculado por el servidor. */
+  urlBusqueda?: string | null;
+  /** D-145: resolver la dirección y redibujar el mapa (lo hace el contenedor). */
+  onGeocodificar?: () => void;
+  /** ¿Se está resolviendo la dirección? */
+  geocodificando?: boolean;
 }
 
 /** Quita los caracteres que podrían inyectar HTML en el globo del marcador. */
@@ -42,7 +50,16 @@ function escapar(texto: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export default function MapaFat({ latitud, longitud, etiqueta, puntos = [] }: Props) {
+export default function MapaFat({
+  latitud,
+  longitud,
+  etiqueta,
+  puntos = [],
+  direccion = null,
+  urlBusqueda = null,
+  onGeocodificar,
+  geocodificando = false,
+}: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
 
   // El arreglo `puntos` suele recrearse en cada render del padre: se usa su
@@ -98,12 +115,39 @@ export default function MapaFat({ latitud, longitud, etiqueta, puntos = [] }: Pr
   }, [latitud, longitud, etiqueta, clavePuntos]);
 
   if (latitud === null || longitud === null) {
+    // D-145: sin coordenadas se ofrece ubicar el FAT **por la dirección**.
     return (
       <div className="masiva-mapa-aviso" role="status">
         <span>
-          Sin coordenadas registradas para el FAT. La ubicación se completa cuando la
-          cuadrilla reporta el GPS desde la aplicación móvil o al registrar la evidencia.
+          Sin coordenadas registradas para el FAT.
+          {direccion
+            ? ' Se puede ubicar en el mapa a partir de su dirección.'
+            : ' La ubicación se completa cuando la cuadrilla reporta el GPS desde la aplicación móvil o al registrar la evidencia.'}
         </span>
+        {direccion && (
+          <div className="acciones-form">
+            {onGeocodificar && (
+              <button
+                type="button"
+                className="btn btn-secundario"
+                onClick={onGeocodificar}
+                disabled={geocodificando}
+              >
+                {geocodificando ? 'Ubicando…' : 'Ubicar por la dirección'}
+              </button>
+            )}
+            {urlBusqueda && (
+              <a className="btn btn-secundario" href={urlBusqueda} target="_blank" rel="noreferrer">
+                Buscar en OpenStreetMap
+              </a>
+            )}
+          </div>
+        )}
+        {direccion && (
+          <p className="texto-pequeno">
+            Dirección del FAT: <strong>{direccion}</strong>
+          </p>
+        )}
       </div>
     );
   }
@@ -127,6 +171,16 @@ export default function MapaFat({ latitud, longitud, etiqueta, puntos = [] }: Pr
           Coordenadas: <span className="mono">{latitud.toFixed(6)}</span>,{' '}
           <span className="mono">{longitud.toFixed(6)}</span>
         </span>
+        <a
+          className="texto-pequeno"
+          href={`https://www.openstreetmap.org/?mlat=${latitud.toFixed(6)}&mlon=${longitud.toFixed(
+            6,
+          )}#map=17/${latitud.toFixed(6)}/${longitud.toFixed(6)}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Abrir en OpenStreetMap
+        </a>
       </div>
     </>
   );

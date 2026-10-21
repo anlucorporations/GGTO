@@ -10,6 +10,7 @@ import type {
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
 import Modal from '../components/Modal';
+import CatalogoPersonalExterno from '../masivas/CatalogoPersonalExterno';
 import PieTabla from '../components/PieTabla';
 import { useAuth } from '../auth/AuthContext';
 import { nv } from '../utils';
@@ -521,6 +522,20 @@ export default function Tecnicos() {
             cargando={cargando}
           />
         </table>
+      </div>
+
+      {/* D-145: el catálogo de personal externo vive en la configuración de técnicos. */}
+      <div className="panel-bloque" id="personal-externo">
+        <div className="pagina-cabecera">
+          <div>
+            <h2>Personal externo</h2>
+            <p>
+              Solicitantes y validadores del CRASS que reportan casos y masivas. Es la
+              lista que alimenta el alta manual de casos.
+            </p>
+          </div>
+        </div>
+        <CatalogoPersonalExterno onCambio={() => void cargar()} />
       </div>
 
       {/* Recuperación de seguridad: palabras nuevas (una sola vez) — solo SUPER */}

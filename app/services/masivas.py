@@ -31,7 +31,7 @@ from ..models import (
     Usuario,
 )
 from ..schemas.alertas import CasoAsociadoOut, UbicacionOut
-from . import resolucion
+from . import geocodificacion, resolucion
 
 #: Columnas por las que la detección automática reconoce la concentración.
 CAMPOS_CONCENTRACION = {"olt": Caso.olt, "fat": Caso.fat, "id_sector": Caso.id_sector}
@@ -457,15 +457,23 @@ def ubicacion(db: Session, falla: FallaMasiva) -> UbicacionOut:
                 lat, lon = punto["latitud"], punto["longitud"]
                 origen = "EVIDENCIA"
                 break
+    direccion = falla.direccion or (caso.direccion if caso else None)
+    consulta = geocodificacion.normalizar_consulta(
+        direccion, sector.nombre if sector else None, f"FAT {falla.fat}" if falla.fat else None
+    )
     return UbicacionOut(
         id_falla=falla.id_falla,
         latitud=lat,
         longitud=lon,
-        direccion=falla.direccion or (caso.direccion if caso else None),
+        direccion=direccion,
         ruta=ruta_de_caso(caso),
         olt=caso.olt if caso else None,
         fat=falla.fat or (caso.fat if caso else None),
         sector_nombre=sector.nombre if sector else None,
         origen=origen,
         puntos=puntos,
+        # D-145: los enlaces del mapa se calculan aquí para que la pantalla no
+        # tenga que saber construir URLs ni depender de una clave de mapas.
+        url_mapa=geocodificacion.url_mapa(lat, lon),
+        url_busqueda=geocodificacion.url_busqueda(consulta),
     )
