@@ -65,6 +65,29 @@ def test_la_muestra_minima_se_marca():
     assert calculo["muestra_suficiente"] is False
 
 
+def test_una_reapertura_penaliza_el_puntaje():
+    """D-146: el caso reabierto resta en «sin reapertura» aunque ya no esté cerrado."""
+    perfecta = efectividad.Conteos(
+        asignados=10, cerrados=10, en_plazo=10, con_evidencia=10
+    )
+    con_reapertura = efectividad.Conteos(
+        asignados=10, cerrados=8, en_plazo=8, con_evidencia=8, reaperturas=2
+    )
+    assert efectividad.puntaje(perfecta)["puntaje"] == 100.0
+    assert efectividad.puntaje(con_reapertura)["puntaje"] < 100.0
+    assert efectividad.puntaje(con_reapertura)["componentes"]["reapertura"] == 0.75
+
+
+def test_un_caso_reabierto_sin_cierres_penaliza_todo_el_criterio():
+    # Cerrados = 0 y reaperturas = 1: el denominador no puede ser 0 (antes el
+    # criterio se quedaba en 1,0 y regalaba el 10 % del puntaje).
+    calculo = efectividad.puntaje(
+        efectividad.Conteos(asignados=1, cerrados=0, reaperturas=1)
+    )
+    assert calculo["componentes"]["reapertura"] == 0.0
+    assert calculo["puntaje"] == 0.0
+
+
 def test_las_etiquetas_cualitativas():
     assert efectividad._etiqueta(90) == "EXCELENTE"
     assert efectividad._etiqueta(75) == "BUENO"
@@ -202,3 +225,63 @@ def test_el_periodo_invertido_se_rechaza(client, admin_token):
         headers=admin_token["admin"],
     )
     assert r.status_code == 422, r.text
+
+
+# --------------------------------------------------------------------------- #
+# Acceso (D-146 · RBAC y aislamiento por central)
+# --------------------------------------------------------------------------- #
+def test_el_tecnico_no_ve_el_ranking(client, admin_token):
+    """El ranking es una métrica de gestión: el TÉCNICO recibe 403."""
+    r = client.get(EFECTIVIDAD, headers=admin_token["tecnico"])
+    assert r.status_code == 403, r.text
+
+
+def test_el_supervisor_si_ve_el_ranking(client, admin_token):
+    r = client.get(EFECTIVIDAD, headers=admin_token["supervisor"])
+    assert r.status_code == 200, r.text
+
+
+def test_no_se_puede_pedir_otra_central(client, admin_token):
+    """D-146: la central se valida contra la del usuario (no se filtra de otra)."""
+    r = client.get(
+        EFECTIVIDAD,
+        params={"id_central": admin_token["id_central"] + 999},
+        headers=admin_token["admin"],
+    )
+    assert r.status_code == 403, r.text
+
+
+def test_una_reapertura_se_cuenta_aunque_el_caso_no_este_cerrado(
+    client, dos_cuadrillas, db_session
+):
+    """El caso reabierto deja de estar CERRADO: aun así debe penalizar a su cuadrilla."""
+    caso = db_session.scalar(
+        select(Caso)
+        .join(DespachoCasos, DespachoCasos.id_caso == Caso.id_caso)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .join(Cuadrilla, Cuadrilla.id_cuadrilla == Despacho.id_cuadrilla)
+        .where(Cuadrilla.codigo == "TC146A")
+        .limit(1)
+    )
+    caso.estado_actual = "PENDIENTE"
+    db_session.add(
+        CasoEstadoHist(
+            id_caso=caso.id_caso, estado_anterior="CERRADO", estado_nuevo="PENDIENTE",
+            motivo="reapertura de prueba D-146", usuario="TESTADM",
+            fecha_hora=datetime.now(UTC),
+        )
+    )
+    db_session.commit()
+
+    r = client.get(
+        EFECTIVIDAD,
+        params={"desde": dos_cuadrillas["dias"][0], "hasta": dos_cuadrillas["dias"][1]},
+        headers=dos_cuadrillas["headers"],
+    )
+    assert r.status_code == 200, r.text
+    fila = {f["codigo"]: f for f in r.json()["ranking"]}["TC146A"]
+    assert fila["reaperturas"] == 1
+    assert fila["cerrados"] == 5 and fila["asignados"] == 6
+    # cierre 5/6, oportunidad 5/5, calidad 5/5 y reapertura 1 - 1/5.
+    assert fila["puntaje"] == pytest.approx(90.5)
+    assert fila["puntaje"] < 100.0

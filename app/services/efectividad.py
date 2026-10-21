@@ -9,7 +9,7 @@ El puntaje es una media ponderada de cuatro criterios, todos medidos sobre el
 | **Cierre** | 45 % | casos cerrados sobre los asignados (el trabajo se termina) |
 | **Oportunidad** | 25 % | de los cerrados, cuántos se cerraron dentro de `DIAS_OPORTUNIDAD` día(s) |
 | **Calidad** | 20 % | de los cerrados, cuántos tienen al menos una **evidencia** fotográfica |
-| **Sin reapertura** | 10 % | 1 - (casos reabiertos después de cerrarse / cerrados) |
+| **Sin reapertura** | 10 % | 1 - (casos reabiertos / casos cerrados) |
 
 `puntaje = 100 * suma(peso * criterio)`, entre 0 y 100. Los conteos viajan en
 la respuesta para que el ranking sea reproducible a mano.
@@ -39,6 +39,7 @@ from ..models import (
     DespachoCasos,
     Evidencia,
 )
+from .tiempo import dia_operativo
 
 #: Pesos de los criterios (suman 1). Cambiarlos aquí cambia el ranking.
 PESOS: dict[str, float] = {
@@ -91,7 +92,11 @@ def puntaje(conteos: Conteos, *, minimo_muestras: int = MIN_MUESTRAS) -> dict:
     cierre = _cociente(conteos.cerrados, conteos.asignados)
     oportunidad = _cociente(conteos.en_plazo, conteos.cerrados)
     calidad = _cociente(conteos.con_evidencia, conteos.cerrados)
-    reapertura = 1.0 - min(1.0, _cociente(conteos.reaperturas, conteos.cerrados))
+    # Un caso reabierto puede **no** estar cerrado hoy (es justo lo que produce la
+    # reapertura), así que el denominador no puede ser solo `cerrados`: se toma el
+    # mayor entre cerrados y reabiertos para que la ratio quede en 0..1.
+    denominador_reapertura = max(conteos.cerrados, conteos.reaperturas)
+    reapertura = 1.0 - min(1.0, _cociente(conteos.reaperturas, denominador_reapertura))
     componentes = {
         "cierre": round(cierre, 4),
         "oportunidad": round(oportunidad, 4),
@@ -138,6 +143,7 @@ def _casos_con_evidencia(db: Session, ids_caso: list[int]) -> set[int]:
     """
     if not ids_caso:
         return set()
+    ids = set(ids_caso)
     directos = set(
         db.scalars(select(Evidencia.id_caso).where(Evidencia.id_caso.in_(ids_caso))).all()
     )
@@ -148,7 +154,7 @@ def _casos_con_evidencia(db: Session, ids_caso: list[int]) -> set[int]:
             .where(Actividad.id_caso.in_(ids_caso))
         ).all()
     )
-    return {c for c in (directos | por_actividad) if c is not None and c in set(ids_caso)}
+    return {c for c in (directos | por_actividad) if c is not None and c in ids}
 
 
 def _casos_reabiertos(db: Session, ids_caso: list[int]) -> set[int]:
@@ -225,18 +231,21 @@ def ranking(
                 datos.cerrados += 1
                 momento = cierres.get(fila.id_caso)
                 if momento is not None:
+                    # D-131: el plazo se mide en **día operativo** (America/Caracas),
+                    # no en la fecha UTC que devuelve la base.
                     limite = fila.fecha.toordinal() + DIAS_OPORTUNIDAD
-                    if momento.date().toordinal() <= limite:
+                    if dia_operativo(momento).toordinal() <= limite:
                         datos.en_plazo += 1
                 if fila.id_caso in con_evidencia:
                     datos.con_evidencia += 1
-                if fila.id_caso in reabiertos:
-                    datos.reaperturas += 1
             # D-99: el cierre de jornada devuelve el **caso** a PENDIENTE; ese es
             # el «no atendido» que se mide como trabajo devuelto.
             if estado == "PENDIENTE":
                 datos.devueltos += 1
             estados[estado or "SIN_ESTADO"] = estados.get(estado or "SIN_ESTADO", 0) + 1
+        # Las reaperturas se cuentan por **caso**, no por fila, y también cuando el
+        # caso ya no está cerrado (el estado típico de un caso reabierto).
+        datos.reaperturas = len({f.id_caso for f in propias} & reabiertos)
         datos.por_estado = estados
 
     resultado = []
@@ -285,7 +294,7 @@ def ranking(
             "cierre": "casos cerrados / asignados",
             "oportunidad": f"cerrados en {DIAS_OPORTUNIDAD} día(s) o menos / cerrados",
             "calidad": "cerrados con evidencia / cerrados",
-            "reapertura": "1 - (reabiertos / cerrados)",
+            "reapertura": "1 - (casos reabiertos / casos cerrados)",
         },
         "minimo_muestras": minimo_muestras,
         "dias_oportunidad": DIAS_OPORTUNIDAD,

@@ -376,7 +376,7 @@ class EfectividadCuadrillaOut(BaseModel):
     etiqueta: str = "BAJO"
     muestra_suficiente: bool = False
     #: Componentes del puntaje, en 0..1.
-    componentes: dict = Field(default_factory=dict)
+    componentes: dict[str, float] = Field(default_factory=dict)
     #: Conteos crudos: la misma información con la que se calcula el puntaje.
     asignados: int = 0
     cerrados: int = 0
@@ -386,7 +386,7 @@ class EfectividadCuadrillaOut(BaseModel):
     reaperturas: int = 0
     casos_unicos: int = 0
     dias_trabajados: int = 0
-    por_estado: dict = Field(default_factory=dict)
+    por_estado: dict[str, int] = Field(default_factory=dict)
 
 
 class RankingEfectividadOut(BaseModel):
@@ -399,8 +399,8 @@ class RankingEfectividadOut(BaseModel):
     desde: date
     hasta: date
     id_central: int
-    pesos: dict
-    criterios: dict
+    pesos: dict[str, float]
+    criterios: dict[str, str]
     minimo_muestras: int
     dias_oportunidad: int
     ranking: list[EfectividadCuadrillaOut] = Field(default_factory=list)

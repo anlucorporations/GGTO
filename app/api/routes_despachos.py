@@ -55,6 +55,8 @@ router = APIRouter(prefix="/api/v1/despachos", tags=["despacho"])
 #: D-143: días que cubre el seguimiento de construcciones si no se pide otro.
 DIAS_SEGUIMIENTO = 30
 _escritura = require_roles("ADMIN", "SUPERVISOR")
+#: D-146: el ranking es una métrica de gestión, no de campo.
+_lectura_gestion = require_roles("ADMIN", "SUPERVISOR", "COORDINADOR")
 
 
 def _o_404(db: Session, id_despacho: int) -> Despacho:
@@ -161,7 +163,7 @@ def listar(
 
 
 # --------------------------------------------------------------------------- #
-# Fallas masivas (RF-09)
+# Efectividad y ranking de cuadrillas (D-146)
 # --------------------------------------------------------------------------- #
 @router.get(
     "/efectividad",
@@ -177,16 +179,19 @@ def efectividad_cuadrillas(
     ),
     id_central: int | None = Query(default=None),
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(_lectura_gestion),
 ) -> RankingEfectividadOut:
     """Ranking de cuadrillas por efectividad (cierre, oportunidad, calidad y reaperturas).
 
     El puntaje (0-100) es una media ponderada de cuatro criterios medidos sobre el
     **trabajo despachado**: ver `app/services/efectividad.py`. Las cuadrillas con
     menos de `min_muestras` asignaciones se informan pero sin posición.
+
+    D-146 · el rol se limita a la gestión (ADMIN, SUPERVISOR, COORDINADOR) y la
+    central se valida contra la del usuario para no filtrar métricas de otra central.
     """
     config = cargar_config(db)
-    central = resolver_central(db, id_central, config)
+    central = resolver_central(db, id_central, config, usuario)
     fin = hasta or hoy_operativo()
     inicio = desde or (fin - timedelta(days=DIAS_SEGUIMIENTO - 1))
     if inicio > fin:

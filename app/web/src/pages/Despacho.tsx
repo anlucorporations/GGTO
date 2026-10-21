@@ -448,7 +448,12 @@ function RankingEfectividad() {
     try {
       const hasta = new Date();
       const desde = new Date(hasta.getTime() - (dias - 1) * 24 * 60 * 60 * 1000);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
+      // D-131/D-146: el periodo se expresa en **fecha local**; `toISOString()`
+      // convierte a UTC y a partir de las 20:00 de Caracas adelantaba el día.
+      const iso = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+          d.getDate(),
+        ).padStart(2, '0')}`;
       setDatos(
         await api.efectividadCuadrillas({ desde: iso(desde), hasta: iso(hasta) }),
       );
