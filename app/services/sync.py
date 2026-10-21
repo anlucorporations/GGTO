@@ -642,6 +642,28 @@ def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None, u
     svc_resolucion.registrar_estado(db, caso, nuevo, motivo, usuario_p00)
 
 
+def _fk_invalida(db: Session, act: dict[str, Any]) -> str | None:
+    """Mensaje si `id_metodo`/`id_causa` del ítem no existen (D-139 · H-22).
+
+    Antes, una FK rota lanzaba un 500 al insertar la actividad y **se perdía el
+    lote entero**. Ahora el ítem se rechaza con su motivo y el resto se aplica.
+    """
+    for campo, modelo, etiqueta in (
+        ("id_metodo", CatalogoMetodo, "método"),
+        ("id_causa", Causa, "causa"),
+    ):
+        crudo = act.get(campo)
+        if crudo is None or crudo == "":
+            continue
+        try:
+            valor = int(crudo)
+        except (TypeError, ValueError):
+            return f"El {etiqueta} '{crudo}' no es un identificador válido"
+        if db.get(modelo, valor) is None:
+            return f"El {etiqueta} {valor} no existe en el catálogo"
+    return None
+
+
 def aplicar_carga(
     db: Session,
     usuario: Usuario,
@@ -753,6 +775,12 @@ def aplicar_carga(
             # D-121 · H-01: idempotencia. Si la acción ya se aplicó (reenvío del mismo
             # lote tras un timeout, reintento o doble emisor), se confirma sin volver
             # a escribir la actividad ni a mover el caso.
+            problema_fk = _fk_invalida(db, act)
+            if problema_fk is not None:
+                rechazadas += 1
+                _rechazar(caso.id_caso, problema_fk, local)
+                continue
+
             previa = _ya_aplicada(local)
             if previa is not None:
                 aceptadas += 1
