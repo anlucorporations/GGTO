@@ -13,6 +13,7 @@ import type {
   AsignacionCasosRequest,
   AsignacionMasiva,
   ResolucionOut,
+  SeguimientoConstruccionOut,
   EnrutadoCaso,
   CasoRelacionado,
   CitaRapida,
@@ -731,6 +732,8 @@ export function procesarDespacho(datos: {
   tipos?: string[];
   /** D-113 · D-114: reasignación de las fallas masivas y su inclusión en el despacho. */
   masivas?: AsignacionMasiva[];
+  /** D-143: cuadrilla que atiende **toda** la construcción del día. */
+  construccion_cuadrilla?: number | null;
   reemplazar?: boolean;
 }): Promise<DespachoDetalleOut[]> {
   return conCuerpo<DespachoDetalleOut[]>('/despachos/procesar', 'POST', datos);
@@ -807,6 +810,20 @@ export function reporteProduccion(
 /** Reporte de producción del despacho seleccionado (RF-27). */
 export function reporteDespacho(idDespacho: number): Promise<ReporteProduccionOut> {
   return request<ReporteProduccionOut>(`/despachos/${idDespacho}/reporte`);
+}
+
+/**
+ * D-143: seguimiento global de construcciones (asignadas y cerradas por día).
+ *
+ * Alimenta la métrica aparte de construcción: cuántas se realizaron cada día y
+ * cómo se reparten por sector en el periodo.
+ */
+export function seguimientoConstruccion(
+  params: { desde?: string; hasta?: string; id_central?: number } = {},
+): Promise<SeguimientoConstruccionOut> {
+  return request<SeguimientoConstruccionOut>(
+    `/despachos/construcciones/seguimiento${construirQuery(params)}`,
+  );
 }
 
 /** Envía la ficha por Telegram o correo (RF-10). */

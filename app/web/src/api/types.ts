@@ -705,6 +705,59 @@ export interface AsignacionMasiva {
   incluida?: boolean;
 }
 
+/** D-143: sector de la construcción con su cantidad. */
+export interface SectorConstruccionOut {
+  id_sector: number;
+  nombre: string | null;
+  cantidad: number;
+}
+
+/**
+ * D-143: bloque aparte de CONSTRUCCIÓN del proceso de despacho.
+ *
+ * La construcción se asigna completa a una cuadrilla; `por_sector` es el cuadro
+ * de sectores con sus cantidades que el usuario revisa antes de procesar.
+ */
+export interface ConstruccionProcesoOut {
+  total: number;
+  por_sector: SectorConstruccionOut[];
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
+  automatica: boolean;
+}
+
+/** D-143: un día del seguimiento global de construcciones. */
+export interface DiaConstruccionOut {
+  fecha: string;
+  asignadas: number;
+  cerradas: number;
+  abiertas: number;
+}
+
+/** D-143: sector del seguimiento global de construcciones. */
+export interface SectorConstruccionSeguimientoOut {
+  id_sector: number | null;
+  nombre: string | null;
+  asignadas: number;
+  cerradas: number;
+}
+
+/** D-143: seguimiento global de construcciones (serie diaria + totales). */
+export interface SeguimientoConstruccionOut {
+  desde: string;
+  hasta: string;
+  id_central: number;
+  totales: {
+    asignadas: number;
+    cerradas: number;
+    abiertas: number;
+    sectores: number;
+  };
+  por_dia: DiaConstruccionOut[];
+  por_sector: SectorConstruccionSeguimientoOut[];
+}
+
 export interface ProcesoDespachoOut {
   fecha: string;
   id_central: number;
@@ -727,6 +780,8 @@ export interface ProcesoDespachoOut {
   sin_asignar: CasoAsignadoOut[];
   reglas: Record<string, unknown>;
   resumen: Record<string, unknown>;
+  /** D-143: bloque aparte de construcción (sectores, cantidades y cuadrilla). */
+  construccion?: ConstruccionProcesoOut;
 }
 
 export interface GrupoCuadrillaOut {
@@ -867,6 +922,10 @@ export interface FilaProduccionOut {
   gestionados: number;
   referidos: number;
   empresas: number;
+  /** D-143: construcciones asignadas a la cuadrilla en el día. */
+  construcciones?: number;
+  /** D-143: construcciones de la cuadrilla que quedaron cerradas (realizadas). */
+  construcciones_cerradas?: number;
   es_masiva: boolean;
   masivas: number[];
 }

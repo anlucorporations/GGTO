@@ -186,6 +186,60 @@ class MasivaProcesoOut(BaseModel):
     incluida: bool = True
 
 
+class SectorConstruccionOut(BaseModel):
+    """Sector con su cantidad de construcciones (D-143)."""
+
+    id_sector: int
+    nombre: str | None = None
+    cantidad: int = 0
+
+
+class ConstruccionProcesoOut(BaseModel):
+    """Bloque de CONSTRUCCIÓN del proceso de despacho (D-143).
+
+    La construcción se procesa **aparte** del resto: el formulario muestra sus
+    sectores con las cantidades y elige la cuadrilla que la atiende (una sola).
+    """
+
+    total: int = 0
+    por_sector: list[SectorConstruccionOut] = Field(default_factory=list)
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None
+    automatica: bool = True
+
+
+class DiaConstruccionOut(BaseModel):
+    """Construcciones de un día del seguimiento global (D-143)."""
+
+    fecha: date
+    asignadas: int = 0
+    cerradas: int = 0
+    abiertas: int = 0
+
+
+class SectorConstruccionSeguimientoOut(BaseModel):
+    id_sector: int | None = None
+    nombre: str | None = None
+    asignadas: int = 0
+    cerradas: int = 0
+
+
+class SeguimientoConstruccionOut(BaseModel):
+    """Seguimiento global de construcciones (D-143).
+
+    `por_dia` es la serie para medir cuántas construcciones se realizaron cada
+    día; `por_sector` reparte el periodo entre sectores y `totales` resume.
+    """
+
+    desde: date
+    hasta: date
+    id_central: int
+    totales: dict = Field(default_factory=dict)
+    por_dia: list[DiaConstruccionOut] = Field(default_factory=list)
+    por_sector: list[SectorConstruccionSeguimientoOut] = Field(default_factory=list)
+
+
 class ProcesoDespachoOut(BaseModel):
     fecha: date
     id_central: int
@@ -204,6 +258,8 @@ class ProcesoDespachoOut(BaseModel):
     asignacion: list[AsignacionBloque] = Field(default_factory=list)
     grupos: list[GrupoCuadrillaOut] = Field(default_factory=list)
     sin_asignar: list[CasoAsignadoOut] = Field(default_factory=list)
+    #: D-143: bloque aparte de construcción (sectores, cantidades y cuadrilla).
+    construccion: ConstruccionProcesoOut = Field(default_factory=ConstruccionProcesoOut)
     reglas: dict = Field(default_factory=dict)
     resumen: dict = Field(default_factory=dict)
 
@@ -234,6 +290,14 @@ class ProcesarDespacho(BaseModel):
     )
     #: D-113 · D-114: reasignación de las fallas masivas y su inclusión.
     masivas: list[AsignacionMasiva] = Field(default_factory=list)
+    #: D-143: cuadrilla que atiende **toda** la construcción del día.
+    construccion_cuadrilla: int | None = Field(
+        default=None,
+        description=(
+            "Cuadrilla a la que se asigna toda la construcción. Si se omite, se "
+            "usa la regla automática (la cuadrilla con más sectores de construcción)."
+        ),
+    )
     reemplazar: bool = True
 
 

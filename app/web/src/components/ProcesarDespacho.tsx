@@ -81,6 +81,8 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const [masivas, setMasivas] = useState<Record<number, number | null>>({});
   /** D-114: `id_falla -> incluida`; lo controla la lista desplegable del sector. */
   const [masivasIncluidas, setMasivasIncluidas] = useState<Record<number, boolean>>({});
+  /** D-143: cuadrilla que atiende **toda** la construcción (una sola). */
+  const [construccionCuadrilla, setConstruccionCuadrilla] = useState<number | null>(null);
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
@@ -107,6 +109,8 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
       setMasivasIncluidas(
         Object.fromEntries(datos.masivas.map((m) => [m.id_falla, m.incluida ?? true])),
       );
+      // D-143: la construcción arranca con la cuadrilla que sugiere el servidor.
+      setConstruccionCuadrilla(datos.construccion?.id_cuadrilla ?? null);
       setError('');
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el proceso de despacho.');
@@ -331,6 +335,8 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
         asignaciones: bloques,
         tipos,
         masivas: masivasPayload,
+        // D-143: toda la construcción a la cuadrilla elegida.
+        construccion_cuadrilla: construccionCuadrilla,
         reemplazar: true,
       });
       onProcesado(creados);
@@ -605,6 +611,82 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
               </p>
             </>
           )}
+
+          {/* D-143: la CONSTRUCCIÓN se procesa aparte, con sus sectores y una
+              sola cuadrilla para todo el bloque. */}
+          <h3 className="subtitulo-seccion">Construcción (se procesa aparte)</h3>
+          {(() => {
+            const construccion = proceso?.construccion;
+            const totalConstruccion = construccion?.total ?? 0;
+            const incluidaEnChecklist =
+              tipos.includes('COMUNES') || tipos.includes('ESPECIALES_CONSTRUCCION');
+            if (totalConstruccion === 0) {
+              return (
+                <p className="vacio">
+                  No hay construcciones para esa fecha. El bloque queda vacío y no se
+                  asigna ninguna cuadrilla.
+                </p>
+              );
+            }
+            return (
+              <div className="panel-construccion" id="proceso-construccion">
+                <div className="tarjeta">
+                  <div className="valor">{totalConstruccion}</div>
+                  <div className="etiqueta">Construcciones en el universo</div>
+                </div>
+                <div className="tabla-envoltura">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Sector</th>
+                        <th>Cantidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(construccion?.por_sector ?? []).map((s) => (
+                        <tr key={s.id_sector}>
+                          <td>{s.nombre ?? `Sector #${s.id_sector}`}</td>
+                          <td>{s.cantidad}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <label className="casilla-fila" htmlFor="construccion-cuadrilla">
+                  Cuadrilla que atiende toda la construcción
+                  <select
+                    id="construccion-cuadrilla"
+                    aria-label="Cuadrilla que atiende toda la construcción"
+                    value={construccionCuadrilla ?? ''}
+                    onChange={(e) =>
+                      setConstruccionCuadrilla(e.target.value ? Number(e.target.value) : null)
+                    }
+                  >
+                    <option value="">— Sin asignar (regla automática) —</option>
+                    {cuadrillasCalle.map((c) => (
+                      <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                        {c.codigo} — {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="texto-pequeno">
+                  Toda la construcción va a la cuadrilla elegida, aunque sus sectores
+                  estén asignados a otra. Sin elección, se usa la regla automática (la
+                  cuadrilla con más sectores de construcción).
+                </p>
+                {!incluidaEnChecklist && (
+                  <div className="aviso aviso-info">
+                    <span>
+                      La construcción está fuera del checklist: marque{' '}
+                      <strong>Comunes</strong> (o Especiales Construcción) para que se
+                      distribuya.
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Cuadrillas con sus sectores asignados y el desglose de especiales */}
           <h3 className="subtitulo-seccion">Cuadrillas y sectores asignados</h3>

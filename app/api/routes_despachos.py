@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import HTMLResponse
@@ -38,6 +38,7 @@ from ..schemas.despacho import (
     ProcesoDespachoOut,
     PropuestaOut,
     ReporteProduccionOut,
+    SeguimientoConstruccionOut,
 )
 from ..services import despacho as svc
 from ..services import jornada as svc_jornada
@@ -48,6 +49,9 @@ from ..services.tiempo import hoy_operativo
 from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/despachos", tags=["despacho"])
+
+#: D-143: días que cubre el seguimiento de construcciones si no se pide otro.
+DIAS_SEGUIMIENTO = 30
 _escritura = require_roles("ADMIN", "SUPERVISOR")
 
 
@@ -308,6 +312,8 @@ def procesar(
     resultado = svc.construir_propuesta(
         db, central.id_central, dia, casos=casos, tipos=tipos,
         masivas_incluidas=masivas_incluidas,
+        # D-143: toda la construcción a la cuadrilla elegida en el formulario.
+        construccion_cuadrilla_id=datos.construccion_cuadrilla,
     )
     creados = svc.guardar_propuesta(db, resultado, usuario.p00)
     if reproceso:
@@ -626,14 +632,17 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
     por_cuadrilla: dict[str, dict] = {}
     totales = {"asignados": 0, "abiertos": 0, "cerrados": 0, "enrutado": 0, "citados": 0,
                "diferidos": 0, "gestionados": 0, "referidos": 0, "empresas": 0,
-               "masivas": 0}
+               "masivas": 0,
+               # D-143: la construcción se mide aparte (asignadas y **realizadas**).
+               "construcciones": 0, "construcciones_cerradas": 0}
     for _despacho, cuadrilla, dc, caso in filas:
         fila = por_cuadrilla.setdefault(
             cuadrilla.codigo,
             {"cuadrilla": cuadrilla.codigo, "nombre": cuadrilla.nombre, "id_cuadrilla":
              cuadrilla.id_cuadrilla, "asignados": 0, "abiertos": 0,
              "cerrados": 0, "enrutado": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
-             "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": []},
+             "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": [],
+             "construcciones": 0, "construcciones_cerradas": 0},
         )
         fila["asignados"] += 1
         totales["asignados"] += 1
@@ -667,6 +676,14 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         if dc.tipo_asignacion == "EMPRESA":
             fila["empresas"] += 1
             totales["empresas"] += 1
+        # D-143: la construcción se cuenta aparte y, además, cuántas se cerraron
+        # (las que de verdad se realizaron en la jornada).
+        if dc.tipo_asignacion == "CONSTRUCCION":
+            fila["construcciones"] += 1
+            totales["construcciones"] += 1
+            if cerrado:
+                fila["construcciones_cerradas"] += 1
+                totales["construcciones_cerradas"] += 1
         # Icono MASIVA: por asignación explícita del caso o por la masiva activa
         # de la cuadrilla.
         if dc.tipo_asignacion == "FALLA_MASIVA":
@@ -696,6 +713,81 @@ def reporte(
     config = cargar_config(db)
     central = resolver_central(db, id_central, config)
     return _reporte(db, central.id_central, fecha or hoy_operativo())
+
+
+@router.get(
+    "/construcciones/seguimiento",
+    response_model=SeguimientoConstruccionOut,
+    summary="Seguimiento global de construcciones (D-143)",
+)
+def seguimiento_construccion(
+    desde: date | None = Query(default=None, description="Primer día del periodo"),
+    hasta: date | None = Query(default=None, description="Último día del periodo"),
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> SeguimientoConstruccionOut:
+    """Serie diaria de construcciones **asignadas** y **cerradas**.
+
+    D-143: mide cuántas construcciones se realizaron cada día para el seguimiento
+    global. Se apoya en `despacho_caso` (asignación del día) y en el estado del
+    caso: una construcción cuenta como **cerrada** cuando su caso está `CERRADO`.
+    """
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    fin = hasta or hoy_operativo()
+    inicio = desde or (fin - timedelta(days=DIAS_SEGUIMIENTO - 1))
+    if inicio > fin:
+        raise HTTPException(status_code=422, detail="`desde` no puede ser mayor que `hasta`")
+
+    filas = db.execute(
+        select(Despacho.fecha, DespachoCasos.id_caso, Caso.id_sector, Caso.estado_actual)
+        .join(DespachoCasos, DespachoCasos.id_despacho == Despacho.id_despacho)
+        .join(Caso, Caso.id_caso == DespachoCasos.id_caso)
+        .where(
+            Despacho.id_central == central.id_central,
+            Despacho.fecha >= inicio,
+            Despacho.fecha <= fin,
+            DespachoCasos.tipo_asignacion == "CONSTRUCCION",
+        )
+    ).all()
+
+    nombres = svc.nombres_de_sector(db, central.id_central)
+    por_dia: dict[date, dict] = {}
+    por_sector: dict[int | None, dict] = {}
+    totales = {"asignadas": 0, "cerradas": 0, "abiertas": 0, "sectores": 0}
+    for fecha_dia, _id_caso, id_sector, estado in filas:
+        cerrada = estado == "CERRADO"
+        dia = por_dia.setdefault(
+            fecha_dia, {"fecha": fecha_dia, "asignadas": 0, "cerradas": 0, "abiertas": 0}
+        )
+        dia["asignadas"] += 1
+        totales["asignadas"] += 1
+        sector = por_sector.setdefault(
+            id_sector,
+            {"id_sector": id_sector, "nombre": nombres.get(id_sector) if id_sector else None,
+             "asignadas": 0, "cerradas": 0},
+        )
+        sector["asignadas"] += 1
+        if cerrada:
+            dia["cerradas"] += 1
+            totales["cerradas"] += 1
+            sector["cerradas"] += 1
+        else:
+            dia["abiertas"] += 1
+            totales["abiertas"] += 1
+
+    totales["sectores"] = len(por_sector)
+    return SeguimientoConstruccionOut(
+        desde=inicio,
+        hasta=fin,
+        id_central=central.id_central,
+        totales=totales,
+        por_dia=[por_dia[d] for d in sorted(por_dia)],
+        por_sector=sorted(
+            por_sector.values(), key=lambda s: (s["nombre"] or "", s["id_sector"] or 0)
+        ),
+    )
 
 
 @router.get("/{id_despacho}/reporte", response_model=ReporteProduccionOut,

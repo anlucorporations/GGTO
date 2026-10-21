@@ -11,6 +11,7 @@ import type {
   NotificacionOut,
   PropuestaOut,
   ReporteProduccionOut,
+  SeguimientoConstruccionOut,
   TipoAsignacionDespacho,
 } from '../api/types';
 import Mensaje from '../components/Mensaje';
@@ -258,6 +259,9 @@ function FilaDesglose({ fila }: { fila: FilaProduccionOut }) {
       <td>{fila.gestionados}</td>
       <td>{fila.referidos}</td>
       <td>{fila.empresas}</td>
+      {/* D-143: la construcción se mide aparte. */}
+      <td>{fila.construcciones ?? 0}</td>
+      <td>{fila.construcciones_cerradas ?? 0}</td>
     </tr>
   );
 }
@@ -305,6 +309,125 @@ function AroCumplimiento({ fila }: { fila: FilaProduccionOut }) {
   );
 }
 
+
+/**
+ * D-143: seguimiento **global** de construcciones.
+ *
+ * Mide cuántas construcciones se realizaron cada día (cerradas) sobre las
+ * asignadas, para poder seguir la producción de construcción aparte del resto
+ * del despacho. La serie y los totales los calcula el servidor.
+ */
+function SeguimientoConstrucciones() {
+  const [datos, setDatos] = useState<SeguimientoConstruccionOut | null>(null);
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(true);
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      setDatos(await api.seguimientoConstruccion({}));
+      setError('');
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el seguimiento.');
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
+
+  if (cargando) return <p className="texto-pequeno">Cargando el seguimiento de construcciones…</p>;
+  if (error) return <p className="aviso aviso-error">{error}</p>;
+  if (!datos) return <p className="vacio">Sin datos de construcción.</p>;
+
+  return (
+    <div className="subpanel" id="seguimiento-construcciones">
+      <div className="pagina-cabecera">
+        <h3>Seguimiento de construcciones</h3>
+        <button type="button" className="btn btn-secundario" onClick={() => void cargar()}>
+          Recargar
+        </button>
+      </div>
+      <p className="texto-pequeno">
+        Del {fecha(datos.desde)} al {fecha(datos.hasta)}: construcciones asignadas y{' '}
+        <strong>realizadas</strong> (cerradas) por día.
+      </p>
+      <div className="rejilla-tarjetas">
+        <div className="tarjeta">
+          <div className="valor">{num(datos.totales.asignadas)}</div>
+          <div className="etiqueta">Construcciones asignadas</div>
+        </div>
+        <div className="tarjeta">
+          <div className="valor">{num(datos.totales.cerradas)}</div>
+          <div className="etiqueta">Construcciones realizadas</div>
+        </div>
+        <div className="tarjeta">
+          <div className="valor">{num(datos.totales.abiertas)}</div>
+          <div className="etiqueta">Pendientes</div>
+        </div>
+        <div className="tarjeta">
+          <div className="valor">{num(datos.totales.sectores)}</div>
+          <div className="etiqueta">Sectores con construcción</div>
+        </div>
+      </div>
+
+      {datos.por_dia.length === 0 ? (
+        <p className="vacio">No hay construcciones despachadas en el periodo.</p>
+      ) : (
+        <>
+          <h4 className="subtitulo-seccion">Por día</h4>
+          <div className="tabla-envoltura">
+            <table>
+              <thead>
+                <tr>
+                  <th>Día</th>
+                  <th>Asignadas</th>
+                  <th>Realizadas</th>
+                  <th>Pendientes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datos.por_dia.map((dia) => (
+                  <tr key={dia.fecha}>
+                    <td>{fecha(dia.fecha)}</td>
+                    <td>{dia.asignadas}</td>
+                    <td>{dia.cerradas}</td>
+                    <td>{dia.abiertas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h4 className="subtitulo-seccion">Por sector</h4>
+          <div className="tabla-envoltura">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sector</th>
+                  <th>Asignadas</th>
+                  <th>Realizadas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datos.por_sector.map((s) => (
+                  <tr key={s.id_sector ?? 'sin-sector'}>
+                    <td>{s.nombre ?? 'Sin sector'}</td>
+                    <td>{s.asignadas}</td>
+                    <td>{s.cerradas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProduccionOut }) {
   return (
     <div className="subpanel">
@@ -318,6 +441,18 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
             <div className="etiqueta">{t.etiqueta}</div>
           </div>
         ))}
+      </div>
+
+      {/* D-143: métrica aparte de construcción (asignadas y realizadas hoy). */}
+      <div className="rejilla-tarjetas" id="metricas-construccion">
+        <div className="tarjeta">
+          <div className="valor">{num(reporte.totales.construcciones)}</div>
+          <div className="etiqueta">Construcciones asignadas</div>
+        </div>
+        <div className="tarjeta">
+          <div className="valor">{num(reporte.totales.construcciones_cerradas)}</div>
+          <div className="etiqueta">Construcciones realizadas (cerradas)</div>
+        </div>
       </div>
 
       {reporte.por_cuadrilla.length === 0 ? (
@@ -348,6 +483,8 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
                   <th>Gestionados</th>
                   <th>Referidos</th>
                   <th>Empresas</th>
+                  <th title="Construcciones asignadas del día">Constr.</th>
+                  <th title="Construcciones cerradas (realizadas) del día">Constr. cerr.</th>
                 </tr>
               </thead>
               <tbody>
@@ -356,7 +493,7 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
                 ))}
               </tbody>
               <PieTabla
-                colSpan={11}
+                colSpan={13}
                 total={reporte.por_cuadrilla.length}
                 singular="cuadrilla"
                 plural="cuadrillas"
@@ -1304,6 +1441,8 @@ export default function Despacho() {
           ) : (
             <p className="vacio">Sin reporte para el despacho seleccionado.</p>
           ))}
+        {/* D-143: seguimiento global de construcciones. */}
+        <SeguimientoConstrucciones />
       </div>
 
     </>

@@ -623,8 +623,14 @@ def construir_propuesta(
     casos: list[Caso] | None = None,
     tipos: Iterable[object] | str | None = None,
     masivas_incluidas: set[int] | None = None,
+    construccion_cuadrilla_id: int | None = None,
 ) -> Propuesta:
     """Reparte el universo según la asignación de sectores del día.
+
+    D-143: la **construcción** se procesa aparte. Si `construccion_cuadrilla_id`
+    llega, **toda** la construcción se asigna a esa cuadrilla (la elige el
+    formulario con la tabla de sectores y sus cantidades); si no, se mantiene la
+    heurística de D-113 (la cuadrilla con más sectores de construcción).
 
     `casos` permite pasar un universo ya calculado (p. ej. el del formulario de
     proceso, que incluye los borradores del día). `tipos` es la selección del
@@ -783,16 +789,21 @@ def construir_propuesta(
         c for lista in grupos.values() for c in lista if c.tipo_asignacion == "CONSTRUCCION"
     ]
     construccion_cuadrilla = None
+    construccion_id = None
     if construcciones:
         sectores_construccion = {c.id_sector for c in construcciones if c.id_sector is not None}
-        candidatas = []
-        for cu in cuadrillas:
-            en_sector = sum(
-                1 for c in grupos[cu.id_cuadrilla]
-                if c.id_sector in sectores_construccion and c.tipo_asignacion != "CONSTRUCCION"
-            )
-            candidatas.append((en_sector, -len(grupos[cu.id_cuadrilla]), cu))
-        destino_cu = max(candidatas, key=lambda t: (t[0], t[1]))[2]
+        # D-143: la cuadrilla elegida en el formulario manda; si no hay (o no es de
+        # calle), se usa la heurística de D-113.
+        destino_cu = por_id.get(construccion_cuadrilla_id) if construccion_cuadrilla_id else None
+        if destino_cu is None:
+            candidatas = []
+            for cu in cuadrillas:
+                en_sector = sum(
+                    1 for c in grupos[cu.id_cuadrilla]
+                    if c.id_sector in sectores_construccion and c.tipo_asignacion != "CONSTRUCCION"
+                )
+                candidatas.append((en_sector, -len(grupos[cu.id_cuadrilla]), cu))
+            destino_cu = max(candidatas, key=lambda t: (t[0], t[1]))[2]
         for cu in cuadrillas:
             if cu.id_cuadrilla == destino_cu.id_cuadrilla:
                 continue
@@ -801,6 +812,7 @@ def construir_propuesta(
                 grupos[cu.id_cuadrilla].remove(c)
                 grupos[destino_cu.id_cuadrilla].append(c)
         construccion_cuadrilla = destino_cu.codigo
+        construccion_id = destino_cu.id_cuadrilla
 
     # --- Orden de visita: citados primero, luego sector y caso ---
     for cu in cuadrillas:
@@ -847,6 +859,8 @@ def construir_propuesta(
             "cumple_min_empresas": empresas >= min(MIN_EMPRESAS, empresas_disponibles),
             "especiales_asignados": especiales_asignados,
             "construccion_cuadrilla": construccion_cuadrilla,
+            "construccion_id_cuadrilla": construccion_id,
+            "construccion_total": len(construcciones),
             "construccion_en_una_sola": len({
                 g.codigo for g in resultado
                 if any(c.tipo_asignacion == "CONSTRUCCION" for c in g.casos)
@@ -1038,6 +1052,39 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         1 for c in casos if "ESPECIALES_GOBIERNO" in tipos_distribucion(c)
     )
 
+    # D-143: la construcción se presenta aparte, con sus sectores y cantidades,
+    # para asignarla a una sola cuadrilla desde el formulario.
+    sectores_construccion: dict[int, dict] = {}
+    # El formulario se calcula con **todos** los tipos (el checklist decide después),
+    # así que la tabla muestra el universo de construcción completo.
+    candidatos_construccion = [
+        c for c in casos if _tipo_asignacion(c) == "CONSTRUCCION"
+    ]
+    for caso in candidatos_construccion:
+        if caso.id_sector is None:
+            continue
+        fila = sectores_construccion.setdefault(
+            caso.id_sector,
+            {
+                "id_sector": caso.id_sector,
+                "nombre": nombres.get(caso.id_sector),
+                "cantidad": 0,
+            },
+        )
+        fila["cantidad"] += 1
+    id_construccion = propuesta.reglas.get("construccion_id_cuadrilla")
+    cuadrilla_construccion = ids_cuadrilla.get(id_construccion) if id_construccion else None
+    bloque_construccion = {
+        "total": propuesta.reglas.get("construccion_total", 0),
+        "por_sector": sorted(
+            sectores_construccion.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])
+        ),
+        "id_cuadrilla": id_construccion,
+        "cuadrilla_codigo": cuadrilla_construccion.codigo if cuadrilla_construccion else None,
+        "cuadrilla_nombre": cuadrilla_construccion.nombre if cuadrilla_construccion else None,
+        "automatica": True,
+    }
+
     retorno = {
         "fecha": fecha.isoformat(),
         "id_central": id_central,
@@ -1094,6 +1141,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         "sin_asignar": propuesta.como_dict()["sin_asignar"],
         "reglas": propuesta.reglas,
         "resumen": propuesta.resumen,
+        "construccion": bloque_construccion,
     }
     return retorno
 
