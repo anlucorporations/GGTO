@@ -186,7 +186,12 @@ class DownloadService {
       // D-119: además se conservan los casos vigentes de la cuadrilla y los que
       // acaban de llegar en esta descarga: la purga nunca borra lo que el
       // servidor considera trabajo del técnico.
-      if (PurgaDespachos.procede(motivo: motivo, cuadrillaResuelta: codigo.isNotEmpty)) {
+      final purgaPermitida = datos['purga_permitida'] != false;
+      if (PurgaDespachos.procede(
+        motivo: motivo,
+        cuadrillaResuelta: codigo.isNotEmpty,
+        purgaPermitida: purgaPermitida,
+      )) {
         avisar(0.9, 'Descartando los casos no atendidos…');
         descartados = await PurgaDespachos.ejecutar(
           idsDelDia: idsDia,

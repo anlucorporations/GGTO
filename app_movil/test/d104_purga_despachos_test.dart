@@ -171,6 +171,25 @@ void main() {
         PurgaDespachos.procede(motivo: 'CUADRILLA_GESTION', cuadrillaResuelta: true),
         isFalse,
       );
+
+      // D-140 · H-23: una cuadrilla de gestión no purga aunque tenga casos; la
+      // bandera la manda el servidor en la descarga.
+      expect(
+        PurgaDespachos.procede(
+          motivo: 'OK',
+          cuadrillaResuelta: true,
+          purgaPermitida: false,
+        ),
+        isFalse,
+      );
+      expect(
+        PurgaDespachos.procede(
+          motivo: 'OK',
+          cuadrillaResuelta: true,
+          purgaPermitida: true,
+        ),
+        isTrue,
+      );
     });
   });
 }

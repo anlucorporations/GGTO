@@ -470,6 +470,9 @@ def _respuesta(
         ),
         "ids_del_dia": ids_del_dia or [],
         "ids_vigentes": ids_vigentes or [],
+        # D-140 · H-23: una cuadrilla de gestión no purga en el dispositivo,
+        # tenga o no casos (antes la salvaguarda solo actuaba si estaba vacía).
+        "purga_permitida": True if cuadrilla is None else not cuadrilla.es_supervisor,
     }
 
 

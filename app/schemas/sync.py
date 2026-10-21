@@ -115,6 +115,10 @@ class SyncDescargaOut(BaseModel):
     # conserva estos ids: sin ellos se borraba lo que la descarga acababa de
     # entregar cuando el despacho del día seguía en BORRADOR.
     ids_vigentes: list[int] = Field(default_factory=list)
+    #: D-140 · H-23: la APK solo purga si el servidor lo autoriza. Una cuadrilla
+    #: de gestión (`es_supervisor`) recibe `false` aunque tenga casos, para que la
+    #: salvaguarda de C-00 no dependa de que esté vacía.
+    purga_permitida: bool = True
 
 
 class SyncDescargaIn(BaseModel):

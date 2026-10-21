@@ -72,8 +72,15 @@ class PurgaDespachos {
   /// técnico no debe arrastrar casos no atendidos. No se purga cuando no hay
   /// cuadrilla (`SIN_CUADRILLA`/`SIN_TECNICO`) ni en la **cuadrilla 0** de
   /// gestión (`CUADRILLA_GESTION`), porque no son trabajo de campo.
-  static bool procede({required String motivo, required bool cuadrillaResuelta}) {
+  static bool procede({
+    required String motivo,
+    required bool cuadrillaResuelta,
+    bool purgaPermitida = true,
+  }) {
     if (!cuadrillaResuelta) return false;
+    // D-140 · H-23: el servidor decide; una cuadrilla de gestión no purga aunque
+    // tenga casos (antes la salvaguarda solo actuaba si estaba vacía).
+    if (!purgaPermitida) return false;
     return motivo != 'CUADRILLA_GESTION';
   }
 
