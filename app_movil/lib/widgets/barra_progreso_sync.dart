@@ -46,13 +46,22 @@ class BarraProgresoSync extends StatelessWidget {
       icono = Icons.cloud_done;
     }
 
-    final barra = ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: LinearProgressIndicator(
-        value: valor.clamp(0, 1),
-        minHeight: compacta ? 6 : 8,
-        backgroundColor: color.withOpacity(0.15),
-        valueColor: AlwaysStoppedAnimation<Color>(color),
+    // D-142 · H-25: la barra se anuncia a los lectores de pantalla (progreso
+    // accesible con `liveRegion` para que el cambio se lea sin volver a enfocar).
+    final barra = Semantics(
+      label: 'Progreso de la sincronización',
+      value: activo
+          ? '${sync.progresoPorcentaje} por ciento: ${sync.fase}'
+          : sync.resumenBarra,
+      liveRegion: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: valor.clamp(0, 1),
+          minHeight: compacta ? 6 : 8,
+          backgroundColor: color.withOpacity(0.15),
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+        ),
       ),
     );
 

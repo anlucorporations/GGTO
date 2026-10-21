@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme.dart';
 import '../../widgets/barra_progreso_sync.dart';
 import '../../widgets/boton_usuario.dart';
 import '../casos/casos_provider.dart';
@@ -38,6 +39,13 @@ class _SyncScreenState extends State<SyncScreen> {
   /// despacho del día con la purga de los casos no atendidos.
   Future<void> _actualizarTodo() async {
     if (_procesando) return;
+    // D-142 · H-25: la actualización puede quitar del teléfono los casos no
+    // atendidos de jornadas anteriores; se avisa y se pide confirmación.
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (_) => const ConfirmarSincronizacionDialog(),
+    );
+    if (confirmado != true || !mounted) return;
     setState(() => _procesando = true);
     final sync = context.read<SyncProvider>();
     final casos = context.read<CasosProvider>();
@@ -56,13 +64,14 @@ class _SyncScreenState extends State<SyncScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ACTUALIZACIÓN: ${resultado.resumen}'),
-          backgroundColor: resultado.huboErrores ? Colors.orange.shade800 : null,
+          // D-142 · H-25: tokens de marca (contraste ≥ 4,5:1 sobre el texto blanco).
+          backgroundColor: resultado.huboErrores ? Marca.alerta : null,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al actualizar: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error al actualizar: $e'), backgroundColor: Marca.error),
       );
     } finally {
       sync.terminarProgreso();
@@ -222,10 +231,12 @@ class _AccionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estado = '${accion['estado']}';
+    // D-142 · H-25: tokens de marca (el ámbar y el rojo de Material no llegaban
+    // al 4,5:1 sobre blanco).
     final color = switch (estado) {
-      'ERROR' => Colors.red,
-      'REINTENTO' => Colors.orange,
-      _ => Colors.blueGrey,
+      'ERROR' => Marca.error,
+      'REINTENTO' => Marca.alerta,
+      _ => Marca.textoSuave,
     };
 
     return Card(
@@ -311,4 +322,35 @@ class _PasoChecklist extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// Diálogo de confirmación antes de la actualización completa (D-142 · H-25).
+///
+/// Explica que los casos **no atendidos** de jornadas anteriores se quitan del
+/// dispositivo (no se borran del servidor) y permite cancelar.
+class ConfirmarSincronizacionDialog extends StatelessWidget {
+  const ConfirmarSincronizacionDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('¿Actualizar los datos?'),
+        content: const Text(
+          'Se subirán las evidencias y la cola, y se descargará el despacho de su '
+          'cuadrilla. Los casos NO atendidos de jornadas anteriores se quitarán de '
+          'este teléfono (no se borran del servidor).',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('sincronizar-cancelar'),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            key: const Key('sincronizar-confirmar'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Actualizar'),
+          ),
+        ],
+      );
 }
