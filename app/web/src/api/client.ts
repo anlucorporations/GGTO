@@ -76,6 +76,7 @@ import type {
   PropuestaOut,
   ReactivarCaso,
   RegenerarPalabrasResponse,
+  RankingEfectividadOut,
   ReporteProduccionOut,
   Flota,
   FlotaCreate,
@@ -810,6 +811,18 @@ export function reporteProduccion(
 /** Reporte de producción del despacho seleccionado (RF-27). */
 export function reporteDespacho(idDespacho: number): Promise<ReporteProduccionOut> {
   return request<ReporteProduccionOut>(`/despachos/${idDespacho}/reporte`);
+}
+
+/**
+ * D-146: efectividad y ranking de cuadrillas.
+ *
+ * El puntaje (0-100) pesa cierre (45 %), oportunidad (25 %), calidad con
+ * evidencia (20 %) y ausencia de reaperturas (10 %) sobre el trabajo despachado.
+ */
+export function efectividadCuadrillas(
+  params: { desde?: string; hasta?: string; min_muestras?: number; id_central?: number } = {},
+): Promise<RankingEfectividadOut> {
+  return request<RankingEfectividadOut>(`/despachos/efectividad${construirQuery(params)}`);
 }
 
 /**

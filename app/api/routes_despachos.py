@@ -37,10 +37,12 @@ from ..schemas.despacho import (
     ProcesarDespacho,
     ProcesoDespachoOut,
     PropuestaOut,
+    RankingEfectividadOut,
     ReporteProduccionOut,
     SeguimientoConstruccionOut,
 )
 from ..services import despacho as svc
+from ..services import efectividad
 from ..services import jornada as svc_jornada
 from ..services import mensajes as svc_mensajes
 from ..services.consultas import cargar_config, resolver_central
@@ -161,6 +163,40 @@ def listar(
 # --------------------------------------------------------------------------- #
 # Fallas masivas (RF-09)
 # --------------------------------------------------------------------------- #
+@router.get(
+    "/efectividad",
+    response_model=RankingEfectividadOut,
+    summary="Efectividad y ranking de cuadrillas (D-146)",
+)
+def efectividad_cuadrillas(
+    desde: date | None = Query(default=None, description="Primer día del periodo"),
+    hasta: date | None = Query(default=None, description="Último día del periodo"),
+    min_muestras: int = Query(
+        default=5, ge=1, le=1000,
+        description="Asignaciones mínimas para entrar al ranking de posiciones",
+    ),
+    id_central: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> RankingEfectividadOut:
+    """Ranking de cuadrillas por efectividad (cierre, oportunidad, calidad y reaperturas).
+
+    El puntaje (0-100) es una media ponderada de cuatro criterios medidos sobre el
+    **trabajo despachado**: ver `app/services/efectividad.py`. Las cuadrillas con
+    menos de `min_muestras` asignaciones se informan pero sin posición.
+    """
+    config = cargar_config(db)
+    central = resolver_central(db, id_central, config)
+    fin = hasta or hoy_operativo()
+    inicio = desde or (fin - timedelta(days=DIAS_SEGUIMIENTO - 1))
+    if inicio > fin:
+        raise HTTPException(status_code=422, detail="`desde` no puede ser mayor que `hasta`")
+    datos = efectividad.ranking(
+        db, central.id_central, inicio, fin, minimo_muestras=min_muestras
+    )
+    return RankingEfectividadOut(**datos)
+
+
 @router.post("/fallas-masivas", response_model=FallaMasivaOut,
              status_code=status.HTTP_201_CREATED, summary="Reportar una falla masiva")
 def reportar_falla(

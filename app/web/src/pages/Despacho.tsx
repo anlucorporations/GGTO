@@ -10,6 +10,7 @@ import type {
   FilaProduccionOut,
   NotificacionOut,
   PropuestaOut,
+  RankingEfectividadOut,
   ReporteProduccionOut,
   SeguimientoConstruccionOut,
   TipoAsignacionDespacho,
@@ -422,6 +423,156 @@ function SeguimientoConstrucciones() {
               </tbody>
             </table>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * D-146: efectividad y **ranking de cuadrillas**.
+ *
+ * Muestra el puntaje (0-100) con sus componentes y los conteos crudos para que el
+ * número se pueda explicar: cierre 45 %, oportunidad 25 %, calidad con evidencia
+ * 20 % y ausencia de reaperturas 10 %.
+ */
+function RankingEfectividad() {
+  const [datos, setDatos] = useState<RankingEfectividadOut | null>(null);
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [dias, setDias] = useState(30);
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    try {
+      const hasta = new Date();
+      const desde = new Date(hasta.getTime() - (dias - 1) * 24 * 60 * 60 * 1000);
+      const iso = (d: Date) => d.toISOString().slice(0, 10);
+      setDatos(
+        await api.efectividadCuadrillas({ desde: iso(desde), hasta: iso(hasta) }),
+      );
+      setError('');
+    } catch (e) {
+      setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el ranking.');
+    } finally {
+      setCargando(false);
+    }
+  }, [dias]);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
+
+  const filas = datos?.ranking ?? [];
+
+  return (
+    <div className="subpanel" id="ranking-efectividad">
+      <div className="pagina-cabecera">
+        <h3>Efectividad y ranking de cuadrillas</h3>
+        <div className="acciones-form">
+          <label className="texto-pequeno" htmlFor="ranking-dias">
+            Periodo
+          </label>
+          <select
+            id="ranking-dias"
+            value={dias}
+            onChange={(e) => setDias(Number(e.target.value))}
+          >
+            {[7, 30, 90].map((d) => (
+              <option key={d} value={d}>
+                Últimos {d} días
+              </option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-secundario" onClick={() => void cargar()}>
+            Recargar
+          </button>
+        </div>
+      </div>
+
+      {cargando && <p className="texto-pequeno">Calculando la efectividad…</p>}
+      {error && <p className="aviso aviso-error">{error}</p>}
+
+      {!cargando && datos && (
+        <>
+          <p className="texto-pequeno">
+            Del {fecha(datos.desde)} al {fecha(datos.hasta)}. El puntaje pesa{' '}
+            <strong>cierre {Math.round((datos.pesos.cierre ?? 0) * 100)} %</strong>,{' '}
+            <strong>oportunidad {Math.round((datos.pesos.oportunidad ?? 0) * 100)} %</strong>{' '}
+            (cerrado en {datos.dias_oportunidad} día(s) o menos),{' '}
+            <strong>calidad {Math.round((datos.pesos.calidad ?? 0) * 100)} %</strong> (con
+            evidencia) y{' '}
+            <strong>sin reapertura {Math.round((datos.pesos.reapertura ?? 0) * 100)} %</strong>.
+            Las cuadrillas con menos de {datos.minimo_muestras} asignaciones se informan sin
+            posición.
+          </p>
+
+          {filas.length === 0 ? (
+            <p className="vacio">No hay cuadrillas con despachos en el periodo.</p>
+          ) : (
+            <div className="tabla-envoltura">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Cuadrilla</th>
+                    <th title="Puntaje de 0 a 100">Efectividad</th>
+                    <th>Cerrados / asignados</th>
+                    <th title="Cerrados dentro del plazo">Oportunidad</th>
+                    <th title="Cerrados con evidencia fotográfica">Calidad</th>
+                    <th title="Casos devueltos por el cierre de jornada">Devueltos</th>
+                    <th title="Casos reabiertos tras cerrarse">Reaperturas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filas.map((f) => (
+                    <tr key={f.id_cuadrilla}>
+                      <td>{f.posicion ?? '—'}</td>
+                      <td>
+                        {f.codigo} — {f.nombre}
+                        {!f.muestra_suficiente && (
+                          <span className="chip" title="Pocos casos para comparar">
+                            muestra baja
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="ranking-puntaje">
+                          <span className={`estado-cuenta ranking-${f.etiqueta.toLowerCase()}`}>
+                            {f.puntaje.toFixed(1)}
+                          </span>
+                          <span className="texto-pequeno">{f.etiqueta}</span>
+                        </div>
+                        <div
+                          className="ranking-barra"
+                          role="img"
+                          aria-label={`Efectividad ${f.puntaje} de 100`}
+                        >
+                          <span style={{ width: `${Math.max(0, Math.min(100, f.puntaje))}%` }} />
+                        </div>
+                      </td>
+                      <td>
+                        {f.cerrados} / {f.asignados}
+                      </td>
+                      <td>
+                        {f.cerrados > 0
+                          ? `${Math.round((f.en_plazo / f.cerrados) * 100)} %`
+                          : '—'}
+                      </td>
+                      <td>
+                        {f.cerrados > 0
+                          ? `${Math.round((f.con_evidencia / f.cerrados) * 100)} %`
+                          : '—'}
+                      </td>
+                      <td>{f.devueltos}</td>
+                      <td>{f.reaperturas}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1443,6 +1594,8 @@ export default function Despacho() {
           ))}
         {/* D-143: seguimiento global de construcciones. */}
         <SeguimientoConstrucciones />
+        {/* D-146: efectividad y ranking de cuadrillas. */}
+        <RankingEfectividad />
       </div>
 
     </>

@@ -363,6 +363,49 @@ class EnvioOut(BaseModel):
     notificacion: NotificacionOut | None = None
 
 
+class EfectividadCuadrillaOut(BaseModel):
+    """Efectividad de una cuadrilla en el periodo (D-146)."""
+
+    id_cuadrilla: int
+    codigo: str
+    nombre: str
+    activa: bool = True
+    #: Posición en el ranking (None si no tiene muestra suficiente).
+    posicion: int | None = None
+    puntaje: float = 0.0
+    etiqueta: str = "BAJO"
+    muestra_suficiente: bool = False
+    #: Componentes del puntaje, en 0..1.
+    componentes: dict = Field(default_factory=dict)
+    #: Conteos crudos: la misma información con la que se calcula el puntaje.
+    asignados: int = 0
+    cerrados: int = 0
+    devueltos: int = 0
+    en_plazo: int = 0
+    con_evidencia: int = 0
+    reaperturas: int = 0
+    casos_unicos: int = 0
+    dias_trabajados: int = 0
+    por_estado: dict = Field(default_factory=dict)
+
+
+class RankingEfectividadOut(BaseModel):
+    """Ranking de efectividad de las cuadrillas de la central (D-146).
+
+    Incluye los pesos y la definición de cada criterio para que el número sea
+    reproducible: el ranking no es una caja negra.
+    """
+
+    desde: date
+    hasta: date
+    id_central: int
+    pesos: dict
+    criterios: dict
+    minimo_muestras: int
+    dias_oportunidad: int
+    ranking: list[EfectividadCuadrillaOut] = Field(default_factory=list)
+
+
 class ReporteProduccionOut(BaseModel):
     fecha: date
     id_central: int

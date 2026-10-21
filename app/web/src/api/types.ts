@@ -897,6 +897,40 @@ export interface EnvioOut {
   notificacion: NotificacionOut | null;
 }
 
+/** D-146: efectividad de una cuadrilla en el periodo. */
+export interface EfectividadCuadrillaOut {
+  id_cuadrilla: number;
+  codigo: string;
+  nombre: string;
+  activa: boolean;
+  posicion: number | null;
+  puntaje: number;
+  etiqueta: string;
+  muestra_suficiente: boolean;
+  componentes: Record<string, number>;
+  asignados: number;
+  cerrados: number;
+  devueltos: number;
+  en_plazo: number;
+  con_evidencia: number;
+  reaperturas: number;
+  casos_unicos: number;
+  dias_trabajados: number;
+  por_estado: Record<string, number>;
+}
+
+/** D-146: ranking de efectividad con sus pesos y criterios. */
+export interface RankingEfectividadOut {
+  desde: string;
+  hasta: string;
+  id_central: number;
+  pesos: Record<string, number>;
+  criterios: Record<string, string>;
+  minimo_muestras: number;
+  dias_oportunidad: number;
+  ranking: EfectividadCuadrillaOut[];
+}
+
 export interface ReporteProduccionOut {
   fecha: string;
   id_central: number;

@@ -3807,3 +3807,40 @@ tbody tr:hover {
 .box-info-tipos {
   border-left-color: #6a13a1;
 }
+
+
+/* D-146: efectividad y ranking de cuadrillas */
+.ranking-puntaje {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ranking-barra {
+  height: 6px;
+  border-radius: 4px;
+  background: #e3e9f4;
+  overflow: hidden;
+  margin-top: 4px;
+  min-width: 90px;
+}
+.ranking-barra > span {
+  display: block;
+  height: 100%;
+  background: var(--marca-azul, #0b1bb4);
+}
+.ranking-excelente {
+  color: #1f7a4d;
+  font-weight: 700;
+}
+.ranking-bueno {
+  color: #0b1bb4;
+  font-weight: 700;
+}
+.ranking-regular {
+  color: #8a6100;
+  font-weight: 700;
+}
+.ranking-bajo {
+  color: #b3261e;
+  font-weight: 700;
+}
