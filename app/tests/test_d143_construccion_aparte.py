@@ -14,12 +14,12 @@ diaria con totales.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import select
 
-from app.models import Caso, Cuadrilla, Despacho, DespachoCasos, Sector
+from app.models import Caso, Cuadrilla, Despacho, DespachoCasos
 from app.services.tiempo import hoy_operativo
 
 DESPACHOS = "/api/v1/despachos"

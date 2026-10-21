@@ -15,6 +15,7 @@ import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
 import '../usuario/banner_actualizacion.dart';
 import 'caso_detalle_screen.dart';
+import 'acciones_caso.dart';
 import 'casos_provider.dart';
 
 /// Lista de trabajo del técnico (RF-11): sus casos, con búsqueda, refresco y
@@ -191,6 +192,32 @@ class _CasosScreenState extends State<CasosScreen> {
           // D-101/D-105: los casos ya resueltos se ocultan del listado, pero el
           // botón para verlos es **permanente**: se pinta siempre, aunque el
           // conteo sea 0 o el listado esté vacío.
+          // D-144: filtro de estado (incluye CERRADOS) + chip de resueltos.
+          Row(
+            children: [
+              const SizedBox(width: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final opcion in opcionesFiltroEstado)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: FilterChip(
+                            key: Key('filtro-estado-${opcion.clave}'),
+                            selected: casosProv.filtroEstado == opcion.clave,
+                            label: Text(opcion.etiqueta),
+                            onSelected: (_) =>
+                                casosProv.cambiarFiltroEstado(opcion.clave),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           ChipResueltos(
             resueltos: casosProv.gestionados,
             viendoResueltos: casosProv.verGestionados,

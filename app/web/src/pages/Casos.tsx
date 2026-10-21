@@ -36,6 +36,9 @@ const ESTADOS: EstadoCaso[] = [
   'DIFERIDO',
   'EN_GESTION',
   'ENRUTADO',
+  // D-144: el filtro de estado permite ver los casos ya resueltos.
+  'CERRADO',
+  'CANCELADO',
 ];
 
 const CATEGORIAS: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
@@ -298,13 +301,17 @@ export default function Casos() {
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
     try {
+      // D-144: la búsqueda de texto libre cubre **todo** el universo (abiertos,
+      // cerrados, cancelados…) y elegir un estado manda sobre «solo abiertos»;
+      // el listado por defecto sigue mostrando solo trabajo abierto (RN-AL-02).
+      const buscaOTraeEstado =
+        aplicados.q.trim() !== '' || aplicados.estado_actual !== '';
       const params: CasosFiltros = {
         q: aplicados.q,
         estado_actual: aplicados.estado_actual,
         categoria: aplicados.categoria,
         tipo_caso: aplicados.tipo_caso,
-        // RN-AL-02: la sección CASOS lista solo casos abiertos.
-        solo_abiertos: true,
+        solo_abiertos: !buscaOTraeEstado,
         page,
         page_size: tamanio,
       };
@@ -550,6 +557,13 @@ export default function Casos() {
           </div>
         </form>
 
+        {(aplicados.q.trim() !== '' || aplicados.estado_actual !== '') && (
+          <p className="texto-pequeno" id="aviso-universo">
+            {aplicados.q.trim() !== ''
+              ? 'Buscando en todo el universo: se incluyen casos cerrados y cancelados.'
+              : `Filtrando por estado ${aplicados.estado_actual}: se incluyen los casos resueltos.`}
+          </p>
+        )}
         <div className="barra-paginacion">
           <span className="texto-pequeno">
             {cargandoLista ? 'Cargando…' : `Total: ${total} caso(s) · página ${page} de ${pages || 1}`}

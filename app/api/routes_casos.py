@@ -260,12 +260,21 @@ def listar(
     central = resolver_central(db, id_central, cargar_config(db), usuario)
     condiciones = [Caso.id_central == central.id_central]
     if q:
-        patron = f"%{q.strip()}%"
+        termino = q.strip()
+        patron = f"%{termino}%"
+        # D-144: el contacto se guarda normalizado (+58…), así que el número local
+        # («0414…») no coincidía; se busca también sin los ceros iniciales.
+        solo_digitos = re.sub(r"\D", "", termino)
+        patrones_contacto = [patron]
+        if len(solo_digitos) >= 7:
+            patrones_contacto.append(f"%{solo_digitos.lstrip('0')}%")
         sectores_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
         condiciones.append(
             or_(
                 Caso.id_averia.ilike(patron),
                 Caso.telefono.ilike(patron),
+                # D-144: el texto libre del listado también busca el contacto.
+                *(Caso.contacto_cliente.ilike(p) for p in patrones_contacto),
                 Caso.nombre_cliente.ilike(patron),
                 Caso.direccion.ilike(patron),
                 Caso.tipo_caso.ilike(patron),

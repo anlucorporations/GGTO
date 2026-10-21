@@ -43,19 +43,49 @@ const Set<String> estadosGestionados = {
 bool estaGestionado(String estado) =>
     estadosGestionados.contains(estado.trim().toUpperCase());
 
+/// Filtros de estado del listado (D-144).
+///
+/// `TODOS` respeta el comportamiento de D-101 (oculta los gestionados salvo que
+/// se pidan); `ABIERTOS` los oculta siempre y `CERRADOS` muestra solo los casos
+/// con estado `CERRADO`.
+const String filtroTodos = 'TODOS';
+const String filtroAbiertos = 'ABIERTOS';
+const String filtroCerrados = 'CERRADOS';
+
+/// Opciones que pinta la pantalla de casos para elegir el filtro (D-144).
+const List<({String clave, String etiqueta})> opcionesFiltroEstado = [
+  (clave: filtroTodos, etiqueta: 'Todos'),
+  (clave: filtroAbiertos, etiqueta: 'Abiertos'),
+  (clave: filtroCerrados, etiqueta: 'Cerrados'),
+];
+
 /// Casos que pinta el **listado principal**.
 ///
 /// D-101: por defecto se ocultan los gestionados; con [verGestionados] se
-/// devuelven todos. Es una función pura para poder probar el filtro sin base de
+/// devuelven todos.
+///
+/// D-144: la **búsqueda por texto libre** mira todo el universo (abiertos,
+/// cerrados, cancelados…) y el filtro de estado puede pedir solo los
+/// **CERRADOS**. Es una función pura para poder probar el filtro sin base de
 /// datos: el proveedor solo la aplica.
 List<Map<String, dynamic>> casosVisiblesDe(
   List<Map<String, dynamic>> casos, {
   required bool verGestionados,
+  String filtroEstado = filtroTodos,
+  String consulta = '',
 }) {
-  if (verGestionados) return casos;
-  return casos
-      .where((caso) => !estaGestionado('${caso['estado_actual'] ?? ''}'))
-      .toList();
+  String estadoDe(Map<String, dynamic> caso) =>
+      '${caso['estado_actual'] ?? ''}'.trim().toUpperCase();
+
+  if (filtroEstado == filtroCerrados) {
+    return casos.where((caso) => estadoDe(caso) == 'CERRADO').toList();
+  }
+  final buscando = consulta.trim().isNotEmpty;
+  if (filtroEstado == filtroAbiertos || (!buscando && !verGestionados)) {
+    return casos.where((caso) => !estaGestionado(estadoDe(caso))).toList();
+  }
+  // Sin búsqueda y con «resueltos» activos, o buscando: todo el universo.
+  return casos;
 }
 
 /// Explicación que el PIE muestra cuando no hay acciones disponibles.

@@ -22,6 +22,8 @@ class CasosProvider extends ChangeNotifier {
   bool _cargando = false;
   bool _desdeCache = false;
   bool _verGestionados = false;
+  // D-144: filtro de estado del listado (TODOS / ABIERTOS / CERRADOS).
+  String _filtroEstado = filtroTodos;
   String? _error;
   String _consulta = '';
   DateTime? _actualizadoEn;
@@ -48,8 +50,29 @@ class CasosProvider extends ChangeNotifier {
 
   /// Casos que pinta el **listado principal**: los pendientes y, si el técnico
   /// activó el conmutador, también los gestionados (D-101).
-  List<Map<String, dynamic>> get casosVisibles =>
-      casosVisiblesDe(_casos, verGestionados: _verGestionados);
+  ///
+  /// D-144: con texto de búsqueda se mira **todo** el universo y el filtro de
+  /// estado permite ver solo los cerrados.
+  List<Map<String, dynamic>> get casosVisibles => casosVisiblesDe(
+        _casos,
+        verGestionados: _verGestionados,
+        filtroEstado: _filtroEstado,
+        consulta: _consulta,
+      );
+
+  /// Filtro de estado activo (`TODOS`, `ABIERTOS` o `CERRADOS`).
+  String get filtroEstado => _filtroEstado;
+
+  /// Cuántos casos del dispositivo están **cerrados** (D-144).
+  int get cerrados => _casos
+      .where((c) => '${c['estado_actual'] ?? ''}'.trim().toUpperCase() == 'CERRADO')
+      .length;
+
+  /// Cambia el filtro de estado del listado (D-144).
+  void cambiarFiltroEstado(String filtro) {
+    _filtroEstado = filtro;
+    notifyListeners();
+  }
 
   /// Muestra u oculta los casos ya gestionados.
   void alternarGestionados() {
