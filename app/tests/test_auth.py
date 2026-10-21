@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy import func, select
 
 from app.core.security import hash_password
-from app.models import DispositivoSeguridad, Rol, Tecnico, Usuario
+from app.models import Auditoria, DispositivoSeguridad, Rol, Tecnico, Usuario
 
 P00 = "TEST001"
 CLAVE_INICIAL = "inicial12345"
@@ -20,6 +22,9 @@ def usuario_creado(db_session):
 
     # Limpieza de ejecuciones previas
     db_session.query(DispositivoSeguridad).filter(DispositivoSeguridad.p00 == P00).delete()
+    # H-04: los fallos de recuperación se cuentan en la auditoría; sin esta
+    # limpieza, las pruebas acumularían fallos y se bloquearían entre sí.
+    db_session.query(Auditoria).filter(Auditoria.id_entidad == P00).delete()
     previo = db_session.scalar(select(Usuario).where(Usuario.p00 == P00))
     if previo:
         db_session.delete(previo)
@@ -43,6 +48,7 @@ def usuario_creado(db_session):
     yield usuario
 
     db_session.query(DispositivoSeguridad).filter(DispositivoSeguridad.p00 == P00).delete()
+    db_session.query(Auditoria).filter(Auditoria.id_entidad == P00).delete()
     u = db_session.scalar(select(Usuario).where(Usuario.p00 == P00))
     if u:
         db_session.delete(u)
@@ -186,6 +192,104 @@ def test_restablecer_clave_con_palabras(client, usuario_creado):
     )
     assert r.status_code == 200, r.text
     assert client.post("/api/v1/auth/login", json={"p00": P00, "clave": "otraclave789"}).status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# H-04: límite, bloqueo temporal y auditoría de la recuperación
+# --------------------------------------------------------------------------- #
+PALABRAS_MAL = [
+    {"pos": 1, "valor": "incorrecta"},
+    {"pos": 2, "valor": "incorrecta"},
+    {"pos": 3, "valor": "incorrecta"},
+]
+
+
+def _auditar_fallos(db, p00: str, veces: int) -> None:
+    for _ in range(veces):
+        db.add(
+            Auditoria(
+                usuario=p00,
+                accion="RECUPERACION_FALLIDA",
+                entidad="usuario",
+                id_entidad=p00,
+                resultado="FALLO",
+                fecha_hora=datetime.now(UTC),
+            )
+        )
+    db.commit()
+
+
+def test_unlock_fallido_queda_en_la_auditoria(client, usuario_creado, db_session):
+    client.post(
+        "/api/v1/auth/setup",
+        json={"p00": P00, "correo": "tecnico@cantv.com.ve",
+              "clave": "nueva123456", "confirmacion": "nueva123456"},
+    )
+    r = client.post(
+        "/api/v1/auth/unlock", json={"p00": P00, "palabras": PALABRAS_MAL}
+    )
+    assert r.status_code == 401, r.text
+    fila = db_session.scalar(
+        select(Auditoria)
+        .where(
+            Auditoria.accion == "RECUPERACION_FALLIDA",
+            Auditoria.id_entidad == P00,
+        )
+        .order_by(Auditoria.id_auditoria.desc())
+    )
+    assert fila is not None
+    assert fila.resultado == "FALLO"
+    assert fila.id_central == 1
+
+
+def test_unlock_se_bloquea_tras_diez_fallos(client, db_session):
+    p00 = "TSTH04BLOQ"
+    _auditar_fallos(db_session, p00, 10)
+    r = client.post(
+        "/api/v1/auth/unlock", json={"p00": p00, "palabras": PALABRAS_MAL}
+    )
+    assert r.status_code == 429, r.text
+    assert r.headers.get("Retry-After") == "900"
+
+
+def test_reset_password_se_bloquea_tras_diez_fallos(client, db_session):
+    p00 = "TSTH04RESET"
+    _auditar_fallos(db_session, p00, 10)
+    r = client.post(
+        "/api/v1/auth/reset-password",
+        json={"p00": p00, "nueva_clave": "otraclave789", "palabras": PALABRAS_MAL},
+    )
+    assert r.status_code == 429, r.text
+
+
+def test_unlock_correcto_queda_auditado_y_reinicia_el_conteo(
+    client, usuario_creado, db_session
+):
+    palabras = client.post(
+        "/api/v1/auth/setup",
+        json={"p00": P00, "correo": "tecnico@cantv.com.ve",
+              "clave": "nueva123456", "confirmacion": "nueva123456"},
+    ).json()["palabras"]
+    # Nueve fallos previos: el desbloqueo correcto todavía está permitido.
+    _auditar_fallos(db_session, P00, 9)
+    ok = client.post(
+        "/api/v1/auth/unlock",
+        json={"p00": P00, "palabras": [
+            {"pos": 1, "valor": palabras[0]},
+            {"pos": 5, "valor": palabras[4]},
+            {"pos": 9, "valor": palabras[8]},
+        ]},
+    )
+    assert ok.status_code == 200, ok.text
+    assert client.post(
+        "/api/v1/auth/unlock", json={"p00": P00, "palabras": PALABRAS_MAL}
+    ).status_code == 401
+    exito = db_session.scalar(
+        select(Auditoria)
+        .where(Auditoria.accion == "RECUPERACION_OK", Auditoria.id_entidad == P00)
+        .order_by(Auditoria.id_auditoria.desc())
+    )
+    assert exito is not None and exito.resultado == "OK"
 
 
 # --------------------------------------------------------------------------- #

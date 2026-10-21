@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
@@ -56,6 +56,78 @@ def _rate_limit(clave: str, maximo: int, ventana: int) -> None:
             detail="Demasiados intentos. Espere un momento.",
         )
     cola.append(ahora)
+
+
+# --- Recuperación de cuenta (H-04): límite, bloqueo temporal y auditoría -----
+#: Fallos de recuperación permitidos por cuenta dentro de la ventana.
+MAX_FALLOS_RECUPERACION = 10
+#: Ventana, en minutos, del bloqueo temporal de la recuperación.
+VENTANA_RECUPERACION_MIN = 15
+
+
+def _fallos_recuperacion(db: Session, p00: str) -> int:
+    """Fallos de recuperación recientes de una cuenta (H-04).
+
+    Se cuentan en la **auditoría**, no en memoria: sobrevive a reinicios y vale
+    para todas las instancias de Cloud Run. Un desbloqueo correcto reinicia el
+    conteo (solo cuentan los fallos posteriores al último éxito).
+    """
+    desde = datetime.now(UTC) - timedelta(minutes=VENTANA_RECUPERACION_MIN)
+    ultimo_ok = db.scalar(
+        select(func.max(Auditoria.fecha_hora)).where(
+            Auditoria.accion == "RECUPERACION_OK",
+            Auditoria.id_entidad == p00,
+        )
+    )
+    if ultimo_ok is not None and ultimo_ok > desde:
+        desde = ultimo_ok
+    return (
+        db.scalar(
+            select(func.count())
+            .select_from(Auditoria)
+            .where(
+                Auditoria.accion == "RECUPERACION_FALLIDA",
+                Auditoria.id_entidad == p00,
+                Auditoria.fecha_hora >= desde,
+            )
+        )
+        or 0
+    )
+
+
+def _exigir_recuperacion_disponible(db: Session, p00: str) -> None:
+    """Corta la recuperación tras demasiados fallos seguidos (H-04)."""
+    if _fallos_recuperacion(db, p00) >= MAX_FALLOS_RECUPERACION:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                "Demasiados intentos de recuperación. Espere unos minutos o pida "
+                "al Super Usuario que regenere sus palabras de seguridad."
+            ),
+            headers={"Retry-After": str(VENTANA_RECUPERACION_MIN * 60)},
+        )
+
+
+def _auditar_recuperacion(
+    db: Session,
+    usuario: Usuario | None,
+    p00: str,
+    endpoint: str,
+    ip: str,
+    ok: bool,
+) -> None:
+    """Registra el intento de recuperación; el llamador confirma la transacción."""
+    db.add(
+        Auditoria(
+            id_central=usuario.id_central if usuario else None,
+            usuario=p00,
+            accion="RECUPERACION_OK" if ok else "RECUPERACION_FALLIDA",
+            entidad="usuario",
+            id_entidad=p00,
+            resultado="OK" if ok else "FALLO",
+            datos_antes={"endpoint": endpoint, "ip": ip},
+        )
+    )
 
 
 def _usuario_out(u: Usuario) -> UsuarioOut:
@@ -359,40 +431,74 @@ def regenerar_palabras(
 
 
 @router.post("/unlock", summary="Desbloquear con 3 de las 12 palabras de seguridad")
-def unlock(datos: UnlockRequest, db: Session = Depends(get_db)) -> dict:
+def unlock(datos: UnlockRequest, request: Request, db: Session = Depends(get_db)) -> dict:
+    s = get_settings()
+    ip = request.client.host if request.client else "desconocida"
+    # H-04: el limitador de RNF-22 también cubre la recuperación.
+    _rate_limit(
+        f"recuperacion:{datos.p00}|{ip}",
+        s.rate_limit_intentos,
+        s.rate_limit_ventana_seg,
+    )
+    _exigir_recuperacion_disponible(db, datos.p00)
+
     usuario = db.scalar(select(Usuario).where(Usuario.p00 == datos.p00))
     if usuario is None:
+        _auditar_recuperacion(db, None, datos.p00, "unlock", ip, ok=False)
+        db.commit()
         raise HTTPException(status_code=404, detail="P00 no encontrado")
     dispositivo = db.scalar(
         select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == datos.p00)
     )
     if not _verificar_palabras(dispositivo, datos.palabras):
+        _auditar_recuperacion(db, usuario, datos.p00, "unlock", ip, ok=False)
+        db.commit()
         raise HTTPException(status_code=401, detail="Palabras de seguridad incorrectas")
 
     usuario.bloqueado = False
     usuario.intentos_fallidos = 0
     if dispositivo:
         dispositivo.bloqueado = False
+    _auditar_recuperacion(db, usuario, datos.p00, "unlock", ip, ok=True)
     db.commit()
+    _intentos.pop(f"recuperacion:{datos.p00}|{ip}", None)
     return {"p00": usuario.p00, "bloqueado": False, "mensaje": "Usuario desbloqueado"}
 
 
 @router.post("/reset-password", summary="Restablecer la clave con 3 de las 12 palabras")
-def reset_password(datos: ResetPasswordRequest, db: Session = Depends(get_db)) -> dict:
+def reset_password(
+    datos: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)
+) -> dict:
+    s = get_settings()
+    ip = request.client.host if request.client else "desconocida"
+    # H-04: el limitador de RNF-22 también cubre la recuperación.
+    _rate_limit(
+        f"recuperacion:{datos.p00}|{ip}",
+        s.rate_limit_intentos,
+        s.rate_limit_ventana_seg,
+    )
+    _exigir_recuperacion_disponible(db, datos.p00)
+
     usuario = db.scalar(select(Usuario).where(Usuario.p00 == datos.p00))
     if usuario is None:
+        _auditar_recuperacion(db, None, datos.p00, "reset-password", ip, ok=False)
+        db.commit()
         raise HTTPException(status_code=404, detail="P00 no encontrado")
     dispositivo = db.scalar(
         select(DispositivoSeguridad).where(DispositivoSeguridad.p00 == datos.p00)
     )
     if not _verificar_palabras(dispositivo, datos.palabras):
+        _auditar_recuperacion(db, usuario, datos.p00, "reset-password", ip, ok=False)
+        db.commit()
         raise HTTPException(status_code=401, detail="Palabras de seguridad incorrectas")
 
     usuario.clave_hash = hash_password(datos.nueva_clave)
     usuario.bloqueado = False
     usuario.intentos_fallidos = 0
     usuario.requiere_cambio_clave = False
+    _auditar_recuperacion(db, usuario, datos.p00, "reset-password", ip, ok=True)
     db.commit()
+    _intentos.pop(f"recuperacion:{datos.p00}|{ip}", None)
     return {"p00": usuario.p00, "mensaje": "Clave restablecida"}
 
 

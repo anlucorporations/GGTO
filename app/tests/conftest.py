@@ -61,6 +61,8 @@ DELETE FROM dispositivo_seguridad WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP','T
 DELETE FROM usuario             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP','TESTSPV') OR p00 LIKE 'TST%';
 DELETE FROM tecnico             WHERE p00 IN ('TESTADM','TESTTEC','TESTSUP','TESTSPV') OR p00 LIKE 'TST%';
 DELETE FROM central             WHERE codigo_central LIKE 'TST%';
+DELETE FROM auditoria           WHERE id_entidad IN ('TESTADM','TESTTEC','TESTSUP','TESTSPV')
+                                   OR id_entidad LIKE 'TST%';
 """
 
 
