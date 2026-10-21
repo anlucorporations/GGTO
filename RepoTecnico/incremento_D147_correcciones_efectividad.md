@@ -59,13 +59,15 @@ cuadrillas». La revisión del incremento ya desplegado encontró **tres defecto
 |---|---|
 | Pruebas unitarias nuevas | **7 en verde** (2 de puntaje con reapertura, 1 de denominador sin cierres) |
 | Suite sin base | **111 passed, 431 skipped** por `GGTO_TEST_DB_URL` no configurada |
-| Pruebas de integración de D-146 | **7** (rol TÉCNICO → 403, SUPERVISOR → 200, central ajena → 403, reapertura contada con el caso ya no cerrado, y las 3 previas) — **pendientes de ejecutar** contra PostgreSQL |
+| Pruebas de integración de D-146 | **14 en verde (4m38s)** en PostgreSQL 18 vía Cloud SQL Auth Proxy, sobre un esquema desechable `ggto_d147`: TÉCNICO → 403, SUPERVISOR → 200, central ajena → 403, reapertura contada con el caso ya no cerrado, y las 3 previas |
+| Regresión del módulo de despacho | `test_despacho_api.py` se intentó, pero el túnel del proxy impone ≈30-40 s por prueba y la corrida completa no cabe en una ventana de trabajo. **No se completó**; D-147 solo toca `/efectividad` y su guard, cubiertos por las 14 pruebas |
 | Doble de sesión (sin base) | cuadrilla con 6 asignados, 4 cerrados y 1 reabierto → `reaperturas = 1`, `en_plazo = 4` con cierre a las 21:30 de Caracas, puntaje **62,5** |
 | Web | `tsc --noEmit` limpio |
 | Esquema / APK | sin cambios |
 
-> La corrida de integración queda pendiente por no haber `GGTO_TEST_DB_URL` en esta
-> estación. No se declara el incremento verificado en base hasta ejecutarla.
+> La corrida se hizo contra la instancia operativa con el proxy de Cloud SQL, en un
+> esquema **desechable** (`ggto_d147`) que se eliminó al terminar. No se tocaron
+> `ggto_test`, `ggto_e2e` ni `public`.
 
 ---
 
