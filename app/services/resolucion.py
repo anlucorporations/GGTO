@@ -41,7 +41,8 @@ def metodo_cierre(db: Session, codigo: str) -> CatalogoMetodo:
 
 
 def registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
-                     usuario: str | None) -> None:
+                     usuario: str | None,
+                     momento: datetime | None = None) -> None:
     """Anota el cambio de estado en la bitácora y lo aplica al caso (RNF-12).
 
     D-120: es el camino **único** de los cambios de estado, así que aquí se
@@ -58,6 +59,8 @@ def registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
             estado_nuevo=nuevo,
             motivo=motivo,
             usuario=usuario,
+            # D-141 · H-24: la hora en que el técnico hizo la acción (si la mandó).
+            **({"fecha_hora": momento} if momento is not None else {}),
         )
     )
     caso.estado_actual = nuevo

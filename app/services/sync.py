@@ -634,7 +634,14 @@ def _catalogos(db: Session) -> dict[str, Any]:
     return {"modelos": modelos, "causas": causas}
 
 
-def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None, usuario_p00: str) -> None:
+def _registrar_estado(
+    db: Session,
+    caso: Caso,
+    nuevo: str,
+    motivo: str | None,
+    usuario_p00: str,
+    momento: datetime | None = None,
+) -> None:
     """Bitácora + estado del caso para la CARGA de la APK.
 
     D-120: delega en `resolucion.registrar_estado` para que un caso cerrado **en
@@ -642,7 +649,25 @@ def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None, u
     no tocaba `caso_especial` y el referido seguía «pendiente» en la web y en la
     APK aunque el trabajo de campo estuviera terminado.
     """
-    svc_resolucion.registrar_estado(db, caso, nuevo, motivo, usuario_p00)
+    svc_resolucion.registrar_estado(
+        db, caso, nuevo, motivo, usuario_p00, momento=momento
+    )
+
+
+def _instante_del_item(item: dict[str, Any]) -> datetime | None:
+    """Instante real de una acción del lote (D-141 · H-24).
+
+    La APK manda `fecha_hora` en UTC con offset; si viene sin zona se asume UTC
+    (nunca la hora local del servidor). Un valor ilegible se ignora.
+    """
+    crudo = item.get("fecha_hora")
+    if not crudo:
+        return None
+    try:
+        momento = datetime.fromisoformat(str(crudo).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return momento if momento.tzinfo is not None else momento.replace(tzinfo=UTC)
 
 
 def _fk_invalida(db: Session, act: dict[str, Any]) -> str | None:
@@ -901,7 +926,10 @@ def aplicar_carga(
                 continue
             if nuevo == caso.estado_actual:
                 continue
-            _registrar_estado(db, caso, nuevo, est.get("motivo"), usuario.p00)
+            _registrar_estado(
+                db, caso, nuevo, est.get("motivo"), usuario.p00,
+                momento=_instante_del_item(est),
+            )
             aceptadas += 1
 
     db.commit()

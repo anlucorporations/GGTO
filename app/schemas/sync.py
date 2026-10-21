@@ -175,6 +175,9 @@ class EstadoSyncIn(BaseModel):
     #: junto con las actividades (sin él, un CONTACTADO anterior podía aplicarse
     #: después de un CIERRE y revertirlo).
     id_actividad_local: int | None = None
+    #: D-141 · H-24: instante real de la acción (UTC con offset). Sin él, el cambio
+    #: se fecha al sincronizar y la bitácora queda desplazada.
+    fecha_hora: datetime | None = None
 
 
 class SyncCargaIn(BaseModel):

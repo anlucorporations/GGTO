@@ -99,6 +99,7 @@ Map<String, dynamic>? estadoDeCarga({
   required int idCaso,
   required String tipo,
   required Map<String, dynamic> payload,
+  String? fechaHora,
 }) {
   switch (tipo.trim().toUpperCase()) {
     case 'CONTACTADO':
@@ -113,6 +114,8 @@ Map<String, dynamic>? estadoDeCarga({
         'id_caso': idCaso,
         'estado_nuevo': objetivo,
         'motivo': payload['motivo_estado'],
+        // D-141 · H-24: la hora real de la acción (UTC con offset).
+        if (fechaHora != null) 'fecha_hora': fechaHora,
       };
     default:
       return null;

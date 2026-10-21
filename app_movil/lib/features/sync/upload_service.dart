@@ -221,7 +221,9 @@ class UploadService {
       // probada). En particular, las evidencias de un diferido viajan como
       // actividad CONTACTO y no como un estado contra `/casos/{id}/estado`.
       final idLocal = accion['id'] as int;
-      final ahora = DateTime.now().toIso8601String();
+      // D-141 · H-24: se manda en UTC con offset (`Z`) para que la bitácora no
+      // dependa de la zona del teléfono ni de la del servidor.
+      final ahora = DateTime.now().toUtc().toIso8601String();
       final actividad = actividadDeCarga(
         idLocal: idLocal,
         idCaso: idCaso,
@@ -240,6 +242,7 @@ class UploadService {
         idCaso: idCaso,
         tipo: tipo,
         payload: payload,
+        fechaHora: ahora,
       );
       if (estado != null) {
         estados.add(estado);
