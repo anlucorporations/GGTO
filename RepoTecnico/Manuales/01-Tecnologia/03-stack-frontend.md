@@ -719,11 +719,10 @@ El estado verificado del frontend y sus pendientes son los siguientes:
   los esquemas Pydantic (`app/web/src/api/types.ts:1-4`). No hay generación automática ni verificación
   en CI de esa correspondencia; es un riesgo de desincronización **pendiente de confirmar** en cuanto
   a su mitigación.
-- **Integración continua del frontend.** El *workflow* de CI verificado tiene un único trabajo
-  `backend` que ejecuta Ruff, mypy y pytest (`.github/workflows/ci.yml:11-54`). La ejecución de
-  `tsc`, de la construcción de Vite y de las pruebas E2E de Playwright dentro de ese *workflow* es
-  **pendiente de confirmar**; en el momento de redactar este manual no aparecen como pasos del
-  archivo de CI.
+- **Integración continua del frontend.** El *workflow* de CI tiene un trabajo `web`
+  (`.github/workflows/ci.yml`) que ejecuta `npm ci` y `npm run build` —`tsc` + `vite build`—,
+  el mismo comando que la imagen de producción. Las pruebas E2E de Playwright siguen **fuera
+  del CI** y se ejecutan con `RepoTecnico/pruebas/run_e2e.sh`.
 - **Aplicación móvil.** Existe una APK Flutter de campo (`1.1.0+9`); este manual no documenta su
   implementación. La APK multirol V2 para gestión sigue pendiente.
 - **WhatsApp.** No existe integración con WhatsApp; fue diferida a la v3

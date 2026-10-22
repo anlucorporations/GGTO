@@ -21,7 +21,9 @@ router = APIRouter(prefix="/api/v1/auditoria", tags=["auditoría"])
 
 @router.get("", response_model=AuditoriaListOut, summary="Consultar traza de auditoría (solo SUPER)")
 def listar_auditoria(
-    usuario_filtro: str | None = Query(default=None, alias="usuario", description="Filtrar por P00 del actor"),
+    usuario_filtro: str | None = Query(
+        default=None, alias="usuario", description="Filtrar por P00 del actor"
+    ),
     accion: str | None = Query(default=None, description="Filtrar por acción realizada"),
     entidad: str | None = Query(default=None, description="Filtrar por entidad afectada"),
     id_entidad: str | None = Query(default=None, description="Filtrar por ID de la entidad"),

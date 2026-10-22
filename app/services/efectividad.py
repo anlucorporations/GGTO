@@ -279,8 +279,8 @@ def ranking(
         con_muestra,
         key=lambda f: (-f["puntaje"], -f["cerrados"], -f["asignados"], f["codigo"]),
     )
-    for indice, fila in enumerate(orden, start=1):
-        fila["posicion"] = indice
+    for indice, item in enumerate(orden, start=1):
+        item["posicion"] = indice
     orden.extend(
         sorted(sin_muestra, key=lambda f: (-f["puntaje"], f["codigo"]))
     )

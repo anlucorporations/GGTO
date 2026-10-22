@@ -3,7 +3,8 @@
 - Las pruebas unitarias no necesitan base de datos.
 - Las de integración se ejecutan si está definida `GGTO_TEST_DB_URL`; el esquema
   completo se crea a partir de `RepoTecnico/db/schema.sql` en el esquema indicado
-  por `GGTO_TEST_SCHEMA` (por defecto `public`).
+  por `GGTO_TEST_SCHEMA` (por defecto `ggto_test`, **nunca** `public`).
+- En CI (`GGTO_REQUIRE_DB=1`) la ausencia de base **falla**, no se omite.
 """
 
 from __future__ import annotations
@@ -23,7 +24,9 @@ RAIZ = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA_SQL = RAIZ / "RepoTecnico" / "db" / "schema.sql"
 MUESTRA_CSV = RAIZ / "RepoTecnico" / "muestras" / "detalle_averias_gpon_EJEMPLO.csv"
 TEST_URL = os.environ.get("GGTO_TEST_DB_URL")
-TEST_SCHEMA = os.environ.get("GGTO_TEST_SCHEMA", "public")
+TEST_SCHEMA = os.environ.get("GGTO_TEST_SCHEMA", "ggto_test")
+REQUERIR_BD = os.environ.get("GGTO_REQUIRE_DB") == "1"
+PERMITIR_PUBLIC = os.environ.get("GGTO_ALLOW_PUBLIC_SCHEMA") == "1"
 
 P00_ADMIN = "TESTADM"
 P00_TEC = "TESTTEC"
@@ -79,7 +82,16 @@ def _limpiar_rate_limit():
 @pytest.fixture(scope="session")
 def engine():
     if not TEST_URL:
+        if REQUERIR_BD:
+            pytest.fail(
+                "GGTO_REQUIRE_DB=1 exige GGTO_TEST_DB_URL: la suite no puede omitir la base"
+            )
         pytest.skip("GGTO_TEST_DB_URL no configurada: se omiten las pruebas de integración")
+    if TEST_SCHEMA == "public" and not PERMITIR_PUBLIC:
+        pytest.fail(
+            "GGTO_TEST_SCHEMA=public no está permitido: use un esquema desechable "
+            "(p. ej. ggto_test) o defina GGTO_ALLOW_PUBLIC_SCHEMA=1 a sabiendas"
+        )
     connect_args = {}
     if TEST_SCHEMA != "public":
         # `public` se mantiene en el search_path para resolver las extensiones

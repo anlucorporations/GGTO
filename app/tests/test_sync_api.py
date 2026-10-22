@@ -80,7 +80,7 @@ def entorno_sync(client, admin_token, db_session):
     assert inc.status_code == 201, inc.text
 
     def crear(id_averia: str, **extra: object) -> dict:
-        cuerpo = {"id_averia": id_averia, "direccion": "SECTOR SYNC 1",
+        cuerpo: dict[str, object] = {"id_averia": id_averia, "direccion": "SECTOR SYNC 1",
                   "nombre_cliente": f"CLIENTE {id_averia}",
                   "contacto_cliente": "04142223344", "id_pago": "7007000000",
                   "tipo_reporte": "REPARACION", "tipo_problema": "SIN_SERVICIO"}

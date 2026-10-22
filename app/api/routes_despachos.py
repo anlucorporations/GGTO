@@ -31,6 +31,7 @@ from ..schemas.despacho import (
     DespachoDetalleOut,
     DespachoOut,
     DespachoUpdate,
+    DiaConstruccionOut,
     EnvioOut,
     FallaMasivaCreate,
     FallaMasivaOut,
@@ -40,6 +41,7 @@ from ..schemas.despacho import (
     PropuestaOut,
     RankingEfectividadOut,
     ReporteProduccionOut,
+    SectorConstruccionSeguimientoOut,
     SeguimientoConstruccionOut,
 )
 from ..services import despacho as svc
@@ -796,28 +798,28 @@ def seguimiento_construccion(
     ).all()
 
     nombres = svc.nombres_de_sector(db, central.id_central)
-    por_dia: dict[date, dict] = {}
-    por_sector: dict[int | None, dict] = {}
+    por_dia: dict[date, DiaConstruccionOut] = {}
+    por_sector: dict[int | None, SectorConstruccionSeguimientoOut] = {}
     totales = {"asignadas": 0, "cerradas": 0, "abiertas": 0, "sectores": 0}
     for fecha_dia, _id_caso, id_sector, estado in filas:
         cerrada = estado == "CERRADO"
-        dia = por_dia.setdefault(
-            fecha_dia, {"fecha": fecha_dia, "asignadas": 0, "cerradas": 0, "abiertas": 0}
-        )
-        dia["asignadas"] += 1
+        dia = por_dia.setdefault(fecha_dia, DiaConstruccionOut(fecha=fecha_dia))
+        dia.asignadas += 1
         totales["asignadas"] += 1
         sector = por_sector.setdefault(
             id_sector,
-            {"id_sector": id_sector, "nombre": nombres.get(id_sector) if id_sector else None,
-             "asignadas": 0, "cerradas": 0},
+            SectorConstruccionSeguimientoOut(
+                id_sector=id_sector,
+                nombre=nombres.get(id_sector) if id_sector else None,
+            ),
         )
-        sector["asignadas"] += 1
+        sector.asignadas += 1
         if cerrada:
-            dia["cerradas"] += 1
+            dia.cerradas += 1
             totales["cerradas"] += 1
-            sector["cerradas"] += 1
+            sector.cerradas += 1
         else:
-            dia["abiertas"] += 1
+            dia.abiertas += 1
             totales["abiertas"] += 1
 
     totales["sectores"] = len(por_sector)
@@ -828,7 +830,7 @@ def seguimiento_construccion(
         totales=totales,
         por_dia=[por_dia[d] for d in sorted(por_dia)],
         por_sector=sorted(
-            por_sector.values(), key=lambda s: (s["nombre"] or "", s["id_sector"] or 0)
+            por_sector.values(), key=lambda s: (s.nombre or "", s.id_sector or 0)
         ),
     )
 

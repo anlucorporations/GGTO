@@ -80,9 +80,11 @@ que añade `options=-csearch_path=<esquema>,public` a la URL de conexión
 
 El esquema E2E se fija en `run_e2e.sh` con `ESQUEMA="${DB_SCHEMA:-ggto_e2e}"` y se exporta como
 `DB_SCHEMA` (`RepoTecnico/pruebas/run_e2e.sh:14,21`). En el lado de `pytest`, el esquema se
-selecciona con `GGTO_TEST_SCHEMA`, por defecto `public` (`app/tests/conftest.py:24-25`), y las
-pruebas de integración se omiten si `GGTO_TEST_DB_URL` no está definida
-(`app/tests/conftest.py:72`). La razón de conservar `public` en el `search_path` es que ahí
+selecciona con `GGTO_TEST_SCHEMA`, por defecto **`ggto_test`** (`app/tests/conftest.py`), y las
+pruebas de integración se omiten en local si `GGTO_TEST_DB_URL` no está definida; en CI
+(`GGTO_REQUIRE_DB=1`) la suite **falla** en ese caso en lugar de omitirse. El esquema
+`public` está prohibido por defecto —la batería lo borraría— y solo se admite con
+`GGTO_ALLOW_PUBLIC_SCHEMA=1`. La razón de conservar `public` en el `search_path` es que ahí
 residen las extensiones `pgcrypto` y `pg_trgm` (`app/core/db.py:34`).
 
 ### variables globales del workspace (.env.global, gcp-env.sh)

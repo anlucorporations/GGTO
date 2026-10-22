@@ -70,10 +70,18 @@ class Mensaje(Base):
         ),
         CheckConstraint("expira_en > creado_en", name="ck_mensaje_expira"),
         CheckConstraint(
-            "(destino_tipo = 'TODOS'      AND id_cuadrilla IS NULL     AND id_tecnico IS NULL     AND id_usuario_destino IS NULL) OR "
-            "(destino_tipo = 'CUADRILLA'  AND id_cuadrilla IS NOT NULL AND id_tecnico IS NULL     AND id_usuario_destino IS NULL) OR "
-            "(destino_tipo = 'TECNICO'    AND id_tecnico IS NOT NULL   AND id_cuadrilla IS NULL   AND id_usuario_destino IS NULL) OR "
-            "(destino_tipo = 'SUPERVISOR' AND id_usuario_destino IS NOT NULL AND id_cuadrilla IS NULL AND id_tecnico IS NULL)",
+            " OR ".join(
+                (
+                    "(destino_tipo = 'TODOS'      AND id_cuadrilla IS NULL     "
+                    "AND id_tecnico IS NULL     AND id_usuario_destino IS NULL)",
+                    "(destino_tipo = 'CUADRILLA'  AND id_cuadrilla IS NOT NULL "
+                    "AND id_tecnico IS NULL     AND id_usuario_destino IS NULL)",
+                    "(destino_tipo = 'TECNICO'    AND id_tecnico IS NOT NULL   "
+                    "AND id_cuadrilla IS NULL   AND id_usuario_destino IS NULL)",
+                    "(destino_tipo = 'SUPERVISOR' AND id_usuario_destino IS NOT NULL "
+                    "AND id_cuadrilla IS NULL AND id_tecnico IS NULL)",
+                )
+            ),
             name="ck_mensaje_destino_xor",
         ),
     )

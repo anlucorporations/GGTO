@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: ["GGTOv2-DSH-GCP", main]
+  pull_request:
+    branches: ["GGTOv2-DSH-GCP", main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (ruff, mypy, pytest + cobertura)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ggto_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      GGTO_TEST_DB_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/ggto_test
+      GGTO_TEST_SCHEMA: ggto_ci
+      GGTO_REQUIRE_DB: "1"
+      SECRET_KEY: secreto-solo-para-ci
+      APP_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: pip install -r app/requirements-dev.txt
+
+      - name: Lint (Ruff)
+        run: ruff check app
+
+      - name: Tipos (mypy)
+        run: mypy app
+
+      - name: Pruebas con cobertura (RNF-24)
+        run: >-
+          pytest app/tests -q
+          --cov --cov-report=term-missing --cov-report=xml
+          --cov-fail-under=70
+
+      - name: Publicar cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  web:
+    name: Web (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # `npm run build` ejecuta `tsc` y luego `vite build`.
+      - name: Compilar (tsc + vite)
+        run: npm run build
+
+  apk:
+    name: APK (flutter analyze + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app_movil
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Análisis
+        run: flutter analyze
+
+      - name: Pruebas
+        run: flutter test

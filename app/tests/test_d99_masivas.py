@@ -98,7 +98,7 @@ def _crear_masiva(client, headers, *, descripcion: str, ids_caso: list[int],
                   slot: str = "3", puerto: str = "7", fat: str = "FAT-D99",
                   direccion: str = "SECTOR D99 ALFA CASA 1", **extra):
     """Alta manual D-118: tupla completa + al menos un caso asociado."""
-    cuerpo = {
+    cuerpo: dict[str, object] = {
         "descripcion": descripcion,
         "olt": olt,
         "slot": slot,

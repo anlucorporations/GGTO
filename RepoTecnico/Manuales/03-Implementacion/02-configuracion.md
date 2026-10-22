@@ -560,7 +560,9 @@ F4-01 y su corrección se documentan en el informe de Fase 4
 
 ### CI
 
-El flujo de integración continua levanta PostgreSQL 15 como servicio y ejecuta `ruff`,
-`mypy` y `pytest app/tests -q` (`.github/workflows/ci.yml:16-54`). Las pruebas de
-integración requieren `GGTO_TEST_DB_URL`; si no está definida, el `conftest` las omite
-(`app/tests/conftest.py:70-72`).
+El flujo de integración continua levanta PostgreSQL 18 como servicio y ejecuta `ruff`, `mypy`
+y `pytest app/tests -q --cov --cov-fail-under=70`; además compila la SPA (`tsc` + `vite`) y
+analiza y prueba la APK (`flutter analyze` + `flutter test`) en trabajos paralelos
+(`.github/workflows/ci.yml`). Las pruebas de integración requieren `GGTO_TEST_DB_URL`; en CI
+la variable `GGTO_REQUIRE_DB=1` hace que la suite falle si falta, en lugar de omitirse
+(`app/tests/conftest.py`).

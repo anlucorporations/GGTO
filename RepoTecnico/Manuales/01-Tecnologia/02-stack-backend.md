@@ -57,14 +57,14 @@ La lista de dependencias directas de ejecución es:
 | `PyJWT` | Emisión y validación de JWT | `app/requirements.txt:7` |
 | `python-multipart` | Carga de archivos en la ingesta | `app/requirements.txt:8` |
 
-Las herramientas de desarrollo son `pytest`, `httpx`, `ruff` y `mypy`
-(`app/requirements-dev.txt:2-5`), con versiones verificadas pytest 9.1.1, httpx 0.28.1, ruff 0.16.9
-y mypy 2.3.1 (`/tmp/ggto_factsheet.md:54-57`).
+Las herramientas de desarrollo son `pytest`, `pytest-cov`, `httpx`, `ruff` y `mypy`
+(`app/requirements-dev.txt:2-6`), con versiones verificadas pytest 9.1.1, pytest-cov 7.1.0,
+httpx 0.28.1, ruff 0.16.9 y mypy 2.3.1 (`/tmp/ggto_factsheet.md:54-57`).
 
 La integración continua reproduce este stack en GitHub Actions con Python 3.12 y caché de pip basada
-en `app/requirements-dev.txt` (`.github/workflows/ci.yml:32-37`). El *workflow* se dispara ante
-`push` y `pull_request` sobre las ramas `GGTOv2-DSH-GCP` y `main`
-(`.github/workflows/ci.yml:4-9`).
+en `app/requirements-dev.txt` (`.github/workflows/ci.yml`, trabajo `backend`). El *workflow* se
+dispara ante `push` y `pull_request` sobre las ramas `GGTOv2-DSH-GCP` y `main` y exige cobertura
+mínima del 70 % (`--cov-fail-under=70`).
 
 ### SQLAlchemy 2.x y psycopg2
 

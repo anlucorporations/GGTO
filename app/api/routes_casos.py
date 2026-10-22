@@ -99,7 +99,7 @@ def _nuevo_id_averia_ref(db: Session, tipo_reporte: str) -> str:
     usaba `generar_id_averia_ref`, así que dos altas simultáneas nunca chocan.
     """
     prefijo = "CONS" if str(tipo_reporte).upper() == "CONSTRUCCION" else "REP"
-    numero = db.execute(text("SELECT nextval('seq_caso_ref')")).scalar_one()
+    numero: int = db.execute(text("SELECT nextval('seq_caso_ref')")).scalar_one()
     return f"REF-{prefijo}-{int(numero):06d}"
 
 

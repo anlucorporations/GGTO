@@ -54,14 +54,19 @@ acceso a la base mediante el proxy de Cloud SQL.
 ### ggto_test (pytest)
 
 Es el esquema que usa la integración y los contratos. Su nombre se toma de la variable
-`GGTO_TEST_SCHEMA`, con valor por defecto `public`
-(`app/tests/conftest.py:25`). Con el valor de trabajo `ggto_test`, el `conftest` añade
-`search_path` para que `public` siga resolviendo las extensiones `pgcrypto` y `pg_trgm`
-(`app/tests/conftest.py:74-77`). Si el esquema no es `public`, lo crea con
-`CREATE SCHEMA IF NOT EXISTS` antes de aplicar `schema.sql`
-(`app/tests/conftest.py:82-85`). La lógica de `search_path` proviene del parámetro `DB_SCHEMA` de
+`GGTO_TEST_SCHEMA`, con valor por defecto **`ggto_test`** (`app/tests/conftest.py`). El
+esquema `public` está **prohibido por defecto** —la batería borra y recrea su esquema, y
+hacerlo sobre `public` destruiría datos reales—: solo se admite con
+`GGTO_ALLOW_PUBLIC_SCHEMA=1` de forma explícita. Si el esquema no es `public`, el `conftest`
+lo **elimina y recrea** desde `schema.sql` en cada corrida y añade `search_path` para que
+`public` siga resolviendo las extensiones `pgcrypto` y `pg_trgm`
+(`app/tests/conftest.py`). La lógica de `search_path` proviene del parámetro `DB_SCHEMA` de
 la aplicación (`app/core/db.py:33-36`), corregido durante la Fase 4 (hallazgo F4-01,
 `RepoTecnico/pruebas/informe_fase4.md:36`).
+
+Si falta `GGTO_TEST_DB_URL`, las pruebas de integración se omiten en local; en CI la
+variable `GGTO_REQUIRE_DB=1` hace que la suite **falle** en lugar de omitirse
+(`app/tests/conftest.py`).
 
 ### ggto_e2e (Playwright)
 
@@ -305,22 +310,21 @@ Además de las pruebas, la Fase 4 exige `ruff`, `mypy` y `tsc` strict sin hallaz
 La configuración vive en `pyproject.toml`: longitud de línea 110, objetivo `py312`, exclusión de
 `app/web` y selección de reglas `E`, `F`, `I`, `B`, `UP`, `RUF`, con `B008` ignorada porque FastAPI
 usa `Depends(...)` como valor por defecto (`pyproject.toml:1-12`). El comando de CI es
-`ruff check app` (`.github/workflows/ci.yml:47-48`).
+`ruff check app` (`.github/workflows/ci.yml`, job `backend`).
 
 ### mypy
 
 La configuración declara `python_version = "3.12"`, `ignore_missing_imports = true`,
 `warn_unused_ignores = true` y excluye `app/web/` (`pyproject.toml:14-18`). El comando de CI es
-`mypy app --ignore-missing-imports` (`.github/workflows/ci.yml:50-51`).
+`mypy app` (`.github/workflows/ci.yml`, job `backend`).
 
 ### tsc strict
 
 El frontend se compila con TypeScript estricto: `strict: true` y `noFallthroughCasesInSwitch: true`
 en `app/web/tsconfig.json:18-19`, y el *script* de build es `tsc && vite build`
 (`app/web/package.json:9`). El informe registra `tsc` strict sin hallazgos
-(`RepoTecnico/pruebas/informe_fase4.md:20`). **Pendiente de confirmar** si `tsc` se ejecuta en algún
-flujo automatizado: el único *workflow* del repositorio solo corre el trabajo de backend
-(`.github/workflows/ci.yml:9-54`).
+(`RepoTecnico/pruebas/informe_fase4.md:20`). El trabajo `web` del CI ejecuta `npm ci` y
+`npm run build`, de modo que `tsc` y Vite quedan automatizados (`.github/workflows/ci.yml`).
 
 ## Resultado Fase 4
 
@@ -363,45 +367,76 @@ deja defectos funcionales abiertos (`RepoTecnico/pruebas/informe_fase4.md:106-10
 
 ## CI
 
-La integración continua se materializa en un único *workflow* de GitHub Actions.
+La integración continua es un único *workflow* de GitHub Actions con **tres trabajos en
+paralelo**: backend, web y APK. El pipeline es la puerta de calidad: si cualquier trabajo
+falla, el push no se considera verde (RNF-24).
 
-### .github/workflows/ci.yml
+### `.github/workflows/ci.yml`
 
-El archivo se llama `CI` y se dispara en `push` y `pull_request` sobre las ramas `GGTOv2-DSH-GCP` y
-`main` (`.github/workflows/ci.yml:1-7`). Tiene un solo trabajo, `backend`, que corre en
-`ubuntu-latest` (`.github/workflows/ci.yml:9-12`) y declara un servicio PostgreSQL:
+El archivo se llama `CI` y se dispara en `push` y `pull_request` sobre las ramas
+`GGTOv2-DSH-GCP` y `main` (`.github/workflows/ci.yml`). Cancela las corridas anteriores de la
+misma referencia (`concurrency`) y solo necesita permiso de lectura.
 
-| Aspecto | Valor | Referencia |
-|---|---|---|
-| Imagen | `postgres:15` | `.github/workflows/ci.yml:16` |
-| Usuario / clave / base | `postgres` / `postgres` / `ggto_test` | `.github/workflows/ci.yml:18-20` |
-| Puerto | `5432:5432` | `.github/workflows/ci.yml:21-22` |
-| *Health check* | `pg_isready -U postgres`, 10 s, 5 reintentos | `.github/workflows/ci.yml:23-27` |
-| `GGTO_TEST_DB_URL` | URL de la base de servicio de CI (`postgres` en `localhost:5432/ggto_test`; la clave es la del servicio efímero) | `.github/workflows/ci.yml:30` |
-| `GGTO_TEST_SCHEMA` | `public` | `.github/workflows/ci.yml:31` |
-| `SECRET_KEY` / `APP_ENV` | Valor de prueba / `test` | `.github/workflows/ci.yml:32-33` |
+#### Trabajo `backend`
 
-Los pasos del trabajo son: `actions/checkout@v4` (`.github/workflows/ci.yml:36`); `actions/setup-python@v5` con
-Python 3.12 y caché de `pip` sobre `app/requirements-dev.txt` (`.github/workflows/ci.yml:38-42`); instalación de
-dependencias de desarrollo (`.github/workflows/ci.yml:44-45`); `ruff check app` (`.github/workflows/ci.yml:47-48`);
-`mypy app --ignore-missing-imports` (`.github/workflows/ci.yml:50-51`); y `pytest app/tests -q` (`.github/workflows/ci.yml:53-54`). Las
-dependencias de desarrollo son `-r requirements.txt` más `pytest`, `httpx`, `ruff` y `mypy`
-(`app/requirements-dev.txt:1-5`).
+Corre en `ubuntu-latest` con Python 3.12 —la misma versión de `app/Dockerfile`— y un servicio
+PostgreSQL **15**, la versión de producción:
+
+| Aspecto | Valor |
+|---|---|
+| Imagen | `postgres:15` |
+| Usuario / clave / base | `postgres` / `postgres` / `ggto_test` (servicio efímero) |
+| Puerto | `5432:5432` |
+| *Health check* | `pg_isready -U postgres`, 10 s, 5 reintentos |
+| `GGTO_TEST_DB_URL` | `postgresql+psycopg2://postgres:postgres@localhost:5432/ggto_test` |
+| `GGTO_TEST_SCHEMA` | `ggto_ci` (esquema desechable; `public` está prohibido) |
+| `GGTO_REQUIRE_DB` | `1`: sin base la suite **falla**, no se omite |
+| `SECRET_KEY` / `APP_ENV` | Valor de prueba / `test` |
+
+Pasos: `actions/checkout@v4`; `actions/setup-python@v5` con caché de `pip` sobre
+`app/requirements-dev.txt`; instalación de dependencias; `ruff check app`; `mypy app`;
+`pytest app/tests -q --cov --cov-report=term-missing --cov-report=xml
+--cov-fail-under=70`; y publicación de `coverage.xml` como artefacto (aunque falle, para
+diagnosticar).
+
+Las dependencias de desarrollo son `-r requirements.txt` más `pytest`, `pytest-cov`, `httpx`,
+`ruff` y `mypy` (`app/requirements-dev.txt`). La cobertura se configura en `pyproject.toml`
+(`[tool.coverage.run]`, `source = ["app"]`, sin las pruebas).
+
+#### Trabajo `web`
+
+`actions/setup-node@v4` con Node 20 —la versión de `app/Dockerfile`—, `npm ci` con la caché
+de `app/web/package-lock.json` y `npm run build`, que ejecuta `tsc` y `vite build`. Es el
+mismo comando que usa la imagen de producción.
+
+#### Trabajo `apk`
+
+`subosito/flutter-action@v2` con Flutter **3.24.5** (Dart 3.5.4), `flutter pub get`,
+`flutter analyze` y `flutter test` en `app_movil/`. No compila el APK: la firma y la
+publicación siguen siendo un paso manual (`scripts/publicar_apk.py`).
+
+### Línea base por commit
+
+La referencia verificable es la corrida del CI de cada commit, no una cifra copiada en los
+manuales. La línea base de esta revisión (2026-10-21, PostgreSQL 18 local en un esquema
+desechable):
+
+| Medición | Resultado |
+|---|---|
+| `pytest` (unidad + integración) | **556 passed** en 8m15s (115 unitarias sin base + 441 de integración) |
+| Cobertura del backend | **90,54 %** (umbral 70 %) |
+| `ruff check app` | 0 hallazgos |
+| `mypy app` | 0 hallazgos en 126 archivos |
+| Web (`npm run build`) | `tsc` + `vite build` sin errores |
+| APK (`flutter analyze` / `flutter test`) | 0 issues / **274 pruebas** |
 
 ### Comparación con lo previsto
 
-La decisión D-38 y los requisitos técnicos preveían un CI/CD más amplio que el implementado
-(`RepoTecnico/estado_proyecto.md:102`, `RepoTecnico/requerimientos.md:288-289`).
-
 | Elemento previsto | Requisito / decisión | Estado real |
 |---|---|---|
-| Cobertura mínima 70 % | RNF-24 (`RepoTecnico/requerimientos.md:203`), D-38 (`RepoTecnico/estado_proyecto.md:102`) | **No implementado** en el CI: no hay `pytest-cov` en `app/requirements-dev.txt` ni configuración de cobertura en `pyproject.toml` |
-| Migraciones versionadas con Alembic | RT-13 (`RepoTecnico/requerimientos.md:288`), `RepoTecnico/entornos_globales.md:240` | **No implementado**: no existe `alembic.ini` ni carpeta `db/migrations/`; el esquema se aplica desde `db/schema.sql` |
-| Build de imagen y despliegue a Cloud Run | RT-14 (`RepoTecnico/requerimientos.md:289`), `RepoTecnico/entornos_globales.md:247` | **No implementado** en el CI: `ci.yml` no compila ni publica la imagen; el despliegue se hizo manualmente |
-| Espejo en GitLab CI | D-38 (`RepoTecnico/estado_proyecto.md:102`), `RepoTecnico/entornos_globales.md:247` | **Pendiente de confirmar**: no existe `.gitlab-ci.yml` en el repositorio |
-| Análisis estático del frontend (`tsc`) | Plan de pruebas (`RepoTecnico/pruebas/plan_pruebas.md:55`) | **No automatizado**: `tsc` se ejecuta en el build local de la SPA (`app/web/package.json:9`), pero no hay trabajo de frontend en el CI |
-
-El CI implementado cubre, por tanto, lint, tipos y pruebas de backend sobre PostgreSQL 15; la
-cobertura, las migraciones versionadas, el build de imagen, el espejo en GitLab y el análisis
-estático del frontend quedan como brechas frente a lo previsto y se registran aquí como pendientes
-de confirmar en cuanto a su planificación.
+| Cobertura mínima 70 % | RNF-24, D-38 | **Implementado**: `pytest-cov` + `--cov-fail-under=70` |
+| Análisis estático del frontend (`tsc`) | Plan de pruebas | **Implementado**: trabajo `web` |
+| Pruebas de la APK | Plan de pruebas | **Implementado**: trabajo `apk` (`analyze` + `test`) |
+| Migraciones versionadas con Alembic | RT-13 | **No implementado**: el esquema se aplica desde `db/schema.sql` |
+| Build de imagen y despliegue a Cloud Run | RT-14 | **No implementado** en CI: el despliegue es manual |
+| Espejo en GitLab CI | D-38 | **Pendiente**: el repositorio se empuja a GitLab, pero no hay `.gitlab-ci.yml` |

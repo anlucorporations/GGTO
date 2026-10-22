@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import select
 
-from app.models import CasoEspecial, Solicitante
+from app.models import CasoEspecial
 from app.services import geocodificacion
 
 CASOS = "/api/v1/casos"
@@ -137,7 +137,7 @@ def test_los_enlaces_del_mapa_se_calculan_sin_red():
 
 def test_la_ubicacion_sin_gps_ofrece_el_enlace_de_busqueda(client, entorno, db_session):
     """Sin coordenadas, la ubicación trae `url_busqueda` con la dirección del FAT."""
-    from app.models import Despacho, FallaMasiva
+    from app.models import FallaMasiva
 
     r = _alta(client, entorno["headers"])
     assert r.status_code == 201, r.text

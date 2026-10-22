@@ -38,6 +38,13 @@ app/web/node_modules/
 app_movil/GGTOv2.apk
 app_movil/app-release.apk
 app/web/public/apk/ggto-tecnico.apk
+
+# Cobertura de pruebas (CI y local)
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
 app/web/public/apk/apk.json
 app/web/public/apk/*.apk
 

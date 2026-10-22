@@ -44,14 +44,15 @@ El archivo de desarrollo extiende al anterior y añade las herramientas de calid
 |---|---|---|
 | `app/requirements-dev.txt:1` | `-r requirements.txt` | Hereda las ocho dependencias de ejecución |
 | `app/requirements-dev.txt:2` | `pytest` | Marco de pruebas |
-| `app/requirements-dev.txt:3` | `httpx` | Cliente HTTP usado por `TestClient` |
-| `app/requirements-dev.txt:4` | `ruff` | Linter y ordenador de importaciones |
-| `app/requirements-dev.txt:5` | `mypy` | Comprobación estática de tipos |
+| `app/requirements-dev.txt:3` | `pytest-cov` | Medición de cobertura (RNF-24) |
+| `app/requirements-dev.txt:4` | `httpx` | Cliente HTTP usado por `TestClient` |
+| `app/requirements-dev.txt:5` | `ruff` | Linter y ordenador de importaciones |
+| `app/requirements-dev.txt:6` | `mypy` | Comprobación estática de tipos |
 
 La directiva `-r requirements.txt:1` hace que instalar el archivo de desarrollo instale también
 todo el conjunto de ejecución. El *pipeline* de integración continua aprovecha esta propiedad:
-instala únicamente `app/requirements-dev.txt` (`.github/workflows/ci.yml:44-45`) y su caché de
-pip se ancla a ese mismo archivo (`.github/workflows/ci.yml:38-42`).
+instala únicamente `app/requirements-dev.txt` (trabajo `backend` de `.github/workflows/ci.yml`) y
+su caché de pip se ancla a ese mismo archivo.
 
 ## Dependencias de ejecución
 
@@ -189,7 +190,7 @@ configuración:
   (`app/tests/test_config_db.py:23`) y `url.startswith("postgresql+psycopg2://u:p@/ggtov2?")`
   (`app/tests/test_config_db.py:45`).
 - La integración continua define su cadena con el mismo dialecto en
-  `GGTO_TEST_DB_URL` (`.github/workflows/ci.yml:30`).
+  `GGTO_TEST_DB_URL` (`.github/workflows/ci.yml`, job `backend`).
 
 El parámetro `sslmode` forma parte de la URL (`app/core/config.py:23`, aplicado en
 `app/core/db.py:32`) y el esquema alternativo se añade con
@@ -471,7 +472,7 @@ Dos paquetes que el código importa de forma directa **no están declarados** en
 2. **Declarar las dependencias directas** `pydantic` y `starlette` en `app/requirements.txt`,
    ya que el código las importa de forma explícita.
 3. **Fijar la versión de Python** en la imagen y en CI; hoy ambas usan 3.12
-   (`app/Dockerfile:13` y `.github/workflows/ci.yml:38-40`), lo que es coherente con RNF-25.
+   (`app/Dockerfile:13` y `.github/workflows/ci.yml`, job `backend`), lo que es coherente con RNF-25.
 4. **Registrar el texto de las licencias** de todas las dependencias para cerrar la revisión
    legal pendiente.
 
@@ -479,7 +480,8 @@ Dos paquetes que el código importa de forma directa **no están declarados** en
 
 ### pyproject.toml
 
-El archivo `pyproject.toml` contiene dos bloques de configuración y ninguna dependencia.
+El archivo `pyproject.toml` contiene tres bloques de configuración —Ruff, mypy y cobertura— y
+ninguna dependencia.
 
 #### Ruff
 
@@ -502,6 +504,14 @@ El archivo `pyproject.toml` contiene dos bloques de configuración y ninguna dep
 - `warn_unused_ignores = true` (`pyproject.toml:17`).
 - `exclude = ["app/web/"]` (`pyproject.toml:18`).
 
+#### Cobertura
+
+- `[tool.coverage.run]` con `source = ["app"]` y `omit = ["app/tests/*"]`
+  (`pyproject.toml`): mide el código de la aplicación, no las pruebas.
+- `[tool.coverage.report]` con `skip_empty = true` y `show_missing = true`.
+- El CI exige el **70 %** con `--cov-fail-under=70` (RNF-24); la línea base medida es
+  **90,54 %**.
+
 ### pytest.ini
 
 La configuración de pytest es mínima y explícita (`pytest.ini:1-6`):
@@ -520,15 +530,15 @@ Los comandos verificados son:
 
 | Herramienta | Comando | Referencia |
 |---|---|---|
-| Ruff | `ruff check app` | `.github/workflows/ci.yml:48`, `RepoTecnico/plan_desarrollo.md:415` |
-| mypy | `mypy app --ignore-missing-imports` | `.github/workflows/ci.yml:51` |
-| pytest | `pytest app/tests -q` | `.github/workflows/ci.yml:54` |
+| Ruff | `ruff check app` | `.github/workflows/ci.yml` (job `backend`), `RepoTecnico/plan_desarrollo.md:415` |
+| mypy | `mypy app` | `.github/workflows/ci.yml` (job `backend`) |
+| pytest | `pytest app/tests -q --cov --cov-fail-under=70` | `.github/workflows/ci.yml` (job `backend`) |
 | pytest (alternativo) | `python3 -m pytest app/tests -q` | `RepoTecnico/pruebas/plan_pruebas.md:117` |
 
-El *workflow* dispone de un servicio PostgreSQL 15 con base `ggto_test`
-(`.github/workflows/ci.yml:14-27`) y define las variables de entorno de prueba, incluida
-`GGTO_TEST_DB_URL` con dialecto `psycopg2` (`.github/workflows/ci.yml:29-33`). Los pasos
-se ejecutan en el orden lint → tipos → pruebas (`.github/workflows/ci.yml:47-54`).
+El *workflow* dispone de un servicio PostgreSQL **18** con base `ggto_test` y ejecuta la suite
+en el esquema desechable `ggto_ci`, con `GGTO_REQUIRE_DB=1` para que no pueda omitirse la
+integración (`.github/workflows/ci.yml`, job `backend`). Los pasos se ejecutan en el orden
+lint → tipos → pruebas.
 
 ### Sistema de construcción
 
