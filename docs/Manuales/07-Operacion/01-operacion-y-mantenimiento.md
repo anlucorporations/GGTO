@@ -1,7 +1,7 @@
 # Manual de Operación y Mantenimiento — GGTO
 
-> **Corte operativo verificado 2026-10-12:** servicio Cloud Run `ggto-web` en
-> revisión `ggto-web-00039-g9n`, imagen `v24`; Cloud SQL está RUNNABLE y los
+> **Corte operativo verificado 2026-10-22:** servicio Cloud Run `ggto-web` en
+> revisión `ggto-web-00093-g8c`, imagen `v80`, con la APK `1.15.17+42`; Cloud SQL está RUNNABLE y los
 > respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas
 > de restauración no se validaron en esta auditoría. Consulta el informe
 > `RepoTecnico/auditoria_estado_real_v2.md` dentro del repositorio.
@@ -377,25 +377,26 @@ sentencias DDL manuales y controladas hasta que se incorpore.
 
 ### Logs y /health /ready
 
-La aplicación registra sus mensajes en nivel INFO, con formato de fecha, nivel, nombre y mensaje.
-El middleware de observabilidad asigna un **`request_id`** (tomado de la cabecera `X-Request-ID` o
-generado nuevo), lo devuelve en la respuesta y registra el método, la ruta, el código de respuesta
-y la duración en milisegundos. Si ocurre una excepción, registra el fallo junto con el
-`request_id`.
+La aplicación registra **una línea JSON por evento**, con fecha, nivel, nombre del registro,
+mensaje, **`request_id`**, **usuario (P00)**, rol y, cuando corresponde, método, ruta, estado y
+duración. El `request_id` se toma de la cabecera `X-Request-ID` (si es válida) o se genera, y se
+devuelve en la respuesta. Los datos sensibles (tokens, claves, correos, teléfonos y P00 en texto
+libre) se redactan antes de escribir.
 
 | Sonda | Ruta | Comportamiento |
 |---|---|---|
 | Metadatos | `GET /api/v1/info` | Servicio, versión, entorno y `/docs` (pública) |
 | Liveness | `GET /health` | Responde `{"status":"ok"}` y **no toca la base de datos** (pública) |
-| Readiness | `GET /ready` | Verifica la conexión y reporta base, usuario, versión y número de tablas; responde `503` si falla (pública) |
+| Readiness | `GET /ready` | Verifica la conexión y reporta base, usuario, versión, número de tablas y modo de almacenamiento; responde `503` si falla (pública) |
 | Resumen | `GET /api/v1/resumen` | Conteos de entidades (**requiere token**) |
 
-> El requerimiento RNF-19 pide registros con `request-id` **y usuario** en todas las operaciones,
-> métricas de negocio, alertas cuando la ingesta no se ejecuta o falla una notificación, y
-> retención de al menos 30 días. El código sí cumple con el `request-id` y con las métricas
-> (`GET /api/v1/metricas`), pero **no registra el usuario en el log, ni incluye alertas
-> automáticas, ni tiene una política de retención propia**: esos puntos están **pendientes de
-> confirmar** con la configuración de Cloud Logging.
+El 2026-10-22 se activó la observabilidad de D-155 en v80: **4 métricas** basadas en logs,
+**4 políticas de alerta** habilitadas, un **uptime check de `/health` cada 5 minutos** y
+**retención de 30 días** en Cloud Logging. La alerta de ingesta quedó en **23 horas** porque
+Monitoring no admite una ausencia mayor de 23 h 30 min. **Las políticas no tienen canal de
+notificación** hasta que se defina `ALERTA_EMAIL`; mientras tanto se consultan en Monitoring pero
+no envían correo. El crash reporting remoto de la APK sigue pendiente de credenciales; el log
+local rotativo está en el teléfono.
 
 ---
 

@@ -2,7 +2,8 @@
 
 **Fecha:** 2026-10-22
 **Hallazgo:** H-15 (R3, severidad M) del `INFORME_OPTIMIZACION_V2.md`.
-**Estado:** implementado, probado y publicado (`85604de`); despliegue pendiente con v80.
+**Estado:** implementado, probado, publicado y desplegado en producción (imagen **v80**, revisión
+`ggto-web-00093-g8c`, 100 % del tráfico).
 
 ## 1. Defecto
 
@@ -52,11 +53,19 @@ componente `gcloud alpha`):
 
 - métricas basadas en logs `ggto_ingesta_completada`, `ggto_notificacion_fallida`,
   `ggto_http_5xx` y `ggto_http_latencia` (distribución de `jsonPayload.ms`);
-- 4 políticas: ingesta ausente 26 h, 5xx/`/ready` en 5 min, notificación fallida en 15 min y
+- 4 políticas: ingesta ausente 23 h, 5xx/`/ready` en 5 min, notificación fallida en 15 min y
   latencia p95 > 2 s en 10 min;
 - canal de correo si se define `ALERTA_EMAIL`;
 - *uptime check* de `/health` cada 5 minutos;
 - retención explícita de `_Default` a 30 días.
+
+Dos límites de la API obligaron a ajustar el script durante la puesta en marcha:
+
+- Monitoring rechaza `conditionAbsent` con duración superior a **23 h 30 min**; la alerta de
+  ingesta quedó en **23 h** (`82800s`) para dejar margen antes del corte de 24 h.
+- El `GET` de una métrica de Logging devolvía `404` aunque la métrica existiera. El script ahora
+  hace `PUT` (actualización idempotente) y solo usa `POST` si la métrica no existe; un `409` se
+  resuelve con un segundo `PUT`. Así se puede ejecutar repetidamente sin fallar.
 
 ### 2.4 APK
 
@@ -83,24 +92,42 @@ inválido; P00/rol en el log de acceso; `ready_fallido`; `ingesta_completada`; y
 
 ## 4. Despliegue
 
-1. Desplegar v80 (incluye D-148, D-149, D-150, D-152, D-153, D-154 y D-155).
-2. Ejecutar, con una cuenta con permisos de Logging/Monitoring:
+El **2026-10-22** se desplegó la imagen **v80** con D-148, D-149, D-150, D-152, D-153, D-154 y
+D-155. Resultado verificado:
 
-   ```bash
-   PROYECTO=truekeate-main ALERTA_EMAIL=operaciones@ejemplo.com \
-     bash RepoTecnico/scripts/12_observabilidad.sh
-   ```
+| Dato | Valor |
+|---|---|
+| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v80` |
+| Revisión de Cloud Run | `ggto-web-00093-g8c`, 100 % del tráfico |
+| URL | `https://ggto-web-593453426217.europe-west1.run.app` |
+| `/health`, `/ready`, `/`, `/manual/` y un HTML de manual | `200` |
+| `/ready` | PostgreSQL 15.18, base `ggtov2`, 43 tablas, `"almacenamiento": "gcs"`, `evidencias_ok: true` |
+| Log JSON | `jsonPayload.evento="http_request"`, `request_id="deploy-v80-check"`, ruta `/health`, estado 200 |
+| APK servida | `1.15.17+42`, 25.162.951 bytes, SHA-256 `22c59a…128c`, idéntico al binario firmado |
+| Observabilidad | 4 métricas, 4 políticas habilitadas, uptime `/health` cada 300 s, retención 30 días |
+| Alertas | 0 canales: no se configuró `ALERTA_EMAIL` |
 
-3. Verificar una línea JSON:
+El script se ejecutó sin `ALERTA_EMAIL`, por lo que las políticas existen pero no notifican. Para
+activarlas, ejecutar de nuevo con el correo de destino o asociar un canal desde Monitoring.
 
-   ```bash
-   gcloud logging read 'resource.type="cloud_run_revision" AND jsonPayload.evento="http_request"' \
-     --project=truekeate-main --limit=1 --format=json
-   ```
+La ejecución de referencia es:
 
-4. En Monitoring, comprobar las 4 políticas, el uptime de `/health` y la retención de 30 días.
-5. En la APK, provocar un fallo controlado y confirmar que se crea
-   `logs/ggto_tecnico.log` en el almacenamiento privado; el archivo no debe contener PII.
+```bash
+PROYECTO=truekeate-main bash RepoTecnico/scripts/12_observabilidad.sh
+```
+
+La verificación de una línea JSON se hizo con una petición marcada:
+
+```bash
+curl -H 'X-Request-ID: deploy-v80-check' \
+  https://ggto-web-593453426217.europe-west1.run.app/health
+gcloud logging read \
+  'resource.type="cloud_run_revision" AND jsonPayload.request_id="deploy-v80-check"' \
+  --project=truekeate-main --limit=1 --format=json
+```
+
+Queda pendiente la prueba en un dispositivo real del log local de la APK: provocar un fallo
+controlado y confirmar `logs/ggto_tecnico.log` en el almacenamiento privado, sin PII.
 
 ## 5. Residuales
 
@@ -133,7 +160,9 @@ El 2026-10-22 se compiló y firmó la APK **`1.15.17+42`** con el keystore ofici
 
 La APK incorpora `app_movil/lib/core/crash_log.dart` (log local rotativo y saneado de D-155).
 Verificado en el binario: `lib/arm64-v8a/libapp.so` contiene las cadenas `ggto_tecnico.log` y
-`CrashLog`. **Todavía no es descargable desde producción:** el sitio sigue en v79 y sirve la APK
-`1.15.16+41`; hace falta desplegar v80 para publicar el binario y los cambios de backend. El
-APK y `apk.json` están ignorados por git, por lo que el despliegue debe hacerse desde este
-árbol de trabajo (o copiarlos al contexto de la imagen).
+`CrashLog`.
+
+**Descarga en producción verificada:** v80 sirve `/apk/ggto-tecnico.apk` y
+`/apk/apk.json`; el archivo descargado mide **25.162.951 bytes** y su SHA-256 coincide con el
+binario firmado (`22c59a…128c`). El APK y `apk.json` están ignorados por git, por lo que el
+despliegue debe hacerse desde este árbol de trabajo (o copiarlos al contexto de la imagen).

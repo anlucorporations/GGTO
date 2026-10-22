@@ -415,10 +415,13 @@ Eventos que alimentan las alertas: `ingesta_completada` e `ingesta_fallida`
 > rol, los eventos de ingesta/notificación/readiness y las métricas de negocio
 > (`GET /api/v1/metricas`, `app/api/routes_alertas.py:975`). La parte de infraestructura está en
 > `RepoTecnico/scripts/12_observabilidad.sh`: métricas basadas en logs, 4 políticas de alerta,
-> uptime de `/health` cada 5 minutos y retención explícita de 30 días. **Debe ejecutarse después
-> del despliegue de v80**; sin `ALERTA_EMAIL` las políticas se crean sin canal de notificación.
+> uptime de `/health` cada 5 minutos y retención explícita de 30 días. **Ejecutado en v80** el
+> 2026-10-22 (revisión `ggto-web-00093-g8c`): 4 métricas, 4 políticas habilitadas, uptime y
+> retención activos. La alerta de ingesta quedó en **23 h** porque Monitoring no admite más de
+> 23 h 30 min de ausencia; sin `ALERTA_EMAIL` las políticas no tienen canal de notificación.
 > El crash reporting remoto de la APK sigue pendiente de credenciales; el log local rotativo ya
-> está en `app_movil/lib/core/crash_log.dart`.
+> está en `app_movil/lib/core/crash_log.dart` y la APK `1.15.17+42` se descarga desde
+> `/apk/ggto-tecnico.apk`.
 
 ---
 
