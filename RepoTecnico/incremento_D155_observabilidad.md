@@ -132,7 +132,8 @@ El 2026-10-22 se compiló y firmó la APK **`1.15.17+42`** con el keystore ofici
 | Metadatos | `app/web/public/apk/apk.json` actualizado |
 
 La APK incorpora `app_movil/lib/core/crash_log.dart` (log local rotativo y saneado de D-155).
-**Todavía no es descargable desde producción:** el sitio sigue en v79 y sirve la APK
+Verificado en el binario: `lib/arm64-v8a/libapp.so` contiene las cadenas `ggto_tecnico.log` y
+`CrashLog`. **Todavía no es descargable desde producción:** el sitio sigue en v79 y sirve la APK
 `1.15.16+41`; hace falta desplegar v80 para publicar el binario y los cambios de backend. El
 APK y `apk.json` están ignorados por git, por lo que el despliegue debe hacerse desde este
 árbol de trabajo (o copiarlos al contexto de la imagen).
