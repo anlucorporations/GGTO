@@ -37,6 +37,9 @@ gcloud secrets create ggto-mantenimiento-token --replication-policy=automatic --
 echo -n "$(openssl rand -hex 24)" | gcloud secrets versions add ggto-mantenimiento-token --data-file=- --project=<PROY>
 ```
 
+> El script `RepoTecnico/scripts/11_desplegar_ggto_web.sh --confirmar` crea el secreto si no existe,
+> concede lectura a la cuenta de servicio y lo inyecta como `MANTENIMIENTO_TOKEN` (D-153).
+
 ## 3. Reconstruir y desplegar `ggto-web`
 
 La SPA se sirve desde el mismo contenedor (`app/web/dist`), así que el despliegue
@@ -62,6 +65,10 @@ Todos con el header `X-Mantenimiento-Token: <token>` (OIDC como alternativa):
 | Purga | `0 * * * *` | `/api/v1/mantenimiento/purgar` |
 | Recordatorios de citas | `*/15 * * * *` | `/api/v1/mantenimiento/recordatorios-citas` |
 | Alarmas de despacho | `*/30 * * * *` | `/api/v1/mantenimiento/alarmas-despacho` |
+
+> D-153: el script de despliegue habilita `cloudscheduler.googleapis.com` y crea o actualiza estos
+> cuatro jobs (idempotente, `--location "$REGION"`), leyendo el token del secreto. La purga aplica
+> la retención de todas las entidades con PII, no solo mensajes y `sync_log`.
 
 ## 5. Verificación en vivo
 

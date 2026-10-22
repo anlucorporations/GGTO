@@ -14,6 +14,7 @@ import logging
 import os
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 
@@ -87,3 +88,51 @@ def subir_evidencia(nombre: str, contenido: bytes, content_type: str = "image/jp
 def serial_desde_nombre(nombre_original: str) -> str:
     """Genera un serial único estable para la fila `evidencia.serial_imagen`."""
     return f"{uuid.uuid4().hex}-{nombre_original}"[:160]
+
+
+def borrar_evidencia(ruta: str) -> bool:
+    """Borra el objeto de una evidencia y devuelve si ya no existe (D-153).
+
+    Acepta las dos formas que produce `subir_evidencia`: `gcs://bucket/objeto` y
+    `/evidencias-locales/objeto`. Un objeto ausente cuenta como borrado; un fallo
+    de credenciales o de red devuelve `False` para que la purga reintente y no
+    pierda la referencia.
+    """
+    if not ruta:
+        return True
+
+    if ruta.startswith("/evidencias-locales/"):
+        base = Path(os.getenv("GGTO_EVIDENCIAS_DIR", ".evidencias")).resolve()
+        relativa = ruta[len("/evidencias-locales/") :]
+        destino = (base / relativa).resolve()
+        if destino != base and base not in destino.parents:
+            logger.warning("Ruta de evidencia fuera del directorio base: %s", ruta)
+            return False
+        try:
+            destino.unlink()
+        except FileNotFoundError:
+            return True
+        except OSError:
+            logger.exception("No se pudo borrar la evidencia local %s", destino)
+            return False
+        return True
+
+    if ruta.startswith("gcs://"):
+        bucket, _, objeto = ruta[len("gcs://") :].partition("/")
+        if not bucket or not objeto:
+            return True
+        token = _token_gcs()
+        if not token:
+            return False
+        url = (
+            "https://storage.googleapis.com/storage/v1/b/"
+            f"{bucket}/o/{quote(objeto, safe='')}"
+        )
+        try:
+            r = httpx.delete(url, headers={"Authorization": f"Bearer {token}"}, timeout=30)
+        except httpx.HTTPError:
+            logger.exception("No se pudo borrar la evidencia remota %s", ruta)
+            return False
+        return r.status_code in (200, 204, 404)
+
+    return True

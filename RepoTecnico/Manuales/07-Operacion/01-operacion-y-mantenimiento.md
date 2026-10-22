@@ -209,11 +209,14 @@ todavía**, por lo que las notificaciones permanecen pendientes con su motivo
 | Reporte de producción de las 16:00 | **No** hay disparo por horario | `RepoTecnico/requerimientos.md:199` |
 | Respaldo de la base de datos | **No** existe (D-26) | `RepoTecnico/estado_proyecto.md:90` |
 | Migraciones de esquema | **No** implementadas (Alembic ausente) | `RepoTecnico/requerimientos.md:288` |
+| Purga y anonimización por retención | **Sí**, vía Cloud Scheduler (D-153) | `app/services/purga.py`; `RepoTecnico/scripts/11_desplegar_ggto_web.sh` |
+| Cierre de sesiones, recordatorios de citas y alarmas de despacho | **Sí**, vía Cloud Scheduler | `app/api/routes_mantenimiento.py` |
 
 > La plataforma **no incluye** `APScheduler`, `Celery`, tareas `BackgroundTasks` ni `lifespan`
 > con trabajos programados: una búsqueda en `app/` no encuentra ninguna de esas construcciones. Toda
 > rutina periódica que se necesite debe ejecutarse manualmente o resolverse con un servicio externo
-> **pendiente de confirmar**.
+> **pendiente de confirmar**. La excepción es la **purga y anonimización** (D-153): Cloud Scheduler
+> ejecuta `/api/v1/mantenimiento/purgar` cada hora y el script de despliegue crea el job y el token.
 
 ---
 
@@ -299,6 +302,32 @@ EXISTS` + `CREATE POLICY`, `RepoTecnico/db/schema.sql:699-709`) y recrea trigger
 (`RepoTecnico/db/schema.sql:714-724`). Es una operación **de mantenimiento mayor** que debe ejecutarse
 con respaldo previo y ventana acordada; hoy no hay respaldo (D-26), por lo que se recomienda
 **no reaplicarla** sin antes migrar a la instancia con PITR.
+
+### Retención y purga por entidad (D-153)
+
+`POST /api/v1/mantenimiento/purgar` aplica la retención de `requerimientos.md` §5.1 en lotes de
+1000 filas. Cloud Scheduler lo ejecuta cada hora (`0 * * * *`, `America/Caracas`) con el header
+`X-Mantenimiento-Token`; el token vive en el secreto `ggto-mantenimiento-token` y el script
+`RepoTecnico/scripts/11_desplegar_ggto_web.sh --confirmar` lo crea, lo inyecta en Cloud Run y
+programa el job de forma idempotente.
+
+| Entidad | Plazo | Acción | Clave en `configuracion` |
+|---|---|---|---|
+| `mensaje` / `mensaje_destino` | 5 días (30 si hay destinatarios sin leer) | Eliminar | `mensajeria.retencion_dias` / `mensajeria.retencion_max_dias` |
+| `sync_log` / `sync_check` | 90 días | Eliminar | `sync_log.retencion_dias` |
+| `notificacion` | 1 año | Eliminar | `notificacion.retencion_dias` |
+| `evidencia` | 2 años | Eliminar imagen y fila | `evidencia.retencion_dias` |
+| `auditoria` | 3 años | Eliminar | `auditoria.retencion_dias` |
+| `caso` | 5 años | Anonimizar (nombre, teléfono, dirección, serial, textos libres, ayudantes) | `caso.retencion_dias` |
+| `actividad` | 5 años | Anonimizar (reporte libre y GPS) | `actividad.retencion_dias` |
+| `solicitante` | 5 años | Anonimizar nombre, contacto y documento | `solicitante.retencion_dias` |
+| `identificador_pago` | 5 años | Anonimizar titular y dirección; conservar el número | `identificador_pago.retencion_dias` |
+
+La purga es idempotente: los registros ya anonimizados no se vuelven a tocar. Si una imagen no se
+puede borrar (credenciales o red), la fila se conserva y el reporte devuelve
+`evidencias_pendientes` para reintentar en la siguiente pasada. La respuesta y la auditoría
+`MANTENIMIENTO_PURGA` registran los conteos y los plazos aplicados. Los plazos siguen siendo una
+**propuesta** sujeta a validación de CANTV/asesoría legal.
 
 ### recalcular_cuadrilla0.py
 

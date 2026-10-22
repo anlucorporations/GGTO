@@ -45,7 +45,7 @@ def cerrar_sesiones(
     return svc.cerrar_sesiones_colgadas(db)
 
 
-@router.post("/purgar", summary="Purga mensajes vencidos y log fuera de retención")
+@router.post("/purgar", summary="Purga y anonimiza según la retención por entidad")
 def purgar(db: Session = Depends(get_db), _: None = Depends(verificar_token)) -> dict:
     return svc.purgar(db)
 

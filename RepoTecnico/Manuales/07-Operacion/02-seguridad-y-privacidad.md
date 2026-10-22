@@ -380,15 +380,22 @@ RNF-18 exige **enmascarar teléfono, dirección y serial** para los roles no aut
 | `caso` | Sí (nombre, teléfono, dirección, serial) | 5 años | Anonimizar y archivar |
 | `actividad` | Sí (reporte libre, GPS) | 5 años | Anonimizar |
 | `evidencia` | Sí (imagen + GPS + hora) | 2 años | Eliminar imagen y metadatos |
-| `auditoria` | Sí (datos antes/después) | 3 años | Archivar sin PII |
+| `auditoria` | Sí (datos antes/después) | 3 años | Eliminar |
 | `notificacion` | Sí (destinatario, cuerpo) | 1 año | Eliminar |
+| `mensaje` / `mensaje_destino` | Sí (`p00`, cuerpo) | 5 días (30 si hay no leídos) | Eliminar |
+| `sync_log` / `sync_check` | Sí (`p00`, dispositivo, `detalle`) | 90 días | Eliminar |
 | `solicitante` | Sí (nombre, contacto) | 5 años | Anonimizar |
+| `identificador_pago` | Sí (titular, dirección) | 5 años | Anonimizar titular y dirección; conservar el número |
 | `dispositivo_seguridad` | No (hashes) | Mientras la cuenta esté activa | Eliminar con la cuenta |
 | `inventario_movimiento` / `orden_material` (v2) | No | 5 años | Archivar |
 
 Los plazos son una **propuesta** y deben validarse con CANTV/asesoría legal
-(`RepoTecnico/requerimientos.md:225`). **No existe** un job ni rutina de purga/anonimización
-implementada en el código: la retención es hoy una **política pendiente de confirmar y automatizar**.
+(`RepoTecnico/requerimientos.md:225`). Desde **D-153** la rutina existe y está programada:
+`POST /api/v1/mantenimiento/purgar` aplica esta tabla en lotes de 1000 filas y Cloud Scheduler la
+ejecuta cada hora con `X-Mantenimiento-Token`; los plazos se ajustan en la tabla `configuracion`.
+La anonimización sustituye los datos personales y conserva las claves operativas. No hay una tabla
+de archivo separada: «archivar» significa conservar la fila ya anonimizada. La ejecución efectiva en
+producción queda supeditada al despliegue de la revisión que incluye D-153.
 
 ### Derechos del titular
 

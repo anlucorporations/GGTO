@@ -963,7 +963,15 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('mensajeria.retencion_max_dias',  '30'::jsonb, 'Tope de seguridad: mensajes no leídos se borran a los N días'),
     ('sync_log.retencion_dias',        '90'::jsonb, 'Retención del log de sincronización'),
     ('mensajeria.recordatorio_cita_min','60'::jsonb, 'Antelación del recordatorio de cita'),
-    ('sync.timeout_min',               '10'::jsonb, 'Cierre de sesiones de sincronización colgadas')
+    ('sync.timeout_min',               '10'::jsonb, 'Cierre de sesiones de sincronización colgadas'),
+    -- Incremento D-153 (retención por entidad, RNF-18 / H-25)
+    ('auditoria.retencion_dias',         '1095'::jsonb, 'Retención de la auditoría (3 años)'),
+    ('notificacion.retencion_dias',      '365'::jsonb,  'Retención de notificaciones (1 año)'),
+    ('evidencia.retencion_dias',         '730'::jsonb,  'Retención de evidencias, imagen incluida (2 años)'),
+    ('caso.retencion_dias',              '1825'::jsonb, 'Retención de casos antes de anonimizar (5 años)'),
+    ('actividad.retencion_dias',         '1825'::jsonb, 'Retención de actividades antes de anonimizar (5 años)'),
+    ('solicitante.retencion_dias',       '1825'::jsonb, 'Retención de solicitantes antes de anonimizar (5 años)'),
+    ('identificador_pago.retencion_dias','1825'::jsonb, 'Retención del titular/dirección del pago (5 años)')
 ON CONFLICT (clave) DO NOTHING;
 
 -- =============================================================================

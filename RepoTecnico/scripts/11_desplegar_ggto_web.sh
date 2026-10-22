@@ -48,7 +48,7 @@ cat <<EOF
   Contexto de build: $RAIZ/app (app/Dockerfile)
 EOF
 
-echo "== 1/4 Comprobando sesión y proyecto =="
+echo "== 1/6 Comprobando sesión y proyecto =="
 CUENTA="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' | head -1)"
 [ -n "$CUENTA" ] || { echo "ERROR: no hay cuenta activa (ejecuta: gcloud auth login)." >&2; exit 1; }
 echo "  Cuenta activa: $CUENTA"
@@ -61,18 +61,36 @@ if [ "$CONFIRMAR" -ne 1 ]; then
   cat <<EOF
 
 == PLAN (sin ejecutar) ==
-  1) gcloud builds submit "$RAIZ/app" --tag "$IMAGEN"
-  2) gcloud run deploy "$SERVICIO" --image "$IMAGEN" ... (Cloud SQL, secretos, SA)
-  3) Verificación de /health, /ready, SPA y /manual/
+  1) Comprobar sesión y proyecto de gcloud
+  2) Asegurar el token de mantenimiento (ggto-mantenimiento-token)
+  3) gcloud builds submit "$RAIZ/app" --tag "$IMAGEN"
+  4) gcloud run deploy "$SERVICIO" --image "$IMAGEN" ... (Cloud SQL, secretos, SA)
+  5) Verificación de /health, /ready, SPA y /manual/
+  6) Programación de los trabajos de mantenimiento (Cloud Scheduler)
 Vuelve a ejecutar con --confirmar para desplegar en producción.
 EOF
   exit 0
 fi
 
-echo "== 2/4 Construyendo la imagen en Cloud Build (Dockerfile multi-etapa) =="
+echo "== 2/6 Asegurando el token de mantenimiento =="
+if ! gcloud secrets describe ggto-mantenimiento-token --project "$PROYECTO" >/dev/null 2>&1; then
+  gcloud secrets create ggto-mantenimiento-token --replication-policy=automatic \
+    --project "$PROYECTO" >/dev/null
+  echo -n "$(openssl rand -hex 24)" | gcloud secrets versions add ggto-mantenimiento-token \
+    --data-file=- --project "$PROYECTO" >/dev/null
+  echo "  Secreto creado."
+else
+  echo "  Secreto existente: se conserva la versión vigente."
+fi
+gcloud secrets add-iam-policy-binding ggto-mantenimiento-token \
+  --member="serviceAccount:$CUENTA_SERVICIO" \
+  --role="roles/secretmanager.secretAccessor" --project "$PROYECTO" >/dev/null
+echo "  Permiso de lectura concedido a $CUENTA_SERVICIO."
+
+echo "== 3/6 Construyendo la imagen en Cloud Build (Dockerfile multi-etapa) =="
 gcloud builds submit "$RAIZ/app" --project "$PROYECTO" --tag "$IMAGEN"
 
-echo "== 3/4 Desplegando el servicio $SERVICIO =="
+echo "== 4/6 Desplegando el servicio $SERVICIO =="
 gcloud run deploy "$SERVICIO" \
   --project "$PROYECTO" \
   --region "$REGION" \
@@ -83,11 +101,11 @@ gcloud run deploy "$SERVICIO" \
   --timeout 300 \
   --add-cloudsql-instances "$INSTANCIA_SQL" \
   --set-env-vars "DB_HOST=/cloudsql/${INSTANCIA_SQL},DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require" \
-  --set-secrets "SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest" \
+  --set-secrets "SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest,MANTENIMIENTO_TOKEN=ggto-mantenimiento-token:latest" \
   --service-account "$CUENTA_SERVICIO" \
   --allow-unauthenticated
 
-echo "== 4/4 Verificando =="
+echo "== 5/6 Verificando =="
 URL="$(gcloud run services describe "$SERVICIO" --project "$PROYECTO" --region "$REGION" --format='value(status.url)')"
 REV="$(gcloud run services describe "$SERVICIO" --project "$PROYECTO" --region "$REGION" --format='value(status.latestReadyRevisionName)')"
 echo "  URL: $URL"
@@ -99,3 +117,30 @@ done
 echo
 echo "Aviso: el servicio queda con acceso público (--allow-unauthenticated) y contiene PII"
 echo "real; restringir el invocador antes de operar (ver estado_proyecto.md, pendientes)."
+
+echo "== 6/6 Programando los trabajos de mantenimiento (Cloud Scheduler) =="
+gcloud services enable cloudscheduler.googleapis.com --project "$PROYECTO" >/dev/null
+TOKEN_MANTENIMIENTO="$(gcloud secrets versions access latest \
+  --secret=ggto-mantenimiento-token --project "$PROYECTO")"
+
+programar_job() {
+  local nombre="$1" cron="$2" ruta="$3"
+  if gcloud scheduler jobs describe "$nombre" --location "$REGION" \
+      --project "$PROYECTO" >/dev/null 2>&1; then
+    gcloud scheduler jobs update http "$nombre" --location "$REGION" --project "$PROYECTO" \
+      --schedule "$cron" --time-zone "America/Caracas" --uri "$URL$ruta" \
+      --http-method POST --headers "X-Mantenimiento-Token=$TOKEN_MANTENIMIENTO" >/dev/null
+  else
+    gcloud scheduler jobs create http "$nombre" --location "$REGION" --project "$PROYECTO" \
+      --schedule "$cron" --time-zone "America/Caracas" --uri "$URL$ruta" \
+      --http-method POST --headers "X-Mantenimiento-Token=$TOKEN_MANTENIMIENTO" >/dev/null
+  fi
+  echo "  $nombre  $cron  $ruta"
+}
+
+programar_job ggto-purgar "0 * * * *" "/api/v1/mantenimiento/purgar"
+programar_job ggto-cerrar-sesiones "*/10 * * * *" "/api/v1/mantenimiento/cerrar-sesiones"
+programar_job ggto-recordatorios-citas "*/15 * * * *" "/api/v1/mantenimiento/recordatorios-citas"
+programar_job ggto-alarmas-despacho "*/30 * * * *" "/api/v1/mantenimiento/alarmas-despacho"
+gcloud scheduler jobs list --location "$REGION" --project "$PROYECTO" \
+  --format='table(name,schedule,state)'
