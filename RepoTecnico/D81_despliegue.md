@@ -40,6 +40,25 @@ echo -n "$(openssl rand -hex 24)" | gcloud secrets versions add ggto-mantenimien
 > El script `RepoTecnico/scripts/11_desplegar_ggto_web.sh --confirmar` crea el secreto si no existe,
 > concede lectura a la cuenta de servicio y lo inyecta como `MANTENIMIENTO_TOKEN` (D-153).
 
+### 2.1 Bucket de evidencias (H-05)
+
+Sin bucket, en producción la subida de fotos responde **503** (fail-closed) y la APK conserva la
+evidencia en su cola local. El script crea el bucket, concede permiso y define `GGTO_GCS_BUCKET`:
+
+```bash
+BUCKET="${GGTO_BUCKET:-<PROY>-ggto-evidencias}"
+gcloud services enable storage.googleapis.com --project=<PROY>
+gcloud storage buckets create "gs://$BUCKET" --project=<PROY> --location=europe-west1 \
+  --uniform-bucket-level-access --public-access-prevention
+gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" \
+  --member="serviceAccount:<CUENTA_SERVICIO>" --role="roles/storage.objectUser"
+```
+
+> Acceso uniforme, sin acceso público y ciclo de vida de **730 días** (respaldo de la purga D-153).
+> La cuenta de Cloud Run obtiene el token del servidor de metadatos; no se monta ninguna clave.
+> El despliegue define `APP_ENV=production`, que activa el fail-closed y desactiva el montaje
+> directo de `/evidencias-locales`.
+
 ## 3. Reconstruir y desplegar `ggto-web`
 
 La SPA se sirve desde el mismo contenedor (`app/web/dist`), así que el despliegue
@@ -51,7 +70,7 @@ cd app/web && npm ci && npm run build && cd ../..
 
 # Imagen y despliegue (ver RepoTecnico/scripts/11_desplegar_ggto_web.sh)
 gcloud run deploy ggto-web --source . --region=europe-west1 \
-  --set-env-vars DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev,DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require \
+  --set-env-vars DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev,DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require,APP_ENV=production,GGTO_GCS_BUCKET=<PROY>-ggto-evidencias \
   --set-secrets SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest,MANTENIMIENTO_TOKEN=ggto-mantenimiento-token:latest
 ```
 
@@ -72,9 +91,11 @@ Todos con el header `X-Mantenimiento-Token: <token>` (OIDC como alternativa):
 
 ## 5. Verificación en vivo
 
-- `GET /health` y `GET /ready` → `200`.
+- `GET /health` y `GET /ready` → `200`; `/ready` debe informar `"almacenamiento": "gcs"` y `"evidencias_ok": true`.
 - `GET /api/v1/sincronizaciones` (con token ADMIN/SUPERVISOR) → `200`.
 - `POST /api/v1/mantenimiento/purgar` sin token → `503`; con token → `200`.
+- Subir una foto de prueba desde la APK y abrir la `url_firmada` devuelta → `200 image/jpeg`.
+- `GET /evidencias-locales/cualquier.jpg` → `404` (nunca el HTML de la SPA).
 - Publicar un mensaje `TODOS` y verlo desde la APK (sondeo 20 s).
 - SPA: **SISTEMAS → Sincronización**, **Mensajes** (badge) y panel de gestión diaria.
 

@@ -6,11 +6,12 @@ DESPACHO, casos especiales/agenda, MONITOREO/REPORTES y ALERTAS/Telegram/MCP).
 """
 
 import logging
+import os
 import time
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -112,6 +113,27 @@ class SPAStaticFiles(StaticFiles):
             if exc.status_code == 404:
                 return await super().get_response("index.html", scope)
             raise
+
+
+# --------------------------------------------------------------------------- #
+# Evidencias locales (H-05): en producción se sirven por la ruta autenticada
+# `/api/v1/evidencias/{id}` desde Cloud Storage. El montaje directo queda solo
+# para desarrollo; en producción la ruta responde 404 (nunca el HTML de la SPA).
+# --------------------------------------------------------------------------- #
+_APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+if _APP_ENV in {"production", "produccion", "producción", "prod"}:
+
+    @app.get("/evidencias-locales/{ruta:path}", include_in_schema=False)
+    def evidencias_locales_no_disponibles(ruta: str) -> None:
+        raise HTTPException(status_code=404, detail="No encontrada")
+
+else:
+    EVIDENCIAS_DIR = Path(os.getenv("GGTO_EVIDENCIAS_DIR", ".evidencias"))
+    app.mount(
+        "/evidencias-locales",
+        StaticFiles(directory=str(EVIDENCIAS_DIR), check_dir=False),
+        name="evidencias-locales",
+    )
 
 
 WEB_DIST = Path(__file__).resolve().parent / "web" / "dist"

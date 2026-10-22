@@ -373,6 +373,22 @@ RNF-18 exige **enmascarar teléfono, dirección y serial** para los roles no aut
 > ejecutar la visita y el cierre. Si CANTV exige el enmascaramiento también para esos roles,
 > queda **pendiente de confirmar** como decisión de producto.
 
+### Evidencias: almacenamiento y acceso (D-154)
+
+Las fotos de campo son PII (imagen, GPS y hora) y ya no se guardan en el disco efímero del
+contenedor. El bucket `${PROYECTO}-ggto-evidencias` es **privado** (acceso uniforme y prevención de
+acceso público), con ciclo de vida de 730 días y `roles/storage.objectUser` solo para la cuenta de
+Cloud Run. El objeto no se expone por URL pública: se descarga por
+`GET /api/v1/evidencias/{id}` con el Bearer o con una URL firmada de **15 minutos**, y el backend
+aplica el alcance de central/cuadrilla de D-152 (un usuario ajeno recibe `404`). La evidencia sin
+caso (falla masiva) solo la abren ADMIN/SUPERVISOR/COORDINADOR/SUPER.
+
+La subida exige autenticación, valida los bytes reales (JPEG/PNG/WebP), rechaza un `id_caso`
+inexistente y aplica la cuota `evidencia.max_por_caso_dia`. En producción, sin bucket o sin
+credenciales, responde **503** en lugar de aceptar una foto que se perdería; la APK la conserva y
+reintenta. `/evidencias-locales` solo se monta en desarrollo. **Residual:** no hay conciliación
+automática de objetos huérfanos ni URLs nativas firmadas de GCS; ambas quedan como mejora.
+
 ### Retención por entidad (requerimientos.md:212-225)
 
 | Entidad | Contiene PII | Retención propuesta | Acción al vencer |

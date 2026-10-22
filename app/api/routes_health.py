@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ..core.config import get_settings
 from ..core.db import get_db
 from ..models import Usuario
+from ..services import storage as svc_storage
 from .deps import get_current_user
 
 router = APIRouter(tags=["salud"])
@@ -52,6 +53,8 @@ def ready(db: Session = Depends(get_db)) -> dict:
             "usuario": row["usuario"],
             "postgres": str(row["version"]).split(" on ")[0],
             "tablas": row["tablas"],
+            "almacenamiento": svc_storage.modo_almacenamiento(),
+            "evidencias_ok": svc_storage.modo_almacenamiento() != "no_configurado",
         }
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"BD no disponible: {type(exc).__name__}") from exc

@@ -329,6 +329,34 @@ puede borrar (credenciales o red), la fila se conserva y el reporte devuelve
 `MANTENIMIENTO_PURGA` registran los conteos y los plazos aplicados. Los plazos siguen siendo una
 **propuesta** sujeta a validación de CANTV/asesoría legal.
 
+### Evidencias fotográficas (D-154)
+
+Las fotos de campo se guardan en Cloud Storage, no en el contenedor. El bucket
+`${PROYECTO}-ggto-evidencias` tiene acceso uniforme, acceso público bloqueado y un ciclo de vida
+de 730 días; la cuenta de Cloud Run recibe `roles/storage.objectUser`. El script de despliegue
+crea el bucket y define `APP_ENV=production` y `GGTO_GCS_BUCKET`.
+
+| Aspecto | Comportamiento |
+|---|---|
+| Subida sin bucket/credenciales en producción | `503`; la APK conserva la foto y reintenta |
+| Subida con bucket | Objeto en `gcs://<bucket>/evidencias/<uuid>/<archivo>` |
+| Validación | JPEG, PNG o WebP por bytes mágicos; otro contenido → `422` |
+| Cuota | `configuracion.evidencia.max_por_caso_dia` (10 por defecto); exceso → `429` |
+| Caso inexistente | `404`; no se crea la fila |
+| Descarga | `GET /api/v1/evidencias/{id}` con Bearer o URL firmada de 15 min |
+| Alcance | Central y cuadrilla (D-152); sin caso, solo ADMIN/SUPERVISOR/COORDINADOR/SUPER |
+| Local | `/evidencias-locales/...` solo en desarrollo; en producción `404` |
+
+**Diagnóstico.** `GET /ready` informa `almacenamiento` (`gcs`, `local` o `no_configurado`) y
+`evidencias_ok`. Si aparece `no_configurado`, las subidas responderán `503`: revise
+`GGTO_GCS_BUCKET`, que el bucket exista y que la cuenta de servicio tenga el permiso. **No**
+configure un fallback a disco como solución: el disco de Cloud Run es efímero. Tras corregir,
+suba una foto de prueba y abra la `url_firmada`; debe devolver `200 image/jpeg`. La evidencia
+perdida antes del despliegue de v80 no es recuperable.
+
+**Residual.** No hay conciliación automática de objetos sin fila (blobs huérfanos); las filas sin
+caso por un `id_caso` inexistente ya no se crean.
+
 ### recalcular_cuadrilla0.py
 
 Cuando cambia el criterio de **cuadrilla 0**, los casos ya cargados no se recalculan solos: hay que

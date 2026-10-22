@@ -971,7 +971,9 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('caso.retencion_dias',              '1825'::jsonb, 'Retención de casos antes de anonimizar (5 años)'),
     ('actividad.retencion_dias',         '1825'::jsonb, 'Retención de actividades antes de anonimizar (5 años)'),
     ('solicitante.retencion_dias',       '1825'::jsonb, 'Retención de solicitantes antes de anonimizar (5 años)'),
-    ('identificador_pago.retencion_dias','1825'::jsonb, 'Retención del titular/dirección del pago (5 años)')
+    ('identificador_pago.retencion_dias','1825'::jsonb, 'Retención del titular/dirección del pago (5 años)'),
+    -- Incremento D-154 (evidencias: cuota de subida, H-05)
+    ('evidencia.max_por_caso_dia',       '10'::jsonb,   'Máximo de evidencias nuevas por caso y día')
 ON CONFLICT (clave) DO NOTHING;
 
 -- =============================================================================

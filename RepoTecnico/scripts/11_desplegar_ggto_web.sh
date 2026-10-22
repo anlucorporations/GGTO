@@ -48,7 +48,7 @@ cat <<EOF
   Contexto de build: $RAIZ/app (app/Dockerfile)
 EOF
 
-echo "== 1/6 Comprobando sesión y proyecto =="
+echo "== 1/7 Comprobando sesión y proyecto =="
 CUENTA="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' | head -1)"
 [ -n "$CUENTA" ] || { echo "ERROR: no hay cuenta activa (ejecuta: gcloud auth login)." >&2; exit 1; }
 echo "  Cuenta activa: $CUENTA"
@@ -63,16 +63,17 @@ if [ "$CONFIRMAR" -ne 1 ]; then
 == PLAN (sin ejecutar) ==
   1) Comprobar sesión y proyecto de gcloud
   2) Asegurar el token de mantenimiento (ggto-mantenimiento-token)
-  3) gcloud builds submit "$RAIZ/app" --tag "$IMAGEN"
-  4) gcloud run deploy "$SERVICIO" --image "$IMAGEN" ... (Cloud SQL, secretos, SA)
-  5) Verificación de /health, /ready, SPA y /manual/
-  6) Programación de los trabajos de mantenimiento (Cloud Scheduler)
+  3) Asegurar el bucket de evidencias (GCS, IAM y ciclo de vida)
+  4) gcloud builds submit "$RAIZ/app" --tag "$IMAGEN"
+  5) gcloud run deploy "$SERVICIO" --image "$IMAGEN" ... (Cloud SQL, secretos, SA)
+  6) Verificación de /health, /ready, SPA y /manual/
+  7) Programación de los trabajos de mantenimiento (Cloud Scheduler)
 Vuelve a ejecutar con --confirmar para desplegar en producción.
 EOF
   exit 0
 fi
 
-echo "== 2/6 Asegurando el token de mantenimiento =="
+echo "== 2/7 Asegurando el token de mantenimiento =="
 if ! gcloud secrets describe ggto-mantenimiento-token --project "$PROYECTO" >/dev/null 2>&1; then
   gcloud secrets create ggto-mantenimiento-token --replication-policy=automatic \
     --project "$PROYECTO" >/dev/null
@@ -87,10 +88,31 @@ gcloud secrets add-iam-policy-binding ggto-mantenimiento-token \
   --role="roles/secretmanager.secretAccessor" --project "$PROYECTO" >/dev/null
 echo "  Permiso de lectura concedido a $CUENTA_SERVICIO."
 
-echo "== 3/6 Construyendo la imagen en Cloud Build (Dockerfile multi-etapa) =="
+echo "== 3/7 Preparando el bucket de evidencias =="
+BUCKET="${GGTO_BUCKET:-${PROYECTO}-ggto-evidencias}"
+gcloud services enable storage.googleapis.com --project "$PROYECTO" >/dev/null
+if ! gcloud storage buckets describe "gs://$BUCKET" --project "$PROYECTO" >/dev/null 2>&1; then
+  gcloud storage buckets create "gs://$BUCKET" --project "$PROYECTO" --location "$REGION" \
+    --uniform-bucket-level-access --public-access-prevention >/dev/null
+  echo "  Bucket creado: gs://$BUCKET"
+else
+  echo "  Bucket existente: gs://$BUCKET"
+fi
+gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" \
+  --member="serviceAccount:$CUENTA_SERVICIO" \
+  --role="roles/storage.objectUser" >/dev/null
+LIFECYCLE="$(mktemp)"
+cat > "$LIFECYCLE" <<'EOF'
+{"lifecycle":{"rule":[{"action":{"type":"Delete"},"condition":{"age":730}}]}}
+EOF
+gcloud storage buckets update "gs://$BUCKET" --lifecycle-file="$LIFECYCLE" >/dev/null
+rm -f "$LIFECYCLE"
+echo "  Ciclo de vida: borrar objetos a los 730 días (respaldo de la purga D-153)."
+
+echo "== 4/7 Construyendo la imagen en Cloud Build (Dockerfile multi-etapa) =="
 gcloud builds submit "$RAIZ/app" --project "$PROYECTO" --tag "$IMAGEN"
 
-echo "== 4/6 Desplegando el servicio $SERVICIO =="
+echo "== 5/7 Desplegando el servicio $SERVICIO =="
 gcloud run deploy "$SERVICIO" \
   --project "$PROYECTO" \
   --region "$REGION" \
@@ -100,12 +122,12 @@ gcloud run deploy "$SERVICIO" \
   --min-instances 0 --max-instances 10 \
   --timeout 300 \
   --add-cloudsql-instances "$INSTANCIA_SQL" \
-  --set-env-vars "DB_HOST=/cloudsql/${INSTANCIA_SQL},DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require" \
+  --set-env-vars "DB_HOST=/cloudsql/${INSTANCIA_SQL},DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require,APP_ENV=production,GGTO_GCS_BUCKET=${BUCKET}" \
   --set-secrets "SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest,MANTENIMIENTO_TOKEN=ggto-mantenimiento-token:latest" \
   --service-account "$CUENTA_SERVICIO" \
   --allow-unauthenticated
 
-echo "== 5/6 Verificando =="
+echo "== 6/7 Verificando =="
 URL="$(gcloud run services describe "$SERVICIO" --project "$PROYECTO" --region "$REGION" --format='value(status.url)')"
 REV="$(gcloud run services describe "$SERVICIO" --project "$PROYECTO" --region "$REGION" --format='value(status.latestReadyRevisionName)')"
 echo "  URL: $URL"
@@ -118,7 +140,7 @@ echo
 echo "Aviso: el servicio queda con acceso público (--allow-unauthenticated) y contiene PII"
 echo "real; restringir el invocador antes de operar (ver estado_proyecto.md, pendientes)."
 
-echo "== 6/6 Programando los trabajos de mantenimiento (Cloud Scheduler) =="
+echo "== 7/7 Programando los trabajos de mantenimiento (Cloud Scheduler) =="
 gcloud services enable cloudscheduler.googleapis.com --project "$PROYECTO" >/dev/null
 TOKEN_MANTENIMIENTO="$(gcloud secrets versions access latest \
   --secret=ggto-mantenimiento-token --project "$PROYECTO")"
