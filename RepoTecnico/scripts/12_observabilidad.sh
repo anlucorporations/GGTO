@@ -91,10 +91,12 @@ JSON
 )
   fi
 
-  code=$(_api GET "$url")
-  if [[ "$code" == "404" ]]; then
+  code=$(_api PUT "$url" "$cuerpo")
+  if [[ "$code" == "404" || "$code" == "405" ]]; then
     code=$(_api POST "$LOG/v2/projects/$PROJECT_ID/metrics" "$cuerpo")
-  else
+  fi
+  if [[ "$code" == "409" ]]; then
+    # Ya existe: el PUT es la actualización idempotente.
     code=$(_api PUT "$url" "$cuerpo")
   fi
   if [[ "$code" != "200" ]]; then
@@ -173,16 +175,16 @@ cuerpo=$(cat <<JSON
   "displayName": "GGTO - Ingesta diaria ausente",
   "combiner": "OR",
   "conditions": [{
-    "displayName": "Sin ingesta completada en 26 horas",
+    "displayName": "Sin ingesta completada en 23 horas",
     "conditionAbsent": {
       "filter": "metric.type=\"logging.googleapis.com/user/ggto_ingesta_completada\" AND resource.type=\"cloud_run_revision\"",
-      "duration": "93600s",
+      "duration": "82800s",
       "aggregations": [{"alignmentPeriod": "3600s", "perSeriesAligner": "ALIGN_COUNT"}],
       "trigger": {"count": 1}
     }
   }],
   "alertStrategy": {"autoClose": "604800s"},
-  "documentation": {"mimeType": "text/markdown", "content": "No se registró una ingesta completada en 26 h. Revise el CSV diario y el job de carga."},
+  "documentation": {"mimeType": "text/markdown", "content": "No se registró una ingesta completada en 23 h. Revise el CSV diario y el job de carga."},
   "severity": "WARNING"${CANAL_JSON}
 }
 JSON
