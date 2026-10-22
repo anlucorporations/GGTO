@@ -178,40 +178,88 @@ def _update(texto: str, chat_id: int = 12345):
     return {"message": {"chat": {"id": chat_id}, "text": texto}}
 
 
-def test_telegram_ayuda(client, entorno):
-    r = client.post("/api/v1/telegram/webhook", json=_update("/ayuda"))
+# H-02: los canales externos exigen credencial. Estas pruebas los configuran.
+SECRETO_TELEGRAM = "s3creto"
+CLAVE_MCP = "clave-mcp"
+CABECERAS_TELEGRAM = {"X-Telegram-Bot-Api-Secret-Token": SECRETO_TELEGRAM}
+CABECERAS_MCP = {"X-MCP-Key": CLAVE_MCP}
+
+
+def _configurar(db_session, clave: str, valor: str) -> None:
+    from app.models import Configuracion
+
+    fila = db_session.get(Configuracion, clave)
+    fila.valor = valor
+    db_session.commit()
+
+
+@pytest.fixture()
+def canales_con_credencial(db_session):
+    """Configura el secreto de Telegram y la clave de MCP, y los restaura."""
+    _configurar(db_session, "telegram.webhook_secret", SECRETO_TELEGRAM)
+    _configurar(db_session, "mcp.api_key", CLAVE_MCP)
+    yield
+    _configurar(db_session, "telegram.webhook_secret", "")
+    _configurar(db_session, "mcp.api_key", "")
+
+
+def test_telegram_ayuda(client, entorno, canales_con_credencial):
+    r = client.post("/api/v1/telegram/webhook", json=_update("/ayuda"),
+                    headers=CABECERAS_TELEGRAM)
     assert r.status_code == 200, r.text
     assert "Comandos" in r.json()["respuesta"]
 
 
-def test_telegram_estado(client, entorno):
-    r = client.post("/api/v1/telegram/webhook", json=_update("/estado"))
+def test_telegram_estado(client, entorno, canales_con_credencial):
+    r = client.post("/api/v1/telegram/webhook", json=_update("/estado"),
+                    headers=CABECERAS_TELEGRAM)
     assert r.status_code == 200
     assert "Casos pendientes" in r.json()["respuesta"]
 
 
-def test_telegram_consulta_caso(client, entorno):
-    r = client.post("/api/v1/telegram/webhook", json=_update("/caso TSTA-0"))
+def test_telegram_consulta_caso(client, entorno, canales_con_credencial):
+    r = client.post("/api/v1/telegram/webhook", json=_update("/caso TSTA-0"),
+                    headers=CABECERAS_TELEGRAM)
     assert r.status_code == 200
     assert "TSTA-0" in r.json()["respuesta"]
 
-    faltante = client.post("/api/v1/telegram/webhook", json=_update("/caso NOEXISTE"))
+    faltante = client.post("/api/v1/telegram/webhook", json=_update("/caso NOEXISTE"),
+                           headers=CABECERAS_TELEGRAM)
     assert "No encontré" in faltante.json()["respuesta"]
 
 
-def test_telegram_reporta_falla(client, entorno, db_session):
+def test_telegram_reporta_falla(client, entorno, db_session, canales_con_credencial):
     r = client.post("/api/v1/telegram/webhook",
-                    json=_update("/falla Corte total en el sector"))
+                    json=_update("/falla Corte total en el sector"),
+                    headers=CABECERAS_TELEGRAM)
     assert r.status_code == 200
     assert "registrada" in r.json()["respuesta"]
     falla = db_session.scalar(select(FallaMasiva).where(FallaMasiva.origen == "REPORTE_TECNICO"))
     assert falla is not None and "Telegram" in falla.descripcion
 
 
-def test_telegram_sin_texto(client):
-    r = client.post("/api/v1/telegram/webhook", json={"message": {"chat": {"id": 1}}})
+def test_telegram_sin_texto(client, canales_con_credencial):
+    r = client.post("/api/v1/telegram/webhook", json={"message": {"chat": {"id": 1}}},
+                    headers=CABECERAS_TELEGRAM)
     assert r.status_code == 200
     assert r.json().get("ignorado") is True
+
+
+def test_telegram_sin_secreto_configurado_no_atiende(client, db_session):
+    """H-02: sin secreto, el webhook responde 503 y no ejecuta ningún comando."""
+    _configurar(db_session, "telegram.webhook_secret", "")
+    r = client.post("/api/v1/telegram/webhook", json=_update("/estado"))
+    assert r.status_code == 503, r.text
+
+
+def test_telegram_con_secreto_incorrecto_no_atiende(client, entorno, db_session,
+                                                    canales_con_credencial):
+    r = client.post("/api/v1/telegram/webhook", json=_update("/estado"),
+                    headers={"X-Telegram-Bot-Api-Secret-Token": "otro"})
+    assert r.status_code == 403, r.text
+    # El comando no se ejecuta: nada se registra como falla.
+    assert db_session.scalar(select(FallaMasiva).where(
+        FallaMasiva.origen == "REPORTE_TECNICO")) is None
 
 
 def test_telegram_secreto(client, entorno, db_session):
@@ -238,61 +286,64 @@ def _rpc(metodo: str, params: dict | None = None, ident: int = 1, token: str | N
     return {"jsonrpc": "2.0", "id": ident, "method": metodo, "params": params or {}}
 
 
-def test_mcp_initialize(client):
-    r = client.post("/api/v1/mcp", json=_rpc("initialize"))
+def test_mcp_initialize(client, canales_con_credencial):
+    r = client.post("/api/v1/mcp", json=_rpc("initialize"), headers=CABECERAS_MCP)
     assert r.status_code == 200
     assert r.json()["result"]["serverInfo"]["name"] == "ggto-mcp"
 
 
-def test_mcp_tools_list(client):
-    r = client.post("/api/v1/mcp", json=_rpc("tools/list"))
+def test_mcp_tools_list(client, canales_con_credencial):
+    r = client.post("/api/v1/mcp", json=_rpc("tools/list"), headers=CABECERAS_MCP)
     nombres = {t["name"] for t in r.json()["result"]["tools"]}
     assert {"estado_central", "consultar_caso", "reportar_falla",
             "procesar_notificaciones"} <= nombres
 
 
-def test_mcp_tool_estado_y_caso(client, entorno):
+def test_mcp_tool_estado_y_caso(client, entorno, canales_con_credencial):
     r = client.post("/api/v1/mcp", json=_rpc("tools/call", {
-        "name": "estado_central", "arguments": {}}))
+        "name": "estado_central", "arguments": {}}), headers=CABECERAS_MCP)
     datos = r.json()["result"]["datos"]
     assert datos["casos_pendientes"] == 6
 
     caso = client.post("/api/v1/mcp", json=_rpc("tools/call", {
-        "name": "consultar_caso", "arguments": {"id_averia": "TSTA-1"}}))
+        "name": "consultar_caso", "arguments": {"id_averia": "TSTA-1"}}),
+        headers=CABECERAS_MCP)
     assert caso.json()["result"]["datos"]["encontrado"] is True
 
     sin_argumentos = client.post("/api/v1/mcp", json=_rpc("tools/call", {
-        "name": "consultar_caso", "arguments": {}}))
+        "name": "consultar_caso", "arguments": {}}), headers=CABECERAS_MCP)
     assert sin_argumentos.json()["error"]["code"] == -32602
 
 
-def test_mcp_reportar_falla(client, entorno, db_session):
+def test_mcp_reportar_falla(client, entorno, db_session, canales_con_credencial):
     r = client.post("/api/v1/mcp", json=_rpc("tools/call", {
-        "name": "reportar_falla", "arguments": {"descripcion": "Falla reportada por IA"}}))
+        "name": "reportar_falla", "arguments": {"descripcion": "Falla reportada por IA"}}),
+        headers=CABECERAS_MCP)
     assert r.status_code == 200
     assert r.json()["result"]["datos"]["estado"] == "DETECTADA"
     assert db_session.scalar(select(FallaMasiva).where(FallaMasiva.origen == "MCP")) is not None
 
 
-def test_mcp_metodo_no_soportado(client):
-    r = client.post("/api/v1/mcp", json=_rpc("resources/list"))
+def test_mcp_metodo_no_soportado(client, canales_con_credencial):
+    r = client.post("/api/v1/mcp", json=_rpc("resources/list"), headers=CABECERAS_MCP)
     assert r.json()["error"]["code"] == -32601
 
 
-def test_mcp_clave(client, entorno, db_session):
-    from app.models import Configuracion
+def test_mcp_sin_clave_configurada_no_atiende(client, db_session):
+    """H-02: sin clave, el servidor MCP responde 503 y no expone herramienta alguna."""
+    _configurar(db_session, "mcp.api_key", "")
+    r = client.post("/api/v1/mcp", json=_rpc("tools/list"))
+    assert r.status_code == 503, r.text
 
-    config = db_session.get(Configuracion, "mcp.api_key")
-    config.valor = "clave-mcp"
-    db_session.commit()
-    try:
-        rechazado = client.post("/api/v1/mcp", json=_rpc("initialize"))
-        assert rechazado.json()["error"]["code"] == -32001
-        ok = client.post("/api/v1/mcp", json=_rpc("initialize"), headers={"X-MCP-Key": "clave-mcp"})
-        assert ok.json()["result"]["serverInfo"]["name"] == "ggto-mcp"
-    finally:
-        config.valor = ""
-        db_session.commit()
+
+def test_mcp_clave(client, entorno, db_session, canales_con_credencial):
+    rechazado = client.post("/api/v1/mcp", json=_rpc("initialize"))
+    assert rechazado.status_code == 401
+    equivocada = client.post("/api/v1/mcp", json=_rpc("initialize"),
+                             headers={"X-MCP-Key": "otra"})
+    assert equivocada.status_code == 401
+    ok = client.post("/api/v1/mcp", json=_rpc("initialize"), headers=CABECERAS_MCP)
+    assert ok.json()["result"]["serverInfo"]["name"] == "ggto-mcp"
 
 
 # --------------------------------------------------------------------------- #

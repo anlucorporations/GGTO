@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import os
 from datetime import UTC, datetime
 from typing import Any
@@ -823,7 +824,16 @@ async def telegram_webhook(
 ) -> dict:
     config = cargar_config(db)
     esperado = str(config.get("telegram.webhook_secret") or "").strip('"')
-    if esperado and x_telegram_bot_api_secret_token != esperado:
+    # H-02: sin secreto configurado el webhook NO se abre (antes respondía 200
+    # y cualquiera podía consultar casos con PII o registrar fallas).
+    if not esperado:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El webhook de Telegram no tiene secreto configurado",
+        )
+    if not x_telegram_bot_api_secret_token or not hmac.compare_digest(
+        x_telegram_bot_api_secret_token, esperado
+    ):
         raise HTTPException(status_code=403, detail="Secreto del webhook inválido")
 
     update: dict[str, Any] = await request.json()
@@ -913,9 +923,17 @@ async def mcp(
 ) -> dict:
     config = cargar_config(db)
     esperada = str(config.get("mcp.api_key") or "").strip('"')
-    if esperada and x_mcp_key != esperada:
-        return {"jsonrpc": "2.0", "id": None,
-                "error": {"code": -32001, "message": "Clave MCP inválida"}}
+    # H-02: sin clave configurada el servidor MCP NO se abre (antes exponía
+    # `consultar_caso` y `reportar_falla` a cualquiera que conociera la URL).
+    if not esperada:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El servidor MCP no tiene clave configurada",
+        )
+    if not x_mcp_key or not hmac.compare_digest(x_mcp_key, esperada):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Clave MCP inválida"
+        )
 
     cuerpo: dict[str, Any] = await request.json()
     metodo = cuerpo.get("method")

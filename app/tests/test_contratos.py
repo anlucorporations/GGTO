@@ -165,11 +165,21 @@ def test_rbac_matriz_de_escritura(client, admin_token, db_session):
     assert respuesta.status_code == 403
 
 
-def test_los_webhooks_no_exigen_token(client):
-    """Telegram y MCP son públicos (se protegen por secreto propio, no por JWT)."""
-    assert client.post("/api/v1/telegram/webhook", json={"message": {}}).status_code == 200
+def test_los_webhooks_no_exigen_token_pero_si_su_credencial(client, db_session):
+    """H-02: Telegram y MCP no usan JWT, pero exigen su propio secreto.
+
+    Sin secreto configurado responden 503 (antes respondían 200 a cualquiera).
+    """
+    from app.models import Configuracion
+
+    for clave in ("telegram.webhook_secret", "mcp.api_key"):
+        db_session.get(Configuracion, clave).valor = ""
+    db_session.commit()
+
+    assert client.post("/api/v1/telegram/webhook",
+                       json={"message": {}}).status_code == 503
     assert client.post("/api/v1/mcp", json={"jsonrpc": "2.0", "id": 1,
-                                            "method": "initialize"}).status_code == 200
+                                            "method": "initialize"}).status_code == 503
 
 
 def test_paginacion_declarada_en_casos(client, admin_token):
