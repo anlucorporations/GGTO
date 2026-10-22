@@ -415,6 +415,15 @@ mismo comando que usa la imagen de producción.
 `flutter analyze` y `flutter test` en `app_movil/`. No compila el APK: la firma y la
 publicación siguen siendo un paso manual (`scripts/publicar_apk.py`).
 
+### Estado de ejecución
+
+El archivo está validado: GitHub lo acepta y crea los tres trabajos con sus nombres. La
+ejecución efectiva depende del estado de la cuenta del propietario. Al 2026-10-21 GitHub no
+inicia los trabajos y anota *«The job was not started because your account is locked due to a
+billing issue»*; no es un defecto del *workflow*. Mientras el bloqueo persista, la línea base se
+verifica en local con los mismos comandos y el CI correrá sin cambios al regularizarse la
+facturación.
+
 ### Línea base por commit
 
 La referencia verificable es la corrida del CI de cada commit, no una cifra copiada en los

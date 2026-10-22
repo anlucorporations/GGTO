@@ -87,8 +87,13 @@ autenticación local, esquema `ggto_ci`), no sobre producción ni sobre el proxy
 
 ## 4. Residuales
 
-1. **El CI se estrena con el próximo push**: el archivo está en el repositorio, pero la
-   primera ejecución real en GitHub Actions ocurre al publicar este commit.
+1. **GitHub no inicia los trabajos por un bloqueo de facturación de la cuenta.** El
+   *workflow* es válido —GitHub lo registra y crea los tres trabajos con sus nombres—, pero
+   desde al menos el 2-oct-2026 toda corrida termina en 3-4 s con la anotación *«The job was
+   not started because your account is locked due to a billing issue»* (corridas 48 y 49,
+   commits `1c50bcb` y `bceb851`). No es un defecto del archivo: la cuenta del propietario
+   debe regularizar la facturación para que los *runners* arranquen. Mientras tanto, la
+   línea base se verifica en local con los mismos comandos del CI.
 2. **No hay `.gitlab-ci.yml`**: el espejo en GitLab sigue sin pipeline.
 3. **E2E de Playwright fuera del CI**: se ejecutan con `RepoTecnico/pruebas/run_e2e.sh`.
 4. **Sin build de imagen ni despliegue automático**: siguen siendo manuales
