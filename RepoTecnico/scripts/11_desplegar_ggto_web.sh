@@ -151,7 +151,7 @@ programar_job() {
       --project "$PROYECTO" >/dev/null 2>&1; then
     gcloud scheduler jobs update http "$nombre" --location "$REGION" --project "$PROYECTO" \
       --schedule "$cron" --time-zone "America/Caracas" --uri "$URL$ruta" \
-      --http-method POST --headers "X-Mantenimiento-Token=$TOKEN_MANTENIMIENTO" >/dev/null
+      --http-method POST --update-headers "X-Mantenimiento-Token=$TOKEN_MANTENIMIENTO" >/dev/null
   else
     gcloud scheduler jobs create http "$nombre" --location "$REGION" --project "$PROYECTO" \
       --schedule "$cron" --time-zone "America/Caracas" --uri "$URL$ruta" \
