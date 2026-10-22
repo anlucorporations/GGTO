@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
+import { imprimirHtml } from '../utils/imprimir';
 import type {
   MonitoreoCapacidad,
   MonitoreoConstruccion,
@@ -485,14 +486,7 @@ export function BloqueReportes() {
     setImprimiendo(true);
     try {
       const html = await api.obtenerReporteTrabajoImprimible(periodo, fechaSel);
-      const ventana = window.open('', '_blank');
-      if (!ventana) {
-        setError('El navegador bloqueó la pestaña emergente; permita las ventanas emergentes.');
-        return;
-      }
-      ventana.document.open();
-      ventana.document.write(html);
-      ventana.document.close();
+      imprimirHtml(html);
     } catch (e) {
       setError(detalleDe(e, 'Error al obtener el reporte imprimible.'));
     } finally {

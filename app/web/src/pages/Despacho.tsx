@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import * as api from '../api/client';
+import { imprimirHtml } from '../utils/imprimir';
 import type {
   CanalDespacho,
   CasoAsignadoOut,
@@ -974,14 +975,7 @@ export default function Despacho() {
     setOk('');
     try {
       const html = await api.obtenerImprimible(idDespacho);
-      const ventana = window.open('', '_blank');
-      if (!ventana) {
-        setError('El navegador bloqueó la pestaña emergente; permita las ventanas emergentes.');
-        return;
-      }
-      ventana.document.open();
-      ventana.document.write(html);
-      ventana.document.close();
+      imprimirHtml(html);
     } catch (e) {
       setError(detalleDe(e, 'Error al obtener la ficha imprimible.'));
     }

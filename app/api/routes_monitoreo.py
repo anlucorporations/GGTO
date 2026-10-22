@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
+from ..core.html import CABECERAS_IMPRIMIBLE, escapar
 from ..models import CuadrillaTecnico, Usuario
 from ..services import monitoreo as svc
 from ..services import pagos
@@ -238,30 +239,33 @@ def reporte_imprimible(
     d, g, r, c = datos["diario"], datos["globales"], datos["reparacion"], datos["construccion"]
 
     filas_diario = "".join(
-        f"<tr><td>{k.replace('_', ' ').title()}</td><td class='num'>{v}</td></tr>"
+        f"<tr><td>{escapar(k.replace('_', ' ').title(), '')}</td>"
+        f"<td class='num'>{escapar(v, '')}</td></tr>"
         for k, v in d.items() if k != "fecha"
     )
     filas_semana = "".join(
-        f"<tr><td>{dia['fecha']}</td><td class='num'>{dia['asignados']}</td>"
-        f"<td class='num'>{dia['cerrados']}</td><td class='num'>{dia['gestionados']}</td></tr>"
+        f"<tr><td>{escapar(dia['fecha'], '')}</td><td class='num'>{escapar(dia['asignados'], '')}</td>"
+        f"<td class='num'>{escapar(dia['cerrados'], '')}</td>"
+        f"<td class='num'>{escapar(dia['gestionados'], '')}</td></tr>"
         for dia in datos["semanal"]["dias"]
     )
     filas_cuadrilla = "".join(
-        f"<tr><td>{cu['codigo']} — {cu['nombre']}</td>"
-        f"<td class='num'>{cu['totales']['asignados']}</td>"
-        f"<td class='num'>{cu['totales']['cerrados']}</td>"
-        f"<td class='num'>{cu['totales']['gestionados']}</td></tr>"
+        f"<tr><td>{escapar(cu['codigo'], '')} — {escapar(cu['nombre'], '')}</td>"
+        f"<td class='num'>{escapar(cu['totales']['asignados'], '')}</td>"
+        f"<td class='num'>{escapar(cu['totales']['cerrados'], '')}</td>"
+        f"<td class='num'>{escapar(cu['totales']['gestionados'], '')}</td></tr>"
         for cu in datos["cuadrilla"]["cuadrillas"]
     )
     filas_estado = "".join(
-        f"<tr><td>{k}</td><td class='num'>{v}</td></tr>" for k, v in g["por_estado"].items()
+        f"<tr><td>{escapar(k, '')}</td><td class='num'>{escapar(v, '')}</td></tr>"
+        for k, v in g["por_estado"].items()
     )
     # D-94: el informe también se lee desde el identificador de pago (RF-55).
     ids = datos["identificadores"]
     recl = datos["reclasificaciones"]
     filas_identificadores = "".join(
-        f"<tr><td>{fila['numero']}</td><td class='num'>{fila['casos']}</td>"
-        f"<td class='num'>{fila['reportes_ventana']}</td>"
+        f"<tr><td>{escapar(fila['numero'], '')}</td><td class='num'>{escapar(fila['casos'], '')}</td>"
+        f"<td class='num'>{escapar(fila['reportes_ventana'], '')}</td>"
         f"<td>{'Sí' if fila['reincidente'] else 'No'}</td></tr>"
         for fila in ids["top"]
     )
@@ -277,7 +281,8 @@ def reporte_imprimible(
     )
 
     html = f"""<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><title>Reporte {periodo} · {datos['desde']}</title>
+<html lang="es"><head><meta charset="utf-8">
+<title>Reporte {escapar(periodo, '')} · {escapar(datos['desde'], '')}</title>
 <style>
   @page {{ size: letter; margin: 1cm; }}
   body {{ font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; }}
@@ -294,11 +299,11 @@ def reporte_imprimible(
   @media print {{ .no-print {{ display: none; }} }}
 </style></head>
 <body>
-  <h1>GGTO — Reporte de trabajo ({periodo})</h1>
+  <h1>GGTO — Reporte de trabajo ({escapar(periodo, '')})</h1>
   <div class="sub">
-    <strong>Central:</strong> {central.nombre_central} ({central.codigo_central}) ·
-    <strong>Periodo:</strong> {datos['desde']} → {datos['hasta']} ·
-    <strong>Día operativo:</strong> {svc.ZONA_OPERATIVA}
+    <strong>Central:</strong> {escapar(central.nombre_central, '')} ({escapar(central.codigo_central, '')}) ·
+    <strong>Periodo:</strong> {escapar(datos['desde'], '')} → {escapar(datos['hasta'], '')} ·
+    <strong>Día operativo:</strong> {escapar(svc.ZONA_OPERATIVA, '')}
   </div>
 
   <div class="tarjetas">
@@ -316,7 +321,7 @@ def reporte_imprimible(
     <div class="tarjeta">Reportes por 70* (media)<b>{ids['media_casos']}</b></div>
   </div>
 
-  <h2>Gestión del día {d['fecha']}</h2>
+  <h2>Gestión del día {escapar(d['fecha'], '')}</h2>
   <table><tbody>{filas_diario}</tbody></table>
 
   <h2>Gestión semanal (lunes a sábado)</h2>
@@ -342,4 +347,4 @@ def reporte_imprimible(
 
   <p class="no-print"><button onclick="window.print()">Imprimir</button></p>
 </body></html>"""
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers=CABECERAS_IMPRIMIBLE)

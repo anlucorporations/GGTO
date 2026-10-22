@@ -391,6 +391,27 @@ def test_imprimible_es_html_carta(client, entorno):
     assert "ID avería" in r.text
 
 
+def test_imprimible_escapa_el_html_de_los_casos(client, entorno, db_session):
+    """H-06: el marcado guardado en un caso se imprime como texto, no se ejecuta."""
+    despachos = client.post(BASE, params={"fecha": HOY}, headers=entorno["headers"]).json()
+    id_despacho = despachos[0]["id_despacho"]
+    id_caso = db_session.scalar(
+        select(DespachoCasos.id_caso).where(DespachoCasos.id_despacho == id_despacho)
+    )
+    caso = db_session.get(Caso, id_caso)
+    caso.nombre_cliente = '<img src=x onerror="alert(1)">'
+    caso.direccion = "<script>alert(2)</script>"
+    db_session.commit()
+
+    r = client.get(f"{BASE}/{id_despacho}/imprimible", headers=entorno["headers"])
+    assert r.status_code == 200
+    assert "<script>alert(2)</script>" not in r.text
+    assert "&lt;script&gt;alert(2)&lt;/script&gt;" in r.text
+    assert "<img src=x" not in r.text
+    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in r.text
+    assert "default-src 'none'" in r.headers["content-security-policy"]
+
+
 def test_reporte_produccion(client, entorno):
     despachos = client.post(BASE, params={"fecha": HOY}, headers=entorno["headers"]).json()
     id_despacho = despachos[0]["id_despacho"]

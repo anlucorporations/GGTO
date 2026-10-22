@@ -13,6 +13,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
+from ..core.html import CABECERAS_IMPRIMIBLE, escapar
 from ..models import (
     Caso,
     Cuadrilla,
@@ -643,33 +644,27 @@ def reporte_falla(
         .order_by(OrdenMaterial.id_orden)
     ).all())
 
-    def _esc(valor: object) -> str:
-        return (
-            str(valor if valor is not None else "—")
-            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        )
-
     filas_casos = "".join(
         "<tr>"
-        f"<td>{_esc(c.id_averia)}</td><td>{_esc(c.estado_actual)}</td>"
-        f"<td>{_esc(c.ruta)}</td><td>{_esc(c.sector_nombre)}</td>"
-        f"<td>{_esc(c.nombre_cliente)}</td><td>{_esc(c.direccion)}</td>"
-        f"<td>{_esc(c.cuadrilla_codigo)}</td>"
+        f"<td>{escapar(c.id_averia)}</td><td>{escapar(c.estado_actual)}</td>"
+        f"<td>{escapar(c.ruta)}</td><td>{escapar(c.sector_nombre)}</td>"
+        f"<td>{escapar(c.nombre_cliente)}</td><td>{escapar(c.direccion)}</td>"
+        f"<td>{escapar(c.cuadrilla_codigo)}</td>"
         "</tr>"
         for c in casos
     )
     filas_ordenes = "".join(
         "<tr>"
-        f"<td>{_esc(o.id_orden)}</td><td>{_esc(o.estado)}</td>"
-        f"<td>{_esc(o.solicitante_usuario)}</td><td>{_esc(o.observacion)}</td>"
-        f"<td>{_esc(o.fecha)}</td>"
+        f"<td>{escapar(o.id_orden)}</td><td>{escapar(o.estado)}</td>"
+        f"<td>{escapar(o.solicitante_usuario)}</td><td>{escapar(o.observacion)}</td>"
+        f"<td>{escapar(o.fecha)}</td>"
         "</tr>"
         for o in ordenes
     )
     validador = salida.validador_crass
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
-<title>Reporte de masiva #{_esc(falla.id_falla)}</title>
+<title>Reporte de masiva #{escapar(falla.id_falla)}</title>
 <style>
  body {{ font-family: system-ui, "Segoe UI", Roboto, sans-serif; margin: 24px; color: #1c2733; }}
  h1 {{ font-size: 20px; }} h2 {{ font-size: 15px; margin-top: 22px; }}
@@ -679,30 +674,30 @@ def reporte_falla(
  .datos th {{ width: 190px; background: #f8fafc; }}
  @media print {{ .no-imprimir {{ display: none; }} }}
 </style></head><body>
-<h1>Reporte de falla masiva #{_esc(falla.id_falla)}</h1>
+<h1>Reporte de falla masiva #{escapar(falla.id_falla)}</h1>
 <table class="datos"><tbody>
-<tr><th>Estado</th><td>{_esc(salida.estado)}</td></tr>
-<tr><th>Origen</th><td>{_esc(salida.origen)}</td></tr>
-<tr><th>Concentración</th><td>{_esc(salida.clave_concentracion)}</td></tr>
-<tr><th>Descripción</th><td>{_esc(salida.descripcion)}</td></tr>
-<tr><th>ODN</th><td>{_esc(salida.odn)}</td></tr>
-<tr><th>FAT</th><td>{_esc(salida.fat)}</td></tr>
-<tr><th>RUTA</th><td>{_esc(salida.ruta)}</td></tr>
-<tr><th>Dirección</th><td>{_esc(salida.direccion)}</td></tr>
-<tr><th>Sector</th><td>{_esc(salida.sector_nombre)}</td></tr>
-<tr><th>Cuadrilla</th><td>{_esc(salida.cuadrilla_codigo)}</td></tr>
+<tr><th>Estado</th><td>{escapar(salida.estado)}</td></tr>
+<tr><th>Origen</th><td>{escapar(salida.origen)}</td></tr>
+<tr><th>Concentración</th><td>{escapar(salida.clave_concentracion)}</td></tr>
+<tr><th>Descripción</th><td>{escapar(salida.descripcion)}</td></tr>
+<tr><th>ODN</th><td>{escapar(salida.odn)}</td></tr>
+<tr><th>FAT</th><td>{escapar(salida.fat)}</td></tr>
+<tr><th>RUTA</th><td>{escapar(salida.ruta)}</td></tr>
+<tr><th>Dirección</th><td>{escapar(salida.direccion)}</td></tr>
+<tr><th>Sector</th><td>{escapar(salida.sector_nombre)}</td></tr>
+<tr><th>Cuadrilla</th><td>{escapar(salida.cuadrilla_codigo)}</td></tr>
 <tr><th>Casos asociados</th><td>{len(casos)}</td></tr>
-<tr><th>Casos cerrados</th><td>{_esc(salida.casos_cerrados)}</td></tr>
-<tr><th>Detectada</th><td>{_esc(salida.fecha_deteccion)}</td></tr>
-<tr><th>Planificación</th><td>{_esc(salida.planificacion)}</td></tr>
-<tr><th>Ubicación</th><td>{_esc(ubicacion.latitud)}, {_esc(ubicacion.longitud)}
-    ({_esc(ubicacion.origen)})</td></tr>
-<tr><th>Descripción del cierre</th><td>{_esc(salida.descripcion_cierre)}</td></tr>
-<tr><th>Valida (CRASS)</th><td>{_esc(validador.nombre if validador else None)}
-    · {_esc(validador.unidad if validador else None)}
-    · {_esc(validador.contacto if validador else None)}</td></tr>
-<tr><th>Cerrada por / en</th><td>{_esc(salida.cerrada_por)} · {_esc(salida.cerrada_en)}</td></tr>
-<tr><th>Evidencias del cierre</th><td>{_esc(", ".join(salida.evidencias_cierre))}</td></tr>
+<tr><th>Casos cerrados</th><td>{escapar(salida.casos_cerrados)}</td></tr>
+<tr><th>Detectada</th><td>{escapar(salida.fecha_deteccion)}</td></tr>
+<tr><th>Planificación</th><td>{escapar(salida.planificacion)}</td></tr>
+<tr><th>Ubicación</th><td>{escapar(ubicacion.latitud)}, {escapar(ubicacion.longitud)}
+    ({escapar(ubicacion.origen)})</td></tr>
+<tr><th>Descripción del cierre</th><td>{escapar(salida.descripcion_cierre)}</td></tr>
+<tr><th>Valida (CRASS)</th><td>{escapar(validador.nombre if validador else None)}
+    · {escapar(validador.unidad if validador else None)}
+    · {escapar(validador.contacto if validador else None)}</td></tr>
+<tr><th>Cerrada por / en</th><td>{escapar(salida.cerrada_por)} · {escapar(salida.cerrada_en)}</td></tr>
+<tr><th>Evidencias del cierre</th><td>{escapar(", ".join(salida.evidencias_cierre))}</td></tr>
 </tbody></table>
 
 <h2>Casos asociados ({len(casos)})</h2>
@@ -719,7 +714,7 @@ def reporte_falla(
   <button onclick="window.print()">Imprimir</button>
 </p>
 </body></html>"""
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers=CABECERAS_IMPRIMIBLE)
 
 
 # --------------------------------------------------------------------------- #

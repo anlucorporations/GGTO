@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
+from ..core.html import CABECERAS_IMPRIMIBLE, escapar
 from ..models import (
     Caso,
     Cuadrilla,
@@ -595,18 +596,19 @@ def imprimible(
     sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
 
     filas_html = "".join(
-        f"<tr><td>{dc.orden_visita or ''}</td><td>{c.id_averia}</td>"
-        f"<td>{(sectores.get(dc.id_sector) if dc.id_sector else None) or '—'}</td>"
-        f"<td>{c.direccion or ''}</td>"
-        f"<td>{c.nombre_cliente or ''}</td><td>{c.telefono or ''}</td>"
-        f"<td>{c.contacto_cliente or ''}</td>"
-        f"<td>{dc.tipo_asignacion or ''}</td><td>{c.problema_reporte or ''}</td>"
+        f"<tr><td>{escapar(dc.orden_visita, '')}</td><td>{escapar(c.id_averia, '')}</td>"
+        f"<td>{escapar(sectores.get(dc.id_sector) if dc.id_sector else None)}</td>"
+        f"<td>{escapar(c.direccion, '')}</td>"
+        f"<td>{escapar(c.nombre_cliente, '')}</td><td>{escapar(c.telefono, '')}</td>"
+        f"<td>{escapar(c.contacto_cliente, '')}</td>"
+        f"<td>{escapar(dc.tipo_asignacion, '')}</td>"
+        f"<td>{escapar(c.problema_reporte, '')}</td>"
         f"<td></td></tr>"
         for dc, c in filas
     )
     html = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
-<title>Despacho {despacho.fecha} · {cuadrilla.codigo if cuadrilla else ''}</title>
+<title>Despacho {escapar(despacho.fecha, '')} · {escapar(cuadrilla.codigo if cuadrilla else '', '')}</title>
 <style>
   @page {{ size: letter; margin: 1cm; }}
   body {{ font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; }}
@@ -624,10 +626,10 @@ def imprimible(
 <body>
   <h1>GGTO — Despacho de cuadrilla</h1>
   <div class="sub">
-    <strong>Central:</strong> FRANCISCO SALIAS · <strong>Fecha:</strong> {despacho.fecha} ·
-    <strong>Cuadrilla:</strong> {cuadrilla.codigo if cuadrilla else '—'}
-    — {cuadrilla.nombre if cuadrilla else ''} ·
-    <strong>Estado:</strong> {despacho.estado} · <strong>Casos:</strong> {len(filas)}
+    <strong>Central:</strong> FRANCISCO SALIAS · <strong>Fecha:</strong> {escapar(despacho.fecha, '')} ·
+    <strong>Cuadrilla:</strong> {escapar(cuadrilla.codigo if cuadrilla else None)}
+    — {escapar(cuadrilla.nombre if cuadrilla else '', '')} ·
+    <strong>Estado:</strong> {escapar(despacho.estado, '')} · <strong>Casos:</strong> {len(filas)}
   </div>
   <table>
     <thead><tr><th>#</th><th>ID avería</th><th>Sector</th><th>Dirección</th><th>Cliente</th>
@@ -637,7 +639,7 @@ def imprimible(
   </table>
   <p class="no-print"><button onclick="window.print()">Imprimir</button></p>
 </body></html>"""
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers=CABECERAS_IMPRIMIBLE)
 
 
 # --------------------------------------------------------------------------- #

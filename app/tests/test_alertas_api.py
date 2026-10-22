@@ -56,6 +56,16 @@ def _masiva(client, entorno, descripcion: str, ids_caso: list[int] | None = None
     return r
 
 
+def test_reporte_imprimible_de_la_masiva_escapa_html(client, entorno):
+    """H-06: la descripción de la falla se imprime como texto, no se ejecuta."""
+    falla = _masiva(client, entorno, '<script>alert("x")</script>').json()
+    r = client.get(f"{FALLAS}/{falla['id_falla']}/reporte", headers=entorno["headers"])
+    assert r.status_code == 200
+    assert "<script>alert" not in r.text
+    assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in r.text
+    assert "default-src 'none'" in r.headers["content-security-policy"]
+
+
 # --------------------------------------------------------------------------- #
 # Detección automática (RF-09)
 # --------------------------------------------------------------------------- #

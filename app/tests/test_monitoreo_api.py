@@ -190,6 +190,9 @@ def test_reporte_imprimible(client, entorno):
     assert "size: letter" in r.text
     assert "Reporte de trabajo" in r.text
     assert "Gestión semanal" in r.text
+    # H-06: el documento no permite ejecutar scripts.
+    assert "default-src 'none'" in r.headers["content-security-policy"]
+    assert r.headers["x-content-type-options"] == "nosniff"
 
 
 def test_periodo_invalido(client, entorno):

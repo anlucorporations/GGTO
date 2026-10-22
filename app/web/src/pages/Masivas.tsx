@@ -22,6 +22,7 @@
  */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import * as api from '../api/client';
+import { imprimirHtml } from '../utils/imprimir';
 import type {
   CasoCandidatoOut,
   Cuadrilla,
@@ -196,15 +197,8 @@ export default function Masivas() {
     setOk('');
     try {
       const html = await api.reporteMasiva(idFalla);
-      const ventana = window.open('', '_blank');
-      if (!ventana) {
-        setError('El navegador bloqueó la pestaña emergente; permita las ventanas emergentes.');
-        return;
-      }
-      ventana.document.open();
-      ventana.document.write(html);
-      ventana.document.close();
-      setOk(`Reporte de la masiva #${idFalla} generado en una pestaña nueva.`);
+      imprimirHtml(html);
+      setOk(`Reporte de la masiva #${idFalla} generado y listo para imprimir.`);
     } catch (e) {
       setError(detalleDe(e, 'No se pudo obtener el reporte de la masiva.'));
     } finally {
