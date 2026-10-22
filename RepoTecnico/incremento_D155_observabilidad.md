@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Hallazgo:** H-15 (R3, severidad M) del `INFORME_OPTIMIZACION_V2.md`.
-**Estado:** implementado, probado y pendiente de publicación/despliegue al cierre de este documento.
+**Estado:** implementado, probado y publicado (`85604de`); despliegue pendiente con v80.
 
 ## 1. Defecto
 
