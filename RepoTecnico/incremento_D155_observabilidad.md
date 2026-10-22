@@ -116,3 +116,23 @@ inválido; P00/rol en el log de acceso; `ready_fallido`; `ingesta_completada`; y
   cabeceras; conviene revisar un log antes de compartirlo fuera del equipo.
 - **Métricas de negocio:** `/metricas` sigue siendo un endpoint autenticado; las alertas se basan
   en los eventos de log, no en un exportador Prometheus.
+
+## 6. APK publicada con el log local
+
+El 2026-10-22 se compiló y firmó la APK **`1.15.17+42`** con el keystore oficial
+(`CN=GGTO Tecnico`), usando `scripts/publicar_apk.py --confirmar`:
+
+| Dato | Valor |
+|---|---|
+| `versionName` / `versionCode` | `1.15.17` / `42` |
+| Tamaño | **25.162.951 bytes** (24,0 MB) |
+| SHA-256 del APK | `22c59a673b86e988ba8ebb22e626021623a9e1c7b2ec8704df3799c9e8ec128c` |
+| SHA-256 del certificado | `1591662443fa9df058d3dce995403e31a50020db2e6ce65beccf26a1316bef44` |
+| Copias | `app_movil/GGTOv2.apk` y `app/web/public/apk/ggto-tecnico.apk` |
+| Metadatos | `app/web/public/apk/apk.json` actualizado |
+
+La APK incorpora `app_movil/lib/core/crash_log.dart` (log local rotativo y saneado de D-155).
+**Todavía no es descargable desde producción:** el sitio sigue en v79 y sirve la APK
+`1.15.16+41`; hace falta desplegar v80 para publicar el binario y los cambios de backend. El
+APK y `apk.json` están ignorados por git, por lo que el despliegue debe hacerse desde este
+árbol de trabajo (o copiarlos al contexto de la imagen).
