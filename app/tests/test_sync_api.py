@@ -31,7 +31,8 @@ from app.models import (
     Tecnico,
     Usuario,
 )
-from app.services.tiempo import hoy_operativo
+from app.services import sync as svc_sync
+from app.services.tiempo import dia_operativo, hoy_operativo
 
 BASE = "/api/v1"
 SYNC = f"{BASE}/sync"
@@ -160,6 +161,34 @@ def test_cuadrilla_de_un_admin_sin_asignacion_es_nula(client, entorno_sync):
     r = client.get(f"{SYNC}/cuadrilla", headers=entorno_sync["admin"])
     assert r.status_code == 200, r.text
     assert r.json()["id_cuadrilla"] is None
+
+
+def test_a_las_21_de_caracas_el_tecnico_conserva_la_cuadrilla(
+    client, entorno_sync, db_session, monkeypatch
+):
+    """H-30 (cerrado por D-131): a las 21:00 de Caracas el servidor ya está en
+    «mañana» en UTC. Si la vigencia se calculara con la fecha UTC, la pertenencia
+    que termina hoy dejaría al técnico «sin cuadrilla» las últimas cuatro horas
+    del día operativo.
+    """
+    noche = datetime(2027, 3, 16, 1, 0, tzinfo=UTC)  # 21:00 del 15 en Caracas
+    dia_local = dia_operativo(noche)
+    assert dia_local == date(2027, 3, 15), "la noche de Caracas ya es otro día en UTC"
+    # Se fija el «hoy» del servicio en el día operativo de esa noche: si alguien
+    # volviera a usar la fecha del servidor, el 15 no coincidiría con el 16.
+    monkeypatch.setattr(svc_sync, "hoy_operativo", lambda: dia_local)
+
+    id_tecnico = db_session.scalar(select(Tecnico.id_tecnico).where(Tecnico.p00 == P00_TEC))
+    pertenencia = db_session.scalar(
+        select(CuadrillaTecnico).where(CuadrillaTecnico.id_tecnico == id_tecnico)
+    )
+    pertenencia.desde = dia_local
+    pertenencia.hasta = dia_local  # termina hoy: el caso límite del hallazgo
+    db_session.commit()
+
+    r = client.get(f"{SYNC}/cuadrilla", headers=entorno_sync["tecnico"])
+    assert r.status_code == 200, r.text
+    assert r.json()["id_cuadrilla"] == entorno_sync["id_cuadrilla_a"]
 
 
 # --------------------------------------------------------------------------- #
