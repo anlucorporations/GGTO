@@ -585,9 +585,9 @@ def quitar_casos(
 @router.get("/{id_despacho}/imprimible", response_class=HTMLResponse,
             summary="Ficha de la cuadrilla lista para imprimir (carta)")
 def imprimible(
-    id_despacho: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    id_despacho: int, db: Session = Depends(get_db), usuario: Usuario = Depends(_escritura)
 ) -> HTMLResponse:
-    despacho = _o_404(db, id_despacho)
+    despacho = _de_usuario(db, _o_404(db, id_despacho), usuario)
     cuadrilla = db.get(Cuadrilla, despacho.id_cuadrilla)
     filas = db.execute(
         select(DespachoCasos, Caso)

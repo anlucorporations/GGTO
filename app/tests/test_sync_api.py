@@ -532,8 +532,11 @@ def test_carga_rechaza_caso_de_otra_cuadrilla(client, entorno_sync):
     assert resumen["rechazadas"] == 1
     assert resumen["errores"], "debe explicar por qué se rechazó"
 
-    # El caso ajeno no cambió de estado.
-    caso = client.get(f"{CASOS}/{id_ajeno}", headers=entorno_sync["tecnico"]).json()
+    # El caso ajeno no cambió de estado. El TÉCNICO ya no puede leerlo (404,
+    # D-152): la comprobación se hace con el ADMIN.
+    assert client.get(f"{CASOS}/{id_ajeno}",
+                      headers=entorno_sync["tecnico"]).status_code == 404
+    caso = client.get(f"{CASOS}/{id_ajeno}", headers=entorno_sync["admin"]).json()
     assert caso["estado_actual"] == "ASIGNADO"
 
 

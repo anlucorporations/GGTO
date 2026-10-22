@@ -354,17 +354,24 @@ origen **no se transforma** más allá de esa depuración (`RepoTecnico/interfaz
 Los campos de texto tienen longitudes máximas para evitar volcados inesperados
 (`app/services/ingesta.py:80-94`).
 
-### Enmascaramiento por rol
+### Acceso mínimo por rol
 
 RNF-18 exige **enmascarar teléfono, dirección y serial** para los roles no autorizados
 (`RepoTecnico/requerimientos.md:197`).
 
-> ❌ **No implementado.** Una búsqueda de `enmascar`, `mask`, `ocultar` o `PII` en `app/` no arroja
-> ninguna coincidencia. Los endpoints devuelven los datos en claro a cualquier usuario autenticado:
-> el listado y la búsqueda de casos incluyen teléfono, nombre del cliente y dirección
-> (`app/api/routes_casos.py:112-127,186-203`), y la ficha imprimible de la cuadrilla incluye teléfono
-> y nombre del cliente (`app/api/routes_despachos.py:314-322`). El **enmascaramiento por rol está
-> pendiente de confirmar / no implementado**.
+> ✅ **Acceso mínimo implementado (D-152); enmascaramiento literal pendiente.** En lugar de
+> devolver los campos enmascarados a roles sin necesidad de verlos, el backend **no les
+> devuelve el dato**: el TÉCNICO solo lee las fichas, el historial y los relacionados de los
+> casos de su cuadrilla —con la ventana de reasignación de D-123— y los roles de gestión,
+> únicamente su central (`app/api/routes_casos.py`). La ficha impresa del despacho y el
+> listado de personal con cédula, teléfono y correo quedaron restringidos a ADMIN/SUPERVISOR
+> (`app/api/routes_despachos.py`, `app/api/routes_config.py`). Las pruebas negativas están en
+> `app/tests/test_d152_pii.py` y `app/tests/test_d130_alcance_casos.py`.
+>
+> El **enmascaramiento literal** de teléfono/dirección/serial dentro de las respuestas
+> autorizadas no se aplica: el TÉCNICO necesita el contacto y la dirección completos para
+> ejecutar la visita y el cierre. Si CANTV exige el enmascaramiento también para esos roles,
+> queda **pendiente de confirmar** como decisión de producto.
 
 ### Retención por entidad (requerimientos.md:212-225)
 

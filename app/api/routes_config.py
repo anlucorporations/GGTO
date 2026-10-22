@@ -59,6 +59,7 @@ from ..schemas.config import (
     UsuarioGestionIn,
     UsuarioGestionOut,
 )
+from ..services.consultas import cargar_config, resolver_central
 from ..services.tiempo import hoy_operativo
 from .deps import ROL_SUPER, get_current_user, require_roles
 
@@ -303,10 +304,18 @@ def _tecnico_con_estado(db: Session, tecnico: Tecnico) -> TecnicoOut:
 @router.get("/tecnicos", response_model=list[TecnicoOut])
 def listar_tecnicos(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(_escritura),
     id_central: int | None = None,
     status_: str | None = Query(default=None, alias="status"),
 ):
+    """Personal de la central del usuario (D-152 · H-01).
+
+    La lista solo la ven ADMIN/SUPERVISOR (y SUPER) porque devuelve cédula,
+    teléfono y correo; antes la leía **cualquier autenticado**, incluido un
+    TÉCNICO. Un usuario que no es SUPER solo ve su propia central.
+    """
+    if usuario.rol is None or usuario.rol.codigo != "SUPER":
+        id_central = resolver_central(db, id_central, cargar_config(db), usuario).id_central
     stmt = select(Tecnico).order_by(Tecnico.nombre, Tecnico.apellido)
     if id_central is not None:
         stmt = stmt.where(Tecnico.id_central == id_central)
@@ -329,9 +338,14 @@ def crear_tecnico(
 
 @router.get("/tecnicos/{id_tecnico}", response_model=TecnicoOut)
 def obtener_tecnico(
-    id_tecnico: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
+    id_tecnico: int, db: Session = Depends(get_db), usuario: Usuario = Depends(_escritura)
 ):
-    return _tecnico_con_estado(db, _o_404(db, Tecnico, id_tecnico, "Técnico"))
+    tecnico = _o_404(db, Tecnico, id_tecnico, "Técnico")
+    if usuario.rol is None or usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        if tecnico.id_central != central.id_central:
+            raise HTTPException(status_code=404, detail="Técnico no encontrado")
+    return _tecnico_con_estado(db, tecnico)
 
 
 @router.patch("/tecnicos/{id_tecnico}", response_model=TecnicoOut)

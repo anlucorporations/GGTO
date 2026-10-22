@@ -103,6 +103,26 @@ def _nuevo_id_averia_ref(db: Session, tipo_reporte: str) -> str:
     return f"REF-{prefijo}-{int(numero):06d}"
 
 
+def _caso_visible(db: Session, usuario: Usuario, id_caso: int) -> Caso:
+    """Caso que el usuario puede **leer** (D-152 · H-01/H-13).
+
+    El listado y la búsqueda ya se acotaban a la central y a la cuadrilla
+    (D-130), pero la ficha, el historial y los relacionados no: un TÉCNICO podía
+    recorrer los identificadores y leer nombre, teléfono y dirección de casos de
+    otras cuadrillas —incluso de otras centrales—. Se responde **404** en ambos
+    casos para no confirmar la existencia de un caso ajeno.
+    """
+    caso = _o_404(db, id_caso)
+    if usuario.rol is None or usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        if caso.id_central != central.id_central:
+            raise HTTPException(status_code=404, detail="Caso no encontrado")
+    permitidos = svc_sync.casos_permitidos(db, usuario)
+    if permitidos is not None and caso.id_caso not in permitidos:
+        raise HTTPException(status_code=404, detail="Caso no encontrado")
+    return caso
+
+
 def _caso_de_campo(db: Session, usuario: Usuario, id_caso: int) -> Caso:
     """Caso que el usuario puede resolver **por la vía de campo** (D-123).
 
@@ -568,8 +588,8 @@ def crear_manual(
 # --------------------------------------------------------------------------- #
 @router.get("/{id_caso}", response_model=CasoOut, summary="Ficha completa del caso")
 def obtener(id_caso: int, db: Session = Depends(get_db),
-            _: Usuario = Depends(_lectura)) -> CasoOut:
-    return _resumen(db, [_o_404(db, id_caso)])[0]
+            usuario: Usuario = Depends(_lectura)) -> CasoOut:
+    return _resumen(db, [_caso_visible(db, usuario, id_caso)])[0]
 
 
 @router.patch("/{id_caso}", response_model=CasoOut, summary="Actualizar un caso")
@@ -704,9 +724,9 @@ def reactivar_caso(
 @router.get("/{id_caso}/historial", response_model=list[CasoEstadoHistOut],
             summary="Bitácora de estados del caso")
 def historial(
-    id_caso: int, db: Session = Depends(get_db), _: Usuario = Depends(_lectura)
+    id_caso: int, db: Session = Depends(get_db), usuario: Usuario = Depends(_lectura)
 ) -> list[CasoEstadoHist]:
-    _o_404(db, id_caso)
+    _caso_visible(db, usuario, id_caso)
     return list(
         db.scalars(
             select(CasoEstadoHist)
@@ -979,7 +999,7 @@ def enrutar_caso(
 def relacionados(
     id_caso: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(_lectura),
+    usuario: Usuario = Depends(_lectura),
     limite: int = Query(default=20, ge=1, le=100),
 ) -> list[CasoRelacionado]:
     """Casos previos asociados al teléfono del caso (pestaña Histórico, D-70).
@@ -988,7 +1008,7 @@ def relacionados(
     antecedente incluye el id de avería anterior, la fecha de cierre, el problema
     reportado y la justificación del cierre (última actividad de CIERRE).
     """
-    caso = _o_404(db, id_caso)
+    caso = _caso_visible(db, usuario, id_caso)
     telefono = (caso.telefono or caso.contacto_cliente or "").strip()
     if not telefono:
         return []
@@ -996,7 +1016,11 @@ def relacionados(
     anteriores = list(
         db.scalars(
             select(Caso)
-            .where(Caso.telefono == telefono, Caso.id_caso != caso.id_caso)
+            .where(
+                Caso.telefono == telefono,
+                Caso.id_caso != caso.id_caso,
+                Caso.id_central == caso.id_central,
+            )
             .order_by(Caso.fecha_reporte.desc().nulls_last(), Caso.id_caso.desc())
             .limit(limite)
         ).all()

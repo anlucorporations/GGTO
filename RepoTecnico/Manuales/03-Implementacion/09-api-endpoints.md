@@ -251,9 +251,9 @@ salvo en direcciones de sector e integrantes de cuadrilla.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/tecnicos` | Listar técnicos; filtros `id_central`, `status` | Autenticado | `app/api/routes_config.py:289` |
+| GET | `/api/v1/tecnicos` | Listar técnicos; filtros `id_central`, `status` (solo la central propia si no es SUPER) | ADMIN/SUPERVISOR | `app/api/routes_config.py:289` |
 | POST | `/api/v1/tecnicos` | Crear técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:304` |
-| GET | `/api/v1/tecnicos/{id_tecnico}` | Obtener un técnico | Autenticado | `app/api/routes_config.py:316` |
+| GET | `/api/v1/tecnicos/{id_tecnico}` | Obtener un técnico (404 si es de otra central) | ADMIN/SUPERVISOR | `app/api/routes_config.py:316` |
 | PATCH | `/api/v1/tecnicos/{id_tecnico}` | Actualizar un técnico | ADMIN/SUPERVISOR | `app/api/routes_config.py:323` |
 | DELETE | `/api/v1/tecnicos/{id_tecnico}` | Desactivar (`status = "INACTIVO"`) | ADMIN/SUPERVISOR | `app/api/routes_config.py:338` |
 
@@ -340,19 +340,19 @@ para cualquier usuario autenticado.
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/casos` | Listado paginado con filtros | Autenticado | `app/api/routes_casos.py:180-276` |
-| GET | `/api/v1/casos/buscar` | Búsqueda rápida de PANEL por `q`, `id_averia` o `telefono`; cubre también `contacto_cliente` | Autenticado | `app/api/routes_casos.py:278-326` |
+| GET | `/api/v1/casos` | Listado paginado con filtros (acotado a la cuadrilla del TÉCNICO) | TECNICO (su cuadrilla) / ADMIN, SUPERVISOR (su central) | `app/api/routes_casos.py:180-276` |
+| GET | `/api/v1/casos/buscar` | Búsqueda rápida de PANEL por `q`, `id_averia` o `telefono`; cubre también `contacto_cliente` (acotada a la cuadrilla del TÉCNICO) | TECNICO (su cuadrilla) / ADMIN, SUPERVISOR (su central) | `app/api/routes_casos.py:278-326` |
 | POST | `/api/v1/casos` | Alta manual (genera `REF-…` si no hay `id_averia`); admite `id_pago` | ADMIN/SUPERVISOR | `app/api/routes_casos.py:365-438` |
-| GET | `/api/v1/casos/{id_caso}` | Ficha completa del caso | Autenticado | `app/api/routes_casos.py:444-447` |
+| GET | `/api/v1/casos/{id_caso}` | Ficha completa del caso (404 si está fuera de su alcance) | TECNICO (su cuadrilla) / ADMIN, SUPERVISOR (su central) | `app/api/routes_casos.py:444-447` |
 | PATCH | `/api/v1/casos/{id_caso}` | Actualizar campos, sector, `id_pago` y/o estado | ADMIN/SUPERVISOR | `app/api/routes_casos.py:450-519` |
 | POST | `/api/v1/casos/{id_caso}/estado` | Cambiar el estado desde la gestión | ADMIN/SUPERVISOR | `app/api/routes_casos.py:522-544` |
-| GET | `/api/v1/casos/{id_caso}/historial` | Bitácora de estados del caso | Autenticado | `app/api/routes_casos.py:546-564` |
+| GET | `/api/v1/casos/{id_caso}/historial` | Bitácora de estados del caso (404 fuera de alcance) | TECNICO (su cuadrilla) / ADMIN, SUPERVISOR (su central) | `app/api/routes_casos.py:546-564` |
 | POST | `/api/v1/casos/{id_caso}/cierre` | Registrar el cierre con método | ADMIN/SUPERVISOR | `app/api/routes_casos.py:577-639` |
 | POST | `/api/v1/casos/{id_caso}/cita` | Agendar una cita rápida | ADMIN/SUPERVISOR | `app/api/routes_casos.py:641-671` |
 | POST | `/api/v1/casos/{id_caso}/no-contesta` | Registrar «No Contesta» (**D-88**) | ADMIN/SUPERVISOR | `app/api/routes_casos.py:673-758` |
 | PATCH | `/api/v1/casos/{id_caso}/contacto` | Corregir dirección y número de contacto desde el campo (**D-88**) | ADMIN/SUPERVISOR/TECNICO | `app/api/routes_casos.py:761-804` |
 | POST | `/api/v1/casos/{id_caso}/enrutado` | Enrutar el caso a otra instancia | ADMIN/SUPERVISOR | `app/api/routes_casos.py:807-849` |
-| GET | `/api/v1/casos/{id_caso}/relacionados` | Antecedentes del mismo teléfono o dirección | Autenticado | `app/api/routes_casos.py:852-920` |
+| GET | `/api/v1/casos/{id_caso}/relacionados` | Antecedentes del mismo teléfono o dirección en la misma central (404 fuera de alcance) | TECNICO (su cuadrilla) / ADMIN, SUPERVISOR (su central) | `app/api/routes_casos.py:852-920` |
 
 El listado admite los filtros `q`, `id_averia`, `telefono`, `id_central`,
 `id_sector`, `id_causa`, `id_lote_ingesta`, `estado_actual`, `tipo_caso`,
@@ -409,7 +409,7 @@ Escritura para ADMIN/SUPERVISOR (`app/api/routes_despachos.py:42`).
 | POST | `/api/v1/despachos/{id_despacho}/casos` | Agregar un caso al despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:293` |
 | DELETE | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Quitar un caso del despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:338` |
 | PATCH | `/api/v1/despachos/{id_despacho}/casos/{id_caso}` | Actualizar el estado del caso en el despacho | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:360` |
-| GET | `/api/v1/despachos/{id_despacho}/imprimible` | Ficha de la cuadrilla lista para imprimir (HTML carta) | Autenticado | `app/api/routes_despachos.py:388` |
+| GET | `/api/v1/despachos/{id_despacho}/imprimible` | Ficha de la cuadrilla lista para imprimir (HTML carta; solo la central propia) | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:388` |
 | GET | `/api/v1/despachos/reporte/produccion` | Reporte de producción del día | Autenticado | `app/api/routes_despachos.py:496` |
 | GET | `/api/v1/despachos/{id_despacho}/reporte` | Reporte de producción del despacho | Autenticado | `app/api/routes_despachos.py:509` |
 | POST | `/api/v1/despachos/{id_despacho}/enviar` | Enviar la ficha por `TELEGRAM` o `CORREO` | ADMIN/SUPERVISOR | `app/api/routes_despachos.py:521` |
