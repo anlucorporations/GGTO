@@ -107,12 +107,22 @@ La trazabilidad efectiva en v1 se completa con:
   motivo y usuario (`app/api/routes_casos.py:36-49`) y se consulta por caso
   (`app/api/routes_casos.py:317-329`);
 - el campo `caso.creado_por` (`RepoTecnico/db/schema.sql:305`);
-- el log del middleware, que **no incluye el usuario** (`app/main.py:62-64`).
+- el log JSON de la aplicación, que incluye P00 y rol (tomados del JWT firmado) y redacta
+  secretos y PII conocida antes de escribir (`app/core/observabilidad.py`).
 
 RNF-12 y RNF-19 exigen registro de usuario, fecha/hora y cambios sobre cada caso, además de logs con
-usuario (`RepoTecnico/requerimientos.md:191,198`). El registro en `auditoria` ya cubre el alta y la
-regeneración de accesos; el **usuario en los logs** del middleware sigue **pendiente de confirmar /
-no implementado**.
+usuario (`RepoTecnico/requerimientos.md:191,198`). El registro en `auditoria` cubre el alta y la
+regeneración de accesos; el **usuario en los logs** ya está implementado mediante el contexto de
+observabilidad (D-155). El middleware no registra cuerpos, query strings ni cabeceras sensibles.
+
+### Logs y PII (D-155)
+
+Cada evento se escribe como JSON y pasa por una redacción de `Bearer`, JWT, `token`, `clave`,
+`password`, `secret`, correos, teléfonos venezolanos, números de 10-11 dígitos y P00 en texto
+libre. Los eventos de ingesta y notificación incluyen identificadores y conteos, no nombres,
+direcciones ni el contenido del CSV. **Limitación:** un error de base de datos podría incluir
+valores entrecomillados (nombres o direcciones) que la redacción por patrón no reconoce; no se
+deben compartir logs fuera del equipo sin revisarlos.
 
 ---
 

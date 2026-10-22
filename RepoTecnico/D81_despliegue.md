@@ -89,10 +89,26 @@ Todos con el header `X-Mantenimiento-Token: <token>` (OIDC como alternativa):
 > cuatro jobs (idempotente, `--location "$REGION"`), leyendo el token del secreto. La purga aplica
 > la retención de todas las entidades con PII, no solo mensajes y `sync_log`.
 
+## 4.1 Observabilidad (D-155)
+
+Después de desplegar v80, con una cuenta que tenga permisos de Logging y Monitoring:
+
+```bash
+PROYECTO=truekeate-main ALERTA_EMAIL=operaciones@ejemplo.com \
+  bash RepoTecnico/scripts/12_observabilidad.sh
+```
+
+El script crea o actualiza métricas basadas en logs, 4 políticas de alerta (ingesta ausente,
+5xx/`/ready`, notificación fallida y latencia p95 > 2 s), el uptime de `/health` cada 5 minutos y
+la retención de `_Default` a 30 días. Sin `ALERTA_EMAIL` las políticas se crean sin canal de
+notificación.
+
 ## 5. Verificación en vivo
 
 - `GET /health` y `GET /ready` → `200`; `/ready` debe informar `"almacenamiento": "gcs"` y `"evidencias_ok": true`.
 - `GET /api/v1/sincronizaciones` (con token ADMIN/SUPERVISOR) → `200`.
+- `gcloud logging read 'jsonPayload.evento="http_request"' --limit=1 --format=json` → línea JSON con `request_id`, `usuario` y `rol`.
+- Monitoring: 4 políticas de alerta, uptime `GGTO /health` y retención de 30 días.
 - `POST /api/v1/mantenimiento/purgar` sin token → `503`; con token → `200`.
 - Subir una foto de prueba desde la APK y abrir la `url_firmada` devuelta → `200 image/jpeg`.
 - `GET /evidencias-locales/cualquier.jpg` → `404` (nunca el HTML de la SPA).

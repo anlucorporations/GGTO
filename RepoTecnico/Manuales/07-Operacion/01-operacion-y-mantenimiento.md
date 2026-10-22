@@ -389,11 +389,18 @@ esquema en v1 deberán aplicarse con DDL manual controlado hasta que se incorpor
 
 ### Logs y /health /ready
 
-La aplicación registra con `logging.basicConfig` en nivel INFO y formato
-`asctime levelname name message` (`app/main.py:32-34`). El `ObservabilidadMiddleware` asigna un
-`request_id` (de la cabecera `X-Request-ID` o uno nuevo), lo devuelve en la respuesta y registra
-método, ruta, código y duración en milisegundos; ante una excepción registra el fallo con el
-`request_id` (`app/main.py:49-65`).
+La aplicación registra **una línea JSON por evento** (`app/core/observabilidad.py`) con
+`timestamp`, `severity`, `logger`, `message`, `request_id`, `usuario` (P00), `rol` y, cuando
+aplica, `evento`, `metodo`, `ruta`, `status`, `ms`, `id_lote`, `filas`, `canal`, etc. El
+`ObservabilidadMiddleware` acepta `X-Request-ID` (validado) o genera uno, lo devuelve en la
+respuesta y emite `evento=http_request`; el P00 y el rol se toman del JWT firmado y quedan en el
+contexto de todos los logs de la petición, incluidos los servicios (`app/main.py:65-150`). Antes
+de escribir se redactan `Bearer`, JWT, `token/clave/password/secret`, correos, teléfonos y P00 en
+texto libre.
+
+Eventos que alimentan las alertas: `ingesta_completada` e `ingesta_fallida`
+(`app/api/routes_ingesta.py`), `notificacion_fallida` (`app/services/outbox.py`),
+`ready_fallido` (`app/api/routes_health.py`) y `http_request` (`app/main.py`).
 
 | Sonda | Ruta | Comportamiento | Referencia |
 |---|---|---|---|
@@ -404,10 +411,14 @@ método, ruta, código y duración en milisegundos; ante una excepción registra
 
 > RNF-19 pide logs con `request-id` **y usuario** en todas las operaciones, métricas de negocio,
 > alertas ante ingesta no ejecutada o fallo de notificación, y retención ≥ 30 días
-> (`RepoTecnico/requerimientos.md:198`). El código cumple el `request-id` y las métricas
-> (`GET /api/v1/metricas`, `app/api/routes_alertas.py:400-423`), pero **no registra el usuario en el
-> log ni incluye alertas automáticas ni política de retención propia**: esos puntos están
-> **pendientes de confirmar** con la configuración de Cloud Logging.
+> (`RepoTecnico/requerimientos.md:198`). El código ya cumple los logs JSON con request-id, P00 y
+> rol, los eventos de ingesta/notificación/readiness y las métricas de negocio
+> (`GET /api/v1/metricas`, `app/api/routes_alertas.py:975`). La parte de infraestructura está en
+> `RepoTecnico/scripts/12_observabilidad.sh`: métricas basadas en logs, 4 políticas de alerta,
+> uptime de `/health` cada 5 minutos y retención explícita de 30 días. **Debe ejecutarse después
+> del despliegue de v80**; sin `ALERTA_EMAIL` las políticas se crean sin canal de notificación.
+> El crash reporting remoto de la APK sigue pendiente de credenciales; el log local rotativo ya
+> está en `app_movil/lib/core/crash_log.dart`.
 
 ---
 

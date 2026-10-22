@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'core/api_client.dart';
 import 'core/auth_storage.dart';
+import 'core/crash_log.dart';
 import 'core/theme.dart';
 import 'features/alertas/alertas_screen.dart';
 import 'features/auth/auth_provider.dart';
@@ -32,6 +33,10 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // D-155: los fallos no controlados quedan en un log local rotativo y saneado
+  // (sin token, P00, correo ni teléfono) para diagnóstico en campo.
+  await CrashLog.iniciar();
 
   // Registra el interceptor `Authorization: Bearer`, los tiempos de espera y el
   // cierre de sesión ante un 401 (H-01/H-18/H-39).

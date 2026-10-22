@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
@@ -33,6 +34,7 @@ from ..services.sectorizacion import Patron, asignar_sector
 from .deps import get_current_user, require_roles
 
 router = APIRouter(prefix="/api/v1/ingesta", tags=["ingesta"])
+logger = logging.getLogger("ggto.ingesta")
 
 _escritura = require_roles("ADMIN", "SUPERVISOR")
 CAMPOS_ESPECIFICACION = tuple(c for c, _, _ in ESPECIFICACION)
@@ -219,6 +221,14 @@ async def cargar(
             )
         )
         db.commit()
+        logger.warning(
+            "ingesta_fallida",
+            extra={
+                "evento": "ingesta_fallida",
+                "archivo": nombre[:120],
+                "motivo": detalle[:200],
+            },
+        )
         raise HTTPException(status_code=422, detail=detalle)
 
     resumen, candidatas, central, _patrones, _config = _analizar(db, contenido, id_central)
@@ -277,6 +287,17 @@ async def cargar(
     lote.detalle_error = "; ".join(resumen["avisos"]) or None
     lote.avisos = resumen["avisos_detalle"]
     db.commit()
+    logger.info(
+        "ingesta_completada",
+        extra={
+            "evento": "ingesta_completada",
+            "id_lote": lote.id_lote,
+            "filas": resumen["filas_leidas"],
+            "nuevos": resumen["casos_nuevos"],
+            "duplicados": resumen["casos_duplicados"],
+            "archivo": nombre[:120],
+        },
+    )
 
     # RF-09: detección automática de fallas masivas por concentración
     creadas = fallas.detectar(db, central.id_central)

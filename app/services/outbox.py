@@ -8,6 +8,7 @@ permanece PENDIENTE con el motivo (no se pierde).
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -19,6 +20,7 @@ from .notificaciones import enviar
 
 MAX_INTENTOS_POR_DEFECTO = 5
 BACKOFF_TOPE_MINUTOS = 60
+logger = logging.getLogger("ggto.outbox")
 
 
 def _config(db: Session, clave: str, defecto: Any) -> Any:
@@ -88,6 +90,16 @@ def procesar(db: Session, limite: int = 50) -> dict:
                 notificacion.estado = "FALLIDO"
                 notificacion.proximo_intento = None
                 resumen["fallidas"] += 1
+                logger.error(
+                    "notificacion_fallida",
+                    extra={
+                        "evento": "notificacion_fallida",
+                        "id_notificacion": notificacion.id_notificacion,
+                        "canal": notificacion.canal,
+                        "intentos": notificacion.intentos,
+                        "motivo": (error or "")[:200],
+                    },
+                )
             else:
                 notificacion.estado = "PENDIENTE"
                 notificacion.proximo_intento = ahora + timedelta(

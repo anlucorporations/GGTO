@@ -7,15 +7,17 @@ DESPACHO, casos especiales/agenda, MONITOREO/REPORTES y ALERTAS/Telegram/MCP).
 
 import logging
 import os
+import re
 import time
 import uuid
 from pathlib import Path
 
+import jwt
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import Headers, MutableHeaders
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from .api import (
     routes_alertas,
@@ -36,10 +38,16 @@ from .api import (
     routes_sync,
 )
 from .core.config import get_settings
+from .core.observabilidad import (
+    configurar_logging,
+    iniciar_request,
+    limpiar_contexto,
+    vincular_usuario,
+)
+from .core.security import decode_token
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
-logger = logging.getLogger('ggto')
+configurar_logging()
+logger = logging.getLogger("ggto")
 
 settings = get_settings()
 
@@ -54,23 +62,96 @@ app = FastAPI(
     ),
 )
 
-class ObservabilidadMiddleware(BaseHTTPMiddleware):
-    """Añade un `request-id` y registra cada petición (RNF-19)."""
+class ObservabilidadMiddleware:
+    """Añade un `request-id` y registra cada petición como JSON (RNF-19).
 
-    async def dispatch(self, request, call_next):
-        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:12]
+    Es un middleware ASGI puro (no `BaseHTTPMiddleware`) para conservar el
+    contexto en la misma tarea. El P00 y el rol se toman del JWT **firmado**
+    solo como datos de trazabilidad; la autorización real sigue en
+    `get_current_user`. Así los logs de los servicios, incluso en el hilo de
+    las dependencias síncronas, comparten request-id, usuario y rol.
+    """
+
+    _ID_VALIDO = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = Headers(scope=scope)
+        solicitado = headers.get("X-Request-ID", "")
+        request_id = (
+            solicitado
+            if self._ID_VALIDO.fullmatch(solicitado)
+            else uuid.uuid4().hex[:12]
+        )
+        iniciar_request(request_id)
+
+        autorizacion = headers.get("Authorization", "")
+        if autorizacion.lower().startswith("bearer "):
+            try:
+                payload = decode_token(autorizacion[7:].strip())
+            except jwt.PyJWTError:
+                payload = {}
+            if payload.get("sub"):
+                vincular_usuario(
+                    str(payload["sub"]), str(payload.get("rol") or "")
+                )
+
+        metodo = scope.get("method", "")
+        ruta = scope.get("path", "")
         inicio = time.perf_counter()
+        estado = 500
+
+        async def enviar(message) -> None:
+            nonlocal estado
+            if message["type"] == "http.response.start":
+                estado = message["status"]
+                respuesta = MutableHeaders(scope=message)
+                respuesta["X-Request-ID"] = request_id
+            await send(message)
+
         try:
-            response = await call_next(request)
+            await self.app(scope, receive, enviar)
         except Exception:
-            logger.exception("request_id=%s %s %s fallo", request_id,
-                             request.method, request.url.path)
+            duracion = (time.perf_counter() - inicio) * 1000
+            logger.exception(
+                "http_request",
+                extra={
+                    "evento": "http_request",
+                    "metodo": metodo,
+                    "ruta": ruta,
+                    "status": 500,
+                    "ms": round(duracion, 1),
+                },
+            )
             raise
-        duracion = (time.perf_counter() - inicio) * 1000
-        response.headers["X-Request-ID"] = request_id
-        logger.info("request_id=%s %s %s -> %s %.1fms", request_id, request.method,
-                    request.url.path, response.status_code, duracion)
-        return response
+        else:
+            duracion = (time.perf_counter() - inicio) * 1000
+            nivel = (
+                logging.ERROR
+                if estado >= 500
+                else logging.WARNING
+                if duracion >= 2000
+                else logging.INFO
+            )
+            logger.log(
+                nivel,
+                "http_request",
+                extra={
+                    "evento": "http_request",
+                    "metodo": metodo,
+                    "ruta": ruta,
+                    "status": estado,
+                    "ms": round(duracion, 1),
+                },
+            )
+        finally:
+            limpiar_contexto()
 
 
 app.add_middleware(ObservabilidadMiddleware)
@@ -80,6 +161,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 app.include_router(routes_health.router)

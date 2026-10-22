@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -13,6 +15,7 @@ from ..services import storage as svc_storage
 from .deps import get_current_user
 
 router = APIRouter(tags=["salud"])
+logger = logging.getLogger("ggto.salud")
 
 
 @router.get("/api/v1/info")
@@ -57,6 +60,10 @@ def ready(db: Session = Depends(get_db)) -> dict:
             "evidencias_ok": svc_storage.modo_almacenamiento() != "no_configurado",
         }
     except Exception as exc:
+        logger.error(
+            "ready_fallido",
+            extra={"evento": "ready_fallido", "motivo": type(exc).__name__},
+        )
         raise HTTPException(status_code=503, detail=f"BD no disponible: {type(exc).__name__}") from exc
 
 
