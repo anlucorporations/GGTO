@@ -722,7 +722,7 @@ CREATE TABLE IF NOT EXISTS inventario_movimiento (
 
 CREATE TABLE IF NOT EXISTS notificacion (
     id_notificacion bigserial    PRIMARY KEY,
-    canal           varchar(20)  NOT NULL CHECK (canal IN ('TELEGRAM','CORREO','MCP_IA')),
+    canal           varchar(20)  NOT NULL CHECK (canal IN ('TELEGRAM','CORREO','MCP_IA','MANUAL')),
     destinatario    varchar(160),
     asunto          varchar(200),
     cuerpo          text,

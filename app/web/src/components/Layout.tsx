@@ -19,6 +19,7 @@ import {
   IconoPanel,
   IconoPerfil,
   IconoSalir,
+  IconoSeguimiento,
 } from './Iconos';
 import { ETIQUETA_MASIVAS, IconoMasiva, ROLES_MASIVAS, RUTA_MASIVAS } from '../masivas/registro';
 
@@ -45,6 +46,14 @@ const SECCIONES: Seccion[] = [
   { ruta: '/', etiqueta: 'OPERACIÓN', fin: true, Icono: IconoPanel, roles: null },
   { ruta: '/casos', etiqueta: 'CASOS', fin: false, Icono: IconoCasos, roles: null },
   { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales, roles: null },
+  // D-156: SEGUIMIENTO (RF-34). El COORDINADOR no ve el universo de casos.
+  {
+    ruta: '/seguimiento',
+    etiqueta: 'SEGUIMIENTO',
+    fin: false,
+    Icono: IconoSeguimiento,
+    roles: ['SUPER', 'ADMIN', 'SUPERVISOR', 'TECNICO'],
+  },
   { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda, roles: null },
   { ruta: '/despacho', etiqueta: 'DESPACHO', fin: false, Icono: IconoDespacho, roles: ROLES_CONFIG },
   // MASIVAS (D-99 · RF-60): sección propia para las fallas masivas.

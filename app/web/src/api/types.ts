@@ -1229,12 +1229,23 @@ export interface SeguimientoOut {
   estado: string;
   observacion: string | null;
   usuario: string | null;
+  /* D-156: contexto del caso para que SEGUIMIENTO sea una vista real. */
+  id_averia: string | null;
+  nombre_cliente: string | null;
+  direccion: string | null;
+  sector_nombre: string | null;
+  estado_caso: string | null;
+  id_central: number | null;
+  id_cuadrilla: number | null;
+  cuadrilla_codigo: string | null;
+  cuadrilla_nombre: string | null;
 }
 
 export type SeguimientoFiltros = {
   id_caso?: number;
   estado?: string;
   instancia_destino?: string;
+  q?: string;
 };
 
 /* ------------------------------------------------------------------ */

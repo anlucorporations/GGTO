@@ -915,7 +915,7 @@ ORM `app/models/despacho_entities.py:95-109`).
 | Campo | Tipo | Clave / Nulo | Descripción |
 |---|---|---|---|
 | `id_notificacion` | `bigserial` | PK, NN | Identificador. |
-| `canal` | `varchar(20)` | NN | `TELEGRAM`/`CORREO`/`MCP_IA`. |
+| `canal` | `varchar(20)` | NN | `TELEGRAM`/`CORREO`/`MCP_IA`/`MANUAL` (D-156). |
 | `destinatario` | `varchar(160)` | — | Destino (PII cuando es correo). |
 | `asunto` | `varchar(200)` | — | Asunto. |
 | `cuerpo` | `text` | — | Cuerpo del mensaje. |

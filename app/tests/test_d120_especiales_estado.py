@@ -16,7 +16,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import select
 
-from app.models import Caso, CasoEspecial
+from app.models import Caso, CasoEspecial, Notificacion
 from app.services import clasificacion
 from app.services.tiempo import hoy_operativo
 
@@ -146,6 +146,16 @@ def test_cerrar_el_caso_desde_campo_cierra_el_especial(client, admin_token, espe
     )
     assert ficha is not None
     assert ficha.estado == "CERRADO"
+
+    # D-156: el solicitante externo queda avisado en el outbox. Sin token de
+    # Telegram el aviso no se pierde: queda PENDIENTE para reintento.
+    aviso = db_session.scalar(
+        select(Notificacion).where(Notificacion.id_caso == especial["id_caso"])
+    )
+    assert aviso is not None
+    assert aviso.canal == "TELEGRAM"
+    assert aviso.estado == "PENDIENTE"
+    assert aviso.destinatario == "04140000000"
 
     # Y la lista de ESPECIALES lo muestra cerrado y fuera de los pendientes.
     lista = client.get(ESPECIALES, headers=especial["headers"])

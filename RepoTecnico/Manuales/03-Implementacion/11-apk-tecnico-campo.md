@@ -1,4 +1,4 @@
-# 11 — La APK del técnico: contenido local, progreso de sincronización, sección Usuario, falla masiva de campo (D-82) e identificador de pago (D-93)
+# 11 — La APK del técnico: contenido local, progreso de sincronización, sección Usuario, falla masiva de campo (D-82), identificador de pago (D-93) y ZIP de jornada (D-156)
 
 > Manual técnico de la aplicación **GGTO Técnico** (`app_movil/`, Flutter). El
 > incremento **D-82** cubre cinco requisitos pedidos por el usuario:
@@ -13,7 +13,13 @@
 > separación **identificador de pago (70\*) / número de contacto** que el backend
 > estrenó en D-89: se documenta en la sección 7 de este manual.
 
-> **Alcance vigente:** este manual describe la APK de campo `1.1.0+9`. No describe una APK multirol ya entregada. La V2 solicitada debe integrar TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER; a la fecha de corte no existen las pantallas ni la navegación de gestión en `app_movil/`. Ver [`../../auditoria_estado_real_v2.md`](../../auditoria_estado_real_v2.md).
+> **Alcance vigente:** este manual describe la APK de campo y su versión publicada
+> al cierre de **D-156** es `1.15.17+42`. El incremento D-156 añade el **ZIP de la
+> jornada** (sección 3.6); el resto del documento conserva el detalle histórico de
+> D-82 y D-93. No describe una APK multirol ya entregada. La V2 solicitada debe
+> integrar TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER; a la fecha de corte no
+> existen las pantallas ni la navegación de gestión en `app_movil/`. Ver
+> [`../../auditoria_estado_real_v2.md`](../../auditoria_estado_real_v2.md).
 
 ---
 
@@ -128,6 +134,28 @@ pendiente) ni uno del **despacho del día**.
 El PIN solo se usa para **abrir sin internet** y **desbloquear la pantalla**; no
 se envía al servidor. El bloqueo aplica a la sesión **TÉCNICO**, que es la que
 tiene credencial local.
+
+### 3.6 ZIP de la jornada (D-156)
+
+El apartado 4.3 de los requerimientos pide que, al finalizar la jornada, el
+dispositivo genere un **ZIP con el despacho modificado y todas las evidencias**,
+con el nombre `central + cuadrilla + fecha`. Se implementa **en la APK**, no en el
+backend: el despacho local ya contiene los cambios del técnico y las fotos están
+en el teléfono, así que el ZIP se puede generar sin red.
+
+| Pieza | Detalle |
+|---|---|
+| `app_movil/lib/features/sync/zip_jornada_service.dart` | `ZipJornadaService.generar()` lee los casos y las evidencias locales, el perfil y la cuadrilla; `crear()` construye el archivo a partir de datos ya leídos y es la parte que prueban los tests. |
+| Nombre | `ZipJornadaService.nombreArchivo` normaliza central, cuadrilla y fecha a `central_cuadrilla_AAAAMMDD.zip`. |
+| Contenido | `despacho.csv` (una fila por caso con los campos operativos), `despacho.json` (registro local completo), `evidencias/` (fotos disponibles) y `LEEME.txt` (resumen y conteos). |
+| Evidencias | Se incluyen las que existen en el dispositivo; las que no se encuentran se cuentan en `evidenciasFaltantes` y se informan, sin abortar el ZIP. Los nombres repetidos se renombran (`foto_2.jpg`). |
+| Pantalla | `app_movil/lib/features/sync/sync_screen.dart`: tarjeta **ZIP de la jornada** con el botón `GENERAR Y COMPARTIR ZIP` (clave `zip-jornada`). |
+| Compartición | `SharePlus.instance.share` con el archivo `application/zip`; el usuario elige correo, mensajería o almacenamiento. |
+| Pruebas | `app_movil/test/d156_zip_jornada_test.dart` (**3**): nombre válido, contenido CSV/JSON/evidencias y no duplicación de nombres. La suite completa queda en **279 passed**. |
+
+El ZIP se genera desde la sección **SINCRONIZAR** y no sustituye a la
+sincronización: primero se cargan las acciones y las fotos al servidor; el ZIP es
+el respaldo local que el técnico entrega al supervisor al cerrar la jornada.
 
 ---
 
@@ -325,7 +353,7 @@ de edición. La evidencia de regresión previa sigue en
 
 | Elemento | Valor |
 |---|---|
-| Versión visible | `AppConstants.version` = `1.1.0+9` (`app_movil/pubspec.yaml:5`, `app_movil/lib/core/constants.dart:15`), verificada por `test/version_visible_test.dart`. (En D-82 la entrega era `1.0.0+3`.) |
+| Versión visible | `AppConstants.version` = `1.15.17+42` (`app_movil/pubspec.yaml`, `app_movil/lib/core/constants.dart`), verificada por `test/version_visible_test.dart`. (En D-82 la entrega era `1.0.0+3`; en D-93, `1.1.0+9`.) |
 | URL de la API | `AppConstants.baseUrl` (`--dart-define=GGTO_API_BASE=…`). |
 | Firma | Keystore oficial `RepoTecnico/credenciales/ggto-tecnico-release.jks` + `app_movil/android/key.properties`; publicación con `python scripts/publicar_apk.py --confirmar` (valida el keystore y la firma con `apksigner`). |
 | Entrega | `app_movil/GGTOv2.apk` con su SHA-256. |
@@ -337,7 +365,7 @@ de edición. La evidencia de regresión previa sigue en
 | Nivel | Comando | Cobertura D-82 |
 |---|---|---|
 | Análisis | `flutter analyze` | Sin hallazgos. |
-| Unitarias/widget | `flutter test` | `test/d82_apk_test.dart` (12): validación del reporte de campo, barra de progreso (porcentaje y widget), icono de usuario → ruta `/usuario`, datos de la sección Usuario. **D-93:** `test/d93_identificador_pago_test.dart` (normalización RN-IP-07, detección del 70\*, cabecera en solo lectura, rótulos de ficha/tarjeta y aviso del diálogo). |
+| Unitarias/widget | `flutter test` | **279 passed** en total. `test/d82_apk_test.dart` (12): validación del reporte de campo, barra de progreso (porcentaje y widget), icono de usuario → ruta `/usuario`, datos de la sección Usuario. **D-93:** `test/d93_identificador_pago_test.dart` (normalización RN-IP-07, detección del 70\*, cabecera en solo lectura, rótulos de ficha/tarjeta y aviso del diálogo). **D-156:** `test/d156_zip_jornada_test.dart` (3): nombre, contenido y evidencias del ZIP. |
 | Integración backend | `pytest` con `GGTO_TEST_DB_URL` | `app/tests/test_d82_falla_campo.py` (6): ODN/dirección/FAT/descripción y 2 fotos, 422 si falta un dato o si hay 3 fotos, cuadrilla del reportante y RBAC intacto. `test_auth.py` (3 nuevas): palabras con la clave actual + auditoría + palabras anteriores invalidadas, cambio de clave y perfil propio. |
 | Migración | `scripts/migrar_d82_falla_campo.py` (`--dsn`) | Simulación → aplicar → verificación → reejecución idempotente. |
 
@@ -355,5 +383,6 @@ de edición. La evidencia de regresión previa sigue en
 | DEC-IP-7 (un 70\* es identificador del caso) | `operaciones_service.dart:375-389` (aviso) + servidor `PATCH /casos/{id}/contacto` (manual 04) |
 | RNF-06 (offline) | caché local de casos, perfil y cuadrilla; cola de acciones con las fotos |
 | RNF-21/22 | rutas protegidas y contraseña actual exigida en cada operación sensible |
+| ZIP de jornada (apartado 4.3) · D-156 | `zip_jornada_service.dart` (`generar`, `crear`, `nombreArchivo`), `sync_screen.dart` (`zip-jornada`), `test/d156_zip_jornada_test.dart` |
 
 Documento del incremento: [`../../incremento_D82_apk_campo.md`](../../incremento_D82_apk_campo.md).

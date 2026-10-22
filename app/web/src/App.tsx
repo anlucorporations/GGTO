@@ -7,6 +7,7 @@ import Operacion from './pages/Operacion';
 import Casos from './pages/Casos';
 import Despacho from './pages/Despacho';
 import Especiales from './pages/Especiales';
+import Seguimiento from './pages/Seguimiento';
 import Agenda from './pages/Agenda';
 import Centrales from './pages/Centrales';
 import Sectores from './pages/Sectores';
@@ -38,6 +39,9 @@ export default function App() {
           <Route path="alertas" element={<Navigate to="/?pestana=alertas" replace />} />
           <Route element={<RutaCasos />}>
             <Route path="casos" element={<Casos />} />
+            {/* D-156: SEGUIMIENTO comparte el alcance de CASOS; el COORDINADOR
+                no accede ni por URL directa. */}
+            <Route path="seguimiento" element={<Seguimiento />} />
           </Route>
           <Route path="especiales" element={<Especiales />} />
           <Route path="agenda" element={<Agenda />} />

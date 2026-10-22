@@ -256,6 +256,12 @@ class SeguimientoUpdate(BaseModel):
 
 
 class SeguimientoOut(BaseModel):
+    """Derivación + datos del caso para que SEGUIMIENTO sea una vista real.
+
+    Los campos del caso se calculan en el listado (`_resumen_seguimiento`); se
+    dejan opcionales para que la ficha siga funcionando si el caso fue purgado.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id_seguimiento: int
@@ -267,3 +273,13 @@ class SeguimientoOut(BaseModel):
     estado: str
     observacion: str | None = None
     usuario: str | None = None
+    #: Datos de contexto del caso (RNF-04 / RF-34).
+    id_averia: str | None = None
+    nombre_cliente: str | None = None
+    direccion: str | None = None
+    sector_nombre: str | None = None
+    estado_caso: str | None = None
+    id_central: int | None = None
+    id_cuadrilla: int | None = None
+    cuadrilla_codigo: str | None = None
+    cuadrilla_nombre: str | None = None

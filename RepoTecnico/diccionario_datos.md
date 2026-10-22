@@ -64,7 +64,7 @@
 | 25 | Falla masiva | `falla_masiva` | Evento de falla masiva y su atención. |
 | 25b | Masiva–Caso | `falla_masiva_caso` | Asociación explícita de los CASOS ASOCIADOS (D-99 · DEC-MA-1). |
 | 26 | Incidente | `incidente` | Incidentes de flota/herramienta. |
-| 27 | Notificación | `notificacion` | Mensajes enviados por Telegram/correo/MCP. |
+| 27 | Notificación | `notificacion` | Mensajes enviados por Telegram/correo/MCP o aviso manual pendiente (D-156). |
 | 28 | Seguridad del dispositivo | `dispositivo_seguridad` | 12 palabras, clave privada, estado de bloqueo. |
 | 29 | Sincronización | `sincronizacion` | Paquetes ZIP y estado de sync del dispositivo. |
 | 30 | Catálogo de causas | `causa` | Código/subcódigo/descripción de causa. |
@@ -512,7 +512,7 @@ unicidad cuando un caso se reabre y vuelve a cerrarse.
 
 - **`causa`** (H-23, alineado con el DDL): `id_causa` serial PK · `codigo_causa` · `subcodigo_causa` · `descripcion` · `descripcion_subcodigo` · `tipo` · `activo` · **UQ `(codigo_causa, subcodigo_causa)`**. Catálogo administrable; **no** se puebla desde el CSV (D-27).
 - **`catalogo_metodo`**: `id` · `dominio` (`CIERRE`/`ENRUTE`/`DIFERIDO`) · `codigo` · `nombre` · `activo`.
-- **`notificacion`**: `id` · `canal` (`TELEGRAM`/`CORREO`/`MCP_IA`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `error` · `enviado_en` · **`intentos`** · **`proximo_intento`** (patrón *outbox* con reintentos, RNF-20) · `creado_en`.
+- **`notificacion`**: `id` · `canal` (`TELEGRAM`/`CORREO`/`MCP_IA`/`MANUAL`) · `destinatario` · `asunto` · `cuerpo` · `id_caso` · `estado` (`PENDIENTE`/`ENVIADO`/`FALLIDO`) · `error` · `enviado_en` · **`intentos`** · **`proximo_intento`** (patrón *outbox* con reintentos, RNF-20) · `creado_en`.
 - **`incidente`**: `id` · `tipo` (`FLOTA`/`HERRAMIENTA`) · `id_flota`/`id_herramienta` · `descripcion` · `id_actividad` · `estado`.
 - **`ingesta_lote`**: `id_lote` · `archivo` · `fecha_archivo` · `id_central` · `filas_leidas` · `filas_central` · `casos_nuevos` · `casos_duplicados` · `casos_descartados` · `estado` · `usuario` · `creado_en`.
 - **`configuracion`**: `clave` PK · `valor` (jsonb) · `descripcion`. Ej.: frases de exclusión `["LOSS ROJO","FALLA FIBRA","Fibra Dañada"]`, reglas de despacho (≥2 referidos, ≥1 empresa), hora de corte (16:00).

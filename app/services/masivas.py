@@ -331,6 +331,18 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
                              no_encontrada=True)
     if not validador.activo:
         raise MasivaInvalida("El validador del CRASS indicado está inactivo")
+    # D-156: no basta con que exista y esté activo: el cierre de una masiva lo
+    # valida personal del CRASS de la **misma central**. Antes se aceptaba a
+    # cualquier solicitante activo, incluso de otra central o de otro tipo.
+    if (validador.tipo or "").upper() != "CRASS":
+        raise MasivaInvalida(
+            "El validador indicado no es personal del CRASS: seleccione un "
+            "registro de tipo CRASS"
+        )
+    if validador.id_central is None or validador.id_central != falla.id_central:
+        raise MasivaInvalida(
+            "El validador del CRASS no pertenece a la central de la masiva"
+        )
 
     ids = list(db.scalars(
         select(FallaMasivaCaso.id_caso).where(FallaMasivaCaso.id_falla == falla.id_falla)

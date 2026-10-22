@@ -49,7 +49,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 |---|---|---|---|
 | **ACT-01** | **Supervisor de la central** | Carga el CSV diario, crea perfiles/accesos, gestiona flota, cuadrillas e insumos, genera reportes, ejecuta el despacho diario, gestiona fallas masivas y la "cuadrilla 0". | Web PC / App móvil |
 | **ACT-02** | **Técnico de campo** | Miembro de una cuadrilla. Consulta casos, contacta y agenda, documenta actividad/resolución, captura evidencias, alerta fallas masivas e incidentes, solicita material, sincroniza el dispositivo. | App Android / Web móvil / Telegram |
-| **ACT-03** | **Personal externo solicitante** | Reporta casos especiales (referidos, empresas, gobiernos) indicando **Unidad + Nombre + Contacto**; recibe notificación de lo realizado. | Telegram / WEB-MCP (IA) |
+| **ACT-03** | **Personal externo solicitante** | Reporta casos especiales (referidos, empresas, gobiernos) indicando **Unidad + Nombre + Contacto**; recibe notificación de lo realizado. **D-156:** el alta la hace el supervisor y el cierre genera un aviso por el *outbox*; si el canal es manual, queda pendiente para entrega del supervisor (no hay portal público ni enlace tokenizado). | Telegram / WEB-MCP (IA) / aviso interno |
 | **ACT-04** | **Administrador del sistema** | Configura el entorno (central, técnicos, flota, cuadrillas, catálogos, roles). | Web PC |
 | **ACT-05** | **Sistema (automático)** | Ingesta, detección de duplicados, sectorización, propuesta de despacho, gestión automatizada, mensajería, generación de reportes. | Backend |
 | **ACT-06** | **Integración IA (WEB-MCP)** | Canal conversacional que interpreta y registra casos especiales y consultas. | MCP sobre web |
@@ -150,7 +150,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RF-31** | **Actualizar/editar** un caso existente (contacto, dirección, clasificación, estado y campos de gestión). | Alta | PANEL |
 | **RF-32** | **Alta manual** de un caso nuevo con información sencilla (fecha, tipo, actividad, contacto, nombre, dirección, información). | Alta | PANEL |
 | **RF-33** | **Administrar el universo de casos**: listado con filtros (central, sector, estado, tipo, fechas), detalle y registro de resolución. | Alta | CASOS |
-| **RF-34** | **Gestionar el seguimiento** de casos derivados a otras instancias/colas (instancia, motivo, fechas, estado). | Media | SEGUIMIENTO |
+| **RF-34** | **Gestionar el seguimiento** de casos derivados a otras instancias/colas (instancia, motivo, fechas, estado). La página real muestra además avería, cliente, dirección, sector y cuadrilla, y respeta el alcance por central/cuadrilla (D-156). | Media | SEGUIMIENTO |
 | **RF-35** | **Gestionar los casos de tipo EMPRESA** (reparación/construcción) y su cita de atención. | Media | EMPRESAS |
 | **RF-36** | **Gestionar los casos de tipo REFERIDO** sin `id_averia` (prioridad y cita), con identificador `REF-…`. | Media | REFERIDOS |
 | **RF-37** | **Gestionar los casos de la cuadrilla 0** sin despacharlos a calle (bandeja GESTIÓN y cierre administrativo). | Alta | GESTIÓN |
@@ -178,7 +178,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
   - **DIFERIR:** reporte corto de justificación + hasta 3 fotos demostrativas + causa (listado de causas).
 - **4.3 CONSIDERACIONES:**
   - Evidencias solo por **cámara del móvil** (no galería); almacenadas en baja calidad en carpeta de la app, serializadas con `N.º de caso + id_averia + tipo (potencia/navegación/demo) + fecha y hora`; en el reporte solo se guarda el serial de la imagen según tipo.
-  - Al finalizar la jornada, en la pantalla **DISPOSITIVO** se genera un **ZIP** con el despacho modificado y todas las evidencias; nombre `central+cuadrilla+fecha`.
+  - Al finalizar la jornada, en la pantalla **DISPOSITIVO** se genera un **ZIP** con el despacho modificado y todas las evidencias; nombre `central+cuadrilla+fecha`. **D-156:** implementado en la APK como `despacho.csv` + `despacho.json` + `evidencias/` + `LEEME.txt`, con botón **GENERAR Y COMPARTIR ZIP** en SINCRONIZAR.
   - En la pantalla principal se puede seleccionar **SINCRONIZAR** el dispositivo (propuesta de procedimiento).
   - Primer inicio: ingresar `P00`, correo, clave y confirmación; se generan **12 palabras aleatorias** mostradas en pantalla y guardadas como **documento de seguridad encriptado** para recuperación de contraseña/bloqueo.
   - La app posee una **clave privada** para descifrar el documento de seguridad.
@@ -196,6 +196,18 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RN-AL-01** | **Datos obligatorios del alta** (manual y especial) | Al incorporar un caso manual o especial se deben ingresar **obligatoriamente**: el **nombre y el teléfono de contacto** (`nombre_cliente`, `contacto_cliente`), la **dirección del inmueble** (`direccion`), el **teléfono con el identificador de pago (70\*)** (`id_pago`/`telefono`), el **tipo de reporte** (REPARACIÓN o CONSTRUCCIÓN) y los **datos extra**: si el reporte es una REPARACIÓN, el **id de avería** y el **tipo de problema**. En el caso especial son obligatorios además los **datos del solicitante** (nombre, unidad y contacto). El incumplimiento responde **422**. | `app/tests/test_casos_api.py` (`test_alta_manual_exige_los_datos_obligatorios`), `app/tests/test_especiales_api.py` (`test_el_alta_especial_exige_los_datos_obligatorios`) |
 | **RN-AL-02** | **CASOS muestra solo casos abiertos** | La sección CASOS de la web lista únicamente casos **abiertos**: excluye `CERRADO` y `CANCELADO` (parámetro `solo_abiertos` de `GET /api/v1/casos`). | `app/tests/test_casos_api.py`, sección CASOS de la web |
 | **RN-AL-03** | **El teléfono de contacto de la APK es el contacto** | En la APK, el teléfono que se muestra **para contactar** al cliente es el **número de contacto** (`contacto_cliente`), nunca el identificador de pago (70\*). | `app_movil/test/d93_identificador_pago_test.dart` |
+
+---
+
+### 4.7 Decisiones de alcance D-156 (cierre documental)
+
+| Tema | Decisión vigente | Implementación / verificación |
+|---|---|---|
+| **SEGUIMIENTO** | Es una **página real** de la web, no un módulo vacío. Reutiliza la API existente y añade al seguimiento los datos del caso (avería, cliente, dirección, sector, estado y cuadrilla). La lectura aplica el mismo alcance por central y cuadrilla que CASOS (404 para lo ajeno); el TÉCNICO solo consulta y las acciones quedan para ADMIN/SUPERVISOR. | `app/web/src/pages/Seguimiento.tsx`, `app/api/routes_especiales.py` (`_resumen_seguimiento`, `_caso_visible_seguimiento`), `app/schemas/especiales.py` (`SeguimientoOut`). |
+| **Solicitante externo ACT-03** | **Alta manual** por el supervisor y **aviso de cierre** al solicitante. No se crea portal público ni enlace tokenizado. El aviso se encola en el *outbox* y se deduplica por caso/canal/asunto; `MANUAL` y `MCP_IA` quedan **PENDIENTES** para entrega manual, sin marcar la notificación como fallida. | `app/services/avisos.py`, enganches en `routes_especiales.actualizar_especial` y `clasificacion.sincronizar_estado_especial`, `app/services/notificaciones.py`; `RepoTecnico/db/schema.sql` y `scripts/migrar_d156_notificacion_manual.py` para el CHECK de `notificacion.canal`. |
+| **Supervisor de cuadrilla** | Se conserva `rol_cuadrilla=SUPERVISOR` **solo como etiqueta informativa** de organización interna. No concede permisos ni abre un flujo nuevo: la validación la ejerce el rol global `SUPERVISOR`. | Modelo de cuadrillas y RBAC vigente; no hay endpoint ni pantalla nueva. |
+| **CRASS en masivas** | El cierre exige un validador **activo**, de tipo **CRASS** y de la **misma central** de la falla. Antes bastaba con que existiera un solicitante activo. | `app/services/masivas.py::cerrar`; pruebas en `app/tests/test_d99_masivas.py` (tipo ajeno y central ajena). |
+| **ZIP de jornada** | Se genera **en la APK**, no en el backend: el despacho local ya contiene los cambios del técnico y las fotos están en el dispositivo. Se comparte con el supervisor desde SINCRONIZAR. | `app_movil/lib/features/sync/zip_jornada_service.dart`, `sync_screen.dart`, `app_movil/test/d156_zip_jornada_test.dart`. |
 
 ---
 

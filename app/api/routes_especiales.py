@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import case, func, or_, select, text
+from sqlalchemy import case, false, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
@@ -38,7 +38,8 @@ from ..schemas.especiales import (
     SolicitanteOut,
     SolicitanteUpdate,
 )
-from ..services import clasificacion, pagos
+from ..services import avisos, clasificacion, pagos
+from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
 from ..services.tiempo import hoy_operativo
@@ -452,12 +453,14 @@ def actualizar_especial(
     obj = db.get(CasoEspecial, id_caso_especial)
     if obj is None:
         raise HTTPException(status_code=404, detail="Caso especial no encontrado")
+    caso_asociado: Caso | None = None
     if obj.id_caso is not None:
-        caso = db.get(Caso, obj.id_caso)
-        if caso is None:
+        caso_asociado = db.get(Caso, obj.id_caso)
+        if caso_asociado is None:
             raise HTTPException(status_code=404, detail="Caso asociado no encontrado")
-        resolver_central(db, caso.id_central, cargar_config(db), usuario)
+        resolver_central(db, caso_asociado.id_central, cargar_config(db), usuario)
 
+    estado_anterior = str(obj.estado or "").upper()
     cambios = datos.model_dump(exclude_unset=True)
     # D-133 · H-16: `requiere_informe` deja de ser decorativo. Un especial que lo
     # requiere no pasa a ATENDIDO/CERRADO sin un informe de atención.
@@ -480,6 +483,13 @@ def actualizar_especial(
         _validar_transicion(db, obj, estado_destino, motivo_reversion, usuario)
     for campo, valor in cambios.items():
         setattr(obj, campo, valor)
+    # D-156: el cierre manual del especial también avisa al solicitante externo.
+    if (
+        estado_anterior != "CERRADO"
+        and str(obj.estado or "").upper() == "CERRADO"
+        and caso_asociado is not None
+    ):
+        avisos.avisar_cierre_especial(db, obj, caso_asociado)
     db.commit()
     db.refresh(obj)
     return obj
@@ -785,22 +795,143 @@ def cancelar_cita(
 # --------------------------------------------------------------------------- #
 # Seguimiento (RF-34)
 # --------------------------------------------------------------------------- #
-@router.get("/seguimiento", response_model=list[SeguimientoOut], summary="Casos derivados a otras colas")
+def _caso_visible_seguimiento(db: Session, usuario: Usuario, id_caso: int) -> Caso:
+    """Caso que el usuario puede ver en SEGUIMIENTO.
+
+    Aplica el mismo alcance que CASOS (D-130/D-152): central y cuadrilla. Se
+    responde **404** para no confirmar la existencia de un caso ajeno.
+    """
+    caso = db.get(Caso, id_caso)
+    if caso is None:
+        raise HTTPException(status_code=404, detail="Caso no encontrado")
+    if usuario.rol is None or usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        if caso.id_central != central.id_central:
+            raise HTTPException(status_code=404, detail="Caso no encontrado")
+    permitidos = svc_sync.casos_permitidos(db, usuario)
+    if permitidos is not None and caso.id_caso not in permitidos:
+        raise HTTPException(status_code=404, detail="Caso no encontrado")
+    return caso
+
+
+def _resumen_seguimiento(db: Session, lista: list[Seguimiento]) -> list[SeguimientoOut]:
+    """Añade los datos del caso y la cuadrilla vigente al seguimiento.
+
+    La vista SEGUIMIENTO necesita mostrar al operador *qué* caso está en otra
+    cola, no solo el id interno. Se resuelve en bloque para no hacer N+1.
+    """
+    if not lista:
+        return []
+    ids_caso = sorted({s.id_caso for s in lista})
+    casos = {
+        c.id_caso: c
+        for c in db.scalars(select(Caso).where(Caso.id_caso.in_(ids_caso))).all()
+    }
+    ids_sector = {c.id_sector for c in casos.values() if c.id_sector is not None}
+    sectores = {
+        s.id_sector: s.nombre
+        for s in db.scalars(select(Sector).where(Sector.id_sector.in_(ids_sector))).all()
+    } if ids_sector else {}
+
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=DespachoCasos.id_caso,
+            order_by=(Despacho.fecha.desc(), Despacho.id_despacho.desc()),
+        )
+        .label("rn")
+    )
+    por_caso = (
+        select(
+            DespachoCasos.id_caso.label("id_caso"),
+            Despacho.id_cuadrilla.label("id_cuadrilla"),
+            rn,
+        )
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .subquery()
+    )
+    filas_cuadrilla = db.execute(
+        select(por_caso.c.id_caso, por_caso.c.id_cuadrilla).where(
+            por_caso.c.id_caso.in_(ids_caso), por_caso.c.rn == 1
+        )
+    ).all()
+    ids_cuadrilla = {f[1] for f in filas_cuadrilla if f[1] is not None}
+    cuadrillas = {
+        c.id_cuadrilla: c
+        for c in db.scalars(
+            select(Cuadrilla).where(Cuadrilla.id_cuadrilla.in_(ids_cuadrilla))
+        ).all()
+    } if ids_cuadrilla else {}
+    cuadrilla_por_caso = {f[0]: f[1] for f in filas_cuadrilla}
+
+    salida: list[SeguimientoOut] = []
+    for obj in lista:
+        out = SeguimientoOut.model_validate(obj)
+        caso = casos.get(obj.id_caso)
+        if caso is None:
+            salida.append(out)
+            continue
+        out.id_averia = caso.id_averia
+        out.nombre_cliente = caso.nombre_cliente
+        out.direccion = caso.direccion
+        out.sector_nombre = sectores.get(caso.id_sector) if caso.id_sector else None
+        out.estado_caso = caso.estado_actual
+        out.id_central = caso.id_central
+        id_cuadrilla = cuadrilla_por_caso.get(caso.id_caso)
+        out.id_cuadrilla = id_cuadrilla
+        cuadrilla = cuadrillas.get(id_cuadrilla) if id_cuadrilla else None
+        if cuadrilla is not None:
+            out.cuadrilla_codigo = cuadrilla.codigo
+            out.cuadrilla_nombre = cuadrilla.nombre
+        salida.append(out)
+    return salida
+
+
+@router.get("/seguimiento", response_model=list[SeguimientoOut],
+            summary="Casos derivados a otras colas")
 def listar_seguimiento(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user),
     id_caso: int | None = None,
     estado: str | None = None,
     instancia_destino: str | None = None,
-) -> list[Seguimiento]:
-    stmt = select(Seguimiento).order_by(Seguimiento.id_seguimiento.desc())
-    if id_caso:
+    q: str | None = Query(
+        default=None,
+        description="Texto libre: avería, cliente, dirección, sector o instancia",
+    ),
+) -> list[SeguimientoOut]:
+    stmt = (
+        select(Seguimiento)
+        .join(Caso, Caso.id_caso == Seguimiento.id_caso)
+        .outerjoin(Sector, Sector.id_sector == Caso.id_sector)
+    )
+    if usuario.rol is None or usuario.rol.codigo != "SUPER":
+        central = resolver_central(db, None, cargar_config(db), usuario)
+        stmt = stmt.where(Caso.id_central == central.id_central)
+    permitidos = svc_sync.casos_permitidos(db, usuario)
+    if permitidos is not None:
+        stmt = stmt.where(false()) if not permitidos else stmt.where(
+            Seguimiento.id_caso.in_(permitidos)
+        )
+    if id_caso is not None:
         stmt = stmt.where(Seguimiento.id_caso == id_caso)
     if estado:
         stmt = stmt.where(Seguimiento.estado == estado)
     if instancia_destino:
         stmt = stmt.where(Seguimiento.instancia_destino.ilike(f"%{instancia_destino}%"))
-    return list(db.scalars(stmt).all())
+    aguja = (q or "").strip()
+    if aguja:
+        patron = f"%{aguja}%"
+        stmt = stmt.where(or_(
+            Caso.id_averia.ilike(patron),
+            Caso.nombre_cliente.ilike(patron),
+            Caso.direccion.ilike(patron),
+            Sector.nombre.ilike(patron),
+            Seguimiento.instancia_destino.ilike(patron),
+            Seguimiento.motivo.ilike(patron),
+        ))
+    stmt = stmt.order_by(Seguimiento.id_seguimiento.desc())
+    return _resumen_seguimiento(db, list(db.scalars(stmt).all()))
 
 
 @router.post("/seguimiento", response_model=SeguimientoOut, status_code=status.HTTP_201_CREATED,
@@ -809,10 +940,13 @@ def crear_seguimiento(
     datos: SeguimientoCreate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> Seguimiento:
-    caso = db.get(Caso, datos.id_caso)
-    if caso is None:
-        raise HTTPException(status_code=404, detail="Caso no encontrado")
+) -> SeguimientoOut:
+    caso = _caso_visible_seguimiento(db, usuario, datos.id_caso)
+    if caso.estado_actual in ("CERRADO", "CANCELADO"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede derivar un caso cerrado o cancelado",
+        )
     obj = Seguimiento(**datos.model_dump(), usuario=usuario.p00)
     db.add(obj)
     # El caso queda enrutado a otra instancia: no vuelve al despacho de calle (RF-34/RF-25)
@@ -822,7 +956,7 @@ def crear_seguimiento(
             caso.en_gestion_supervisor = False
     db.commit()
     db.refresh(obj)
-    return obj
+    return _resumen_seguimiento(db, [obj])[0]
 
 
 @router.patch("/seguimiento/{id_seguimiento}", response_model=SeguimientoOut)
@@ -831,30 +965,40 @@ def actualizar_seguimiento(
     datos: SeguimientoUpdate,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_escritura),
-) -> Seguimiento:
+) -> SeguimientoOut:
     obj = db.get(Seguimiento, id_seguimiento)
     if obj is None:
         raise HTTPException(status_code=404, detail="Seguimiento no encontrado")
+    caso = _caso_visible_seguimiento(db, usuario, obj.id_caso)
     cambios = datos.model_dump(exclude_unset=True)
     for campo, valor in cambios.items():
         setattr(obj, campo, valor)
     if datos.estado == "DEVUELTO":
-        caso = db.get(Caso, obj.id_caso)
-        if caso and caso.estado_actual == "ENRUTADO":
+        if caso.estado_actual == "ENRUTADO":
             caso.estado_actual = "NUEVO"
             caso.en_gestion_supervisor = False
         obj.fecha_retorno = obj.fecha_retorno or datetime.now(UTC)
+    elif datos.estado == "RESUELTO":
+        # El trabajo lo hizo la otra instancia: se sella el retorno, pero el
+        # cierre formal del caso sigue su vía normal (con informe/evidencias).
+        obj.fecha_retorno = obj.fecha_retorno or datetime.now(UTC)
+    elif datos.estado == "EN_COLA":
+        obj.fecha_retorno = None
+        if caso.estado_actual not in ("CERRADO", "CANCELADO"):
+            caso.estado_actual = "ENRUTADO"
     db.commit()
     db.refresh(obj)
-    return obj
+    return _resumen_seguimiento(db, [obj])[0]
 
 
 @router.get("/seguimiento/{id_seguimiento}", response_model=SeguimientoOut)
 def obtener_seguimiento(
-    id_seguimiento: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)
-) -> Seguimiento:
+    id_seguimiento: int, db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> SeguimientoOut:
     obj = db.get(Seguimiento, id_seguimiento)
     if obj is None:
         raise HTTPException(status_code=404, detail="Seguimiento no encontrado")
-    return obj
+    _caso_visible_seguimiento(db, usuario, obj.id_caso)
+    return _resumen_seguimiento(db, [obj])[0]
 

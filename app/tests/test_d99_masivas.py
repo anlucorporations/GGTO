@@ -22,7 +22,15 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import Actividad, Caso, FallaMasiva, FallaMasivaCaso, Mensaje
+from app.models import (
+    Actividad,
+    Caso,
+    Central,
+    FallaMasiva,
+    FallaMasivaCaso,
+    Mensaje,
+    Solicitante,
+)
 from app.services.tiempo import hoy_operativo
 
 MASIVAS = "/api/v1/fallas-masivas"
@@ -425,6 +433,32 @@ def test_el_cierre_exige_validador_del_crass_activo(client, entorno, db_session)
     r = client.post(f"{MASIVAS}/{id_falla}/cierre", json=cuerpo, headers=headers)
     assert r.status_code == 409, r.text
     assert "inactivo" in r.json()["detail"]
+
+    # D-156: un registro activo de otro tipo tampoco puede validar la masiva.
+    otro = _crear_personal(client, headers, nombre="PERSONAL AJENO", tipo="OTRO")
+    cuerpo["id_validador_crass"] = otro["id_solicitante"]
+    r = client.post(f"{MASIVAS}/{id_falla}/cierre", json=cuerpo, headers=headers)
+    assert r.status_code == 409, r.text
+    assert "CRASS" in r.json()["detail"]
+
+    # D-156: el validador del CRASS debe pertenecer a la central de la masiva.
+    central_ajena = Central(
+        region="TST", estado_geografico="TST", municipio="TST", parroquia="TST",
+        area="4", codigo_central="TSTC156", nombre_central="Central D-156",
+    )
+    db_session.add(central_ajena)
+    db_session.flush()
+    validador_ajeno = Solicitante(
+        unidad="CRASS AJENO", nombre="VALIDADOR DE OTRA CENTRAL",
+        contacto="04140000156", tipo="CRASS", activo=True,
+        id_central=central_ajena.id_central,
+    )
+    db_session.add(validador_ajeno)
+    db_session.commit()
+    cuerpo["id_validador_crass"] = validador_ajeno.id_solicitante
+    r = client.post(f"{MASIVAS}/{id_falla}/cierre", json=cuerpo, headers=headers)
+    assert r.status_code == 409, r.text
+    assert "central" in r.json()["detail"].lower()
 
 
 # --------------------------------------------------------------------------- #

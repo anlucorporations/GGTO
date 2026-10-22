@@ -41,6 +41,16 @@ export function IconoCasos(props: Props) {
   );
 }
 
+/** D-156: SEGUIMIENTO (RF-34), caso derivado a otra instancia. */
+export function IconoSeguimiento(props: Props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 6h9M4 12h6M4 18h9" />
+      <path d="M15 8l3 4-3 4M18 12h3" />
+    </svg>
+  );
+}
+
 export function IconoEspeciales(props: Props) {
   return (
     <svg {...base} {...props}>

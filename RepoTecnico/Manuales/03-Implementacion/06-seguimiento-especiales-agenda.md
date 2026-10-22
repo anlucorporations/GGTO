@@ -1,6 +1,6 @@
 # 06 — Seguimiento, casos especiales y agenda
 
-## Visión general (RF-12, RF-34..RF-36, D-30/D-53)
+## Visión general (RF-12, RF-34..RF-36, D-30/D-53/D-156)
 
 Este manual cubre el **Ciclo 6** del proyecto GGTO: los **casos especiales**
 (REFERIDO / EMPRESA / GOBIERNO) con su **solicitante**, la **agenda de citas** con control de
@@ -25,12 +25,19 @@ el caso pasa a `tipo_caso='REFERIDO'` y se registra como **caso especial**
 en la puerta de entrada de los casos que antes se quedaban como reparaciones
 incompletas.
 
+La decisión **D-156** cierra el alcance pendiente de este ciclo: **SEGUIMIENTO**
+es una página real de la web (no un módulo vacío), el cierre de un especial
+avisa al **solicitante externo ACT-03**, el cierre de una masiva exige un
+**validador CRASS de la misma central** y el **supervisor de cuadrilla** queda
+solo como etiqueta organizativa. El detalle está en la sección
+[SEGUIMIENTO web y aviso ACT-03 (D-156)](#seguimiento-web-y-aviso-act-03-d-156).
+
 ### Alcance funcional
 
 | Requisito | Descripción | Evidencia en código |
 |---|---|---|
 | **RF-12** | Contactar y acordar hora con el cliente; gestionar la agenda interna. | `app/api/routes_especiales.py:388-484` |
-| **RF-34** | Gestionar el seguimiento de casos derivados a otras instancias/colas. | `app/api/routes_especiales.py:486-557` |
+| **RF-34** | Gestionar el seguimiento de casos derivados a otras instancias/colas. | `app/api/routes_especiales.py` (`listar_seguimiento`, `_resumen_seguimiento`) |
 | **RF-35** | Gestionar casos **EMPRESA** (reparación/construcción) y su cita. | `app/api/routes_especiales.py:189-267` |
 | **RF-36** | Gestionar casos **REFERIDO** sin `id_averia`, priorizados, con identificador `REF-…`. | `app/api/routes_especiales.py:73-125` |
 | **RNF-04** | Agenda sin solapamiento por cuadrilla. | `app/api/routes_especiales.py:365-386` |
@@ -46,8 +53,9 @@ incompletas.
 | DDL y función `REF-…` | `RepoTecnico/db/schema.sql:38-57,391-459` |
 | Regla REPARACIÓN/REFERIDO (D-90) | `app/services/clasificacion.py` |
 | Identificador de pago (D-89) | `app/services/pagos.py`, `app/models/pago_entities.py`, DDL `RepoTecnico/db/schema.sql:292-304` |
-| Páginas web | `app/web/src/pages/Especiales.tsx`, `app/web/src/pages/Agenda.tsx` |
-| Pruebas de integración | `app/tests/test_especiales_api.py`, `app/tests/test_d90_clasificacion.py` |
+| Páginas web | `app/web/src/pages/Especiales.tsx`, `app/web/src/pages/Agenda.tsx`, `app/web/src/pages/Seguimiento.tsx` |
+| Aviso al solicitante externo (D-156) | `app/services/avisos.py`, `app/services/notificaciones.py` |
+| Pruebas de integración | `app/tests/test_especiales_api.py`, `app/tests/test_d120_especiales_estado.py`, `app/tests/test_d90_clasificacion.py` |
 
 El router se monta en `app/main.py:89` con prefijo general `/api/v1`
 (`app/api/routes_especiales.py:42`). Las escrituras exigen `ADMIN` o `SUPERVISOR` mediante
@@ -347,38 +355,79 @@ tabla se describe en `RepoTecnico/diccionario_datos.md:340-344` y su DDL en
 
 En el ORM corresponde a `Seguimiento` (`app/models/especiales_entities.py:73-90`) y en
 Pydantic a `SeguimientoCreate`/`SeguimientoUpdate`/`SeguimientoOut`
-(`app/schemas/especiales.py:132-158`).
+(`app/schemas/especiales.py:242-264`). Desde **D-156** `SeguimientoOut` ya no devuelve solo
+la derivación: añade `id_averia`, `nombre_cliente`, `direccion`, `sector_nombre`,
+`estado_caso`, `id_central` y la cuadrilla del último despacho (`id_cuadrilla`,
+`cuadrilla_codigo`, `cuadrilla_nombre`). Esos campos los calcula `_resumen_seguimiento` en
+bloque, sin una consulta por fila.
 
 ### exclusión del despacho
 
 Al crear un seguimiento en estado `EN_COLA`, el caso pasa a `estado_actual = "ENRUTADO"`
-(`app/api/routes_especiales.py:516-520`). Como el motor de despacho excluye explícitamente
-los estados `CERRADO`, `CANCELADO` y `ENRUTADO` (`app/services/despacho.py:23,114`), el caso
-**sale del despacho de calle** hasta que se devuelva. La prueba de integración comprueba que
-un caso enrutado no aparece en la propuesta
-(`app/tests/test_especiales_api.py:188-203`). Al pasar el seguimiento a `DEVUELTO`, el caso
-vuelve a `NUEVO` y a `en_gestion_supervisor=False`, y se sella `fecha_retorno`
-(`app/api/routes_especiales.py:539-544`), con lo que vuelve a estar disponible
-(`app/tests/test_especiales_api.py:205-210`).
+(`crear_seguimiento` en `app/api/routes_especiales.py`). Como el motor de despacho excluye
+explícitamente los estados `CERRADO`, `CANCELADO` y `ENRUTADO`
+(`app/services/despacho.py:23,114`), el caso **sale del despacho de calle** hasta que se
+devuelva. La prueba de integración comprueba que un caso enrutado no aparece en la
+propuesta (`app/tests/test_especiales_api.py:188-203`). Al pasar el seguimiento a
+`DEVUELTO`, el caso vuelve a `NUEVO` y a `en_gestion_supervisor=False`, y se sella
+`fecha_retorno`; con ello vuelve a estar disponible (`app/tests/test_especiales_api.py:205-210`).
+`RESUELTO` también sella `fecha_retorno`, pero **no cierra** el caso: el cierre formal sigue
+su camino normal (informe y evidencias).
 
-### endpoints (routes_especiales.py:486,504,526,550)
+### endpoints (`app/api/routes_especiales.py`)
 
-| Método y ruta | Línea | Rol | Resumen |
+| Método y ruta | Función | Rol | Resumen |
 |---|---|---|---|
-| `GET /api/v1/seguimiento` | 486 | Lectura | Lista derivaciones con filtros. |
-| `POST /api/v1/seguimiento` | 504 | Escritura | Deriva un caso a otra instancia. |
-| `PATCH /api/v1/seguimiento/{id}` | 526 | Escritura | Actualiza estado / datos. |
-| `GET /api/v1/seguimiento/{id}` | 550 | Lectura | Ficha de la derivación. |
+| `GET /api/v1/seguimiento` | `listar_seguimiento` | Lectura | Lista derivaciones con filtros y alcance. |
+| `POST /api/v1/seguimiento` | `crear_seguimiento` | ADMIN/SUPERVISOR | Deriva un caso a otra instancia. |
+| `PATCH /api/v1/seguimiento/{id}` | `actualizar_seguimiento` | ADMIN/SUPERVISOR | Actualiza estado / datos. |
+| `GET /api/v1/seguimiento/{id}` | `obtener_seguimiento` | Lectura | Ficha de la derivación. |
 
 - `GET /seguimiento` ordena por `id_seguimiento` descendente y filtra por `id_caso`,
-  `estado` e `instancia_destino` (búsqueda parcial con `ilike`)
-  (`app/api/routes_especiales.py:494-501`).
-- `POST /seguimiento` responde **404** si el caso no existe y registra `usuario=usuario.p00`
-  (`app/api/routes_especiales.py:511-514`).
-- `PATCH /seguimiento/{id}` aplica solo los campos enviados; si el nuevo estado es
-  `DEVUELTO` restituye el caso (`app/api/routes_especiales.py:536-544`).
-- `GET /seguimiento/{id}` responde **404** `"Seguimiento no encontrado"` si no existe
-  (`app/api/routes_especiales.py:550-557`).
+  `estado`, `instancia_destino` (búsqueda parcial con `ilike`) y **`q`** (texto libre sobre
+  avería, cliente, dirección, sector, instancia y motivo). El alcance se aplica **en SQL**
+  antes de resumir: central del usuario y, para el TÉCNICO, `casos_permitidos` (cuadrilla
+  vigente + ventana D-123). Un TÉCNICO sin cuadrilla ve **cero** filas (fail-closed); el
+  COORDINADOR no tiene esta capacidad (el menú no se la muestra y la API devuelve vacío).
+- `POST /seguimiento` valida el caso con `_caso_visible_seguimiento` (**404** si es de otra
+  central/cuadrilla, para no confirmar su existencia), rechaza **409** un caso
+  `CERRADO`/`CANCELADO` y registra `usuario=usuario.p00`.
+- `PATCH /seguimiento/{id}` aplica solo los campos enviados; `DEVUELTO` restituye el caso y
+  `EN_COLA` lo vuelve a enrutar. La visibilidad se comprueba también aquí.
+- `GET /seguimiento/{id}` responde **404** `"Seguimiento no encontrado"` si no existe o si
+  el caso queda fuera del alcance.
+
+### SEGUIMIENTO web y aviso ACT-03 (D-156)
+
+La página real es `app/web/src/pages/Seguimiento.tsx`, montada en la ruta `/seguimiento`
+(`app/web/src/App.tsx`) y visible en la barra para SUPER, ADMIN, SUPERVISOR y TÉCNICO
+(`app/web/src/components/Layout.tsx`). Ofrece resumen por estado, búsqueda libre, filtro de
+estado e instancia, tabla con caso/cliente/dirección/sector/instancia/fecha/estado, alta de
+una derivación y edición del detalle. El TÉCNICO solo consulta; los botones de escritura se
+muestran a ADMIN y SUPERVISOR, que son los roles que exige el backend.
+
+El **solicitante externo (ACT-03)** se da de alta manualmente por el supervisor en el
+catálogo de personal externo y recibe un **aviso de cierre**:
+
+| Aspecto | Comportamiento |
+|---|---|
+| Disparadores | `PATCH /casos-especiales/{id}` cuando el especial pasa a `CERRADO` y `clasificacion.sincronizar_estado_especial` cuando el caso se cierra desde la APK/campo. |
+| Servicio | `app/services/avisos.py::avisar_cierre_especial`. |
+| Contenido | Unidad, nombre, contacto, ID de avería, dirección e informe de atención. |
+| Deduplicación | Por caso + canal + asunto: si ya existe el aviso, no se repite. |
+| Canales | Los automáticos del catálogo; `MANUAL` y `MCP_IA` se registran en el *outbox* como `PENDIENTE` para que el supervisor los entregue. No se marcan `FALLIDO`. |
+| Esquema | `notificacion.canal` admite `MANUAL` (`RepoTecnico/db/schema.sql`). En una base ya creada se aplica `scripts/migrar_d156_notificacion_manual.py` (idempotente, simulación por defecto, `--aplicar`/`--si`/`--dsn`). |
+| Auditoría | `AVISO_CIERRE_SOLICITANTE` con el canal y el destinatario. |
+| Fuera de alcance | No hay portal público, enlace tokenizado ni alta autónoma del solicitante. |
+
+El **supervisor de cuadrilla** (`rol_cuadrilla=SUPERVISOR`) se conserva únicamente como
+**etiqueta organizativa** de la cuadrilla: no concede permisos, no crea un rol global nuevo y
+no abre un flujo distinto. La validación de una masiva la ejerce el rol global `SUPERVISOR`.
+
+El cierre de una **masiva** exige un validador **activo**, de tipo **CRASS** y de la **misma
+central** de la falla (`app/services/masivas.py::cerrar`). Antes bastaba con que existiera un
+solicitante activo; ahora un registro de tipo `OTRO`, inactivo o de otra central responde
+**409** con el motivo. Las pruebas están en `app/tests/test_d99_masivas.py`.
 
 ---
 
@@ -397,15 +446,15 @@ vuelve a `NUEVO` y a `en_gestion_supervisor=False`, y se sella `fecha_retorno`
 | `CasoEspecialOut` | 65-96 | Ficha + campos de resumen calculados. |
 | `CitaCreate` / `CitaUpdate` | 102-120 | Alta y edición de citas; `permitir_solape`. |
 | `CitaOut` | 122-138 | Lectura de citas. |
-| `SeguimientoCreate` / `SeguimientoUpdate` | 140-154 | Alta y edición de derivaciones. |
-| `SeguimientoOut` | 156-167 | Lectura de derivaciones. |
+| `SeguimientoCreate` / `SeguimientoUpdate` | 242-256 | Alta y edición de derivaciones. |
+| `SeguimientoOut` | 258-283 | Lectura de derivaciones + contexto del caso (D-156). |
 
 `CasoEspecialCreate.crear_solicitante` es de tipo `SolicitanteCreate` y se documenta como
 «Crea el solicitante en la misma operación» (`app/schemas/especiales.py:45-47`);
 `CasoEspecialCreate.telefono` (`app/schemas/especiales.py:51`) es el dato que D-89 clasifica
 en el alta (70\* → identificador; otro número → contacto, ver «creación automática del caso
 REF-...»). Los
-esquemas de lectura habilitan `from_attributes=True` (`app/schemas/especiales.py:30,66,123,157`).
+esquemas de lectura habilitan `from_attributes=True` (`app/schemas/especiales.py:30,66,123,258`).
 
 ### Modelos SQLAlchemy
 
@@ -416,7 +465,7 @@ esquemas de lectura habilitan `from_attributes=True` (`app/schemas/especiales.py
 | `Solicitante` | `solicitante` | 22-32 |
 | `CasoEspecial` | `caso_especial` | 35-51 |
 | `Cita` | `cita` | 54-73 |
-| `Seguimiento` | `seguimiento` | 76-93 |
+| `Seguimiento` | `seguimiento` | 90-107 |
 
 Los docstrings del módulo identifican `Solicitante` como «personal externo que reporta casos
 especiales» (`app/models/especiales_entities.py:23`) y `Cita` como agenda que «no admite

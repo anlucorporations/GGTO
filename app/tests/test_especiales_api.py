@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import Caso
+from app.models import Auditoria, Caso, Notificacion
 
 CITAS = "/api/v1/citas"
 ESPECIALES = "/api/v1/casos-especiales"
@@ -183,6 +183,38 @@ def test_filtros_y_actualizacion_de_especiales(client, entorno):
     assert all(e["estado"] in ("ABIERTO", "EN_PROCESO") for e in pendientes)
 
 
+def test_cerrar_especial_avisa_al_solicitante_manual(client, entorno, db_session):
+    """ACT-03/D-156: el cierre deja el aviso en el outbox sin abrir un portal."""
+    r = client.post(ESPECIALES, json={
+        "clasificacion": "REFERIDO", "tipo_actividad": "REPARACION",
+        "descripcion": "Referido con solicitante externo manual",
+        "id_caso": entorno["id_caso"],
+        "crear_solicitante": {
+            "unidad": "Unidad Externa", "nombre": "SOLICITANTE MANUAL",
+            "contacto": "04147778899", "canal": "MANUAL",
+        },
+    }, headers=entorno["headers"])
+    assert r.status_code == 201, r.text
+    id_especial = r.json()["id_caso_especial"]
+
+    r = client.patch(f"{ESPECIALES}/{id_especial}", json={
+        "estado": "CERRADO",
+        "informe": "Se atendió el referido y se verificó el servicio en sitio.",
+    }, headers=entorno["headers"])
+    assert r.status_code == 200, r.text
+
+    aviso = db_session.scalar(
+        select(Notificacion).where(Notificacion.id_caso == entorno["id_caso"])
+    )
+    assert aviso is not None
+    assert aviso.canal == "MANUAL"
+    assert aviso.estado == "PENDIENTE"
+    assert aviso.destinatario == "04147778899"
+    assert db_session.scalar(
+        select(Auditoria).where(Auditoria.accion == "AVISO_CIERRE_SOLICITANTE")
+    ) is not None
+
+
 # --------------------------------------------------------------------------- #
 # Agenda de citas (RF-12 / RNF-04)
 # --------------------------------------------------------------------------- #
@@ -265,7 +297,14 @@ def test_derivar_caso_y_devolverlo(client, entorno, db_session):
         "motivo": "Requiere cuadrilla especializada",
     }, headers=entorno["headers"])
     assert r.status_code == 201, r.text
-    id_seg = r.json()["id_seguimiento"]
+    creado = r.json()
+    id_seg = creado["id_seguimiento"]
+    # D-156: la respuesta ya trae los datos del caso para la vista SEGUIMIENTO.
+    assert creado["id_averia"] == "TSTE-1"
+    assert creado["nombre_cliente"] == "CLIENTE E"
+    assert creado["direccion"] == "SECTOR ALFA CASA 1"
+    assert creado["sector_nombre"] == "Alfa"
+    assert creado["estado_caso"] == "ENRUTADO"
 
     caso = db_session.scalar(select(Caso).where(Caso.id_caso == entorno["id_caso"]))
     db_session.refresh(caso)
@@ -302,6 +341,10 @@ def test_listado_y_filtros_de_seguimiento(client, entorno):
     assert len(filtrado) == 1
     en_cola = client.get(SEGUIMIENTO, params={"estado": "EN_COLA"}, headers=entorno["headers"]).json()
     assert len(en_cola) >= 2
+    por_texto = client.get(SEGUIMIENTO, params={"q": "TSTE-1"},
+                           headers=entorno["headers"]).json()
+    assert len(por_texto) >= 2
+    assert all(f["id_averia"] == "TSTE-1" for f in por_texto)
 
 
 # --------------------------------------------------------------------------- #

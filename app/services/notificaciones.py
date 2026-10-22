@@ -63,6 +63,11 @@ def _correo(destinatario: str, asunto: str, cuerpo: str) -> tuple[str, str | Non
 
 def enviar(canal: str, destinatario: str | None, asunto: str, cuerpo: str) -> tuple[str, str | None]:
     """Devuelve (estado, error). Estados: ENVIADO | PENDIENTE | FALLIDO."""
+    # D-156: los avisos del catálogo externo pueden ser MANUAL/MCP_IA. No son un
+    # fallo: quedan PENDIENTES para que el supervisor los entregue y el outbox
+    # conserve la constancia sin abrir un canal público nuevo.
+    if canal in {"MANUAL", "MCP_IA"}:
+        return "PENDIENTE", "Canal manual: aviso registrado para gestión del supervisor"
     if not destinatario:
         return "PENDIENTE", "Sin destinatario configurado"
     if canal == "TELEGRAM":

@@ -461,10 +461,10 @@ seguimiento). Escritura para ADMIN/SUPERVISOR
 | POST | `/api/v1/citas` | Agendar una cita (valida solapamiento) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:301` |
 | PATCH | `/api/v1/citas/{id_cita}` | Reprogramar/actualizar una cita | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:329` |
 | DELETE | `/api/v1/citas/{id_cita}` | Cancelar la cita (`estado = "CANCELADA"`) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:355` |
-| GET | `/api/v1/seguimiento` | Casos derivados a otras colas | Autenticado | `app/api/routes_especiales.py:369` |
-| POST | `/api/v1/seguimiento` | Derivar un caso a otra instancia | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:387` |
-| PATCH | `/api/v1/seguimiento/{id_seguimiento}` | Actualizar el seguimiento (p. ej. `DEVUELTO`) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:409` |
-| GET | `/api/v1/seguimiento/{id_seguimiento}` | Obtener un seguimiento | Autenticado | `app/api/routes_especiales.py:433` |
+| GET | `/api/v1/seguimiento` | Casos derivados a otras colas; filtros `id_caso`, `estado`, `instancia_destino` y `q` (avería, cliente, dirección, sector, instancia o motivo) | Autenticado | `app/api/routes_especiales.py:892` |
+| POST | `/api/v1/seguimiento` | Derivar un caso a otra instancia | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:939` |
+| PATCH | `/api/v1/seguimiento/{id_seguimiento}` | Actualizar el seguimiento (p. ej. `DEVUELTO`) | ADMIN/SUPERVISOR | `app/api/routes_especiales.py:963` |
+| GET | `/api/v1/seguimiento/{id_seguimiento}` | Obtener un seguimiento | Autenticado | `app/api/routes_especiales.py:995` |
 
 Reglas destacadas: un caso especial no puede indicar a la vez `id_solicitante` y
 `crear_solicitante` (422, `app/api/routes_especiales.py:131-135`); si no se
@@ -474,8 +474,17 @@ indica `id_caso`, se crea un caso asociado con `origen = "MANUAL"`
 (`app/api/routes_especiales.py:43-44,250-254`); el solapamiento devuelve **409**
 (`:273-277`). **Forzar un solapamiento está reservado al rol SUPER**: cualquier
 otro rol recibe 403 (`:317-320` y `:344-347`). Al derivar con estado `EN_COLA`,
-el caso pasa a `ENRUTADO` (`:400-403`); al registrarlo `DEVUELTO`, vuelve a
-`NUEVO` (`:422-427`).
+el caso pasa a `ENRUTADO` (`crear_seguimiento`); al registrarlo `DEVUELTO`, vuelve a
+`NUEVO` (`actualizar_seguimiento`).
+
+**D-156:** `SeguimientoOut` añade los datos del caso (`id_averia`, `nombre_cliente`,
+`direccion`, `sector_nombre`, `estado_caso`, `id_central`) y la cuadrilla del último
+despacho (`id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre`). El listado aplica el
+alcance por central y cuadrilla antes de resumir: el TÉCNICO solo ve sus casos y un caso
+ajeno responde **404** en el detalle, la creación y la edición. La página web
+`/seguimiento` consume estos endpoints. El cierre de un especial encola el aviso al
+solicitante externo ACT-03 (`AVISO_CIERRE_SOLICITANTE`) y el cierre de una masiva exige
+un validador CRASS activo de la misma central (ver manual 06).
 
 ### Monitoreo y reportes (app/api/routes_monitoreo.py)
 
@@ -823,7 +832,7 @@ Los filtros se declaran como *query params* tipados. Los más relevantes:
 | `GET /api/v1/catalogos/metodos` | `dominio` | `app/api/routes_config.py:558` |
 | `GET /api/v1/despachos` | `fecha`, `id_central` | `app/api/routes_despachos.py:122-123` |
 | `GET /api/v1/citas` | `desde`, `hasta`, `id_cuadrilla`, `estado` | `app/api/routes_especiales.py:284-287` |
-| `GET /api/v1/seguimiento` | `id_caso`, `estado`, `instancia_destino` | `app/api/routes_especiales.py:373-375` |
+| `GET /api/v1/seguimiento` | `id_caso`, `estado`, `instancia_destino`, **`q`** (D-156) | `app/api/routes_especiales.py:892-904` |
 | `GET /api/v1/fallas-masivas` | `estado`, `id_central`, `solo_activas` | `app/api/routes_alertas.py:50-52` |
 | `GET /api/v1/notificaciones` | `estado`, `canal`, `limite` | `app/api/routes_alertas.py:174-176` |
 | `GET /api/v1/monitoreo/*` y reportes | `fecha`, `desde`, `hasta`, `dias`, `id_central`, `periodo`; `fecha`/`desde` por defecto = **día operativo** `America/Caracas` (**D-94**) | `app/api/routes_monitoreo.py:58-60,71-73,84-87,120-124,178-181` |

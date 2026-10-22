@@ -149,6 +149,9 @@ void main() {
       expect(find.text('SINCRONIZAR'), findsOneWidget);
       expect(find.text('DESCARGA'), findsNothing);
       expect(find.text('CARGA'), findsNothing);
+      // D-156: el ZIP de la jornada vive en la misma pantalla del dispositivo.
+      expect(find.byKey(const Key('zip-jornada')), findsOneWidget);
+      expect(find.text('ZIP de la jornada'), findsOneWidget);
     });
   });
 }

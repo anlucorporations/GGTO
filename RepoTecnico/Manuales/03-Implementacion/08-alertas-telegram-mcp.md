@@ -266,14 +266,16 @@ El módulo declara que, si el canal no tiene credenciales, la notificación qued
 |---|---|---|---|
 | `TELEGRAM` | `TELEGRAM_BOT_TOKEN` | `PENDIENTE` + motivo | `app/services/notificaciones.py:20-22` |
 | `CORREO` | `SMTP_HOST` (y `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`) | `PENDIENTE` + motivo | `app/services/notificaciones.py:40-46` |
+| `MANUAL` / `MCP_IA` | No aplica | `PENDIENTE` para entrega del supervisor (D-156) | `app/services/notificaciones.py:66-70` |
 
 El envío por Telegram usa `urllib.request` contra `api.telegram.org/bot{token}/sendMessage`
 con `parse_mode: Markdown`, trunca el texto a `LIMITE_TELEGRAM = 4000` caracteres
 (`app/services/notificaciones.py:16,23-33`) y devuelve `FALLIDO` ante
 `URLError`, `TimeoutError` u `OSError` (`app/services/notificaciones.py:35-36`). El correo
 usa `smtplib.SMTP` con `starttls()` y login si hay usuario
-(`app/services/notificaciones.py:54-58`). Cualquier otro canal devuelve `FALLIDO` con
-«Canal no soportado» (`app/services/notificaciones.py:72`).
+(`app/services/notificaciones.py:54-58`). `MANUAL` y `MCP_IA` no intentan red:
+quedan `PENDIENTE` para entrega del supervisor (D-156). Cualquier otro canal no
+listado devuelve `FALLIDO` con «Canal no soportado».
 
 #### Nota sobre nombre de canal del correo
 

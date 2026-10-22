@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import Auditoria, Caso, CasoEspecial
+from . import avisos
 
 TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 PREFIJO_REF = "REF-"
@@ -147,6 +148,11 @@ def sincronizar_estado_especial(db: Session, caso: Caso) -> bool:
     if especial is None or especial.estado == objetivo:
         return False
     especial.estado = objetivo
+    # D-156: cuando el técnico cierra el caso, el solicitante externo recibe el
+    # aviso de cierre por el outbox. No se avisa en ENRUTADO/CANCELADO: el
+    # especial queda CERRADO por sincronización, pero el caso no se resolvió.
+    if objetivo == "CERRADO" and (caso.estado_actual or "").upper() == "CERRADO":
+        avisos.avisar_cierre_especial(db, especial, caso)
     return True
 
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../widgets/barra_progreso_sync.dart';
@@ -8,6 +9,7 @@ import '../casos/casos_provider.dart';
 import '../masivas/masivas_provider.dart';
 import 'actualizacion_datos_service.dart';
 import 'sync_provider.dart';
+import 'zip_jornada_service.dart';
 
 /// Pantalla SINCRONIZAR (§4.3 / D-73 · D-117): estado de la cola y **un solo
 /// botón** que sube los casos resueltos y contactados y descarga los casos
@@ -24,6 +26,8 @@ class SyncScreen extends StatefulWidget {
 
 class _SyncScreenState extends State<SyncScreen> {
   bool _procesando = false;
+  bool _generandoZip = false;
+  String? _resumenZip;
 
   @override
   void initState() {
@@ -71,11 +75,50 @@ class _SyncScreenState extends State<SyncScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al actualizar: $e'), backgroundColor: Marca.error),
+        SnackBar(
+            content: Text('Error al actualizar: $e'),
+            backgroundColor: Marca.error),
       );
     } finally {
       sync.terminarProgreso();
       if (mounted) setState(() => _procesando = false);
+    }
+  }
+
+  /// Apartado 4.3: al finalizar la jornada se genera un ZIP con el despacho
+  /// local modificado y todas las evidencias, y se comparte con el supervisor
+  /// (correo, mensajería o almacenamiento del dispositivo).
+  Future<void> _generarZipJornada() async {
+    if (_procesando || _generandoZip) return;
+    setState(() {
+      _generandoZip = true;
+      _resumenZip = null;
+    });
+    try {
+      final resultado = await ZipJornadaService.generar();
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(resultado.archivo.path, mimeType: 'application/zip')],
+          subject: 'ZIP de la jornada — GGTO Técnico',
+          text: resultado.resumen,
+        ),
+      );
+      if (!mounted) return;
+      setState(
+          () => _resumenZip = '${resultado.resumen} ${resultado.archivo.path}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultado.resumen)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo generar el ZIP: $e'),
+          backgroundColor: Marca.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _generandoZip = false);
     }
   }
 
@@ -128,10 +171,13 @@ class _SyncScreenState extends State<SyncScreen> {
                     style: TextStyle(fontSize: 12.5, color: Colors.black54),
                   ),
                   const SizedBox(height: 10),
-                  _Metrica('Acciones pendientes', '${sync.resumen['PENDIENTE'] ?? 0}'),
+                  _Metrica('Acciones pendientes',
+                      '${sync.resumen['PENDIENTE'] ?? 0}'),
                   _Metrica('En reintento', '${sync.resumen['REINTENTO'] ?? 0}'),
-                  _Metrica('Con error (requieren atención)', '${sync.conError}'),
-                  _Metrica('Evidencias en el dispositivo', '${sync.evidencias}'),
+                  _Metrica(
+                      'Con error (requieren atención)', '${sync.conError}'),
+                  _Metrica(
+                      'Evidencias en el dispositivo', '${sync.evidencias}'),
                   if (sync.ultimaSync != null)
                     _Metrica('Última sincronización', _hora(sync.ultimaSync!)),
                 ],
@@ -151,7 +197,8 @@ class _SyncScreenState extends State<SyncScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    for (final paso in sync.ultimoChecklist) _PasoChecklist(paso: paso),
+                    for (final paso in sync.ultimoChecklist)
+                      _PasoChecklist(paso: paso),
                   ],
                 ),
               ),
@@ -173,6 +220,58 @@ class _SyncScreenState extends State<SyncScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.folder_zip_outlined),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'ZIP de la jornada',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Genera el despacho local con los cambios del día y todas las '
+                    'evidencias, y lo comparte con el supervisor. El nombre del '
+                    'archivo es central + cuadrilla + fecha.',
+                    style: TextStyle(fontSize: 12.5, color: Colors.black54),
+                  ),
+                  if (_resumenZip != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _resumenZip!,
+                      style: const TextStyle(
+                          fontSize: 12, color: Marca.textoSuave),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      key: const Key('zip-jornada'),
+                      icon: const Icon(Icons.archive_outlined),
+                      label: Text(
+                        _generandoZip
+                            ? 'GENERANDO ZIP…'
+                            : 'GENERAR Y COMPARTIR ZIP',
+                      ),
+                      onPressed: _generandoZip ? null : _generarZipJornada,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 18),
           const Text(
             'Cola de acciones',
@@ -188,7 +287,8 @@ class _SyncScreenState extends State<SyncScreen> {
               ),
             )
           else
-            for (final accion in acciones) _AccionTile(accion: accion, sync: sync),
+            for (final accion in acciones)
+              _AccionTile(accion: accion, sync: sync),
         ],
       ),
     );
@@ -198,8 +298,6 @@ class _SyncScreenState extends State<SyncScreen> {
     String dos(int v) => v.toString().padLeft(2, '0');
     return '${dos(fecha.day)}/${dos(fecha.month)} ${dos(fecha.hour)}:${dos(fecha.minute)}';
   }
-
-
 }
 
 class _Metrica extends StatelessWidget {
@@ -252,12 +350,15 @@ class _AccionTile extends StatelessWidget {
             color: color,
           ),
         ),
-        title: Text('${accion['tipo']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text('${accion['tipo']}',
+            style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${accion['metodo']} ${accion['endpoint']}', style: const TextStyle(fontSize: 12)),
-            Text('Estado: $estado · intentos: ${accion['intentos']}', style: const TextStyle(fontSize: 12)),
+            Text('${accion['metodo']} ${accion['endpoint']}',
+                style: const TextStyle(fontSize: 12)),
+            Text('Estado: $estado · intentos: ${accion['intentos']}',
+                style: const TextStyle(fontSize: 12)),
             if (accion['ultimo_error'] != null)
               Text(
                 '${accion['ultimo_error']}',
@@ -313,17 +414,19 @@ class _PasoChecklist extends StatelessWidget {
         children: [
           Icon(icono, size: 18, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text('${paso['paso']}', style: const TextStyle(fontSize: 13))),
+          Expanded(
+              child: Text('${paso['paso']}',
+                  style: const TextStyle(fontSize: 13))),
           Text(
             estado,
-            style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+            style: TextStyle(
+                fontSize: 12, color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 }
-
 
 /// Diálogo de confirmación antes de la actualización completa (D-142 · H-25).
 ///
