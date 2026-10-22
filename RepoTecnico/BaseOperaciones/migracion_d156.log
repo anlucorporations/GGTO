@@ -1,0 +1,17 @@
+[2026-10-22T20:40:19+00:00] ==============================================================================
+[2026-10-22T20:40:19+00:00] MIGRACIÓN D-156 (notificacion.canal: MANUAL)
+[2026-10-22T20:40:19+00:00] modo=SIMULACIÓN
+[2026-10-22T20:40:19+00:00] ¿ya admite MANUAL?: no
+[2026-10-22T20:40:19+00:00] Cambio pendiente: reemplazar el CHECK de notificacion.canal.
+[2026-10-22T20:40:19+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-22T20:40:30+00:00] ==============================================================================
+[2026-10-22T20:40:30+00:00] MIGRACIÓN D-156 (notificacion.canal: MANUAL)
+[2026-10-22T20:40:30+00:00] modo=APLICAR
+[2026-10-22T20:40:30+00:00] ¿ya admite MANUAL?: no
+[2026-10-22T20:40:30+00:00] Cambio pendiente: reemplazar el CHECK de notificacion.canal.
+[2026-10-22T20:40:31+00:00] ✔ MIGRACIÓN COMPLETA Y VERIFICADA: INSERT MANUAL aceptado y revertido.
+[2026-10-22T20:40:43+00:00] ==============================================================================
+[2026-10-22T20:40:43+00:00] MIGRACIÓN D-156 (notificacion.canal: MANUAL)
+[2026-10-22T20:40:43+00:00] modo=SIMULACIÓN
+[2026-10-22T20:40:43+00:00] ¿ya admite MANUAL?: sí
+[2026-10-22T20:40:43+00:00] ✔ La base YA está migrada: no hay cambios pendientes.
