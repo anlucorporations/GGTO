@@ -131,17 +131,20 @@ La función de gestión diaria devuelve el bloque correspondiente al día indica
 | Indicador | Qué cuenta, en palabras |
 |---|---|
 | `ingresos_nuevos` | Casos creados en el sistema ese día |
-| `resueltos_residencial` | Casos que pasaron al estado CERRADO ese día, de categoría RESIDENCIAL |
+| `resueltos_residencial` | Casos **comunes** que pasaron al estado CERRADO ese día: categoría RESIDENCIAL y tipo distinto de CONSTRUCCIÓN/REFERIDO |
 | `resueltos_empresarial` | Igual, pero de categoría EMPRESA o GOBIERNO |
-| `resueltos_referidos` | Igual, pero de categoría REFERIDO |
+| `resueltos_reparaciones_referidas` | Reparaciones reclasificadas a REFERIDO que se cerraron ese día |
+| `resueltos_construccion` | Casos de construcción cerrados ese día |
 | `citados` | Casos distintos que tuvieron una cita (AGENDA) ese día |
 | `diferidos` | Casos que pasaron al estado DIFERIDO ese día |
 | `gestionados` | Casos distintos con una gestión registrada en un despacho del día |
-| `pendientes_total` | Casos cuyo estado actual no es CERRADO ni CANCELADO |
 
 El criterio de **«pendiente»** está centralizado: se excluyen siempre los estados **CERRADO** y
-**CANCELADO**. La categoría **empresarial** agrupa **EMPRESA** y **GOBIERNO**. La prueba de integración
-verifica el bloque con 5 ingresos, 1 resuelto residencial y 4 pendientes.
+**CANCELADO**. La categoría **empresarial** agrupa **EMPRESA** y **GOBIERNO**. Las tarjetas de
+residencial/empresarial excluyen construcciones y referidos para evitar dobles conteos; esos dos
+grupos se muestran por separado. **«Pendientes totales» ya no pertenece al bloque diario**: es una
+cifra de cartera y se consulta en casos globales. La prueba de integración verifica 5 ingresos,
+1 residencial común y la separación entre reparaciones referidas y construcciones.
 
 #### Nota sobre «gestionado»
 
@@ -176,11 +179,17 @@ agrega desgloses por estado y por categoría.
 
 | Campo | Qué muestra, en palabras |
 |---|---|
-| `pendientes` | Casos abiertos (excluye CERRADO y CANCELADO) |
-| `resueltos` | Casos cerrados dentro del rango consultado |
+| `pendientes` | Casos abiertos a la fecha (excluye CERRADO y CANCELADO) |
+| `resueltos` | Casos distintos cerrados dentro del rango consultado |
 | `total` | Suma de pendientes más resueltos |
+| `referidos` | Total de cartera con `tipo_caso='REFERIDO'` |
+| `construccion` | Total de cartera con `tipo_caso='CONSTRUCCION'` |
+| `cerrados_comunes` | Casos comunes residenciales distintos cerrados en el rango |
 | `por_estado` | Conteo agrupado por estado actual del caso |
 | `por_categoria` | Conteo agrupado por categoría del caso |
+
+Los totales de **referidos** y **construcción** describen la cartera actual y no cambian al mover el
+rango; `resueltos` y `cerrados_comunes` sí se acotan al rango seleccionado.
 
 En la API, el rango por defecto va **del día 1 del mes en curso hasta hoy**.
 

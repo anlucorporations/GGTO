@@ -94,37 +94,40 @@ class DiarioMonitoreo {
     required this.ingresosNuevos,
     required this.resueltosResidencial,
     required this.resueltosEmpresarial,
-    required this.resueltosReferidos,
+    required this.resueltosReparacionesReferidas,
+    required this.resueltosConstruccion,
     required this.citados,
     required this.diferidos,
     required this.gestionados,
-    required this.pendientesTotal,
   });
 
   final String fecha;
   final int ingresosNuevos;
   final int resueltosResidencial;
   final int resueltosEmpresarial;
-  final int resueltosReferidos;
+  final int resueltosReparacionesReferidas;
+  final int resueltosConstruccion;
   final int citados;
   final int diferidos;
   final int gestionados;
-  final int pendientesTotal;
 
   static DiarioMonitoreo desdeJson(Map<String, dynamic> json) => DiarioMonitoreo(
         fecha: texto(json['fecha']),
         ingresosNuevos: numero(json['ingresos_nuevos']),
         resueltosResidencial: numero(json['resueltos_residencial']),
         resueltosEmpresarial: numero(json['resueltos_empresarial']),
-        resueltosReferidos: numero(json['resueltos_referidos']),
+        resueltosReparacionesReferidas: numero(json['resueltos_reparaciones_referidas']),
+        resueltosConstruccion: numero(json['resueltos_construccion']),
         citados: numero(json['citados']),
         diferidos: numero(json['diferidos']),
         gestionados: numero(json['gestionados']),
-        pendientesTotal: numero(json['pendientes_total']),
       );
 
   int get resueltosTotal =>
-      resueltosResidencial + resueltosEmpresarial + resueltosReferidos;
+      resueltosResidencial +
+      resueltosEmpresarial +
+      resueltosReparacionesReferidas +
+      resueltosConstruccion;
 }
 
 class DiaSemanal {
@@ -184,6 +187,9 @@ class GlobalesMonitoreo {
     required this.pendientes,
     required this.resueltos,
     required this.total,
+    required this.referidos,
+    required this.construccion,
+    required this.cerradosComunes,
     required this.porEstado,
     required this.porCategoria,
   });
@@ -193,6 +199,9 @@ class GlobalesMonitoreo {
   final int pendientes;
   final int resueltos;
   final int total;
+  final int referidos;
+  final int construccion;
+  final int cerradosComunes;
   final Map<String, int> porEstado;
   final Map<String, int> porCategoria;
 
@@ -202,6 +211,9 @@ class GlobalesMonitoreo {
         pendientes: numero(json['pendientes']),
         resueltos: numero(json['resueltos']),
         total: numero(json['total']),
+        referidos: numero(json['referidos']),
+        construccion: numero(json['construccion']),
+        cerradosComunes: numero(json['cerrados_comunes']),
         porEstado: mapaNumeros(json['por_estado']),
         porCategoria: mapaNumeros(json['por_categoria']),
       );

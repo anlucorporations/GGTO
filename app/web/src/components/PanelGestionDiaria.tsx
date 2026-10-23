@@ -1,9 +1,10 @@
 /**
  * Pantalla principal del panel (D-81 · RF-42/43/44).
  *
- * Gestión diaria: **Asignadas vs. Cerradas por cuadrilla**, en modos **Común**
- * (`categoria=RESIDENCIAL`) y **Referidos**. Se **auto-refresca cada 30 s**
- * (pausa en segundo plano) y permite **agregar un caso especial** manualmente.
+ * Gestión diaria: **Asignadas vs. Cerradas por cuadrilla**, con los modos
+ * **Común** (`categoria=RESIDENCIAL`) y **Referidos** en **un solo cuadro**.
+ * Se **auto-refresca cada 30 s** (pausa en segundo plano) y permite **agregar
+ * un caso especial** manualmente.
  */
 import { useCallback, useEffect, useState } from 'react';
 import * as api from '../api/client';
@@ -12,21 +13,33 @@ import Mensaje from './Mensaje';
 import Modal from './Modal';
 import { useAutoRefresh } from './useAutoRefresh';
 
+interface DatosGestion {
+  comun: GestionDiaria;
+  referidos: GestionDiaria;
+}
+
+function porcentaje(cerradas: number, asignadas: number): number {
+  return asignadas ? (cerradas / asignadas) * 100 : 0;
+}
+
 export default function PanelGestionDiaria() {
-  const [modo, setModo] = useState<'COMUN' | 'REFERIDOS'>('COMUN');
-  const [datos, setDatos] = useState<GestionDiaria | null>(null);
+  const [datos, setDatos] = useState<DatosGestion | null>(null);
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [altaAbierta, setAltaAbierta] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
-      setDatos(await api.gestionDiaria(undefined, modo));
+      const [comun, referidos] = await Promise.all([
+        api.gestionDiaria(undefined, 'COMUN'),
+        api.gestionDiaria(undefined, 'REFERIDOS'),
+      ]);
+      setDatos({ comun, referidos });
       setError('');
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'No se pudo leer la gestión diaria.');
     }
-  }, [modo]);
+  }, []);
 
   useEffect(() => {
     void cargar();
@@ -41,7 +54,9 @@ export default function PanelGestionDiaria() {
         <div>
           <h2>Gestión diaria — Asignadas vs. Cerradas por cuadrilla</h2>
           <p className="texto-pequeno">
-            Se actualiza automáticamente cada 30 s.{datos ? ` Fecha: ${datos.fecha}.` : ''}
+            Se actualiza automáticamente cada 30 s.
+            {datos ? ` Fecha: ${datos.comun.fecha}.` : ''} Común = casos residenciales;
+            Referidos = fichas de referidos.
           </p>
         </div>
         <button className="btn" type="button" onClick={() => setAltaAbierta(true)}>
@@ -52,27 +67,6 @@ export default function PanelGestionDiaria() {
       <Mensaje tipo="error" texto={error} onCerrar={() => setError('')} />
       <Mensaje tipo="ok" texto={ok} onCerrar={() => setOk('')} />
 
-      <div className="operacion-pestanas" role="tablist" aria-label="Modo de gestión">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={modo === 'COMUN'}
-          className={`operacion-pestana${modo === 'COMUN' ? ' activa' : ''}`}
-          onClick={() => setModo('COMUN')}
-        >
-          Común
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={modo === 'REFERIDOS'}
-          className={`operacion-pestana${modo === 'REFERIDOS' ? ' activa' : ''}`}
-          onClick={() => setModo('REFERIDOS')}
-        >
-          Referidos
-        </button>
-      </div>
-
       {!datos ? (
         <p className="vacio">Cargando gestión diaria…</p>
       ) : (
@@ -80,24 +74,50 @@ export default function PanelGestionDiaria() {
           <table>
             <thead>
               <tr>
-                <th>Cuadrilla</th>
+                <th rowSpan={2}>Cuadrilla</th>
+                <th colSpan={3}>Común</th>
+                <th colSpan={3}>Referidos</th>
+                <th colSpan={3}>Total</th>
+              </tr>
+              <tr>
+                <th>Asignadas</th>
+                <th>Cerradas</th>
+                <th>% cerrado</th>
+                <th>Asignadas</th>
+                <th>Cerradas</th>
+                <th>% cerrado</th>
                 <th>Asignadas</th>
                 <th>Cerradas</th>
                 <th>% cerrado</th>
               </tr>
             </thead>
             <tbody>
-              {datos.cuadrillas.map((c) => (
-                <tr key={c.id_cuadrilla}>
-                  <td>
-                    <strong>{c.codigo}</strong> · {c.nombre}
-                    {c.es_supervisor ? ' (supervisor)' : ''}
-                  </td>
-                  <td>{c.asignadas}</td>
-                  <td>{c.cerradas}</td>
-                  <td>{c.porcentaje.toFixed(1)} %</td>
-                </tr>
-              ))}
+              {datos.comun.cuadrillas.map((comun) => {
+                const referido = datos.referidos.cuadrillas.find(
+                  (c) => c.id_cuadrilla === comun.id_cuadrilla,
+                );
+                const asigRef = referido?.asignadas ?? 0;
+                const cerrRef = referido?.cerradas ?? 0;
+                const asigTotal = comun.asignadas + asigRef;
+                const cerrTotal = comun.cerradas + cerrRef;
+                return (
+                  <tr key={comun.id_cuadrilla}>
+                    <td>
+                      <strong>{comun.codigo}</strong> · {comun.nombre}
+                      {comun.es_supervisor ? ' (supervisor)' : ''}
+                    </td>
+                    <td>{comun.asignadas}</td>
+                    <td>{comun.cerradas}</td>
+                    <td>{comun.porcentaje.toFixed(1)} %</td>
+                    <td>{asigRef}</td>
+                    <td>{cerrRef}</td>
+                    <td>{porcentaje(cerrRef, asigRef).toFixed(1)} %</td>
+                    <td>{asigTotal}</td>
+                    <td>{cerrTotal}</td>
+                    <td>{porcentaje(cerrTotal, asigTotal).toFixed(1)} %</td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr>
@@ -105,13 +125,41 @@ export default function PanelGestionDiaria() {
                   <strong>Total</strong>
                 </td>
                 <td>
-                  <strong>{datos.totales.asignadas}</strong>
+                  <strong>{datos.comun.totales.asignadas}</strong>
                 </td>
                 <td>
-                  <strong>{datos.totales.cerradas}</strong>
+                  <strong>{datos.comun.totales.cerradas}</strong>
                 </td>
                 <td>
-                  <strong>{datos.totales.porcentaje.toFixed(1)} %</strong>
+                  <strong>{datos.comun.totales.porcentaje.toFixed(1)} %</strong>
+                </td>
+                <td>
+                  <strong>{datos.referidos.totales.asignadas}</strong>
+                </td>
+                <td>
+                  <strong>{datos.referidos.totales.cerradas}</strong>
+                </td>
+                <td>
+                  <strong>{datos.referidos.totales.porcentaje.toFixed(1)} %</strong>
+                </td>
+                <td>
+                  <strong>
+                    {datos.comun.totales.asignadas + datos.referidos.totales.asignadas}
+                  </strong>
+                </td>
+                <td>
+                  <strong>
+                    {datos.comun.totales.cerradas + datos.referidos.totales.cerradas}
+                  </strong>
+                </td>
+                <td>
+                  <strong>
+                    {porcentaje(
+                      datos.comun.totales.cerradas + datos.referidos.totales.cerradas,
+                      datos.comun.totales.asignadas + datos.referidos.totales.asignadas,
+                    ).toFixed(1)}{' '}
+                    %
+                  </strong>
                 </td>
               </tr>
             </tfoot>

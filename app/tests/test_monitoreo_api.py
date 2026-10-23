@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
+from app.models import Caso, CasoEstadoHist, IdentificadorPago
 from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/monitoreo"
@@ -70,8 +71,11 @@ def test_gestion_diaria(client, entorno):
     assert d["ingresos_nuevos"] == 5
     assert d["resueltos_residencial"] == 1
     assert d["resueltos_empresarial"] == 0
-    # El cierre deja 4 pendientes (3 residenciales - 1 cerrado + empresa + construcción)
-    assert d["pendientes_total"] == 4
+    assert d["resueltos_reparaciones_referidas"] == 0
+    assert d["resueltos_construccion"] == 0
+    # «Pendientes totales» es una cifra global, no del bloque diario.
+    assert "pendientes_total" not in d
+    assert "resueltos_referidos" not in d
 
 
 def test_gestion_diaria_sin_datos(client, entorno):
@@ -79,6 +83,8 @@ def test_gestion_diaria_sin_datos(client, entorno):
                    headers=entorno["headers"]).json()
     assert d["ingresos_nuevos"] == 0
     assert d["resueltos_residencial"] == 0
+    assert d["resueltos_reparaciones_referidas"] == 0
+    assert d["resueltos_construccion"] == 0
 
 
 # --------------------------------------------------------------------------- #
@@ -90,8 +96,71 @@ def test_globales(client, entorno):
     assert g["pendientes"] == 4
     assert g["resueltos"] == 1
     assert g["total"] == 5
+    assert g["referidos"] == 0
+    assert g["construccion"] == 1
+    assert g["cerrados_comunes"] == 1
     assert g["por_estado"].get("CERRADO") == 1
     assert g["por_categoria"].get("RESIDENCIAL") == 3
+
+
+def test_globales_y_diario_separan_referidos_y_construccion(
+    client, admin_token, db_session
+):
+    """Los referidos y las construcciones no se mezclan ni se cuentan dos veces."""
+    id_central = admin_token["id_central"]
+    identificador = IdentificadorPago(numero="7009999999", id_central=id_central)
+    db_session.add(identificador)
+    db_session.flush()
+
+    def crear(
+        id_averia: str,
+        tipo_caso: str,
+        categoria: str,
+        id_pago: int | None = None,
+    ) -> Caso:
+        caso = Caso(
+            id_central=id_central,
+            id_averia=id_averia,
+            tipo_caso=tipo_caso,
+            categoria=categoria,
+            id_pago=id_pago,
+            estado_actual="CERRADO",
+            origen="MANUAL",
+            nombre_cliente="CLIENTE TIPO",
+        )
+        db_session.add(caso)
+        db_session.flush()
+        db_session.add(
+            CasoEstadoHist(
+                id_caso=caso.id_caso,
+                estado_anterior="NUEVO",
+                estado_nuevo="CERRADO",
+                fecha_hora=datetime.now(UTC),
+            )
+        )
+        return caso
+
+    crear("TSTTIPO-REF", "REFERIDO", "REFERIDO")
+    crear("TSTTIPO-CONS", "CONSTRUCCION", "REFERIDO")
+    # Una reparación común de verdad: 70* + avería real. Si faltara alguno de
+    # los dos, el trigger de D-89 la convertiría en REFERIDO y la prueba dejaría
+    # de comprobar la separación.
+    crear("TSTTIPO-AVE", "REPARACION", "RESIDENCIAL", identificador.id_pago)
+    db_session.commit()
+
+    headers = admin_token["admin"]
+    dia = hoy().isoformat()
+    d = client.get(f"{BASE}/diario", params={"fecha": dia}, headers=headers).json()
+    assert d["resueltos_reparaciones_referidas"] == 1
+    assert d["resueltos_construccion"] == 1
+    assert d["resueltos_residencial"] == 1
+
+    g = client.get(f"{BASE}/globales", params={"desde": dia, "hasta": dia},
+                   headers=headers).json()
+    assert g["resueltos"] == 3
+    assert g["referidos"] == 1
+    assert g["construccion"] == 1
+    assert g["cerrados_comunes"] == 1
 
 
 def test_reparacion_y_construccion(client, entorno):

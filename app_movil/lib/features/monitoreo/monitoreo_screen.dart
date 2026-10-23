@@ -168,6 +168,9 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
                       ('Pendientes', panorama.globales.pendientes, Marca.alerta),
                       ('Resueltos', panorama.globales.resueltos, Marca.exito),
                       ('Total', panorama.globales.total, Marca.azul),
+                      ('Referidos', panorama.globales.referidos, Marca.especial),
+                      ('Construcción', panorama.globales.construccion, Marca.enrutado),
+                      ('Cerrados comunes', panorama.globales.cerradosComunes, Marca.exito),
                     ]),
                     const SizedBox(height: 10),
                     if (panorama.globales.porEstado.isNotEmpty)
@@ -571,11 +574,13 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
 
   List<(String, int, Color)> _kpisDiario(DiarioMonitoreo diario) => [
         ('Ingresos', diario.ingresosNuevos, Marca.azul),
-        ('Resueltos', diario.resueltosTotal, Marca.exito),
+        ('Res. resid.', diario.resueltosResidencial, Marca.exito),
+        ('Res. empres.', diario.resueltosEmpresarial, Marca.exito),
+        ('Rep. referidas', diario.resueltosReparacionesReferidas, Marca.alerta),
+        ('Construcciones', diario.resueltosConstruccion, Marca.enrutado),
         ('Citados', diario.citados, Marca.alerta),
         ('Diferidos', diario.diferidos, Marca.especial),
         ('Gestionados', diario.gestionados, Marca.enrutado),
-        ('Pendientes', diario.pendientesTotal, Marca.error),
       ];
 }
 
@@ -588,11 +593,11 @@ List<DatoBarra> barrasDiario(DiarioMonitoreo diario) => [
       DatoBarra('Ingresos', diario.ingresosNuevos, color: Marca.azul),
       DatoBarra('Res. resid.', diario.resueltosResidencial, color: Marca.exito),
       DatoBarra('Res. empres.', diario.resueltosEmpresarial, color: Marca.exito),
-      DatoBarra('Referidos', diario.resueltosReferidos, color: Marca.alerta),
+      DatoBarra('Rep. referidas', diario.resueltosReparacionesReferidas, color: Marca.alerta),
+      DatoBarra('Construcciones', diario.resueltosConstruccion, color: Marca.enrutado),
       DatoBarra('Citados', diario.citados, color: Marca.alerta),
       DatoBarra('Diferidos', diario.diferidos, color: Marca.especial),
       DatoBarra('Gestionados', diario.gestionados, color: Marca.enrutado),
-      DatoBarra('Pendientes', diario.pendientesTotal, color: Marca.error),
     ];
 
 /// Barras por estado del periodo (globales).

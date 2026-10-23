@@ -88,9 +88,19 @@ def _resueltos(
     id_central: int,
     desde: date,
     hasta: date,
-    categoria: str | None,
+    categoria: str | tuple[str, ...] | None,
     id_cuadrilla: int | None = None,
+    *,
+    tipo_caso: str | None = None,
+    excluir_tipos: tuple[str, ...] = (),
 ) -> int:
+    """Casos **distintos** cerrados en el rango, con filtros de categoría/tipo.
+
+    Se cuenta `distinct(Caso.id_caso)` y no las filas del historial: un caso que
+    se cerró, reabrió y volvió a cerrar el mismo día sigue siendo **un** caso
+    resuelto. Los filtros de tipo permiten separar comunes, referidos y
+    construcciones sin dobles conteos.
+    """
     condiciones = [
         Caso.id_central == id_central,
         CasoEstadoHist.estado_nuevo == "CERRADO",
@@ -98,9 +108,18 @@ def _resueltos(
         *_scope_cuadrilla(id_cuadrilla),
     ]
     if categoria:
-        condiciones.append(Caso.categoria == categoria)
+        if isinstance(categoria, tuple):
+            condiciones.append(Caso.categoria.in_(categoria))
+        else:
+            condiciones.append(Caso.categoria == categoria)
+    if tipo_caso:
+        condiciones.append(Caso.tipo_caso == tipo_caso)
+    if excluir_tipos:
+        condiciones.append(Caso.tipo_caso.notin_(excluir_tipos))
     return db.scalar(
-        select(func.count()).select_from(CasoEstadoHist).join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
+        select(func.count(func.distinct(Caso.id_caso)))
+        .select_from(CasoEstadoHist)
+        .join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
         .where(*condiciones)
     ) or 0
 
@@ -134,19 +153,29 @@ def gestion_diaria(db: Session, id_central: int, fecha: date,
     citados_cond = [_dia(Cita.fecha_hora) == fecha, Cita.id_caso.is_not(None)]
     if id_cuadrilla is not None:
         citados_cond.append(Cita.id_cuadrilla == id_cuadrilla)
+    # Los bloques «comunes» excluyen referidos y construcciones para que las
+    # tarjetas no cuenten el mismo caso dos veces. Los referidos son el resultado
+    # de la regla REPARACIÓN/REFERIDO y las construcciones se identifican por
+    # `tipo_caso`.
+    comunes = ("CONSTRUCCION", "REFERIDO")
     return {
         "fecha": fecha.isoformat(),
         "ingresos_nuevos": _conteo(db, Caso.id_central == id_central,
                                    _dia(Caso.creado_en) == fecha, *extra),
-        "resueltos_residencial": _resueltos(db, id_central, fecha, fecha, "RESIDENCIAL", id_cuadrilla),
-        "resueltos_empresarial": db.scalar(
-            select(func.count()).select_from(CasoEstadoHist)
-            .join(Caso, Caso.id_caso == CasoEstadoHist.id_caso)
-            .where(Caso.id_central == id_central, CasoEstadoHist.estado_nuevo == "CERRADO",
-                   _dia(CasoEstadoHist.fecha_hora) == fecha, Caso.categoria.in_(EMPRESARIAL),
-                   *extra)
-        ) or 0,
-        "resueltos_referidos": _resueltos(db, id_central, fecha, fecha, "REFERIDO", id_cuadrilla),
+        "resueltos_residencial": _resueltos(
+            db, id_central, fecha, fecha, "RESIDENCIAL", id_cuadrilla,
+            excluir_tipos=comunes,
+        ),
+        "resueltos_empresarial": _resueltos(
+            db, id_central, fecha, fecha, EMPRESARIAL, id_cuadrilla,
+            excluir_tipos=comunes,
+        ),
+        "resueltos_reparaciones_referidas": _resueltos(
+            db, id_central, fecha, fecha, None, id_cuadrilla, tipo_caso="REFERIDO"
+        ),
+        "resueltos_construccion": _resueltos(
+            db, id_central, fecha, fecha, None, id_cuadrilla, tipo_caso="CONSTRUCCION"
+        ),
         "citados": db.scalar(
             select(func.count(func.distinct(Cita.id_caso))).where(*citados_cond)
         ) or 0,
@@ -158,7 +187,6 @@ def gestion_diaria(db: Session, id_central: int, fecha: date,
                    DespachoCasos.estado == "GESTIONADO",
                    *([Despacho.id_cuadrilla == id_cuadrilla] if id_cuadrilla is not None else []))
         ) or 0,
-        "pendientes_total": _pendientes(db, id_central, *extra),
     }
 
 
@@ -285,6 +313,19 @@ def casos_globales(db: Session, id_central: int, desde: date, hasta: date,
     extra = _scope_cuadrilla(id_cuadrilla)
     pendientes = _pendientes(db, id_central, *extra)
     resueltos = _resueltos(db, id_central, desde, hasta, None, id_cuadrilla)
+    # Totales de cartera por tipo (estado actual). El rango solo acota los
+    # cerrados, igual que `resueltos`; así «Referidos» y «Construcción» no
+    # cambian de significado al mover el filtro de fechas.
+    referidos = _conteo(
+        db, Caso.id_central == id_central, Caso.tipo_caso == "REFERIDO", *extra
+    )
+    total_construccion = _conteo(
+        db, Caso.id_central == id_central, Caso.tipo_caso == "CONSTRUCCION", *extra
+    )
+    cerrados_comunes = _resueltos(
+        db, id_central, desde, hasta, "RESIDENCIAL", id_cuadrilla,
+        excluir_tipos=("CONSTRUCCION", "REFERIDO"),
+    )
     por_estado = dict(
         db.execute(
             select(Caso.estado_actual, func.count()).where(Caso.id_central == id_central, *extra)
@@ -299,6 +340,8 @@ def casos_globales(db: Session, id_central: int, desde: date, hasta: date,
     )
     return {"desde": desde.isoformat(), "hasta": hasta.isoformat(), "pendientes": pendientes,
             "resueltos": resueltos, "total": pendientes + resueltos,
+            "referidos": referidos, "construccion": total_construccion,
+            "cerrados_comunes": cerrados_comunes,
             "por_estado": por_estado, "por_categoria": por_categoria}
 
 

@@ -448,21 +448,12 @@ Los campos vacíos se muestran como «—». La antigua pestaña **Gestión** ya
 Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y fecha y hora, bajo
 la ficha. Se carga con la operación de historial del cliente de API.
 
-### PANEL (`app/web/src/pages/Panel.tsx`)
+### Antigua página PANEL (`app/web/src/pages/Panel.tsx`)
 
-El PANEL es la **página raíz**. Muestra un resumen con seis tarjetas:
-
-1. Tablas.
-2. Centrales.
-3. Roles.
-4. Cuadrillas.
-5. Causas.
-6. Parámetros.
-
-Además, identifica la sesión con el nombre completo del usuario y su rol.
-
-Incluye una «Búsqueda rápida de casos» por ID de avería o teléfono. Al enviarla, la pantalla
-navega a CASOS llevando el término de búsqueda; CASOS lo recoge y lo usa como filtro inicial.
+La página raíz es hoy **OPERACIÓN**. La ruta `/panel` redirige a ella y el componente
+`Panel.tsx` ya no se monta: conserva solo el resumen de tablas del sistema. La **búsqueda
+rápida que vivía en el widget de OPERACIÓN se retiró**; el listado de CASOS mantiene su
+propio buscador y la barra superior conserva el localizador flotante de casos.
 
 ### Modal «Agregar caso» (`app/web/src/components/ModalCaso.tsx`)
 

@@ -39,20 +39,24 @@
 | Indicador | Fórmula | Ventana |
 |---|---|---|
 | `ingresos_nuevos` | `count(caso)` con `creado_en::date = día` | día |
-| `resueltos_residencial` | `count(hist)` con `estado_nuevo='CERRADO'` y `categoria='RESIDENCIAL'` | día |
-| `resueltos_empresarial` | idem con `categoria in ('EMPRESA','GOBIERNO')` | día |
-| `resueltos_referidos` | idem con `categoria='REFERIDO'` | día |
+| `resueltos_residencial` | `count(distinct caso.id_caso)` con `estado_nuevo='CERRADO'`, `categoria='RESIDENCIAL'` y `tipo_caso not in ('CONSTRUCCION','REFERIDO')` | día |
+| `resueltos_empresarial` | idem con `categoria in ('EMPRESA','GOBIERNO')` y `tipo_caso not in ('CONSTRUCCION','REFERIDO')` | día |
+| `resueltos_reparaciones_referidas` | idem con `tipo_caso='REFERIDO'` (reparaciones reclasificadas por la regla 70*/avería) | día |
+| `resueltos_construccion` | idem con `tipo_caso='CONSTRUCCION'` | día |
 | `citados` | `count(distinct id_caso)` en `cita` | día |
 | `diferidos` | `count(hist)` con `estado_nuevo='DIFERIDO'` | día |
 | `gestionados` | `count(distinct id_caso)` en `despacho_caso.estado='GESTIONADO'` de despachos del día | día |
-| `pendientes_total` | `count(caso)` pendiente | a la fecha |
+
+**Sin dobles conteos:** las tarjetas «residencial» y «empresarial» excluyen construcciones y
+referidos; esos dos grupos se informan aparte. «Pendientes totales» ya **no** forma parte de este
+bloque: es una cifra de cartera y se consulta en **casos globales**.
 
 ## 3. MONITOREO — GESTIÓN SEMANAL (curva lunes→sábado)
 
 | Indicador | Fórmula | Ventana |
 |---|---|---|
 | `asignados` | `count(despacho_caso)` de despachos del día | cada día |
-| `cerrados` | `count(hist)` con `estado_nuevo='CERRADO'` | cada día |
+| `cerrados` | `count(distinct caso.id_caso)` con `estado_nuevo='CERRADO'` | cada día |
 | `gestionados` | `count(despacho_caso)` con `estado='GESTIONADO'` | cada día |
 
 Se devuelven **6 puntos** (lunes a sábado) con `fecha`, `asignados`, `cerrados`, `gestionados`.
@@ -61,11 +65,15 @@ Se devuelven **6 puntos** (lunes a sábado) con `fecha`, `asignados`, `cerrados`
 
 | Indicador | Fórmula | Ventana |
 |---|---|---|
-| `pendientes` | casos **no** `CERRADO`/`CANCELADO` | rango `desde..hasta` |
-| `resueltos` | `count(hist)` con `estado_nuevo='CERRADO'` | rango |
-| `total` | `pendientes + resueltos` | rango |
+| `pendientes` | casos **no** `CERRADO`/`CANCELADO` | a la fecha |
+| `resueltos` | `count(distinct caso.id_caso)` con `estado_nuevo='CERRADO'` | rango |
+| `total` | `pendientes + resueltos` | a la fecha + rango |
+| `referidos` | `count(caso)` con `tipo_caso='REFERIDO'` | total de cartera |
+| `construccion` | `count(caso)` con `tipo_caso='CONSTRUCCION'` | total de cartera |
+| `cerrados_comunes` | `count(distinct caso.id_caso)` cerrados con `categoria='RESIDENCIAL'` y `tipo_caso not in ('CONSTRUCCION','REFERIDO')` | rango |
 
-Además: desglose `por_estado` y `por_categoria`.
+Además: desglose `por_estado` y `por_categoria` (estado actual). Los totales de cartera no cambian
+al mover el rango de fechas; solo `resueltos` y `cerrados_comunes` se acotan al rango.
 
 ## 5. MONITOREO — REPARACIÓN (torta)
 

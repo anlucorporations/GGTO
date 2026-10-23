@@ -31,21 +31,25 @@ void main() {
         'ingresos_nuevos': 12,
         'resueltos_residencial': 5,
         'resueltos_empresarial': 2,
-        'resueltos_referidos': 1,
+        'resueltos_reparaciones_referidas': 1,
+        'resueltos_construccion': 2,
         'citados': 3,
         'diferidos': 4,
         'gestionados': 6,
-        'pendientes_total': 21,
       });
       expect(diario.fecha, '2026-10-17');
       expect(diario.ingresosNuevos, 12);
-      expect(diario.resueltosTotal, 8);
-      expect(diario.pendientesTotal, 21);
+      expect(diario.resueltosTotal, 10);
+      expect(diario.resueltosReparacionesReferidas, 1);
+      expect(diario.resueltosConstruccion, 2);
 
       final barras = barrasDiario(diario);
       expect(barras.length, 8);
       expect(barras.first.etiqueta, 'Ingresos');
       expect(barras.first.valor, 12);
+      expect(barras.map((b) => b.etiqueta), contains('Rep. referidas'));
+      expect(barras.map((b) => b.etiqueta), contains('Construcciones'));
+      expect(barras.map((b) => b.etiqueta), isNot(contains('Pendientes')));
     });
 
     test('la curva semanal y sus totales', () {
@@ -71,10 +75,16 @@ void main() {
         'pendientes': 30,
         'resueltos': 70,
         'total': 100,
+        'referidos': 12,
+        'construccion': 8,
+        'cerrados_comunes': 40,
         'por_estado': {'NUEVO': 10, 'CERRADO': 70, 'CITADO': 20},
         'por_categoria': {'REPARACION': 60},
       });
       expect(globales.total, 100);
+      expect(globales.referidos, 12);
+      expect(globales.construccion, 8);
+      expect(globales.cerradosComunes, 40);
       final barras = barrasPorEstado(globales);
       expect(barras.map((b) => b.etiqueta).toList(), ['CERRADO', 'CITADO', 'NUEVO']);
     });

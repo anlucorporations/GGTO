@@ -1271,11 +1271,11 @@ export interface MonitoreoDiario {
   ingresos_nuevos: number;
   resueltos_residencial: number;
   resueltos_empresarial: number;
-  resueltos_referidos: number;
+  resueltos_reparaciones_referidas: number;
+  resueltos_construccion: number;
   citados: number;
   diferidos: number;
   gestionados: number;
-  pendientes_total: number;
 }
 
 /** Punto diario del reporte semanal (lunes a sábado). */
@@ -1298,6 +1298,9 @@ export interface MonitoreoGlobales {
   pendientes: number;
   resueltos: number;
   total: number;
+  referidos: number;
+  construccion: number;
+  cerrados_comunes: number;
   por_estado: Record<string, number>;
   por_categoria: Record<string, number>;
 }

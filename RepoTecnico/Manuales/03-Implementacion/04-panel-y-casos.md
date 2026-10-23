@@ -657,19 +657,13 @@ Se muestra en una tabla con estado anterior, estado nuevo, motivo, usuario y
 fecha y hora (`app/web/src/pages/Casos.tsx:896-921`), cargado con
 `api.obtenerHistorialCaso` (`app/web/src/pages/Casos.tsx:331-339`).
 
-### PANEL (`app/web/src/pages/Panel.tsx`)
+### Antigua página PANEL (`app/web/src/pages/Panel.tsx`)
 
-El PANEL es la página raíz. Muestra un resumen con seis tarjetas —tablas,
-centrales, roles, cuadrillas, causas y parámetros—
-(`app/web/src/pages/Panel.tsx:8-15`) alimentadas por `api.obtenerResumen`
-(`app/web/src/pages/Panel.tsx:29`), e identifica la sesión con el nombre completo
-y el rol (`app/web/src/pages/Panel.tsx:44`, `app/web/src/pages/Panel.tsx:63`).
-
-Incluye una «Búsqueda rápida de casos» por ID de avería o teléfono que, al
-enviar, navega a CASOS con el término en el estado de navegación:
-`navigate('/casos', { state: { q } })`
-(`app/web/src/pages/Panel.tsx:46-55`). CASOS recoge ese término como filtro
-inicial (`app/web/src/pages/Casos.tsx:260-264`).
+La página raíz es hoy **OPERACIÓN** (`app/web/src/App.tsx`); la ruta `/panel`
+redirige a ella. El componente `Panel.tsx` ya no se monta y conserva solo el
+resumen de tablas del sistema; la **búsqueda rápida que vivía en el widget de
+OPERACIÓN se retiró**. El listado de CASOS mantiene su propio buscador y la barra
+superior conserva el localizador flotante de casos.
 
 ### Modal «Agregar caso» (`app/web/src/components/ModalCaso.tsx`)
 

@@ -106,20 +106,23 @@ y, si no se envía `fecha`, usa `svc.hoy_operativo()` —el día de `America/Car
 | Indicador | Fórmula implementada | Referencia |
 |---|---|---|
 | `ingresos_nuevos` | `count(caso)` con `_dia(creado_en) = fecha` | `app/services/monitoreo.py:139-140` |
-| `resueltos_residencial` | `caso_estado_hist` con `estado_nuevo='CERRADO'` y categoría `RESIDENCIAL` | `app/services/monitoreo.py:141` |
-| `resueltos_empresarial` | idem con categoría en `('EMPRESA','GOBIERNO')` | `app/services/monitoreo.py:142-148` |
-| `resueltos_referidos` | idem con categoría `REFERIDO` | `app/services/monitoreo.py:149` |
-| `citados` | `count(distinct id_caso)` en `cita` del día | `app/services/monitoreo.py:150-152` |
-| `diferidos` | casos que pasaron a `DIFERIDO` ese día | `app/services/monitoreo.py:153` |
-| `gestionados` | `count(distinct id_caso)` en `despacho_caso` con estado `GESTIONADO` de despachos del día | `app/services/monitoreo.py:154-160` |
-| `pendientes_total` | casos cuyo `estado_actual` no es `CERRADO` ni `CANCELADO` | `app/services/monitoreo.py:161` |
+| `resueltos_residencial` | `count(distinct caso.id_caso)` en `caso_estado_hist` con `estado_nuevo='CERRADO'`, categoría `RESIDENCIAL` y tipo distinto de `CONSTRUCCION`/`REFERIDO` | `app/services/monitoreo.py` |
+| `resueltos_empresarial` | idem con categoría en `('EMPRESA','GOBIERNO')` y tipo distinto de `CONSTRUCCION`/`REFERIDO` | `app/services/monitoreo.py` |
+| `resueltos_reparaciones_referidas` | idem con `tipo_caso='REFERIDO'` | `app/services/monitoreo.py` |
+| `resueltos_construccion` | idem con `tipo_caso='CONSTRUCCION'` | `app/services/monitoreo.py` |
+| `citados` | `count(distinct id_caso)` en `cita` del día | `app/services/monitoreo.py` |
+| `diferidos` | casos que pasaron a `DIFERIDO` ese día | `app/services/monitoreo.py` |
+| `gestionados` | `count(distinct id_caso)` en `despacho_caso` con estado `GESTIONADO` de despachos del día | `app/services/monitoreo.py` |
 
 El criterio de «pendiente» se centraliza en `_pendientes` y en la tupla
-`PENDIENTE_EXCLUIR = ("CERRADO", "CANCELADO")` (`app/services/monitoreo.py:27,124-125`).
+`PENDIENTE_EXCLUIR = ("CERRADO", "CANCELADO")` (`app/services/monitoreo.py`).
 La categoría empresarial agrupa `EMPRESA` y `GOBIERNO`
-(`EMPRESARIAL = ("EMPRESA", "GOBIERNO")`, `app/services/monitoreo.py:28`). La prueba de
-integración verifica el bloque con 5 ingresos, 1 resuelto residencial y 4 pendientes
-(`app/tests/test_monitoreo_api.py:63-71`).
+(`EMPRESARIAL = ("EMPRESA", "GOBIERNO")`, `app/services/monitoreo.py`). Las tarjetas de
+residencial/empresarial excluyen construcciones y referidos para evitar dobles conteos; esos
+grupos se informan aparte. **«Pendientes totales» ya no forma parte del bloque diario**: es una
+cifra de cartera y se consulta en casos globales. La prueba de integración verifica 5 ingresos,
+1 residencial común y la separación entre reparaciones referidas y construcciones
+(`app/tests/test_monitoreo_api.py`).
 
 #### Nota sobre «gestionado»
 
@@ -158,11 +161,17 @@ desgloses por estado y por categoría (`app/services/monitoreo.py:219-238`).
 
 | Campo | Cálculo | Referencia |
 |---|---|---|
-| `pendientes` | `_pendientes` (excluye `CERRADO`/`CANCELADO`) | `app/services/monitoreo.py:222` |
-| `resueltos` | `_resueltos` en el rango `desde..hasta` | `app/services/monitoreo.py:223` |
-| `total` | `pendientes + resueltos` | `app/services/monitoreo.py:237` |
-| `por_estado` | `group_by(Caso.estado_actual)` | `app/services/monitoreo.py:224-229` |
-| `por_categoria` | `group_by(Caso.categoria)` | `app/services/monitoreo.py:230-235` |
+| `pendientes` | `_pendientes` (excluye `CERRADO`/`CANCELADO`) | `app/services/monitoreo.py` |
+| `resueltos` | `_resueltos` con casos distintos en el rango `desde..hasta` | `app/services/monitoreo.py` |
+| `total` | `pendientes + resueltos` | `app/services/monitoreo.py` |
+| `referidos` | `count(caso)` con `tipo_caso='REFERIDO'` (cartera actual) | `app/services/monitoreo.py` |
+| `construccion` | `count(caso)` con `tipo_caso='CONSTRUCCION'` (cartera actual) | `app/services/monitoreo.py` |
+| `cerrados_comunes` | casos comunes residenciales distintos cerrados en el rango | `app/services/monitoreo.py` |
+| `por_estado` | `group_by(Caso.estado_actual)` | `app/services/monitoreo.py` |
+| `por_categoria` | `group_by(Caso.categoria)` | `app/services/monitoreo.py` |
+
+Los totales de **referidos** y **construcción** describen la cartera actual y no cambian al mover el
+rango; `resueltos` y `cerrados_comunes` sí se acotan al rango seleccionado.
 
 En el router, el rango por defecto es del día 1 del mes en curso hasta el día operativo de
 hoy (`hoy.replace(day=1)` y `hoy = svc.hoy_operativo()`, `app/api/routes_monitoreo.py:82-94`).

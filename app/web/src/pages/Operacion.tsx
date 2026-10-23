@@ -41,7 +41,7 @@ const PESTANAS: PEstana[] = [
   {
     id: 'widget',
     etiqueta: 'Widget',
-    descripcion: 'Búsqueda rápida, reportes y zona de gestión diaria.',
+    descripcion: 'Reportes y zona de gestión diaria.',
     Icono: IconoPanel,
     roles: ['SUPER', 'ADMIN', 'SUPERVISOR', 'TECNICO'],
   },

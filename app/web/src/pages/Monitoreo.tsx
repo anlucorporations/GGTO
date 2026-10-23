@@ -25,8 +25,6 @@ import type {
   MonitoreoDiaSemanal,
   MonitoreoDiario,
   MonitoreoGlobales,
-  MonitoreoIdentificadores,
-  MonitoreoReclasificaciones,
   MonitoreoReparacion,
   MonitoreoSemanal,
   PeriodoReporte,
@@ -105,13 +103,29 @@ function entradas(registro: Record<string, number>): { clave: string; valor: num
 function tarjetasDiario(d: MonitoreoDiario): DatoBarra[] {
   return [
     { etiqueta: 'Ingresos nuevos', valor: d.ingresos_nuevos },
-    { etiqueta: 'Resueltos residencial', valor: d.resueltos_residencial, color: PALETA[0] },
-    { etiqueta: 'Resueltos empresarial', valor: d.resueltos_empresarial, color: PALETA[1] },
-    { etiqueta: 'Resueltos referidos', valor: d.resueltos_referidos, color: PALETA[2] },
+    {
+      etiqueta: 'Resueltos residencial',
+      valor: d.resueltos_residencial,
+      color: PALETA[0],
+    },
+    {
+      etiqueta: 'Resueltos empresarial',
+      valor: d.resueltos_empresarial,
+      color: PALETA[1],
+    },
+    {
+      etiqueta: 'Reparaciones referidas',
+      valor: d.resueltos_reparaciones_referidas,
+      color: PALETA[2],
+    },
+    {
+      etiqueta: 'Construcciones',
+      valor: d.resueltos_construccion,
+      color: PALETA[4],
+    },
     { etiqueta: 'Citados', valor: d.citados, color: PALETA[3] },
     { etiqueta: 'Diferidos', valor: d.diferidos, color: PALETA[4] },
     { etiqueta: 'Gestionados', valor: d.gestionados, color: PALETA[5] },
-    { etiqueta: 'Pendientes totales', valor: d.pendientes_total, color: PALETA[0] },
   ];
 }
 
@@ -120,6 +134,9 @@ function tarjetasGlobales(g: MonitoreoGlobales): DatoBarra[] {
     { etiqueta: 'Pendientes', valor: g.pendientes, color: PALETA[3] },
     { etiqueta: 'Resueltos', valor: g.resueltos, color: PALETA[1] },
     { etiqueta: 'Total', valor: g.total, color: PALETA[0] },
+    { etiqueta: 'Referidos (total)', valor: g.referidos, color: PALETA[2] },
+    { etiqueta: 'Construcción (total)', valor: g.construccion, color: PALETA[4] },
+    { etiqueta: 'Cerrados comunes', valor: g.cerrados_comunes, color: PALETA[5] },
   ];
 }
 
@@ -778,98 +795,6 @@ export function BloqueCuadrilla({ fechaDia }: { fechaDia: string }) {
 /* Pestaña MONITOREO (vista por defecto)                               */
 /* ------------------------------------------------------------------ */
 
-/* ------------------------------------------------------------------ */
-/* Zona del identificador de pago (D-94 · RF-54/RF-55)                 */
-/* ------------------------------------------------------------------ */
-
-/**
- * Ficha «Zona identificador de pago» (pestaña MONITOREO).
- *
- * El identificador de pago (70*) es la clave que enlaza al usuario con la
- * institución y puede tener **varios reportes**: aquí se ve cuántos hay, cuántos
- * son **reincidentes** dentro de la ventana configurada y cómo queda la regla
- * REPARACIÓN ⇐ 70* + avería real (D-90).
- */
-export function BloqueIdentificadorPago() {
-  const [datos, error] = useCarga<MonitoreoIdentificadores>(
-    () => api.monitoreoIdentificadores(),
-    [],
-  );
-  const [regla, errorRegla] = useCarga<MonitoreoReclasificaciones>(
-    () => api.monitoreoReclasificaciones(),
-    [],
-  );
-  return (
-    <div className="panel-bloque" id="zona-identificador-pago">
-      <h2>Zona identificador de pago (70*)</h2>
-      <Mensaje tipo="error" texto={error || errorRegla} />
-      {datos ? (
-        <>
-          <Tarjetas
-            datos={[
-              { etiqueta: 'Identificadores con casos', valor: datos.con_casos },
-              {
-                etiqueta: `Reincidentes (${datos.ventana_dias} días)`,
-                valor: datos.reincidentes,
-              },
-              { etiqueta: 'Casos con 70*', valor: datos.casos_con_identificador },
-              { etiqueta: 'Casos sin 70*', valor: datos.casos_sin_identificador },
-              { etiqueta: 'Reportes por 70* (media)', valor: datos.media_casos },
-              { etiqueta: 'Máximo de reportes', valor: datos.max_casos },
-            ]}
-          />
-          <h3 className="subtitulo-seccion">Identificadores con más reportes</h3>
-          {datos.top.length === 0 ? (
-            <p className="vacio">Sin identificadores de pago registrados.</p>
-          ) : (
-            <div className="tabla-envoltura" id="tabla-identificadores-pago">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Identificador de pago (70*)</th>
-                    <th>Casos</th>
-                    <th>En la ventana</th>
-                    <th>Reincidente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datos.top.map((fila) => (
-                    <tr key={fila.numero}>
-                      <td>{fila.numero}</td>
-                      <td>{fila.casos}</td>
-                      <td>{fila.reportes_ventana}</td>
-                      <td>{fila.reincidente ? 'Sí' : 'No'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      ) : (
-        !error && <p className="vacio">Sin datos del identificador de pago.</p>
-      )}
-
-      {regla && (
-        <>
-          <h3 className="subtitulo-seccion">Regla REPARACIÓN ⇐ 70* + avería real</h3>
-          <Tarjetas
-            datos={[
-              { etiqueta: 'Reparaciones válidas', valor: regla.reparaciones_validas },
-              { etiqueta: 'Casos REFERIDO', valor: regla.referidos },
-              { etiqueta: 'Reclasificadas', valor: regla.reclasificadas },
-              {
-                etiqueta: 'Marcadas sin regularizar',
-                valor: regla.pendientes_historicos,
-              },
-            ]}
-          />
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function Monitoreo() {
   const { usuario } = useAuth();
   const [fechaSel, setFechaSel] = useState(hoyISO());
@@ -920,9 +845,6 @@ export default function Monitoreo() {
       </div>
 
       <BloqueCuadrilla fechaDia={fechaSel} />
-
-      {/* D-94: el TÉCNICO no consulta las métricas por identificador (403). */}
-      {usuario?.rol !== 'TECNICO' && <BloqueIdentificadorPago />}
     </>
   );
 }
