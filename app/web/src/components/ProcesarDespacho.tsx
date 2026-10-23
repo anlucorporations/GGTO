@@ -5,9 +5,6 @@
  *  - el **checklist de tipos a distribuir** (D-113 · D-114): Comunes y
  *    Especiales Reparación por defecto; Especiales Construcción, Especiales
  *    Gobierno y Masivas se marcan si se quieren,
- *  - las **fallas masivas** con la cuadrilla que las atiende, reasignable
- *    (D-113): sus casos se despachan a esa cuadrilla aunque el sector esté en
- *    otra,
  *  - los **sectores** con su total de casos, los **especiales separados** en
  *    Reparación, Construcción y Gobierno (D-114) y una lista desplegable con
  *    las **masivas del sector** para decidir cuáles entran al despacho,
@@ -291,13 +288,6 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
     );
   }
 
-  function cambiarMasiva(idFalla: number, valor: string) {
-    setMasivas((previo) => ({
-      ...previo,
-      [idFalla]: valor === '' ? null : Number(valor),
-    }));
-  }
-
   /** D-114: incluye o excluye del despacho las masivas marcadas en un sector. */
   function cambiarMasivasDelSector(idSector: number, valores: string[]) {
     const opciones = masivasDelSector(idSector);
@@ -458,66 +448,6 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                 jornada).
               </span>
             </div>
-          )}
-
-          {/* D-113: fallas masivas y su cuadrilla (reasignable) */}
-          {masivasActivas.length > 0 && (
-            <>
-              <h3 className="subtitulo-seccion">Fallas masivas y su cuadrilla</h3>
-              <div className="tabla-envoltura">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Masiva</th>
-                      <th>Descripción</th>
-                      <th>Sector</th>
-                      <th>Casos</th>
-                      <th>Cuadrilla asignada</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {masivasActivas.map((m) => (
-                      <tr key={m.id_falla}>
-                        <td>
-                          <span className="mono">#{m.id_falla}</span>{' '}
-                          <span className="chip-masiva" title="Falla masiva">
-                            <IconoMasiva className="icono-masiva" />
-                            MASIVA
-                          </span>
-                          {masivasIncluidas[m.id_falla] === false && (
-                            <span className="chip" title="Su sector la dejó fuera del despacho">
-                              fuera
-                            </span>
-                          )}
-                        </td>
-                        <td>{m.descripcion}</td>
-                        <td>{m.sector_nombre ?? '—'}</td>
-                        <td>{m.casos ?? m.ids_caso?.length ?? 0}</td>
-                        <td>
-                          <select
-                            aria-label={`Cuadrilla de la masiva ${m.id_falla}`}
-                            value={masivas[m.id_falla] ?? ''}
-                            onChange={(e) => cambiarMasiva(m.id_falla, e.target.value)}
-                          >
-                            <option value="">— Sin cuadrilla —</option>
-                            {cuadrillasCalle.map((c) => (
-                              <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
-                                {c.codigo} — {c.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="texto-pequeno">
-                Al cambiar la cuadrilla de una masiva, sus casos se despachan a esa
-                cuadrilla aunque su sector esté asignado a otra. Las masivas que el
-                sector no marque en la tabla de abajo quedan fuera del despacho.
-              </p>
-            </>
           )}
 
           {/* D-114: sectores con sus especiales separados y sus masivas */}
