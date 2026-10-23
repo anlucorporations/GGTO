@@ -175,10 +175,10 @@ calculados y —desde D-89/D-90— los campos del identificador y de la regla
 | Icono / campo | Condición | Referencia |
 |---|---|---|
 | `pendiente` | El estado no es `CERRADO` ni `CANCELADO` | `app/api/routes_casos.py:89-90` |
-| `asignado` | Existe fila en `despacho_caso` o el estado es `ASIGNADO` | `app/api/routes_casos.py:91-93` |
+| `asignado` | Existe fila en `despacho_caso` **que no sea `DEVUELTO`** (D-157) o el estado es `ASIGNADO` | `app/api/routes_casos.py:169-172` |
 | `citado` | Existe cita en estado `PROPUESTA` o `CONFIRMADA` | `app/api/routes_casos.py:94-95` |
 | `gestion` | `en_gestion_supervisor`, estado `EN_GESTION` o despacho `GESTIONADO` | `app/api/routes_casos.py:96-98` |
-| `id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre` | Cuadrilla del último despacho (D-78) | `app/api/routes_casos.py:139-141` |
+| `id_cuadrilla`, `cuadrilla_codigo`, `cuadrilla_nombre` | Cuadrilla del último despacho **sin filas `DEVUELTO`** (D-78, D-157) | `app/api/routes_casos.py:183-201` |
 | `marcado_reclasificar` | `clasificacion.esta_marcado(caso)` (D-90) | `app/api/routes_casos.py:143` |
 | `motivo_marca` | `SIN_IDENTIFICADOR_PAGO` / `SIN_ID_AVERIA` / ambos | `app/api/routes_casos.py:144` |
 | `tiene_identificador_pago` | `caso.id_pago is not None` | `app/api/routes_casos.py:145` |

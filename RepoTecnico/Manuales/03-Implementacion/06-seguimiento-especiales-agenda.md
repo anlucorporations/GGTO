@@ -237,7 +237,7 @@ campos de contexto que consume la SPA:
 | `sector_nombre` | Nombre del sector del caso asociado. |
 | `solicitante_nombre` / `solicitante_unidad` | Datos del solicitante referenciado. |
 | `pendiente` | `estado` en `ABIERTO`/`EN_PROCESO`. |
-| `asignado` | El caso está en `despacho_caso`. |
+| `asignado` | El caso está en `despacho_caso` con una fila que **no sea `DEVUELTO`** (D-157). |
 | `citado` | Tiene cita en estado `PROPUESTA`/`CONFIRMADA` (por caso o por caso especial). |
 | `gestion` | `en_gestion_supervisor`, `estado_actual == "EN_GESTION"` o fila de despacho `GESTIONADO`. |
 

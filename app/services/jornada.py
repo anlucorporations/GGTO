@@ -3,7 +3,11 @@
 Los despachos se cierran **automáticamente a las 23:50** del día de la jornada
 (hora configurable en `despacho.hora_cierre_jornada`) y los casos que no quedaron
 cerrados pasan a **PENDIENTE**, de modo que vuelven al universo despachable y se
-reasignan en la jornada siguiente.
+reasignan en la jornada siguiente. Además, las **asignaciones se anulan**
+(D-157): el renglón de `despacho_caso` pasa a `DEVUELTO` y queda excluido de las
+consultas de vigencia, así que el caso deja de pertenecer a la cuadrilla (la
+APK deja de descargarlo y CASOS lo muestra sin cuadrilla) mientras el histórico
+del despacho conserva la fila y el estado que había tenido.
 
 DEC-MA-5: no hay *cron*. El cierre lo dispara de forma **perezosa** la entrada de
 un usuario con rol SUPER/ADMIN/SUPERVISOR (opción elegida en el proyecto), de
@@ -31,6 +35,8 @@ ROLES_QUE_CIERRAN = ("SUPER", "ADMIN", "SUPERVISOR")
 ESTADOS_RESUELTOS = ("CERRADO", "CANCELADO", "ENRUTADO")
 #: Estado al que vuelven los casos que quedaron sin cerrar (DEC-MA-6).
 ESTADO_PENDIENTE = "PENDIENTE"
+#: Estado de `despacho_caso` que anula la asignación (D-157).
+ESTADO_DEVUELTO = "DEVUELTO"
 
 
 def _zona():
@@ -74,7 +80,8 @@ def cerrar_jornada(
     usuario_p00: str | None = None,
     solo_vencidos: bool = True,
 ) -> dict:
-    """Cierra los despachos vencidos y devuelve los casos a PENDIENTE.
+    """Cierra los despachos vencidos, anula sus asignaciones y devuelve los casos
+    a PENDIENTE (D-157: la asignación devuelta deja de contar para la cuadrilla).
 
     **No hace `commit`**: quien llama decide la unidad de trabajo.
     """
@@ -85,7 +92,7 @@ def cerrar_jornada(
     if id_central is not None:
         stmt = stmt.where(Despacho.id_central == id_central)
 
-    cerrados = pendientes = 0
+    cerrados = pendientes = devueltas = 0
     detalle: list[dict] = []
     for despacho in db.scalars(stmt).all():
         if solo_vencidos and not jornada_vencida(despacho.fecha, momento, corte):
@@ -96,7 +103,7 @@ def cerrar_jornada(
             .where(DespachoCasos.id_despacho == despacho.id_despacho)
         ).all()
         liberados = 0
-        for _vinculo, caso in filas:
+        for vinculo, caso in filas:
             if caso.estado_actual in ESTADOS_RESUELTOS:
                 continue
             resolucion.registrar_estado(
@@ -104,12 +111,16 @@ def cerrar_jornada(
                 f"Cierre de jornada: el caso no se cerró a las {corte.strftime('%H:%M')}",
                 usuario_p00,
             )
+            # D-157: la asignación se anula. La fila conserva la historia de la
+            # jornada, pero deja de contar para la cuadrilla (sync, CASOS…).
+            vinculo.estado = ESTADO_DEVUELTO
             liberados += 1
         despacho.estado = "CERRADO"
         despacho.cerrado_en = datetime.now(UTC)
         despacho.cierre_auto = True
         cerrados += 1
         pendientes += liberados
+        devueltas += liberados
         detalle.append({
             "id_despacho": despacho.id_despacho,
             "fecha": despacho.fecha.isoformat(),
@@ -119,6 +130,7 @@ def cerrar_jornada(
     return {
         "despachos_cerrados": cerrados,
         "casos_pendientes": pendientes,
+        "asignaciones_devueltas": devueltas,
         "hora_corte": corte.strftime("%H:%M"),
         "fecha_corte": momento.isoformat(),
         "detalle": detalle,

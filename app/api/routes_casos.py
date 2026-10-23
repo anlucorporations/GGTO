@@ -167,7 +167,9 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
     pendientes = set(db.scalars(select(Caso.id_caso).where(
         Caso.id_caso.in_(ids), Caso.estado_actual.notin_(('CERRADO', 'CANCELADO')))))
     asignados = set(db.scalars(select(DespachoCasos.id_caso).where(
-        DespachoCasos.id_caso.in_(ids))))
+        DespachoCasos.id_caso.in_(ids),
+        # D-157: una asignación devuelta por el cierre de jornada ya no cuenta.
+        DespachoCasos.estado != 'DEVUELTO')))
     asignados |= {c.id_caso for c in casos if c.estado_actual == 'ASIGNADO'}
     citados = set(db.scalars(select(Cita.id_caso).where(
         Cita.id_caso.in_(ids), Cita.estado.in_(('PROPUESTA', 'CONFIRMADA')))))
@@ -176,7 +178,8 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
         DespachoCasos.id_caso.in_(ids), DespachoCasos.estado == 'GESTIONADO')))
 
     # D-78: cuadrilla del último despacho que incluyó el caso (misma regla que el
-    # filtro «Cuadrilla» de D-72: `fecha` e `id_despacho` descendentes).
+    # filtro «Cuadrilla» de D-72: `fecha` e `id_despacho` descendentes). D-157:
+    # una fila `DEVUELTO` ya no es asignación, así que no se toma como última.
     rn = (
         func.row_number()
         .over(
@@ -192,7 +195,7 @@ def _resumen(db: Session, casos: list[Caso]) -> list[CasoOut]:
             rn,
         )
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
-        .where(DespachoCasos.id_caso.in_(ids))
+        .where(DespachoCasos.estado != 'DEVUELTO', DespachoCasos.id_caso.in_(ids))
         .subquery()
     )
     ultima = {
@@ -235,7 +238,8 @@ def _casos_de_cuadrilla(id_cuadrilla: int):
 
     Ciclo D-72: el filtro «Cuadrilla» de CASOS toma la cuadrilla de origen del
     despacho más reciente (`fecha` y `id_despacho` descendentes) que incluyó el
-    caso. Si el caso no ha sido despachado nunca, no pertenece a ninguna.
+    caso. Si el caso no ha sido despachado nunca, no pertenece a ninguna. Una
+    asignación `DEVUELTO` por el cierre de jornada tampoco cuenta (D-157).
     """
     rn = (
         func.row_number()
@@ -248,6 +252,7 @@ def _casos_de_cuadrilla(id_cuadrilla: int):
     por_caso = (
         select(DespachoCasos.id_caso.label("id_caso"), Despacho.id_cuadrilla.label("id_cuadrilla"), rn)
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(DespachoCasos.estado != 'DEVUELTO')
         .subquery()
     )
     return select(por_caso.c.id_caso).where(

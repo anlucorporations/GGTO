@@ -477,6 +477,8 @@ def test_el_corte_de_jornada_cierra_el_despacho_y_devuelve_los_casos(client, ent
     resultado = r.json()
     assert resultado["despachos_cerrados"] >= 1
     assert resultado["casos_pendientes"] >= 1
+    # D-157: además de devolver el caso, el corte anula su asignación.
+    assert resultado["asignaciones_devueltas"] >= 1
 
     db_session.expire_all()
     for caso in casos:

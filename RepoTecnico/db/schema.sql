@@ -494,7 +494,8 @@ CREATE TABLE IF NOT EXISTS despacho_caso (
                         CHECK (tipo_asignacion IN ('REPARACION','CONSTRUCCION','REFERIDO',
                                'EMPRESA','FALLA_MASIVA')),
     estado              varchar(20)  NOT NULL DEFAULT 'ASIGNADO'
-                        CHECK (estado IN ('ASIGNADO','GESTIONADO','CERRADO','CITADO','DIFERIDO')),
+                        CHECK (estado IN ('ASIGNADO','GESTIONADO','CERRADO','CITADO','DIFERIDO',
+                               'DEVUELTO')),
     observacion         text,
     UNIQUE (id_despacho, id_caso)
 );

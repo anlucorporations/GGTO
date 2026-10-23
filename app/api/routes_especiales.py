@@ -575,8 +575,10 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
     solicitantes = {
         s.id_solicitante: s for s in db.scalars(select(Solicitante)).all()
     }
+    # D-157: una asignación devuelta por el cierre de jornada ya no cuenta.
     asignados = set(db.scalars(select(DespachoCasos.id_caso).where(
-        DespachoCasos.id_caso.in_(ids_caso)))) if ids_caso else set()
+        DespachoCasos.id_caso.in_(ids_caso),
+        DespachoCasos.estado != "DEVUELTO"))) if ids_caso else set()
     gestion = {
         cid for cid, caso in casos.items()
         if caso.en_gestion_supervisor or caso.estado_actual == "EN_GESTION"
@@ -591,7 +593,8 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
             Cita.id_caso.in_(ids_caso), Cita.estado.in_(("PROPUESTA", "CONFIRMADA")))))
 
     # D-80: cuadrilla del último despacho del caso asociado, con la misma regla
-    # que el listado de CASOS (D-78): `fecha` e `id_despacho` descendentes.
+    # que el listado de CASOS (D-78): `fecha` e `id_despacho` descendentes. Una
+    # asignación `DEVUELTO` por el cierre de jornada ya no cuenta (D-157).
     ultima_cuadrilla: dict[int, int] = {}
     if ids_caso:
         rn = (
@@ -609,7 +612,7 @@ def _resumen_especiales(db: Session, lista: list[CasoEspecial]) -> list[CasoEspe
                 rn,
             )
             .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
-            .where(DespachoCasos.id_caso.in_(ids_caso))
+            .where(DespachoCasos.estado != "DEVUELTO", DespachoCasos.id_caso.in_(ids_caso))
             .subquery()
         )
         ultima_cuadrilla = {
@@ -848,6 +851,7 @@ def _resumen_seguimiento(db: Session, lista: list[Seguimiento]) -> list[Seguimie
             rn,
         )
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(DespachoCasos.estado != "DEVUELTO")
         .subquery()
     )
     filas_cuadrilla = db.execute(

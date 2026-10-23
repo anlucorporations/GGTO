@@ -971,7 +971,7 @@ continuación; la columna «Valores» reproduce el orden del DDL:
 | `despacho.estado` | `BORRADOR`, `PUBLICADO`, `CERRADO` | `:446-447` |
 | `despacho.enviado_canal` | `TELEGRAM`, `CORREO` | `:449` |
 | `despacho_caso.tipo_asignacion` | `REPARACION`, `CONSTRUCCION`, `REFERIDO`, `EMPRESA`, `FALLA_MASIVA` | `:464-466` |
-| `despacho_caso.estado` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO` | `:467-468` |
+| `despacho_caso.estado` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO`, `DEVUELTO` | `:487-500` |
 | `falla_masiva.origen` | `AUTOMATICA`, `REPORTE_TECNICO`, `MCP` | `:496-497` |
 | `falla_masiva.estado` | `DETECTADA`, `PLANIFICADA`, `ATENDIDA`, `CERRADA` | `:500-501` |
 | `actividad.tipo` | `CONTACTO`, `CIERRE`, `ENRUTE`, `DIFERIDO`, `INCIDENTE`, `FALLA_MASIVA` | `:518-519` |

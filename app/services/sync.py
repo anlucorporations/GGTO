@@ -45,6 +45,11 @@ logger = logging.getLogger(__name__)
 #: dejaría al técnico sin nada que descargar.
 ESTADOS_TERMINALES = ("CERRADO", "CANCELADO", "ENRUTADO")
 
+#: D-157: asignación devuelta por el **cierre de jornada**. Una fila en ese
+#: estado ya no es trabajo de la cuadrilla: no descarga, no autoriza la carga ni
+#: cuenta como último despacho.
+ESTADO_DESASIGNADO = "DEVUELTO"
+
 #: Estados de un despacho que **son la jornada** de la cuadrilla para su APK.
 #:
 #: D-119: `BORRADOR` **sí** cuenta. El supervisor ya procesó el despacho y esos
@@ -217,6 +222,9 @@ def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
     caso reasignado a otra cuadrilla deja de pertenecer a la anterior, con el
     mismo criterio que el filtro «Cuadrilla» de CASOS (D-72). Así el técnico no
     descarga trabajo que ya pasó a manos de otra cuadrilla.
+
+    D-157: una fila `DEVUELTA` por el cierre de jornada ya no es una asignación:
+    el caso liberado deja de ser de cualquier cuadrilla hasta que se reseñe.
     """
     rn = (
         func.row_number()
@@ -233,6 +241,7 @@ def _casos_ids_de_cuadrilla(db: Session, id_cuadrilla: int) -> list[int]:
             rn,
         )
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(DespachoCasos.estado != ESTADO_DESASIGNADO)
         .subquery()
     )
     filas: list[int] = list(
@@ -273,7 +282,8 @@ def _casos_del_dia(db: Session, id_cuadrilla: int, dia: date) -> list[int]:
 
     Se aplica el mismo criterio que `_casos_ids_de_cuadrilla` (último despacho por
     caso, `fecha` e `id_despacho` descendentes): un caso reasignado hoy a otra
-    cuadrilla no cuenta como del día para la anterior.
+    cuadrilla no cuenta como del día para la anterior (ni una fila `DEVUELTO`
+    con el despacho de ayer, D-157).
     """
     rn = (
         func.row_number()
@@ -291,6 +301,7 @@ def _casos_del_dia(db: Session, id_cuadrilla: int, dia: date) -> list[int]:
             rn,
         )
         .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .where(DespachoCasos.estado != ESTADO_DESASIGNADO)
         .subquery()
     )
     return list(
@@ -548,13 +559,18 @@ def construir_descarga(
     sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
 
     # Última línea de despacho por caso y cuadrilla (para orden/tipo/observación).
+    # D-157: las filas `DEVUELTO` ya no son asignación.
     dc_map: dict[int, DespachoCasos] = {}
     if casos:
         ids = [cc.id_caso for cc in casos]
         dcs = db.scalars(
             select(DespachoCasos)
             .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
-            .where(Despacho.id_cuadrilla == c.id_cuadrilla, DespachoCasos.id_caso.in_(ids))
+            .where(
+                Despacho.id_cuadrilla == c.id_cuadrilla,
+                DespachoCasos.estado != ESTADO_DESASIGNADO,
+                DespachoCasos.id_caso.in_(ids),
+            )
             .order_by(Despacho.fecha.desc(), Despacho.id_despacho.desc())
         ).all()
         for dc in dcs:

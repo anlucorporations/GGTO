@@ -37,6 +37,7 @@ const ESTADOS_CASO: EstadoDespachoCaso[] = [
   'CERRADO',
   'CITADO',
   'DIFERIDO',
+  'DEVUELTO',
 ];
 
 const TIPOS_ASIGNACION: TipoAsignacionDespacho[] = [

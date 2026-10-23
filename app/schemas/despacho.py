@@ -8,7 +8,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 EstadoDespacho = Literal["BORRADOR", "PUBLICADO", "CERRADO"]
-EstadoDespachoCaso = Literal["ASIGNADO", "GESTIONADO", "CERRADO", "CITADO", "DIFERIDO"]
+EstadoDespachoCaso = Literal["ASIGNADO", "GESTIONADO", "CERRADO", "CITADO", "DIFERIDO",
+                             "DEVUELTO"]
 TipoAsignacion = Literal["REPARACION", "CONSTRUCCION", "REFERIDO", "EMPRESA", "FALLA_MASIVA"]
 Canal = Literal["TELEGRAM", "CORREO"]
 
@@ -414,10 +415,13 @@ class ReporteProduccionOut(BaseModel):
 
 
 class CierreJornadaOut(BaseModel):
-    """Resultado del corte de jornada del despacho (D-99 · RF-65)."""
+    """Resultado del corte de jornada del despacho (D-99 · RF-65 · D-157)."""
 
     despachos_cerrados: int = 0
     casos_pendientes: int = 0
+    #: Asignaciones anuladas: `despacho_caso.estado = DEVUELTO` para los casos
+    #: liberados, de modo que dejan de pertenecer a cualquier cuadrilla.
+    asignaciones_devueltas: int = 0
     hora_corte: str
     fecha_corte: str
     detalle: list[dict] = Field(default_factory=list)

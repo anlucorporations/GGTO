@@ -778,7 +778,7 @@ asignación (`RepoTecnico/db/schema.sql:458-471`; ORM `app/models/despacho_entit
 | `id_sector` | `integer` | FK→`sector` | Sector que agrupa la visita. |
 | `orden_visita` | `smallint` | — | Orden de recorrido. |
 | `tipo_asignacion` | `varchar(20)` | — | `REPARACION`/`CONSTRUCCION`/`REFERIDO`/`EMPRESA`/`FALLA_MASIVA`. |
-| `estado` | `varchar(20)` | NN, `ASIGNADO` | `ASIGNADO`/`GESTIONADO`/`CERRADO`/`CITADO`/`DIFERIDO`. |
+| `estado` | `varchar(20)` | NN, `ASIGNADO` | `ASIGNADO`/`GESTIONADO`/`CERRADO`/`CITADO`/`DIFERIDO`/`DEVUELTO` (D-157: asignación anulada por el cierre de jornada). |
 | `observacion` | `text` | — | Notas. |
 
 Restricción `UNIQUE (id_despacho, id_caso)`: un caso una sola vez por despacho

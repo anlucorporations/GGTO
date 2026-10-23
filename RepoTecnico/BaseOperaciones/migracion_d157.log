@@ -1,0 +1,49 @@
+[2026-10-23T12:48:27+00:00] ERROR (transacción revertida): relation "despacho_caso" does not exist
+LINE 4:       WHERE conrelid = 'despacho_caso'::regclass
+                               ^
+
+[2026-10-23T12:48:39+00:00] ==============================================================================
+[2026-10-23T12:48:39+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T12:48:39+00:00] modo=SIMULACIÓN
+[2026-10-23T12:48:39+00:00] estado actual: {'catalogo_devuelto': 1}
+[2026-10-23T12:48:39+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-10-23T12:48:58+00:00] ==============================================================================
+[2026-10-23T12:48:58+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T12:48:58+00:00] modo=SIMULACIÓN
+[2026-10-23T12:48:58+00:00] estado actual: {'catalogo_devuelto': 0}
+[2026-10-23T12:48:58+00:00] Cambios pendientes:
+[2026-10-23T12:48:58+00:00]   · catalogo_devuelto
+[2026-10-23T12:48:58+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-23T12:49:02+00:00] ==============================================================================
+[2026-10-23T12:49:02+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T12:49:02+00:00] modo=APLICAR
+[2026-10-23T12:49:02+00:00] estado actual: {'catalogo_devuelto': 0}
+[2026-10-23T12:49:02+00:00] Cambios pendientes:
+[2026-10-23T12:49:02+00:00]   · catalogo_devuelto
+[2026-10-23T12:49:02+00:00] verificación post-migración: {'catalogo_devuelto': 1}
+[2026-10-23T12:49:02+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-23T12:49:03+00:00] ==============================================================================
+[2026-10-23T12:49:03+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T12:49:03+00:00] modo=SIMULACIÓN
+[2026-10-23T12:49:03+00:00] estado actual: {'catalogo_devuelto': 1}
+[2026-10-23T12:49:03+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-10-23T14:13:13+00:00] ==============================================================================
+[2026-10-23T14:13:13+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T14:13:13+00:00] modo=SIMULACIÓN
+[2026-10-23T14:13:13+00:00] estado actual: {'catalogo_devuelto': 0}
+[2026-10-23T14:13:13+00:00] Cambios pendientes:
+[2026-10-23T14:13:13+00:00]   · catalogo_devuelto
+[2026-10-23T14:13:13+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-23T14:13:21+00:00] ==============================================================================
+[2026-10-23T14:13:21+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T14:13:21+00:00] modo=APLICAR
+[2026-10-23T14:13:21+00:00] estado actual: {'catalogo_devuelto': 0}
+[2026-10-23T14:13:21+00:00] Cambios pendientes:
+[2026-10-23T14:13:21+00:00]   · catalogo_devuelto
+[2026-10-23T14:13:22+00:00] verificación post-migración: {'catalogo_devuelto': 1}
+[2026-10-23T14:13:22+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-10-23T14:13:30+00:00] ==============================================================================
+[2026-10-23T14:13:30+00:00] MIGRACIÓN D-157 (despacho_caso: estado DEVUELTO)
+[2026-10-23T14:13:30+00:00] modo=SIMULACIÓN
+[2026-10-23T14:13:30+00:00] estado actual: {'catalogo_devuelto': 1}
+[2026-10-23T14:13:30+00:00] ✓ La base YA está migrada: no hay cambios pendientes.

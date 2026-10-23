@@ -592,7 +592,8 @@ export type EstadoDespachoCaso =
   | 'GESTIONADO'
   | 'CERRADO'
   | 'CITADO'
-  | 'DIFERIDO';
+  | 'DIFERIDO'
+  | 'DEVUELTO';
 
 export type CanalDespacho = 'TELEGRAM' | 'CORREO';
 

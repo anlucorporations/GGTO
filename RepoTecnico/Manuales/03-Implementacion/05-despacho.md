@@ -93,7 +93,7 @@ Tabla de detalle: cada caso asignado dentro de un despacho. Definida en
 | `id_sector` | `integer` FK→`sector` | Sector del caso al momento de asignar. |
 | `orden_visita` | `smallint` | Secuencia de visita dentro de la cuadrilla. |
 | `tipo_asignacion` | `varchar(20)` | `REPARACION`/`CONSTRUCCION`/`REFERIDO`/`EMPRESA`/`FALLA_MASIVA`. |
-| `estado` | `varchar(20)` | `ASIGNADO`/`GESTIONADO`/`CERRADO`/`CITADO`/`DIFERIDO`. |
+| `estado` | `varchar(20)` | `ASIGNADO`/`GESTIONADO`/`CERRADO`/`CITADO`/`DIFERIDO`/`DEVUELTO` (D-157: asignación anulada por el cierre de jornada). |
 | `observacion` | `text` | Nota del supervisor para ese caso. |
 
 La restricción `UNIQUE (id_despacho, id_caso)` (`RepoTecnico/db/schema.sql:470`) impide

@@ -973,3 +973,42 @@ def test_el_pendiente_del_despacho_se_descarga_y_el_tecnico_lo_gestiona(
     assert cierre.json()["estado_actual"] == "CERRADO"
 
 
+# --------------------------------------------------------------------------- #
+# APK · el corte de jornada anula la asignación y la cuadrilla deja de bajarlo (D-157)
+# --------------------------------------------------------------------------- #
+def test_el_cierre_de_jornada_desasigna_y_el_tecnico_deja_de_bajarlo(
+    client, entorno_sync, db_session
+):
+    """D-157: la fila `DEVUELTO` ya no es trabajo de la cuadrilla.
+
+    El caso liberado pasa a PENDIENTE y desaparece de la descarga, sin perder la
+    protección D-123 para el trabajo que el técnico ya hizo.
+    """
+    headers = entorno_sync["admin"]
+    id_caso = _crear_caso(client, headers, "TSTSYNC-DE15")
+    db_session.add(DespachoCasos(
+        id_despacho=entorno_sync["despacho_hoy_a"], id_caso=id_caso,
+        estado="ASIGNADO", orden_visita=6, tipo_asignacion="REPARACION",
+    ))
+    db_session.commit()
+
+    antes = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"])
+    assert antes.status_code == 200, antes.text
+    assert id_caso in {c["id_caso"] for c in antes.json()["casos"]}
+
+    r = client.post(f"{BASE}/despachos/cierre-jornada?solo_vencidos=false", headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["asignaciones_devueltas"] >= 1
+
+    db_session.expire_all()
+    assert db_session.get(Caso, id_caso).estado_actual == "PENDIENTE"
+    ids_vigentes = svc_sync._casos_ids_de_cuadrilla(db_session, entorno_sync["id_cuadrilla_a"])
+    assert id_caso not in ids_vigentes, "el caso devuelto sigue siendo de la cuadrilla"
+
+    descarga = client.get(f"{SYNC}/descarga", headers=entorno_sync["tecnico"])
+    assert descarga.status_code == 200, descarga.text
+    assert id_caso not in {c["id_caso"] for c in descarga.json()["casos"]}, (
+        "la APK de la cuadrilla devuelta no debe seguir descargando el caso"
+    )
+
+
