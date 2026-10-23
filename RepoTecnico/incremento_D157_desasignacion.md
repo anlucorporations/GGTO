@@ -4,7 +4,7 @@
 |---|---|
 | Petición | «Modifica para que también quite las asignaciones» — sobre el proceso diario que pasa los casos a `PENDIENTE` (el corte perezoso de las 23:50, **D-99** · RF-65/RF-66) |
 | Fecha | 2026-10-23 |
-| Alcance | Backend, esquema (`despacho_caso.estado`), web y migración · **pendiente de despliegue (v84)** |
+| Alcance | Backend, esquema (`despacho_caso.estado`), web y migración · **desplegado en producción (v84)** |
 | Autor | Dirección del proyecto |
 
 ---
