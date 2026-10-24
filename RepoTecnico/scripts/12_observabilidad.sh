@@ -154,6 +154,51 @@ else
   echo "  ! ALERTA_EMAIL vacío: las políticas se crean sin canal de notificación"
 fi
 
+# Políticas creadas antes de disponer de ALERTA_EMAIL quedaron sin canal.
+# Al reejecutar el script con ALERTA_EMAIL definido, este paso asocia el canal
+# a toda política existente que no lo lleve (idempotente).
+asociar_canal() {
+  local nombre="$1" code
+  _api GET "$MON/v3/projects/$PROJECT_ID/alertPolicies?pageSize=100" >/dev/null
+  local cuerpo
+  cuerpo=$(python3 - "$TMP/resp" "$nombre" "$CANAL" "$TMP/pol" <<'PY'
+import json
+import sys
+
+try:
+    datos = json.load(open(sys.argv[1], encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+canal = sys.argv[3]
+for politica in datos.get("alertPolicies", []):
+    if politica.get("displayName") != sys.argv[2]:
+        continue
+    canales = politica.get("notificationChannels", [])
+    if canal in canales:
+        print("YA")  # ya lo lleva
+    else:
+        canales.append(canal)
+        print({"name": politica["name"], "notificationChannels": canales}.get("name", "PATCH"))
+    # PATCH estricto del canal: conserva la política y solo fija los canales.
+    with open(sys.argv[4], "w", encoding="utf-8") as fichero:
+        json.dump({"name": politica["name"], "notificationChannels": canales}, fichero)
+    break
+PY
+)
+  if [[ "$cuerpo" == "YA" || -z "$cuerpo" ]]; then
+    [[ "$cuerpo" == "YA" ]] && echo "  = canal presente en $nombre"
+    return 0
+  fi
+  local politica_url
+  politica_url=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("name",""))' "$TMP/pol")
+  code=$(_api PATCH "$MON/v3/$politica_url?updateMask=notificationChannels" "$(cat "$TMP/pol")")
+  if [[ "$code" != "200" ]]; then
+    echo "ERROR al asociar el canal a '$nombre' ($code): $(cat "$TMP/resp")" >&2
+    return 1
+  fi
+  echo "  = canal asociado a $nombre"
+}
+
 crear_alerta() {
   local nombre="$1" cuerpo="$2" code
   _api GET "$MON/v3/projects/$PROJECT_ID/alertPolicies?pageSize=100" >/dev/null
@@ -191,9 +236,12 @@ JSON
 )
 crear_alerta "GGTO - Ingesta diaria ausente" "$cuerpo"
 
+# Nombre a propósito en ASCII: la ejecución desde Git Bash pierde los caracteres
+# UTF-8 del heredoc y la comparación de idempotencia (displayName) dejaría de
+# coincidir, duplicando la política.
 cuerpo=$(cat <<JSON
 {
-  "displayName": "GGTO - Errores 5xx o /ready caído",
+  "displayName": "GGTO - Errores 5xx o /ready caido",
   "combiner": "OR",
   "conditions": [{
     "displayName": "Respuestas 5xx en 5 minutos",
@@ -212,7 +260,7 @@ cuerpo=$(cat <<JSON
 }
 JSON
 )
-crear_alerta "GGTO - Errores 5xx o /ready caído" "$cuerpo"
+crear_alerta "GGTO - Errores 5xx o /ready caido" "$cuerpo"
 
 cuerpo=$(cat <<JSON
 {
@@ -258,6 +306,14 @@ cuerpo=$(cat <<JSON
 JSON
 )
 crear_alerta "GGTO - Latencia p95 superior a 2 s" "$cuerpo"
+
+if [[ -n "$CANAL" ]]; then
+  echo "== Asociación del canal a las políticas existentes =="
+  asociar_canal "GGTO - Ingesta diaria ausente"
+  asociar_canal "GGTO - Errores 5xx o /ready caido"
+  asociar_canal "GGTO - Notificaciones fallidas"
+  asociar_canal "GGTO - Latencia p95 superior a 2 s"
+fi
 
 echo "== Uptime de /health =="
 URL=$(gcloud run services describe "$SERVICIO" --region "$REGION" --project "$PROJECT_ID" \
