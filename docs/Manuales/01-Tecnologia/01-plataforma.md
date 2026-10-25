@@ -1,8 +1,8 @@
 # Plataforma GGTO — Visión general y arquitectura
 
-> **Estado verificado 2026-10-12:** GGTO V1 continúa desplegado; GGTO V2 está
-> parcialmente implementado. La APK vigente (`1.1.0+9`) es de campo y todavía no
-> ofrece gestión por rol. La auditoría de código, documentación y despliegue está
+> **Estado verificado 2026-10-24:** GGTO V1 continúa desplegado; GGTO V2 está
+> parcialmente implementado. La APK vigente (`1.15.20+45`) es multirol: campo y
+> pantallas de gestión (D-95…D-158). La auditoría de código, documentación y despliegue está
 > en `RepoTecnico/auditoria_estado_real_v2.md` dentro del repositorio.
 
 > Manual para todo público. Explica qué es **GGTO**, para qué sirve y cómo está armado por dentro,
@@ -76,8 +76,9 @@ disponibilidad) y **14 RT** (requisitos técnicos).
 
 **Capacidades que deben distinguirse por versión:**
 
-- **La APK Flutter existe como aplicación de campo** (`1.1.0+9`), con casos, sincronización,
-  alertas, mensajes y perfil. Las pantallas de gestión multirol V2 siguen pendientes.
+- **La APK Flutter es multirol** (`1.15.20+45`, versión del commit D-158), con el flujo de
+  campo (casos, sincronización, alertas, mensajes y perfil) y las pantallas de gestión
+  (D-95 y siguientes).
 - **WhatsApp no existe en esta versión.** Se retiró de los requerimientos y quedó reservado para una
   versión futura (v3).
 - **Telegram y el correo todavía no envían de verdad.** No tienen credenciales cargadas en
@@ -282,7 +283,9 @@ un asistente de IA) consulten datos de GGTO de forma controlada.
 - **Telegram: no envía todavía.** No hay credenciales cargadas. Cada mensaje queda **PENDIENTE** en
   la bandeja de salida.
 - **Correo: tampoco envía todavía.** Mismo motivo.
-- **MCP: existe como servicio** y responde si se le presenta la clave correcta.
+- **MCP: existe como servicio**, pero su clave `mcp.api_key` está hoy **vacía**: con la clave vacía el
+  servidor responde **503** y no expone herramientas (D-149). Solo atiende cuando la clave esté
+  configurada y se le presente la clave correcta.
 - **WhatsApp: no existe** en esta versión.
 
 El sistema guarda todo lo que quiere notificar en una **bandeja de salida** (en inglés, *outbox*).
@@ -299,8 +302,8 @@ Los parámetros que gobiernan alertas y envíos se guardan en la tabla `configur
 | `fallas.campo_concentracion` | `olt` | Campo por el que se agrupa: `olt`, `fat` o `id_sector` |
 | `despacho.destino_telegram` | vacío | Destino del despacho; si está vacío, queda PENDIENTE |
 | `outbox.max_intentos` | `5` | Reintentos máximos de un envío |
-| `telegram.webhook_secret` | vacío | Clave del webhook de Telegram |
-| `mcp.api_key` | vacío | Clave del canal MCP |
+| `telegram.webhook_secret` | vacío | Clave del webhook de Telegram: mientras esté vacía, el webhook responde **503** y no atiende (D-149) |
+| `mcp.api_key` | vacío | Clave del canal MCP: mientras esté vacía, el servidor MCP responde **503** y no expone herramientas (D-149) |
 
 La detección de fallas **no se duplica**: mientras una falla siga activa no se genera otra igual. Se
 ejecuta automáticamente después de cada carga de CSV y también a mano, cuando se pide.

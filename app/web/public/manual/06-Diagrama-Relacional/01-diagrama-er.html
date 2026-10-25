@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Diagrama Relacional</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/06-Diagrama-Relacional/01-diagrama-er.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -826,8 +826,8 @@ puede tener una cuenta de usuario, o ninguna.</li>
 con tablas puente: <code>cuadrilla_tecnico</code>, <code>cuadrilla_herramienta</code> y
 <code>despacho_caso</code>.</li>
 <li><strong>Recuerda el estado real.</strong> El DDL local define 41 tablas; hay cinco
-complementarias a las 36 entidades originales del modelo. La APK de campo
-existe (<code>1.1.0+9</code>), pero la gestión multirol V2 está pendiente. Cloud SQL está
+complementarias a las 36 entidades originales del modelo. La APK vigente es
+multirol (<code>1.15.20+45</code>). Cloud SQL está
 activa y no tiene respaldos automáticos habilitados.</li>
 </ol>
 <h2 id="vision-general-del-modelo"><span class="sec-num">2</span>Visión general del modelo</h2>
@@ -1552,7 +1552,7 @@ cada insumo a una sola aparición por orden (<code>UNIQUE (id_orden, id_insumo)<
     }
     NOTIFICACION {
         bigserial id_notificacion PK
-        varchar  canal &quot;TELEGRAM|CORREO|MCP_IA&quot;
+        varchar  canal &quot;TELEGRAM|CORREO|MCP_IA|MANUAL&quot;
         varchar  destinatario
         varchar  asunto
         text     cuerpo
@@ -2167,7 +2167,7 @@ La columna «Valores» reproduce el orden del script:</p>
 </tr>
 <tr>
 <td><code>despacho_caso.estado</code></td>
-<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code>, <code>DIFERIDO</code></td>
+<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code>, <code>DIFERIDO</code>, <code>DEVUELTO</code></td>
 </tr>
 <tr>
 <td><code>falla_masiva.origen</code></td>
@@ -2211,7 +2211,7 @@ La columna «Valores» reproduce el orden del script:</p>
 </tr>
 <tr>
 <td><code>notificacion.canal</code></td>
-<td><code>TELEGRAM</code>, <code>CORREO</code>, <code>MCP_IA</code></td>
+<td><code>TELEGRAM</code>, <code>CORREO</code>, <code>MCP_IA</code>, <code>MANUAL</code></td>
 </tr>
 <tr>
 <td><code>notificacion.estado</code></td>
@@ -2528,7 +2528,7 @@ reportes de monitoreo (<code>app/services/monitoreo.py</code>).</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Diagrama Relacional</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

@@ -448,28 +448,38 @@ servidor MCP y métricas. La escritura es para ADMIN y SUPERVISOR.
 | POST | `/api/v1/fallas-masivas/{id_falla}/material` | Solicitar material para la falla (RF-18) | ADMIN/SUPERVISOR |
 | GET | `/api/v1/notificaciones` | Bandeja de notificaciones; filtros por estado, canal y límite | Autenticado |
 | POST | `/api/v1/notificaciones/procesar` | Procesar la bandeja de salida (reintentos con espera creciente) | ADMIN/SUPERVISOR |
-| POST | `/api/v1/telegram/webhook` | Webhook del bot de Telegram | Público (con secreto propio) |
-| POST | `/api/v1/mcp` | Servidor MCP en JSON-RPC 2.0 | Público (con clave propia) |
+| POST | `/api/v1/telegram/webhook` | Webhook del bot de Telegram | Público (con credencial obligatoria; **sin secreto responde 503**, D-149) |
+| POST | `/api/v1/mcp` | Servidor MCP en JSON-RPC 2.0 | Público (con credencial obligatoria; **sin clave responde 503**, D-149) |
 | GET | `/api/v1/metricas` | Métricas de negocio y estado de los canales | Autenticado |
 
 Detalles verificados:
 
-- El webhook de Telegram exige la cabecera `X-Telegram-Bot-Api-Secret-Token` **cuando** la clave
-  `telegram.webhook_secret` está configurada; si no coincide, devuelve **403**.
+- El webhook de Telegram tiene un control **fail-closed** (D-149): si la clave `telegram.webhook_secret`
+  está **vacía**, responde **503** («El webhook de Telegram no tiene secreto configurado») y **no ejecuta
+  ningún comando** (`app/api/routes_alertas.py:814-832`). Si la cabecera `X-Telegram-Bot-Api-Secret-Token`
+  está ausente o no coincide, devuelve **403**. La comparación del secreto es en tiempo constante.
 - El bot soporta los comandos `/start`, `/ayuda`, `/help`, `/estado`, `/caso` y `/falla`, y **responde
   encolando en la bandeja de salida**; por eso, **sin credenciales, la respuesta queda PENDIENTE**.
-- El servidor MCP valida la cabecera `X-MCP-Key` contra `mcp.api_key` y, si no coincide, responde **HTTP 200
-  con error JSON-RPC -32001**.
+- El servidor MCP valida la cabecera `X-MCP-Key` contra `mcp.api_key`, también **fail-closed** (D-149):
+  si la clave está **vacía**, responde **503** («El servidor MCP no tiene clave configurado») y **no expone
+  herramienta alguna** (`app/api/routes_alertas.py:913-931`); si la cabecera está ausente o no coincide,
+  responde **HTTP 401** («Clave MCP inválida»). Antes de D-149 respondía **HTTP 200 con error JSON-RPC
+  -32001**: ya no.
 - MCP implementa `initialize` (versión de protocolo `2024-11-05`), `tools/list` y `tools/call`, con cuatro
   herramientas: `estado_central`, `consultar_caso`, `reportar_falla` y `procesar_notificaciones`.
 - Los errores de herramienta se devuelven como **-32602** y un método desconocido como **-32601**.
 - La versión anunciada del servidor MCP es **0.1.0**.
-- El modo de prueba de contrato confirma que **ambos webhooks son públicos** y no exigen token de sesión.
+- El modo de prueba de contrato confirma que **ambos webhooks no exigen token de sesión, pero sí su
+  credencial de canal**: sin secreto/clave configurados responden **503** y no ejecutan nada (D-149;
+  `app/tests/test_contratos.py:168-182`).
 
 > **Recordatorio importante:** **Telegram y el correo no tienen credenciales en producción**. Los envíos
-> quedan **PENDIENTES** en la bandeja (patrón de bandeja de salida) y **no se completan**. El canal
-> **WhatsApp no existe** en la versión 1. En este manual solo se **nombran** los secretos y las claves; **no
-> se transcriben valores**.
+> quedan **PENDIENTES** en la bandeja (patrón de bandeja de salida) y **no se completan**. Por lo mismo, y
+> por el control **fail-closed** introducido con D-149, **el webhook de Telegram y el servidor MCP están
+> desactivados hasta configurar su credencial** (`telegram.webhook_secret` y `mcp.api_key`, hoy vacías en
+> la tabla de configuración): responden **503**. Nunca debe hablarse de ellos como canales «públicos». El
+> canal **WhatsApp no existe** en la versión 1. En este manual solo se **nombran** los secretos y las
+> claves; **no se transcriben valores**.
 
 ## Sincronización de la aplicación móvil (APK)
 
@@ -657,22 +667,25 @@ observabilidad, cuya verificación se apoya además en la ruta de métricas.
 | `POST /api/v1/auth/unlock` | Recuperación de una cuenta bloqueada con 3 de 12 palabras |
 | `POST /api/v1/auth/reset-password` | Restablecimiento de la clave con 3 de 12 palabras |
 
-### Rutas sin JWT pero con secreto propio
+### Rutas sin JWT pero con credencial de canal obligatoria
 
 Dos operaciones son públicas desde la perspectiva del esquema publicado, porque no dependen de la credencial
-de sesión, pero **se protegen con un secreto de canal**:
+de sesión, pero desde D-149 su credencial de canal es **obligatoria** y sin ella el endpoint **no atiende**
+(fail-closed):
 
 - `POST /api/v1/telegram/webhook`: valida la cabecera `X-Telegram-Bot-Api-Secret-Token` contra
-  `telegram.webhook_secret`; si la clave está vacía, no se exige.
-- `POST /api/v1/mcp`: valida la cabecera `X-MCP-Key` contra `mcp.api_key`; si la clave está vacía, no se
-  exige.
+  `telegram.webhook_secret`; **clave vacía ⇒ 503** y no ejecuta ningún comando, cabecera ausente o
+  incorrecta ⇒ **403** (`app/api/routes_alertas.py:814-832`).
+- `POST /api/v1/mcp`: valida la cabecera `X-MCP-Key` contra `mcp.api_key`; **clave vacía ⇒ 503** y no
+  expone herramienta alguna, cabecera ausente o incorrecta ⇒ **401**
+  (`app/api/routes_alertas.py:913-931`). Antes de D-149 respondía 200 con error JSON-RPC -32001: ya no.
 
 Los nombres de esos secretos y parámetros están documentados en la tabla de configuración. **No se
 reproducen valores ni credenciales en este manual.**
 
 ### Resto de la superficie
 
-Descontadas las **ocho rutas públicas** por diseño y las **dos rutas con secreto propio**, las **99
+Descontadas las **ocho rutas públicas** por diseño y las **dos rutas con credencial de canal obligatoria**, las **99
 operaciones restantes** exigen el pase de sesión Bearer: o bien con la dependencia de usuario autenticado
 (lectura) o con la validación de rol ADMIN o SUPERVISOR (escritura). Una prueba de contrato enumera la lista
 exacta de rutas públicas y comprueba que el resto declare seguridad en el esquema publicado.
@@ -685,8 +698,9 @@ exacta de rutas públicas y comprueba que el resto declare seguridad en el esque
 - **503**: en `/ready` cuando la base de datos no responde, y en `/api/v1/resumen` en la misma situación.
 - **500**: cualquier excepción no controlada; el middleware la registra con su identificador de petición y
   la vuelve a lanzar.
-- **Errores JSON-RPC dentro de HTTP 200** en `/api/v1/mcp` (códigos -32001, -32602 y -32601), por el formato
-  propio del protocolo.
+- **Errores JSON-RPC dentro de HTTP 200** en `/api/v1/mcp` (códigos **-32602** y **-32601**), por el formato
+  propio del protocolo. El rechazo de autenticación del canal **ya no es un error JSON-RPC dentro de 200**:
+  sin clave responde **503** y con clave inválida **401** (D-149).
 
 > **Nota final sobre el entorno real:** el servicio **Cloud Run `ggto-web` es PÚBLICO** y contiene **datos
 > personales reales (PII)**. Debe **restringirse el acceso**. Además, existe un **riesgo aceptado (D-26)**:

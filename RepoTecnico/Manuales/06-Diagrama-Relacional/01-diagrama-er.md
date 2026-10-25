@@ -563,8 +563,8 @@ que un sector pertenezca como máximo a una cuadrilla por jornada
 ### Gestión técnica (offline)
 
 Reproducido de `RepoTecnico/modelo_er.md:448-528`. El título original del documento es
-«Gestión técnica (app móvil)». Existe una APK Flutter de campo (`1.1.0+9`);
-las pantallas de gestión multirol V2 siguen pendientes. Este bloque describe el
+«Gestión técnica (app móvil)». La APK Flutter vigente es multirol (`1.15.20+45`).
+Este bloque describe el
 modelo de datos para la operación en campo.
 
 ```mermaid
@@ -750,7 +750,7 @@ erDiagram
     }
     NOTIFICACION {
         bigserial id_notificacion PK
-        varchar  canal "TELEGRAM|CORREO|MCP_IA"
+        varchar  canal "TELEGRAM|CORREO|MCP_IA|MANUAL"
         varchar  destinatario
         varchar  asunto
         text     cuerpo
@@ -982,7 +982,7 @@ continuación; la columna «Valores» reproduce el orden del DDL:
 | `sincronizacion.estado` | `EN_PROCESO`, `OK`, `ERROR` | `:584-585` |
 | `orden_material.estado` | `SOLICITADA`, `APROBADA`, `ENTREGADA`, `RECHAZADA` | `:610-611` |
 | `inventario_movimiento.tipo` | `INGRESO`, `EGRESO`, `AJUSTE` | `:630` |
-| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA` | `:645` |
+| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA`, `MANUAL` (D-156) | `:726` |
 | `notificacion.estado` | `PENDIENTE`, `ENVIADO`, `FALLIDO` | `:650-651` |
 
 Restricciones `CHECK` de referencia (no enumeradas):

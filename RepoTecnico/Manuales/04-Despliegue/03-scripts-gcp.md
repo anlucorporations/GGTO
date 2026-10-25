@@ -10,8 +10,9 @@ documentos se declara expresamente como **pendiente de confirmar**.
 ## Visión general
 
 Los scripts son la materialización reproducible del plan de infraestructura descrito en
-`RepoTecnico/GGTOv2_GCP.md`. El estado del proyecto los registra como trece archivos `.sh`
-(`RepoTecnico/estado_proyecto.md:44`) y la auditoría confirma ese mismo conteo, aclarando que
+`RepoTecnico/GGTOv2_GCP.md`. La carpeta contiene trece scripts numerados más `lib_gcp.sh`
+(biblioteca) y `provision_all.sh` (orquestador); el estado del proyecto los registra
+(`RepoTecnico/estado_proyecto.md:44`) y la auditoría aclara que
 `lib_gcp.sh` es una biblioteca y no un paso de aprovisionamiento
 (`RepoTecnico/INFORME_OPTIMIZACION_V1.md:329`). Todos están escritos en `bash`, declaran
 `set -euo pipefail` y se apoyan en la API REST de Google Cloud mediante `curl`, con `python3` como
@@ -19,7 +20,8 @@ ayudante para leer y construir JSON.
 
 ### La carpeta RepoTecnico/scripts
 
-La carpeta `RepoTecnico/scripts/` contiene trece archivos:
+La carpeta `RepoTecnico/scripts/` contiene trece archivos numerados más la biblioteca
+y el orquestador:
 
 | Archivo | Rol |
 |---|---|
@@ -35,6 +37,8 @@ La carpeta `RepoTecnico/scripts/` contiene trece archivos:
 | `07_cloudrun_web.sh` | Servicio Cloud Run |
 | `08_auditoria_presupuesto.sh` | Auditoría de acceso a datos y presupuesto |
 | `10_usar_instancia_truekeate.sh` | Base y usuario `ggtov2` en la instancia compartida `truekeate-db-dev` |
+| `11_desplegar_ggto_web.sh` | Construye la imagen (backend FastAPI + SPA React con manuales) y despliega el servicio `ggto-web` en Cloud Run, con Secret Manager, Scheduler y APK (`RepoTecnico/scripts/11_desplegar_ggto_web.sh:1-5`) |
+| `12_observabilidad.sh` | Métricas basadas en logs, 4 políticas de alerta con canal `ALERTA_EMAIL` y asociación idempotente, uptime de `/health` y retención de logs (D-155; `RepoTecnico/scripts/12_observabilidad.sh:1-11`) |
 | `99_eliminar_todo.sh` | *Teardown* controlado |
 
 La tabla funcional coincide con la que mantiene `RepoTecnico/entornos_globales.md:112-125`. El

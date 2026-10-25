@@ -276,8 +276,8 @@ continuación. El conteo de 13 parámetros sembrados está verificado
 | `fallas.ventana_horas` | `24` | Ventana temporal de la concentración | `RepoTecnico/db/schema.sql:790` |
 | `fallas.campo_concentracion` | `"olt"` | Campo agrupador: `olt \| fat \| id_sector` | `RepoTecnico/db/schema.sql:791` |
 | `outbox.max_intentos` | `5` | Reintentos antes de marcar `FALLIDO` (RNF-20) | `RepoTecnico/db/schema.sql:792` |
-| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ sin exigir | `RepoTecnico/db/schema.sql:793` |
-| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ sin exigir | `RepoTecnico/db/schema.sql:794` |
+| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ el webhook responde **503** (fail-closed, D-149) | `RepoTecnico/db/schema.sql:952` |
+| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ responde **503** (fail-closed, D-149) | `RepoTecnico/db/schema.sql:953` |
 | `seguridad.max_intentos` | `3` | Intentos de login antes del bloqueo | `RepoTecnico/db/schema.sql:795` |
 | `seguridad.palabras_seguridad` | `12` | Cantidad de palabras de recuperación | `RepoTecnico/db/schema.sql:796` |
 
@@ -290,8 +290,10 @@ Cómo las consume el código:
 - `app/services/outbox.py:53` lee `outbox.max_intentos` con reserva a
   `MAX_INTENTOS_POR_DEFECTO = 5` (`app/services/outbox.py:18`); el *backoff* es exponencial
   1, 2, 4, 8… minutos con tope de 60 (`app/services/outbox.py:25-27`).
-- `app/api/routes_alertas.py:263` compara la cabecera del webhook de Telegram contra
-  `telegram.webhook_secret`; `app/api/routes_alertas.py:353` hace lo propio con `mcp.api_key`.
+- `app/api/routes_alertas.py:821` compara la cabecera del webhook de Telegram contra
+  `telegram.webhook_secret` (503 si la clave está vacía, 403 si no coincide,
+  `app/api/routes_alertas.py:824-832`); `app/api/routes_alertas.py:920` hace lo propio
+  con `mcp.api_key` (503 sin clave, 401 si no coincide, `app/api/routes_alertas.py:923-931`).
 - `app/api/routes_despachos.py:467` resuelve el destino de forma genérica con
   `despacho.destino_<canal>`.
 

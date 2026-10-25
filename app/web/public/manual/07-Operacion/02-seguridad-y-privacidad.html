@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/02-seguridad-y-privacidad.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1421,11 +1421,11 @@ llevan el valor en el repositorio</strong>: solo el nombre del secreto.</p>
 </tr>
 <tr>
 <td><code>telegram.webhook_secret</code></td>
-<td>Tabla <code>configuracion</code> (vacío: no se exige)</td>
+<td>Tabla <code>configuracion</code> (vacío ⇒ webhook de Telegram <strong>cerrado con 503</strong>, D-149)</td>
 </tr>
 <tr>
 <td><code>mcp.api_key</code></td>
-<td>Tabla <code>configuracion</code> (vacío: no se exige)</td>
+<td>Tabla <code>configuracion</code> (vacío ⇒ servidor MCP <strong>cerrado con 503</strong>, D-149)</td>
 </tr>
 </tbody>
 </table></div>
@@ -1666,8 +1666,10 @@ restringir el acceso público antes de seguir cargando datos.</p>
 <li>Son <strong>públicos</strong> (sin token): <code>/api/v1/info</code>, <code>/health</code> y <code>/ready</code>; el inicio de sesión
 (<code>login</code>); la consulta del primer acceso (<code>primer-acceso</code>); la configuración inicial (<code>setup</code>); y
 <code>unlock</code> y <code>reset-password</code>.</li>
-<li><code>/api/v1/telegram/webhook</code> y <code>/api/v1/mcp</code> se protegen con <strong>cabecera secreta</strong> solo si está
-configurada. Si la clave está vacía, <strong>no se exige</strong>.</li>
+<li><code>/api/v1/telegram/webhook</code> y <code>/api/v1/mcp</code> no exigen pase de sesión, pero sí su <strong>credencial de canal</strong>,
+y desde D-149 ese control es <strong>fail-closed</strong>: sin secreto/clave configurados responden <strong>503</strong> y <strong>no
+atienden</strong>; con cabecera ausente o incorrecta responden <strong>403</strong> (Telegram) o <strong>401</strong> (MCP). Hoy ambas
+claves están vacías, por lo que <strong>ambos canales están cerrados por diseño</strong>.</li>
 </ul>
 <p>El riesgo real es de <strong>exposición de perímetro</strong>: cualquier persona alcanza el servicio, la
 aplicación web, el inicio de sesión y las sondas. Además, <code>GET /ready</code> publica el nombre de la
@@ -1823,7 +1825,7 @@ SUPERVISOR.</p>
 </tr>
 <tr>
 <td>Autenticación de canales externos</td>
-<td><span class="ico ico-warn" role="img" aria-label="atención"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M8 1.1l7.2 12.9H.8z" fill="#8a6100"/><path d="M8 5.3v4.1" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.8" r="1.05" fill="#fff"/></svg></span> Por cabecera, solo si la clave está configurada</td>
+<td><span class="ico ico-ok" role="img" aria-label="ok"><svg viewBox="0 0 16 16" width="1em" height="1em" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="7.3" fill="#1f7a4d"/><path d="M4.3 8.4l2.4 2.4 5-5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Fail-closed desde D-149: <strong>503</strong> sin credencial configurada; <strong>403</strong> (Telegram) / <strong>401</strong> (MCP) con cabecera inválida</td>
 </tr>
 </tbody>
 </table></div>
@@ -1832,7 +1834,8 @@ SUPERVISOR.</p>
 restringido</strong> están exigidos por RNF-22 pero <strong>no están implementados</strong>: son los principales
 puntos de endurecimiento <strong>pendientes de confirmar</strong>. Mientras tanto, <code>cors_origins</code> debe
 fijarse a los orígenes reales en producción, y las claves <code>telegram.webhook_secret</code> y
-<code>mcp.api_key</code> deben establecerse (hoy están vacías, por lo que no se exigen).</p>
+<code>mcp.api_key</code> deben establecerse para habilitar esos canales: están vacías, y desde D-149 esa
+ausencia los mantiene <strong>cerrados con 503</strong>.</p>
 </blockquote>
 <hr />
 <h2 id="cumplimiento-y-pendientes"><span class="sec-num">9</span>Cumplimiento y pendientes</h2>
@@ -1896,7 +1899,7 @@ AUDITOR en la versión 1.</strong></p>
 usuario.</li>
 <li>Habilitar <strong>MFA</strong> para ADMIN y SUPERVISOR y la política de claves de RNF-22.</li>
 <li>Fijar <code>cors_origins</code> a los orígenes reales y establecer <code>telegram.webhook_secret</code> y
-<code>mcp.api_key</code>.</li>
+<code>mcp.api_key</code> para habilitar los canales (hoy quedan cerrados con 503 por D-149).</li>
 <li>Definir con CANTV la base legal, la retención definitiva y los DPA de los proveedores.</li>
 <li>Establecer el procedimiento de rotación de <code>SECRET_KEY</code> y verificar que no use el valor por
 defecto.</li>
@@ -1918,7 +1921,7 @@ no se haya podido verificar.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

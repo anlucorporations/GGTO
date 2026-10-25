@@ -950,7 +950,7 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('fallas.campo_concentracion',  '"olt"'::jsonb,            'olt | fat | id_sector'),
     ('outbox.max_intentos',         '5'::jsonb,                 'Reintentos máximos por notificación (RNF-20)'),
     ('telegram.webhook_secret',     '""'::jsonb,               'Secreto del webhook del bot (X-Telegram-Bot-Api-Secret-Token)'),
-    ('mcp.api_key',                 '""'::jsonb,               'Clave del servidor MCP (si está vacía no se exige)'),
+    ('mcp.api_key',                 '""'::jsonb,               'Clave del servidor MCP: vacía ⇒ endpoint cerrado con 503 (D-149)'),
     ('seguridad.max_intentos',      '3'::jsonb,                 'Intentos de login antes del bloqueo'),
     ('seguridad.palabras_seguridad','12'::jsonb,                'Cantidad de palabras de recuperación'),
     -- Incremento D-89 (identificador de pago 70*)

@@ -290,8 +290,8 @@ secretos **nunca llevan el valor en el repositorio**: solo el nombre del secreto
 | `TELEGRAM_BOT_TOKEN` | Secret Manager (**no configurado**) | `RepoTecnico/entornos_globales.md:170` |
 | `SMTP_PASSWORD` | Secret Manager (**no configurado**) | `RepoTecnico/entornos_globales.md:175` |
 | `MCP_API_KEY` | Secret Manager (**no configurado**) | `RepoTecnico/entornos_globales.md:181` |
-| `telegram.webhook_secret` | Tabla `configuracion` (vacío ⇒ no se exige) | `RepoTecnico/entornos_globales.md:201` |
-| `mcp.api_key` | Tabla `configuracion` (vacío ⇒ no se exige) | `RepoTecnico/entornos_globales.md:202` |
+| `telegram.webhook_secret` | Tabla `configuracion` (vacío ⇒ webhook cerrado con **503**, D-149) | `RepoTecnico/entornos_globales.md:201` |
+| `mcp.api_key` | Tabla `configuracion` (vacío ⇒ servidor MCP cerrado con **503**, D-149) | `RepoTecnico/entornos_globales.md:202` |
 
 El archivo `.gitignore` excluye los CSV con PII (`detalle_averias_gpon*.csv`) por el hallazgo H-01 y
 la carpeta `RepoTecnico/credenciales/` está ignorada por Git
@@ -480,9 +480,11 @@ Precisión técnica sobre esa afirmación:
   (`app/api/routes_auth.py:129`), `primer-acceso` (`app/api/routes_auth.py:219`), `unlock` y
   `reset-password` (`app/api/routes_auth.py:330,349`). El `primer-acceso` es público pero lleva
   *rate limit* por IP de 30/60 s (`app/api/routes_auth.py:229-230`).
-- `/api/v1/telegram/webhook` y `/api/v1/mcp` se protegen con **cabecera secreta** solo si está
-  configurada; si la clave está vacía, **no se exige**
-  (`app/api/routes_alertas.py:260-265,350-356`).
+- `/api/v1/telegram/webhook` y `/api/v1/mcp` no exigen JWT pero sí su **credencial de
+  canal**, y desde D-149 el control es **fail-closed**: sin secreto/clave configurados
+  responden **503** y no atienden; cabecera ausente o incorrecta ⇒ **403** (Telegram) o
+  **401** (MCP), con `hmac.compare_digest`
+  (`app/api/routes_alertas.py:820-832,919-931`).
 
 El riesgo real es de **exposición de perímetro**: cualquier persona alcanza el servicio, la SPA, el
 `login` y las sondas; y `GET /ready` publica nombre de base, usuario y número de tablas
@@ -572,13 +574,14 @@ para ADMIN y SUPERVISOR (`RepoTecnico/requerimientos.md:255`).
 | Protección CSRF | ❌ No implementado (no hay referencias a CSRF) | — |
 | CORS restringido | ⚠️ Por defecto `cors_origins = "*"` | `app/core/config.py:38`, `app/main.py:69-75` |
 | Registro de eventos de login | ⚠️ Solo el log general sin usuario | `app/main.py:62-64` |
-| Autenticación de canales externos | ⚠️ Por cabecera si la clave está configurada | `app/api/routes_alertas.py:260-265,350-356` |
+| Autenticación de canales externos | ✅ Fail-closed desde D-149: 503 sin credencial configurada; 403 (Telegram) / 401 (MCP) con cabecera inválida | `app/api/routes_alertas.py:820-832,919-931` |
 
-> El **MFA, la política de claves, la revocación de tokens, el CSRF y un CORS restringido** están
+> El **MFA, la política de claves, la revocación de tokens y el CSRF** están
 > exigidos por RNF-22 pero **no implementados**: son los principales puntos de endurecimiento
 > **pendientes de confirmar**. Mientras tanto, `cors_origins` debe fijarse a los orígenes reales en
-> producción y las claves `telegram.webhook_secret` y `mcp.api_key` deben establecerse (hoy vacías ⇒
-> no se exigen, `RepoTecnico/entornos_globales.md:201-202`).
+> producción; las claves `telegram.webhook_secret` y `mcp.api_key` están vacías con el
+> endpoint **cerrado (503)** desde D-149, y deben establecerse para habilitar esos canales
+> (`RepoTecnico/entornos_globales.md:201-202`).
 
 ---
 
@@ -606,7 +609,7 @@ lectura; no existe rol AUDITOR en v1.
 4. Extender el registro de **auditoría** (hoy limitado a alta y regeneración de accesos) y añadir el usuario a los logs.
 5. Conectar **RLS** fijando `app.id_central` por sesión y acotar las consultas por `usuario.id_central`.
 6. Habilitar **MFA** para ADMIN y SUPERVISOR y la política de claves de RNF-22.
-7. Fijar `cors_origins` a los orígenes reales y establecer `telegram.webhook_secret` y `mcp.api_key`.
+7. Fijar `cors_origins` a los orígenes reales y establecer `telegram.webhook_secret` y `mcp.api_key` para habilitar los canales (hoy quedan cerrados con 503 por D-149).
 8. Definir con CANTV la base legal, la retención definitiva y los DPA de proveedores.
 9. Establecer el procedimiento de rotación de `SECRET_KEY` y verificar que no use el valor por defecto.
 

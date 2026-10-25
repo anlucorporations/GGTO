@@ -170,9 +170,14 @@ para pintar el estado. No se guardan: se deducen al vuelo.
 | Icono | Condición para que se encienda |
 |---|---|
 | `pendiente` | El estado no es `CERRADO` ni `CANCELADO`. |
-| `asignado` | El caso ya está en un despacho, o su estado es `ASIGNADO`. |
+| `asignado` | El caso ya está en un despacho con una fila que **no sea `DEVUELTO`** (D-157), o su estado es `ASIGNADO`. |
 | `citado` | Tiene una cita en estado `PROPUESTA` o `CONFIRMADA`. |
 | `gestion` | Está marcado `en_gestion_supervisor`, su estado es `EN_GESTION` o su despacho dice `GESTIONADO`. |
+
+> **D-157:** cuando el supervisor **cierra la jornada**, las asignaciones no gestionadas quedan
+> marcadas `DEVUELTO` (asignación anulada). Ese caso vuelve a mostrarse como **no asignado** en
+> este listado —también el dato de la cuadrilla del último despacho lo omite—, aunque el
+> histórico del despacho del día se conserva.
 
 ### `GET /api/v1/casos/buscar`
 

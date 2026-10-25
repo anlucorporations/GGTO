@@ -178,9 +178,11 @@ La detección también puede lanzarse **a demanda** con `POST /api/v1/fallas-mas
 
 El patrón *outbox* persiste primero la notificación en estado `PENDIENTE` y la envía después
 (`app/services/outbox.py:34-48`). El procesamiento **no es automático**: se dispara con
-`POST /api/v1/notificaciones/procesar` (`app/api/routes_alertas.py:186-195`) o como efecto de una
-llamada al webhook de Telegram o a la herramienta MCP `procesar_notificaciones`
-(`app/api/routes_alertas.py:201-206,381-383`).
+`POST /api/v1/notificaciones/procesar` (`app/api/routes_alertas.py:744-753`), con el job
+horario `ggto-purgar` de Cloud Scheduler o como efecto de una
+llamada al webhook de Telegram o a la herramienta MCP `procesar_notificaciones` —ambos
+canales deberán estar configurados con su credencial para que el webhook/MCP atienda
+(D-149) — (`app/api/routes_alertas.py:759-764,956-958`).
 
 | Regla del outbox | Comportamiento | Referencia |
 |---|---|---|

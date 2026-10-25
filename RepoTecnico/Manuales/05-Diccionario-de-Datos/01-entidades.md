@@ -447,9 +447,10 @@ ORM `app/models/config_entities.py:195-201`).
 
 Los parámetros relacionados con secretos solo se nombran, nunca se transcriben:
 `telegram.webhook_secret` y `mcp.api_key` se siembran vacíos
-(`RepoTecnico/db/schema.sql:810-811`). El resto de claves sembradas
+(`RepoTecnico/db/schema.sql:952-953`); sin credencial los endpoints correspondientes
+responden **503** (fail-closed, D-149). El resto de claves sembradas
 (`ingesta.*`, `despacho.*`, `fallas.*`, `outbox.max_intentos`,
-`seguridad.*`) consta en `RepoTecnico/db/schema.sql:788-814`.
+`seguridad.*`) consta en `RepoTecnico/db/schema.sql:930-960`.
 
 ### Operación
 

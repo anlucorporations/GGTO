@@ -152,8 +152,8 @@ El documento normativo define **«Gestionado»** como el caso que tiene al menos
 mismo tiempo, aclara que, **mientras no exista la app móvil (Ciclo 8), ese valor se aproxima** usando el
 estado `GESTIONADO` del despacho. La implementación real usa exactamente esa aproximación.
 
-> **Estado 2026-10-12:** existe APK Flutter de campo `1.1.0+9`; las pantallas de gestión multirol V2
-> siguen pendientes. Ver `RepoTecnico/auditoria_estado_real_v2.md`.
+> **Estado 2026-10-24:** la APK Flutter vigente es `1.15.20+45` (multirol, D-95…D-158).
+> Ver `RepoTecnico/estado_proyecto.md`.
 > No debe documentarse como si estuviera disponible.
 
 ### Gestión semanal (lunes → sábado)

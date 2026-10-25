@@ -5,8 +5,8 @@
 > `app/web/` y se sirve desde el mismo contenedor FastAPI. Todas las referencias `ruta:línea`
 > fueron leídas del repositorio. Las versiones declaradas provienen de `package.json` y las
 > **resueltas** de `package-lock.json`; lo que no puede comprobarse se marca como **pendiente de
-> confirmar**. Este manual **no** documenta aplicaciones móviles ni canales de mensajería: la
-> existe una APK Flutter de campo (`1.1.0+9`); la APK de gestión multirol V2 sigue pendiente.
+> confirmar**. Este manual **no** documenta aplicaciones móviles ni canales de mensajería:
+> la APK Flutter vigente es multirol (`1.15.20+45`).
 
 ## Fuentes
 

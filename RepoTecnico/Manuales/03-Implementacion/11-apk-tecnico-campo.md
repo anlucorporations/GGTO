@@ -14,7 +14,8 @@
 > estrenó en D-89: se documenta en la sección 7 de este manual.
 
 > **Alcance vigente:** este manual describe la APK de campo y su versión publicada
-> al cierre de **D-156** es `1.15.17+42`. El incremento D-156 añade el **ZIP de la
+> actual es `1.15.20+45` (D-158, que corrigió la discrepancia de `AppConstants.version`;
+> al cierre de **D-156** era `1.15.17+42`). El incremento D-156 añade el **ZIP de la
 > jornada** (sección 3.6); el resto del documento conserva el detalle histórico de
 > D-82 y D-93. No describe una APK multirol ya entregada. La V2 solicitada debe
 > integrar TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER; a la fecha de corte no
@@ -353,7 +354,7 @@ de edición. La evidencia de regresión previa sigue en
 
 | Elemento | Valor |
 |---|---|
-| Versión visible | `AppConstants.version` = `1.15.17+42` (`app_movil/pubspec.yaml`, `app_movil/lib/core/constants.dart`), verificada por `test/version_visible_test.dart`. (En D-82 la entrega era `1.0.0+3`; en D-93, `1.1.0+9`.) |
+| Versión visible | `AppConstants.version` = `1.15.20+45` (`app_movil/pubspec.yaml:5`, `app_movil/lib/core/constants.dart:15`), verificada por `test/version_visible_test.dart`. (En D-82 la entrega era `1.0.0+3`; en D-93, `1.1.0+9`; en D-156, `1.15.17+42`.) |
 | URL de la API | `AppConstants.baseUrl` (`--dart-define=GGTO_API_BASE=…`). |
 | Firma | Keystore oficial `RepoTecnico/credenciales/ggto-tecnico-release.jks` + `app_movil/android/key.properties`; publicación con `python scripts/publicar_apk.py --confirmar` (valida el keystore y la firma con `apksigner`). |
 | Entrega | `app_movil/GGTOv2.apk` con su SHA-256. |

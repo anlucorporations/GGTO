@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#alcance-funcional-y-requerimientos" data-target="alcance-funcional-y-requerimientos"><span class="tn">2.1</span> Alcance funcional y requerimientos</a><span class="pag"></span></li><li class="n3"><a href="#componentes-implicados" data-target="componentes-implicados"><span class="tn">2.2</span> Componentes implicados</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#fallas-masivas" data-target="fallas-masivas"><span class="tn">3</span> Fallas masivas</a><span class="pag"></span><ul><li class="n3"><a href="#deteccion-por-concentracion-agrupador-olt-fat-id-sector" data-target="deteccion-por-concentracion-agrupador-olt-fat-id-sector"><span class="tn">3.1</span> Detección por concentración (agrupador olt/fat/id_sector)</a><span class="pag"></span><ul><li class="n4"><a href="#cuadrilla-asignada-por-proximidad" data-target="cuadrilla-asignada-por-proximidad"><span class="tn">3.1.1</span> Cuadrilla asignada por proximidad</a><span class="pag"></span></li><li class="n4"><a href="#cuando-se-ejecuta" data-target="cuando-se-ejecuta"><span class="tn">3.1.2</span> Cuándo se ejecuta</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#idempotencia-por-clave-concentracion" data-target="idempotencia-por-clave-concentracion"><span class="tn">3.2</span> Idempotencia por clave_concentracion</a><span class="pag"></span></li><li class="n3"><a href="#umbral-configuracion" data-target="umbral-configuracion"><span class="tn">3.3</span> Umbral (configuración)</a><span class="pag"></span></li><li class="n3"><a href="#endpoints" data-target="endpoints"><span class="tn">3.4</span> Endpoints</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#planificacion-rf-17-y-material-rf-18-sobre-la-falla" data-target="planificacion-rf-17-y-material-rf-18-sobre-la-falla"><span class="tn">4</span> Planificación (RF-17) y material (RF-18) sobre la falla</a><span class="pag"></span><ul><li class="n3"><a href="#planificacion" data-target="planificacion"><span class="tn">4.1</span> Planificación</a><span class="pag"></span></li><li class="n3"><a href="#material" data-target="material"><span class="tn">4.2</span> Material</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#outbox" data-target="outbox"><span class="tn">5</span> Outbox</a><span class="pag"></span><ul><li class="n3"><a href="#tabla-notificacion" data-target="tabla-notificacion"><span class="tn">5.1</span> Tabla notificacion</a><span class="pag"></span></li><li class="n3"><a href="#estados" data-target="estados"><span class="tn">5.2</span> Estados</a><span class="pag"></span><ul><li class="n4"><a href="#diferencia-entre-diferida-y-fallida" data-target="diferencia-entre-diferida-y-fallida"><span class="tn">5.2.1</span> Diferencia entre «diferida» y «fallida»</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#backoff-y-max-intentos-app-services-outbox-py" data-target="backoff-y-max-intentos-app-services-outbox-py"><span class="tn">5.3</span> Backoff y max_intentos (app/services/outbox.py)</a><span class="pag"></span><ul><li class="n4"><a href="#disparadores-del-procesamiento" data-target="disparadores-del-procesamiento"><span class="tn">5.3.1</span> Disparadores del procesamiento</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#canales-app-services-notificaciones-py" data-target="canales-app-services-notificaciones-py"><span class="tn">5.4</span> Canales (app/services/notificaciones.py)</a><span class="pag"></span><ul><li class="n4"><a href="#nota-sobre-nombre-de-canal-del-correo" data-target="nota-sobre-nombre-de-canal-del-correo"><span class="tn">5.4.1</span> Nota sobre nombre de canal del correo</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#telegram" data-target="telegram"><span class="tn">6</span> Telegram</a><span class="pag"></span><ul><li class="n3"><a href="#webhook-post-api-v1-telegram-webhook" data-target="webhook-post-api-v1-telegram-webhook"><span class="tn">6.1</span> Webhook POST /api/v1/telegram/webhook</a><span class="pag"></span></li><li class="n3"><a href="#comandos-ayuda-estado-caso-falla" data-target="comandos-ayuda-estado-caso-falla"><span class="tn">6.2</span> Comandos /ayuda /estado /caso /falla</a><span class="pag"></span><ul><li class="n4"><a href="#comando-no-implementado" data-target="comando-no-implementado"><span class="tn">6.2.1</span> Comando no implementado</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#cabecera-x-telegram-bot-api-secret-token" data-target="cabecera-x-telegram-bot-api-secret-token"><span class="tn">6.3</span> Cabecera X-Telegram-Bot-Api-Secret-Token</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#mcp" data-target="mcp"><span class="tn">7</span> MCP</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-mcp-json-rpc" data-target="post-api-v1-mcp-json-rpc"><span class="tn">7.1</span> POST /api/v1/mcp JSON-RPC</a><span class="pag"></span></li><li class="n3"><a href="#cabecera-x-mcp-key" data-target="cabecera-x-mcp-key"><span class="tn">7.2</span> Cabecera X-MCP-Key</a><span class="pag"></span></li><li class="n3"><a href="#metodos-expuestos-segun-el-codigo" data-target="metodos-expuestos-segun-el-codigo"><span class="tn">7.3</span> Métodos expuestos según el código</a><span class="pag"></span></li><li class="n3"><a href="#herramientas-de-la-lista-tools" data-target="herramientas-de-la-lista-tools"><span class="tn">7.4</span> Herramientas de la lista TOOLS</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#metricas" data-target="metricas"><span class="tn">8</span> Métricas</a><span class="pag"></span><ul><li class="n3"><a href="#get-api-v1-metricas" data-target="get-api-v1-metricas"><span class="tn">8.1</span> GET /api/v1/metricas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#estado-real-de-los-canales" data-target="estado-real-de-los-canales"><span class="tn">9</span> ESTADO REAL de los canales</a><span class="pag"></span><ul><li class="n3"><a href="#telegram-y-correo-sin-credenciales-envios-pendientes" data-target="telegram-y-correo-sin-credenciales-envios-pendientes"><span class="tn">9.1</span> Telegram y correo sin credenciales ⇒ envíos PENDIENTES</a><span class="pag"></span></li><li class="n3"><a href="#whatsapp-no-existe" data-target="whatsapp-no-existe"><span class="tn">9.2</span> WhatsApp NO existe</a><span class="pag"></span><ul><li class="n4"><a href="#canales-mencionados-en-dependencias" data-target="canales-mencionados-en-dependencias"><span class="tn">9.2.1</span> Canales mencionados en dependencias</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#endpoints-de-bandeja-y-pagina-web-alertas" data-target="endpoints-de-bandeja-y-pagina-web-alertas"><span class="tn">10</span> Endpoints de bandeja y página web ALERTAS</a><span class="pag"></span><ul><li class="n3"><a href="#endpoints-de-bandeja" data-target="endpoints-de-bandeja"><span class="tn">10.1</span> Endpoints de bandeja</a><span class="pag"></span></li><li class="n3"><a href="#pagina-web-alertas" data-target="pagina-web-alertas"><span class="tn">10.2</span> Página web ALERTAS</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">11</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#cobertura-del-ciclo-9" data-target="cobertura-del-ciclo-9"><span class="tn">11.1</span> Cobertura del ciclo 9</a><span class="pag"></span></li><li class="n3"><a href="#pruebas-de-contrato-y-rbac" data-target="pruebas-de-contrato-y-rbac"><span class="tn">11.2</span> Pruebas de contrato y RBAC</a><span class="pag"></span></li><li class="n3"><a href="#verificacion-en-vivo" data-target="verificacion-en-vivo"><span class="tn">11.3</span> Verificación en vivo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pendiente-de-confirmar" data-target="pendiente-de-confirmar"><span class="tn">12</span> Pendiente de confirmar</a><span class="pag"></span></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#alcance-funcional-y-requerimientos" data-target="alcance-funcional-y-requerimientos"><span class="tn">2.1</span> Alcance funcional y requerimientos</a><span class="pag"></span></li><li class="n3"><a href="#componentes-implicados" data-target="componentes-implicados"><span class="tn">2.2</span> Componentes implicados</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#fallas-masivas" data-target="fallas-masivas"><span class="tn">3</span> Fallas masivas</a><span class="pag"></span><ul><li class="n3"><a href="#deteccion-por-concentracion-agrupador-olt-fat-id-sector" data-target="deteccion-por-concentracion-agrupador-olt-fat-id-sector"><span class="tn">3.1</span> Detección por concentración (agrupador olt/fat/id_sector)</a><span class="pag"></span><ul><li class="n4"><a href="#cuadrilla-asignada-por-proximidad" data-target="cuadrilla-asignada-por-proximidad"><span class="tn">3.1.1</span> Cuadrilla asignada por proximidad</a><span class="pag"></span></li><li class="n4"><a href="#cuando-se-ejecuta" data-target="cuando-se-ejecuta"><span class="tn">3.1.2</span> Cuándo se ejecuta</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#idempotencia-por-clave-concentracion" data-target="idempotencia-por-clave-concentracion"><span class="tn">3.2</span> Idempotencia por clave_concentracion</a><span class="pag"></span></li><li class="n3"><a href="#umbral-configuracion" data-target="umbral-configuracion"><span class="tn">3.3</span> Umbral (configuración)</a><span class="pag"></span></li><li class="n3"><a href="#endpoints" data-target="endpoints"><span class="tn">3.4</span> Endpoints</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#planificacion-rf-17-y-material-rf-18-sobre-la-falla" data-target="planificacion-rf-17-y-material-rf-18-sobre-la-falla"><span class="tn">4</span> Planificación (RF-17) y material (RF-18) sobre la falla</a><span class="pag"></span><ul><li class="n3"><a href="#planificacion" data-target="planificacion"><span class="tn">4.1</span> Planificación</a><span class="pag"></span></li><li class="n3"><a href="#material" data-target="material"><span class="tn">4.2</span> Material</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#outbox" data-target="outbox"><span class="tn">5</span> Outbox</a><span class="pag"></span><ul><li class="n3"><a href="#tabla-notificacion" data-target="tabla-notificacion"><span class="tn">5.1</span> Tabla notificacion</a><span class="pag"></span></li><li class="n3"><a href="#estados" data-target="estados"><span class="tn">5.2</span> Estados</a><span class="pag"></span><ul><li class="n4"><a href="#diferencia-entre-diferida-y-fallida" data-target="diferencia-entre-diferida-y-fallida"><span class="tn">5.2.1</span> Diferencia entre «diferida» y «fallida»</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#backoff-y-max-intentos-app-services-outbox-py" data-target="backoff-y-max-intentos-app-services-outbox-py"><span class="tn">5.3</span> Backoff y max_intentos (app/services/outbox.py)</a><span class="pag"></span><ul><li class="n4"><a href="#disparadores-del-procesamiento" data-target="disparadores-del-procesamiento"><span class="tn">5.3.1</span> Disparadores del procesamiento</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#canales-app-services-notificaciones-py" data-target="canales-app-services-notificaciones-py"><span class="tn">5.4</span> Canales (app/services/notificaciones.py)</a><span class="pag"></span><ul><li class="n4"><a href="#nota-sobre-nombre-de-canal-del-correo" data-target="nota-sobre-nombre-de-canal-del-correo"><span class="tn">5.4.1</span> Nota sobre nombre de canal del correo</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#telegram" data-target="telegram"><span class="tn">6</span> Telegram</a><span class="pag"></span><ul><li class="n3"><a href="#webhook-post-api-v1-telegram-webhook" data-target="webhook-post-api-v1-telegram-webhook"><span class="tn">6.1</span> Webhook POST /api/v1/telegram/webhook</a><span class="pag"></span></li><li class="n3"><a href="#comandos-ayuda-estado-caso-falla" data-target="comandos-ayuda-estado-caso-falla"><span class="tn">6.2</span> Comandos /ayuda /estado /caso /falla</a><span class="pag"></span><ul><li class="n4"><a href="#comando-no-implementado" data-target="comando-no-implementado"><span class="tn">6.2.1</span> Comando no implementado</a><span class="pag"></span></li></ul></li><li class="n3"><a href="#cabecera-x-telegram-bot-api-secret-token-fail-closed-d-149" data-target="cabecera-x-telegram-bot-api-secret-token-fail-closed-d-149"><span class="tn">6.3</span> Cabecera X-Telegram-Bot-Api-Secret-Token (fail-closed, D-149)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#mcp" data-target="mcp"><span class="tn">7</span> MCP</a><span class="pag"></span><ul><li class="n3"><a href="#post-api-v1-mcp-json-rpc" data-target="post-api-v1-mcp-json-rpc"><span class="tn">7.1</span> POST /api/v1/mcp JSON-RPC</a><span class="pag"></span></li><li class="n3"><a href="#cabecera-x-mcp-key-fail-closed-d-149" data-target="cabecera-x-mcp-key-fail-closed-d-149"><span class="tn">7.2</span> Cabecera X-MCP-Key (fail-closed, D-149)</a><span class="pag"></span></li><li class="n3"><a href="#metodos-expuestos-segun-el-codigo" data-target="metodos-expuestos-segun-el-codigo"><span class="tn">7.3</span> Métodos expuestos según el código</a><span class="pag"></span></li><li class="n3"><a href="#herramientas-de-la-lista-tools" data-target="herramientas-de-la-lista-tools"><span class="tn">7.4</span> Herramientas de la lista TOOLS</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#metricas" data-target="metricas"><span class="tn">8</span> Métricas</a><span class="pag"></span><ul><li class="n3"><a href="#get-api-v1-metricas" data-target="get-api-v1-metricas"><span class="tn">8.1</span> GET /api/v1/metricas</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#estado-real-de-los-canales" data-target="estado-real-de-los-canales"><span class="tn">9</span> ESTADO REAL de los canales</a><span class="pag"></span><ul><li class="n3"><a href="#telegram-y-correo-sin-credenciales-envios-pendientes" data-target="telegram-y-correo-sin-credenciales-envios-pendientes"><span class="tn">9.1</span> Telegram y correo sin credenciales ⇒ envíos PENDIENTES</a><span class="pag"></span></li><li class="n3"><a href="#whatsapp-no-existe" data-target="whatsapp-no-existe"><span class="tn">9.2</span> WhatsApp NO existe</a><span class="pag"></span><ul><li class="n4"><a href="#canales-mencionados-en-dependencias" data-target="canales-mencionados-en-dependencias"><span class="tn">9.2.1</span> Canales mencionados en dependencias</a><span class="pag"></span></li></ul></li></ul></li><li class="n2"><a href="#endpoints-de-bandeja-y-pagina-web-alertas" data-target="endpoints-de-bandeja-y-pagina-web-alertas"><span class="tn">10</span> Endpoints de bandeja y página web ALERTAS</a><span class="pag"></span><ul><li class="n3"><a href="#endpoints-de-bandeja" data-target="endpoints-de-bandeja"><span class="tn">10.1</span> Endpoints de bandeja</a><span class="pag"></span></li><li class="n3"><a href="#pagina-web-alertas" data-target="pagina-web-alertas"><span class="tn">10.2</span> Página web ALERTAS</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pruebas" data-target="pruebas"><span class="tn">11</span> Pruebas</a><span class="pag"></span><ul><li class="n3"><a href="#cobertura-del-ciclo-9" data-target="cobertura-del-ciclo-9"><span class="tn">11.1</span> Cobertura del ciclo 9</a><span class="pag"></span></li><li class="n3"><a href="#pruebas-de-contrato-y-rbac" data-target="pruebas-de-contrato-y-rbac"><span class="tn">11.2</span> Pruebas de contrato y RBAC</a><span class="pag"></span></li><li class="n3"><a href="#verificacion-en-vivo" data-target="verificacion-en-vivo"><span class="tn">11.3</span> Verificación en vivo</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#pendiente-de-confirmar" data-target="pendiente-de-confirmar"><span class="tn">12</span> Pendiente de confirmar</a><span class="pag"></span></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/08-alertas-telegram-mcp.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>27/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1321,6 +1321,12 @@ comando, <strong>encola la respuesta</strong> y devuelve el texto que correspond
 <p>La respuesta al usuario se encola por el <strong>canal Telegram</strong> y luego se procesan hasta 5 notificaciones. Esto
 significa que <strong>la respuesta al usuario también depende de la bandeja de salida</strong>: sin credenciales del bot,
 <strong>la respuesta queda PENDIENTE y el usuario no recibe nada en Telegram</strong>.</p>
+<p>El webhook aplica primero el control <strong>fail-closed</strong> del hallazgo H-02 (D-149,
+<code>app/api/routes_alertas.py:814-832</code>): si la clave <code>telegram.webhook_secret</code> de la tabla de configuración
+está <strong>vacía</strong>, la puerta responde <strong>503</strong> («El webhook de Telegram no tiene secreto configurado») y
+<strong>no ejecuta comando alguno</strong>; si la cabecera <code>X-Telegram-Bot-Api-Secret-Token</code> falta o no coincide,
+responde <strong>403</strong> («Secreto del webhook inválido»). Por eso, <strong>mientras el secreto no se configure, el
+canal de Telegram está desactivado por diseño</strong>, nunca abierto al público.</p>
 <h3 id="comandos-ayuda-estado-caso-falla"><span class="sec-num">6.2</span>Comandos /ayuda /estado /caso /falla</h3>
 <p>El sistema separa el comando del argumento, normaliza el comando a minúsculas y le quita la barra inicial.</p>
 <div class="tabla-scroll"><table>
@@ -1358,28 +1364,52 @@ significa que <strong>la respuesta al usuario también depende de la bandeja de 
 «No encontré el caso …». <code>/falla</code> sin argumento responde «Uso: /falla &lt;descripción de la falla&gt;»; la
 descripción se prefija con «[Telegram (identificador de la conversación)]». Un comando desconocido responde
 «Comando no reconocido. Use /ayuda.». Las pruebas del webhook cubren la ayuda, el estado, la consulta de un
-caso (incluido el caso no encontrado), el reporte de falla, un mensaje sin texto y el secreto.</p>
+caso (incluido el caso no encontrado), el reporte de falla, un mensaje sin texto y los <strong>tres caminos del
+secreto</strong>: 503 sin credencial configurada, 403 con secreto incorrecto y acceso con el secreto correcto
+(<code>app/tests/test_alertas_api.py:216-290</code>).</p>
 <h4 id="comando-no-implementado"><span class="sec-num">6.2.1</span>Comando no implementado</h4>
 <p>El comando <code>/falla</code> <strong>crea la falla</strong>, pero <strong>no llama a la función que alerta al supervisor</strong>, a diferencia
 del reporte manual y de la herramienta MCP, que <strong>sí</strong> lo hacen. Sin embargo, el mensaje de respuesta
 <strong>afirma</strong> «Se notificó al supervisor». Este es el comportamiento <strong>real</strong> del código y se documenta tal
 cual; <strong>queda pendiente de confirmar</strong> si es intencional.</p>
-<h3 id="cabecera-x-telegram-bot-api-secret-token"><span class="sec-num">6.3</span>Cabecera X-Telegram-Bot-Api-Secret-Token</h3>
-<p>El webhook recibe de forma <strong>opcional</strong> la cabecera <code>X-Telegram-Bot-Api-Secret-Token</code>. El valor esperado se
-lee de la clave <code>telegram.webhook_secret</code> de la tabla de configuración:</p>
-<ul>
-<li>Si la clave <strong>tiene valor</strong> y la cabecera <strong>no coincide</strong>, el sistema responde <strong>error 403</strong> con el detalle
-«Secreto del webhook inválido».</li>
-<li>Si la clave está <strong>vacía</strong>, la cabecera <strong>no se exige</strong>.</li>
-</ul>
-<p>Una prueba valida ambos caminos.</p>
+<h3 id="cabecera-x-telegram-bot-api-secret-token-fail-closed-d-149"><span class="sec-num">6.3</span>Cabecera X-Telegram-Bot-Api-Secret-Token (fail-closed, D-149)</h3>
+<p>La cabecera <code>X-Telegram-Bot-Api-Secret-Token</code> es la «apertura» del webhook: el valor esperado se lee de la
+clave <code>telegram.webhook_secret</code> de la tabla de configuración. El control es <strong>fail-closed</strong> desde D-149
+(<code>app/api/routes_alertas.py:822-832</code>):</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>Respuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Secreto <strong>no configurado</strong> (clave vacía)</td>
+<td><strong>503</strong> «El webhook de Telegram no tiene secreto configurado» y no se ejecuta nada</td>
+</tr>
+<tr>
+<td>Cabecera <strong>ausente</strong> o que <strong>no coincide</strong></td>
+<td><strong>403</strong> «Secreto del webhook inválido»</td>
+</tr>
+<tr>
+<td>Cabecera correcta</td>
+<td>El webhook atiende el mensaje</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ya <strong>no existe</strong> el caso «clave vacía ⇒ no se exige» que se describía antes de D-149. Las pruebas
+<code>test_telegram_sin_secreto_configurado_no_atiende</code> (<code>app/tests/test_alertas_api.py:258-262</code>, espera <strong>503</strong>)
+y <code>test_telegram_con_secreto_incorrecto_no_atiende</code> (<code>:265-269</code>, espera <strong>403</strong>) validan los caminos de
+rechazo; el acceso con el secreto correcto se valida en <code>test_telegram_secreto</code> (<code>:275-290</code>).</p>
 <h2 id="mcp"><span class="sec-num">7</span>MCP</h2>
 <h3 id="post-api-v1-mcp-json-rpc"><span class="sec-num">7.1</span>POST /api/v1/mcp JSON-RPC</h3>
 <p>El <strong>servidor MCP</strong> se expone en <code>POST /api/v1/mcp</code> con la descripción «Servidor MCP (JSON-RPC 2.0)». MCP es
 un canal automático pensado para que <strong>otros programas</strong> (asistentes o herramientas) consulten GGTO. El
 protocolo <strong>JSON-RPC</strong> es una forma estándar de pedir acciones y recibir respuestas en formato JSON. La
 operación es asíncrona, lee el contenido enviado y extrae el método, el identificador de la petición y los
-parámetros. <strong>No exige sesión de usuario</strong>: su control de acceso es la <strong>clave MCP</strong>.</p>
+parámetros. <strong>No exige sesión de usuario</strong>: su control de acceso es la <strong>clave MCP</strong>, y ese control es
+<strong>fail-closed</strong> desde D-149 (<code>app/api/routes_alertas.py:919-931</code>).</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1408,15 +1438,36 @@ parámetros. <strong>No exige sesión de usuario</strong>: su control de acceso 
 </table></div>
 <p>La respuesta exitosa tiene la forma <code>{&quot;jsonrpc&quot;: &quot;2.0&quot;, &quot;id&quot;: …, &quot;result&quot;: …}</code>. Las herramientas devuelven
 tanto un <strong>texto</strong> legible como un <strong>objeto de datos</strong> estructurado.</p>
-<h3 id="cabecera-x-mcp-key"><span class="sec-num">7.2</span>Cabecera X-MCP-Key</h3>
-<p>La operación recibe de forma <strong>opcional</strong> la cabecera <code>X-MCP-Key</code>. El valor esperado se lee de la clave
-<code>mcp.api_key</code> de la tabla de configuración:</p>
-<ul>
-<li>Si la clave está <strong>configurada</strong> y <strong>no coincide</strong>, se devuelve un <strong>error JSON-RPC con código -32001</strong> y el
-mensaje «Clave MCP inválida».</li>
-<li>Si la clave está <strong>vacía</strong>, la cabecera <strong>no se exige</strong>.</li>
-</ul>
-<p>Una prueba cubre el rechazo y el acceso con la cabecera correcta.</p>
+<h3 id="cabecera-x-mcp-key-fail-closed-d-149"><span class="sec-num">7.2</span>Cabecera X-MCP-Key (fail-closed, D-149)</h3>
+<p>La cabecera <code>X-MCP-Key</code> es la «apertura» del servidor MCP: el valor esperado se lee de la clave <code>mcp.api_key</code>
+de la tabla de configuración. El control es <strong>fail-closed</strong> desde D-149 (<code>app/api/routes_alertas.py:921-931</code>):</p>
+<div class="tabla-scroll"><table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>Respuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clave <strong>no configurada</strong> (vacía)</td>
+<td><strong>503</strong> «El servidor MCP no tiene clave configurada»; <strong>no expone herramienta alguna</strong></td>
+</tr>
+<tr>
+<td>Cabecera <strong>ausente</strong> o que <strong>no coincide</strong></td>
+<td><strong>HTTP 401</strong> «Clave MCP inválida»</td>
+</tr>
+<tr>
+<td>Cabecera correcta</td>
+<td>El servidor MCP atiende la operación</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ya <strong>no existe</strong> el caso «clave vacía ⇒ no se exige», ni el error JSON-RPC <strong>-32001</strong> sobre HTTP 200 que
+describía este manual antes de D-149: un rechazo de autenticación ahora es una <strong>respuesta HTTP real (401)</strong>,
+no un error dentro de una respuesta 200. Las pruebas <code>test_mcp_sin_clave_configurada_no_atiende</code>
+(<code>app/tests/test_alertas_api.py:342-346</code>, espera <strong>503</strong>) y <code>test_mcp_clave</code> (<code>:349-354</code>, espera <strong>401</strong>)
+validan los caminos de rechazo.</p>
 <h3 id="metodos-expuestos-segun-el-codigo"><span class="sec-num">7.3</span>Métodos expuestos según el código</h3>
 <p>Solo están implementados <strong>los tres métodos anteriores</strong>. La consulta de recursos y cualquier otro método
 caen en el error <strong>-32601</strong>. <strong>Queda pendiente de confirmar</strong> cualquier ampliación de métodos o de
@@ -1630,11 +1681,11 @@ guion E2E <code>09-alertas.spec.js</code> aportó <strong>4 pruebas</strong> sob
 </tr>
 <tr>
 <td>Telegram</td>
-<td>Ayuda, estado, caso, reporte de falla, mensaje sin texto y secreto</td>
+<td>Ayuda, estado, caso, reporte de falla, mensaje sin texto y los tres caminos del secreto (503 sin credencial, 403 con secreto incorrecto, acceso con el correcto)</td>
 </tr>
 <tr>
 <td>MCP</td>
-<td>Inicialización, lista de herramientas, ejecución, método no soportado y clave</td>
+<td>Inicialización, lista de herramientas, ejecución, método no soportado, clave inválida (401) y clave no configurada (503)</td>
 </tr>
 <tr>
 <td>Métricas y control de acceso</td>
@@ -1647,8 +1698,11 @@ esquemas separados: <strong><code>ggto_test</code></strong> para <code>pytest</c
 de prueba con datos reales.</p>
 <h3 id="pruebas-de-contrato-y-rbac"><span class="sec-num">11.2</span>Pruebas de contrato y RBAC</h3>
 <p>Además del archivo específico, las pruebas de contrato verifican que la ruta de fallas masivas forma parte
-del inventario publicado y que los roles autorizados pueden crear fallas. El escenario base de las pruebas
-crea <strong>seis casos pendientes en el mismo OLT</strong> para superar el umbral de 5, fijando el campo <code>olt</code>
+del inventario publicado y que los roles autorizados pueden crear fallas. La prueba de contrato
+<code>test_los_webhooks_no_exigen_token_pero_si_su_credencial</code> (<code>app/tests/test_contratos.py:168-182</code>) confirma
+además que <strong>el webhook de Telegram y el servidor MCP no exigen pase de sesión, pero sí su credencial de
+canal</strong>: sin credencial configurada responden <strong>503</strong> y no atienden (D-149). El escenario base de las
+pruebas crea <strong>seis casos pendientes en el mismo OLT</strong> para superar el umbral de 5, fijando el campo <code>olt</code>
 directamente porque la vía manual no lo carga.</p>
 <h3 id="verificacion-en-vivo"><span class="sec-num">11.3</span>Verificación en vivo</h3>
 <p>La decisión <strong>D-60</strong> registra la verificación en vivo del ciclo con <strong>42 casos, 0 fallas, bandeja vacía, 73
@@ -1697,7 +1751,7 @@ configurarse.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plataforma GGTO — Visión general y arquitectura — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Estado verificado 2026-10-12: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.1.0+9) es de campo y todavía no ofrece gestión por rol. La auditoría de código, doc">
+<meta name="description" content="Estado verificado 2026-10-24: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.15.20+45) es multirol: campo y pantallas de gestión (D-95…D-158). La auditoría de c">
 <meta property="og:image" content="../imagenes/onboarding-tecnico.png">
 <style>
 /* ==================================================================
@@ -783,25 +783,25 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Tecnología</span>
           <h1 class="portada-titulo">Plataforma GGTO — Visión general y arquitectura</h1>
-          <p class="portada-resumen">Estado verificado 2026-10-12: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.1.0+9) es de campo y todavía no ofrece gestión por rol. La auditoría de código, documentación y despliegue está en RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área 4). Este […]</p>
+          <p class="portada-resumen">Estado verificado 2026-10-24: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.15.20+45) es multirol: campo y pantallas de gestión (D-95…D-158). La auditoría de código, documentación y despliegue está en RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Tecnología</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/01-Tecnologia/01-plataforma.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
-<p><strong>Estado verificado 2026-10-12:</strong> GGTO V1 continúa desplegado; GGTO V2 está
-parcialmente implementado. La APK vigente (<code>1.1.0+9</code>) es de campo y todavía no
-ofrece gestión por rol. La auditoría de código, documentación y despliegue está
+<p><strong>Estado verificado 2026-10-24:</strong> GGTO V1 continúa desplegado; GGTO V2 está
+parcialmente implementado. La APK vigente (<code>1.15.20+45</code>) es multirol: campo y
+pantallas de gestión (D-95…D-158). La auditoría de código, documentación y despliegue está
 en <code>RepoTecnico/auditoria_estado_real_v2.md</code> dentro del repositorio.</p>
 </blockquote>
 <blockquote>
@@ -895,8 +895,9 @@ disponibilidad) y <strong>14 RT</strong> (requisitos técnicos).</p>
 </table></div>
 <p><strong>Capacidades que deben distinguirse por versión:</strong></p>
 <ul>
-<li><strong>La APK Flutter existe como aplicación de campo</strong> (<code>1.1.0+9</code>), con casos, sincronización,
-alertas, mensajes y perfil. Las pantallas de gestión multirol V2 siguen pendientes.</li>
+<li><strong>La APK Flutter es multirol</strong> (<code>1.15.20+45</code>, versión del commit D-158), con el flujo de
+campo (casos, sincronización, alertas, mensajes y perfil) y las pantallas de gestión
+(D-95 y siguientes).</li>
 <li><strong>WhatsApp no existe en esta versión.</strong> Se retiró de los requerimientos y quedó reservado para una
 versión futura (v3).</li>
 <li><strong>Telegram y el correo todavía no envían de verdad.</strong> No tienen credenciales cargadas en
@@ -1274,7 +1275,9 @@ un asistente de IA) consulten datos de GGTO de forma controlada.</p>
 <li><strong>Telegram: no envía todavía.</strong> No hay credenciales cargadas. Cada mensaje queda <strong>PENDIENTE</strong> en
 la bandeja de salida.</li>
 <li><strong>Correo: tampoco envía todavía.</strong> Mismo motivo.</li>
-<li><strong>MCP: existe como servicio</strong> y responde si se le presenta la clave correcta.</li>
+<li><strong>MCP: existe como servicio</strong>, pero su clave <code>mcp.api_key</code> está hoy <strong>vacía</strong>: con la clave vacía el
+servidor responde <strong>503</strong> y no expone herramientas (D-149). Solo atiende cuando la clave esté
+configurada y se le presente la clave correcta.</li>
 <li><strong>WhatsApp: no existe</strong> en esta versión.</li>
 </ul>
 <p>El sistema guarda todo lo que quiere notificar en una <strong>bandeja de salida</strong> (en inglés, <em>outbox</em>).
@@ -1323,12 +1326,12 @@ pierde: se acumulan ordenadamente con su estado.</p>
 <tr>
 <td><code>telegram.webhook_secret</code></td>
 <td>vacío</td>
-<td>Clave del webhook de Telegram</td>
+<td>Clave del webhook de Telegram: mientras esté vacía, el webhook responde <strong>503</strong> y no atiende (D-149)</td>
 </tr>
 <tr>
 <td><code>mcp.api_key</code></td>
 <td>vacío</td>
-<td>Clave del canal MCP</td>
+<td>Clave del canal MCP: mientras esté vacía, el servidor MCP responde <strong>503</strong> y no expone herramientas (D-149)</td>
 </tr>
 </tbody>
 </table></div>
@@ -1603,7 +1606,7 @@ usarlas para una decisión.</strong> Lo que no se pueda comprobar se reporta com
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Tecnología</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

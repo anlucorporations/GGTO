@@ -294,8 +294,8 @@ La tabla se siembra con las claves que se enumeran a continuación:
 | `fallas.ventana_horas` | `24` | Ventana temporal de la concentración |
 | `fallas.campo_concentracion` | `"olt"` | Campo agrupador: `olt`, `fat` o `id_sector` |
 | `outbox.max_intentos` | `5` | Reintentos antes de marcar el envío como `FALLIDO` (RNF-20) |
-| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío significa que no se exige |
-| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío significa que no se exige |
+| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ el webhook responde **503** y no atiende (fail-closed, D-149) |
+| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ responde **503** y no expone herramientas (fail-closed, D-149) |
 | `seguridad.max_intentos` | `3` | Intentos de inicio de sesión antes del bloqueo |
 | `seguridad.palabras_seguridad` | `12` | Cantidad de palabras de recuperación |
 
@@ -313,7 +313,9 @@ Cómo consume el código estas claves:
   `MAX_INTENTOS_POR_DEFECTO = 5`. El reintento es exponencial: 1, 2, 4, 8… minutos, con un tope de
   60 minutos.
 - El módulo de alertas compara la cabecera del webhook de Telegram contra `telegram.webhook_secret`
-  y la cabecera del servidor MCP contra `mcp.api_key`.
+  y la cabecera del servidor MCP contra `mcp.api_key`. El control es **fail-closed** desde D-149:
+  con la clave vacía responde **503** y no atiende; con cabecera ausente o incorrecta responde
+  **403** (Telegram) o **401** (MCP).
 - El módulo de despachos resuelve el destino de forma genérica con el patrón
   `despacho.destino_<canal>`.
 - La administración se expone por API: `GET /api/v1/configuracion` lista las claves y

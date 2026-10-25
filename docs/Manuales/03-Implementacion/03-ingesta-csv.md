@@ -4,7 +4,7 @@
 > averías** que envía el sistema de origen de CANTV, cómo lo limpia y lo revisa, cómo se
 > queda solo con los casos de la central configurada, cómo evita repetidos y cómo crea los
 > casos nuevos. Está dirigido a técnicos de campo, supervisores y administradores de la
-> Central Francisco Salias (Área 4). Existe APK Flutter de campo `1.1.0+9`; la carga CSV
+> Central Francisco Salias (Área 4). La APK Flutter vigente es `1.15.20+45`; la carga CSV
 > se hace desde la interfaz web. Cuando algo no pudo
 > comprobarse, se indica con la frase **«pendiente de confirmar»**.
 

@@ -155,11 +155,16 @@ Es la tabla de **detalle**: cada caso asignado dentro de un despacho.
 | `id_sector` | entero, referencia a sector | Sector del caso al momento de asignarlo. |
 | `orden_visita` | entero pequeño | Secuencia de visita dentro de la cuadrilla. |
 | `tipo_asignacion` | texto corto | `REPARACION` / `CONSTRUCCION` / `REFERIDO` / `EMPRESA` / `FALLA_MASIVA`. |
-| `estado` | texto corto | `ASIGNADO` / `GESTIONADO` / `CERRADO` / `CITADO` / `DIFERIDO`. |
+| `estado` | texto corto | `ASIGNADO` / `GESTIONADO` / `CERRADO` / `CITADO` / `DIFERIDO` / `DEVUELTO`. |
 | `observacion` | texto largo | Nota del supervisor para ese caso. |
 
 Otra regla clave: **el mismo caso no puede aparecer dos veces en el mismo despacho**. Lo impide
 una restricción de unicidad sobre la combinación de despacho y caso.
+
+Desde **D-157**, cuando el supervisor **cierra la jornada**, la fila no gestionada pasa a
+`DEVUELTO`: es la marca de «**asignación anulada**». El caso vuelve a estar libre para el
+despacho y el sistema **deja de contarlo como asignado** en cualquier consulta de «última
+asignación», aunque el despacho del día queda en el histórico.
 
 ### cuadrilla_sector_dia
 

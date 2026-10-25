@@ -26,7 +26,7 @@ ubicarte.
 5. **Consulta el resultado.** Cuando la otra instancia devuelve el caso, el seguimiento pasa a
    `DEVUELTO` y el caso vuelve a `NUEVO`, listo para entrar otra vez al despacho.
 
-## Visión general (RF-12, RF-34..RF-36, D-30/D-53)
+## Visión general (RF-12, RF-34..RF-36, D-30/D-53/D-156)
 
 Este manual cubre el **Ciclo 6** del proyecto GGTO:
 
@@ -46,6 +46,12 @@ y canal, más prioridad y clasificación. La decisión **D-53** da por completad
 - Seguimiento que enruta el caso y lo saca del despacho.
 - Las páginas **ESPECIALES** y **AGENDA**.
 - **111/111 pruebas** y el despliegue `ggto-web-00008-vr5` (imagen `v8`).
+
+La decisión **D-156** cierra el alcance pendiente de este ciclo: **SEGUIMIENTO** ahora es una
+página real de la web (no un módulo vacío), el cierre de un especial avisa al **solicitante
+externo ACT-03**, el cierre de una masiva exige un **validador CRASS de la misma central** y el
+**supervisor de cuadrilla** queda solo como etiqueta organizativa. El detalle está en la sección
+[SEGUIMIENTO web y aviso ACT-03 (D-156)](#seguimiento-web-y-aviso-act-03-d-156).
 
 ### Alcance funcional
 
@@ -68,8 +74,9 @@ operar el sistema.
 | Esquemas de validación | `app/schemas/especiales.py` |
 | Modelos de base de datos | `app/models/especiales_entities.py` |
 | Definición de tablas y función `REF-…` | `RepoTecnico/db/schema.sql` |
-| Páginas web | `app/web/src/pages/Especiales.tsx`, `app/web/src/pages/Agenda.tsx` |
-| Pruebas de integración | `app/tests/test_especiales_api.py` |
+| Páginas web | `app/web/src/pages/Especiales.tsx`, `app/web/src/pages/Agenda.tsx`, `app/web/src/pages/Seguimiento.tsx` |
+| Aviso al solicitante externo (D-156) | `app/services/avisos.py`, `app/services/notificaciones.py` |
+| Pruebas de integración | `app/tests/test_especiales_api.py`, `app/tests/test_d120_especiales_estado.py`, `app/tests/test_d90_clasificacion.py` |
 
 El módulo se monta con el prefijo general `/api/v1`. Las **escrituras** exigen `ADMIN` o
 `SUPERVISOR`; el rol `SUPER` tiene permiso total.
@@ -210,7 +217,7 @@ pintar los iconos. No se guardan: se deducen al vuelo.
 | `sector_nombre` | Nombre del sector del caso asociado. |
 | `solicitante_nombre` / `solicitante_unidad` | Datos del solicitante referenciado. |
 | `pendiente` | El estado es `ABIERTO` o `EN_PROCESO`. |
-| `asignado` | El caso está en un despacho. |
+| `asignado` | El caso está en `despacho_caso` con una fila que **no sea `DEVUELTO`** (D-157). |
 | `citado` | Tiene una cita en estado `PROPUESTA` o `CONFIRMADA`, por caso o por caso especial. |
 | `gestion` | Está en gestión del supervisor, su estado es `EN_GESTION` o su despacho dice `GESTIONADO`. |
 
@@ -349,21 +356,82 @@ Cuando el seguimiento pasa a `DEVUELTO`:
 Con eso, el caso queda otra vez disponible para el despacho. La prueba de integración también
 cubre este regreso.
 
-### endpoints (routes_especiales.py:369,387,409,433)
+`RESUELTO` también sella la fecha de retorno, pero **no cierra** el caso: el cierre formal sigue
+su camino normal (informe y evidencias).
+
+### endpoints de seguimiento (app/api/routes_especiales.py)
 
 | Método y ruta | Rol | Resumen |
 |---|---|---|
-| `GET /api/v1/seguimiento` | Lectura | Lista derivaciones con filtros. |
+| `GET /api/v1/seguimiento` | Lectura | Lista derivaciones con filtros y alcance. |
 | `POST /api/v1/seguimiento` | Escritura | Deriva un caso a otra instancia. |
 | `PATCH /api/v1/seguimiento/{id}` | Escritura | Actualiza estado o datos. |
 | `GET /api/v1/seguimiento/{id}` | Lectura | Ficha de la derivación. |
 
 - **`GET /seguimiento`** ordena por número de seguimiento descendente y filtra por caso, estado e
-  instancia destino (búsqueda por parecido en el destino).
-- **`POST /seguimiento`** responde **404** si el caso no existe y registra al usuario que deriva.
+  instancia destino (búsqueda por parecido en el destino). Además acepta un **texto libre `q`**:
+  busca en la avería, el cliente, la dirección, el sector, la instancia y el motivo. Y aplica un
+  **alcance**: cada usuario solo ve los casos de **su central**; el **TÉCNICO** solo ve los casos
+  de su cuadrilla (los vigentes y los muy recientes, ventana D-123). Un técnico sin cuadrilla no
+  ve **ninguna** fila; el coordinador no tiene esta capacidad.
+- **`POST /seguimiento`** responde **404** si el caso no existe **o queda fuera del alcance de
+  otra central o cuadrilla** (así el sistema no confirma que exista), rechaza con **409** derivar
+  un caso que ya está `CERRADO` o `CANCELADO`, y registra al usuario que deriva.
 - **`PATCH /seguimiento/{id}`** aplica solo los campos enviados. Si el nuevo estado es
-  `DEVUELTO`, restituye el caso.
-- **`GET /seguimiento/{id}`** responde **404** con «Seguimiento no encontrado» si no existe.
+  `DEVUELTO`, restituye el caso; si es `EN_COLA`, vuelve a enrutarlo. También comprueba el alcance.
+- **`GET /seguimiento/{id}`** responde **404** con «Seguimiento no encontrado» si no existe o si
+  el caso queda fuera del alcance.
+
+## SEGUIMIENTO web y aviso ACT-03 (D-156)
+
+### La página SEGUIMIENTO
+
+Desde D-156, **SEGUIMIENTO es una página real de la web**, montada en `/seguimiento` y visible en
+la barra para SUPER, ADMIN, SUPERVISOR y TÉCNICO. Ofrece:
+
+- Un resumen de cuántas derivaciones hay por estado.
+- Búsqueda libre (el texto `q`) y filtros por estado e instancia destino.
+- Una tabla con caso, cliente, dirección, sector, instancia, fecha y estado.
+- El alta de una derivación y la edición del detalle.
+
+Los roles escriben distinto: el **TÉCNICO solo consulta**; los botones de escritura se muestran
+a **ADMIN y SUPERVISOR**, que son los roles que el backend exige. El listado devuelve a cada
+usuario solo los casos de su central y, para el técnico, de su cuadrilla; a un caso ajeno no le
+dice ni «no existe» (responde la misma falta de resultados).
+
+### El aviso de cierre al solicitante externo (ACT-03)
+
+El **solicitante externo** (ACT-03) es el personal externo que reporta casos especiales y se da
+de alta **a mano**, por el supervisor, en el catálogo de personal externo. Cuando el caso
+especial se **cierra**, el sistema le prepara un aviso:
+
+| Aspecto | Comportamiento |
+|---|---|
+| Cuándo sale | El cierre desde la web (`PATCH /casos-especiales/{id}`) y el cierre desde la APK/campo. |
+| Contenido | Unidad, nombre, contacto, ID de avería, dirección e informe de atención. |
+| No se repite | Si ya existe el aviso por el mismo caso, canal y asunto, no se vuelve a crear. |
+| Canales | Los automáticos del catálogo; los canales `MANUAL` y `MCP_IA` se guardan en el buzón de notificaciones (outbox) como **`PENDIENTE`**, para que el supervisor los entregue a mano. El sistema nunca los marca `FALLIDO`. |
+| Auditoría | Se registra la actividad `AVISO_CIERRE_SOLICITANTE` con el canal y el destinatario. |
+
+Sobre el canal `MANUAL`: la caja ya lo admite en `notificacion.canal` en bases nuevas. En una
+base ya creada, hay un **script de migración** (`scripts/migrar_d156_notificacion_manual.py`)
+que agrega el valor; por defecto solo **simula**, y con `--aplicar` hace el cambio real.
+
+**Fuera de alcance**: no hay portal público, ni enlace con token, ni alta autónoma del
+solicitante.
+
+### El cierre de una masiva exige validador CRASS
+
+Para **cerrar una falla masiva** hace falta un validador **activo**, de tipo **CRASS** y de la
+**misma central** de la falla. Antes bastaba con que existiera un solicitante activo cualquiera;
+ahora un registro de tipo `OTRO`, inactivo o de otra central provoca el rechazo del cierre con
+**409** y su motivo.
+
+### El supervisor de cuadrilla no es un rol nuevo
+
+La etiqueta **supervisor de cuadrilla** (el `rol_cuadrilla=SUPERVISOR` de la cuadrilla) queda
+solo como **etiqueta organizativa**: no da permisos, no crea un rol global nuevo y no abre un
+flujo distinto. La validación de un cierre de masiva la ejerce el rol global `SUPERVISOR`.
 
 ---
 
@@ -382,7 +450,7 @@ El archivo define los literales compartidos y estos modelos:
 | `CitaCreate` / `CitaUpdate` | Alta y edición de citas, incluido `permitir_solape`. |
 | `CitaOut` | Lectura de citas. |
 | `SeguimientoCreate` / `SeguimientoUpdate` | Alta y edición de derivaciones. |
-| `SeguimientoOut` | Lectura de derivaciones. |
+| `SeguimientoOut` | Lectura de derivaciones más el **contexto del caso** (D-156): avería, cliente, dirección, sector, estado, central y cuadrilla del último despacho. |
 
 El campo `crear_solicitante` se documenta como «Crea el solicitante en la misma operación». Los
 esquemas de lectura se arman directamente desde las entidades de base de datos.

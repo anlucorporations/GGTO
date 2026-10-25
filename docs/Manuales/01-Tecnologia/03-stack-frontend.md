@@ -527,6 +527,6 @@ Estado verificado y cosas por cerrar:
 - **Integración continua:** el flujo verificado ejecuta las revisiones de Python y las pruebas de
   Python. La ejecución de la revisión de tipos de la web, de la construcción y de las pruebas de
   navegador dentro de ese flujo está **pendiente de confirmar**.
-- **Aplicación móvil:** existe APK Flutter de campo `1.1.0+9`. Este manual no documenta su
-  implementación interna; la APK multirol V2 para gestión sigue pendiente.
+- **Aplicación móvil:** la APK Flutter vigente es `1.15.20+45` (multirol desde D-95;
+  commit D-158). Este manual no documenta su implementación interna.
 - **WhatsApp:** no existe integración. Quedó diferida a la versión 3.

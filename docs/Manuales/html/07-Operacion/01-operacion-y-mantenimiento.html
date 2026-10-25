@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de Operación y Mantenimiento — GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Corte operativo verificado 2026-10-12: servicio Cloud Run ggto-web en revisión ggto-web-00039-g9n, imagen v24; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desp">
+<meta name="description" content="Corte operativo verificado 2026-10-22: servicio Cloud Run ggto-web en revisión ggto-web-00093-g8c, imagen v80, con la APK 1.15.17+42; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabil">
 <meta property="og:image" content="../../../imagenes/rutina-diaria.png">
 <style>
 /* ==================================================================
@@ -783,24 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Operación</span>
           <h1 class="portada-titulo">Manual de Operación y Mantenimiento — GGTO</h1>
-          <p class="portada-resumen">Corte operativo verificado 2026-10-12: servicio Cloud Run ggto-web en revisión ggto-web-00039-g9n, imagen v24; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas de restauración no se validaron en esta auditoría. Consulta el informe RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la información, cómo se mantiene, […]</p>
+          <p class="portada-resumen">Corte operativo verificado 2026-10-22: servicio Cloud Run ggto-web en revisión ggto-web-00093-g8c, imagen v80, con la APK 1.15.17+42; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas de restauración no se validaron en esta auditoría. Consulta el informe RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/01-operacion-y-mantenimiento.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>22/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
-<p><strong>Corte operativo verificado 2026-10-12:</strong> servicio Cloud Run <code>ggto-web</code> en
-revisión <code>ggto-web-00039-g9n</code>, imagen <code>v24</code>; Cloud SQL está RUNNABLE y los
+<p><strong>Corte operativo verificado 2026-10-22:</strong> servicio Cloud Run <code>ggto-web</code> en
+revisión <code>ggto-web-00093-g8c</code>, imagen <code>v80</code>, con la APK <code>1.15.17+42</code>; Cloud SQL está RUNNABLE y los
 respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas
 de restauración no se validaron en esta auditoría. Consulta el informe
 <code>RepoTecnico/auditoria_estado_real_v2.md</code> dentro del repositorio.</p>
@@ -1399,11 +1399,11 @@ esquema es <code>RepoTecnico/db/schema.sql</code>. Por lo tanto, <strong>el uso 
 confirmar y no está implementado</strong>: en la versión 1 los cambios de esquema deberán aplicarse con
 sentencias DDL manuales y controladas hasta que se incorpore.</p>
 <h3 id="logs-y-health-ready"><span class="sec-num">5.4</span>Logs y /health /ready</h3>
-<p>La aplicación registra sus mensajes en nivel INFO, con formato de fecha, nivel, nombre y mensaje.
-El middleware de observabilidad asigna un <strong><code>request_id</code></strong> (tomado de la cabecera <code>X-Request-ID</code> o
-generado nuevo), lo devuelve en la respuesta y registra el método, la ruta, el código de respuesta
-y la duración en milisegundos. Si ocurre una excepción, registra el fallo junto con el
-<code>request_id</code>.</p>
+<p>La aplicación registra <strong>una línea JSON por evento</strong>, con fecha, nivel, nombre del registro,
+mensaje, <strong><code>request_id</code></strong>, <strong>usuario (P00)</strong>, rol y, cuando corresponde, método, ruta, estado y
+duración. El <code>request_id</code> se toma de la cabecera <code>X-Request-ID</code> (si es válida) o se genera, y se
+devuelve en la respuesta. Los datos sensibles (tokens, claves, correos, teléfonos y P00 en texto
+libre) se redactan antes de escribir.</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1426,7 +1426,7 @@ y la duración en milisegundos. Si ocurre una excepción, registra el fallo junt
 <tr>
 <td>Readiness</td>
 <td><code>GET /ready</code></td>
-<td>Verifica la conexión y reporta base, usuario, versión y número de tablas; responde <code>503</code> si falla (pública)</td>
+<td>Verifica la conexión y reporta base, usuario, versión, número de tablas y modo de almacenamiento; responde <code>503</code> si falla (pública)</td>
 </tr>
 <tr>
 <td>Resumen</td>
@@ -1435,14 +1435,13 @@ y la duración en milisegundos. Si ocurre una excepción, registra el fallo junt
 </tr>
 </tbody>
 </table></div>
-<blockquote>
-<p>El requerimiento RNF-19 pide registros con <code>request-id</code> <strong>y usuario</strong> en todas las operaciones,
-métricas de negocio, alertas cuando la ingesta no se ejecuta o falla una notificación, y
-retención de al menos 30 días. El código sí cumple con el <code>request-id</code> y con las métricas
-(<code>GET /api/v1/metricas</code>), pero <strong>no registra el usuario en el log, ni incluye alertas
-automáticas, ni tiene una política de retención propia</strong>: esos puntos están <strong>pendientes de
-confirmar</strong> con la configuración de Cloud Logging.</p>
-</blockquote>
+<p>El 2026-10-22 se activó la observabilidad de D-155 en v80: <strong>4 métricas</strong> basadas en logs,
+<strong>4 políticas de alerta</strong> habilitadas, un <strong>uptime check de <code>/health</code> cada 5 minutos</strong> y
+<strong>retención de 30 días</strong> en Cloud Logging. La alerta de ingesta quedó en <strong>23 horas</strong> porque
+Monitoring no admite una ausencia mayor de 23 h 30 min. <strong>Las políticas no tienen canal de
+notificación</strong> hasta que se defina <code>ALERTA_EMAIL</code>; mientras tanto se consultan en Monitoring pero
+no envían correo. El crash reporting remoto de la APK sigue pendiente de credenciales; el log
+local rotativo está en el teléfono.</p>
 <hr />
 <h2 id="incidentes"><span class="sec-num">6</span>Incidentes</h2>
 <h3 id="tipos-ingesta-fallida-dependencia-externa-caida-bloqueo-de-u"><span class="sec-num">6.1</span>Tipos (ingesta fallida, dependencia externa caída, bloqueo de usuario, fallo de notificación)</h3>
@@ -1664,7 +1663,7 @@ confirmar»</strong>.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

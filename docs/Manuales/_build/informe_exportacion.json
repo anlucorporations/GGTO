@@ -1588,9 +1588,9 @@
         "pagina": 14,
         "texto": "7.1.7Historial"
       },
-      "panel-app-web-src-pages-panel-tsx": {
+      "antigua-pagina-panel-app-web-src-pages-panel-tsx": {
         "pagina": 14,
-        "texto": "7.2PANEL (app/web/src/pages/Panel.tsx)"
+        "texto": "7.2Antigua página PANEL (app/web/src/pages/Panel.tsx)"
       },
       "modal-agregar-caso-app-web-src-components-modalcaso-tsx": {
         "pagina": 14,
@@ -1804,17 +1804,17 @@
   {
     "manual": "03-Implementacion\\06-seguimiento-especiales-agenda.html",
     "pdf": "pdf\\03-Implementacion\\06-seguimiento-especiales-agenda.pdf",
-    "paginas": 14,
-    "hojasContenido": 12,
-    "entradasToc": 30,
+    "paginas": 16,
+    "hojasContenido": 14,
+    "entradasToc": 35,
     "anclas": {
       "empezar-en-5-minutos": {
         "pagina": 3,
         "texto": "1Empezar en 5 minutos"
       },
-      "vision-general-rf-12-rf-34-rf-36-d-30-d-53": {
+      "vision-general-rf-12-rf-34-rf-36-d-30-d-53-d-156": {
         "pagina": 4,
-        "texto": "2Visión general (RF-12, RF-34..RF-36, D-30/D-53)"
+        "texto": "2Visión general (RF-12, RF-34..RF-36, D-30/D-53/D-156)"
       },
       "alcance-funcional": {
         "pagina": 4,
@@ -1825,108 +1825,128 @@
         "texto": "2.2Archivos de referencia"
       },
       "casos-especiales": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3Casos especiales"
       },
       "clasificacion-referido-empresa-gobierno": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.1clasificación REFERIDO/EMPRESA/GOBIERNO"
       },
       "prioridad-alta-media-baja": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.2prioridad ALTA/MEDIA/BAJA"
       },
       "solicitante-unidad-nombre-contacto-canal": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.3solicitante (unidad+nombre+contacto+canal)"
       },
       "creacion-automatica-del-caso-ref": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.4creación automática del caso REF-..."
       },
       "endpoints-de-solicitantes-y-casos-especiales-app-api-routes-": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "4Endpoints de solicitantes y casos especiales (app/api/routes_especiales.py:50,57,103,124,173,183)"
       },
       "solicitantes": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "4.1Solicitantes"
       },
       "casos-especiales-2": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "4.2Casos especiales"
       },
       "resumen-de-estado-calculado": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "4.3Resumen de estado calculado"
       },
       "agenda-de-citas": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5Agenda de citas"
       },
       "modelo-cita": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5.1modelo cita"
       },
       "validacion-de-solapamiento-409": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5.2validación de solapamiento (409)"
       },
       "estados": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.3estados"
       },
       "endpoints-routes-especiales-py-280-301-329-355": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.4endpoints (routes_especiales.py:280,301,329,355)"
       },
       "seguimiento": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "6Seguimiento"
       },
       "tabla-seguimiento": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "6.1tabla seguimiento"
       },
       "exclusion-del-despacho": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "6.2exclusión del despacho"
       },
-      "endpoints-routes-especiales-py-369-387-409-433": {
-        "pagina": 11,
-        "texto": "6.3endpoints (routes_especiales.py:369,387,409,433)"
+      "endpoints-de-seguimiento-app-api-routes-especiales-py": {
+        "pagina": 12,
+        "texto": "6.3endpoints de seguimiento (app/api/routes_especiales.py)"
+      },
+      "seguimiento-web-y-aviso-act-03-d-156": {
+        "pagina": 13,
+        "texto": "7SEGUIMIENTO web y aviso ACT-03 (D-156)"
+      },
+      "la-pagina-seguimiento": {
+        "pagina": 13,
+        "texto": "7.1La página SEGUIMIENTO"
+      },
+      "el-aviso-de-cierre-al-solicitante-externo-act-03": {
+        "pagina": 13,
+        "texto": "7.2El aviso de cierre al solicitante externo (ACT-03)"
+      },
+      "el-cierre-de-una-masiva-exige-validador-crass": {
+        "pagina": 14,
+        "texto": "7.3El cierre de una masiva exige validador CRASS"
+      },
+      "el-supervisor-de-cuadrilla-no-es-un-rol-nuevo": {
+        "pagina": 14,
+        "texto": "7.4El supervisor de cuadrilla no es un rol nuevo"
       },
       "esquemas-app-schemas-especiales-py-y-modelos-app-models-espe": {
-        "pagina": 12,
-        "texto": "7Esquemas (app/schemas/especiales.py) y modelos (app/models/especiales_entities.py)"
+        "pagina": 14,
+        "texto": "8Esquemas (app/schemas/especiales.py) y modelos (app/models/especiales_entities.py)"
       },
       "esquemas-pydantic": {
-        "pagina": 12,
-        "texto": "7.1Esquemas Pydantic"
+        "pagina": 14,
+        "texto": "8.1Esquemas Pydantic"
       },
       "modelos-sqlalchemy": {
-        "pagina": 12,
-        "texto": "7.2Modelos SQLAlchemy"
+        "pagina": 14,
+        "texto": "8.2Modelos SQLAlchemy"
       },
       "paginas-web-especiales-y-agenda-app-web-src-pages-especiales": {
-        "pagina": 13,
-        "texto": "8Páginas web ESPECIALES y AGENDA (app/web/src/pages/Especiales.tsx, Agenda.tsx)"
+        "pagina": 15,
+        "texto": "9Páginas web ESPECIALES y AGENDA (app/web/src/pages/Especiales.tsx, Agenda.tsx)"
       },
       "especiales": {
-        "pagina": 13,
-        "texto": "8.1ESPECIALES"
+        "pagina": 15,
+        "texto": "9.1ESPECIALES"
       },
       "agenda": {
-        "pagina": 13,
-        "texto": "8.2AGENDA"
+        "pagina": 15,
+        "texto": "9.2AGENDA"
       },
       "pruebas-app-tests-test-especiales-api-py-15": {
-        "pagina": 14,
-        "texto": "9Pruebas (app/tests/test_especiales_api.py 15)"
+        "pagina": 16,
+        "texto": "10Pruebas (app/tests/test_especiales_api.py 15)"
       },
       "escenarios-cubiertos-por-la-suite-de-integracion": {
-        "pagina": 14,
-        "texto": "9.1Escenarios cubiertos por la suite de integración"
+        "pagina": 16,
+        "texto": "10.1Escenarios cubiertos por la suite de integración"
       }
     },
     "avisos": []
@@ -1934,8 +1954,8 @@
   {
     "manual": "03-Implementacion\\07-monitoreo-y-reportes.html",
     "pdf": "pdf\\03-Implementacion\\07-monitoreo-y-reportes.pdf",
-    "paginas": 13,
-    "hojasContenido": 11,
+    "paginas": 14,
+    "hojasContenido": 12,
     "entradasToc": 34,
     "anclas": {
       "empezar-en-5-minutos": {
@@ -1975,7 +1995,7 @@
         "texto": "3.2Gestión semanal (lunes → sábado)"
       },
       "casos-globales": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.3Casos globales"
       },
       "reparacion": {
@@ -1991,23 +2011,23 @@
         "texto": "3.6Cuadrilla"
       },
       "calculo-de-cerrados-por-cuadrilla": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "3.6.1Cálculo de «cerrados» por cuadrilla"
       },
       "capacidad-operativa": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "3.7Capacidad operativa"
       },
       "endpoints": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4Endpoints"
       },
       "superficie-de-la-api": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4.1Superficie de la API"
       },
       "parametros-y-resolucion-de-la-central": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4.2Parámetros y resolución de la central"
       },
       "cliente-web": {
@@ -2015,63 +2035,63 @@
         "texto": "4.2.1Cliente web"
       },
       "reporte-de-trabajo": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5Reporte de trabajo"
       },
       "get-api-v1-reportes-trabajo": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.1GET /api/v1/reportes/trabajo"
       },
       "version-imprimible": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.2Versión imprimible"
       },
       "reglas-de-calculo": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6Reglas de cálculo"
       },
       "reparacion-y-construccion-excluyentes": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.1Reparación y construcción excluyentes"
       },
       "redondeo-y-zona-horaria-america-caracas": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.2Redondeo y zona horaria America/Caracas"
       },
       "matiz-verificado-sobre-la-zona-horaria": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.2.1Matiz verificado sobre la zona horaria"
       },
       "pagina-web-monitoreo-y-graficos-svg-propios": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7Página web MONITOREO y gráficos SVG propios"
       },
       "estructura-de-la-pagina": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.1Estructura de la página"
       },
       "componentes-de-graficos": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.2Componentes de gráficos"
       },
       "accesibilidad-y-detalle": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.2.1Accesibilidad y detalle"
       },
       "pruebas": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8Pruebas"
       },
       "cobertura-del-ciclo-7": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8.1Cobertura del ciclo 7"
       },
       "aprendizajes-de-la-fase-4": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8.2Aprendizajes de la Fase 4"
       },
       "pendiente-de-validacion-con-cantv": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "9Pendiente de validación con CANTV"
       }
     },
@@ -2080,8 +2100,8 @@
   {
     "manual": "03-Implementacion\\08-alertas-telegram-mcp.html",
     "pdf": "pdf\\03-Implementacion\\08-alertas-telegram-mcp.pdf",
-    "paginas": 18,
-    "hojasContenido": 15,
+    "paginas": 19,
+    "hojasContenido": 16,
     "entradasToc": 46,
     "anclas": {
       "empezar-en-5-minutos": {
@@ -2185,87 +2205,87 @@
         "texto": "6.2Comandos /ayuda /estado /caso /falla"
       },
       "comando-no-implementado": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "6.2.1Comando no implementado"
       },
-      "cabecera-x-telegram-bot-api-secret-token": {
-        "pagina": 12,
-        "texto": "6.3Cabecera X-Telegram-Bot-Api-Secret-Token"
+      "cabecera-x-telegram-bot-api-secret-token-fail-closed-d-149": {
+        "pagina": 13,
+        "texto": "6.3Cabecera X-Telegram-Bot-Api-Secret-Token (fail-closed, D-149)"
       },
       "mcp": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "7MCP"
       },
       "post-api-v1-mcp-json-rpc": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "7.1POST /api/v1/mcp JSON-RPC"
       },
-      "cabecera-x-mcp-key": {
-        "pagina": 13,
-        "texto": "7.2Cabecera X-MCP-Key"
+      "cabecera-x-mcp-key-fail-closed-d-149": {
+        "pagina": 14,
+        "texto": "7.2Cabecera X-MCP-Key (fail-closed, D-149)"
       },
       "metodos-expuestos-segun-el-codigo": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "7.3Métodos expuestos según el código"
       },
       "herramientas-de-la-lista-tools": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "7.4Herramientas de la lista TOOLS"
       },
       "metricas": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "8Métricas"
       },
       "get-api-v1-metricas": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "8.1GET /api/v1/metricas"
       },
       "estado-real-de-los-canales": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "9ESTADO REAL de los canales"
       },
       "telegram-y-correo-sin-credenciales-envios-pendientes": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "9.1Telegram y correo sin credenciales ⇒ envíos PENDIENTES"
       },
       "whatsapp-no-existe": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "9.2WhatsApp NO existe"
       },
       "canales-mencionados-en-dependencias": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "9.2.1Canales mencionados en dependencias"
       },
       "endpoints-de-bandeja-y-pagina-web-alertas": {
-        "pagina": 16,
+        "pagina": 17,
         "texto": "10Endpoints de bandeja y página web ALERTAS"
       },
       "endpoints-de-bandeja": {
-        "pagina": 16,
+        "pagina": 17,
         "texto": "10.1Endpoints de bandeja"
       },
       "pagina-web-alertas": {
-        "pagina": 16,
+        "pagina": 17,
         "texto": "10.2Página web ALERTAS"
       },
       "pruebas": {
-        "pagina": 17,
+        "pagina": 18,
         "texto": "11Pruebas"
       },
       "cobertura-del-ciclo-9": {
-        "pagina": 17,
+        "pagina": 18,
         "texto": "11.1Cobertura del ciclo 9"
       },
       "pruebas-de-contrato-y-rbac": {
-        "pagina": 17,
+        "pagina": 18,
         "texto": "11.2Pruebas de contrato y RBAC"
       },
       "verificacion-en-vivo": {
-        "pagina": 17,
+        "pagina": 18,
         "texto": "11.3Verificación en vivo"
       },
       "pendiente-de-confirmar": {
-        "pagina": 18,
+        "pagina": 19,
         "texto": "12Pendiente de confirmar"
       }
     },
@@ -2442,9 +2462,9 @@
         "pagina": 19,
         "texto": "7.1Superficie pública por diseño"
       },
-      "rutas-sin-jwt-pero-con-secreto-propio": {
+      "rutas-sin-jwt-pero-con-credencial-de-canal-obligatoria": {
         "pagina": 19,
-        "texto": "7.2Rutas sin JWT pero con secreto propio"
+        "texto": "7.2Rutas sin JWT pero con credencial de canal obligatoria"
       },
       "resto-de-la-superficie": {
         "pagina": 19,
@@ -2510,9 +2530,9 @@
   {
     "manual": "03-Implementacion\\11-apk-tecnico-campo.html",
     "pdf": "pdf\\03-Implementacion\\11-apk-tecnico-campo.pdf",
-    "paginas": 8,
-    "hojasContenido": 6,
-    "entradasToc": 12,
+    "paginas": 9,
+    "hojasContenido": 7,
+    "entradasToc": 13,
     "anclas": {
       "la-app-ya-muestra-lo-que-tiene-guardado-en-el-telefono": {
         "pagina": 4,
@@ -2554,13 +2574,17 @@
         "pagina": 7,
         "texto": "5.1¿Y si no hay señal?"
       },
-      "el-telefono-para-llamar-al-cliente": {
+      "el-zip-de-la-jornada-novedad-de-d-156": {
         "pagina": 8,
-        "texto": "6El teléfono para llamar al cliente"
+        "texto": "6El ZIP de la jornada (novedad de D-156)"
+      },
+      "el-telefono-para-llamar-al-cliente": {
+        "pagina": 9,
+        "texto": "7El teléfono para llamar al cliente"
       },
       "resumen-rapido": {
-        "pagina": 8,
-        "texto": "7Resumen rápido"
+        "pagina": 9,
+        "texto": "8Resumen rápido"
       }
     },
     "avisos": []

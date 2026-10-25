@@ -251,8 +251,8 @@ Los parámetros que gobiernan los canales y la detección de fallas viven en la 
 | `fallas.campo_concentracion` | `"olt"` (`olt` \| `fat` \| `id_sector`) | `RepoTecnico/entornos_globales.md:198` |
 | `despacho.destino_telegram` | `""` (vacío ⇒ PENDIENTE) | `RepoTecnico/entornos_globales.md:199` |
 | `outbox.max_intentos` | `5` (backoff 1,2,4,8… min, tope 60) | `RepoTecnico/entornos_globales.md:200` |
-| `telegram.webhook_secret` | `""` (cabecera `X-Telegram-Bot-Api-Secret-Token`) | `RepoTecnico/entornos_globales.md:201` |
-| `mcp.api_key` | `""` (cabecera `X-MCP-Key`) | `RepoTecnico/entornos_globales.md:202` |
+| `telegram.webhook_secret` | `""` (cabecera `X-Telegram-Bot-Api-Secret-Token`; vacía ⇒ webhook cerrado con 503, D-149) | `RepoTecnico/entornos_globales.md:201` |
+| `mcp.api_key` | `""` (cabecera `X-MCP-Key`; vacía ⇒ servidor MCP cerrado con 503, D-149) | `RepoTecnico/entornos_globales.md:202` |
 
 La detección de fallas es **idempotente** por `falla_masiva.clave_concentracion`
 (p. ej. `olt:pde-olt-00`): mientras la falla siga activa (`DETECTADA`/`PLANIFICADA`) no se

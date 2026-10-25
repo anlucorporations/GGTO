@@ -85,7 +85,7 @@ se busca un caso del grupo con `id_sector` no nulo (`app/services/fallas.py:92-9
 los casos por cuadrilla en ese sector vía `despacho_caso` y elige la de mayor conteo
 (`app/services/fallas.py:37-49`). Si no hay datos del sector, elige la cuadrilla de código
 menor (`app/services/fallas.py:50`). La prueba de contrato funcional de fallas se apoya en
-esta asignación (`app/tests/test_alertas_api.py:36-44`).
+esta asignación (`app/tests/test_alertas_api.py:40-56`).
 
 #### Cuándo se ejecuta
 
@@ -93,7 +93,7 @@ La detección se dispara automáticamente al terminar una carga CSV: el router d
 importa el servicio (`app/api/routes_ingesta.py:15`) y, tras confirmar el lote, llama a
 `fallas.detectar(db, central.id_central)`, agregando el conteo `fallas_masivas` al resumen
 (`app/api/routes_ingesta.py:162-166`). También puede forzarse bajo demanda con
-`POST /api/v1/fallas-masivas/detectar` (`app/api/routes_alertas.py:90-101`).
+`POST /api/v1/fallas-masivas/detectar` (`app/api/routes_alertas.py:364-375`).
 
 ### Idempotencia por clave_concentracion
 
@@ -105,7 +105,7 @@ una falla, el servicio busca otra de la misma central, con la misma clave y esta
 
 Esto garantiza que, mientras la falla siga activa, una nueva detección no la duplica. La
 prueba `test_deteccion_por_concentracion` verifica la clave `olt:pde-olt-99` y que una
-segunda detección devuelve lista vacía (`app/tests/test_alertas_api.py:36-51`).
+segunda detección devuelve lista vacía (`app/tests/test_alertas_api.py:72-91`).
 `RepoTecnico/entornos_globales.md:204-206` documenta la misma regla con el ejemplo
 `olt:pde-olt-00`.
 
@@ -132,27 +132,28 @@ devuelve lista vacía y restaura el valor
 
 | Método y ruta | Propósito | Rol exigido | Línea |
 |---|---|---|---|
-| `GET /api/v1/fallas-masivas` | Listar fallas registradas | Autenticado | `app/api/routes_alertas.py:45` |
-| `POST /api/v1/fallas-masivas` | Reportar falla manual (201) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:64` |
-| `POST /api/v1/fallas-masivas/detectar` | Detección por concentración | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:90` |
-| `PATCH /api/v1/fallas-masivas/{id_falla}` | Actualizar estado o cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:104` |
-| `POST /api/v1/fallas-masivas/{id_falla}/planificacion` | Documentar planificación (RF-17) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:120` |
-| `POST /api/v1/fallas-masivas/{id_falla}/material` | Solicitar material (RF-18), 201 | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:144` |
+| `GET /api/v1/fallas-masivas` | Listar fallas registradas | Autenticado | `app/api/routes_alertas.py:185` |
+| `POST /api/v1/fallas-masivas` | Reportar falla manual (201) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:230` |
+| `POST /api/v1/fallas-masivas/detectar` | Detección por concentración | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:364` |
+| `PATCH /api/v1/fallas-masivas/{id_falla}` | Actualizar estado o cuadrilla | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:378` |
+| `POST /api/v1/fallas-masivas/{id_falla}/planificacion` | Documentar planificación (RF-17) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:394` |
+| `POST /api/v1/fallas-masivas/{id_falla}/material` | Solicitar material (RF-18), 201 | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:499` |
 
 El listado acepta `estado`, `id_central` y `solo_activas`; este último filtra
-`DETECTADA`/`PLANIFICADA` (`app/api/routes_alertas.py:50-60`). El reporte manual usa el
+`DETECTADA`/`PLANIFICADA` (`app/api/routes_alertas.py:186-227`; admite además `q`, rango
+de fechas y `origen`). El reporte manual usa el
 esquema `FallaMasivaManual`, con `descripcion` de 5 a 500 caracteres y origen por defecto
-`REPORTE_TECNICO` (`app/schemas/alertas.py:29-33`). Si no se indica cuadrilla, se resuelve
-la cercana al sector informado (`app/api/routes_alertas.py:72-73`), y tras crear la falla
-se encola la alerta (`app/api/routes_alertas.py:84`). El `PATCH` valida el estado contra
-el patrón `^(DETECTADA|PLANIFICADA|ATENDIDA|CERRADA)$` (`app/schemas/alertas.py:36-40`).
+`REPORTE_TECNICO` (`app/schemas/alertas.py:98-120`). Si no se indica cuadrilla, se resuelve
+la cercana al sector informado (`app/api/routes_alertas.py:250-251`), y tras crear la falla
+se encola la alerta (`app/api/routes_alertas.py:280`). El `PATCH` valida el estado contra
+el patrón `^(DETECTADA|PLANIFICADA|ATENDIDA|CERRADA)$` (`app/schemas/alertas.py:137-139`).
 Un `id_falla` inexistente produce HTTP 404 mediante `_o_404`
-(`app/api/routes_alertas.py:35-39`).
+(`app/api/routes_alertas.py:61-65`).
 
 La prueba `test_filtros_de_fallas` valida el filtro `solo_activas`
-(`app/tests/test_alertas_api.py:122-127`) y `test_rbac_tecnico` confirma que el rol
+(`app/tests/test_alertas_api.py:157-165`) y `test_rbac_tecnico` confirma que el rol
 `TECNICO` puede listar pero recibe 403 al crear
-(`app/tests/test_alertas_api.py:286-292`).
+(`app/tests/test_alertas_api.py:372-379`).
 
 ## Planificación (RF-17) y material (RF-18) sobre la falla
 
@@ -160,39 +161,39 @@ La prueba `test_filtros_de_fallas` valida el filtro `solo_activas`
 
 El esquema `PlanificacionRequest` exige `planificacion` (5 a 2000 caracteres), admite
 `reporte_simple` (máximo 2000), una lista de `evidencias` (seriales o rutas) y una
-`id_cuadrilla` opcional (`app/schemas/alertas.py:43-50`). El endpoint
-`POST /fallas-masivas/{id_falla}/planificacion` (`app/api/routes_alertas.py:120-141`):
+`id_cuadrilla` opcional (`app/schemas/alertas.py:146-153`). El endpoint
+`POST /fallas-masivas/{id_falla}/planificacion` (`app/api/routes_alertas.py:394-415`):
 
-1. Recupera la falla con `_o_404` (`:128`).
-2. Guarda `planificacion` (`:129`).
-3. Copia `reporte_simple` si viene (`:130-131`).
+1. Recupera la falla con `_o_404` (`app/api/routes_alertas.py:402`).
+2. Guarda `planificacion` (`app/api/routes_alertas.py:403`).
+3. Copia `reporte_simple` si viene (`app/api/routes_alertas.py:404-405`).
 4. Concatena las evidencias al reporte simple con el prefijo `Evidencias: `
-   (`:132-134`).
-5. Reasigna la cuadrilla si se indicó (`:135-136`).
+   (`app/api/routes_alertas.py:406-408`).
+5. Reasigna la cuadrilla si se indicó (`app/api/routes_alertas.py:409-410`).
 6. Fija el estado en `PLANIFICADA` y registra `planificada_en` con `datetime.now(UTC)`
-   (`:137-138`).
+   (`app/api/routes_alertas.py:411-412`).
 
 La prueba `test_reporte_manual_y_planificacion` comprueba el estado `PLANIFICADA`,
 `planificada_en` no nulo y que un serial `IMG-001` quede en `reporte_simple`
-(`app/tests/test_alertas_api.py:83-99`).
+(`app/tests/test_alertas_api.py:121-137`).
 
 ### Material
 
 El esquema `MaterialRequest` exige `descripcion` (3 a 500 caracteres) y admite
-`id_cuadrilla` (`app/schemas/alertas.py:53-57`). El endpoint
+`id_cuadrilla` (`app/schemas/alertas.py:156-160`). El endpoint
 `POST /fallas-masivas/{id_falla}/material` responde 201 y crea una fila `OrdenMaterial`
-(`app/api/routes_alertas.py:144-163`) con:
+(`app/api/routes_alertas.py:499-518`) con:
 
 | Campo | Valor | Referencia |
 |---|---|---|
-| `id_cuadrilla` | el recibido o el de la falla | `app/api/routes_alertas.py:154` |
-| `solicitante_usuario` | el P00 del usuario autenticado | `app/api/routes_alertas.py:155` |
-| `estado` | `SOLICITADA` | `app/api/routes_alertas.py:156` |
-| `observacion` | `[Falla {id_falla}] {descripcion}` | `app/api/routes_alertas.py:157` |
+| `id_cuadrilla` | el recibido o el de la falla | `app/api/routes_alertas.py:510` |
+| `solicitante_usuario` | el P00 del usuario autenticado | `app/api/routes_alertas.py:511` |
+| `estado` | `SOLICITADA` | `app/api/routes_alertas.py:512` |
+| `observacion` | `[Falla {id_falla}] {descripcion}` | `app/api/routes_alertas.py:513` |
 
 La respuesta incluye `id_orden`, `estado`, `observacion` e `id_falla`
-(`app/api/routes_alertas.py:162-163`). La prueba `test_solicitud_de_material` valida el
-estado `SOLICITADA` y el prefijo `[Falla N]` (`app/tests/test_alertas_api.py:102-110`).
+(`app/api/routes_alertas.py:515-518`). La prueba `test_solicitud_de_material` valida el
+estado `SOLICITADA` y el prefijo `[Falla N]` (`app/tests/test_alertas_api.py:139-147`).
 
 ## Outbox
 
@@ -203,7 +204,7 @@ Toda notificación se persiste primero en la tabla `notificacion`
 `destinatario` (160), `asunto` (200), `cuerpo` (`Text`), `id_caso` con borrado
 `SET NULL`, `estado` (20), `error` (`Text`), `enviado_en`, `intentos` (`SmallInteger`) y
 `proximo_intento` (`app/models/despacho_entities.py:71-82`). El esquema de salida
-`NotificacionOut` refleja estos campos (`app/schemas/alertas.py:60-74`).
+`NotificacionOut` refleja estos campos (`app/schemas/alertas.py:291-306`).
 
 `encolar` crea la fila con estado `PENDIENTE`, `intentos = 0` y `proximo_intento = ahora`
 (`app/services/outbox.py:34-48`). El asunto se trunca a 200 caracteres
@@ -226,35 +227,35 @@ bandeja por estado `PENDIENTE`, `ENVIADO` y `FALLIDO`
 
 Si el canal responde `PENDIENTE` (falta de credenciales), el outbox **resta** el intento
 recién sumado, reprograma con backoff y contabiliza la notificación como «diferida»; así
-no consume intentos (`app/services/outbox.py:78-85`). Si el canal responde `FALLIDO` y los
+no consume intentos (`app/services/outbox.py:80-87`). Si el canal responde `FALLIDO` y los
 intentos alcanzan `max_intentos`, el estado pasa a `FALLIDO` y se limpia
-`proximo_intento` (`app/services/outbox.py:86-90`); en caso contrario se reprograma
-(`app/services/outbox.py:91-96`). `RepoTecnico/metricas.md:121` formaliza que «diferida»
+`proximo_intento` (`app/services/outbox.py:88-102`); en caso contrario se reprograma
+(`app/services/outbox.py:103-107`). `RepoTecnico/metricas.md:121` formaliza que «diferida»
 equivale a `intentadas - enviadas - fallidas`.
 
 ### Backoff y max_intentos (app/services/outbox.py)
 
 `backoff_minutos` devuelve `min(2^(intentos-1), 60)` minutos, es decir 1, 2, 4, 8… con
-tope de 60 (`app/services/outbox.py:29-31`, constante `BACKOFF_TOPE_MINUTOS = 60` en
-`:21`). El número máximo de intentos se lee de `outbox.max_intentos`, con valor por
-defecto `MAX_INTENTOS_POR_DEFECTO = 5` (`app/services/outbox.py:20,53`); el valor inicial
+tope de 60 (`app/services/outbox.py:31-33`, constante `BACKOFF_TOPE_MINUTOS = 60` en
+`:22`). El número máximo de intentos se lee de `outbox.max_intentos`, con valor por
+defecto `MAX_INTENTOS_POR_DEFECTO = 5` (`app/services/outbox.py:21,55`); el valor inicial
 documentado en la configuración también es 5
 (`RepoTecnico/entornos_globales.md:200`).
 
 `procesar` selecciona las notificaciones `PENDIENTE` cuyo `proximo_intento` ya llegó,
 ordenadas por `id_notificacion` y limitadas por el parámetro `limite`
-(`app/services/outbox.py:51-64`). Devuelve un resumen con `intentadas`, `enviadas`,
+(`app/services/outbox.py:53-66`). Devuelve un resumen con `intentadas`, `enviadas`,
 `diferidas`, `fallidas` y el `detalle` por notificación
-(`app/services/outbox.py:66,97-103`), que corresponde al esquema `ProcesarOutboxOut`
-(`app/schemas/alertas.py:77-82`).
+(`app/services/outbox.py:68,103-116`), que corresponde al esquema `ProcesarOutboxOut`
+(`app/schemas/alertas.py:308-314`).
 
 #### Disparadores del procesamiento
 
 | Disparador | Límite | Referencia |
 |---|---|---|
-| `POST /api/v1/notificaciones/procesar` | `limite` entre 1 y 200, por defecto 50 | `app/api/routes_alertas.py:188-195` |
-| Respuesta del bot de Telegram | 5 | `app/api/routes_alertas.py:205` |
-| Herramienta MCP `procesar_notificaciones` | 20 | `app/api/routes_alertas.py:382` |
+| `POST /api/v1/notificaciones/procesar` | `limite` entre 1 y 200, por defecto 50 | `app/api/routes_alertas.py:744-753` |
+| Respuesta del bot de Telegram | 5 | `app/api/routes_alertas.py:763` |
+| Herramienta MCP `procesar_notificaciones` | 20 | `app/api/routes_alertas.py:956-958` |
 
 ### Canales (app/services/notificaciones.py)
 
@@ -264,160 +265,180 @@ El módulo declara que, si el canal no tiene credenciales, la notificación qued
 
 | Canal | Variable de entorno | Sin credenciales | Referencia |
 |---|---|---|---|
-| `TELEGRAM` | `TELEGRAM_BOT_TOKEN` | `PENDIENTE` + motivo | `app/services/notificaciones.py:20-22` |
-| `CORREO` | `SMTP_HOST` (y `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`) | `PENDIENTE` + motivo | `app/services/notificaciones.py:40-46` |
-| `MANUAL` / `MCP_IA` | No aplica | `PENDIENTE` para entrega del supervisor (D-156) | `app/services/notificaciones.py:66-70` |
+| `TELEGRAM` | `TELEGRAM_BOT_TOKEN` | `PENDIENTE` + motivo | `app/services/notificaciones.py:19-22` |
+| `CORREO` | `SMTP_HOST` (y `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`) | `PENDIENTE` + motivo | `app/services/notificaciones.py:39-46` |
+| `MANUAL` / `MCP_IA` | No aplica | `PENDIENTE` para entrega del supervisor (D-156) | `app/services/notificaciones.py:64-70` |
 
 El envío por Telegram usa `urllib.request` contra `api.telegram.org/bot{token}/sendMessage`
 con `parse_mode: Markdown`, trunca el texto a `LIMITE_TELEGRAM = 4000` caracteres
-(`app/services/notificaciones.py:16,23-33`) y devuelve `FALLIDO` ante
-`URLError`, `TimeoutError` u `OSError` (`app/services/notificaciones.py:35-36`). El correo
+(`app/services/notificaciones.py:16,19-36`) y devuelve `FALLIDO` ante
+`URLError`, `TimeoutError` u `OSError` (`app/services/notificaciones.py:30-36`). El correo
 usa `smtplib.SMTP` con `starttls()` y login si hay usuario
-(`app/services/notificaciones.py:54-58`). `MANUAL` y `MCP_IA` no intentan red:
-quedan `PENDIENTE` para entrega del supervisor (D-156). Cualquier otro canal no
-listado devuelve `FALLIDO` con «Canal no soportado».
+(`app/services/notificaciones.py:39-61`). `MANUAL` y `MCP_IA` no intentan red:
+quedan `PENDIENTE` para entrega del supervisor (D-156, `app/services/notificaciones.py:68-70`). Cualquier otro canal no
+listado devuelve `FALLIDO` con «Canal no soportado» (`app/services/notificaciones.py:75-77`).
 
 #### Nota sobre nombre de canal del correo
 
-`enviar` reconoce el canal `CORREO` (`app/services/notificaciones.py:70`). **Pendiente de
+`enviar` reconoce el canal `CORREO` (`app/services/notificaciones.py:75`). **Pendiente de
 confirmar** si algún flujo de la v1 encola notificaciones por ese canal: en el código
 revisado, las alertas de falla y las respuestas del bot encolan siempre `TELEGRAM`
-(`app/services/fallas.py:125`, `app/api/routes_alertas.py:202`).
+(`app/services/fallas.py:125`, `app/api/routes_alertas.py:760`).
 
 ## Telegram
 
 ### Webhook POST /api/v1/telegram/webhook
 
 El webhook se declara como `async` y lee el cuerpo con `await request.json()`
-(`app/api/routes_alertas.py:256-267`). Acepta tanto `message` como `edited_message`
-(`app/api/routes_alertas.py:268`). Extrae `chat_id` y `text`; si falta cualquiera de los
+(`app/api/routes_alertas.py:814-834`). Aplica primero el control **fail-closed** del
+hallazgo H-02 (D-149): si `telegram.webhook_secret` está vacío responde **HTTP 503**
+(«El webhook de Telegram no tiene secreto configurado») y no ejecuta comando alguno, y si
+la cabecera falta o no coincide responde **HTTP 403** («Secreto del webhook inválido»)
+(`app/api/routes_alertas.py:820-832`). Acepta tanto `message` como `edited_message`
+(`app/api/routes_alertas.py:835`). Extrae `chat_id` y `text`; si falta cualquiera de los
 dos, responde `{"ok": True, "ignorado": True}` sin procesar nada
-(`app/api/routes_alertas.py:269-272`). En caso contrario, resuelve el comando, encola la
-respuesta y devuelve `{"ok": True, "respuesta": ...}` (`app/api/routes_alertas.py:274-276`).
+(`app/api/routes_alertas.py:836-839`). En caso contrario, resuelve el comando, encola la
+respuesta y devuelve `{"ok": True, "respuesta": ...}` (`app/api/routes_alertas.py:841-843`).
 
 `_responder_telegram` encola la respuesta con canal `TELEGRAM` y destinatario `chat_id`,
 confirma, procesa hasta 5 notificaciones y vuelve a confirmar
-(`app/api/routes_alertas.py:201-206`). Esto significa que la respuesta al usuario también
+(`app/api/routes_alertas.py:759-764`). Esto significa que la respuesta al usuario también
 depende del outbox: **sin credenciales del bot queda PENDIENTE** y el usuario no recibe
 nada en Telegram.
 
 ### Comandos /ayuda /estado /caso /falla
 
 `_comando` parte el texto en comando y argumento, normaliza el comando a minúsculas y
-quita la barra inicial (`app/api/routes_alertas.py:209-212`).
+quita la barra inicial (`app/api/routes_alertas.py:768-770`).
 
 | Comando | Aliases | Comportamiento | Referencia |
 |---|---|---|---|
-| `/ayuda` | `start`, `help` | Devuelve la lista de comandos | `app/api/routes_alertas.py:215-217` |
-| `/estado` | — | Cuenta casos pendientes y fallas activas de la central | `app/api/routes_alertas.py:218-230` |
-| `/caso <id_averia>` | — | Busca el caso por `id_averia` y devuelve estado, cliente, teléfono, dirección y problema | `app/api/routes_alertas.py:231-239` |
-| `/falla <descripción>` | — | Crea una falla masiva con origen `REPORTE_TECNICO` | `app/api/routes_alertas.py:240-252` |
+| `/ayuda` | `start`, `help` | Devuelve la lista de comandos | `app/api/routes_alertas.py:773-775` |
+| `/estado` | — | Cuenta casos pendientes y fallas activas de la central | `app/api/routes_alertas.py:776-788` |
+| `/caso <id_averia>` | — | Busca el caso por `id_averia` y devuelve estado, cliente, teléfono, dirección y problema | `app/api/routes_alertas.py:789-797` |
+| `/falla <descripción>` | — | Crea una falla masiva con origen `REPORTE_TECNICO` | `app/api/routes_alertas.py:798-810` |
 
 Detalles verificados: `/caso` sin argumento responde «Uso: /caso <id_averia>»
-(`:232-233`) y, si no encuentra el caso, «No encontré el caso {argumento}» (`:235-236`).
-`/falla` sin argumento responde «Uso: /falla <descripción de la falla>` (`:241-242`);
-la descripción se prefija con `[Telegram {chat_id}]` (`:245`). Un comando desconocido
-responde «Comando no reconocido. Use /ayuda.» (`:253`). Las pruebas del webhook cubren
-ayuda, estado, consulta de caso (incluido el no encontrado), reporte de falla, mensaje sin
-texto y el secreto (`app/tests/test_alertas_api.py:156-206`).
+(`app/api/routes_alertas.py:791`) y, si no encuentra el caso, «No encontré el caso {argumento}»
+(`app/api/routes_alertas.py:794`). `/falla` sin argumento responde «Uso: /falla <descripción de la falla>`
+(`app/api/routes_alertas.py:800`); la descripción se prefija con `[Telegram {chat_id}]`
+(`app/api/routes_alertas.py:803`). Un comando desconocido responde «Comando no reconocido.
+Use /ayuda.» (`app/api/routes_alertas.py:811`). Las pruebas del webhook cubren ayuda,
+estado, consulta de caso (incluido el no encontrado), reporte de falla, mensaje sin texto
+y los tres caminos del secreto (503 sin credencial, 403 con incorrecta, acceso con la
+correcta) (`app/tests/test_alertas_api.py:216-290`).
 
 #### Comando no implementado
 
 `/falla` crea la falla pero **no** llama a `svc_fallas.alertar` —a diferencia del reporte
 manual y de la herramienta MCP, que sí lo hacen—; el mensaje de respuesta afirma «Se
-notificó al supervisor» (`app/api/routes_alertas.py:252`). Este comportamiento es el real
+notificó al supervisor» (`app/api/routes_alertas.py:810`). Este comportamiento es el real
 del código y se documenta tal cual; **pendiente de confirmar** si es intencional.
 
-### Cabecera X-Telegram-Bot-Api-Secret-Token
+### Cabecera X-Telegram-Bot-Api-Secret-Token (fail-closed, D-149)
 
 El webhook recibe la cabecera `x_telegram_bot_api_secret_token` de forma opcional
-(`app/api/routes_alertas.py:260`). El valor esperado se lee de la clave
-`telegram.webhook_secret` de `configuracion` (`app/api/routes_alertas.py:263`). Si la
-clave tiene valor y la cabecera no coincide, responde **HTTP 403** con detalle «Secreto
-del webhook inválido» (`app/api/routes_alertas.py:264-265`). Si la clave está vacía, no se
-exige la cabecera (`RepoTecnico/entornos_globales.md:201`). La prueba
-`test_telegram_secreto` valida ambos caminos (`app/tests/test_alertas_api.py:192-206`).
+(`app/api/routes_alertas.py:818`). El valor esperado se lee de la clave
+`telegram.webhook_secret` de `configuracion` (`app/api/routes_alertas.py:821`). El control
+es **fail-closed** desde D-149 (`app/api/routes_alertas.py:822-832`):
+
+| Situación | Respuesta |
+|---|---|
+| Secreto no configurado (clave vacía) | **HTTP 503** «El webhook de Telegram no tiene secreto configurado» (`app/api/routes_alertas.py:824-828`) |
+| Cabecera ausente o no coincide | **HTTP 403** «Secreto del webhook inválido», con `hmac.compare_digest` (`app/api/routes_alertas.py:829-832`) |
+
+Ya **no existe** el caso «clave vacía ⇒ no se exige» que se describía antes de D-149.
+Las pruebas `test_telegram_sin_secreto_configurado_no_atiende`
+(`app/tests/test_alertas_api.py:258-262`), `test_telegram_con_secreto_incorrecto_no_atiende`
+(`:265-269`) y `test_telegram_secreto` (`:275-290`) validan los tres caminos.
 
 ## MCP
 
 ### POST /api/v1/mcp JSON-RPC
 
 El servidor MCP se expone como `POST /api/v1/mcp` con la descripción «Servidor MCP
-(JSON-RPC 2.0)» (`app/api/routes_alertas.py:346`). Es `async`, lee el cuerpo con
+(JSON-RPC 2.0)» (`app/api/routes_alertas.py:913`). Es `async`, lee el cuerpo con
 `await request.json()` y extrae `method`, `id` y `params`
-(`app/api/routes_alertas.py:358-361`). No exige sesión de usuario: su control de acceso es
-la clave MCP.
+(`app/api/routes_alertas.py:933-936`). No exige sesión de usuario: su control de acceso es
+la clave MCP, **fail-closed** desde D-149 (`app/api/routes_alertas.py:919-931`).
 
 | Método JSON-RPC | Resultado | Referencia |
 |---|---|---|
-| `initialize` | `protocolVersion` `2024-11-05`, `capabilities.tools`, `serverInfo` `ggto-mcp` versión 0.1.0 | `app/api/routes_alertas.py:363-368` |
-| `tools/list` | Lista `TOOLS` | `app/api/routes_alertas.py:369-370` |
-| `tools/call` | Ejecuta la herramienta indicada en `params.name` | `app/api/routes_alertas.py:371-389` |
-| Otro método | Error `-32601` «Método no soportado» | `app/api/routes_alertas.py:390-392` |
+| `initialize` | `protocolVersion` `2024-11-05`, `capabilities.tools`, `serverInfo` `ggto-mcp` versión 0.1.0 | `app/api/routes_alertas.py:938-943` |
+| `tools/list` | Lista `TOOLS` | `app/api/routes_alertas.py:944-945` |
+| `tools/call` | Ejecuta la herramienta indicada en `params.name` | `app/api/routes_alertas.py:946-964` |
+| Otro método | Error `-32601` «Método no soportado» | `app/api/routes_alertas.py:965-967` |
 
 La respuesta exitosa tiene la forma `{"jsonrpc": "2.0", "id": ident, "result": ...}`
-(`app/api/routes_alertas.py:394`). Las herramientas devuelven tanto texto como el objeto
-`datos` (`result.content[0].text` y `result.datos`, `app/api/routes_alertas.py:389`).
+(`app/api/routes_alertas.py:969`). Las herramientas devuelven tanto texto como el objeto
+`datos` (`result.content[0].text` y `result.datos`, `app/api/routes_alertas.py:964`).
 
-### Cabecera X-MCP-Key
+### Cabecera X-MCP-Key (fail-closed, D-149)
 
-`mcp` recibe la cabecera opcional `x_mcp_key` (`app/api/routes_alertas.py:350`). El valor
-esperado se lee de la clave `mcp.api_key` (`app/api/routes_alertas.py:353`). Si la clave
-está configurada y no coincide, se devuelve un error JSON-RPC con código **-32001** y
-mensaje «Clave MCP inválida» (`app/api/routes_alertas.py:354-356`). Si está vacía, no se
-exige la cabecera (`RepoTecnico/entornos_globales.md:202`). La prueba `test_mcp_clave`
-cubre el rechazo y el acceso con la cabecera correcta
-(`app/tests/test_alertas_api.py:257-270`).
+`mcp` recibe la cabecera opcional `x_mcp_key` (`app/api/routes_alertas.py:917`). El valor
+esperado se lee de la clave `mcp.api_key` (`app/api/routes_alertas.py:920`). El control es
+**fail-closed** desde D-149 (`app/api/routes_alertas.py:921-931`):
+
+| Situación | Respuesta |
+|---|---|
+| Clave no configurada (vacía) | **HTTP 503** «El servidor MCP no tiene clave configurada» (`app/api/routes_alertas.py:923-927`) |
+| Cabecera ausente o no coincide | **HTTP 401** «Clave MCP inválida», con `hmac.compare_digest` (`app/api/routes_alertas.py:928-931`) |
+
+Ya **no existe** el caso «clave vacía ⇒ no se exige», ni el error JSON-RPC `-32001` sobre
+HTTP 200 que describía este manual antes de D-149: un rechazo de autenticación ahora es
+una respuesta HTTP real (`401`), no un `result` JSON-RPC. Las pruebas
+`test_mcp_sin_clave_configurada_no_atiende` (`app/tests/test_alertas_api.py:342-346`) y
+`test_mcp_clave` (`:349-354`) validan los caminos de rechazo.
 
 ### Métodos expuestos según el código
 
 Solo están implementados los tres métodos anteriores; `resources/list` y cualquier otro
-caen en el error `-32601` (`app/tests/test_alertas_api.py:252-254`). **Pendiente de
+caen en el error `-32601` (`app/tests/test_alertas_api.py:337-340`). **Pendiente de
 confirmar** cualquier ampliación de métodos o de herramientas más allá de las declaradas
 en `TOOLS`.
 
 ### Herramientas de la lista TOOLS
 
-`TOOLS` declara cuatro herramientas (`app/api/routes_alertas.py:282-293`):
+`TOOLS` declara cuatro herramientas (`app/api/routes_alertas.py:849-860`):
 
 | Herramienta | Descripción | Argumentos | Implementación |
 |---|---|---|---|
-| `estado_central` | Resumen de casos pendientes y fallas activas | ninguno | `app/api/routes_alertas.py:296-309` |
-| `consultar_caso` | Busca un caso por id de avería o teléfono | `id_averia`, `telefono` | `app/api/routes_alertas.py:312-325` |
-| `reportar_falla` | Registra una falla masiva | `descripcion` (obligatorio) | `app/api/routes_alertas.py:328-343` |
-| `procesar_notificaciones` | Procesa el outbox | ninguno | `app/api/routes_alertas.py:381-383` |
+| `estado_central` | Resumen de casos pendientes y fallas activas | ninguno | `app/api/routes_alertas.py:863-876` |
+| `consultar_caso` | Busca un caso por id de avería o teléfono | `id_averia`, `telefono` | `app/api/routes_alertas.py:879-892` |
+| `reportar_falla` | Registra una falla masiva | `descripcion` (obligatorio) | `app/api/routes_alertas.py:895-910` |
+| `procesar_notificaciones` | Procesa el outbox | ninguno | `app/api/routes_alertas.py:956-958` |
 
 `consultar_caso` exige al menos uno de los dos argumentos; si faltan, lanza
 `ValueError("Indique id_averia o telefono")`, que el manejador traduce a error `-32602`
-(`app/api/routes_alertas.py:315-316,386-388`). Si no encuentra el caso devuelve
-`{"encontrado": False}` (`app/api/routes_alertas.py:321-322`). `reportar_falla` exige una
+(`app/api/routes_alertas.py:880-883,961-963`). Si no encuentra el caso devuelve
+`{"encontrado": False}` (`app/api/routes_alertas.py:888-889`). `reportar_falla` exige una
 descripción de al menos 5 caracteres, prefija `[MCP]`, asigna cuadrilla cercana, crea la
-falla y llama a `alertar` (`app/api/routes_alertas.py:328-343`).
+falla y llama a `alertar` (`app/api/routes_alertas.py:895-910`).
 
 ## Métricas
 
 ### GET /api/v1/metricas
 
 El endpoint de observabilidad responde con el esquema `MetricasOut` y la descripción
-«Métricas de negocio y estado de los canales» (`app/api/routes_alertas.py:400-402`). Exige
-usuario autenticado y calcula (`app/api/routes_alertas.py:402-422`):
+«Métricas de negocio y estado de los canales» (`app/api/routes_alertas.py:975-977`). Exige
+usuario autenticado y calcula (`app/api/routes_alertas.py:977-998`):
 
 | Campo | Cálculo | Referencia |
 |---|---|---|
-| `casos_total` | suma de los conteos por estado | `app/api/routes_alertas.py:407` |
-| `casos_por_estado` | `group_by(Caso.estado_actual)` | `app/api/routes_alertas.py:403` |
-| `casos_por_categoria` | `group_by(Caso.categoria)` | `app/api/routes_alertas.py:404` |
-| `lotes_ingesta` | `count(ingesta_lote)` | `app/api/routes_alertas.py:410` |
-| `casos_ingeridos` | casos con `origen = 'INGESTA_CSV'` | `app/api/routes_alertas.py:411-412` |
-| `fallas_activas` | fallas en `DETECTADA`/`PLANIFICADA` | `app/api/routes_alertas.py:413-415` |
-| `notificaciones_pendientes` / `enviadas` / `fallidas` | provistas por `outbox.metricas` | `app/api/routes_alertas.py:416-418` |
-| `canales_configurados` | `telegram` = existe `TELEGRAM_BOT_TOKEN`; `correo` = existe `SMTP_HOST` | `app/api/routes_alertas.py:419-422` |
+| `casos_total` | suma de los conteos por estado | `app/api/routes_alertas.py:982` |
+| `casos_por_estado` | `group_by(Caso.estado_actual)` | `app/api/routes_alertas.py:978` |
+| `casos_por_categoria` | `group_by(Caso.categoria)` | `app/api/routes_alertas.py:979` |
+| `lotes_ingesta` | `count(ingesta_lote)` | `app/api/routes_alertas.py:985` |
+| `casos_ingeridos` | casos con `origen = 'INGESTA_CSV'` | `app/api/routes_alertas.py:986-987` |
+| `fallas_activas` | fallas en `DETECTADA`/`PLANIFICADA` | `app/api/routes_alertas.py:988-990` |
+| `notificaciones_pendientes` / `enviadas` / `fallidas` | provistas por `outbox.metricas` | `app/api/routes_alertas.py:991-993` |
+| `canales_configurados` | `telegram` = existe `TELEGRAM_BOT_TOKEN`; `correo` = existe `SMTP_HOST` | `app/api/routes_alertas.py:994-997` |
 
 `outbox.metricas` agrupa `notificacion` por estado y expone `PENDIENTE`, `ENVIADO` y
 `FALLIDO` (`app/services/outbox.py:107-120`). El esquema `MetricasOut` declara exactamente
-esos campos (`app/schemas/alertas.py:85-95`). La prueba `test_metricas` comprueba el total
+esos campos (`app/schemas/alertas.py:316-330`). La prueba `test_metricas` comprueba el total
 de casos, que no hay ingeridos y que ambos canales figuran como no configurados
-(`app/tests/test_alertas_api.py:276-283`).
+(`app/tests/test_alertas_api.py:362-370`).
 
 ## ESTADO REAL de los canales
 
@@ -430,14 +451,14 @@ el Ciclo 9)")` (`app/services/notificaciones.py:20-22`) y `_correo` devuelve
 (`app/services/notificaciones.py:40-42`). En consecuencia:
 
 - `canales_configurados` informa `false` para Telegram y correo
-  (`app/api/routes_alertas.py:419-422`).
+  (`app/api/routes_alertas.py:994-997`).
 - Las alertas quedan en la bandeja con estado `PENDIENTE` y no se pierden
   (`app/services/outbox.py:1-7,78-85`).
 - La prueba `test_deteccion_encola_alerta` verifica que la alerta es del canal `TELEGRAM`,
   que su asunto contiene «Falla masiva» y que su estado es `PENDIENTE`
-  (`app/tests/test_alertas_api.py:54-62`).
+  (`app/tests/test_alertas_api.py:92-101`).
 - La prueba `test_procesar_outbox_sin_credenciales` verifica `enviadas == 0` y
-  `diferidas >= 1` (`app/tests/test_alertas_api.py:133-146`).
+  `diferidas >= 1` (`app/tests/test_alertas_api.py:168-182`).
 
 Por lo tanto, **no debe afirmarse que el sistema ya notifica**: los envíos están
 **PENDIENTES** hasta que existan las credenciales (`TELEGRAM_BOT_TOKEN` / `SMTP_HOST`).
@@ -447,9 +468,9 @@ La propia página ALERTAS lo indica al usuario
 ### WhatsApp NO existe
 
 El canal de WhatsApp **no está implementado** en la v1: `enviar` solo reconoce `TELEGRAM`
-y `CORREO` (`app/services/notificaciones.py:64-72`), `canales_configurados` solo expone
-`telegram` y `correo` (`app/api/routes_alertas.py:419-422`) y la prueba de esquema exige
-exactamente esas dos claves (`app/tests/test_alertas_api.py:283`). WhatsApp está diferido
+y `CORREO` (`app/services/notificaciones.py:64-77`), `canales_configurados` solo expone
+`telegram` y `correo` (`app/api/routes_alertas.py:994-997`) y la prueba de esquema exige
+exactamente esas dos claves (`app/tests/test_alertas_api.py:362-370`). WhatsApp está diferido
 y no debe documentarse como disponible.
 
 #### Canales mencionados en dependencias
@@ -457,7 +478,7 @@ y no debe documentarse como disponible.
 Las variables `MCP_SERVER_URL` y `MCP_API_KEY` aparecen en `RepoTecnico/entornos_globales.md:180-181`,
 pero el servidor MCP implementado en el código no las consume: su control de acceso es la
 clave `mcp.api_key` de la tabla `configuracion`
-(`app/api/routes_alertas.py:352-356`). **Pendiente de confirmar** el uso previsto de esas
+(`app/api/routes_alertas.py:919-931`). **Pendiente de confirmar** el uso previsto de esas
 variables de entorno.
 
 ## Endpoints de bandeja y página web ALERTAS
@@ -466,13 +487,13 @@ variables de entorno.
 
 | Método y ruta | Propósito | Parámetros | Rol | Línea |
 |---|---|---|---|---|
-| `GET /api/v1/notificaciones` | Bandeja del outbox | `estado`, `canal`, `limite` (1–500, por defecto 100) | Autenticado | `app/api/routes_alertas.py:169` |
+| `GET /api/v1/notificaciones` | Bandeja del outbox | `estado`, `canal`, `limite` (1–500, por defecto 100) | Autenticado | `app/api/routes_alertas.py:723` |
 | `POST /api/v1/notificaciones/procesar` | Procesar reintentos | `limite` (1–200, por defecto 50) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:186` |
 
 El listado ordena por `id_notificacion` descendente y aplica los filtros
-(`app/api/routes_alertas.py:178-182`). El procesamiento delega en `outbox.procesar` y
-confirma la sesión (`app/api/routes_alertas.py:193-194`). `test_rbac_tecnico` confirma que
-el rol `TECNICO` recibe 403 al procesar (`app/tests/test_alertas_api.py:292`).
+(`app/api/routes_alertas.py:733-741`). El procesamiento delega en `outbox.procesar` y
+confirma la sesión (`app/api/routes_alertas.py:751-752`). `test_rbac_tecnico` confirma que
+el rol `TECNICO` recibe 403 al procesar (`app/tests/test_alertas_api.py:377-378`).
 
 ### Página web ALERTAS
 
@@ -492,7 +513,7 @@ La página `Alertas` cubre RF-09, RF-16, RF-17, RF-18 y RNF-19/RNF-20
 
 Los estados de falla que ofrece la interfaz son `DETECTADA`, `PLANIFICADA`, `ATENDIDA` y
 `CERRADA` (`app/web/src/pages/Alertas.tsx:25`), coherentes con el patrón de
-`FallaMasivaUpdate` (`app/schemas/alertas.py:37-38`). La detección bajo demanda informa
+`FallaMasivaUpdate` (`app/schemas/alertas.py:137-139`). La detección bajo demanda informa
 cuántas fallas nuevas se crearon o que no hubo concentraciones sobre el umbral
 (`app/web/src/pages/Alertas.tsx:140-146`). El procesamiento del outbox muestra el resumen
 de enviadas, diferidas y fallidas (`app/web/src/pages/Alertas.tsx:148-155`). Las funciones
@@ -513,12 +534,12 @@ pruebas sobre métricas, RF-09, RF-17, RF-18 y outbox
 
 | Bloque | Pruebas | Referencia |
 |---|---|---|
-| Detección automática | `test_deteccion_por_concentracion`, `test_deteccion_encola_alerta`, `test_deteccion_desactivada` | `app/tests/test_alertas_api.py:36-77` |
-| Reporte, planificación y material | `test_reporte_manual_y_planificacion`, `test_solicitud_de_material`, `test_actualizar_estado_de_falla`, `test_filtros_de_fallas` | `app/tests/test_alertas_api.py:83-127` |
-| Outbox | `test_procesar_outbox_sin_credenciales` | `app/tests/test_alertas_api.py:133-146` |
-| Telegram | Ayuda, estado, caso, reporte de falla, sin texto y secreto | `app/tests/test_alertas_api.py:156-206` |
-| MCP | `initialize`, `tools/list`, herramientas, método no soportado y clave | `app/tests/test_alertas_api.py:216-270` |
-| Métricas y RBAC | `test_metricas`, `test_rbac_tecnico`, `test_sin_token` | `app/tests/test_alertas_api.py:276-296` |
+| Detección automática | `test_deteccion_por_concentracion`, `test_deteccion_encola_alerta`, `test_deteccion_desactivada` | `app/tests/test_alertas_api.py:59-118` |
+| Reporte, planificación y material | `test_reporte_manual_y_planificacion`, `test_solicitud_de_material`, `test_actualizar_estado_de_falla`, `test_filtros_de_fallas` | `app/tests/test_alertas_api.py:121-165` |
+| Outbox | `test_procesar_outbox_sin_credenciales` | `app/tests/test_alertas_api.py:168-182` |
+| Telegram | Ayuda, estado, caso, reporte de falla, sin texto y secreto | `app/tests/test_alertas_api.py:216-290` |
+| MCP | `initialize`, `tools/list`, herramientas, método no soportado y clave | `app/tests/test_alertas_api.py:299-359` |
+| Métricas y RBAC | `test_metricas`, `test_rbac_tecnico`, `test_sin_token` | `app/tests/test_alertas_api.py:362-386` |
 
 ### Pruebas de contrato y RBAC
 
@@ -542,7 +563,7 @@ y respuesta `200` de la SPA en `/alertas`
 | Tema | Motivo | Referencia |
 |---|---|---|
 | Canal `CORREO` sin flujo que lo encole en la v1 | `enviar` lo soporta, pero los flujos revisados encolan `TELEGRAM` | `app/services/notificaciones.py:70`, `app/services/fallas.py:125` |
-| `/falla` de Telegram no llama a `alertar` pese a afirmarlo | Comportamiento real del código | `app/api/routes_alertas.py:240-252` |
-| Uso de `MCP_SERVER_URL` / `MCP_API_KEY` del entorno | El código usa `mcp.api_key` de `configuracion` | `RepoTecnico/entornos_globales.md:180-181`, `app/api/routes_alertas.py:353` |
-| Ampliación de métodos MCP o de la lista `TOOLS` | No verificable en el repositorio actual | `app/api/routes_alertas.py:282-293` |
+| `/falla` de Telegram no llama a `alertar` pese a afirmarlo | Comportamiento real del código | `app/api/routes_alertas.py:798-810` |
+| Uso de `MCP_SERVER_URL` / `MCP_API_KEY` del entorno | El código usa `mcp.api_key` de `configuracion` | `RepoTecnico/entornos_globales.md:180-181`, `app/api/routes_alertas.py:919-931` |
+| Ampliación de métodos MCP o de la lista `TOOLS` | No verificable en el repositorio actual | `app/api/routes_alertas.py:849-860` |
 | Fecha de habilitación de credenciales de Telegram/correo | Depende de la operación, no del código | `app/services/notificaciones.py:22,42` |

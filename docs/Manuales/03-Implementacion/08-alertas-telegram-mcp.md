@@ -321,6 +321,13 @@ La respuesta al usuario se encola por el **canal Telegram** y luego se procesan 
 significa que **la respuesta al usuario también depende de la bandeja de salida**: sin credenciales del bot,
 **la respuesta queda PENDIENTE y el usuario no recibe nada en Telegram**.
 
+El webhook aplica primero el control **fail-closed** del hallazgo H-02 (D-149,
+`app/api/routes_alertas.py:814-832`): si la clave `telegram.webhook_secret` de la tabla de configuración
+está **vacía**, la puerta responde **503** («El webhook de Telegram no tiene secreto configurado») y
+**no ejecuta comando alguno**; si la cabecera `X-Telegram-Bot-Api-Secret-Token` falta o no coincide,
+responde **403** («Secreto del webhook inválido»). Por eso, **mientras el secreto no se configure, el
+canal de Telegram está desactivado por diseño**, nunca abierto al público.
+
 ### Comandos /ayuda /estado /caso /falla
 
 El sistema separa el comando del argumento, normaliza el comando a minúsculas y le quita la barra inicial.
@@ -336,7 +343,9 @@ Detalles verificados: `/caso` sin argumento responde «Uso: /caso <id_averia>» 
 «No encontré el caso …». `/falla` sin argumento responde «Uso: /falla <descripción de la falla>»; la
 descripción se prefija con «[Telegram (identificador de la conversación)]». Un comando desconocido responde
 «Comando no reconocido. Use /ayuda.». Las pruebas del webhook cubren la ayuda, el estado, la consulta de un
-caso (incluido el caso no encontrado), el reporte de falla, un mensaje sin texto y el secreto.
+caso (incluido el caso no encontrado), el reporte de falla, un mensaje sin texto y los **tres caminos del
+secreto**: 503 sin credencial configurada, 403 con secreto incorrecto y acceso con el secreto correcto
+(`app/tests/test_alertas_api.py:216-290`).
 
 #### Comando no implementado
 
@@ -345,16 +354,22 @@ del reporte manual y de la herramienta MCP, que **sí** lo hacen. Sin embargo, e
 **afirma** «Se notificó al supervisor». Este es el comportamiento **real** del código y se documenta tal
 cual; **queda pendiente de confirmar** si es intencional.
 
-### Cabecera X-Telegram-Bot-Api-Secret-Token
+### Cabecera X-Telegram-Bot-Api-Secret-Token (fail-closed, D-149)
 
-El webhook recibe de forma **opcional** la cabecera `X-Telegram-Bot-Api-Secret-Token`. El valor esperado se
-lee de la clave `telegram.webhook_secret` de la tabla de configuración:
+La cabecera `X-Telegram-Bot-Api-Secret-Token` es la «apertura» del webhook: el valor esperado se lee de la
+clave `telegram.webhook_secret` de la tabla de configuración. El control es **fail-closed** desde D-149
+(`app/api/routes_alertas.py:822-832`):
 
-- Si la clave **tiene valor** y la cabecera **no coincide**, el sistema responde **error 403** con el detalle
-  «Secreto del webhook inválido».
-- Si la clave está **vacía**, la cabecera **no se exige**.
+| Situación | Respuesta |
+|---|---|
+| Secreto **no configurado** (clave vacía) | **503** «El webhook de Telegram no tiene secreto configurado» y no se ejecuta nada |
+| Cabecera **ausente** o que **no coincide** | **403** «Secreto del webhook inválido» |
+| Cabecera correcta | El webhook atiende el mensaje |
 
-Una prueba valida ambos caminos.
+Ya **no existe** el caso «clave vacía ⇒ no se exige» que se describía antes de D-149. Las pruebas
+`test_telegram_sin_secreto_configurado_no_atiende` (`app/tests/test_alertas_api.py:258-262`, espera **503**)
+y `test_telegram_con_secreto_incorrecto_no_atiende` (`:265-269`, espera **403**) validan los caminos de
+rechazo; el acceso con el secreto correcto se valida en `test_telegram_secreto` (`:275-290`).
 
 ## MCP
 
@@ -364,7 +379,8 @@ El **servidor MCP** se expone en `POST /api/v1/mcp` con la descripción «Servid
 un canal automático pensado para que **otros programas** (asistentes o herramientas) consulten GGTO. El
 protocolo **JSON-RPC** es una forma estándar de pedir acciones y recibir respuestas en formato JSON. La
 operación es asíncrona, lee el contenido enviado y extrae el método, el identificador de la petición y los
-parámetros. **No exige sesión de usuario**: su control de acceso es la **clave MCP**.
+parámetros. **No exige sesión de usuario**: su control de acceso es la **clave MCP**, y ese control es
+**fail-closed** desde D-149 (`app/api/routes_alertas.py:919-931`).
 
 | Método JSON-RPC | Resultado |
 |---|---|
@@ -376,16 +392,22 @@ parámetros. **No exige sesión de usuario**: su control de acceso es la **clave
 La respuesta exitosa tiene la forma `{"jsonrpc": "2.0", "id": …, "result": …}`. Las herramientas devuelven
 tanto un **texto** legible como un **objeto de datos** estructurado.
 
-### Cabecera X-MCP-Key
+### Cabecera X-MCP-Key (fail-closed, D-149)
 
-La operación recibe de forma **opcional** la cabecera `X-MCP-Key`. El valor esperado se lee de la clave
-`mcp.api_key` de la tabla de configuración:
+La cabecera `X-MCP-Key` es la «apertura» del servidor MCP: el valor esperado se lee de la clave `mcp.api_key`
+de la tabla de configuración. El control es **fail-closed** desde D-149 (`app/api/routes_alertas.py:921-931`):
 
-- Si la clave está **configurada** y **no coincide**, se devuelve un **error JSON-RPC con código -32001** y el
-  mensaje «Clave MCP inválida».
-- Si la clave está **vacía**, la cabecera **no se exige**.
+| Situación | Respuesta |
+|---|---|
+| Clave **no configurada** (vacía) | **503** «El servidor MCP no tiene clave configurada»; **no expone herramienta alguna** |
+| Cabecera **ausente** o que **no coincide** | **HTTP 401** «Clave MCP inválida» |
+| Cabecera correcta | El servidor MCP atiende la operación |
 
-Una prueba cubre el rechazo y el acceso con la cabecera correcta.
+Ya **no existe** el caso «clave vacía ⇒ no se exige», ni el error JSON-RPC **-32001** sobre HTTP 200 que
+describía este manual antes de D-149: un rechazo de autenticación ahora es una **respuesta HTTP real (401)**,
+no un error dentro de una respuesta 200. Las pruebas `test_mcp_sin_clave_configurada_no_atiende`
+(`app/tests/test_alertas_api.py:342-346`, espera **503**) y `test_mcp_clave` (`:349-354`, espera **401**)
+validan los caminos de rechazo.
 
 ### Métodos expuestos según el código
 
@@ -509,8 +531,8 @@ guion E2E `09-alertas.spec.js` aportó **4 pruebas** sobre métricas, RF-09, RF-
 | Detección automática | Detección por concentración, encolado de la alerta y detección desactivada |
 | Reporte, planificación y material | Reporte manual con planificación, solicitud de material, actualización de estado y filtros |
 | Bandeja de salida | Procesamiento sin credenciales |
-| Telegram | Ayuda, estado, caso, reporte de falla, mensaje sin texto y secreto |
-| MCP | Inicialización, lista de herramientas, ejecución, método no soportado y clave |
+| Telegram | Ayuda, estado, caso, reporte de falla, mensaje sin texto y los tres caminos del secreto (503 sin credencial, 403 con secreto incorrecto, acceso con el correcto) |
+| MCP | Inicialización, lista de herramientas, ejecución, método no soportado, clave inválida (401) y clave no configurada (503) |
 | Métricas y control de acceso | Métricas, permisos por rol y petición sin token |
 
 **Modo de pruebas aislado.** Las pruebas usan la variable de entorno **`DB_SCHEMA`** para trabajar sobre
@@ -520,8 +542,11 @@ de prueba con datos reales.
 ### Pruebas de contrato y RBAC
 
 Además del archivo específico, las pruebas de contrato verifican que la ruta de fallas masivas forma parte
-del inventario publicado y que los roles autorizados pueden crear fallas. El escenario base de las pruebas
-crea **seis casos pendientes en el mismo OLT** para superar el umbral de 5, fijando el campo `olt`
+del inventario publicado y que los roles autorizados pueden crear fallas. La prueba de contrato
+`test_los_webhooks_no_exigen_token_pero_si_su_credencial` (`app/tests/test_contratos.py:168-182`) confirma
+además que **el webhook de Telegram y el servidor MCP no exigen pase de sesión, pero sí su credencial de
+canal**: sin credencial configurada responden **503** y no atienden (D-149). El escenario base de las
+pruebas crea **seis casos pendientes en el mismo OLT** para superar el umbral de 5, fijando el campo `olt`
 directamente porque la vía manual no lo carga.
 
 ### Verificación en vivo

@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/07-monitoreo-y-reportes.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -993,15 +993,19 @@ reporte.</p>
 </tr>
 <tr>
 <td><code>resueltos_residencial</code></td>
-<td>Casos que pasaron al estado CERRADO ese día, de categoría RESIDENCIAL</td>
+<td>Casos <strong>comunes</strong> que pasaron al estado CERRADO ese día: categoría RESIDENCIAL y tipo distinto de CONSTRUCCIÓN/REFERIDO</td>
 </tr>
 <tr>
 <td><code>resueltos_empresarial</code></td>
 <td>Igual, pero de categoría EMPRESA o GOBIERNO</td>
 </tr>
 <tr>
-<td><code>resueltos_referidos</code></td>
-<td>Igual, pero de categoría REFERIDO</td>
+<td><code>resueltos_reparaciones_referidas</code></td>
+<td>Reparaciones reclasificadas a REFERIDO que se cerraron ese día</td>
+</tr>
+<tr>
+<td><code>resueltos_construccion</code></td>
+<td>Casos de construcción cerrados ese día</td>
 </tr>
 <tr>
 <td><code>citados</code></td>
@@ -1015,22 +1019,21 @@ reporte.</p>
 <td><code>gestionados</code></td>
 <td>Casos distintos con una gestión registrada en un despacho del día</td>
 </tr>
-<tr>
-<td><code>pendientes_total</code></td>
-<td>Casos cuyo estado actual no es CERRADO ni CANCELADO</td>
-</tr>
 </tbody>
 </table></div>
 <p>El criterio de <strong>«pendiente»</strong> está centralizado: se excluyen siempre los estados <strong>CERRADO</strong> y
-<strong>CANCELADO</strong>. La categoría <strong>empresarial</strong> agrupa <strong>EMPRESA</strong> y <strong>GOBIERNO</strong>. La prueba de integración
-verifica el bloque con 5 ingresos, 1 resuelto residencial y 4 pendientes.</p>
+<strong>CANCELADO</strong>. La categoría <strong>empresarial</strong> agrupa <strong>EMPRESA</strong> y <strong>GOBIERNO</strong>. Las tarjetas de
+residencial/empresarial excluyen construcciones y referidos para evitar dobles conteos; esos dos
+grupos se muestran por separado. <strong>«Pendientes totales» ya no pertenece al bloque diario</strong>: es una
+cifra de cartera y se consulta en casos globales. La prueba de integración verifica 5 ingresos,
+1 residencial común y la separación entre reparaciones referidas y construcciones.</p>
 <h4 id="nota-sobre-gestionado"><span class="sec-num">3.1.1</span>Nota sobre «gestionado»</h4>
 <p>El documento normativo define <strong>«Gestionado»</strong> como el caso que tiene al menos una gestión registrada. Al
 mismo tiempo, aclara que, <strong>mientras no exista la app móvil (Ciclo 8), ese valor se aproxima</strong> usando el
 estado <code>GESTIONADO</code> del despacho. La implementación real usa exactamente esa aproximación.</p>
 <blockquote>
-<p><strong>Estado 2026-10-12:</strong> existe APK Flutter de campo <code>1.1.0+9</code>; las pantallas de gestión multirol V2
-siguen pendientes. Ver <code>RepoTecnico/auditoria_estado_real_v2.md</code>.
+<p><strong>Estado 2026-10-24:</strong> la APK Flutter vigente es <code>1.15.20+45</code> (multirol, D-95…D-158).
+Ver <code>RepoTecnico/estado_proyecto.md</code>.
 No debe documentarse como si estuviera disponible.</p>
 </blockquote>
 <h3 id="gestion-semanal-lunes-sabado"><span class="sec-num">3.2</span>Gestión semanal (lunes → sábado)</h3>
@@ -1075,15 +1078,27 @@ agrega desgloses por estado y por categoría.</p>
 <tbody>
 <tr>
 <td><code>pendientes</code></td>
-<td>Casos abiertos (excluye CERRADO y CANCELADO)</td>
+<td>Casos abiertos a la fecha (excluye CERRADO y CANCELADO)</td>
 </tr>
 <tr>
 <td><code>resueltos</code></td>
-<td>Casos cerrados dentro del rango consultado</td>
+<td>Casos distintos cerrados dentro del rango consultado</td>
 </tr>
 <tr>
 <td><code>total</code></td>
 <td>Suma de pendientes más resueltos</td>
+</tr>
+<tr>
+<td><code>referidos</code></td>
+<td>Total de cartera con <code>tipo_caso='REFERIDO'</code></td>
+</tr>
+<tr>
+<td><code>construccion</code></td>
+<td>Total de cartera con <code>tipo_caso='CONSTRUCCION'</code></td>
+</tr>
+<tr>
+<td><code>cerrados_comunes</code></td>
+<td>Casos comunes residenciales distintos cerrados en el rango</td>
 </tr>
 <tr>
 <td><code>por_estado</code></td>
@@ -1095,6 +1110,8 @@ agrega desgloses por estado y por categoría.</p>
 </tr>
 </tbody>
 </table></div>
+<p>Los totales de <strong>referidos</strong> y <strong>construcción</strong> describen la cartera actual y no cambian al mover el
+rango; <code>resueltos</code> y <code>cerrados_comunes</code> sí se acotan al rango seleccionado.</p>
 <p>En la API, el rango por defecto va <strong>del día 1 del mes en curso hasta hoy</strong>.</p>
 <h3 id="reparacion"><span class="sec-num">3.4</span>Reparación</h3>
 <p>La métrica de reparación cuenta los <strong>casos pendientes que no son de construcción</strong>, separados por
@@ -1649,7 +1666,7 @@ existe un módulo de contratos dedicado).</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

@@ -18,7 +18,7 @@
 
 La V2 debe entregar **una sola APK Android Flutter con navegación y autorización según rol** para **TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER (Super Usuario)**. El TÉCNICO conserva el flujo de campo y sincronización manual. SUPERVISOR/ADMIN requieren capacidades operativas de gestión; COORDINADOR tiene el alcance limitado definido en la matriz D-95; SUPER conserva su alcance de plataforma y consulta de auditoría. La matriz funcional y las excepciones aceptadas están en [`incremento_D95_apk_gestion.md`](incremento_D95_apk_gestion.md).
 
-**Estado de implementación al 2026-10-12:** el código de la APK sigue en `1.1.0+9` y solo tiene navegación de campo; no cumple todavía la navegación multirol V2. Las menciones a módulos/roles V2 en este documento son especificaciones pendientes hasta que la auditoría confirme su cierre.
+**Estado de implementación al 2026-10-24:** la APK vigente es `1.15.20+45` (D-158) con navegación multirol (TÉCNICO, SUPERVISOR, ADMIN, COORDINADOR y SUPER; entregas D-95…D-158). Se conserva el **estado al 2026-10-12** abajo como referencia histórica: *el código de la APK seguía en `1.1.0+9` y solo tenía navegación de campo; las menciones a módulos/roles V2 eran especificaciones pendientes hasta que la auditoría confirmó su cierre.*
 
 ---
 

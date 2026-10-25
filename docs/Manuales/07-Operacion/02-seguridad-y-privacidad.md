@@ -304,8 +304,8 @@ llevan el valor en el repositorio**: solo el nombre del secreto.
 | `TELEGRAM_BOT_TOKEN` | Secret Manager (**no configurado**) |
 | `SMTP_PASSWORD` | Secret Manager (**no configurado**) |
 | `MCP_API_KEY` | Secret Manager (**no configurado**) |
-| `telegram.webhook_secret` | Tabla `configuracion` (vacío: no se exige) |
-| `mcp.api_key` | Tabla `configuracion` (vacío: no se exige) |
+| `telegram.webhook_secret` | Tabla `configuracion` (vacío ⇒ webhook de Telegram **cerrado con 503**, D-149) |
+| `mcp.api_key` | Tabla `configuracion` (vacío ⇒ servidor MCP **cerrado con 503**, D-149) |
 
 El archivo `.gitignore` excluye los CSV con datos personales (`detalle_averias_gpon*.csv`), por el
 hallazgo H-01, y la carpeta `RepoTecnico/credenciales/` también está ignorada por Git.
@@ -455,8 +455,10 @@ Precisión técnica sobre esa afirmación:
 - Son **públicos** (sin token): `/api/v1/info`, `/health` y `/ready`; el inicio de sesión
   (`login`); la consulta del primer acceso (`primer-acceso`); la configuración inicial (`setup`); y
   `unlock` y `reset-password`.
-- `/api/v1/telegram/webhook` y `/api/v1/mcp` se protegen con **cabecera secreta** solo si está
-  configurada. Si la clave está vacía, **no se exige**.
+- `/api/v1/telegram/webhook` y `/api/v1/mcp` no exigen pase de sesión, pero sí su **credencial de canal**,
+  y desde D-149 ese control es **fail-closed**: sin secreto/clave configurados responden **503** y **no
+  atienden**; con cabecera ausente o incorrecta responden **403** (Telegram) o **401** (MCP). Hoy ambas
+  claves están vacías, por lo que **ambos canales están cerrados por diseño**.
 
 El riesgo real es de **exposición de perímetro**: cualquier persona alcanza el servicio, la
 aplicación web, el inicio de sesión y las sondas. Además, `GET /ready` publica el nombre de la
@@ -546,13 +548,14 @@ SUPERVISOR.
 | Protección CSRF | ❌ No implementado (no hay referencias a CSRF) |
 | CORS restringido | ⚠️ Por defecto `cors_origins = "*"` |
 | Registro de eventos de inicio de sesión | ⚠️ Parcial: el alta y la recuperación de cuentas quedan en `auditoria` (D-67); el inicio de sesión y el usuario en los registros siguen pendientes |
-| Autenticación de canales externos | ⚠️ Por cabecera, solo si la clave está configurada |
+| Autenticación de canales externos | ✅ Fail-closed desde D-149: **503** sin credencial configurada; **403** (Telegram) / **401** (MCP) con cabecera inválida |
 
 > El **MFA, la política de claves, la revocación de tokens, la protección CSRF y un CORS
 > restringido** están exigidos por RNF-22 pero **no están implementados**: son los principales
 > puntos de endurecimiento **pendientes de confirmar**. Mientras tanto, `cors_origins` debe
 > fijarse a los orígenes reales en producción, y las claves `telegram.webhook_secret` y
-> `mcp.api_key` deben establecerse (hoy están vacías, por lo que no se exigen).
+> `mcp.api_key` deben establecerse para habilitar esos canales: están vacías, y desde D-149 esa
+> ausencia los mantiene **cerrados con 503**.
 
 ---
 
@@ -583,7 +586,7 @@ AUDITOR en la versión 1.**
    usuario.
 6. Habilitar **MFA** para ADMIN y SUPERVISOR y la política de claves de RNF-22.
 7. Fijar `cors_origins` a los orígenes reales y establecer `telegram.webhook_secret` y
-   `mcp.api_key`.
+   `mcp.api_key` para habilitar los canales (hoy quedan cerrados con 503 por D-149).
 8. Definir con CANTV la base legal, la retención definitiva y los DPA de los proveedores.
 9. Establecer el procedimiento de rotación de `SECRET_KEY` y verificar que no use el valor por
    defecto.

@@ -26,8 +26,8 @@
    con tablas puente: `cuadrilla_tecnico`, `cuadrilla_herramienta` y
    `despacho_caso`.
 5. **Recuerda el estado real.** El DDL local define 41 tablas; hay cinco
-   complementarias a las 36 entidades originales del modelo. La APK de campo
-   existe (`1.1.0+9`), pero la gestión multirol V2 está pendiente. Cloud SQL está
+   complementarias a las 36 entidades originales del modelo. La APK vigente es
+   multirol (`1.15.20+45`). Cloud SQL está
    activa y no tiene respaldos automáticos habilitados.
 
 ## Visión general del modelo
@@ -729,7 +729,7 @@ erDiagram
     }
     NOTIFICACION {
         bigserial id_notificacion PK
-        varchar  canal "TELEGRAM|CORREO|MCP_IA"
+        varchar  canal "TELEGRAM|CORREO|MCP_IA|MANUAL"
         varchar  destinatario
         varchar  asunto
         text     cuerpo
@@ -924,7 +924,7 @@ La columna «Valores» reproduce el orden del script:
 | `despacho.estado` | `BORRADOR`, `PUBLICADO`, `CERRADO` |
 | `despacho.enviado_canal` | `TELEGRAM`, `CORREO` |
 | `despacho_caso.tipo_asignacion` | `REPARACION`, `CONSTRUCCION`, `REFERIDO`, `EMPRESA`, `FALLA_MASIVA` |
-| `despacho_caso.estado` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO` |
+| `despacho_caso.estado` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO`, `DEVUELTO` |
 | `falla_masiva.origen` | `AUTOMATICA`, `REPORTE_TECNICO`, `MCP` |
 | `falla_masiva.estado` | `DETECTADA`, `PLANIFICADA`, `ATENDIDA`, `CERRADA` |
 | `actividad.tipo` | `CONTACTO`, `CIERRE`, `ENRUTE`, `DIFERIDO`, `INCIDENTE`, `FALLA_MASIVA` |
@@ -935,7 +935,7 @@ La columna «Valores» reproduce el orden del script:
 | `sincronizacion.estado` | `EN_PROCESO`, `OK`, `ERROR` |
 | `orden_material.estado` | `SOLICITADA`, `APROBADA`, `ENTREGADA`, `RECHAZADA` |
 | `inventario_movimiento.tipo` | `INGRESO`, `EGRESO`, `AJUSTE` |
-| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA` |
+| `notificacion.canal` | `TELEGRAM`, `CORREO`, `MCP_IA`, `MANUAL` |
 | `notificacion.estado` | `PENDIENTE`, `ENVIADO`, `FALLIDO` |
 
 Restricciones de comprobación que no son listas de estados:

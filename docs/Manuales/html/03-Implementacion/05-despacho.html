@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Implementación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/03-Implementacion/05-despacho.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1085,7 +1085,7 @@ junto con ella para mostrarlos de una sola vez.</p>
 <tr>
 <td><code>estado</code></td>
 <td>texto corto</td>
-<td><code>ASIGNADO</code> / <code>GESTIONADO</code> / <code>CERRADO</code> / <code>CITADO</code> / <code>DIFERIDO</code>.</td>
+<td><code>ASIGNADO</code> / <code>GESTIONADO</code> / <code>CERRADO</code> / <code>CITADO</code> / <code>DIFERIDO</code> / <code>DEVUELTO</code>.</td>
 </tr>
 <tr>
 <td><code>observacion</code></td>
@@ -1096,6 +1096,10 @@ junto con ella para mostrarlos de una sola vez.</p>
 </table></div>
 <p>Otra regla clave: <strong>el mismo caso no puede aparecer dos veces en el mismo despacho</strong>. Lo impide
 una restricción de unicidad sobre la combinación de despacho y caso.</p>
+<p>Desde <strong>D-157</strong>, cuando el supervisor <strong>cierra la jornada</strong>, la fila no gestionada pasa a
+<code>DEVUELTO</code>: es la marca de «<strong>asignación anulada</strong>». El caso vuelve a estar libre para el
+despacho y el sistema <strong>deja de contarlo como asignado</strong> en cualquier consulta de «última
+asignación», aunque el despacho del día queda en el histórico.</p>
 <h3 id="cuadrilla-sector-dia"><span class="sec-num">3.3</span>cuadrilla_sector_dia</h3>
 <p>Es la tabla <strong>nueva del ciclo D-66</strong>. Guarda <strong>qué sectores atiende cada cuadrilla cada día</strong>. Es
 la lista de trabajo que el supervisor prepara antes de procesar el despacho.</p>
@@ -1358,24 +1362,26 @@ la pantalla</strong>. Desde ahí se revisa y se confirma el trabajo del día. De
 partes:</p>
 <ol>
 <li><strong>Resumen principal.</strong> Arriba se ven las tarjetas de <strong>comunes</strong>, <strong>especiales reparación</strong>,
-<strong>especiales construcción</strong>, <strong>especiales gobierno</strong>, <strong>sin sector</strong> y <strong>a distribuir</strong>.
-Los especiales ya no son una cifra única: Gobierno suma a la actividad del caso. En la cabecera se
-indica si la asignación es la <strong>guardada</strong> por el supervisor o una <strong>propuesta automática</strong> del
-sistema.</li>
+<strong>especiales construcción</strong>, <strong>especiales gobierno</strong>, <strong>sin sector</strong> y <strong>a distribuir</strong>. Los
+especiales ya no son una cifra única: Gobierno suma a la actividad del caso, así que un
+gobierno de reparación cuenta en las dos tarjetas. En la cabecera se indica si la asignación
+es la <strong>guardada</strong> por el supervisor o una <strong>propuesta automática</strong> del sistema.</li>
 <li><strong>Tipos de casos a distribuir.</strong> Un checklist con <strong>Comunes</strong>, <strong>Especiales Reparación</strong>,
-<strong>Especiales Construcción</strong>, <strong>Especiales Gobierno</strong> y <strong>Masivas</strong>, cada uno con su total. Por defecto
-vienen marcados <strong>Comunes</strong> y <strong>Especiales Reparación</strong>.</li>
-<li><strong>Fallas masivas y su cuadrilla.</strong> Una tabla con cada masiva activa, su descripción, su <strong>sector</strong>,
-sus casos y un <strong>selector de cuadrilla</strong>. Al cambiar la cuadrilla, los casos de la masiva se despachan
-a esa cuadrilla aunque el sector esté en otra.</li>
+<strong>Especiales Construcción</strong>, <strong>Especiales Gobierno</strong> y <strong>Masivas</strong>, cada uno con su total. Por
+defecto vienen marcados <strong>Comunes</strong> y <strong>Especiales Reparación</strong>; lo que no se marca queda para
+otro procesamiento.</li>
+<li><strong>Fallas masivas y su cuadrilla.</strong> Una tabla con cada masiva activa, su descripción, su
+<strong>sector</strong>, sus casos y un <strong>selector de cuadrilla</strong>. Al cambiar la cuadrilla, los casos de la
+masiva se despachan a esa cuadrilla aunque el sector esté en otra.</li>
 <li><strong>Sectores y cuadrilla asignada.</strong> Una tabla con cada sector, su <strong>total de casos</strong>, las tres
 columnas de especiales (<strong>reparación</strong>, <strong>construcción</strong> y <strong>gobierno</strong>), los <strong>citados</strong>, un
-<strong>selector de cuadrilla</strong> y una <strong>lista desplegable de las masivas del sector</strong>. Las masivas marcadas
-entran al despacho; las que se dejan sin marcar quedan fuera de ese procesamiento. La opción
-«— Sin asignar —» deja el sector sin cuadrilla: sus casos no se despacharán (salvo los citados).</li>
+<strong>selector de cuadrilla</strong> y una <strong>lista desplegable de las masivas del sector</strong>. Las masivas
+marcadas entran al despacho; las que se dejan sin marcar quedan fuera de ese procesamiento.
+La opción «— Sin asignar —» del selector de cuadrilla deja el sector sin cuadrilla: sus casos
+no se despacharán (salvo los citados).</li>
 <li><strong>Cuadrillas y sectores asignados.</strong> Tarjetas con cada cuadrilla activa, los <strong>sectores que
-tiene asignados</strong>, el <strong>total de casos</strong> y el desglose de <strong>especiales reparación, construcción y
-gobierno</strong>. Si algún sector quedó sin cuadrilla, aparece un aviso en pantalla.</li>
+tiene asignados</strong>, el <strong>total de casos</strong> y el desglose de <strong>especiales reparación,
+construcción y gobierno</strong>. Si algún sector quedó sin cuadrilla, aparece un aviso en pantalla.</li>
 </ol>
 <p>La sección <strong>«Universo de casos»</strong> —el listado de casos con sus filtros— se eliminó en D-114: el
 detalle de casos ya no se muestra en el formulario de proceso.</p>
@@ -1775,7 +1781,7 @@ origen) y una tabla con las registradas. La prueba de integración comprueba el 
 </tr>
 <tr>
 <td><code>SectorProcesoOut</code></td>
-<td>Un sector con su total de casos, especiales y citados (D-66).</td>
+<td>Un sector con su total, sus especiales separados (reparación, construcción y gobierno) y citados (D-66 · D-114).</td>
 </tr>
 <tr>
 <td><code>CuadrillaProcesoOut</code></td>
@@ -1783,7 +1789,7 @@ origen) y una tabla con las registradas. La prueba de integración comprueba el 
 </tr>
 <tr>
 <td><code>UniversoOut</code></td>
-<td>El universo de casos del formulario de proceso (D-66).</td>
+<td>El universo del formulario de proceso, con los especiales separados (D-66 · D-114).</td>
 </tr>
 <tr>
 <td><code>AsignacionBloque</code></td>
@@ -2083,7 +2089,7 @@ mypy y tsc en modo estricto) no arrojaron hallazgos.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Implementación</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

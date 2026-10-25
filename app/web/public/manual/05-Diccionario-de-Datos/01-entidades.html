@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Diccionario de Datos — Entidades de la base GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Estado verificado 2026-10-12: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa, pero su esquema no se consultó. La APK actual es de campo (1.1.0+9), no una APK multirol V2. Est">
+<meta name="description" content="Estado verificado 2026-10-24: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa. La APK vigente (1.15.20+45) es multirol (campo + gestión), ya no solo de campo. Este manual expl">
 <meta property="og:image" content="../imagenes/dominios-datos.png">
 <style>
 /* ==================================================================
@@ -783,25 +783,25 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Diccionario de Datos</span>
           <h1 class="portada-titulo">Diccionario de Datos — Entidades de la base GGTO</h1>
-          <p class="portada-resumen">Estado verificado 2026-10-12: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa, pero su esquema no se consultó. La APK actual es de campo (1.1.0+9), no una APK multirol V2. Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos datos, pero sin tecnicismos. Cuando el código no permite confirmar algo, se indica como pendiente de confirmar.</p>
+          <p class="portada-resumen">Estado verificado 2026-10-24: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa. La APK vigente (1.15.20+45) es multirol (campo + gestión), ya no solo de campo. Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos datos, pero sin tecnicismos. Cuando el código no permite confirmar algo, se indica como pendiente de confirmar.</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Diccionario de Datos</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/05-Diccionario-de-Datos/01-entidades.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>12/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
-<p><strong>Estado verificado 2026-10-12:</strong> DDL local con 41 tablas; ORM con 36. La
-instancia desplegada está activa, pero su esquema no se consultó. La APK actual
-es de campo (<code>1.1.0+9</code>), no una APK multirol V2.</p>
+<p><strong>Estado verificado 2026-10-24:</strong> DDL local con 41 tablas; ORM con 36. La
+instancia desplegada está activa. La APK vigente (<code>1.15.20+45</code>) es multirol
+(campo + gestión), ya no solo de campo.</p>
 </blockquote>
 <blockquote>
 <p>Este manual explica, con palabras sencillas, qué información guarda la base de
@@ -3243,7 +3243,7 @@ visita y el tipo de asignación.</p>
 <td><code>estado</code></td>
 <td><code>varchar(20)</code></td>
 <td>NN, <code>ASIGNADO</code></td>
-<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code> o <code>DIFERIDO</code>.</td>
+<td><code>ASIGNADO</code>, <code>GESTIONADO</code>, <code>CERRADO</code>, <code>CITADO</code>, <code>DIFERIDO</code> o <code>DEVUELTO</code> (D-157: asignación anulada por el cierre de jornada).</td>
 </tr>
 <tr>
 <td><code>observacion</code></td>
@@ -3679,7 +3679,7 @@ reintentos y espera creciente entre intentos (patrón <em>outbox</em>, RNF-20).<
 <td><code>canal</code></td>
 <td><code>varchar(20)</code></td>
 <td>NN</td>
-<td><code>TELEGRAM</code>, <code>CORREO</code> o <code>MCP_IA</code>.</td>
+<td><code>TELEGRAM</code>, <code>CORREO</code>, <code>MCP_IA</code> o <code>MANUAL</code> (D-156).</td>
 </tr>
 <tr>
 <td><code>destinatario</code></td>
@@ -4025,7 +4025,7 @@ intención definitiva.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Diccionario de Datos</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

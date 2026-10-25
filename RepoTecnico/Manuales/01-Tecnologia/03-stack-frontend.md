@@ -723,7 +723,7 @@ El estado verificado del frontend y sus pendientes son los siguientes:
   (`.github/workflows/ci.yml`) que ejecuta `npm ci` y `npm run build` —`tsc` + `vite build`—,
   el mismo comando que la imagen de producción. Las pruebas E2E de Playwright siguen **fuera
   del CI** y se ejecutan con `RepoTecnico/pruebas/run_e2e.sh`.
-- **Aplicación móvil.** Existe una APK Flutter de campo (`1.1.0+9`); este manual no documenta su
-  implementación. La APK multirol V2 para gestión sigue pendiente.
+- **Aplicación móvil.** La APK Flutter vigente es multirol (`1.15.20+45`); este manual no documenta su
+  implementación.
 - **WhatsApp.** No existe integración con WhatsApp; fue diferida a la v3
   (`RepoTecnico/estado_proyecto.md:79`).

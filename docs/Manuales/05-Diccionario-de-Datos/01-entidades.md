@@ -1,8 +1,8 @@
 # Diccionario de Datos — Entidades de la base GGTO
 
-> **Estado verificado 2026-10-12:** DDL local con 41 tablas; ORM con 36. La
-> instancia desplegada está activa, pero su esquema no se consultó. La APK actual
-> es de campo (`1.1.0+9`), no una APK multirol V2.
+> **Estado verificado 2026-10-24:** DDL local con 41 tablas; ORM con 36. La
+> instancia desplegada está activa. La APK vigente (`1.15.20+45`) es multirol
+> (campo + gestión), ya no solo de campo.
 
 > Este manual explica, con palabras sencillas, qué información guarda la base de
 > datos del sistema GGTO y cómo se organiza. Es la versión literal del manual
@@ -781,7 +781,7 @@ visita y el tipo de asignación.
 | `id_sector` | `integer` | FK→`sector` | Sector que agrupa la visita. |
 | `orden_visita` | `smallint` | — | Orden de recorrido. |
 | `tipo_asignacion` | `varchar(20)` | — | `REPARACION`, `CONSTRUCCION`, `REFERIDO`, `EMPRESA` o `FALLA_MASIVA`. |
-| `estado` | `varchar(20)` | NN, `ASIGNADO` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO` o `DIFERIDO`. |
+| `estado` | `varchar(20)` | NN, `ASIGNADO` | `ASIGNADO`, `GESTIONADO`, `CERRADO`, `CITADO`, `DIFERIDO` o `DEVUELTO` (D-157: asignación anulada por el cierre de jornada). |
 | `observacion` | `text` | — | Notas. |
 
 Restricción `UNIQUE (id_despacho, id_caso)`: un caso aparece una sola vez por
@@ -911,7 +911,7 @@ reintentos y espera creciente entre intentos (patrón *outbox*, RNF-20).
 | Campo | Tipo | Clave / Nulo | Para qué sirve |
 |---|---|---|---|
 | `id_notificacion` | `bigserial` | PK, NN | Identificador. |
-| `canal` | `varchar(20)` | NN | `TELEGRAM`, `CORREO` o `MCP_IA`. |
+| `canal` | `varchar(20)` | NN | `TELEGRAM`, `CORREO`, `MCP_IA` o `MANUAL` (D-156). |
 | `destinatario` | `varchar(160)` | — | Destino (dato personal cuando es correo). |
 | `asunto` | `varchar(200)` | — | Asunto. |
 | `cuerpo` | `text` | — | Cuerpo del mensaje. |

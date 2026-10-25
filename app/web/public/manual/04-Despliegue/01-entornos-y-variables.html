@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/01-entornos-y-variables.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>27/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 14/10/2026</span>
+          <span>Edición HTML y PDF generada el 24/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1497,12 +1497,12 @@ no desde el entorno».</p>
 <tr>
 <td><code>telegram.webhook_secret</code></td>
 <td><code>&quot;&quot;</code></td>
-<td>Cabecera <code>X-Telegram-Bot-Api-Secret-Token</code>; vacío significa que no se exige</td>
+<td>Cabecera <code>X-Telegram-Bot-Api-Secret-Token</code>; vacío ⇒ el webhook responde <strong>503</strong> y no atiende (fail-closed, D-149)</td>
 </tr>
 <tr>
 <td><code>mcp.api_key</code></td>
 <td><code>&quot;&quot;</code></td>
-<td>Cabecera <code>X-MCP-Key</code> del servidor MCP; vacío significa que no se exige</td>
+<td>Cabecera <code>X-MCP-Key</code> del servidor MCP; vacío ⇒ responde <strong>503</strong> y no expone herramientas (fail-closed, D-149)</td>
 </tr>
 <tr>
 <td><code>seguridad.max_intentos</code></td>
@@ -1531,7 +1531,9 @@ contrastar el total real contra la base de datos al aplicar el esquema.</p>
 <code>MAX_INTENTOS_POR_DEFECTO = 5</code>. El reintento es exponencial: 1, 2, 4, 8… minutos, con un tope de
 60 minutos.</li>
 <li>El módulo de alertas compara la cabecera del webhook de Telegram contra <code>telegram.webhook_secret</code>
-y la cabecera del servidor MCP contra <code>mcp.api_key</code>.</li>
+y la cabecera del servidor MCP contra <code>mcp.api_key</code>. El control es <strong>fail-closed</strong> desde D-149:
+con la clave vacía responde <strong>503</strong> y no atiende; con cabecera ausente o incorrecta responde
+<strong>403</strong> (Telegram) o <strong>401</strong> (MCP).</li>
 <li>El módulo de despachos resuelve el destino de forma genérica con el patrón
 <code>despacho.destino_&lt;canal&gt;</code>.</li>
 <li>La administración se expone por API: <code>GET /api/v1/configuracion</code> lista las claves y
@@ -1729,7 +1731,7 @@ desplegados. Cualquier cambio de nombres debe coordinar Secret Manager, IAM (per
 revisión de Cloud Run, para evitar cortes de servicio.</li>
 </ul>
 
-<nav class="pie-nav"><a class="izq" href="../03-Implementacion/11-apk-tecnico-campo.html">← Manual anterior: 11 — La app del técnico: lo que cambió (Incremento D-82)</a><a href="../index.html">Índice general</a><a class="der" href="../04-Despliegue/02-cloud-run-y-cloud-sql.html">Manual siguiente →: Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco…</a></nav>
+<nav class="pie-nav"><a class="izq" href="../03-Implementacion/11-apk-tecnico-campo.html">← Manual anterior: 11 — La app del técnico: lo que cambió (Incrementos D-82 y D-156)</a><a href="../index.html">Índice general</a><a class="der" href="../04-Despliegue/02-cloud-run-y-cloud-sql.html">Manual siguiente →: Manual de Cloud Run y Cloud SQL — GGTO (CANTV, Central Francisco…</a></nav>
     </article>
   </main>
 </div>
@@ -1739,7 +1741,7 @@ revisión de Cloud Run, para evitar cortes de servicio.</li>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Despliegue</span>
-    <span>Generado el 14/10/2026</span>
+    <span>Generado el 24/10/2026</span>
   </div>
 </footer>
 

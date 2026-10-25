@@ -200,8 +200,8 @@ mantiene las notificaciones en **PENDIENTE** en lugar de perderlas (RNF-20).
 | `fallas.campo_concentracion` | `"olt"` | Campo agrupador: `olt` \| `fat` \| `id_sector` |
 | `despacho.destino_telegram` | `""` | `chat_id` destino de las alertas (vacío ⇒ PENDIENTE) |
 | `outbox.max_intentos` | `5` | Reintentos antes de marcar `FALLIDO` (backoff 1,2,4,8… min, tope 60) |
-| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ sin exigir |
-| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ sin exigir |
+| `telegram.webhook_secret` | `""` | Cabecera `X-Telegram-Bot-Api-Secret-Token`; vacío ⇒ webhook cerrado con 503 (fail-closed, D-149) |
+| `mcp.api_key` | `""` | Cabecera `X-MCP-Key` del servidor MCP; vacío ⇒ cerrado con 503 (fail-closed, D-149) |
 
 > La detección es **idempotente** por `falla_masiva.clave_concentracion` (p. ej. `olt:pde-olt-00`):
 > mientras la falla siga activa (`DETECTADA`/`PLANIFICADA`) no se duplica. Se ejecuta

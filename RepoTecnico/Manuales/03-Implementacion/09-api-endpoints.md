@@ -35,7 +35,7 @@ El prefijo se declara de dos maneras según el archivo:
 | `app/api/routes_despachos.py` | `/api/v1/despachos` | `app/api/routes_despachos.py:41` |
 | `app/api/routes_especiales.py` | `/api/v1` | `app/api/routes_especiales.py:40` |
 | `app/api/routes_monitoreo.py` | `/api/v1` | `app/api/routes_monitoreo.py:17` |
-| `app/api/routes_alertas.py` | `/api/v1` | `app/api/routes_alertas.py:30` |
+| `app/api/routes_alertas.py` | `/api/v1` | `app/api/routes_alertas.py:2` |
 | `app/api/routes_sync.py` | `/api/v1` | `app/api/routes_sync.py:31` |
 | `app/api/routes_sistemas.py` | `/api/v1/sistemas` | `app/api/routes_sistemas.py:18` |
 
@@ -150,7 +150,7 @@ Cada router se agrupa en el esquema mediante etiquetas (*tags*): «salud»
 «despacho» (`app/api/routes_despachos.py:41`), «seguimiento y especiales»
 (`app/api/routes_especiales.py:40`), «monitoreo y reportes»
 (`app/api/routes_monitoreo.py:17`) y «alertas, telegram y mcp»
-(`app/api/routes_alertas.py:30`).
+(`app/api/routes_alertas.py:2`).
 
 Las pruebas de contrato validan que **toda operación tenga `summary`**
 (`app/tests/test_contratos.py:41-47`), que toda respuesta declarada tenga
@@ -564,53 +564,62 @@ respuesta (`app/services/clasificacion.py:32-35,168-173`).
 
 ### Alertas, Telegram y MCP (app/api/routes_alertas.py)
 
-Once operaciones: fallas masivas, bandeja de notificaciones (*outbox*), bot de
+Veintiuna operaciones: fallas masivas (incluido el cierre CRASS y el reporte de la
+APK), bandeja de notificaciones (*outbox*), bot de
 Telegram, servidor MCP y métricas. Escritura para ADMIN/SUPERVISOR
-(`app/api/routes_alertas.py:31`).
+(`app/api/routes_alertas.py:57`).
 
 | Método | Ruta | Propósito | Roles | Línea |
 |---|---|---|---|---|
-| GET | `/api/v1/fallas-masivas` | Listar fallas masivas; filtros `estado`, `id_central`, `solo_activas` | Autenticado | `app/api/routes_alertas.py:45` |
-| POST | `/api/v1/fallas-masivas` | Reportar una falla masiva manual y alertar | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:64` |
-| POST | `/api/v1/fallas-masivas/detectar` | Detectar fallas por concentración (idempotente) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:90` |
-| PATCH | `/api/v1/fallas-masivas/{id_falla}` | Actualizar estado o cuadrilla de la falla | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:104` |
-| POST | `/api/v1/fallas-masivas/{id_falla}/planificacion` | Documentar la planificación de atención (RF-17) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:120` |
-| POST | `/api/v1/fallas-masivas/{id_falla}/material` | Solicitar material para la falla (RF-18) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:144` |
-| GET | `/api/v1/notificaciones` | Bandeja de notificaciones; filtros `estado`, `canal`, `limite` | Autenticado | `app/api/routes_alertas.py:169` |
-| POST | `/api/v1/notificaciones/procesar` | Procesar el outbox (reintentos con backoff) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:186` |
-| POST | `/api/v1/telegram/webhook` | Webhook del bot de Telegram | Público (secreto propio) | `app/api/routes_alertas.py:256` |
-| POST | `/api/v1/mcp` | Servidor MCP en JSON-RPC 2.0 | Público (clave propia) | `app/api/routes_alertas.py:346` |
-| GET | `/api/v1/metricas` | Métricas de negocio y estado de los canales | Autenticado | `app/api/routes_alertas.py:400` |
+| GET | `/api/v1/fallas-masivas` | Listar fallas masivas; filtros `estado`, `id_central`, `solo_activas` | Autenticado | `app/api/routes_alertas.py:185` |
+| POST | `/api/v1/fallas-masivas` | Reportar una falla masiva manual y alertar | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:230` |
+| POST | `/api/v1/fallas-masivas/detectar` | Detectar fallas por concentración (idempotente) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:364` |
+| PATCH | `/api/v1/fallas-masivas/{id_falla}` | Actualizar estado o cuadrilla de la falla | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:378` |
+| POST | `/api/v1/fallas-masivas/{id_falla}/planificacion` | Documentar la planificación de atención (RF-17) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:394` |
+| POST | `/api/v1/fallas-masivas/{id_falla}/material` | Solicitar material para la falla (RF-18) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:499` |
+| GET | `/api/v1/notificaciones` | Bandeja de notificaciones; filtros `estado`, `canal`, `limite` | Autenticado | `app/api/routes_alertas.py:723` |
+| POST | `/api/v1/notificaciones/procesar` | Procesar el outbox (reintentos con backoff) | ADMIN/SUPERVISOR | `app/api/routes_alertas.py:744` |
+| POST | `/api/v1/telegram/webhook` | Webhook del bot de Telegram | Público con credencial propia (**fail-closed**: 503 si no está configurada) | `app/api/routes_alertas.py:814` |
+| POST | `/api/v1/mcp` | Servidor MCP en JSON-RPC 2.0 | Público con credencial propia (**fail-closed**: 503 si no está configurada) | `app/api/routes_alertas.py:913` |
+| GET | `/api/v1/metricas` | Métricas de negocio y estado de los canales | Autenticado | `app/api/routes_alertas.py:975` |
 
-El webhook de Telegram exige la cabecera
-`X-Telegram-Bot-Api-Secret-Token` cuando `telegram.webhook_secret` está
-configurado; si no coincide, devuelve **403** (`app/api/routes_alertas.py:262-265`).
-Soporta los comandos `/start`, `/ayuda`, `/help`, `/estado`, `/caso` y `/falla`
-(`:209-253`), y responde encolando en el outbox (`:201-206`).
+El webhook de Telegram valida primero la cabecera
+`X-Telegram-Bot-Api-Secret-Token` contra `telegram.webhook_secret`
+(`app/api/routes_alertas.py:820-832`): **sin secreto configurado responde 503** (el
+webhook no atiende hasta que se configure la credencial) y con cabecera ausente o
+incorrecta responde **403** («Secreto del webhook inválido»), siempre con
+`hmac.compare_digest`. Soporta los comandos `/start`, `/ayuda`, `/help`, `/estado`,
+`/caso` y `/falla` (`app/api/routes_alertas.py:767-811`), y responde encolando en el
+outbox (`app/api/routes_alertas.py:759-764`).
 
-El servidor MCP valida la cabecera `X-MCP-Key` contra `mcp.api_key` y, si no
-coincide, responde **HTTP 200 con error JSON-RPC `-32001`**
-(`app/api/routes_alertas.py:352-356`). Implementa `initialize`
+El servidor MCP valida la cabecera `X-MCP-Key` contra `mcp.api_key`
+(`app/api/routes_alertas.py:919-931`): **sin clave configurada responde 503** y con
+cabecera ausente o incorrecta responde **HTTP 401**
+(«Clave MCP inválida»; antes de D-149 respondía 200 con error JSON-RPC `-32001`).
+Implementa `initialize`
 (`protocolVersion` `2024-11-05`), `tools/list` y `tools/call`
-(`:363-372`), con cuatro herramientas: `estado_central`, `consultar_caso`,
-`reportar_falla` y `procesar_notificaciones` (`:282-293`). Los errores de
+(`app/api/routes_alertas.py:938-967`), con cuatro herramientas: `estado_central`,
+`consultar_caso`, `reportar_falla` y `procesar_notificaciones`
+(`app/api/routes_alertas.py:849-860`). Los errores de
 herramienta se devuelven como `-32602` y un método desconocido como `-32601`
-(`:387-392`). `MCP_VERSION` es `0.1.0` (`app/api/routes_alertas.py:32`).
+(`app/api/routes_alertas.py:961-967`). `MCP_VERSION` es `0.1.0` (`app/api/routes_alertas.py:58`).
 
-El modo de prueba de contrato confirma que ambos webhooks son públicos y no exigen
-token JWT (`app/tests/test_contratos.py:139-143`).
+El modo de prueba de contrato confirma que ambos webhooks **no exigen token JWT pero
+sí su credencial de canal**: sin secreto/clave configurados responden **503** y no
+ejecutan nada (D-149; `app/tests/test_contratos.py:168-182`), ya no «son públicos sin
+exigir nada».
 
 ## Reporte de falla masiva desde la APK (D-82)
 
 El técnico reporta la concentración **desde el campo** con un endpoint propio, porque el alta
-administrativa (`POST /api/v1/fallas-masivas`, `app/api/routes_alertas.py:172`) exige
+administrativa (`POST /api/v1/fallas-masivas`, `app/api/routes_alertas.py:230`) exige
 ADMIN/SUPERVISOR:
 
 | Método | Ruta | Resumen | Línea |
 |---|---|---|---|
-| POST | `/api/v1/fallas-masivas/reporte-campo` | Reporte de campo (RF-16): ODN · dirección · FAT · descripción y máximo 2 fotos | `app/api/routes_alertas.py:203` |
+| POST | `/api/v1/fallas-masivas/reporte-campo` | Reporte de campo (RF-16): ODN · dirección · FAT · descripción y máximo 2 fotos | `app/api/routes_alertas.py:286` |
 
-- **Cuerpo** (`FallaMasivaCampo`, `app/schemas/alertas.py:59`): `odn` (3-60), `direccion` (5-200),
+- **Cuerpo** (`FallaMasivaCampo`, `app/schemas/alertas.py:123`): `odn` (3-60), `direccion` (5-200),
   `fat` (1-60), `descripcion` (5-500), `id_sector` y `id_cuadrilla` opcionales, y `evidencias`
   (lista de seriales, **máximo 2**; una tercera da `422`). El `origen` se fija a
   `REPORTE_TECNICO` en el servidor.
@@ -619,7 +628,7 @@ ADMIN/SUPERVISOR:
 - **Cuadrilla:** la activa del reportante (`GET /sync/cuadrilla`) y, si no tiene, la más cercana
   al sector (`app/services/fallas.py:26`).
 - **Evidencias:** las fotos se suben antes con `POST /evidencias/upload`
-  (`app/api/routes_sync.py:70`) y sus seriales viajan en el reporte; el servidor los guarda en
+  (`app/api/routes_sync.py:173`) y sus seriales viajan en el reporte; el servidor los guarda en
   `falla_masiva.evidencias` (texto separado por comas) y los devuelve como lista.
 - **Columnas nuevas** (D-82): `odn`, `direccion`, `fat`, `evidencias`
   (`RepoTecnico/db/schema.sql:490`); la migración idempotente es
@@ -634,23 +643,25 @@ registra el último en `app/main.py:89`. Son **cuatro operaciones nuevas**:
 
 | Método | Ruta | Resumen | Línea |
 |---|---|---|---|
-| GET | `/api/v1/sync/cuadrilla` | Cuadrilla activa del usuario | `app/api/routes_sync.py:45` |
-| GET | `/api/v1/sync/descarga` | Descarga diferencial por cuadrilla | `app/api/routes_sync.py:53` |
-| POST | `/api/v1/evidencias/upload` | Subir una foto de evidencia (multipart) | `app/api/routes_sync.py:65` |
-| POST | `/api/v1/sync/carga` | Cargar actividades y estados del día | `app/api/routes_sync.py:120` |
+| GET | `/api/v1/sync/cuadrilla` | Cuadrilla activa del usuario | `app/api/routes_sync.py:126` |
+| GET | `/api/v1/sync/descarga` | Descarga diferencial por cuadrilla | `app/api/routes_sync.py:134` |
+| POST | `/api/v1/evidencias/upload` | Subir una foto de evidencia (multipart) | `app/api/routes_sync.py:173` |
+| POST | `/api/v1/sync/carga` | Cargar actividades y estados del día | `app/api/routes_sync.py:375` |
 
 ### Alcance por rol
 
-La resolución de cuadrilla vive en `app/services/sync.py:35` (`_cuadrilla_activa`):
+La resolución de cuadrilla vive en `app/services/sync.py:99` (`_cuadrilla_activa`):
 enlaza `usuario.id_tecnico` → `cuadrilla_tecnico` con vigencia
-(`desde <= hoy` y `hasta IS NULL o >= hoy`). El rol **TECNICO** queda forzado a su
+(`desde <= hoy` y `hasta IS NULL o >= hoy`,
+`app/services/sync.py:108-126`; el día se resuelve con `hoy_operativo()` de D-131).
+El rol **TECNICO** queda forzado a su
 propia cuadrilla; **SUPERVISOR/ADMIN/SUPER** conservan alcance amplio
-(`app/services/sync.py:55`). Un TECNICO sin cuadrilla recibe una descarga vacía,
-no un error.
+(`app/services/sync.py:191`, `casos_permitidos`). Un TECNICO sin cuadrilla recibe una
+descarga vacía, no un error.
 
 ### GET /sync/descarga
 
-`construir_descarga` (`app/services/sync.py:123`) retorna solo los casos cuyo
+`construir_descarga` (`app/services/sync.py:490`) retorna solo los casos cuyo
 último despacho pertenece a la cuadrilla y cuyo estado sigue siendo operable
 (`ASIGNADO`, `CONTACTADO`, `CITADO`, `DIFERIDO`, `EN_GESTION`). Admite dos
 parámetros diferenciales: `desde` (ISO 8601) e `ids_conocidos[]` (lista de ids
@@ -661,9 +672,9 @@ y los catálogos de métodos y causas para operar offline.
 
 ### POST /evidencias/upload
 
-Endpoint **multipart/form-data** (`app/api/routes_sync.py:65`). Valida:
+Endpoint **multipart/form-data** (`app/api/routes_sync.py:173`). Valida:
 
-- peso ≤ **3 MB** (`MAX_FOTO_BYTES`, `app/api/routes_sync.py:33`; excedido → 413);
+- peso ≤ **3 MB** (`MAX_FOTO_BYTES`, `app/api/routes_sync.py:60`; excedido → 413);
 - formato JPEG/PNG/WebP (otro content-type → 422);
 - **idempotencia** por `serial_local`: si el serial ya existe con archivo subido,
   se devuelve la fila existente sin duplicar el objeto en storage.
@@ -677,13 +688,13 @@ batch la vincule.
 
 ### POST /sync/carga
 
-`aplicar_carga` (`app/services/sync.py:213`) recibe el batch diario
+`aplicar_carga` (`app/services/sync.py:711`) recibe el batch diario
 (`SyncCargaIn`, `app/schemas/sync.py`): lista de `actividades` (máx. 200, cada una
 con máx. **5 evidencias**) y de `estados`. Por cada actividad crea la fila en
 `actividad` (`sincronizado=true`), vincula las evidencias previamente subidas por
 su serial, traduce el tipo al estado objetivo (`CIERRE→CERRADO`,
 `CONTACTO→CONTACTADO`, etc.) y registra la bitácora en `caso_estado_hist`
-reutilizando `_registrar_estado` (`app/services/sync.py:199`). Verifica además que
+reutilizando `_registrar_estado` (`app/services/sync.py:653`). Verifica además que
 cada `id_caso` pertenezca a la cuadrilla del técnico (403 implícito: se reporta
 como error por ítem, no aborta el lote). Responde `{aceptadas, rechazadas,
 errores[], server_ts}`.
@@ -899,13 +910,15 @@ excepción, se registra el fallo con el mismo `request_id` y se re-lanza
 ### Rutas sin JWT pero con secreto propio
 
 Dos operaciones son públicas desde la perspectiva del esquema OpenAPI porque no
-dependen de `HTTPBearer`, pero se protegen con un secreto de canal:
+dependen de `HTTPBearer`, pero desde D-149 H-02 son **fail-closed** con su credencial
+de canal: la credencial es **obligatoria** y sin ella el endpoint no atiende.
 
 - `POST /api/v1/telegram/webhook`: valida `X-Telegram-Bot-Api-Secret-Token`
-  contra `telegram.webhook_secret`; vacío ⇒ no se exige
-  (`app/api/routes_alertas.py:262-265`).
-- `POST /api/v1/mcp`: valida `X-MCP-Key` contra `mcp.api_key`; vacío ⇒ no se exige
-  (`app/api/routes_alertas.py:352-356`).
+  contra `telegram.webhook_secret`; **vacío ⇒ 503**, cabecera ausente o
+  incorrecta ⇒ **403** (`app/api/routes_alertas.py:820-832`).
+- `POST /api/v1/mcp`: valida `X-MCP-Key` contra `mcp.api_key`;
+  **vacío ⇒ 503**, cabecera ausente o incorrecta ⇒ **401**
+  (`app/api/routes_alertas.py:919-931`).
 
 Los nombres de esos secretos/parámetros están documentados en la tabla
 `configuracion` (`RepoTecnico/entornos_globales.md:199-202`). No se reproducen
