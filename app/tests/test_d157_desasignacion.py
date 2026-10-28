@@ -91,7 +91,9 @@ def jornada(client, admin_token, db_session):
     id_despacho = propios[0]["id_despacho"]
 
     yield {"headers": headers, "id_central": id_central, "id_cuadrilla": id_cuadrilla,
-           "id_despacho": id_despacho, "casos": casos}
+           "id_despacho": id_despacho, "casos": casos,
+           # D-160: el corte manual lo ejecuta el Super Usuario (el ADMIN ya no).
+           "super": admin_token["super"]}
     db_session.expire_all()
     cliente_tecnico = db_session.scalar(select(Usuario).where(Usuario.p00 == "TESTTEC"))
     if cliente_tecnico is not None and cliente_tecnico.id_tecnico is not None:
@@ -105,6 +107,7 @@ def jornada(client, admin_token, db_session):
 
 
 def _cerrar(client, headers):
+    """D-160: el corte manual lo ejecuta el SUPER de la prueba (el ADMIN ya no)."""
     r = client.post(f"{DESPACHOS}/cierre-jornada?solo_vencidos=true", headers=headers)
     assert r.status_code == 200, r.text
     return r.json()
@@ -112,7 +115,7 @@ def _cerrar(client, headers):
 
 def test_el_corte_marca_las_asignaciones_devueltas(client, jornada, db_session):
     """RF-65/D-157: las filas liberadas quedan `DEVUELTO` y el total se informa."""
-    resultado = _cerrar(client, jornada["headers"])
+    resultado = _cerrar(client, jornada["super"])
     assert resultado["asignaciones_devueltas"] >= len(jornada["casos"])
     assert resultado["casos_pendientes"] >= len(jornada["casos"])
 
@@ -128,7 +131,7 @@ def test_el_corte_marca_las_asignaciones_devueltas(client, jornada, db_session):
 def test_el_caso_devuelto_deja_de_ser_de_la_cuadrilla(client, jornada, db_session):
     """D-157: la cuadrilla deja de recibir un caso liberado por el corte."""
     ids = [c["id_caso"] for c in jornada["casos"]]
-    _cerrar(client, jornada["headers"])
+    _cerrar(client, jornada["super"])
     db_session.expire_all()
 
     # El helper de vigencia ya no la cuenta como asignación.
@@ -153,7 +156,7 @@ def test_el_caso_devuelto_deja_de_ser_de_la_cuadrilla(client, jornada, db_sessio
 def test_un_caso_devuelto_puede_reasignarse_despues(client, jornada, db_session):
     """D-157: la devolución no bloquea la nueva asignación del caso."""
     caso = jornada["casos"][0]
-    _cerrar(client, jornada["headers"])
+    _cerrar(client, jornada["super"])
     r = client.post(f"{DESPACHOS}/asignar-casos",
                     json={"id_central": jornada["id_central"], "fecha": HOY,
                           "id_cuadrilla": jornada["id_cuadrilla"],
@@ -177,7 +180,7 @@ def test_la_proteccion_d123_sobrevive_a_la_devolucion(client, jornada, db_sessio
     sigue dentro de la ventana D-123 de su cuadrilla para la carga offline.
     """
     caso = jornada["casos"][0]
-    _cerrar(client, jornada["headers"])
+    _cerrar(client, jornada["super"])
     db_session.expire_all()
     usuario = db_session.scalar(select(Usuario).where(Usuario.p00 == "TESTTEC"))
     if usuario is None:

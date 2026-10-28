@@ -213,12 +213,19 @@ todavía**, por lo que las notificaciones permanecen pendientes con su motivo
 | Migraciones de esquema | **No** implementadas (Alembic ausente) | `RepoTecnico/requerimientos.md:288` |
 | Purga y anonimización por retención | **Sí**, vía Cloud Scheduler (D-153) | `app/services/purga.py`; `RepoTecnico/scripts/11_desplegar_ggto_web.sh` |
 | Cierre de sesiones, recordatorios de citas y alarmas de despacho | **Sí**, vía Cloud Scheduler | `app/api/routes_mantenimiento.py` |
+| Corte nocturno de la jornada | **Sí**, vía Cloud Scheduler a las **23:00** (D-160): los casos no atendidos —todo lo que no esté `CERRADO`, `CANCELADO` o `ENRUTADO`, conservando los citados su fecha de cita— vuelven a `PENDIENTE` y las masivas activas quedan sin cuadrilla | `app/services/jornada.py`; `POST /api/v1/mantenimiento/cierre-jornada`; job `ggto-cierre-jornada` |
 
 > La plataforma **no incluye** `APScheduler`, `Celery`, tareas `BackgroundTasks` ni `lifespan`
 > con trabajos programados: una búsqueda en `app/` no encuentra ninguna de esas construcciones. Toda
 > rutina periódica que se necesite debe ejecutarse manualmente o resolverse con un servicio externo
-> **pendiente de confirmar**. La excepción es la **purga y anonimización** (D-153): Cloud Scheduler
-> ejecuta `/api/v1/mantenimiento/purgar` cada hora y el script de despliegue crea el job y el token.
+> **pendiente de confirmar**. Las excepciones son los **jobs de mantenimiento** (D-153 · D-160):
+> Cloud Scheduler ejecuta `/api/v1/mantenimiento/purgar` cada hora y
+> `/api/v1/mantenimiento/cierre-jornada` a las 23:00, y el script de despliegue crea los jobs y el token
+> (`X-Mantenimiento-Token`, **503** si falta la configuración). El cierre de jornada conserva además un
+> disparo **perezoso** de respaldo: entrar al listado con un rol **SUPER** o **SUPERVISOR** aplica el
+> corte si una jornada quedó vencida sin cortar (DEC-MA-5 actualizada por D-160; el ADMIN ya no
+> dispara el cierre ni ejecuta el endpoint manual) (`app/services/jornada.py`,
+> `app/api/routes_despachos.py`).
 
 ---
 

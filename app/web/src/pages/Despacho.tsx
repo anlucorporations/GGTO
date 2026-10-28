@@ -1339,9 +1339,11 @@ export default function Despacho() {
               >
                 Publicar
               </button>
-              {/* D-99 (RF-68): el despacho ya NO se cierra a mano desde aquí. El
-                  corte es automático a las 23:50 y los casos sin cerrar vuelven a
-                  PENDIENTE para la jornada siguiente. */}
+              {/* D-99 (RF-68) · D-160: el despacho ya NO se cierra a mano desde
+                  aquí. El corte es automático a las 23:00 y los casos no
+                  atendidos (todo lo que no esté CERRADO, CANCELADO o ENRUTADO)
+                  vuelven a PENDIENTE para la jornada siguiente; los citados
+                  conservan la fecha de su cita. */}
               <button
                 type="button"
                 className="btn btn-secundario"
@@ -1353,9 +1355,11 @@ export default function Despacho() {
           )}
 
           <p className="texto-pequeno aviso-cierre-jornada">
-            El despacho se cierra solo a las 23:50 del día de la jornada (o al entrar
-            un supervisor un día después). Los casos que no estén cerrados pasan a
-            PENDIENTE para reasignarse en la jornada siguiente.
+            El despacho se cierra solo a las 23:00 del día de la jornada (o al entrar
+            un supervisor o super usuario un día después). Los casos no atendidos —
+            todo lo que no esté CERRADO, CANCELADO o ENRUTADO— pasan a PENDIENTE y
+            quedan sin cuadrilla para reasignarse en la jornada siguiente; los
+            citados conservan la fecha de su cita.
           </p>
 
           <div className="pagina-cabecera">

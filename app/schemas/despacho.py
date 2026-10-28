@@ -415,13 +415,15 @@ class ReporteProduccionOut(BaseModel):
 
 
 class CierreJornadaOut(BaseModel):
-    """Resultado del corte de jornada del despacho (D-99 · RF-65 · D-157)."""
+    """Resultado del corte de jornada del despacho (D-99 · RF-65 · D-157 · D-160)."""
 
     despachos_cerrados: int = 0
     casos_pendientes: int = 0
     #: Asignaciones anuladas: `despacho_caso.estado = DEVUELTO` para los casos
     #: liberados, de modo que dejan de pertenecer a cualquier cuadrilla.
     asignaciones_devueltas: int = 0
+    #: D-160: fallas masivas activas dejadas sin cuadrilla (`id_cuadrilla NULL`).
+    masivas_desasignadas: int = 0
     hora_corte: str
     fecha_corte: str
     detalle: list[dict] = Field(default_factory=list)

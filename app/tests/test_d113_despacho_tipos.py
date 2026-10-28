@@ -136,6 +136,8 @@ def entorno(client, admin_token, db_session):
         "sectores": {"Alfa": alfa, "Beta": beta, "Gamma": gamma},
         "id_falla": falla["id_falla"],
         "crear": crear,
+        # D-160: el corte manual lo ejecuta el Super Usuario (el ADMIN ya no).
+        "super": admin_token["super"],
     }
 
 
@@ -205,8 +207,9 @@ def test_el_proceso_incluye_los_pendientes_del_cierre(client, entorno, db_sessio
                                            "ESPECIALES_CONSTRUCCION",
                                            "ESPECIALES_GOBIERNO", "MASIVAS"])
 
+    # D-160: el corte lo ejecuta el Super Usuario (el ADMIN ya no pasa).
     r = client.post(f"{BASE}/cierre-jornada", params={"solo_vencidos": "true"},
-                    headers=entorno["headers"])
+                    headers=entorno["super"])
     assert r.status_code == 200, r.text
     assert r.json()["casos_pendientes"] == 9
 

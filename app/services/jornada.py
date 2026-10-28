@@ -1,42 +1,63 @@
-"""Cierre de la jornada de despacho — RF-65 · RF-66 · D-99.
+"""Cierre de la jornada de despacho — RF-65 · RF-66 · D-99 · D-160.
 
-Los despachos se cierran **automáticamente a las 23:50** del día de la jornada
-(hora configurable en `despacho.hora_cierre_jornada`) y los casos que no quedaron
-cerrados pasan a **PENDIENTE**, de modo que vuelven al universo despachable y se
-reasignan en la jornada siguiente. Además, las **asignaciones se anulan**
-(D-157): el renglón de `despacho_caso` pasa a `DEVUELTO` y queda excluido de las
-consultas de vigencia, así que el caso deja de pertenecer a la cuadrilla (la
-APK deja de descargarlo y CASOS lo muestra sin cuadrilla) mientras el histórico
-del despacho conserva la fila y el estado que había tenido.
+Los despachos se cierran **automáticamente a las 23:00** del día de la jornada
+(hora configurable en `despacho.hora_cierre_jornada`): el job de Cloud Scheduler
+`ggto-cierre-jornada` (`POST /mantenimiento/cierre-jornada`, token
+`X-Mantenimiento-Token`, D-160) es el disparador principal. Lo no atendido vuelve
+a **PENDIENTE** para reasignarse en la jornada siguiente, y **además las
+asignaciones se anulan** (D-157): el renglón de `despacho_caso` pasa a `DEVUELTO`
+y queda excluido de las consultas de vigencia, así que el caso deja de pertenecer
+a la cuadrilla (la APK deja de descargarlo y CASOS lo muestra sin cuadrilla)
+mientras el histórico del despacho conserva la fila y el estado que había tenido.
 
-DEC-MA-5: no hay *cron*. El cierre lo dispara de forma **perezosa** la entrada de
-un usuario con rol SUPER/ADMIN/SUPERVISOR (opción elegida en el proyecto), de
-modo que no hace falta ni un job de Cloud Scheduler ni un planificador en proceso
-—poco fiable en Cloud Run, donde la instancia se apaga sin tráfico—.
+D-160 (con la corrección del usuario) consolida el corte nocturno: **los casos no
+atendidos —todo lo que no esté `CERRADO`, `CANCELADO` o `ENRUTADO`— vuelven a
+`PENDIENTE`** para reasignarse en la jornada siguiente, y **las asignaciones se
+anulan** (D-157: el renglón de `despacho_caso` pasa a `DEVUELTO`), así que el
+caso deja de pertenecer a la cuadrilla mientras el histórico del despacho
+conserva la fila. Los casos **citados** mantienen la fecha de su cita
+(`caso.fecha_cita` no se toca), y el despacho del día siguiente los vuelve a
+detectar como citas con prioridad. Las **fallas masivas activas pierden su
+cuadrilla** (`id_cuadrilla = NULL`), de modo que a la mañana siguiente el
+supervisor las reasigna junto con el resto del reparto.
+
+El cierre sigue siendo también **perezoso** (DEC-MA-5): la entrada de un usuario
+rol SUPER o SUPERVISOR (ya no ADMIN) lo aplica si ninguna jornada quedó vencida
+sin cortar, de modo que el modo manual `POST /despachos/cierre-jornada` y la
+entrada al listado sirven de respaldo — solo el Supervisor o el Super Usuario
+pueden ejecutarlo (D-160).
 """
 
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta, timezone
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 
-from ..models import Caso, Configuracion, Despacho, DespachoCasos, Usuario
+from ..models import Caso, Configuracion, Despacho, DespachoCasos, FallaMasiva, Usuario
 from . import resolucion
 from .tiempo import ZONA_OPERATIVA, ahora_operativo, dia_operativo
 
-#: Hora del corte de jornada cuando la configuración no está sembrada.
-HORA_CIERRE_POR_DEFECTO = "23:50"
-#: Roles cuya entrada dispara el cierre perezoso de la jornada vencida.
-ROLES_QUE_CIERRAN = ("SUPER", "ADMIN", "SUPERVISOR")
-#: Estados que el corte respeta: el caso ya tuvo un desenlace en la jornada.
+#: Hora del corte de jornada cuando la configuración no está sembrada (D-160).
+HORA_CIERRE_POR_DEFECTO = "23:00"
+#: Roles cuya entrada dispara el cierre perezoso de la jornada vencida (D-160).
+ROLES_QUE_CIERRAN = ("SUPER", "SUPERVISOR")
+#: Estados que el corte respeta (D-99, confirmado en D-160): el caso ya tuvo
+#: un desenlace. Todo lo demás —NUEVO/ASIGNADO/CONTACTADO/CITADO/DIFERIDO/
+#: EN_GESTION/PENDIENTE— vuelve a `PENDIENTE`, y los `CITADO` conservan su
+#: fecha de cita (`caso.fecha_cita`) para que el despacho siguiente los
+#: trate como citas (prioridad, `es_cita`).
 ESTADOS_RESUELTOS = ("CERRADO", "CANCELADO", "ENRUTADO")
 #: Estado al que vuelven los casos que quedaron sin cerrar (DEC-MA-6).
 ESTADO_PENDIENTE = "PENDIENTE"
 #: Estado de `despacho_caso` que anula la asignación (D-157).
 ESTADO_DEVUELTO = "DEVUELTO"
+#: Estados de falla masiva que el corte desasigna (D-160): las activas.
+ESTADOS_MASIVA_ACTIVA = ("DETECTADA", "PLANIFICADA")
 
 
 def _zona():
@@ -59,7 +80,7 @@ def hora_cierre(db: Session) -> time:
         horas, minutos = texto.split(":")[:2]
         return time(int(horas), int(minutos))
     except (TypeError, ValueError):
-        return time(23, 50)
+        return time(23, 0)
 
 
 def jornada_vencida(fecha: date, ahora: datetime, corte: time) -> bool:
@@ -72,6 +93,26 @@ def jornada_vencida(fecha: date, ahora: datetime, corte: time) -> bool:
     return ahora.astimezone(_zona()).time() >= corte
 
 
+def desasignar_masivas(db: Session, id_central: int | None = None) -> int:
+    """D-160: deja **sin cuadrilla** las fallas masivas activas.
+
+    El corte nocturno anula el reparto de las masivas (`id_cuadrilla = NULL`)
+    para que la mañana siguiente el supervisor decida de nuevo qué cuadrilla
+    las atiende, igual que el resto del despacho. Las `CERRADA` no se tocan.
+    Devuelve cuántas quedaron desasignadas. **No hace `commit`**.
+    """
+    stmt = (
+        update(FallaMasiva)
+        .where(FallaMasiva.estado.in_(ESTADOS_MASIVA_ACTIVA),
+               FallaMasiva.id_cuadrilla.is_not(None))
+        .values(id_cuadrilla=None)
+    )
+    if id_central is not None:
+        stmt = stmt.where(FallaMasiva.id_central == id_central)
+    resultado = cast("CursorResult[Any]", db.execute(stmt))
+    return resultado.rowcount or 0
+
+
 def cerrar_jornada(
     db: Session,
     *,
@@ -80,8 +121,11 @@ def cerrar_jornada(
     usuario_p00: str | None = None,
     solo_vencidos: bool = True,
 ) -> dict:
-    """Cierra los despachos vencidos, anula sus asignaciones y devuelve los casos
-    a PENDIENTE (D-157: la asignación devuelta deja de contar para la cuadrilla).
+    """Cierra los despachos vencidos, anula sus asignaciones y devuelve a
+    PENDIENTE los casos no atendidos —todo lo que no esté `CERRADO`, `CANCELADO`
+    o `ENRUTADO` (D-99, confirmado en D-160); los `CITADO` conservan su fecha de
+    cita—. Las fallas masivas activas pierden su cuadrilla (D-160) y la
+    asignación devuelta deja de contar para la cuadrilla (D-157).
 
     **No hace `commit`**: quien llama decide la unidad de trabajo.
     """
@@ -104,11 +148,11 @@ def cerrar_jornada(
         ).all()
         liberados = 0
         for vinculo, caso in filas:
-            if caso.estado_actual in ESTADOS_RESUELTOS:
+            if caso.estado_actual in ESTADOS_RESUELTOS:  # D-99/D-160
                 continue
             resolucion.registrar_estado(
                 db, caso, ESTADO_PENDIENTE,
-                f"Cierre de jornada: el caso no se cerró a las {corte.strftime('%H:%M')}",
+                "Corte nocturno 23:00: el caso no atendido vuelve a PENDIENTE",
                 usuario_p00,
             )
             # D-157: la asignación se anula. La fila conserva la historia de la
@@ -126,11 +170,16 @@ def cerrar_jornada(
             "fecha": despacho.fecha.isoformat(),
             "casos_pendientes": liberados,
         })
+    # D-160: las masivas activas pierden su cuadrilla cuando el corte **actúa**
+    # (job nocturno, que viene con `solo_vencidos=False`) o cierra alguna
+    # jornada vencida. El disparo perezoso de media mañana no toca nada.
+    masivas = desasignar_masivas(db, id_central) if (not solo_vencidos or cerrados) else 0
     db.flush()
     return {
         "despachos_cerrados": cerrados,
         "casos_pendientes": pendientes,
         "asignaciones_devueltas": devueltas,
+        "masivas_desasignadas": masivas,
         "hora_corte": corte.strftime("%H:%M"),
         "fecha_corte": momento.isoformat(),
         "detalle": detalle,
@@ -139,7 +188,7 @@ def cerrar_jornada(
 
 def quizas_cerrar(db: Session, usuario: Usuario | None,
                   ahora: datetime | None = None) -> dict | None:
-    """Cierre perezoso: solo para SUPER/ADMIN/SUPERVISOR (DEC-MA-5).
+    """Cierre perezoso: solo para SUPER o SUPERVISOR (DEC-MA-5 · D-160).
 
     Devuelve el resultado del cierre, o `None` si el rol que entra no lo dispara.
     """
@@ -153,6 +202,6 @@ def quizas_cerrar(db: Session, usuario: Usuario | None,
         ahora=ahora,
         usuario_p00=usuario.p00,
     )
-    if resultado["despachos_cerrados"]:
+    if resultado["despachos_cerrados"] or resultado["masivas_desasignadas"]:
         db.commit()
     return resultado

@@ -6,7 +6,7 @@ Cubren lo que el incremento añade sobre el comportamiento ya probado:
 * RUTA tomada de la columna EXTRA del archivo de ingesta;
 * cierre en cascada exigiendo descripción, validador del CRASS y evidencias;
 * catálogo de personal externo (solicitante / CRASS);
-* corte de jornada a las 23:50 con los casos de vuelta a PENDIENTE;
+* corte de jornada nocturno (23:00 desde D-160) con los casos de vuelta a PENDIENTE;
 * reporte de producción con ABIERTOS/ENRUTADO y la marca `es_masiva`;
 * aviso «DESPACHO ACTUALIZADO» a los técnicos al reprocesar;
 * la descarga de la APK entrega las masivas y los datos técnicos del caso.
@@ -73,7 +73,7 @@ def entorno(client, admin_token):
         return r.json()
 
     yield {"headers": headers, "id_central": id_central, "id_sector": id_sector,
-           "crear": crear}
+           "crear": crear, "super": admin_token["super"]}
 
 
 def _marcar_tecnico(db_session, ids_caso, **campos) -> None:
@@ -466,13 +466,17 @@ def test_el_cierre_exige_validador_del_crass_activo(client, entorno, db_session)
 # --------------------------------------------------------------------------- #
 def test_el_corte_de_jornada_cierra_el_despacho_y_devuelve_los_casos(client, entorno,
                                                                     db_session):
-    """RF-65/RF-66: a las 23:50 el despacho se cierra y lo no cerrado va a PENDIENTE."""
+    """RF-65/RF-66/D-160: a las 23:00 el despacho se cierra y lo no atendido va a PENDIENTE."""
     headers = entorno["headers"]
     casos = [entorno["crear"](f"TSTD99-J{i}") for i in range(3)]
     creados = _procesar(client, entorno, AYER)
     assert creados, "no se generó ningún despacho para ayer"
 
+    # D-160: el corte manual lo ejecuta el Super Usuario (el ADMIN ya no pasa).
     r = client.post(f"{DESPACHOS}/cierre-jornada?solo_vencidos=true", headers=headers)
+    assert r.status_code == 403, r.text
+    r = client.post(f"{DESPACHOS}/cierre-jornada?solo_vencidos=true",
+                    headers=entorno["super"])
     assert r.status_code == 200, r.text
     resultado = r.json()
     assert resultado["despachos_cerrados"] >= 1
@@ -488,17 +492,22 @@ def test_el_corte_de_jornada_cierra_el_despacho_y_devuelve_los_casos(client, ent
     assert resultado["hora_corte"].count(":") == 1
 
 
-def test_el_caso_cerrado_sobrevive_al_corte_de_jornada(client, entorno, db_session):
-    """El corte respeta los casos que ya tuvieron desenlace."""
-    headers = entorno["headers"]
-    casos = [entorno["crear"](f"TSTD99-K{i}") for i in range(2)]
+def test_los_cerrados_y_enrutados_sobreviven_al_corte(client, entorno, db_session):
+    """D-99/D-160: el corte respeta CERRADO, CANCELADO y ENRUTADO como resueltos."""
+    casos = [entorno["crear"](f"TSTD99-K{i}") for i in range(3)]
+    # D-160: primero se despachan (el universo del despacho excluye cerrados,
+    # cancelados y enrutados) y después se marcan los estados "del día".
+    _procesar(client, entorno, AYER)
     _marcar_tecnico(db_session, [casos[0]["id_caso"]], estado_actual="CERRADO")
     _marcar_tecnico(db_session, [casos[1]["id_caso"]], estado_actual="ENRUTADO")
-    _procesar(client, entorno, AYER)
-    client.post(f"{DESPACHOS}/cierre-jornada?solo_vencidos=true", headers=headers)
+    _marcar_tecnico(db_session, [casos[2]["id_caso"]], estado_actual="CANCELADO")
+    r = client.post(f"{DESPACHOS}/cierre-jornada?solo_vencidos=true",
+                    headers=entorno["super"])
+    assert r.status_code == 200, r.text
     db_session.expire_all()
     assert db_session.get(Caso, casos[0]["id_caso"]).estado_actual == "CERRADO"
     assert db_session.get(Caso, casos[1]["id_caso"]).estado_actual == "ENRUTADO"
+    assert db_session.get(Caso, casos[2]["id_caso"]).estado_actual == "CANCELADO"
 
 
 # --------------------------------------------------------------------------- #

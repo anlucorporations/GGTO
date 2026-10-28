@@ -133,6 +133,8 @@ def entorno_sync(client, admin_token, db_session):
         "admin": headers,
         "tecnico": admin_token["tecnico"],
         "supervisor": admin_token["supervisor"],
+        # D-160: el corte manual lo ejecuta el Super Usuario (el ADMIN ya no).
+        "super": admin_token["super"],
         "id_cuadrilla_a": id_a,
         "id_cuadrilla_b": id_b,
         "despacho_hoy_a": d_hoy_a.id_despacho,
@@ -996,7 +998,9 @@ def test_el_cierre_de_jornada_desasigna_y_el_tecnico_deja_de_bajarlo(
     assert antes.status_code == 200, antes.text
     assert id_caso in {c["id_caso"] for c in antes.json()["casos"]}
 
-    r = client.post(f"{BASE}/despachos/cierre-jornada?solo_vencidos=false", headers=headers)
+    # D-160: el corte lo ejecuta el Super Usuario (el ADMIN ya no pasa).
+    r = client.post(f"{BASE}/despachos/cierre-jornada?solo_vencidos=false",
+                    headers=entorno_sync["super"])
     assert r.status_code == 200, r.text
     assert r.json()["asignaciones_devueltas"] >= 1
 

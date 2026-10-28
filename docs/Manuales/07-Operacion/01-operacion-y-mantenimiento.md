@@ -252,12 +252,17 @@ en `GET /api/v1/notificaciones`.
 | Ingesta del CSV | **No** | La sube el operador |
 | Cálculo y generación del despacho | **No** | El operador invoca la propuesta y la generación |
 | Reporte de producción de las 16:00 | **No** | No hay disparo automático por horario |
+| Purga y anonimización por retención | **Sí** | Cloud Scheduler la ejecuta cada hora, con un token de protección (D-153) |
+| Cierre de sesiones, recordatorios de citas y alarmas de despacho | **Sí** | Jobs de Cloud Scheduler cada pocos minutos |
+| Corte nocturno de la jornada | **Sí** | A las **23:00** el sistema cierra la jornada: los casos no atendidos (todo lo que no esté CERRADO, CANCELADO o ENRUTADO; los citados conservan la fecha de su cita) vuelven a Pendiente, quedan sin cuadrilla y los masivos pierden su cuadrilla (D-160). Un supervisor o super usuario también puede provocarlo al entrar al sistema si una jornada quedó vencida |
 | Respaldo de la base de datos | **No** | No existe (riesgo aceptado D-26) |
 | Migraciones de esquema | **No** | No están implementadas (Alembic no está incorporado) |
 
 > La plataforma **no incluye** `APScheduler`, `Celery`, tareas en segundo plano ni trabajos
 > programados al arranque. Toda rutina periódica que se necesite debe ejecutarse manualmente o
-> resolverse con un servicio externo, que está **pendiente de confirmar**.
+> resolverse con un servicio externo. Las rutinas automáticas que existen hoy (purga, cierre de
+> sesiones, recordatorios, alarmas y corte nocturno) las dispara Cloud Scheduler de Google Cloud,
+> protegidas con un token de mantenimiento.
 
 ---
 

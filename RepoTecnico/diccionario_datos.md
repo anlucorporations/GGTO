@@ -392,7 +392,7 @@ reparación de una masiva. El teléfono del catálogo es `contacto`.
 | enviado_en | timestamptz | | |
 | reporte_produccion_en | timestamptz | | Cierre 04:00 p.m. (RF-27). |
 | cerrado_en | timestamptz | | D-99: instante del corte de jornada (RF-65). |
-| cierre_auto | boolean | NN, default false | D-99: el cierre lo hizo el corte de las 23:50, no una persona. |
+| cierre_auto | boolean | NN, default false | D-99: el cierre lo hizo el corte nocturno de las 23:00 (`ggto-cierre-jornada`, D-160), no una persona. |
 | reprocesado_en | timestamptz | | D-99: último reproceso del despacho en la jornada (RF-68). |
 | usuario_crea | varchar(20) | | |
 | creado_en / actualizado_en | timestamptz | | |

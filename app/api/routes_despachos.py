@@ -379,20 +379,24 @@ def procesar(
 
 
 @router.post("/cierre-jornada", response_model=CierreJornadaOut,
-             summary="Cerrar la jornada de despacho y devolver los casos a PENDIENTE (D-99)")
+             summary="Cerrar la jornada de despacho y devolver los casos a PENDIENTE (D-99 · D-160)")
 def cierre_jornada(
     id_central: int | None = Query(default=None),
     solo_vencidos: bool = Query(
         default=True, description="Solo los despachos que ya pasaron su hora de corte"
     ),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(_escritura),
+    usuario: Usuario = Depends(require_roles("SUPERVISOR")),
 ) -> CierreJornadaOut:
-    """Corte de jornada del despacho (RF-65 · RF-66).
+    """Corte de jornada del despacho (RF-65 · RF-66 · D-160).
 
     Declarado **antes** de `/{id_despacho}` para que `cierre-jornada` no se
-    interprete como un identificador. Normalmente no hay que llamarlo: el cierre
-    se dispara solo al entrar un SUPER/ADMIN/SUPERVISOR (DEC-MA-5).
+    interprete como un identificador. D-160: solo lo ejecutan el **Supervisor**
+    o el **Super Usuario** (el bypass del rol SUPER lo admite; el ADMIN ya no).
+    Normalmente no hay que llamarlo: el corte automático **a las 23:00** lo
+    dispara el job `ggto-cierre-jornada` vía `/mantenimiento/cierre-jornada`
+    (token de mantenimiento, D-160), y el cierre perezoso al entrar un
+    Supervisor o Super lo aplica como respaldo.
     """
     config = cargar_config(db)
     central = resolver_central(db, id_central, config, usuario)

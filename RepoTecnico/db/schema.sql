@@ -1145,8 +1145,8 @@ CREATE INDEX IF NOT EXISTS ix_falla_masiva_estado
     ON falla_masiva (id_central, estado, fecha_deteccion DESC);
 
 -- 13.5 Jornada del despacho (RF-65/RF-66).
---      `cerrado_en` y `cierre_auto` dejan constancia del corte de las 23:50;
---      `reprocesado_en` marca el último reproceso de la jornada.
+--      `cerrado_en` y `cierre_auto` dejan constancia del corte nocturno de las
+--      23:00 (D-160); `reprocesado_en` marca el último reproceso de la jornada.
 ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cerrado_en     timestamptz;
 ALTER TABLE despacho ADD COLUMN IF NOT EXISTS cierre_auto    boolean NOT NULL DEFAULT false;
 ALTER TABLE despacho ADD COLUMN IF NOT EXISTS reprocesado_en timestamptz;
@@ -1171,8 +1171,8 @@ ALTER TABLE caso_especial ADD COLUMN IF NOT EXISTS informe text;
 
 -- 13.8 Parámetros del incremento.
 INSERT INTO configuracion (clave, valor, descripcion) VALUES
-    ('despacho.hora_cierre_jornada', '"23:50"'::jsonb,
-     'Hora del día operativo en que se cierran los despachos; lo no cerrado va a PENDIENTE (D-99)'),
+    ('despacho.hora_cierre_jornada', '"23:00"'::jsonb,
+     'Hora del día operativo en que se cierran los despachos; lo no atendido va a PENDIENTE (D-99 · D-160)'),
     ('fallas.asociar_automatico', 'true'::jsonb,
      'Asocia a la falla masiva los casos de su concentración al detectarla (D-99)'),
     ('fallas.historico_dias', '90'::jsonb,

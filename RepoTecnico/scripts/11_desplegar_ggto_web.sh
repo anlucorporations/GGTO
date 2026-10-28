@@ -164,5 +164,7 @@ programar_job ggto-purgar "0 * * * *" "/api/v1/mantenimiento/purgar"
 programar_job ggto-cerrar-sesiones "*/10 * * * *" "/api/v1/mantenimiento/cerrar-sesiones"
 programar_job ggto-recordatorios-citas "*/15 * * * *" "/api/v1/mantenimiento/recordatorios-citas"
 programar_job ggto-alarmas-despacho "*/30 * * * *" "/api/v1/mantenimiento/alarmas-despacho"
+# D-160: corte nocturno de la jornada (devuelve los casos a PENDIENTE a las 23:00).
+programar_job ggto-cierre-jornada "0 23 * * *" "/api/v1/mantenimiento/cierre-jornada"
 gcloud scheduler jobs list --location "$REGION" --project "$PROYECTO" \
   --format='table(name,schedule,state)'

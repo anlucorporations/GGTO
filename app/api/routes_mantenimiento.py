@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
 from ..core.db import get_db
+from ..services import jornada as svc_jornada
 from ..services import mensajes as svc_mensajes
 from ..services import purga as svc
 
@@ -62,3 +63,22 @@ def alarmas_despacho(
     db: Session = Depends(get_db), _: None = Depends(verificar_token)
 ) -> dict:
     return svc_mensajes.emitir_alarmas_despacho(db)
+
+
+@router.post("/cierre-jornada",
+             summary="Corte nocturno: los casos no atendidos (CERRADO y ENRUTADO incluidos) "
+                     "vuelven a PENDIENTE y las masivas pierden su cuadrilla (D-160)")
+def cierre_jornada(
+    db: Session = Depends(get_db), _: None = Depends(verificar_token)
+) -> dict:
+    """Job de las **23:00** (Cloud Scheduler, D-160).
+
+    Recorre **todas** las centrales con `solo_vencidos=False`: cada despacho
+    abierto se cierra y **todos** sus casos —CERRADO y ENRUTADO incluidos—
+    vuelven a `PENDIENTE` con la asignación anulada (`DEVUELTO`, D-157), y las
+    fallas masivas activas quedan sin cuadrilla. Idempotente: un segundo
+    disparo no cambia nada (los despachos ya quedaron `CERRADO`).
+    """
+    resultado = svc_jornada.cerrar_jornada(db, solo_vencidos=False)
+    db.commit()
+    return resultado
