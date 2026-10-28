@@ -790,12 +790,12 @@ a { color: var(--azul); }
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/01-operacion-y-mantenimiento.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>22/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>27/10/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 24/10/2026</span>
+          <span>Edición HTML y PDF generada el 28/10/2026</span>
         </div>
       </section>
 <blockquote>
@@ -1226,6 +1226,21 @@ en <code>GET /api/v1/notificaciones</code>.</p>
 <td>No hay disparo automático por horario</td>
 </tr>
 <tr>
+<td>Purga y anonimización por retención</td>
+<td><strong>Sí</strong></td>
+<td>Cloud Scheduler la ejecuta cada hora, con un token de protección (D-153)</td>
+</tr>
+<tr>
+<td>Cierre de sesiones, recordatorios de citas y alarmas de despacho</td>
+<td><strong>Sí</strong></td>
+<td>Jobs de Cloud Scheduler cada pocos minutos</td>
+</tr>
+<tr>
+<td>Corte nocturno de la jornada</td>
+<td><strong>Sí</strong></td>
+<td>A las <strong>23:00</strong> el sistema cierra la jornada: los casos no atendidos (todo lo que no esté CERRADO, CANCELADO o ENRUTADO; los citados conservan la fecha de su cita) vuelven a Pendiente, quedan sin cuadrilla y los masivos pierden su cuadrilla (D-160). Un supervisor o super usuario también puede provocarlo al entrar al sistema si una jornada quedó vencida</td>
+</tr>
+<tr>
 <td>Respaldo de la base de datos</td>
 <td><strong>No</strong></td>
 <td>No existe (riesgo aceptado D-26)</td>
@@ -1240,7 +1255,9 @@ en <code>GET /api/v1/notificaciones</code>.</p>
 <blockquote>
 <p>La plataforma <strong>no incluye</strong> <code>APScheduler</code>, <code>Celery</code>, tareas en segundo plano ni trabajos
 programados al arranque. Toda rutina periódica que se necesite debe ejecutarse manualmente o
-resolverse con un servicio externo, que está <strong>pendiente de confirmar</strong>.</p>
+resolverse con un servicio externo. Las rutinas automáticas que existen hoy (purga, cierre de
+sesiones, recordatorios, alarmas y corte nocturno) las dispara Cloud Scheduler de Google Cloud,
+protegidas con un token de mantenimiento.</p>
 </blockquote>
 <hr />
 <h2 id="respaldo-y-recuperacion"><span class="sec-num">4</span>Respaldo y recuperación</h2>
@@ -1663,7 +1680,7 @@ confirmar»</strong>.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 24/10/2026</span>
+    <span>Generado el 28/10/2026</span>
   </div>
 </footer>
 
