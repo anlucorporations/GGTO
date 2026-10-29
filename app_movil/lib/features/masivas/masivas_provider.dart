@@ -37,13 +37,14 @@ class MasivasProvider extends ChangeNotifier {
   /// Fecha del contenido local (la última descarga con éxito).
   DateTime? get actualizadoEn => _actualizadoEn;
 
-  /// ¿Hay alguna masiva activa? Es lo que decide si se pinta el banner fijo.
+  /// ¿Hay alguna masiva activa? Es lo que alimenta el aviso (badge) de la
+  /// barra de navegación del técnico.
   bool get hayActivas => _masivas.isNotEmpty;
 
   /// Cuántas masivas activas hay en el dispositivo.
   int get total => _masivas.length;
 
-  /// Masiva de mayor prioridad: la que anuncia el banner fijo.
+  /// Masiva de mayor prioridad (la DETECTADA con más casos asociados).
   Map<String, dynamic>? get prioritaria {
     if (_masivas.isEmpty) return null;
     return ordenarPorPrioridad(_masivas).first;
@@ -99,7 +100,8 @@ class MasivasProvider extends ChangeNotifier {
   /// Quita una masiva del dispositivo (p. ej. tras cerrarla) y refresca la lista.
   ///
   /// Se apoya en `guardarMasivas`, cuyo merge borra lo que ya no viene: se
-  /// vuelve a guardar el resto para que la cerrada desaparezca del banner.
+  /// vuelve a guardar el resto para que la cerrada desaparezca del panel MASIVAS
+  /// (y el badge de la barra caiga a cero).
   Future<void> quitarLocal(int idFalla) async {
     final restantes = _masivas
         .where((m) => idDe(m) != idFalla)
@@ -235,9 +237,9 @@ class MasivasProvider extends ChangeNotifier {
 
   /// Busca el proveedor de masivas **si** está registrado en el árbol.
   ///
-  /// La pantalla de casos lo usa para el banner fijo y el contador de la barra:
-  /// cuando no hay proveedor (una pantalla aislada) simplemente no se pinta nada
-  /// en lugar de romper la lista de trabajo.
+  /// El panel MASIVAS y el badge de la barra lo usan: cuando no hay proveedor
+  /// (una pantalla aislada) el aviso simplemente no se pinta en lugar de romper
+  /// la lista de trabajo.
   static MasivasProvider? opcional(BuildContext context, {bool escuchar = true}) {
     try {
       return Provider.of<MasivasProvider>(context, listen: escuchar);

@@ -3,7 +3,6 @@
 // Cubren, sin emulador ni red:
 //   * la persistencia local de masivas (merge por id y borrado de las que ya no
 //     vienen) mediante el plan puro del `DatabaseHelper`;
-//   * el banner fijo, que **solo** aparece cuando hay masivas activas;
 //   * la **RUTA** de la ficha, tomada de `ruta`/`extra` (columna EXTRA de la
 //     ingesta) y siempre visible;
 //   * el texto obligatorio del cierre («Reparado en FDT») y el aviso de que el
@@ -14,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ggto_tecnico/core/database.dart';
-import 'package:ggto_tecnico/features/masivas/banner_masiva.dart';
 import 'package:ggto_tecnico/features/masivas/ficha_masiva_screen.dart';
 import 'package:ggto_tecnico/features/masivas/masivas_provider.dart';
 import 'package:ggto_tecnico/features/masivas/masivas_screen.dart';
@@ -132,54 +130,6 @@ void main() {
       expect(orden.map((m) => m['id_falla']), [9, 4, 3]);
       expect(MasivasProvider.pesoEstado(_masiva(estado: 'DETECTADA')), 2);
       expect(MasivasProvider.pesoEstado(_masiva(estado: 'PLANIFICADA')), 1);
-    });
-  });
-
-  group('D-99 · banner fijo de MASIVA ACTIVA', () {
-    testWidgets('sin masivas activas no pinta nada', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BannerMasivaActiva(masivas: const [], onTap: () {}),
-          ),
-        ),
-      );
-
-      expect(find.text('MASIVA ACTIVA'), findsNothing);
-      expect(find.byIcon(Icons.crisis_alert), findsNothing);
-    });
-
-    testWidgets('con masivas muestra la de mayor prioridad y cuántas hay',
-        (tester) async {
-      var abierto = 0;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BannerMasivaActiva(
-              masivas: [
-                _masiva(
-                  idFalla: 3,
-                  estado: 'PLANIFICADA',
-                  casosAsociados: 1,
-                ),
-                _masiva(idFalla: 9, estado: 'DETECTADA', casosAsociados: 15),
-                _masiva(idFalla: 4, estado: 'DETECTADA', casosAsociados: 2),
-              ],
-              onTap: () => abierto++,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('MASIVA ACTIVA'), findsOneWidget);
-      // La descripción es la de la masiva prioritaria (#9); todas la comparten
-      // en la fixture, así que se comprueba el conteo y la navegación.
-      expect(find.textContaining('Concentración de 8 casos'), findsOneWidget);
-      expect(find.text(BannerMasivaActiva.textoConteo(3)), findsOneWidget);
-      expect(BannerMasivaActiva.textoConteo(3), '3 masiva(s)');
-
-      await tester.tap(find.byType(BannerMasivaActiva));
-      expect(abierto, 1);
     });
   });
 

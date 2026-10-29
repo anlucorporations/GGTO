@@ -1,8 +1,8 @@
 name: ggto_tecnico
-description: App Móvil para Técnicos de Terreno GGTO — Ciclo 8
+description: App MÃ³vil para TÃ©cnicos de Terreno GGTO â€” Ciclo 8
 publish_to: 'none'
-# versionCode (lo que va tras el «+») debe crecer en CADA entrega a CANTV.
-version: 1.15.20+45
+# versionCode (lo que va tras el Â«+Â») debe crecer en CADA entrega a CANTV.
+version: 1.15.21+46
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -22,12 +22,12 @@ dependencies:
   intl: ^0.19.0
   connectivity_plus: ^6.0.3
   share_plus: ^12.0.2
-  # D-102: abrir en el navegador la descarga de la última APK publicada.
-  # Paquete oficial de Flutter; sus implementaciones de escritorio/web ya venían
+  # D-102: abrir en el navegador la descarga de la Ãºltima APK publicada.
+  # Paquete oficial de Flutter; sus implementaciones de escritorio/web ya venÃ­an
   # en `pubspec.lock` como transitivas.
   url_launcher: ^6.3.0
-  # D-100: PBKDF2-HMAC-SHA256 para el verificador del PIN de acceso sin conexión.
-  # Ya venía como dependencia transitiva (`crypto 3.0.7` en pubspec.lock).
+  # D-100: PBKDF2-HMAC-SHA256 para el verificador del PIN de acceso sin conexiÃ³n.
+  # Ya venÃ­a como dependencia transitiva (`crypto 3.0.7` en pubspec.lock).
   crypto: ^3.0.3
 
 dev_dependencies:
@@ -36,14 +36,14 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   # D-112: prueba de campo automatizada sobre la APK real en un emulador
   # (`flutter test integration_test -d emulator-5554`). El doble del selector de
-  # imágenes permite inyectar una foto ya existente sin abrir la cámara.
+  # imÃ¡genes permite inyectar una foto ya existente sin abrir la cÃ¡mara.
   integration_test:
     sdk: flutter
   image_picker_platform_interface: ^2.10.1
 
 dependency_overrides:
-  # El SDK de compilación es Flutter 3.24.5 (Dart 3.5). geolocator_android ≥5.0 usa
-  # Color.toARGB32() (Dart ≥3.6); se retrotrae el par completo a la serie compatible.
+  # El SDK de compilaciÃ³n es Flutter 3.24.5 (Dart 3.5). geolocator_android â‰¥5.0 usa
+  # Color.toARGB32() (Dart â‰¥3.6); se retrotrae el par completo a la serie compatible.
   geolocator: ^13.0.1
   geolocator_android: ^4.6.1
 

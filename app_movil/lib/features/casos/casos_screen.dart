@@ -9,7 +9,6 @@ import '../../widgets/caso_card.dart';
 import '../../widgets/chip_resueltos.dart';
 import '../../widgets/offline_banner.dart';
 import '../auth/auth_provider.dart';
-import '../masivas/banner_masiva.dart';
 import '../masivas/masivas_provider.dart';
 import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
@@ -42,7 +41,9 @@ class _CasosScreenState extends State<CasosScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final casos = Provider.of<CasosProvider>(context, listen: false);
       final sync = Provider.of<SyncProvider>(context, listen: false);
-      // D-99: el bloque MASIVA es fijo y prioritario.
+      // D-99→nuevo: el aviso de MASIVAS vive en la barra de navegación del
+      // panel (InicioTecnicoScreen); aquí solo releejemos su caché para que el
+      // badge esté al día sin sincronizar.
       final masivas = MasivasProvider.opcional(context, escuchar: false);
       // D-84/D-117: abrir la pantalla **no** sincroniza. Se pinta el contenido
       // local (instantáneo y válido sin conexión); la subida y la descarga viven
@@ -95,9 +96,6 @@ class _CasosScreenState extends State<CasosScreen> {
     final sync = Provider.of<SyncProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
     final mensajes = Provider.of<MensajesProvider>(context);
-    // D-99: el bloque MASIVA es tolerante: si el proveedor no está registrado
-    // (pantallas aisladas), simplemente no se pinta.
-    final masivas = MasivasProvider.opcional(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -120,16 +118,6 @@ class _CasosScreenState extends State<CasosScreen> {
             tooltip: 'Alertas',
             icon: const Icon(Icons.warning_amber),
             onPressed: () => Navigator.pushNamed(context, '/alertas'),
-          ),
-          // D-99: acceso directo a MASIVAS, con el contador de activas.
-          IconButton(
-            tooltip: 'Masivas',
-            icon: Badge(
-              isLabelVisible: (masivas?.total ?? 0) > 0,
-              label: Text('${masivas?.total ?? 0}'),
-              child: const Icon(Icons.crisis_alert),
-            ),
-            onPressed: () => Navigator.pushNamed(context, '/masivas'),
           ),
           IconButton(
             tooltip: 'Mensajes',
@@ -157,12 +145,6 @@ class _CasosScreenState extends State<CasosScreen> {
             pendientes: sync.pendientesSinError,
             onRefrescar: _refrescarLocal,
             refrescando: _actualizando,
-          ),
-          // D-99 · MASIVA fija y priorizada: vive **fuera** del ListView (la
-          // lista va debajo, en el Expanded), así que no desaparece al desplazar.
-          BannerMasivaActiva(
-            masivas: masivas?.masivas ?? const [],
-            onTap: () => Navigator.pushNamed(context, '/masivas'),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),

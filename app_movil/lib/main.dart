@@ -17,6 +17,7 @@ import 'features/auth/unlock_screen.dart';
 import 'features/casos/casos_provider.dart';
 import 'features/casos/casos_screen.dart';
 import 'features/inicio/inicio_gestion_screen.dart';
+import 'features/inicio/inicio_tecnico_screen.dart';
 import 'features/gestion/gestion_screen.dart';
 import 'features/masivas/masivas_provider.dart';
 import 'features/masivas/masivas_screen.dart';
@@ -187,7 +188,7 @@ class _RutaInicio extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return auth.rol == 'TECNICO'
-        ? const CasosScreen()
+        ? const InicioTecnicoScreen()
         : InicioGestionScreen(rol: auth.rol);
   }
 }
