@@ -250,7 +250,7 @@ def test_el_cuadro_de_sectores_trae_las_tres_columnas(client, entorno):
     assert sector["Beta"]["especiales_gobierno"] == 0
 
 
-def test_el_checklist_usa_las_tres_categorias(client, entorno):
+def test_el_checklist_usa_las_categorias_del_catalogo(client, entorno):
     p = _proceso(client, entorno)
     tipos = {t["clave"]: t["total"] for t in p["tipos"]}
 
@@ -258,6 +258,7 @@ def test_el_checklist_usa_las_tres_categorias(client, entorno):
         "COMUNES",
         "ESPECIALES_REPARACION",
         "ESPECIALES_CONSTRUCCION",
+        "MANTENIMIENTO",
         "ESPECIALES_GOBIERNO",
         "MASIVAS",
     ]
@@ -267,12 +268,14 @@ def test_el_checklist_usa_las_tres_categorias(client, entorno):
         "COMUNES": 2,
         "ESPECIALES_REPARACION": 3,
         "ESPECIALES_CONSTRUCCION": 2,
+        "MANTENIMIENTO": 0,
         "ESPECIALES_GOBIERNO": 2,
         "MASIVAS": 2,
     }
     assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == [
         "COMUNES",
         "ESPECIALES_REPARACION",
+        "MANTENIMIENTO",
     ]
 
 

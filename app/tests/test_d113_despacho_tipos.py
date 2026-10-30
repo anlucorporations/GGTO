@@ -238,10 +238,8 @@ def test_el_proceso_incluye_los_pendientes_del_cierre(client, entorno, db_sessio
 # --------------------------------------------------------------------------- #
 # 2. Checklist de tipos (punto 3 de la petición)
 # --------------------------------------------------------------------------- #
-def test_el_proceso_expone_el_checklist_con_comunes_y_especiales_reparacion_por_defecto(
-    client, entorno
-):
-    """D-113 · D-114: cinco tipos con su total y Comunes/Especiales Reparación por defecto."""
+def test_el_proceso_expone_el_checklist_con_el_nuevo_catalogo(client, entorno):
+    """D-161: seis tipos y Comunes/Especiales Rep/Mantenimiento por defecto."""
     p = _proceso(client, entorno)
     tipos = {t["clave"]: t for t in p["tipos"]}
 
@@ -249,23 +247,27 @@ def test_el_proceso_expone_el_checklist_con_comunes_y_especiales_reparacion_por_
         "COMUNES",
         "ESPECIALES_REPARACION",
         "ESPECIALES_CONSTRUCCION",
+        "MANTENIMIENTO",
         "ESPECIALES_GOBIERNO",
         "MASIVAS",
     ]
     assert tipos["COMUNES"]["total"] == 3
     assert tipos["ESPECIALES_REPARACION"]["total"] == 3  # 2 referidos + 1 empresa
     assert tipos["ESPECIALES_CONSTRUCCION"]["total"] == 1
+    assert tipos["MANTENIMIENTO"]["total"] == 0
     assert tipos["ESPECIALES_GOBIERNO"]["total"] == 0
     assert tipos["MASIVAS"]["total"] == 2
     assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == [
         "COMUNES",
         "ESPECIALES_REPARACION",
+        "MANTENIMIENTO",
     ]
 
     assert p["universo"]["por_tipo"] == {
         "COMUNES": 3,
         "ESPECIALES_REPARACION": 3,
         "ESPECIALES_CONSTRUCCION": 1,
+        "MANTENIMIENTO": 0,
         "ESPECIALES_GOBIERNO": 0,
         "MASIVAS": 2,
     }

@@ -400,7 +400,7 @@ export type EstadoCaso =
   | 'CERRADO'
   | 'CANCELADO';
 
-export type TipoCaso = 'AVERIA' | 'REPARACION' | 'CONSTRUCCION';
+export type TipoCaso = 'AVERIA' | 'REPARACION' | 'CONSTRUCCION' | 'MANTENIMIENTO';
 
 export type CategoriaCaso = 'RESIDENCIAL' | 'EMPRESA' | 'REFERIDO' | 'GOBIERNO';
 
@@ -602,7 +602,8 @@ export type TipoAsignacionDespacho =
   | 'CONSTRUCCION'
   | 'REFERIDO'
   | 'EMPRESA'
-  | 'FALLA_MASIVA';
+  | 'FALLA_MASIVA'
+  | 'MANTENIMIENTO';
 
 export type OrigenFallaMasiva = 'AUTOMATICA' | 'REPORTE_TECNICO' | 'MCP';
 

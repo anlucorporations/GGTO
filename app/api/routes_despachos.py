@@ -683,7 +683,9 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
                "diferidos": 0, "gestionados": 0, "referidos": 0, "empresas": 0,
                "masivas": 0,
                # D-143: la construcción se mide aparte (asignadas y **realizadas**).
-               "construcciones": 0, "construcciones_cerradas": 0}
+               "construcciones": 0, "construcciones_cerradas": 0,
+               # D-161: mantenimiento de masivas (JUSTIFICATIVO reclasificado).
+               "mantenimientos": 0, "mantenimientos_cerradas": 0}
     for _despacho, cuadrilla, dc, caso in filas:
         fila = por_cuadrilla.setdefault(
             cuadrilla.codigo,
@@ -691,7 +693,8 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
              cuadrilla.id_cuadrilla, "asignados": 0, "abiertos": 0,
              "cerrados": 0, "enrutado": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
              "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": [],
-             "construcciones": 0, "construcciones_cerradas": 0},
+             "construcciones": 0, "construcciones_cerradas": 0,
+             "mantenimientos": 0, "mantenimientos_cerradas": 0},
         )
         fila["asignados"] += 1
         totales["asignados"] += 1
@@ -733,6 +736,13 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
             if cerrado:
                 fila["construcciones_cerradas"] += 1
                 totales["construcciones_cerradas"] += 1
+        # D-161: el mantenimiento se cuenta aparte, como la construcción.
+        if dc.tipo_asignacion == "MANTENIMIENTO":
+            fila["mantenimientos"] += 1
+            totales["mantenimientos"] += 1
+            if cerrado:
+                fila["mantenimientos_cerradas"] += 1
+                totales["mantenimientos_cerradas"] += 1
         # Icono MASIVA: por asignación explícita del caso o por la masiva activa
         # de la cuadrilla.
         if dc.tipo_asignacion == "FALLA_MASIVA":

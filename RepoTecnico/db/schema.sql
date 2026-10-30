@@ -316,7 +316,7 @@ CREATE TABLE IF NOT EXISTS caso (
     origen                  varchar(20)  NOT NULL DEFAULT 'INGESTA_CSV'
                             CHECK (origen IN ('INGESTA_CSV','MANUAL','TELEGRAM','MCP_IA')),
     tipo_caso               varchar(20)  NOT NULL DEFAULT 'AVERIA'
-                            CHECK (tipo_caso IN ('AVERIA','REPARACION','CONSTRUCCION','REFERIDO')),
+                            CHECK (tipo_caso IN ('AVERIA','REPARACION','CONSTRUCCION','REFERIDO','MANTENIMIENTO')),
     categoria               varchar(20)  NOT NULL DEFAULT 'RESIDENCIAL'
                             CHECK (categoria IN ('RESIDENCIAL','EMPRESA','REFERIDO','GOBIERNO')),
     estado_actual           varchar(20)  NOT NULL DEFAULT 'NUEVO'
@@ -492,7 +492,7 @@ CREATE TABLE IF NOT EXISTS despacho_caso (
     orden_visita        smallint,
     tipo_asignacion     varchar(20)
                         CHECK (tipo_asignacion IN ('REPARACION','CONSTRUCCION','REFERIDO',
-                               'EMPRESA','FALLA_MASIVA')),
+                               'EMPRESA','FALLA_MASIVA','MANTENIMIENTO')),
     estado              varchar(20)  NOT NULL DEFAULT 'ASIGNADO'
                         CHECK (estado IN ('ASIGNADO','GESTIONADO','CERRADO','CITADO','DIFERIDO',
                                'DEVUELTO')),

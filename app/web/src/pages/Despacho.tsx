@@ -21,6 +21,7 @@ import Modal from '../components/Modal';
 import PieTabla from '../components/PieTabla';
 import ProcesarDespacho from '../components/ProcesarDespacho';
 import {
+  IconoActividad,
   IconoConstruccion,
   IconoEmpresa,
   IconoReferido,
@@ -43,6 +44,7 @@ const ESTADOS_CASO: EstadoDespachoCaso[] = [
 const TIPOS_ASIGNACION: TipoAsignacionDespacho[] = [
   'REPARACION',
   'CONSTRUCCION',
+  'MANTENIMIENTO',
   'REFERIDO',
   'EMPRESA',
   'FALLA_MASIVA',
@@ -64,19 +66,21 @@ const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
  * Desglose de los casos de un despacho por tipo de asignación (D-110).
  *
  * La columna **Casos** de la ficha del día muestra el total de
- * **Reparaciones Comunes + Reparaciones Referidas + Construcciones** con un icono
- * por tipo; los casos empresariales y de falla masiva, si los hay, se informan
- * aparte para que el total del despacho nunca oculte trabajo.
+ * **Reparaciones Comunes + Reparaciones Referidas + Construcciones +
+ * Mantenimientos** con un icono por tipo; los casos empresariales y de falla
+ * masiva, si los hay, se informan aparte para que el total del despacho nunca
+ * oculte trabajo.
  */
 export interface ConteoCasosTipo {
   comunes: number;
   referidos: number;
   construcciones: number;
+  mantenimientos: number;
   empresas: number;
   masivas: number;
-  /** Total de los tres tipos que pide la operación. */
+  /** Total de los tipos de trabajo ofrecidos a la cuadrilla. */
   total: number;
-  /** Total real del despacho (incluye empresas y masivas). */
+  /** Total real del despacho (incluye empresas, masivas y mantenimiento). */
   totalDespacho: number;
 }
 
@@ -86,15 +90,17 @@ export function conteoPorTipo(casos: DespachoDetalleOut['casos']): ConteoCasosTi
   const comunes = contar('REPARACION');
   const referidos = contar('REFERIDO');
   const construcciones = contar('CONSTRUCCION');
+  const mantenimientos = contar('MANTENIMIENTO');
   const empresas = contar('EMPRESA');
   const masivas = contar('FALLA_MASIVA');
   return {
     comunes,
     referidos,
     construcciones,
+    mantenimientos,
     empresas,
     masivas,
-    total: comunes + referidos + construcciones,
+    total: comunes + referidos + construcciones + mantenimientos,
     totalDespacho: casos.length,
   };
 }
@@ -132,6 +138,16 @@ export function CeldaCasosPorTipo({ casos }: { casos: DespachoDetalleOut['casos'
         <IconoConstruccion />
         {conteo.construcciones}
       </span>
+      {conteo.mantenimientos > 0 && (
+        <span
+          className="caso-tipo caso-tipo-mantenimiento"
+          title={`Mantenimientos: ${conteo.mantenimientos}`}
+          aria-label={`Mantenimientos: ${conteo.mantenimientos}`}
+        >
+          <IconoActividad />
+          {conteo.mantenimientos}
+        </span>
+      )}
       <strong className="caso-total" title={`Total: ${conteo.total}`}>
         {conteo.total}
       </strong>

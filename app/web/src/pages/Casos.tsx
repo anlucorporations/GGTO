@@ -42,7 +42,7 @@ const ESTADOS: EstadoCaso[] = [
 ];
 
 const CATEGORIAS: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
-const TIPOS: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION'];
+const TIPOS: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION', 'MANTENIMIENTO'];
 const TAMANOS = [10, 25, 50, 100];
 
 interface Filtros {

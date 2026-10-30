@@ -21,7 +21,7 @@ import { IconoBuscar, IconoChevronDerecha, IconoChevronIzquierda } from '../comp
 const TIPOS: TipoCita[] = ['CONTACTO', 'ATENCION'];
 
 // Catálogos de casos para el localizador y los filtros del calendario (D-72).
-const TIPOS_CASO: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION'];
+const TIPOS_CASO: TipoCaso[] = ['AVERIA', 'REPARACION', 'CONSTRUCCION', 'MANTENIMIENTO'];
 const CLASES_CASO: CategoriaCaso[] = ['RESIDENCIAL', 'EMPRESA', 'REFERIDO', 'GOBIERNO'];
 
 const ESTADOS: EstadoCita[] = [

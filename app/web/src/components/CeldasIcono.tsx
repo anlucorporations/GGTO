@@ -14,6 +14,7 @@
  */
 import type { ComponentType, SVGProps } from 'react';
 import {
+  IconoActividad,
   IconoAveria,
   IconoConstruccion,
   IconoEmpresa,
@@ -82,6 +83,13 @@ export function aspectoTipoCaso(valor: string): AspectoIcono | null {
         titulo: 'Tipo: construcción',
         texto: 'Construcción',
         Icono: IconoConstruccion,
+      };
+    case 'MANTENIMIENTO':
+      return {
+        clase: 'ci-tipo-MANTENIMIENTO',
+        titulo: 'Tipo: mantenimiento',
+        texto: 'Mantenimiento',
+        Icono: IconoActividad,
       };
     default:
       return null;

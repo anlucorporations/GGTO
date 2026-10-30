@@ -74,6 +74,7 @@ TIPOS_DISTRIBUCION = (
     "COMUNES",
     "ESPECIALES_REPARACION",
     "ESPECIALES_CONSTRUCCION",
+    "MANTENIMIENTO",
     "ESPECIALES_GOBIERNO",
     "MASIVAS",
 )
@@ -81,11 +82,14 @@ ETIQUETAS_DISTRIBUCION = {
     "COMUNES": "Comunes",
     "ESPECIALES_REPARACION": "Especiales Reparación",
     "ESPECIALES_CONSTRUCCION": "Especiales Construcción",
+    "MANTENIMIENTO": "Mantenimiento",
     "ESPECIALES_GOBIERNO": "Especiales Gobierno",
     "MASIVAS": "Masivas",
 }
-#: D-113 · D-114: selección predeterminada (Comunes y Especiales Reparación).
-TIPOS_DISTRIBUCION_POR_DEFECTO = ("COMUNES", "ESPECIALES_REPARACION")
+#: D-113 · D-114: selección predeterminada (Comunes, Especiales Reparación y el
+#: Mantenimiento de D-161: los casos «JUSTIFICATIVO» reclasificados entran por
+#: defecto al despacho, agrupados por sector).
+TIPOS_DISTRIBUCION_POR_DEFECTO = ("COMUNES", "ESPECIALES_REPARACION", "MANTENIMIENTO")
 
 
 @dataclass
@@ -162,6 +166,11 @@ class Propuesta:
 
 
 def _tipo_asignacion(caso: Caso) -> str:
+    # D-161: el mantenimiento (casos «JUSTIFICATIVO» de las masivas) es un
+    # bloque propio; debe resolverse antes que la categoría REFERIDO, que es la
+    # categoría nativa de esos casos.
+    if caso.tipo_caso == "MANTENIMIENTO":
+        return "MANTENIMIENTO"
     if caso.tipo_caso == "CONSTRUCCION":
         return "CONSTRUCCION"
     if caso.categoria == "REFERIDO":
@@ -190,6 +199,9 @@ def tipos_distribucion(caso: Caso) -> tuple[str, ...]:
             else "ESPECIALES_REPARACION"
         )
         return (actividad, "ESPECIALES_GOBIERNO")
+    # D-161: el mantenimiento se reparte por sí mismo (agrupado por sector).
+    if caso.tipo_caso == "MANTENIMIENTO":
+        return ("MANTENIMIENTO",)
     if caso.tipo_caso == "CONSTRUCCION":
         return ("ESPECIALES_CONSTRUCCION",) if es_especial(caso) else ("COMUNES",)
     if caso.categoria in ("REFERIDO", "EMPRESA"):
@@ -833,9 +845,18 @@ def construir_propuesta(
     total_asignados = sum(g.total for g in resultado)
     referidos = sum(1 for g in resultado for c in g.casos if c.tipo_asignacion == "REFERIDO")
     empresas = sum(1 for g in resultado for c in g.casos if c.tipo_asignacion == "EMPRESA")
+    # D-161: mantenimientos repartidos (agrupados por sector).
+    mantenimientos = sum(
+        1 for g in resultado for c in g.casos if c.tipo_asignacion == "MANTENIMIENTO"
+    )
     citados = sum(1 for g in resultado for c in g.casos if c.es_cita)
     especiales_asignados = sum(1 for g in resultado for c in g.casos if c.especial)
-    referidos_disponibles = sum(1 for c in casos if c.categoria == "REFERIDO")
+    # D-161: los mantenimientos no son referidos aunque su categoría sea la
+    # misma (la categoría es herencia del caso «JUSTIFICATIVO» original).
+    referidos_disponibles = sum(
+        1 for c in casos
+        if c.categoria == "REFERIDO" and c.tipo_caso != "MANTENIMIENTO"
+    )
     empresas_disponibles = sum(1 for c in casos if c.categoria in ("EMPRESA", "GOBIERNO"))
     sectores_sin_cuadrilla = sorted({
         c.id_sector for c in sin_asignar if c.id_sector is not None
@@ -858,6 +879,9 @@ def construir_propuesta(
             "min_empresas": MIN_EMPRESAS,
             "cumple_min_empresas": empresas >= min(MIN_EMPRESAS, empresas_disponibles),
             "especiales_asignados": especiales_asignados,
+            # D-161: el mantenimiento va a la cuadrilla de su sector (agrupado
+            # por sector); no hay bloque único como la construcción.
+            "mantenimientos_asignados": mantenimientos,
             "construccion_cuadrilla": construccion_cuadrilla,
             "construccion_id_cuadrilla": construccion_id,
             "construccion_total": len(construcciones),

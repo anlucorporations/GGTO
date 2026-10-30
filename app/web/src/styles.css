@@ -2343,6 +2343,9 @@ input[type='file'] {
 .ci-tipo-CONSTRUCCION svg {
   color: #5b21b6;
 }
+.ci-tipo-MANTENIMIENTO svg {
+  color: #0a7d5a;
+}
 .ci-clase-RESIDENCIAL svg {
   color: var(--verde);
 }
@@ -3784,6 +3787,11 @@ tbody tr:hover {
 
 .caso-tipo-construccion {
   color: #6a13a1;
+}
+
+/* D-161: mantenimiento de masivas (JUSTIFICATIVO reclasificado). */
+.caso-tipo-mantenimiento {
+  color: #0a7d5a;
 }
 
 .caso-tipo-otros {
