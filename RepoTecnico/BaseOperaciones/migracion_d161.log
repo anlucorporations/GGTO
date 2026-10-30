@@ -27,3 +27,23 @@ DETAIL:  Key (usuario)=(d161-migracion) is not present in table "usuario".
 [2026-10-30T15:39:06+00:00]   · ampliar el CHECK de despacho_caso.tipo_asignacion con MANTENIMIENTO
 [2026-10-30T15:39:06+00:00]   · reclasificar 24 caso(s) JUSTIFICATIVO pendientes a MANTENIMIENTO
 [2026-10-30T15:39:06+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-30T22:13:12+00:00] ==============================================================================
+[2026-10-30T22:13:12+00:00] MIGRACIÓN D-161 (casos JUSTIFICATIVO → MANTENIMIENTO)
+[2026-10-30T22:13:12+00:00] modo=SIMULACIÓN
+[2026-10-30T22:13:12+00:00] estado actual: {'catalogo_mantenimiento': 0, 'catalogo_despacho': 0, 'casos_reclasificados': 0, 'pendientes_reclasificacion': 24, 'sin_sector': 0}
+[2026-10-30T22:13:12+00:00] Cambios pendientes:
+[2026-10-30T22:13:12+00:00]   · ampliar el CHECK de caso.tipo_caso con MANTENIMIENTO
+[2026-10-30T22:13:12+00:00]   · ampliar el CHECK de despacho_caso.tipo_asignacion con MANTENIMIENTO
+[2026-10-30T22:13:12+00:00]   · reclasificar 24 caso(s) JUSTIFICATIVO pendientes a MANTENIMIENTO
+[2026-10-30T22:13:12+00:00] (simulación) Ejecuta con --aplicar para escribir.
+[2026-10-30T22:13:17+00:00] ==============================================================================
+[2026-10-30T22:13:17+00:00] MIGRACIÓN D-161 (casos JUSTIFICATIVO → MANTENIMIENTO)
+[2026-10-30T22:13:17+00:00] modo=APLICAR
+[2026-10-30T22:13:17+00:00] estado actual: {'catalogo_mantenimiento': 0, 'catalogo_despacho': 0, 'casos_reclasificados': 0, 'pendientes_reclasificacion': 24, 'sin_sector': 0}
+[2026-10-30T22:13:17+00:00] Cambios pendientes:
+[2026-10-30T22:13:17+00:00]   · ampliar el CHECK de caso.tipo_caso con MANTENIMIENTO
+[2026-10-30T22:13:17+00:00]   · ampliar el CHECK de despacho_caso.tipo_asignacion con MANTENIMIENTO
+[2026-10-30T22:13:17+00:00]   · reclasificar 24 caso(s) JUSTIFICATIVO pendientes a MANTENIMIENTO
+[2026-10-30T22:13:18+00:00] dueño de la bitácora (FK usuario.p00): SUPER «123456»
+[2026-10-30T22:13:18+00:00] verificación post-migración: {'catalogo_mantenimiento': 1, 'catalogo_despacho': 1, 'casos_reclasificados': 24, 'pendientes_reclasificacion': 0, 'sin_sector': 8}
+[2026-10-30T22:13:18+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
