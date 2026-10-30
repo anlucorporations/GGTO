@@ -196,10 +196,16 @@ class SectorConstruccionOut(BaseModel):
 
 
 class ConstruccionProcesoOut(BaseModel):
-    """Bloque de CONSTRUCCIÓN del proceso de despacho (D-143).
+    """Bloque de CONSTRUCCIÓN del proceso de despacho (D-143 · D-162).
 
     La construcción se procesa **aparte** del resto: el formulario muestra sus
     sectores con las cantidades y elige la cuadrilla que la atiende (una sola).
+
+    D-162 · punto 2: el bloque ya no es solo el tipo CONSTRUCCIÓN —suma REFERIDOS,
+    EMPRESAS y GOBIERNOS— y la cuadrilla que lo atiende queda **exclusiva**. Estos
+    tres campos informan justo eso al supervisor antes de procesar. Deben estar
+    declarados aquí: Pydantic descarta las claves del diccionario que no formen
+    parte del modelo.
     """
 
     total: int = 0
@@ -208,6 +214,12 @@ class ConstruccionProcesoOut(BaseModel):
     cuadrilla_codigo: str | None = None
     cuadrilla_nombre: str | None = None
     automatica: bool = True
+    #: D-162: total del bloque completo (CONSTRUCCIÓN + REFERIDOS + EMPRESAS).
+    bloque_total: int = 0
+    #: D-162: la cuadrilla del bloque no recibe reparaciones ni mantenimiento.
+    excluye_reparaciones: bool = False
+    #: D-162: casos de reparación/mantenimiento desalojados a otra cuadrilla.
+    desalojados: int = 0
 
 
 class DiaConstruccionOut(BaseModel):

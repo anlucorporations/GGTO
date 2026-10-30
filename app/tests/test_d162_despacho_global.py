@@ -311,6 +311,15 @@ def test_las_reglas_del_bloque_se_informan_en_la_propuesta(client, entorno):
     assert reglas["masivas_prioritarias"] is True
     assert reglas["mantenimientos_por_sector"] is True
 
+    # Los mismos datos viajan en el bloque `construccion` del formulario: las
+    # claves deben estar **declaradas** en `ConstruccionProcesoOut` o Pydantic
+    # las descarta al serializar (defecto detectado en el humo de v90).
+    construccion = _proceso(client, entorno)["construccion"]
+    assert construccion["bloque_total"] == 4
+    assert construccion["total"] == 1
+    assert construccion["excluye_reparaciones"] is True
+    assert construccion["desalojados"] == 2
+
 
 # --------------------------------------------------------------------------- #
 # Punto 3 · mantenimiento por sector
