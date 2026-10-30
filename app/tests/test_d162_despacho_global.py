@@ -407,6 +407,17 @@ def test_el_reporte_del_dia_desglosa_el_despacho_en_tres_columnas(
     for averia, estado in estados.items():
         caso = db_session.scalar(select(Caso).where(Caso.id_averia == averia))
         caso.estado_actual = estado
+
+    # D-162 · punto 7: una jornada despachada **antes** de D-161 conserva
+    # `despacho_caso.tipo_asignacion = CONSTRUCCION` en los «JUSTIFICATIVO» ya
+    # asignados. El reporte debe contarlos por su categoría (Comunes si son
+    # residenciales) para que la reconciliación cuadre con el total.
+    legacy = db_session.scalar(
+        select(DespachoCasos)
+        .join(Caso, Caso.id_caso == DespachoCasos.id_caso)
+        .where(Caso.id_averia == "TSTD162-F0")
+    )
+    legacy.tipo_asignacion = "CONSTRUCCION"
     db_session.commit()
 
     r = client.get(f"{BASE}/reporte/produccion", headers=entorno["headers"])
@@ -415,8 +426,10 @@ def test_el_reporte_del_dia_desglosa_el_despacho_en_tres_columnas(
     totales = reporte["totales"]
 
     comunes = totales["columnas"]["comunes"]
-    assert comunes["asignados"] == 2
-    assert comunes["asignados_reparacion"] == 2
+    # 2 comunes + el «JUSTIFICATIVO» legacy (CONSTRUCCION en el despacho, pero
+    # residencial por categoría) = 3 asignados de reparación.
+    assert comunes["asignados"] == 3
+    assert comunes["asignados_reparacion"] == 3
     assert comunes["asignados_construccion"] == 0
     assert comunes["cerrados"] == 1 and comunes["cerrados_reparacion"] == 1
     assert comunes["citado"] == 1 and comunes["citado_reparacion"] == 1
@@ -435,7 +448,8 @@ def test_el_reporte_del_dia_desglosa_el_despacho_en_tres_columnas(
 
     # Mantenimiento y masivas se informan aparte y el total cuadra.
     assert totales["mantenimientos"] == 1
-    assert totales["casos_masiva"] == 2
+    # Solo el caso masivo que conserva `tipo_asignacion = FALLA_MASIVA`.
+    assert totales["casos_masiva"] == 1
     assert totales["masivas"] == 1  # una falla masiva cubierta
     suma_columnas = sum(
         totales["columnas"][clave]["asignados"]

@@ -712,10 +712,15 @@ def _columna_de(caso, tipo_asignacion: str | None) -> str | None:
     * **Referidos**: los proyectos REFERIDO (construcción o reparación).
     * **Empresa**: los EMPRESA/GOBIERNO (el Gobierno se informa aquí).
     * `MANTENIMIENTO` y `FALLA_MASIVA` mantienen su conteo aparte (ya existe).
+
+    Un caso perteneciente a una falla masiva **sí** puede caer en una columna si
+    su `despacho_caso.tipo_asignacion` es de reparación/construcción (jornadas
+    despachadas antes de D-161, cuando los «JUSTIFICATIVO» eran CONSTRUCCION):
+    se informa por su categoría para que la reconciliación de las 3 columnas
+    cuadre con el total. Los casos con `tipo_asignacion = FALLA_MASIVA` siguen
+    contándose aparte en `casos_masiva`.
     """
     if tipo_asignacion in ("REPARACION", "CONSTRUCCION"):
-        if caso.es_falla_masiva:
-            return None
         if caso.categoria == "RESIDENCIAL":
             return "comunes"
         if caso.categoria == "REFERIDO":
