@@ -225,11 +225,19 @@ def test_reparto_por_sector_asignado(client, entorno):
     p = _asignar(client, entorno, {"Alfa": "TCD1", "Beta": "TCD2"})
     grupos = {g["codigo"]: {c["id_averia"] for c in g["casos"]} for g in p["grupos"]}
 
-    # Cada cuadrilla recibe los casos de su sector (la construcción queda en Alfa)
-    assert grupos["TCD1"] == {"TSTD-A0", "TSTD-A1", "TSTD-A2", "TSTD-A3", "TSTD-E0", "TSTD-C0"}
-    assert grupos["TCD2"] == {"TSTD-B0", "TSTD-B1", "TSTD-R0", "TSTD-R1"}
+    # D-162 · punto 2: el bloque de construcciones (CONSTRUCCION + REFERIDO +
+    # EMPRESA) va entero a una cuadrilla y esa cuadrilla queda **exclusiva**; sus
+    # reparaciones se desalojan a la otra. Aquí la cuadrilla de construcción es
+    # TCD1 (la que más trabajo tenía en los sectores de la construcción), así que
+    # TCD2 atiende las reparaciones de Alfa y de Beta.
+    assert grupos["TCD1"] == {"TSTD-E0", "TSTD-C0", "TSTD-R0", "TSTD-R1"}
+    assert grupos["TCD2"] == {
+        "TSTD-A0", "TSTD-A1", "TSTD-A2", "TSTD-A3", "TSTD-B0", "TSTD-B1",
+    }
     assert p["resumen"]["asignados"] == 10
-    assert p["resumen"]["por_cuadrilla"] == {"TCD1": 6, "TCD2": 4}
+    assert p["resumen"]["por_cuadrilla"] == {"TCD1": 4, "TCD2": 6}
+    assert p["reglas"]["construccion_cuadrilla"] == "TCD1"
+    assert p["reglas"]["construccion_cuadrilla_exclusiva"] is True
 
 
 def test_sector_sin_cuadrilla_queda_sin_asignar(client, entorno):

@@ -57,6 +57,17 @@ router = APIRouter(prefix="/api/v1/despachos", tags=["despacho"])
 
 #: D-143: días que cubre el seguimiento de construcciones si no se pide otro.
 DIAS_SEGUIMIENTO = 30
+
+#: D-162 · punto 7: contadores de una columna del despacho (Comunes/Referidos/
+#: Empresa): asignados, cerrados, enrutado, citado y diferidos, con el desglose
+#: Reparaciones vs Construcción (por el tipo del caso).
+_COLUMNA_VACIA: dict[str, int] = {
+    "asignados": 0, "asignados_reparacion": 0, "asignados_construccion": 0,
+    "cerrados": 0, "cerrados_reparacion": 0, "cerrados_construccion": 0,
+    "enrutado": 0,
+    "citado": 0, "citado_reparacion": 0, "citado_construccion": 0,
+    "diferidos": 0, "diferidos_reparacion": 0, "diferidos_construccion": 0,
+}
 _escritura = require_roles("ADMIN", "SUPERVISOR")
 #: D-146: el ranking es una métrica de gestión, no de campo.
 _lectura_gestion = require_roles("ADMIN", "SUPERVISOR", "COORDINADOR")
@@ -601,6 +612,19 @@ def imprimible(
     ).all()
     sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
 
+    # D-162 · punto 5: el imprimible incluye **todos** los casos asignados a la
+    # cuadrilla (comunes, mantenimiento, construcción, especiales y masivas) y
+    # resume el desglose por tipo en la cabecera, para que el papel coincida con
+    # el cuadro de resumen del despacho.
+    resumen_tipos: dict[str, int] = {}
+    for dc, _caso in filas:
+        clave_tipo = dc.tipo_asignacion or "SIN_TIPO"
+        resumen_tipos[clave_tipo] = resumen_tipos.get(clave_tipo, 0) + 1
+    resumen_html = " · ".join(
+        f"<strong>{escapar(clave, '')}:</strong> {total}"
+        for clave, total in sorted(resumen_tipos.items())
+    )
+
     filas_html = "".join(
         f"<tr><td>{escapar(dc.orden_visita, '')}</td><td>{escapar(c.id_averia, '')}</td>"
         f"<td>{escapar(sectores.get(dc.id_sector) if dc.id_sector else None)}</td>"
@@ -637,6 +661,9 @@ def imprimible(
     — {escapar(cuadrilla.nombre if cuadrilla else '', '')} ·
     <strong>Estado:</strong> {escapar(despacho.estado, '')} · <strong>Casos:</strong> {len(filas)}
   </div>
+  <div class="sub">
+    <strong>Desglose por tipo:</strong> {resumen_html or 'sin casos'}
+  </div>
   <table>
     <thead><tr><th>#</th><th>ID avería</th><th>Sector</th><th>Dirección</th><th>Cliente</th>
     <th>Identificador de pago (70*)</th><th>Contacto</th><th>Tipo</th><th>Problema</th>
@@ -651,6 +678,58 @@ def imprimible(
 # --------------------------------------------------------------------------- #
 # Reporte de producción (RF-27)
 # --------------------------------------------------------------------------- #
+def _columnas_vacias() -> dict:
+    return {"comunes": dict(_COLUMNA_VACIA), "referidos": dict(_COLUMNA_VACIA),
+            "empresa": dict(_COLUMNA_VACIA)}
+
+
+def _fila_vacia(codigo=None, nombre=None, id_cuadrilla=None) -> dict:
+    """Fila de cuadrilla (o de totales) vacía del reporte del día
+    (D-99/D-143/D-161/D-162)."""
+    return {
+        "cuadrilla": codigo, "nombre": nombre, "id_cuadrilla": id_cuadrilla,
+        "asignados": 0, "abiertos": 0,
+        "cerrados": 0, "enrutado": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
+        "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": [],
+        "construcciones": 0, "construcciones_cerradas": 0,
+        "mantenimientos": 0, "mantenimientos_cerradas": 0,
+        # D-162 · punto 7: casos del bloque masiva (se informan aparte de las
+        # tres columnas, igual que el mantenimiento, para que el total cuadre).
+        "casos_masiva": 0,
+        # D-162 · punto 7: métricas del despacho en 3 columnas — Comunes (la
+        # reparación diaria de la ingesta y su construcción), Referidos y
+        # Empresa (el Gobierno se informa como Empresa). Cada columna desglosa
+        # Reparaciones vs Construcción por el tipo del caso.
+        "columnas": _columnas_vacias(),
+    }
+
+
+def _columna_de(caso, tipo_asignacion: str | None) -> str | None:
+    """Columna del despacho a la que pertenece el caso (D-162 · punto 7).
+
+    * **Comunes**: la reparación de la ingesta diaria y la construcción
+      común de la residencial (`REPARACION`/`CONSTRUCCION` + `RESIDENCIAL`).
+    * **Referidos**: los proyectos REFERIDO (construcción o reparación).
+    * **Empresa**: los EMPRESA/GOBIERNO (el Gobierno se informa aquí).
+    * `MANTENIMIENTO` y `FALLA_MASIVA` mantienen su conteo aparte (ya existe).
+    """
+    if tipo_asignacion in ("REPARACION", "CONSTRUCCION"):
+        if caso.es_falla_masiva:
+            return None
+        if caso.categoria == "RESIDENCIAL":
+            return "comunes"
+        if caso.categoria == "REFERIDO":
+            return "referidos"
+        if caso.categoria in ("EMPRESA", "GOBIERNO"):
+            return "empresa"
+        return None
+    if tipo_asignacion == "REFERIDO":
+        return "referidos"
+    if tipo_asignacion == "EMPRESA":
+        return "empresa"
+    return None
+
+
 def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
     """Reporte de producción del día (RF-27 · RF-70).
 
@@ -679,22 +758,18 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
             masivas_por_cuadrilla.setdefault(falla.id_cuadrilla, []).append(falla.id_falla)
 
     por_cuadrilla: dict[str, dict] = {}
-    totales = {"asignados": 0, "abiertos": 0, "cerrados": 0, "enrutado": 0, "citados": 0,
-               "diferidos": 0, "gestionados": 0, "referidos": 0, "empresas": 0,
-               "masivas": 0,
-               # D-143: la construcción se mide aparte (asignadas y **realizadas**).
-               "construcciones": 0, "construcciones_cerradas": 0,
-               # D-161: mantenimiento de masivas (JUSTIFICATIVO reclasificado).
-               "mantenimientos": 0, "mantenimientos_cerradas": 0}
+    totales = _fila_vacia()
+    totales["cuadrilla"] = None
+    totales.pop("nombre", None)
+    # D-162 · punto 5: en los totales `masivas` es un **contador** (en la fila
+    # de cada cuadrilla es la lista de fallas que la cubren). Sin esta línea el
+    # acumulado arrancaba como lista y el `+=` lanzaba TypeError.
+    totales["masivas"] = 0
+
     for _despacho, cuadrilla, dc, caso in filas:
         fila = por_cuadrilla.setdefault(
-            cuadrilla.codigo,
-            {"cuadrilla": cuadrilla.codigo, "nombre": cuadrilla.nombre, "id_cuadrilla":
-             cuadrilla.id_cuadrilla, "asignados": 0, "abiertos": 0,
-             "cerrados": 0, "enrutado": 0, "citados": 0, "diferidos": 0, "gestionados": 0,
-             "referidos": 0, "empresas": 0, "es_masiva": False, "masivas": [],
-             "construcciones": 0, "construcciones_cerradas": 0,
-             "mantenimientos": 0, "mantenimientos_cerradas": 0},
+            cuadrilla.codigo, _fila_vacia(cuadrilla.codigo, cuadrilla.nombre,
+                                          cuadrilla.id_cuadrilla),
         )
         fila["asignados"] += 1
         totales["asignados"] += 1
@@ -714,6 +789,26 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         if diferido:
             fila["diferidos"] += 1
             totales["diferidos"] += 1
+        # D-162 · punto 7: cruce despacho frente a desenlace en 3 columnas. El
+        # desglose Reparaciones/Construcción sale del tipo del caso: todo lo que
+        # no es `CONSTRUCCION` cuenta como reparación.
+        columna = _columna_de(caso, dc.tipo_asignacion)
+        if columna is not None:
+            sub = "construccion" if caso.tipo_caso == "CONSTRUCCION" else "reparacion"
+            for destino in (fila["columnas"][columna], totales["columnas"][columna]):
+                destino["asignados"] += 1
+                destino[f"asignados_{sub}"] += 1
+                if cerrado:
+                    destino["cerrados"] += 1
+                    destino[f"cerrados_{sub}"] += 1
+                if enrutado:
+                    destino["enrutado"] += 1
+                if citado:
+                    destino["citado"] += 1
+                    destino[f"citado_{sub}"] += 1
+                if diferido:
+                    destino["diferidos"] += 1
+                    destino[f"diferidos_{sub}"] += 1
         # ABIERTOS = asignados sin desenlace de la jornada. Se cuenta por caso en
         # lugar de restar, para que un caso con dos marcas no descuadre el aro.
         if not (cerrado or enrutado or citado or diferido):
@@ -747,6 +842,8 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         # de la cuadrilla.
         if dc.tipo_asignacion == "FALLA_MASIVA":
             fila["es_masiva"] = True
+            fila["casos_masiva"] += 1
+            totales["casos_masiva"] += 1
 
     for fila in por_cuadrilla.values():
         ids = masivas_por_cuadrilla.get(fila["id_cuadrilla"] or 0)

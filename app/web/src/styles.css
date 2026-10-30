@@ -3852,3 +3852,138 @@ tbody tr:hover {
   color: #b3261e;
   font-weight: 700;
 }
+
+/* ==========================================================================
+   D-162 · Despacho: métricas del día en 3 columnas, aparte de mantenimiento y
+   masivas, línea de reconciliación y bloque de construcciones del proceso
+   ========================================================================== */
+
+/* D-162 · punto 7: bloque de una cuadrilla (o de los totales) con sus 3 columnas. */
+.columna-grupo {
+  margin-bottom: 16px;
+}
+
+.columna-grupo-cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+/* Las 3 columnas del despacho: Comunes · Referidos · Empresa. */
+.rejilla-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.columna-despacho {
+  border: 1px solid var(--gris-borde, #d8dee7);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.columna-despacho-titulo {
+  margin: 0 0 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--gris-borde, #d8dee7);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--azul, #1565c0);
+}
+
+.columna-despacho-filas {
+  display: flex;
+  flex-direction: column;
+}
+
+.columna-despacho-fila {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 1px 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #e6ebf3;
+}
+
+.columna-despacho-fila:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.columna-despacho-etiqueta {
+  font-size: 12px;
+  color: var(--gris-texto, #5b6b7c);
+}
+
+.columna-despacho-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--texto, #1f2937);
+  font-variant-numeric: tabular-nums;
+}
+
+.columna-despacho-detalle {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--gris, #5b6b7c);
+  font-variant-numeric: tabular-nums;
+}
+
+/* D-162 · punto 7: la suma de las 3 columnas + mantenimiento + masivas debe
+   cuadrar con los casos asignados; el color avisa si no. */
+.linea-reconciliacion {
+  margin: 12px 0 4px;
+  padding: 9px 12px;
+  border: 1px solid var(--gris-borde, #d8dee7);
+  border-left: 4px solid var(--gris-borde, #d8dee7);
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.linea-reconciliacion-ok {
+  border-left-color: var(--verde, #1f7a4d);
+  background: #f2faf5;
+}
+
+.linea-reconciliacion-alerta {
+  border-left-color: var(--rojo, #b3261e);
+  background: #fdf3f2;
+}
+
+/* D-162 · punto 5: los seis tipos del despacho en la celda Casos. */
+.caso-tipo-masiva {
+  color: #b26a00;
+}
+
+.caso-tipo-empresa {
+  color: #475569;
+}
+
+.caso-tipo-vacio {
+  opacity: 0.42;
+}
+
+/* D-162 · punto 2: bloque de construcciones del proceso de despacho. */
+.panel-construccion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid var(--gris-borde, #d8dee7);
+  border-radius: var(--radio, 10px);
+  background: #fbfcfe;
+}
+
+.panel-construccion .tabla-envoltura {
+  width: 100%;
+  margin-bottom: 0;
+}
+

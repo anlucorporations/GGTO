@@ -721,6 +721,11 @@ export interface SectorConstruccionOut {
  *
  * La construcción se asigna completa a una cuadrilla; `por_sector` es el cuadro
  * de sectores con sus cantidades que el usuario revisa antes de procesar.
+ *
+ * D-162 · punto 2: el «bloque de construcciones» ya no es solo el tipo
+ * CONSTRUCCIÓN —suma también REFERIDOS y EMPRESAS— y la cuadrilla que lo atiende
+ * queda **exclusiva** (no recibe reparaciones ni mantenimiento). Los campos
+ * nuevos informan justo eso al supervisor antes de procesar.
  */
 export interface ConstruccionProcesoOut {
   total: number;
@@ -729,6 +734,34 @@ export interface ConstruccionProcesoOut {
   cuadrilla_codigo: string | null;
   cuadrilla_nombre: string | null;
   automatica: boolean;
+  /** D-162 · punto 2: total del bloque completo (CONSTRUCCIÓN + REFERIDOS + EMPRESAS). */
+  bloque_total: number;
+  /** D-162 · punto 2: la cuadrilla del bloque no recibe reparaciones ni mantenimiento. */
+  excluye_reparaciones: boolean;
+  /** D-162 · punto 2: casos desalojados a otra cuadrilla por la exclusividad. */
+  desalojados: number;
+}
+
+/**
+ * D-162 · puntos 3 y 4: reglas del proceso de despacho que la web explica al
+ * supervisor.
+ *
+ * El índice abierto conserva el resto de claves que calcula el servidor
+ * (`citados_incluidos`, `construccion_en_una_sola`, …) sin perder el tipado de
+ * las dos reglas nuevas que pide el incremento.
+ */
+export interface ReglasProcesoDespacho {
+  /** D-162 · punto 4: las averías masivas van primero en el orden de visita. */
+  masivas_prioritarias?: boolean;
+  /** D-162 · punto 3: el mantenimiento se reparte por sector, sin bloque único. */
+  mantenimientos_por_sector?: boolean;
+  /** D-162 · punto 2: la cuadrilla del bloque de construcciones queda exclusiva. */
+  construccion_cuadrilla_exclusiva?: boolean | null;
+  /** D-162 · punto 2: casos de reparación/mantenimiento desalojados de esa cuadrilla. */
+  construccion_desalojados?: number;
+  /** D-162 · punto 2: total del bloque de construcciones propuesto. */
+  construccion_bloque_total?: number;
+  [clave: string]: unknown;
 }
 
 /** D-143: un día del seguimiento global de construcciones. */
@@ -773,7 +806,7 @@ export interface ProcesoDespachoOut {
   primera_vez: boolean;
   /** D-99 (RF-68): `true` si la jornada ya tiene despachos (es un reproceso). */
   reproceso: boolean;
-  /** D-113 · D-114: checklist de tipos (Comunes y Especiales Reparación por defecto). */
+  /** D-113 · D-114 · D-162: checklist de tipos (arranca con los seis tipos del día). */
   tipos?: TipoDespachoOut[];
   masivas: MasivaProcesoOut[];
   universo: UniversoOut;
@@ -782,7 +815,8 @@ export interface ProcesoDespachoOut {
   asignacion: AsignacionBloque[];
   grupos: GrupoCuadrillaOut[];
   sin_asignar: CasoAsignadoOut[];
-  reglas: Record<string, unknown>;
+  /** D-162: además de las claves abiertas, tipa las reglas que muestra la web. */
+  reglas: ReglasProcesoDespacho;
   resumen: Record<string, unknown>;
   /** D-143: bloque aparte de construcción (sectores, cantidades y cuadrilla). */
   construccion?: ConstruccionProcesoOut;
@@ -933,11 +967,75 @@ export interface RankingEfectividadOut {
   ranking: EfectividadCuadrillaOut[];
 }
 
+/**
+ * D-162 · punto 7: contadores de **una** columna del despacho del día
+ * (Comunes, Referidos o Empresa).
+ *
+ * Asignados, Cerrados, Citado y Diferidos se desglosan en Reparaciones y
+ * Construcción por el tipo del caso; Enrutado va sin desglose (igual que en el
+ * backend).
+ */
+export interface ColumnaProduccionOut {
+  asignados: number;
+  asignados_reparacion: number;
+  asignados_construccion: number;
+  cerrados: number;
+  cerrados_reparacion: number;
+  cerrados_construccion: number;
+  enrutado: number;
+  citado: number;
+  citado_reparacion: number;
+  citado_construccion: number;
+  diferidos: number;
+  diferidos_reparacion: number;
+  diferidos_construccion: number;
+}
+
+/** D-162 · punto 7: las tres columnas del despacho del día. */
+export interface ColumnasProduccionOut {
+  comunes: ColumnaProduccionOut;
+  referidos: ColumnaProduccionOut;
+  /** El Gobierno se informa como Empresa (contrato del backend). */
+  empresa: ColumnaProduccionOut;
+}
+
+/**
+ * D-162 · punto 7: totales del reporte del día.
+ *
+ * En los totales no hay cuadrilla (`cuadrilla`/`id_cuadrilla` llegan `null`) y
+ * `masivas` es un **contador de fallas cubiertas**: en la fila de cada cuadrilla
+ * ese mismo campo es la lista de `id_falla`.
+ */
+export interface TotalesProduccionOut {
+  cuadrilla: string | null;
+  id_cuadrilla: number | null;
+  asignados: number;
+  abiertos: number;
+  cerrados: number;
+  enrutado: number;
+  citados: number;
+  diferidos: number;
+  gestionados: number;
+  referidos: number;
+  empresas: number;
+  es_masiva: boolean;
+  /** D-162: fallas masivas cubiertas (contador; en la fila es `number[]`). */
+  masivas: number;
+  construcciones: number;
+  construcciones_cerradas: number;
+  /** D-161 · D-162: mantenimiento asignado y cerrado (se informa aparte). */
+  mantenimientos: number;
+  mantenimientos_cerradas: number;
+  /** D-162 · punto 7: casos del bloque masiva (aparte de las 3 columnas). */
+  casos_masiva: number;
+  columnas: ColumnasProduccionOut;
+}
+
 export interface ReporteProduccionOut {
   fecha: string;
   id_central: number;
   por_cuadrilla: FilaProduccionOut[];
-  totales: Record<string, number>;
+  totales: TotalesProduccionOut;
 }
 
 /**
@@ -964,8 +1062,15 @@ export interface FilaProduccionOut {
   construcciones?: number;
   /** D-143: construcciones de la cuadrilla que quedaron cerradas (realizadas). */
   construcciones_cerradas?: number;
+  /** D-161 · D-162: mantenimiento asignado y cerrado de la cuadrilla. */
+  mantenimientos: number;
+  mantenimientos_cerradas: number;
   es_masiva: boolean;
   masivas: number[];
+  /** D-162 · punto 7: casos del bloque masiva asignados a la cuadrilla. */
+  casos_masiva: number;
+  /** D-162 · punto 7: métricas de la cuadrilla en las 3 columnas del despacho. */
+  columnas: ColumnasProduccionOut;
 }
 
 /** Resultado del corte de jornada del despacho (D-99 · RF-65). */

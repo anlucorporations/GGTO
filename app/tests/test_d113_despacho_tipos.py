@@ -8,8 +8,8 @@ Cubren los tres puntos de la petición sobre el **procesamiento del despacho**:
 2. que la **cuadrilla de una falla masiva** se pueda cambiar desde el formulario
    de proceso y que sus casos se despachen a esa cuadrilla;
 3. que el **checklist de tipos** (Comunes, Especiales Reparación, Especiales
-   Construcción, Especiales Gobierno y Masivas) limite lo que se distribuye, con
-   **Comunes y Especiales Reparación** por defecto.
+   Construcción, Especiales Gobierno y Masivas) limite lo que se distribuye.
+   (D-162 cambió la selección predeterminada a **todos** los tipos.)
 
 Los identificadores de prueba empiezan por `TST`/`TCD`/`TSD` para que el aseo de
 `conftest` los barra entre pruebas.
@@ -257,10 +257,17 @@ def test_el_proceso_expone_el_checklist_con_el_nuevo_catalogo(client, entorno):
     assert tipos["MANTENIMIENTO"]["total"] == 0
     assert tipos["ESPECIALES_GOBIERNO"]["total"] == 0
     assert tipos["MASIVAS"]["total"] == 2
+    # D-162: el formulario arranca con **todo** el universo marcado (Comunes,
+    # especiales de reparación y construcción, mantenimiento, gobierno y
+    # masivas). Antes de D-162 solo venían Comunes, Especiales Reparación y
+    # Mantenimiento.
     assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == [
         "COMUNES",
         "ESPECIALES_REPARACION",
+        "ESPECIALES_CONSTRUCCION",
         "MANTENIMIENTO",
+        "ESPECIALES_GOBIERNO",
+        "MASIVAS",
     ]
 
     assert p["universo"]["por_tipo"] == {
@@ -323,20 +330,26 @@ def test_el_proceso_no_reofrece_los_casos_de_un_despacho_publicado(client, entor
 
     El borrador del día sí se reofrece (se reemplaza al reprocesar), pero una
     jornada ya publicada no se reprocesa: sus casos no aparecen como disponibles.
+    D-162: publicar **un** despacho ya no basta para ocultar los comunes, porque
+    el bloque de construcciones puede haber movido esos casos a otra cuadrilla;
+    por eso se publica la jornada completa y se comprueba que lo no despachado
+    (la construcción y las masivas, que quedaron fuera del checklist) sigue
+    disponible.
     """
     _asignar(client, entorno, {"Alfa": "TCD13A", "Beta": "TCD13B", "Gamma": "TCD13A"})
     creados = _procesar(client, entorno, HOY, tipos=["COMUNES", "ESPECIALES_REPARACION"])
-    id_cuadrilla_a = _codigo_a_id(_proceso(client, entorno), "TCD13A")
-    despacho_a = next(d for d in creados if d["id_cuadrilla"] == id_cuadrilla_a)
-    assert client.patch(
-        f"{BASE}/{despacho_a['id_despacho']}", json={"estado": "PUBLICADO"},
-        headers=entorno["headers"],
-    ).status_code == 200
+    for despacho in creados:
+        assert client.patch(
+            f"{BASE}/{despacho['id_despacho']}", json={"estado": "PUBLICADO"},
+            headers=entorno["headers"],
+        ).status_code == 200
 
     p = _proceso(client, entorno, HOY)
     averias = {c["id_averia"] for c in p["universo"]["casos"]}
     assert "TSTD13-A0" not in averias, "los casos publicados no se reofrecen"
-    assert "TSTD13-R0" in averias, "el borrador del día sí se reofrece"
+    assert "TSTD13-R0" not in averias, "los especiales publicados no se reofrecen"
+    # Lo que quedó fuera del checklist no está en ningún despacho: sigue disponible.
+    assert {"TSTD13-C0", "TSTD13-M0"} <= averias
     assert p["reproceso"] is True
 
 

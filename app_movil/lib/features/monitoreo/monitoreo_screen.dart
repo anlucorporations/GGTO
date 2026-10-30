@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/theme.dart';
+import 'despacho_dia.dart';
 import 'grafico.dart';
 import 'monitoreo_api.dart';
 
@@ -48,6 +49,12 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
   bool _enPrimerPlano = true;
   Timer? _temporizador;
 
+  // D-162 · punto 7: el despacho del día se consulta aparte para que un fallo
+  // de red en ese endpoint no tumbe el resto del tablero.
+  DespachoDia? _despacho;
+  String? _errorDespacho;
+  bool _cargandoDespacho = false;
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +95,9 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
       _cargando = true;
       _error = null;
     });
+    // D-162 · punto 7: el despacho del día va por su cuenta. Si falla, el aviso
+    // queda dentro de su sección y el tablero de MONITOREO sigue operativo.
+    unawaited(_cargarDespacho());
     try {
       final panorama = await MonitoreoApi.panorama();
       Map<String, dynamic>? extra;
@@ -107,6 +117,25 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
       if (mounted) setState(() => _error = '$error');
     } finally {
       if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  /// Carga tolerante del reporte de producción del día (D-162 · punto 7).
+  Future<void> _cargarDespacho() async {
+    if (_cargandoDespacho) return;
+    setState(() {
+      _cargandoDespacho = true;
+      _errorDespacho = null;
+    });
+    try {
+      final despacho = await DespachoDiaApi.delDia();
+      if (mounted) setState(() => _despacho = despacho);
+    } on ApiError catch (error) {
+      if (mounted) setState(() => _errorDespacho = error.mensaje);
+    } catch (error) {
+      if (mounted) setState(() => _errorDespacho = '$error');
+    } finally {
+      if (mounted) setState(() => _cargandoDespacho = false);
     }
   }
 
@@ -142,6 +171,14 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
               const SizedBox(height: 8),
               _avisoError(),
             ],
+            // D-162 · punto 7: el despacho del día se muestra aparte de las
+            // métricas de MONITOREO y tolera que su consulta falle (también si
+            // falla el resto del tablero).
+            _seccion(
+              titulo: 'Despacho del día',
+              subtitulo: _despacho?.fecha ?? '',
+              child: _contenidoDespacho(),
+            ),
             if (panorama == null && _cargando)
               const Padding(
                 padding: EdgeInsets.all(40),
@@ -354,6 +391,59 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
         child: Text('No se pudo actualizar. $_error'),
       );
 
+  /// Contenido de la sección «Despacho del día» (D-162 · punto 7).
+  ///
+  /// La sección nunca lanza: si la consulta falla muestra el aviso y un botón
+  /// para reintentar, y si ya había datos conserva la última vista con el aviso
+  /// de que no se pudo refrescar.
+  Widget _contenidoDespacho() {
+    final despacho = _despacho;
+    if (despacho == null) {
+      if (_errorDespacho != null) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('No se pudo cargar el despacho del día. $_errorDespacho',
+                style: const TextStyle(fontSize: 15)),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _cargandoDespacho ? null : _cargarDespacho,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        );
+      }
+      // Aún no hay datos: primera carga (o reintento) en curso.
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_errorDespacho != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Marca.alertaClaro,
+              borderRadius: BorderRadius.circular(Marca.radioControl),
+            ),
+            child: Text(
+              'No se pudo refrescar el despacho (se muestra la última copia). '
+              '$_errorDespacho',
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        DespachoDiaVista(despacho: despacho),
+      ],
+    );
+  }
+
   Widget _seccion({required String titulo, String? subtitulo, required Widget child}) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -378,45 +468,6 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _subtitulo(String texto) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(texto,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-      );
-
-  Widget _rejillaKpis(List<(String, int, Color)> kpis) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final (etiqueta, valor, color) in kpis)
-          SizedBox(
-            width: 104,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withOpacity(0.25)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$valor',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w800, color: color)),
-                  Text(etiqueta,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, color: Marca.textoSuave)),
-                ],
-              ),
-            ),
-          ),
-      ],
     );
   }
 
@@ -582,6 +633,315 @@ class _MonitoreoScreenState extends State<MonitoreoScreen>
         ('Diferidos', diario.diferidos, Marca.especial),
         ('Gestionados', diario.gestionados, Marca.enrutado),
       ];
+}
+
+// ------------------------------------------------------------------------- //
+// Estilo compartido (secciones y tarjetas)
+// ------------------------------------------------------------------------- //
+
+/// Subtítulo de un bloque del tablero. Es de nivel de archivo para poder
+/// reutilizarlo desde la vista «Despacho del día» con el mismo estilo.
+Widget _subtitulo(String texto) => Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(texto,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+    );
+
+/// Rejilla de tarjetas KPI del tablero (mismo estilo en todas las secciones).
+Widget _rejillaKpis(List<(String, int, Color)> kpis) {
+  return Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final (etiqueta, valor, color) in kpis)
+        SizedBox(
+          width: 104,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withOpacity(0.25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$valor',
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800, color: color)),
+                Text(etiqueta,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10.5, color: Marca.textoSuave)),
+              ],
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+// ------------------------------------------------------------------------- //
+// D-162 · punto 7: «Despacho del día»
+// ------------------------------------------------------------------------- //
+
+/// Contenido de la sección «Despacho del día» (D-162 · punto 7).
+///
+/// Se mantiene como widget público para poder probarlo con datos simulados y
+/// sin red. Muestra las tres columnas del despacho con su desglose
+/// reparación/construcción, el desglose por cuadrilla, mantenimiento y masivas
+/// aparte y la línea de reconciliación del contrato.
+class DespachoDiaVista extends StatelessWidget {
+  const DespachoDiaVista({super.key, required this.despacho});
+
+  final DespachoDia despacho;
+
+  @override
+  Widget build(BuildContext context) {
+    final totales = despacho.totales;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (despacho.idCentral > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text('Central ${despacho.idCentral}',
+                style: const TextStyle(fontSize: 14, color: Marca.textoSuave)),
+          ),
+        _subtitulo('Totales por columna'),
+        _tarjetaColumna('Comunes', totales.columnas.comunes, Marca.azul),
+        _tarjetaColumna('Referidos', totales.columnas.referidos, Marca.alerta),
+        _tarjetaColumna('Empresa', totales.columnas.empresa, Marca.exito),
+        const SizedBox(height: 10),
+        _subtitulo('Asignados por bloque'),
+        GraficoBarras(datos: barrasDespacho(totales), alto: 190),
+        const SizedBox(height: 12),
+        _subtitulo('Por cuadrilla'),
+        _tablaCuadrillas(despacho.porCuadrilla, totales),
+        const SizedBox(height: 12),
+        _subtitulo('Mantenimiento y masivas (aparte)'),
+        _rejillaKpis([
+          ('Mantenimiento', totales.mantenimientos, Marca.enrutado),
+          ('Mant. cerradas', totales.mantenimientosCerradas, Marca.exito),
+          ('Casos masiva', totales.casosMasiva, Marca.especial),
+          ('Fallas masivas', totales.masivas, Marca.alerta),
+        ]),
+        const SizedBox(height: 12),
+        _lineaReconciliacion(totales),
+      ],
+    );
+  }
+
+  /// Tarjeta de una columna: total de asignados y su desglose Rep/Const.
+  Widget _tarjetaColumna(String titulo, ColumnaDespacho columna, Color color) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(Marca.radioControl),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(titulo,
+                    style: TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w800, color: color)),
+              ),
+              Text('${columna.asignados}',
+                  style: TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+            ],
+          ),
+          Text(
+            'Asignados · Reparación ${columna.asignadosReparacion} · '
+            'Construcción ${columna.asignadosConstruccion}',
+            style: const TextStyle(fontSize: 15, color: Marca.textoSuave),
+          ),
+          const SizedBox(height: 4),
+          _metrica('Cerrados', columna.cerrados,
+              reparacion: columna.cerradosReparacion,
+              construccion: columna.cerradosConstruccion),
+          _metrica('Enrutado', columna.enrutado),
+          _metrica('Citado', columna.citado,
+              reparacion: columna.citadoReparacion,
+              construccion: columna.citadoConstruccion),
+          _metrica('Diferidos', columna.diferidos,
+              reparacion: columna.diferidosReparacion,
+              construccion: columna.diferidosConstruccion),
+        ],
+      ),
+    );
+  }
+
+  /// Línea de una métrica de la columna: total y, si aplica, Rep/Const.
+  Widget _metrica(String etiqueta, int total, {int? reparacion, int? construccion}) {
+    final desglose = reparacion == null || construccion == null
+        ? ''
+        : 'Rep $reparacion · Const $construccion';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1.5),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 94,
+            child: Text(etiqueta,
+                style: const TextStyle(fontSize: 15, color: Marca.textoSuave)),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text('$total',
+                textAlign: TextAlign.end,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(desglose,
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Marca.textoSuave)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Desglose por cuadrilla: nombre y sus tres columnas de asignados.
+  Widget _tablaCuadrillas(List<FilaDespacho> filas, FilaDespacho totales) {
+    if (filas.isEmpty) {
+      return const Text('Sin cuadrillas despachadas para la fecha.',
+          style: TextStyle(fontSize: 15));
+    }
+    return Table(
+      border: const TableBorder(
+          horizontalInside: BorderSide(color: Marca.borde, width: 0.5)),
+      columnWidths: const {
+        0: FlexColumnWidth(2.6),
+        1: FlexColumnWidth(1),
+        2: FlexColumnWidth(1),
+        3: FlexColumnWidth(1),
+        4: FlexColumnWidth(1),
+      },
+      children: [
+        TableRow(
+          children: [
+            _celdaDespacho('Cuadrilla', negrita: true, alinear: TextAlign.start),
+            _celdaDespacho('Asig.', negrita: true),
+            _celdaDespacho('Com.', negrita: true),
+            _celdaDespacho('Ref.', negrita: true),
+            _celdaDespacho('Emp.', negrita: true),
+          ],
+        ),
+        for (final fila in filas) _filaCuadrillaTabla(fila),
+        _filaCuadrillaTabla(totales, esTotal: true),
+      ],
+    );
+  }
+
+  TableRow _filaCuadrillaTabla(FilaDespacho fila, {bool esTotal = false}) {
+    return TableRow(
+      decoration: esTotal ? const BoxDecoration(color: Marca.contenedor) : null,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          child: Row(
+            children: [
+              if (fila.esMasiva) ...[
+                const Icon(Icons.warning_amber_rounded,
+                    size: 16, color: Marca.especial),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Text(
+                  esTotal ? 'Total' : fila.etiqueta,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: esTotal ? FontWeight.w800 : FontWeight.w400),
+                ),
+              ),
+            ],
+          ),
+        ),
+        _celdaDespacho('${fila.asignados}', esTotal: esTotal),
+        _celdaDespacho('${fila.columnas.comunes.asignados}', esTotal: esTotal),
+        _celdaDespacho('${fila.columnas.referidos.asignados}', esTotal: esTotal),
+        _celdaDespacho('${fila.columnas.empresa.asignados}', esTotal: esTotal),
+      ],
+    );
+  }
+
+  Widget _celdaDespacho(String texto,
+          {bool negrita = false,
+          bool esTotal = false,
+          TextAlign alinear = TextAlign.end}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+        child: Text(texto,
+            textAlign: alinear,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight:
+                    negrita || esTotal ? FontWeight.w700 : FontWeight.w400)),
+      );
+
+  /// Línea de reconciliación exigida por el contrato:
+  /// `suma columnas + mantenimientos + casos_masiva == asignados`.
+  Widget _lineaReconciliacion(FilaDespacho totales) {
+    final cuadra = totales.cuadra;
+    final color = cuadra ? Marca.exito : Marca.alerta;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cuadra ? Marca.exitoClaro : Marca.alertaClaro,
+        borderRadius: BorderRadius.circular(Marca.radioControl),
+        border: Border.all(color: color.withOpacity(0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(cuadra ? Icons.check_circle_outline : Icons.error_outline,
+              size: 20, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(lineaReconciliacion(totales),
+                style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600, color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Barras de los asignados por bloque (D-162 · punto 7), con [DatoBarra].
+List<DatoBarra> barrasDespacho(FilaDespacho totales) => [
+      DatoBarra('Comunes', totales.columnas.comunes.asignados, color: Marca.azul),
+      DatoBarra('Referidos', totales.columnas.referidos.asignados,
+          color: Marca.alerta),
+      DatoBarra('Empresa', totales.columnas.empresa.asignados, color: Marca.exito),
+      DatoBarra('Mantenim.', totales.mantenimientos, color: Marca.enrutado),
+      DatoBarra('Masivas', totales.casosMasiva, color: Marca.especial),
+    ];
+
+/// Línea de reconciliación del contrato (D-162 · punto 7):
+/// `suma de columnas + mantenimientos + casos_masiva == asignados`.
+String lineaReconciliacion(FilaDespacho totales) {
+  final suma = totales.totalColumnas + totales.mantenimientos + totales.casosMasiva;
+  return 'Reconciliación: '
+      '${totales.columnas.comunes.asignados} comunes + '
+      '${totales.columnas.referidos.asignados} referidos + '
+      '${totales.columnas.empresa.asignados} empresa + '
+      '${totales.mantenimientos} mantenimiento + '
+      '${totales.casosMasiva} casos masiva = $suma de ${totales.asignados} '
+      'asignados${totales.cuadra ? ' ✓' : ' (no cuadra)'}';
 }
 
 // ------------------------------------------------------------------------- //

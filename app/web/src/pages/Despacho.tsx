@@ -4,6 +4,8 @@ import { imprimirHtml } from '../utils/imprimir';
 import type {
   CanalDespacho,
   CasoAsignadoOut,
+  ColumnaProduccionOut,
+  ColumnasProduccionOut,
   DespachoDetalleOut,
   EnvioOut,
   EstadoDespachoCaso,
@@ -50,7 +52,26 @@ const TIPOS_ASIGNACION: TipoAsignacionDespacho[] = [
   'FALLA_MASIVA',
 ];
 
-const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
+/** D-162 · punto 7: las tres columnas del despacho del día. */
+const COLUMNAS_DESPACHO: { clave: keyof ColumnasProduccionOut; etiqueta: string }[] = [
+  { clave: 'comunes', etiqueta: 'Comunes' },
+  { clave: 'referidos', etiqueta: 'Referidos' },
+  { clave: 'empresa', etiqueta: 'Empresa' },
+];
+
+/** D-162: claves numéricas de los totales que se muestran como tarjetas. */
+type ClaveTotalProduccion =
+  | 'asignados'
+  | 'abiertos'
+  | 'cerrados'
+  | 'enrutado'
+  | 'citados'
+  | 'diferidos'
+  | 'gestionados'
+  | 'referidos'
+  | 'empresas';
+
+const TOTALES_ETIQUETAS: { clave: ClaveTotalProduccion; etiqueta: string }[] = [
   { clave: 'asignados', etiqueta: 'Asignados' },
   { clave: 'abiertos', etiqueta: 'Abiertos' },
   { clave: 'cerrados', etiqueta: 'Cerrados' },
@@ -63,13 +84,12 @@ const TOTALES_ETIQUETAS: { clave: string; etiqueta: string }[] = [
 ];
 
 /**
- * Desglose de los casos de un despacho por tipo de asignación (D-110).
+ * Desglose de los casos de un despacho por tipo de asignación (D-110 · D-162).
  *
- * La columna **Casos** de la ficha del día muestra el total de
- * **Reparaciones Comunes + Reparaciones Referidas + Construcciones +
- * Mantenimientos** con un icono por tipo; los casos empresariales y de falla
- * masiva, si los hay, se informan aparte para que el total del despacho nunca
- * oculte trabajo.
+ * D-162 · punto 5: el desglose muestra **los seis tipos** del despacho —
+ * Reparación, Construcción, Mantenimiento, Masiva, Referido y Empresa— para que
+ * el total de la ficha nunca oculte trabajo. El total que se pinta es el de
+ * **todos** los casos asignados (`totalDespacho`), no la suma parcial de antes.
  */
 export interface ConteoCasosTipo {
   comunes: number;
@@ -78,9 +98,9 @@ export interface ConteoCasosTipo {
   mantenimientos: number;
   empresas: number;
   masivas: number;
-  /** Total de los tipos de trabajo ofrecidos a la cuadrilla. */
+  /** Suma de los seis tipos (los casos sin tipo no entran aquí). */
   total: number;
-  /** Total real del despacho (incluye empresas, masivas y mantenimiento). */
+  /** Total real del despacho: todos los casos asignados, con o sin tipo. */
   totalDespacho: number;
 }
 
@@ -100,66 +120,86 @@ export function conteoPorTipo(casos: DespachoDetalleOut['casos']): ConteoCasosTi
     mantenimientos,
     empresas,
     masivas,
-    total: comunes + referidos + construcciones + mantenimientos,
+    total: comunes + referidos + construcciones + mantenimientos + empresas + masivas,
     totalDespacho: casos.length,
   };
 }
 
 /**
- * Celda de la columna **Casos**: total de comunes, referidos y construcciones,
- * cada uno con su icono (y los «otros» aparte).
+ * D-162 · punto 5: los seis tipos del despacho, cada uno con su icono.
+ *
+ * Se listan **siempre los seis** (aunque valgan cero) para que mantenimiento y
+ * masivas no queden ocultos en la columna Casos ni en el cuadro de resumen.
+ */
+const TIPOS_CONTEO: {
+  clave: keyof Omit<ConteoCasosTipo, 'total' | 'totalDespacho'>;
+  etiqueta: string;
+  clase: string;
+  icono: ReactNode;
+}[] = [
+  {
+    clave: 'comunes',
+    etiqueta: 'Reparaciones comunes',
+    clase: 'caso-tipo-reparacion',
+    icono: <IconoReparacion />,
+  },
+  {
+    clave: 'construcciones',
+    etiqueta: 'Construcciones',
+    clase: 'caso-tipo-construccion',
+    icono: <IconoConstruccion />,
+  },
+  {
+    clave: 'mantenimientos',
+    etiqueta: 'Mantenimientos',
+    clase: 'caso-tipo-mantenimiento',
+    icono: <IconoActividad />,
+  },
+  {
+    clave: 'masivas',
+    etiqueta: 'Casos de falla masiva',
+    clase: 'caso-tipo-masiva',
+    icono: <IconoMasiva className="icono-masiva" />,
+  },
+  {
+    clave: 'referidos',
+    etiqueta: 'Reparaciones referidas',
+    clase: 'caso-tipo-referido',
+    icono: <IconoReferido />,
+  },
+  {
+    clave: 'empresas',
+    etiqueta: 'Empresas',
+    clase: 'caso-tipo-empresa',
+    icono: <IconoEmpresa />,
+  },
+];
+
+/**
+ * Celda de la columna **Casos**: los seis tipos con su icono y el total de
+ * **todos** los casos asignados (D-162 · punto 5).
  */
 export function CeldaCasosPorTipo({ casos }: { casos: DespachoDetalleOut['casos'] }) {
   const conteo = conteoPorTipo(casos);
-  const otros = conteo.empresas + conteo.masivas;
   return (
     <div className="celda-casos-tipo" id="celda-casos-tipo">
-      <span
-        className="caso-tipo caso-tipo-reparacion"
-        title={`Reparaciones comunes: ${conteo.comunes}`}
-        aria-label={`Reparaciones comunes: ${conteo.comunes}`}
-      >
-        <IconoReparacion />
-        {conteo.comunes}
-      </span>
-      <span
-        className="caso-tipo caso-tipo-referido"
-        title={`Reparaciones referidas: ${conteo.referidos}`}
-        aria-label={`Reparaciones referidas: ${conteo.referidos}`}
-      >
-        <IconoReferido />
-        {conteo.referidos}
-      </span>
-      <span
-        className="caso-tipo caso-tipo-construccion"
-        title={`Construcciones: ${conteo.construcciones}`}
-        aria-label={`Construcciones: ${conteo.construcciones}`}
-      >
-        <IconoConstruccion />
-        {conteo.construcciones}
-      </span>
-      {conteo.mantenimientos > 0 && (
+      {TIPOS_CONTEO.map((tipo) => (
         <span
-          className="caso-tipo caso-tipo-mantenimiento"
-          title={`Mantenimientos: ${conteo.mantenimientos}`}
-          aria-label={`Mantenimientos: ${conteo.mantenimientos}`}
+          key={tipo.clave}
+          className={`caso-tipo ${tipo.clase}${conteo[tipo.clave] === 0 ? ' caso-tipo-vacio' : ''}`}
+          title={`${tipo.etiqueta}: ${conteo[tipo.clave]}`}
+          aria-label={`${tipo.etiqueta}: ${conteo[tipo.clave]}`}
         >
-          <IconoActividad />
-          {conteo.mantenimientos}
+          {tipo.icono}
+          {conteo[tipo.clave]}
         </span>
-      )}
-      <strong className="caso-total" title={`Total: ${conteo.total}`}>
-        {conteo.total}
+      ))}
+      <strong
+        className="caso-total"
+        title={`Total de casos asignados (todos los tipos): ${conteo.totalDespacho}`}
+      >
+        {conteo.totalDespacho}
       </strong>
-      {otros > 0 && (
-        <span
-          className="caso-tipo caso-tipo-otros"
-          title={`Otros: ${conteo.empresas} empresa(s), ${conteo.masivas} de falla masiva`}
-        >
-          <IconoEmpresa />
-          {otros}
-        </span>
-      )}
     </div>
   );
 }
@@ -602,7 +642,95 @@ function RankingEfectividad() {
   );
 }
 
+/**
+ * D-162 · punto 7: una de las tres columnas del despacho del día
+ * (Comunes · Referidos · Empresa).
+ *
+ * Asignados, Cerrados, Citado y Diferidos se muestran con su desglose
+ * Reparaciones/Construcción; Enrutado va sin desglose, igual que el backend.
+ */
+const FILAS_COLUMNA: { clave: string; etiqueta: string; desglose: boolean }[] = [
+  { clave: 'asignados', etiqueta: 'Asignados', desglose: true },
+  { clave: 'cerrados', etiqueta: 'Cerrados', desglose: true },
+  { clave: 'enrutado', etiqueta: 'Enrutado', desglose: false },
+  { clave: 'citado', etiqueta: 'Citado', desglose: true },
+  { clave: 'diferidos', etiqueta: 'Diferidos', desglose: true },
+];
+
+function ColumnaDespacho({
+  etiqueta,
+  columna,
+}: {
+  etiqueta: string;
+  columna: ColumnaProduccionOut;
+}) {
+  return (
+    <div className="columna-despacho">
+      <div className="columna-despacho-titulo">{etiqueta}</div>
+      <div className="columna-despacho-filas">
+        {FILAS_COLUMNA.map((fila) => {
+          const valor = columna[`${fila.clave}` as keyof ColumnaProduccionOut] as number;
+          const reparacion = fila.desglose
+            ? (columna[`${fila.clave}_reparacion` as keyof ColumnaProduccionOut] as number)
+            : 0;
+          const construccion = fila.desglose
+            ? (columna[`${fila.clave}_construccion` as keyof ColumnaProduccionOut] as number)
+            : 0;
+          return (
+            <div className="columna-despacho-fila" key={fila.clave}>
+              <span className="columna-despacho-etiqueta">{fila.etiqueta}</span>
+              <strong className="columna-despacho-total">{valor}</strong>
+              {fila.desglose && (
+                <span className="columna-despacho-detalle">
+                  Rep {reparacion} · Const {construccion}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** D-162 · punto 7: las tres columnas de una cuadrilla (o de los totales). */
+function GrupoColumnas({
+  titulo,
+  subtitulo,
+  columnas,
+  id,
+}: {
+  titulo: string;
+  subtitulo?: string;
+  columnas: ColumnasProduccionOut;
+  id?: string;
+}) {
+  return (
+    <div className="columna-grupo" id={id}>
+      <div className="columna-grupo-cabecera">
+        <strong>{titulo}</strong>
+        {subtitulo && <span className="texto-pequeno">{subtitulo}</span>}
+      </div>
+      <div className="rejilla-columnas">
+        {COLUMNAS_DESPACHO.map((c) => (
+          <ColumnaDespacho key={c.clave} etiqueta={c.etiqueta} columna={columnas[c.clave]} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProduccionOut }) {
+  const totales = reporte.totales;
+  // D-162 · punto 7: reconciliación — las 3 columnas + mantenimiento + masivas
+  // deben sumar exactamente los casos asignados del día.
+  const sumaColumnas =
+    totales.columnas.comunes.asignados +
+    totales.columnas.referidos.asignados +
+    totales.columnas.empresa.asignados;
+  const reconciliado = sumaColumnas + totales.mantenimientos + totales.casos_masiva;
+  const cuadra = reconciliado === totales.asignados;
+
   return (
     <div className="subpanel">
       <h3>
@@ -611,7 +739,7 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
       <div className="rejilla-tarjetas">
         {TOTALES_ETIQUETAS.map((t) => (
           <div className="tarjeta" key={t.clave}>
-            <div className="valor">{num(reporte.totales[t.clave])}</div>
+            <div className="valor">{reporte.totales[t.clave]}</div>
             <div className="etiqueta">{t.etiqueta}</div>
           </div>
         ))}
@@ -620,14 +748,114 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
       {/* D-143: métrica aparte de construcción (asignadas y realizadas hoy). */}
       <div className="rejilla-tarjetas" id="metricas-construccion">
         <div className="tarjeta">
-          <div className="valor">{num(reporte.totales.construcciones)}</div>
+          <div className="valor">{totales.construcciones}</div>
           <div className="etiqueta">Construcciones asignadas</div>
         </div>
         <div className="tarjeta">
-          <div className="valor">{num(reporte.totales.construcciones_cerradas)}</div>
+          <div className="valor">{totales.construcciones_cerradas}</div>
           <div className="etiqueta">Construcciones realizadas (cerradas)</div>
         </div>
       </div>
+
+      {/* D-162 · punto 7: métricas del despacho en 3 columnas. */}
+      <h4 className="subtitulo-seccion">
+        Métricas del despacho en 3 columnas (Comunes · Referidos · Empresa)
+      </h4>
+      <p className="texto-pequeno">
+        <strong>Comunes</strong> es la reparación de la ingesta diaria y su
+        construcción; <strong>Referidos</strong> son los proyectos referidos y{' '}
+        <strong>Empresa</strong> los casos de empresa (el Gobierno se informa como
+        Empresa). En cada columna, Asignados, Cerrados, Citado y Diferidos se
+        desglosan en <strong>Rep</strong>araciones y <strong>Const</strong>rucción;
+        Enrutado no se desglosa. El mantenimiento y los casos de masiva van aparte.
+      </p>
+
+      <div id="columnas-despacho">
+        {reporte.por_cuadrilla.map((fila) => (
+          <GrupoColumnas
+            key={`${fila.cuadrilla}-${fila.id_cuadrilla}`}
+            titulo={fila.cuadrilla}
+            subtitulo={fila.nombre}
+            columnas={fila.columnas}
+          />
+        ))}
+        <GrupoColumnas
+          id="columnas-totales"
+          titulo="Totales del día"
+          subtitulo={`${reporte.por_cuadrilla.length} cuadrilla(s)`}
+          columnas={totales.columnas}
+        />
+      </div>
+
+      {/* D-162 · punto 7: mantenimiento y masivas se informan aparte. */}
+      <h4 className="subtitulo-seccion">Mantenimiento y masivas (aparte de las columnas)</h4>
+      <div className="rejilla-tarjetas" id="metricas-aparte">
+        <div className="tarjeta">
+          <div className="valor">{totales.mantenimientos}</div>
+          <div className="etiqueta">Mantenimiento asignados</div>
+          <p className="texto-pequeno">{totales.mantenimientos_cerradas} cerrado(s)</p>
+        </div>
+        <div className="tarjeta">
+          <div className="valor">{totales.casos_masiva}</div>
+          <div className="etiqueta">Casos de masiva</div>
+          <p className="texto-pequeno">
+            {totales.masivas} falla(s) masiva(s) cubierta(s)
+          </p>
+        </div>
+      </div>
+
+      <div className="tabla-envoltura">
+        <table>
+          <thead>
+            <tr>
+              <th>Cuadrilla</th>
+              <th title="Mantenimientos asignados del día">Mant. asignados</th>
+              <th title="Mantenimientos cerrados (realizados) del día">Mant. cerradas</th>
+              <th title="Casos del bloque masiva asignados">Casos masiva</th>
+              <th title="Fallas masivas activas que cubren a la cuadrilla">Fallas masivas</th>
+              <th>Construcciones</th>
+              <th>Construcciones cerradas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reporte.por_cuadrilla.map((fila) => (
+              <tr key={`aparte-${fila.cuadrilla}-${fila.id_cuadrilla}`}>
+                <td>
+                  {fila.cuadrilla} <span className="texto-pequeno">{fila.nombre}</span>
+                </td>
+                <td>{fila.mantenimientos}</td>
+                <td>{fila.mantenimientos_cerradas}</td>
+                <td>{fila.casos_masiva}</td>
+                <td>{fila.masivas.length}</td>
+                <td>{num(fila.construcciones)}</td>
+                <td>{num(fila.construcciones_cerradas)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <PieTabla
+            colSpan={7}
+            total={reporte.por_cuadrilla.length}
+            singular="cuadrilla"
+            plural="cuadrillas"
+          />
+        </table>
+      </div>
+
+      {/* D-162 · punto 7: línea de reconciliación. */}
+      <p
+        className={`linea-reconciliacion ${
+          cuadra ? 'linea-reconciliacion-ok' : 'linea-reconciliacion-alerta'
+        }`}
+        id="reconciliacion-despacho"
+      >
+        <strong>Reconciliación:</strong> Comunes{' '}
+        {totales.columnas.comunes.asignados} + Referidos{' '}
+        {totales.columnas.referidos.asignados} + Empresa{' '}
+        {totales.columnas.empresa.asignados} + Mantenimiento {totales.mantenimientos} +
+        Masivas {totales.casos_masiva} = <strong>{reconciliado}</strong> de{' '}
+        {totales.asignados} caso(s) asignado(s).{' '}
+        {cuadra ? '✓ Cuadra.' : `⚠ No cuadra (diferencia de ${reconciliado - totales.asignados}).`}
+      </p>
 
       {reporte.por_cuadrilla.length === 0 ? (
         <p className="vacio">Sin producción registrada.</p>
@@ -681,11 +909,15 @@ function Reporte({ titulo, reporte }: { titulo: string; reporte: ReporteProducci
 }
 
 /**
- * Box Infos del despacho (D-99 · RF-68).
+ * Box Infos del despacho (D-99 · RF-68 · D-162).
  *
  * Resume el despacho de un vistazo —cuántos casos tiene, cómo se reparten por
  * desenlace y el porcentaje de cumplimiento— y sustituye al cuadro de información
  * principal, que ahora se dispone en rejilla de datos.
+ *
+ * D-162 · punto 5: el total es el de **todos** los casos asignados y el desglose
+ * por tipo muestra los seis tipos (mantenimiento y masivas incluidos, aunque
+ * valgan cero), para que el resumen nunca oculte trabajo.
  */
 function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
   const contarEstado = (estado: EstadoDespachoCaso) =>
@@ -697,7 +929,6 @@ function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
   const gestionados = contarEstado('GESTIONADO');
   const abiertos = total - cerrados - citados - diferidos - gestionados;
   const cumplimiento = total ? Math.round((cerrados / total) * 100) : 0;
-  const masivos = despacho.casos.filter((c) => c.tipo_asignacion === 'FALLA_MASIVA').length;
 
   const conteo = conteoPorTipo(despacho.casos);
   const cajas: { etiqueta: string; valor: number; clase: string }[] = [
@@ -720,21 +951,27 @@ function BoxInfosDespacho({ despacho }: { despacho: DespachoDetalleOut }) {
         <span className="box-info-valor">{cumplimiento}%</span>
         <span className="box-info-etiqueta">Cumplimiento</span>
       </div>
-      {masivos > 0 && (
-        <div className="box-info box-info-masiva">
-          <span className="box-info-valor">
-            <IconoMasiva className="icono-masiva" />
-            {masivos}
-          </span>
-          <span className="box-info-etiqueta">Casos de masiva</span>
-        </div>
-      )}
-      {/* D-110: el reparto por tipo, con los mismos iconos que la columna Casos. */}
+      {/* D-162 · punto 5: mantenimiento y masivas siempre visibles. */}
+      <div className="box-info">
+        <span className="box-info-valor">{conteo.mantenimientos}</span>
+        <span className="box-info-etiqueta">Mantenimientos</span>
+      </div>
+      <div className="box-info box-info-masiva">
+        <span className="box-info-valor">
+          <IconoMasiva className="icono-masiva" />
+          {conteo.masivas}
+        </span>
+        <span className="box-info-etiqueta">Casos de masiva</span>
+      </div>
+      {/* D-110 · D-162: el reparto por tipo, con los mismos iconos que la columna Casos. */}
       <div className="box-info box-info-tipos" id="box-info-tipos">
         <span className="box-info-valor">
           <CeldaCasosPorTipo casos={despacho.casos} />
         </span>
-        <span className="box-info-etiqueta">Comunes · referidos · construcciones</span>
+        <span className="box-info-etiqueta">
+          Desglose por tipo · Reparación · Construcción · Mantenimiento · Masiva ·
+          Referido · Empresa
+        </span>
       </div>
     </div>
   );
@@ -1215,7 +1452,7 @@ export default function Despacho() {
                 <th>Cuadrilla</th>
                 <th>Estado</th>
                 <th
-                  title="Total de reparaciones comunes, reparaciones referidas y construcciones (los demás tipos se informan aparte)"
+                  title="Total de todos los casos asignados y su desglose por tipo: reparación, construcción, mantenimiento, masiva, referido y empresa (D-162)"
                 >
                   Casos
                 </th>

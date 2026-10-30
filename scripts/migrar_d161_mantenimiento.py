@@ -12,7 +12,9 @@ QUÉ HACE (idempotente; un solo lote de datos + un cambio de catálogo)
        para que el despacho pueda **agruparlo por sector** y asignarlo a la
        cuadrilla de ese sector (regla D-113).
     4. Registra la reclasificación en la bitácora de cada caso
-       (`caso_estado_hist`) con motivo y usuario de migración.
+       (`caso_estado_hist`) con motivo y, como dueño, el **P00 del usuario
+       SUPER** resuelto de la propia base (la columna tiene FK a
+       `usuario(p00)`).
 
 POR QUÉ
     Los casos «JUSTIFICATIVO» nacían como `tipo_caso='CONSTRUCCION'` porque era
@@ -53,12 +55,21 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 LOG = RAIZ / "RepoTecnico" / "BaseOperaciones" / "migracion_d161.log"
 
-USUARIO_MIGRACION = "d161-migracion"
 MOTIVO = "D-161: reclasificado a MANTENIMIENTO (JUSTIFICATIVO de falla masiva)"
 
 CATALOGO_TIPO_CASO = "('AVERIA','REPARACION','CONSTRUCCION','REFERIDO','MANTENIMIENTO')"
 
-SQL_CAMBIOS = f"""
+#: `caso_estado_hist.usuario` tiene FK a `usuario(p00)`, así que el dueño de la
+#: bitácora debe ser el **P00 de un usuario real**: se resuelve el SUPER activo
+#: (fail-closed: sin SUPER en la base, la migración no escribe).
+SQL_USUARIO = """
+SELECT u.p00 FROM usuario u
+JOIN rol r ON r.id_rol = u.id_rol
+WHERE r.codigo = 'SUPER' AND u.activo
+ORDER BY u.id_usuario LIMIT 1
+"""
+
+SQL_CAMBIOS = """
 DO $$
 DECLARE
     restriccion record;
@@ -76,7 +87,7 @@ BEGIN
     END LOOP;
     ALTER TABLE caso
         ADD CONSTRAINT caso_tipo_caso_check
-        CHECK (tipo_caso IN {CATALOGO_TIPO_CASO});
+        CHECK (tipo_caso IN __CATALOGO__);
 
     -- 1.b Descriptor del despacho: el CHECK de tipo_asignacion admite el
     --     bloque MANTENIMIENTO (mismo catálogo nuevo en `despacho_caso`).
@@ -114,18 +125,29 @@ WHERE c.nombre_cliente ILIKE 'JUSTIFICATIVO %'
   AND c.tipo_caso = 'CONSTRUCCION'
   AND c.estado_actual = 'PENDIENTE';
 
--- 4. Bitácora de la reclasificación (un renglón por caso tocado).
+-- 4. Bitácora de la reclasificación (un renglón por caso tocado). El dueño es
+--    el P00 del SUPER, resuelto en la base (FK a `usuario(p00)`).
 INSERT INTO caso_estado_hist (id_caso, estado_anterior, estado_nuevo, motivo, usuario)
-SELECT c.id_caso, c.estado_actual, c.estado_actual, '{MOTIVO}', '{USUARIO_MIGRACION}'
+SELECT c.id_caso, c.estado_actual, c.estado_actual, '__MOTIVO__', '__USUARIO__'
 FROM caso c
 WHERE c.tipo_caso = 'MANTENIMIENTO'
   AND c.nombre_cliente ILIKE 'JUSTIFICATIVO %'
   AND c.estado_actual = 'PENDIENTE'
   AND NOT EXISTS (
       SELECT 1 FROM caso_estado_hist h
-      WHERE h.id_caso = c.id_caso AND h.usuario = '{USUARIO_MIGRACION}'
+      WHERE h.id_caso = c.id_caso AND h.usuario = '__USUARIO__'
   );
 """
+
+
+def sql_cambios(usuario: str) -> str:
+    """SQL con el catálogo, el motivo y el dueño (P00 del SUPER) interpolados."""
+    return (
+        SQL_CAMBIOS
+        .replace("__CATALOGO__", CATALOGO_TIPO_CASO)
+        .replace("__MOTIVO__", MOTIVO)
+        .replace("__USUARIO__", usuario)
+    )
 
 VERIFICACION = """
 SELECT
@@ -239,7 +261,17 @@ def main() -> int:
                 conn.rollback()
                 return 1
 
-        cur.execute(SQL_CAMBIOS)
+        # Dueño de la bitácora: el P00 del SUPER activo (FK a `usuario(p00)`).
+        cur.execute(SQL_USUARIO)
+        fila_super = cur.fetchone()
+        if not fila_super:
+            conn.rollback()
+            registrar("ERROR: no hay un usuario SUPER activo para la bitácora; abortado.")
+            return 5
+        dueño_bitacora = fila_super[0]
+        registrar(f"dueño de la bitácora (FK usuario.p00): SUPER «{dueño_bitacora}»")
+
+        cur.execute(sql_cambios(dueño_bitacora))
         conn.commit()
 
         despues = estado_actual(cur)

@@ -68,3 +68,13 @@ RepoTecnico/pruebas/logs/*.log
 # no deben versionarse. La bitácora de la limpieza tampoco.
 RepoTecnico/BaseOperaciones/respaldo_test_d112/
 RepoTecnico/BaseOperaciones/limpieza_datos_test.log
+
+# ---------------------------------------------------------------------------
+# Material de trabajo que NO se publica (D-162). Los repos son públicos: las
+# hojas de ODN/PDE llevan datos de red de la central, las skills del agente son
+# configuración local y `opencode.json` apunta a un servidor MCP con su clave en
+# el entorno. Ninguno debe entrar al índice por un `git add -A`.
+# ---------------------------------------------------------------------------
+ODN-PDE/
+.agents/
+opencode.json

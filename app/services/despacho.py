@@ -86,10 +86,19 @@ ETIQUETAS_DISTRIBUCION = {
     "ESPECIALES_GOBIERNO": "Especiales Gobierno",
     "MASIVAS": "Masivas",
 }
-#: D-113 · D-114: selección predeterminada (Comunes, Especiales Reparación y el
-#: Mantenimiento de D-161: los casos «JUSTIFICATIVO» reclasificados entran por
-#: defecto al despacho, agrupados por sector).
-TIPOS_DISTRIBUCION_POR_DEFECTO = ("COMUNES", "ESPECIALES_REPARACION", "MANTENIMIENTO")
+#: D-162 · punto 1: el proceso del despacho considera **todo** el universo del
+#: día —la reparación que ingresó por la ingesta (`COMUNES`), el
+#: `MANTENIMIENTO` de D-161 y **todos** los casos especiales (reparación,
+#: construcción y gobierno)— y D-162 · punto 4 añade las **masivas**, que son
+#: prioritarias. El checklist sigue siendo configurable: esto es solo la
+#: selección con la que arranca el formulario.
+TIPOS_DISTRIBUCION_POR_DEFECTO = TIPOS_DISTRIBUCION
+
+#: D-162 · punto 2: las «construcciones» del despacho son el bloque completo de
+#: REFERIDOS, EMPRESAS y GOBIERNOS, más las CONSTRUCCION de la ingesta. Se
+#: resuelve por `tipo_asignacion`: `_tipo_asignacion` ya mapea GOBIERNO a
+#: `EMPRESA` (salvo que el caso sea una CONSTRUCCION).
+BLOQUE_CONSTRUCCION = ("CONSTRUCCION", "REFERIDO", "EMPRESA")
 
 
 @dataclass
@@ -796,14 +805,25 @@ def construir_propuesta(
             else:
                 sin_asignar.append(envuelto)
 
-    # --- Regla: toda la CONSTRUCCIÓN a una sola cuadrilla ---
-    construcciones = [
-        c for lista in grupos.values() for c in lista if c.tipo_asignacion == "CONSTRUCCION"
+    # --- Regla: las CONSTRUCCIONES van a una sola cuadrilla y esa cuadrilla es
+    # --- exclusiva ---
+    # D-143: la CONSTRUCCION se concentra en una cuadrilla. D-162 (punto 2 del
+    # usuario): el concepto «construcciones» son REFERIDOS, EMPRESAS y
+    # GOBIERNOS (más las CONSTRUCCION de la ingesta), y van **todas** a una
+    # misma cuadrilla a la que **no** se le asignan casos de REPARACIÓN ni de
+    # MANTENIMIENTO. Los casos de masivas conservan su override D-113: son el
+    # bloque prioritario (D-162 punto 4) y no se desalojan.
+    bloque = [
+        c for lista in grupos.values()
+        for c in lista if c.tipo_asignacion in BLOQUE_CONSTRUCCION
     ]
+    construcciones = [c for c in bloque if c.tipo_asignacion == "CONSTRUCCION"]
     construccion_cuadrilla = None
     construccion_id = None
-    if construcciones:
-        sectores_construccion = {c.id_sector for c in construcciones if c.id_sector is not None}
+    desalojados = 0
+    exclusiva: bool | None = None
+    if bloque:
+        sectores_construccion = {c.id_sector for c in bloque if c.id_sector is not None}
         # D-143: la cuadrilla elegida en el formulario manda; si no hay (o no es de
         # calle), se usa la heurística de D-113.
         destino_cu = por_id.get(construccion_cuadrilla_id) if construccion_cuadrilla_id else None
@@ -812,28 +832,77 @@ def construir_propuesta(
             for cu in cuadrillas:
                 en_sector = sum(
                     1 for c in grupos[cu.id_cuadrilla]
-                    if c.id_sector in sectores_construccion and c.tipo_asignacion != "CONSTRUCCION"
+                    if c.id_sector in sectores_construccion
+                    and c.tipo_asignacion not in BLOQUE_CONSTRUCCION
                 )
                 candidatas.append((en_sector, -len(grupos[cu.id_cuadrilla]), cu))
             destino_cu = max(candidatas, key=lambda t: (t[0], t[1]))[2]
         for cu in cuadrillas:
             if cu.id_cuadrilla == destino_cu.id_cuadrilla:
                 continue
-            mover = [c for c in grupos[cu.id_cuadrilla] if c.tipo_asignacion == "CONSTRUCCION"]
+            mover = [c for c in grupos[cu.id_cuadrilla]
+                     if c.tipo_asignacion in BLOQUE_CONSTRUCCION]
             for c in mover:
                 grupos[cu.id_cuadrilla].remove(c)
                 grupos[destino_cu.id_cuadrilla].append(c)
+        # D-162 · punto 2: la cuadrilla de construcción es exclusiva — sus casos
+        # de REPARACIÓN y MANTENIMIENTO se desalojan. Cada uno va a la cuadrilla
+        # asignada a su sector del día (si no es la de construcción) o a la
+        # menos cargada de las demás. Con una sola cuadrilla de calle la regla
+        # es imposible: se citan los casos y se informa la excepción.
+        if len(cuadrillas) > 1:
+            for c in list(grupos[destino_cu.id_cuadrilla]):
+                if c.tipo_asignacion in BLOQUE_CONSTRUCCION:
+                    continue
+                if c.tipo_asignacion == "FALLA_MASIVA":
+                    continue  # D-113: el override de la masiva manda (prioridad).
+                destino = None
+                id_sector_alt = asignacion.get(c.id_sector) if c.id_sector is not None else None
+                if id_sector_alt is not None and id_sector_alt != destino_cu.id_cuadrilla:
+                    destino = por_id.get(id_sector_alt)
+                if destino is None:
+                    otras = [cu for cu in cuadrillas if cu.id_cuadrilla != destino_cu.id_cuadrilla]
+                    if otras:
+                        destino = min(
+                            otras, key=lambda cu: (len(grupos[cu.id_cuadrilla]), cu.codigo)
+                        )
+                if destino is not None:
+                    grupos[destino_cu.id_cuadrilla].remove(c)
+                    grupos[destino.id_cuadrilla].append(c)
+                    desalojados += 1
         construccion_cuadrilla = destino_cu.codigo
         construccion_id = destino_cu.id_cuadrilla
+        # D-162 · punto 2: la cuadrilla es exclusiva si **no** le queda ningún
+        # caso de reparación/mantenimiento. Las masivas no rompen la exclusividad
+        # (son prioritarias y conservan su override D-113).
+        exclusiva = not any(
+            c.tipo_asignacion not in BLOQUE_CONSTRUCCION
+            and c.tipo_asignacion != "FALLA_MASIVA"
+            for c in grupos[destino_cu.id_cuadrilla]
+        )
 
-    # --- Orden de visita: citados primero, luego sector y caso ---
+    # --- Orden de visita (D-162 · punto 4): las AVERÍAS MASIVAS son
+    # --- prioritarias — primera cada cuadrilla; luego los citados y después
+    # --- el resto por sector y caso.
     for cu in cuadrillas:
         grupos[cu.id_cuadrilla].sort(
-            key=lambda c: (not c.es_cita, c.id_sector is None, c.id_sector or 0, c.id_caso)
+            key=lambda c: (
+                c.tipo_asignacion != "FALLA_MASIVA",
+                not c.es_cita,
+                c.id_sector is None,
+                c.id_sector or 0,
+                c.id_caso,
+            )
         )
         for i, c in enumerate(grupos[cu.id_cuadrilla], start=1):
             c.orden_visita = i
-    sin_asignar.sort(key=lambda c: (not c.es_cita, c.id_caso))
+    sin_asignar.sort(
+        key=lambda c: (
+            c.tipo_asignacion != "FALLA_MASIVA",
+            not c.es_cita,
+            c.id_caso,
+        )
+    )
     for i, c in enumerate(sin_asignar, start=1):
         c.orden_visita = i
 
@@ -885,9 +954,20 @@ def construir_propuesta(
             "construccion_cuadrilla": construccion_cuadrilla,
             "construccion_id_cuadrilla": construccion_id,
             "construccion_total": len(construcciones),
+            # D-162 · punto 2: el «bloque de construcciones» (CONSTRUCCION +
+            # REFERIDO + EMPRESA) va entero a la misma cuadrilla y esa cuadrilla
+            # queda exclusiva: los REPARACION/MANTENIMIENTO que le tocaban se
+            # desalojan a otra cuadrilla (menos la masiva, que es prioritaria).
+            "construccion_bloque_total": len(bloque),
+            "construccion_desalojados": desalojados,
+            "construccion_cuadrilla_exclusiva": (exclusiva if bloque else None),
+            "masivas_prioritarias": True,
+            # D-162 · punto 3: el mantenimiento no tiene bloque propio; se
+            # agrupa por sector y va a la cuadrilla asignada a ese sector.
+            "mantenimientos_por_sector": True,
             "construccion_en_una_sola": len({
                 g.codigo for g in resultado
-                if any(c.tipo_asignacion == "CONSTRUCCION" for c in g.casos)
+                if any(c.tipo_asignacion in BLOQUE_CONSTRUCCION for c in g.casos)
             }) <= 1,
             "sectores_sin_cuadrilla": sectores_sin_cuadrilla,
             "cuadrillas_activas": len(cuadrillas),
@@ -913,6 +993,8 @@ def construir_propuesta(
             "especiales_gobierno": especiales_gobierno,
             "asignados": total_asignados,
             "sin_asignar": len(sin_asignar),
+            # D-161: el mantenimiento se informa aparte también en el resumen.
+            "mantenimientos": mantenimientos,
             "por_cuadrilla": {g.codigo: g.total for g in resultado},
             "distribuibles": distribuibles,
             "por_tipo": por_tipo_universo,
@@ -1107,6 +1189,15 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         "cuadrilla_codigo": cuadrilla_construccion.codigo if cuadrilla_construccion else None,
         "cuadrilla_nombre": cuadrilla_construccion.nombre if cuadrilla_construccion else None,
         "automatica": True,
+        # D-162 · puntos 2 y 4: la cuadrilla elegida queda exclusiva para las
+        # construcciones (los REPARACION/MANTENIMIENTO se desalojan a otras
+        # cuadrillas, salvo los casos de masiva, que son prioritarios) y el
+        # bloque completo suma REFERIDO + EMPRESA + CONSTRUCCION.
+        "excluye_reparaciones": bool(
+            propuesta.reglas.get("construccion_cuadrilla_exclusiva")
+        ),
+        "desalojados": propuesta.reglas.get("construccion_desalojados", 0),
+        "bloque_total": propuesta.reglas.get("construccion_bloque_total", 0),
     }
 
     retorno = {

@@ -272,10 +272,14 @@ def test_el_checklist_usa_las_categorias_del_catalogo(client, entorno):
         "ESPECIALES_GOBIERNO": 2,
         "MASIVAS": 2,
     }
+    # D-162: el formulario arranca con todo el universo marcado.
     assert [t["clave"] for t in p["tipos"] if t["por_defecto"]] == [
         "COMUNES",
         "ESPECIALES_REPARACION",
+        "ESPECIALES_CONSTRUCCION",
         "MANTENIMIENTO",
+        "ESPECIALES_GOBIERNO",
+        "MASIVAS",
     ]
 
 

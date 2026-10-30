@@ -2,12 +2,17 @@
  * Formulario flotante para PROCESAR el despacho (requisito de UI 6, ciclo D-66).
  *
  * Muestra, para la fecha elegida:
- *  - el **checklist de tipos a distribuir** (D-113 · D-114): Comunes y
- *    Especiales Reparación por defecto; Especiales Construcción, Especiales
- *    Gobierno y Masivas se marcan si se quieren,
+ *  - el **checklist de tipos a distribuir** (D-113 · D-114 · D-162): el proceso
+ *    considera todo el universo del día —Comunes, Especiales Reparación,
+ *    Especiales Construcción, Mantenimiento, Especiales Gobierno y Masivas— y ese
+ *    es el predeterminado del formulario; el supervisor puede desmarcar lo que no
+ *    quiera distribuir,
  *  - los **sectores** con su total de casos, los **especiales separados** en
  *    Reparación, Construcción y Gobierno (D-114) y una lista desplegable con
  *    las **masivas del sector** para decidir cuáles entran al despacho,
+ *  - el **bloque de construcciones** (D-162 · punto 2): REFERIDOS, EMPRESAS y
+ *    CONSTRUCCIONES van a una cuadrilla exclusiva, con el total del bloque, los
+ *    casos desalojados y la nota de que las masivas son prioritarias,
  *  - las **cuadrillas** con los sectores asignados y el desglose de
  *    especiales, con la opción de modificar la asignación (selector por sector),
  *  - los botones **Procesar despacho** y **Cancelar**.
@@ -46,8 +51,25 @@ interface Props {
   onProcesado: (creados: DespachoDetalleOut[]) => void;
 }
 
-/** D-113: selección del checklist cuando la API no la informa. */
-const TIPOS_POR_DEFECTO = ['COMUNES', 'ESPECIALES_REPARACION'];
+/** D-113 · D-162: selección del checklist cuando la API no la informa.
+ *
+ * D-162 · punto 1: el proceso considera **todo** el universo del día —la
+ * reparación de la ingesta, el mantenimiento y los especiales— y D-162 · punto 4
+ * añade las **masivas**, que son prioritarias. El meta del backend manda; este
+ * arreglo solo cubre el caso de que la API no devuelva `tipos`.
+ */
+const TIPOS_POR_DEFECTO = [
+  'COMUNES',
+  'ESPECIALES_REPARACION',
+  'ESPECIALES_CONSTRUCCION',
+  'MANTENIMIENTO',
+  'ESPECIALES_GOBIERNO',
+  'MASIVAS',
+];
+
+/** D-162: etiquetas del checklist por defecto (fallback del texto de ayuda). */
+const ETIQUETAS_POR_DEFECTO =
+  'Comunes, Especiales Reparación, Especiales Construcción, Mantenimiento, Especiales Gobierno y Masivas';
 
 /** D-114: tipos del checklist del caso (Gobierno suma a su actividad). */
 function tiposDe(caso: CasoAsignadoOut): string[] {
@@ -426,10 +448,34 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
               {(proceso?.tipos ?? [])
                 .filter((t) => t.por_defecto)
                 .map((t) => t.etiqueta)
-                .join(' y ') || 'Comunes y Especiales Reparación'}
+                .join(', ') || ETIQUETAS_POR_DEFECTO}
             </strong>
             . Los tipos sin marcar no se distribuyen (quedan para otro procesamiento).
           </p>
+
+          {/* D-162 · puntos 3 y 4: reglas del proceso completo que el supervisor
+              debe conocer antes de procesar. El backend las informa en `reglas`. */}
+          {(proceso?.reglas.masivas_prioritarias ||
+            proceso?.reglas.mantenimientos_por_sector) && (
+            <div className="aviso aviso-info" id="reglas-proceso-d162">
+              <span>
+                {proceso?.reglas.masivas_prioritarias && (
+                  <>
+                    <strong>Masivas prioritarias:</strong> las averías masivas van
+                    primero en el orden de visita de cada cuadrilla. Posteriormente
+                    se atienden los citados y el resto por sector.{' '}
+                  </>
+                )}
+                {proceso?.reglas.mantenimientos_por_sector && (
+                  <>
+                    <strong>Mantenimiento por sector:</strong> se reparte a la
+                    cuadrilla asignada al sector de cada caso; no tiene bloque propio
+                    como la construcción.
+                  </>
+                )}
+              </span>
+            </div>
+          )}
 
           {sinTipos && (
             <div className="aviso aviso-error">
@@ -542,15 +588,23 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
             </>
           )}
 
-          {/* D-143: la CONSTRUCCIÓN se procesa aparte, con sus sectores y una
-              sola cuadrilla para todo el bloque. */}
+          {/* D-143 · D-162 · punto 2: la CONSTRUCCIÓN se procesa aparte, con sus
+              sectores y una sola cuadrilla para todo el bloque. El «bloque de
+              construcciones» suma REFERIDOS, EMPRESAS y CONSTRUCCIONES, y la
+              cuadrilla que lo atiende queda exclusiva (sin reparaciones ni
+              mantenimiento): los casos desalojados se informan aquí. */}
           <h3 className="subtitulo-seccion">Construcción (se procesa aparte)</h3>
           {(() => {
             const construccion = proceso?.construccion;
             const totalConstruccion = construccion?.total ?? 0;
+            // D-162 · punto 2: el bloque completo puede superar el tipo CONSTRUCCIÓN
+            // (incluye REFERIDOS y EMPRESAS); con solo la construcción se perdía.
+            const bloqueTotal = construccion?.bloque_total ?? totalConstruccion;
+            const desalojados = construccion?.desalojados ?? 0;
+            const excluyeReparaciones = construccion?.excluye_reparaciones ?? false;
             const incluidaEnChecklist =
               tipos.includes('COMUNES') || tipos.includes('ESPECIALES_CONSTRUCCION');
-            if (totalConstruccion === 0) {
+            if (bloqueTotal === 0 && totalConstruccion === 0) {
               return (
                 <p className="vacio">
                   No hay construcciones para esa fecha. El bloque queda vacío y no se
@@ -560,9 +614,27 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
             }
             return (
               <div className="panel-construccion" id="proceso-construccion">
-                <div className="tarjeta">
-                  <div className="valor">{totalConstruccion}</div>
-                  <div className="etiqueta">Construcciones en el universo</div>
+                <div className="ficha-tarjetas">
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Bloque de construcciones</div>
+                    <div className="valor">{bloqueTotal}</div>
+                    <p className="texto-pequeno">Construcciones + referidos + empresas</p>
+                  </div>
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Construcciones (tipo)</div>
+                    <div className="valor">{totalConstruccion}</div>
+                    <p className="texto-pequeno">Casos del tipo CONSTRUCCIÓN</p>
+                  </div>
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Excluye reparaciones</div>
+                    <div className="valor">{excluyeReparaciones ? 'Sí' : 'No'}</div>
+                    <p className="texto-pequeno">Cuadrilla exclusiva del bloque</p>
+                  </div>
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Desalojados</div>
+                    <div className="valor">{desalojados}</div>
+                    <p className="texto-pequeno">Reparaciones/mantenimiento a otra cuadrilla</p>
+                  </div>
                 </div>
                 <div className="tabla-envoltura">
                   <table>
@@ -582,6 +654,11 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                     </tbody>
                   </table>
                 </div>
+                <p className="texto-pequeno">
+                  La tabla cuenta solo las construcciones del tipo CONSTRUCCIÓN; el
+                  bloque completo incluye además los <strong>referidos</strong> y las{' '}
+                  <strong>empresas</strong> del día.
+                </p>
                 <label className="casilla-fila" htmlFor="construccion-cuadrilla">
                   Cuadrilla que atiende toda la construcción
                   <select
@@ -601,10 +678,31 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                   </select>
                 </label>
                 <p className="texto-pequeno">
-                  Toda la construcción va a la cuadrilla elegida, aunque sus sectores
-                  estén asignados a otra. Sin elección, se usa la regla automática (la
-                  cuadrilla con más sectores de construcción).
+                  Todo el bloque de construcciones va a la cuadrilla elegida, aunque sus
+                  sectores estén asignados a otra. Sin elección, se usa la regla
+                  automática (la cuadrilla con más sectores de construcción).
                 </p>
+                {excluyeReparaciones ? (
+                  <div className="aviso aviso-info" id="construccion-exclusiva-d162">
+                    <span>
+                      <strong>La cuadrilla de construcción queda exclusiva:</strong> no
+                      recibe reparaciones ni mantenimiento y los casos que le tocaban se
+                      desalojan a otra cuadrilla. Las <strong>masivas se conservan</strong>{' '}
+                      porque son prioritarias.
+                    </span>
+                  </div>
+                ) : (
+                  <p className="texto-pequeno">
+                    La exclusividad de la cuadrilla es automática; con una sola cuadrilla
+                    de calle no se puede aplicar y esos casos se citan.
+                  </p>
+                )}
+                {desalojados > 0 && (
+                  <p className="texto-pequeno" id="construccion-desalojados-d162">
+                    Se desalojaron <strong>{desalojados}</strong> caso(s) de
+                    reparación/mantenimiento de la cuadrilla de construcción.
+                  </p>
+                )}
                 {!incluidaEnChecklist && (
                   <div className="aviso aviso-info">
                     <span>
