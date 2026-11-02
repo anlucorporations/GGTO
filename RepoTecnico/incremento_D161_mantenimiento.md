@@ -54,8 +54,9 @@ medibles en producción (2026-10-29: **24 casos** JUSTIFICATIVO PENDIENTE de
    a `MANTENIMIENTO` los casos `nombre_cliente ILIKE 'JUSTIFICATIVO %'` +
    `CONSTRUCCION` + `PENDIENTE`; (3) **hereda el sector de su falla masiva**
    (la masiva activa asociada por `falla_masiva_caso`) cuando el caso no
-   tiene; (4) deja trazabilidad en `caso_estado_hist` (usuario
-   `d161-migracion`, motivo D-161). Un solo lote; los cerrados no se tocan.
+   tiene; (4) deja trazabilidad en `caso_estado_hist` (motivo D-161 y, como
+   dueño, el **P00 del usuario SUPER** resuelto de la base — la columna tiene
+   FK a `usuario(p00)`). Un solo lote; los cerrados no se tocan.
 7. **Web.** `TipoCaso` y `TipoAsignacionDespacho` ganan el literal; la ficha
    del despacho muestra el chip «Mantenimiento» (icono `IconoActividad`, verde
    la ficha del despacho muestra el chip «Mantenimiento» (icono `IconoActividad`, verde
