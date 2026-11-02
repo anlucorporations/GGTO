@@ -72,6 +72,40 @@ class DespachoCasos(Base):
     despacho: Mapped[Despacho] = relationship(back_populates="casos")
 
 
+class DespachoMetricaDiaria(Base):
+    """Acumulado diario persistido del despacho (D-163).
+
+    Una fila por central, fecha y columna de negocio. Los triggers de la base
+    la recalculan al cambiar una asignación o el desenlace del caso, para que
+    WEB/APK no tengan que reconstruir las métricas históricas al leerlas.
+    """
+
+    __tablename__ = "despacho_metrica_diaria"
+
+    id_metrica: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_central: Mapped[int] = mapped_column(ForeignKey("central.id_central"), nullable=False)
+    fecha: Mapped[date] = mapped_column(Date, nullable=False)
+    columna: Mapped[str] = mapped_column(String(12), nullable=False)
+    asignados: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    asignados_reparacion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    asignados_construccion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cerrados: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cerrados_reparacion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cerrados_construccion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    enrutado: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    citado: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    citado_reparacion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    citado_construccion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    diferidos: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    diferidos_reparacion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    diferidos_construccion: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    recalculado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("id_central", "fecha", "columna", name="despacho_metrica_diaria_unica"),
+    )
+
+
 class CuadrillaSectorDia(Base):
     """Asignación dinámica de sectores a cuadrillas para un día (D-66).
 

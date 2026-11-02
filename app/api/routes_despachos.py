@@ -16,6 +16,7 @@ from ..models import (
     Cuadrilla,
     Despacho,
     DespachoCasos,
+    DespachoMetricaDiaria,
     FallaMasiva,
     Notificacion,
     Sector,
@@ -743,6 +744,13 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
     `es_masiva`, que pinta el icono MASIVA en la cuadrilla a la que se le asignó
     una falla masiva.
     """
+    metricas_persistidas = list(db.scalars(
+        select(DespachoMetricaDiaria).where(
+            DespachoMetricaDiaria.id_central == id_central,
+            DespachoMetricaDiaria.fecha == fecha,
+        )
+    ).all())
+    usa_metricas_persistidas = len(metricas_persistidas) == 3
     filas = db.execute(
         select(Despacho, Cuadrilla, DespachoCasos, Caso)
         .join(Cuadrilla, Cuadrilla.id_cuadrilla == Despacho.id_cuadrilla)
@@ -800,7 +808,10 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
         columna = _columna_de(caso, dc.tipo_asignacion)
         if columna is not None:
             sub = "construccion" if caso.tipo_caso == "CONSTRUCCION" else "reparacion"
-            for destino in (fila["columnas"][columna], totales["columnas"][columna]):
+            destinos = [fila["columnas"][columna]]
+            if not usa_metricas_persistidas:
+                destinos.append(totales["columnas"][columna])
+            for destino in destinos:
                 destino["asignados"] += 1
                 destino[f"asignados_{sub}"] += 1
                 if cerrado:
@@ -856,6 +867,16 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
             fila["es_masiva"] = True
             fila["masivas"] = sorted(ids)
         totales["masivas"] += len(fila["masivas"])
+
+    # D-163: las columnas globales se leen del acumulado diario. El detalle por
+    # cuadrilla sigue en memoria porque la pantalla también lo muestra.
+    if usa_metricas_persistidas:
+        totales["columnas"] = {
+            metrica.columna.lower(): {
+                clave: getattr(metrica, clave) for clave in _COLUMNA_VACIA
+            }
+            for metrica in metricas_persistidas
+        }
 
     return ReporteProduccionOut(
         fecha=fecha, id_central=id_central,

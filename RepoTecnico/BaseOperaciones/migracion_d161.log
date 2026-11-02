@@ -47,3 +47,8 @@ DETAIL:  Key (usuario)=(d161-migracion) is not present in table "usuario".
 [2026-10-30T22:13:18+00:00] dueño de la bitácora (FK usuario.p00): SUPER «123456»
 [2026-10-30T22:13:18+00:00] verificación post-migración: {'catalogo_mantenimiento': 1, 'catalogo_despacho': 1, 'casos_reclasificados': 24, 'pendientes_reclasificacion': 0, 'sin_sector': 8}
 [2026-10-30T22:13:18+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA
+[2026-11-02T14:11:59+00:00] ==============================================================================
+[2026-11-02T14:11:59+00:00] MIGRACIÓN D-161 (casos JUSTIFICATIVO → MANTENIMIENTO)
+[2026-11-02T14:11:59+00:00] modo=SIMULACIÓN
+[2026-11-02T14:11:59+00:00] estado actual: {'catalogo_mantenimiento': 1, 'catalogo_despacho': 1, 'casos_reclasificados': 24, 'pendientes_reclasificacion': 0, 'sin_sector': 8}
+[2026-11-02T14:11:59+00:00] ✓ La base YA está migrada: no hay cambios pendientes.

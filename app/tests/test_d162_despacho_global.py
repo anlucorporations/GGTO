@@ -27,7 +27,7 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
-from app.models import Caso, Cuadrilla, Despacho, DespachoCasos, Mensaje
+from app.models import Caso, Cuadrilla, Despacho, DespachoCasos, DespachoMetricaDiaria, Mensaje
 from app.services.tiempo import hoy_operativo
 
 BASE = "/api/v1/despachos"
@@ -459,3 +459,16 @@ def test_el_reporte_del_dia_desglosa_el_despacho_en_tres_columnas(
         totales["asignados"]
     )
     assert totales["asignados"] == 9
+
+    # D-163: las tres columnas no son un cálculo efímero del endpoint. Quedan
+    # persistidas por fecha y el trigger las actualizó al cambiar los estados.
+    filas_metricas = db_session.scalars(
+        select(DespachoMetricaDiaria).where(
+            DespachoMetricaDiaria.id_central == entorno["id_central"],
+            DespachoMetricaDiaria.fecha == date.fromisoformat(HOY),
+        )
+    ).all()
+    assert {fila.columna for fila in filas_metricas} == {"COMUNES", "REFERIDOS", "EMPRESA"}
+    persistidas = {fila.columna.lower(): fila for fila in filas_metricas}
+    assert persistidas["empresa"].cerrados_construccion == 1
+    assert persistidas["referidos"].enrutado == 1
