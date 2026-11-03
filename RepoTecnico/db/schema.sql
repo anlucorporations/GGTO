@@ -1210,6 +1210,14 @@ CREATE TABLE IF NOT EXISTS despacho_metrica_diaria (
 CREATE INDEX IF NOT EXISTS ix_despacho_metrica_diaria_fecha
     ON despacho_metrica_diaria (id_central, fecha DESC);
 
+-- La tabla se deriva del despacho: misma política de central (D-36).
+ALTER TABLE despacho_metrica_diaria ENABLE ROW LEVEL SECURITY;
+ALTER TABLE despacho_metrica_diaria FORCE  ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_despacho_metrica_central ON despacho_metrica_diaria;
+CREATE POLICY p_despacho_metrica_central ON despacho_metrica_diaria
+    USING      (app_central_actual() IS NULL OR id_central = app_central_actual())
+    WITH CHECK (app_central_actual() IS NULL OR id_central = app_central_actual());
+
 CREATE OR REPLACE FUNCTION fn_recalcular_metricas_despacho_diarias(p_central integer, p_fecha date)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN

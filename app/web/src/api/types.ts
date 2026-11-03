@@ -494,8 +494,8 @@ export interface PaginaCasos {
 /** Alta manual (RF-32). RN-AL-01: los datos de abajo son obligatorios. */
 export interface CasoManualCreate {
   id_central?: number | null;
-  /** Tipo de reporte de la alta: sola REPARACIÓN o CONSTRUCCIÓN. */
-  tipo_reporte: 'REPARACION' | 'CONSTRUCCION';
+  /** Tipo de reporte de la alta: REPARACIÓN, CONSTRUCCIÓN o MANTENIMIENTO. */
+  tipo_reporte: 'REPARACION' | 'CONSTRUCCION' | 'MANTENIMIENTO';
   /** D-145: el servidor genera `REF-REP-…` / `REF-CONS-…`; no se envía. */
   id_averia?: string | null;
   /** D-145: personal externo que reporta el caso. */
@@ -742,6 +742,20 @@ export interface ConstruccionProcesoOut {
   desalojados: number;
 }
 
+/** Sector con cantidad de casos de mantenimiento agrupados. */
+export interface SectorMantenimientoOut {
+  id_sector: number;
+  nombre: string | null;
+  cantidad: number;
+  id_cuadrilla?: number | null;
+}
+
+/** Bloque de casos de mantenimiento agrupados por sector. */
+export interface MantenimientoProcesoOut {
+  total: number;
+  por_sector: SectorMantenimientoOut[];
+}
+
 /**
  * D-162 · puntos 3 y 4: reglas del proceso de despacho que la web explica al
  * supervisor.
@@ -820,6 +834,8 @@ export interface ProcesoDespachoOut {
   resumen: Record<string, unknown>;
   /** D-143: bloque aparte de construcción (sectores, cantidades y cuadrilla). */
   construccion?: ConstruccionProcesoOut;
+  /** Casos de mantenimiento agrupados por sector para asignación en sección aparte. */
+  mantenimiento?: MantenimientoProcesoOut;
 }
 
 export interface GrupoCuadrillaOut {
@@ -1304,55 +1320,6 @@ export type CitasFiltros = {
   /** D-72: Tipo y Clase del caso asociado. */
   tipo_caso?: string;
   categoria?: string;
-};
-
-/* --- Seguimiento (RF-34) ------------------------------------------ */
-
-export type EstadoSeguimiento = 'EN_COLA' | 'RESUELTO' | 'DEVUELTO';
-
-export interface SeguimientoCreate {
-  id_caso: number;
-  instancia_destino: string;
-  motivo?: string | null;
-  estado?: EstadoSeguimiento;
-  observacion?: string | null;
-}
-
-export interface SeguimientoUpdate {
-  instancia_destino?: string;
-  motivo?: string | null;
-  estado?: EstadoSeguimiento;
-  observacion?: string | null;
-  fecha_retorno?: string | null;
-}
-
-export interface SeguimientoOut {
-  id_seguimiento: number;
-  id_caso: number;
-  instancia_destino: string;
-  motivo: string | null;
-  fecha_envio: string | null;
-  fecha_retorno: string | null;
-  estado: string;
-  observacion: string | null;
-  usuario: string | null;
-  /* D-156: contexto del caso para que SEGUIMIENTO sea una vista real. */
-  id_averia: string | null;
-  nombre_cliente: string | null;
-  direccion: string | null;
-  sector_nombre: string | null;
-  estado_caso: string | null;
-  id_central: number | null;
-  id_cuadrilla: number | null;
-  cuadrilla_codigo: string | null;
-  cuadrilla_nombre: string | null;
-}
-
-export type SeguimientoFiltros = {
-  id_caso?: number;
-  estado?: string;
-  instancia_destino?: string;
-  q?: string;
 };
 
 /* ------------------------------------------------------------------ */

@@ -98,7 +98,12 @@ def _nuevo_id_averia_ref(db: Session, tipo_reporte: str) -> str:
     reparación. El correlativo sale de la secuencia `seq_caso_ref`, la misma que
     usaba `generar_id_averia_ref`, así que dos altas simultáneas nunca chocan.
     """
-    prefijo = "CONS" if str(tipo_reporte).upper() == "CONSTRUCCION" else "REP"
+    if str(tipo_reporte).upper() == "CONSTRUCCION":
+        prefijo = "CONS"
+    elif str(tipo_reporte).upper() == "MANTENIMIENTO":
+        prefijo = "MANT"
+    else:
+        prefijo = "REP"
     numero: int = db.execute(text("SELECT nextval('seq_caso_ref')")).scalar_one()
     return f"REF-{prefijo}-{int(numero):06d}"
 
@@ -566,7 +571,8 @@ def crear_manual(
             db, caso, "REFERIDO" if caso.categoria == "REFERIDO" else None
         )
         especial.tipo_actividad = (
-            "CONSTRUCCION" if datos.tipo_reporte == "CONSTRUCCION" else "REPARACION"
+            "CONSTRUCCION" if datos.tipo_reporte == "CONSTRUCCION"
+            else ("MANTENIMIENTO" if datos.tipo_reporte == "MANTENIMIENTO" else "REPARACION")
         )
         if solicitante is not None:
             especial.id_solicitante = solicitante.id_solicitante

@@ -203,3 +203,101 @@ def test_el_reporte_del_dia_cuenta_el_mantenimiento_aparte(client, entorno, db_s
     totales = r.json()["totales"]
     assert totales["mantenimientos"] == 3
     assert totales["mantenimientos_cerradas"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# D-165 · punto 3: bloque aparte de mantenimiento por sector en el despacho
+# --------------------------------------------------------------------------- #
+def test_el_proceso_informa_el_bloque_mantenimiento_por_sector(client, entorno):
+    """`GET /despachos/proceso` trae el bloque aparte de mantenimiento agrupado."""
+    r = client.get(
+        f"{DESPACHOS}/proceso",
+        params={"fecha": hoy_operativo().isoformat()},
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 200, r.text
+    datos = r.json()
+    bloque = datos["mantenimiento"]
+    assert bloque["total"] == 3
+    por_sector = {s["id_sector"]: s for s in bloque["por_sector"]}
+    assert por_sector[entorno["id_sector_a"]]["cantidad"] == 2
+    assert por_sector[entorno["id_sector_a"]]["id_cuadrilla"] == entorno["cu_a"]
+    assert por_sector[entorno["id_sector_b"]]["cantidad"] == 1
+    assert por_sector[entorno["id_sector_b"]]["id_cuadrilla"] == entorno["cu_b"]
+
+
+def test_mantenimiento_asignaciones_reubica_por_sector(client, entorno, db_session):
+    """La sección aparte permite llevar el mantenimiento de un sector a otra
+    cuadrilla (override); los demás sectores conservan su cuadrilla."""
+    hoy = hoy_operativo()
+    r = client.post(
+        f"{DESPACHOS}/procesar",
+        json={
+            "fecha": hoy.isoformat(),
+            "asignaciones": [
+                {"id_cuadrilla": entorno["cu_a"], "ids_sector": [entorno["id_sector_a"]]},
+                {"id_cuadrilla": entorno["cu_b"], "ids_sector": [entorno["id_sector_b"]]},
+            ],
+            # Override: el mantenimiento del sector A va con la cuadrilla B.
+            "mantenimiento_asignaciones": [
+                {"id_sector": entorno["id_sector_a"], "id_cuadrilla": entorno["cu_b"]},
+            ],
+            "reemplazar": True,
+        },
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 201, r.text
+
+    db_session.expire_all()
+    filas = db_session.execute(
+        select(DespachoCasos.id_caso, Despacho.id_cuadrilla)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .join(Caso, Caso.id_caso == DespachoCasos.id_caso)
+        .where(DespachoCasos.tipo_asignacion == "MANTENIMIENTO")
+    ).all()
+    por_averia = {}
+    for id_caso, id_cuadrilla in filas:
+        por_averia[db_session.get(Caso, id_caso).id_averia] = id_cuadrilla
+    # sector A (2 casos) → override cu_b; sector B (1 caso) → default cu_b
+    assert por_averia["TSTD161-M1"] == entorno["cu_b"]
+    assert por_averia["TSTD161-M2"] == entorno["cu_b"]
+    assert por_averia["TSTD161-M3"] == entorno["cu_b"]
+
+
+def test_mantenimiento_asignaciones_null_conserva_la_cuadrilla_del_sector(
+    client, entorno, db_session
+):
+    """Un `id_cuadrilla` explícitamente nulo mantiene la regla D-113 (la cuadrilla
+    de su sector)."""
+    hoy = hoy_operativo()
+    r = client.post(
+        f"{DESPACHOS}/procesar",
+        json={
+            "fecha": hoy.isoformat(),
+            "asignaciones": [
+                {"id_cuadrilla": entorno["cu_a"], "ids_sector": [entorno["id_sector_a"]]},
+                {"id_cuadrilla": entorno["cu_b"], "ids_sector": [entorno["id_sector_b"]]},
+            ],
+            "mantenimiento_asignaciones": [
+                {"id_sector": entorno["id_sector_a"], "id_cuadrilla": None},
+            ],
+            "reemplazar": True,
+        },
+        headers=entorno["headers"],
+    )
+    assert r.status_code == 201, r.text
+
+    db_session.expire_all()
+    filas = db_session.execute(
+        select(DespachoCasos.id_caso, Despacho.id_cuadrilla)
+        .join(Despacho, Despacho.id_despacho == DespachoCasos.id_despacho)
+        .join(Caso, Caso.id_caso == DespachoCasos.id_caso)
+        .where(DespachoCasos.tipo_asignacion == "MANTENIMIENTO")
+    ).all()
+    por_averia = {}
+    for id_caso, id_cuadrilla in filas:
+        por_averia[db_session.get(Caso, id_caso).id_averia] = id_cuadrilla
+    # A sin override → cu_a; B sin override → cu_b
+    assert por_averia["TSTD161-M1"] == entorno["cu_a"]
+    assert por_averia["TSTD161-M2"] == entorno["cu_a"]
+    assert por_averia["TSTD161-M3"] == entorno["cu_b"]

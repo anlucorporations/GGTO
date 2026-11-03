@@ -195,6 +195,22 @@ class SectorConstruccionOut(BaseModel):
     cantidad: int = 0
 
 
+class SectorMantenimientoOut(BaseModel):
+    """Sector con su cantidad de casos de mantenimiento (D-161)."""
+
+    id_sector: int
+    nombre: str | None = None
+    cantidad: int = 0
+    id_cuadrilla: int | None = None
+
+
+class MantenimientoProcesoOut(BaseModel):
+    """Bloque de MANTENIMIENTO del proceso de despacho (agrupado por sector)."""
+
+    total: int = 0
+    por_sector: list[SectorMantenimientoOut] = Field(default_factory=list)
+
+
 class ConstruccionProcesoOut(BaseModel):
     """Bloque de CONSTRUCCIÓN del proceso de despacho (D-143 · D-162).
 
@@ -273,8 +289,17 @@ class ProcesoDespachoOut(BaseModel):
     sin_asignar: list[CasoAsignadoOut] = Field(default_factory=list)
     #: D-143: bloque aparte de construcción (sectores, cantidades y cuadrilla).
     construccion: ConstruccionProcesoOut = Field(default_factory=ConstruccionProcesoOut)
+    #: D-161: bloque aparte de mantenimiento (agrupado por sector).
+    mantenimiento: MantenimientoProcesoOut = Field(default_factory=MantenimientoProcesoOut)
     reglas: dict = Field(default_factory=dict)
     resumen: dict = Field(default_factory=dict)
+
+
+class AsignacionMantenimiento(BaseModel):
+    """Asignación de cuadrilla para los casos de mantenimiento de un sector."""
+
+    id_sector: int
+    id_cuadrilla: int | None = None
 
 
 class AsignacionMasiva(BaseModel):
@@ -298,7 +323,7 @@ class ProcesarDespacho(BaseModel):
         default=None,
         description=(
             "Tipos a distribuir: COMUNES, ESPECIALES_REPARACION, "
-            "ESPECIALES_CONSTRUCCION, ESPECIALES_GOBIERNO, MASIVAS"
+            "ESPECIALES_CONSTRUCCION, ESPECIALES_GOBIERNO, MASIVAS, MANTENIMIENTO"
         ),
     )
     #: D-113 · D-114: reasignación de las fallas masivas y su inclusión.
@@ -310,6 +335,16 @@ class ProcesarDespacho(BaseModel):
             "Cuadrilla a la que se asigna toda la construcción. Si se omite, se "
             "usa la regla automática (la cuadrilla con más sectores de construcción)."
         ),
+    )
+    #: D-161: asignación de cuadrillas para mantenimiento por sector en sección aparte.
+    mantenimiento_asignaciones: (
+        list[AsignacionMantenimiento]
+        | list[AsignacionBloque]
+        | dict[int, int | None]
+        | None
+    ) = Field(
+        default=None,
+        description="Asignaciones de cuadrilla por sector para el bloque de mantenimiento",
     )
     reemplazar: bool = True
 

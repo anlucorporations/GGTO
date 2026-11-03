@@ -16,10 +16,10 @@ import {
   IconoConfig,
   IconoDespacho,
   IconoEspeciales,
+  IconoMantenimiento,
   IconoPanel,
   IconoPerfil,
   IconoSalir,
-  IconoSeguimiento,
 } from './Iconos';
 import { ETIQUETA_MASIVAS, IconoMasiva, ROLES_MASIVAS, RUTA_MASIVAS } from '../masivas/registro';
 
@@ -46,12 +46,12 @@ const SECCIONES: Seccion[] = [
   { ruta: '/', etiqueta: 'OPERACIÓN', fin: true, Icono: IconoPanel, roles: null },
   { ruta: '/casos', etiqueta: 'CASOS', fin: false, Icono: IconoCasos, roles: null },
   { ruta: '/especiales', etiqueta: 'ESPECIALES', fin: false, Icono: IconoEspeciales, roles: null },
-  // D-156: SEGUIMIENTO (RF-34). El COORDINADOR no ve el universo de casos.
+  // MANTENIMIENTO: sección para incorporar y gestionar casos de mantenimiento.
   {
-    ruta: '/seguimiento',
-    etiqueta: 'SEGUIMIENTO',
+    ruta: '/mantenimiento',
+    etiqueta: 'MANTENIMIENTO',
     fin: false,
-    Icono: IconoSeguimiento,
+    Icono: IconoMantenimiento,
     roles: ['SUPER', 'ADMIN', 'SUPERVISOR', 'TECNICO'],
   },
   { ruta: '/agenda', etiqueta: 'AGENDA', fin: false, Icono: IconoAgenda, roles: null },

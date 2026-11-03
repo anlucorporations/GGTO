@@ -1,0 +1,30 @@
+[2026-11-03T19:07:33+00:00] ==============================================================================
+[2026-11-03T19:07:33+00:00] MIGRACIÓN D-163 (métricas diarias persistidas del despacho)
+[2026-11-03T19:07:33+00:00] modo=SIMULACIÓN
+[2026-11-03T19:07:33+00:00] estado actual: {'tabla_ok': 0, 'funcion_ok': 0, 'triggers_ok': 0, 'jornadas': 1, 'filas_metrica': 0}
+[2026-11-03T19:07:33+00:00] pasos pendientes: 9
+[2026-11-03T19:07:33+00:00] (simulación) Ejecuta con --aplicar --si para escribir.
+[2026-11-03T19:07:34+00:00] ==============================================================================
+[2026-11-03T19:07:34+00:00] MIGRACIÓN D-163 (métricas diarias persistidas del despacho)
+[2026-11-03T19:07:34+00:00] modo=APLICAR
+[2026-11-03T19:07:34+00:00] estado actual: {'tabla_ok': 0, 'funcion_ok': 0, 'triggers_ok': 0, 'jornadas': 1, 'filas_metrica': 0}
+[2026-11-03T19:07:34+00:00] pasos pendientes: 9
+[2026-11-03T19:07:37+00:00] verificación post-migración: {'tabla_ok': 1, 'funcion_ok': 1, 'triggers_ok': 4, 'jornadas': 1, 'filas_metrica': 3}
+[2026-11-03T19:07:37+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA (recalculadas)
+[2026-11-03T19:07:39+00:00] ==============================================================================
+[2026-11-03T19:07:39+00:00] MIGRACIÓN D-163 (métricas diarias persistidas del despacho)
+[2026-11-03T19:07:39+00:00] modo=SIMULACIÓN
+[2026-11-03T19:07:39+00:00] estado actual: {'tabla_ok': 1, 'funcion_ok': 1, 'triggers_ok': 4, 'jornadas': 1, 'filas_metrica': 3}
+[2026-11-03T19:07:39+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
+[2026-11-03T19:13:21+00:00] ==============================================================================
+[2026-11-03T19:13:21+00:00] MIGRACIÓN D-163 (métricas diarias persistidas del despacho)
+[2026-11-03T19:13:21+00:00] modo=APLICAR
+[2026-11-03T19:13:21+00:00] estado actual: {'tabla_ok': 1, 'funcion_ok': 1, 'triggers_ok': 4, 'politica_ok': 0, 'jornadas': 1, 'filas_metrica': 3}
+[2026-11-03T19:13:21+00:00] pasos pendientes: 13
+[2026-11-03T19:13:24+00:00] verificación post-migración: {'tabla_ok': 1, 'funcion_ok': 1, 'triggers_ok': 4, 'politica_ok': 1, 'jornadas': 1, 'filas_metrica': 3}
+[2026-11-03T19:13:24+00:00] ✓ MIGRACIÓN COMPLETA Y VERIFICADA (recalculadas)
+[2026-11-03T19:13:26+00:00] ==============================================================================
+[2026-11-03T19:13:26+00:00] MIGRACIÓN D-163 (métricas diarias persistidas del despacho)
+[2026-11-03T19:13:26+00:00] modo=SIMULACIÓN
+[2026-11-03T19:13:26+00:00] estado actual: {'tabla_ok': 1, 'funcion_ok': 1, 'triggers_ok': 4, 'politica_ok': 1, 'jornadas': 1, 'filas_metrica': 3}
+[2026-11-03T19:13:26+00:00] ✓ La base YA está migrada: no hay cambios pendientes.

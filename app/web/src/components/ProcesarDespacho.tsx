@@ -102,6 +102,8 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
   const [masivasIncluidas, setMasivasIncluidas] = useState<Record<number, boolean>>({});
   /** D-143: cuadrilla que atiende **toda** la construcción (una sola). */
   const [construccionCuadrilla, setConstruccionCuadrilla] = useState<number | null>(null);
+  /** Casos de mantenimiento por sector asignados a cuadrillas en sección aparte. */
+  const [mantenimientoAsignacion, setMantenimientoAsignacion] = useState<Record<number, number | null>>({});
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
@@ -130,6 +132,12 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
       );
       // D-143: la construcción arranca con la cuadrilla que sugiere el servidor.
       setConstruccionCuadrilla(datos.construccion?.id_cuadrilla ?? null);
+      // Mantenimiento por sector: inicializa con la asignación por sector existente
+      const initMant: Record<number, number | null> = {};
+      for (const sm of datos.mantenimiento?.por_sector ?? []) {
+        initMant[sm.id_sector] = sm.id_cuadrilla ?? datos.sectores.find((s) => s.id_sector === sm.id_sector)?.id_cuadrilla ?? null;
+      }
+      setMantenimientoAsignacion(initMant);
       setError('');
     } catch (e) {
       setError(e instanceof api.ApiError ? e.message : 'No se pudo cargar el proceso de despacho.');
@@ -349,6 +357,11 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
         masivas: masivasPayload,
         // D-143: toda la construcción a la cuadrilla elegida.
         construccion_cuadrilla: construccionCuadrilla,
+        // Casos de mantenimiento agrupados por sector asignados a cuadrillas en sección aparte.
+        mantenimiento_asignaciones: Object.entries(mantenimientoAsignacion).map(([idSec, idCua]) => ({
+          id_sector: Number(idSec),
+          id_cuadrilla: idCua,
+        })),
         reemplazar: true,
       });
       onProcesado(creados);
@@ -468,9 +481,9 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                 )}
                 {proceso?.reglas.mantenimientos_por_sector && (
                   <>
-                    <strong>Mantenimiento por sector:</strong> se reparte a la
-                    cuadrilla asignada al sector de cada caso; no tiene bloque propio
-                    como la construcción.
+                    <strong>Mantenimiento por sector:</strong> los casos se agrupan
+                    por sector y se asignan a cuadrillas en la sección aparte
+                    «Mantenimiento (sección aparte por sector)».
                   </>
                 )}
               </span>
@@ -712,6 +725,78 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                     </span>
                   </div>
                 )}
+              </div>
+            );
+          })()}
+
+          {/* Casos de mantenimiento agrupados por sector y asignados a cuadrillas en sección aparte */}
+          <h3 className="subtitulo-seccion">Mantenimiento (sección aparte por sector)</h3>
+          {(() => {
+            const mantenimiento = proceso?.mantenimiento;
+            const porSector = mantenimiento?.por_sector ?? [];
+            const totalMantenimiento = mantenimiento?.total ?? 0;
+            if (totalMantenimiento === 0 || porSector.length === 0) {
+              return (
+                <p className="vacio">
+                  No hay casos de mantenimiento para esa fecha.
+                </p>
+              );
+            }
+            return (
+              <div className="panel-mantenimiento" id="proceso-mantenimiento">
+                <div className="ficha-tarjetas">
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Total mantenimiento</div>
+                    <div className="valor">{totalMantenimiento}</div>
+                    <p className="texto-pequeno">Casos del tipo MANTENIMIENTO</p>
+                  </div>
+                  <div className="ficha-tarjeta">
+                    <div className="etiqueta">Sectores con mantenimiento</div>
+                    <div className="valor">{porSector.length}</div>
+                    <p className="texto-pequeno">Agrupados por sector</p>
+                  </div>
+                </div>
+                <div className="tabla-envoltura">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Sector</th>
+                        <th>Casos de mantenimiento</th>
+                        <th>Cuadrilla asignada</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {porSector.map((s) => (
+                        <tr key={s.id_sector}>
+                          <td><strong>{s.nombre ?? `Sector #${s.id_sector}`}</strong></td>
+                          <td><span className="chip chip-info">{s.cantidad} caso(s)</span></td>
+                          <td>
+                            <select
+                              aria-label={`Cuadrilla para mantenimiento en ${s.nombre ?? `Sector ${s.id_sector}`}`}
+                              value={mantenimientoAsignacion[s.id_sector] ?? ''}
+                              onChange={(e) =>
+                                setMantenimientoAsignacion({
+                                  ...mantenimientoAsignacion,
+                                  [s.id_sector]: e.target.value ? Number(e.target.value) : null,
+                                })
+                              }
+                            >
+                              <option value="">— Cuadrilla del sector (por defecto) —</option>
+                              {cuadrillasCalle.map((c) => (
+                                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                                  {c.codigo} — {c.nombre}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="texto-pequeno">
+                  Los casos de mantenimiento se agrupan por sectores y se asignan a las cuadrillas en esta sección aparte.
+                </p>
               </div>
             );
           })()}

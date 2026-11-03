@@ -116,10 +116,6 @@ import type {
   SectorizacionPendientesOut,
   SectorUpdate,
   SetupResponse,
-  SeguimientoCreate,
-  SeguimientoFiltros,
-  SeguimientoOut,
-  SeguimientoUpdate,
   SincronizacionDetalle,
   SincronizacionesFiltros,
   Solicitante,
@@ -735,6 +731,8 @@ export function procesarDespacho(datos: {
   masivas?: AsignacionMasiva[];
   /** D-143: cuadrilla que atiende **toda** la construcción del día. */
   construccion_cuadrilla?: number | null;
+  /** Casos de mantenimiento agrupados por sector asignados a cuadrillas. */
+  mantenimiento_asignaciones?: { id_sector: number; id_cuadrilla?: number | null }[];
   reemplazar?: boolean;
 }): Promise<DespachoDetalleOut[]> {
   return conCuerpo<DespachoDetalleOut[]>('/despachos/procesar', 'POST', datos);
@@ -939,31 +937,6 @@ export function actualizarCita(idCita: number, data: CitaUpdate): Promise<CitaOu
 /** `DELETE` lógico: la cita pasa a CANCELADA (responde `204`). */
 export function eliminarCita(idCita: number): Promise<void> {
   return request<void>(`/citas/${idCita}`, { method: 'DELETE' });
-}
-
-/* --- Seguimiento (RF-34) ------------------------------------------ */
-
-export function listarSeguimiento(
-  filtros: SeguimientoFiltros = {},
-): Promise<SeguimientoOut[]> {
-  return request<SeguimientoOut[]>(`/seguimiento${construirQuery(filtros)}`);
-}
-
-/** Al crear en `EN_COLA`, el caso pasa a ENRUTADO y sale del despacho de calle. */
-export function crearSeguimiento(data: SeguimientoCreate): Promise<SeguimientoOut> {
-  return conCuerpo<SeguimientoOut>('/seguimiento', 'POST', data);
-}
-
-/** Con estado `DEVUELTO` el caso vuelve a NUEVO. */
-export function actualizarSeguimiento(
-  idSeguimiento: number,
-  data: SeguimientoUpdate,
-): Promise<SeguimientoOut> {
-  return conCuerpo<SeguimientoOut>(`/seguimiento/${idSeguimiento}`, 'PATCH', data);
-}
-
-export function obtenerSeguimiento(idSeguimiento: number): Promise<SeguimientoOut> {
-  return request<SeguimientoOut>(`/seguimiento/${idSeguimiento}`);
 }
 
 /* ------------------------------------------------------------------ */

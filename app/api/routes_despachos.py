@@ -370,6 +370,8 @@ def procesar(
         masivas_incluidas=masivas_incluidas,
         # D-143: toda la construcción a la cuadrilla elegida en el formulario.
         construccion_cuadrilla_id=datos.construccion_cuadrilla,
+        # D-161: asignación de cuadrilla por sector para casos de mantenimiento en sección aparte.
+        mantenimiento_asignaciones=datos.mantenimiento_asignaciones,
     )
     creados = svc.guardar_propuesta(db, resultado, usuario.p00)
     if reproceso:
@@ -870,6 +872,7 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
 
     # D-163: las columnas globales se leen del acumulado diario. El detalle por
     # cuadrilla sigue en memoria porque la pantalla también lo muestra.
+    # D-163: las métricas diarias se guardan off-chain en la base operativa.
     if usa_metricas_persistidas:
         totales["columnas"] = {
             metrica.columna.lower(): {
@@ -877,6 +880,29 @@ def _reporte(db: Session, id_central: int, fecha: date) -> ReporteProduccionOut:
             }
             for metrica in metricas_persistidas
         }
+    elif filas:
+        for col_nombre, col_datos in totales["columnas"].items():
+            col_upper = col_nombre.upper()
+            existente = db.scalar(
+                select(DespachoMetricaDiaria).where(
+                    DespachoMetricaDiaria.id_central == id_central,
+                    DespachoMetricaDiaria.fecha == fecha,
+                    DespachoMetricaDiaria.columna == col_upper,
+                )
+            )
+            if existente is None:
+                existente = DespachoMetricaDiaria(
+                    id_central=id_central,
+                    fecha=fecha,
+                    columna=col_upper,
+                )
+                db.add(existente)
+            for clave in _COLUMNA_VACIA:
+                setattr(existente, clave, col_datos.get(clave, 0))
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
 
     return ReporteProduccionOut(
         fecha=fecha, id_central=id_central,

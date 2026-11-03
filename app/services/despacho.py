@@ -645,6 +645,7 @@ def construir_propuesta(
     tipos: Iterable[object] | str | None = None,
     masivas_incluidas: set[int] | None = None,
     construccion_cuadrilla_id: int | None = None,
+    mantenimiento_asignaciones: dict[int, int | None] | list | None = None,
 ) -> Propuesta:
     """Reparte el universo según la asignación de sectores del día.
 
@@ -781,18 +782,49 @@ def construir_propuesta(
     citados_reasignados = 0
     masiva_reasignados = 0
 
+    mant_map: dict[int, int | None] = {}
+    if mantenimiento_asignaciones:
+        if isinstance(mantenimiento_asignaciones, dict):
+            mant_map = {int(k): v for k, v in mantenimiento_asignaciones.items()}
+        elif isinstance(mantenimiento_asignaciones, list):
+            for item in mantenimiento_asignaciones:
+                if isinstance(item, dict):
+                    if "id_sector" in item:
+                        mant_map[int(item["id_sector"])] = item.get("id_cuadrilla")
+                    elif "id_cuadrilla" in item and "ids_sector" in item:
+                        for s_id in item.get("ids_sector", []):
+                            mant_map[int(s_id)] = item["id_cuadrilla"]
+                elif hasattr(item, "id_sector"):
+                    mant_map[int(item.id_sector)] = getattr(item, "id_cuadrilla", None)
+                elif hasattr(item, "id_cuadrilla") and hasattr(item, "ids_sector"):
+                    for s_id in getattr(item, "ids_sector", []):
+                        mant_map[int(s_id)] = getattr(item, "id_cuadrilla", None)
+
     for id_sector, lista in sorted(
         por_sector.items(), key=lambda kv: (-len(kv[1]), kv[0] is None, kv[0] or 0)
     ):
         id_destino = asignacion.get(id_sector) if id_sector is not None else None
         for caso in lista:
-            envuelto = _envolver(caso, _tipo_asignacion(caso), 0, nombres, fecha)
+            tipo_asig = _tipo_asignacion(caso)
+            envuelto = _envolver(caso, tipo_asig, 0, nombres, fecha)
             # D-113: la cuadrilla asignada a la masiva tiene prioridad.
             id_masiva = overrides.get(caso.id_caso)
             destino = por_id.get(id_masiva) if id_masiva is not None else None
+            # Override de la sección aparte (D-161/D-165): solo manda si hay
+            # cuadrilla elegida; un `null` explícito conserva la cuadrilla del
+            # sector (regla D-113).
+            id_mant_dest = (
+                mant_map.get(caso.id_sector)
+                if tipo_asig == "MANTENIMIENTO"
+                and caso.id_sector is not None
+                and caso.id_sector in mant_map
+                else None
+            )
             if destino is not None:
                 if id_destino != destino.id_cuadrilla:
                     masiva_reasignados += 1
+            elif id_mant_dest is not None:
+                destino = por_id.get(id_mant_dest)
             elif id_destino is not None:
                 destino = por_id.get(id_destino)
             if destino is not None:
@@ -1200,6 +1232,31 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         "bloque_total": propuesta.reglas.get("construccion_bloque_total", 0),
     }
 
+    # Casos de mantenimiento agrupados por sector para asignación en sección aparte
+    sectores_mantenimiento: dict[int, dict] = {}
+    candidatos_mantenimiento = [
+        c for c in casos if _tipo_asignacion(c) == "MANTENIMIENTO"
+    ]
+    for caso in candidatos_mantenimiento:
+        if caso.id_sector is None:
+            continue
+        fila = sectores_mantenimiento.setdefault(
+            caso.id_sector,
+            {
+                "id_sector": caso.id_sector,
+                "nombre": nombres.get(caso.id_sector),
+                "cantidad": 0,
+                "id_cuadrilla": asignacion.get(caso.id_sector),
+            },
+        )
+        fila["cantidad"] += 1
+    bloque_mantenimiento = {
+        "total": len(candidatos_mantenimiento),
+        "por_sector": sorted(
+            sectores_mantenimiento.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])
+        ),
+    }
+
     retorno = {
         "fecha": fecha.isoformat(),
         "id_central": id_central,
@@ -1257,6 +1314,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
         "reglas": propuesta.reglas,
         "resumen": propuesta.resumen,
         "construccion": bloque_construccion,
+        "mantenimiento": bloque_mantenimiento,
     }
     return retorno
 
