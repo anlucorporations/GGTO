@@ -466,7 +466,7 @@ export default function Casos() {
               id="filtro-q"
               value={borrador.q}
               onChange={(e) => setBorrador({ ...borrador, q: e.target.value })}
-              placeholder="Busca en todos los renglones: avería, tipo, clase, sector, dirección, nombre, estado…"
+              placeholder="Busca en todos los campos de la ingesta: avería, tipo, clase, sector, dirección, cliente, teléfonos (ip/oficina/móvil), FAT, OLT, slot, puerto, serial, unidad de negocio, VENAPP, persona que reporta/atended, despachos, comentarios, resultados, estado…"
             />
           </div>
           <div className="campo">

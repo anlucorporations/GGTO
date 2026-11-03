@@ -132,8 +132,8 @@ export default function BuscadorGlobal({
           className="buscador-campo"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Buscar por incidente o número…"
-          aria-label="Buscar por incidente o número"
+          placeholder="Cualquier dato de la ingesta: incidente, teléfono, FAT, OLT, serial, nombre…"
+          aria-label="Buscar por cualquier campo de la ingesta"
           onFocus={() => resultados !== null && setAbierto(true)}
         />
         {texto && (

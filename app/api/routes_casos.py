@@ -43,7 +43,7 @@ from ..schemas.casos import (
     ReactivarCaso,
     ResolucionOut,
 )
-from ..services import clasificacion, pagos, resolucion
+from ..services import busqueda, clasificacion, pagos, resolucion
 from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
@@ -271,8 +271,11 @@ def listar(
     usuario: Usuario = Depends(_lectura),
     q: str | None = Query(
         default=None,
-        description="Texto libre: busca en todos los renglones de la tabla "
-        "(avería, tipo, clase, sector, dirección, nombre y estado)",
+        description="Texto libre: busca en **todos** los campos de la tabla de "
+        "ingesta (D-167): identificador, cliente, teléfonos y contactos, "
+        "geografía, central, datos técnicos FAT (OLT/slot/puerto/serial/ruta), "
+        "comentarios y resultados, quién atiende, códigos VENAPP, tipo, clase, "
+        "estado y sector",
     ),
     id_averia: str | None = None,
     telefono: str | None = None,
@@ -305,26 +308,11 @@ def listar(
     if q:
         termino = q.strip()
         patron = f"%{termino}%"
-        # D-144: el contacto se guarda normalizado (+58…), así que el número local
-        # («0414…») no coincidía; se busca también sin los ceros iniciales.
-        solo_digitos = re.sub(r"\D", "", termino)
-        patrones_contacto = [patron]
-        if len(solo_digitos) >= 7:
-            patrones_contacto.append(f"%{solo_digitos.lstrip('0')}%")
-        sectores_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
+        sector_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
+        # D-167: el texto libre recorre **todos** los campos de la tabla de
+        # ingesta (contacto D-144 incluido); el nombre del sector acompaña.
         condiciones.append(
-            or_(
-                Caso.id_averia.ilike(patron),
-                Caso.telefono.ilike(patron),
-                # D-144: el texto libre del listado también busca el contacto.
-                *(Caso.contacto_cliente.ilike(p) for p in patrones_contacto),
-                Caso.nombre_cliente.ilike(patron),
-                Caso.direccion.ilike(patron),
-                Caso.tipo_caso.ilike(patron),
-                Caso.categoria.ilike(patron),
-                Caso.estado_actual.ilike(patron),
-                Caso.id_sector.in_(sectores_q),
-            )
+            or_(*busqueda.condiciones(termino), Caso.id_sector.in_(sector_q))
         )
     if id_averia:
         condiciones.append(Caso.id_averia.ilike(f"%{id_averia.strip()}%"))
@@ -387,7 +375,12 @@ def listar(
 def buscar(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(_lectura),
-    q: str | None = Query(default=None, description="Incidente o número de teléfono"),
+    q: str | None = Query(
+        default=None,
+        description="Texto simple: busca en todos los campos de la tabla de "
+        "ingesta (D-167) — identificador, teléfonos, nombre, dirección, datos "
+        "técnicos FAT, comentarios, etc.",
+    ),
     id_averia: str | None = Query(default=None),
     telefono: str | None = Query(default=None),
     limite: int = Query(default=20, ge=1, le=100),
@@ -405,17 +398,10 @@ def buscar(
     condiciones = []
     if q:
         termino = q.strip()
-        # D-92 (adelanto mínimo de RT-19): la búsqueda cubre el **identificador de
-        # pago** (`telefono`) y el **número de contacto** (`contacto_cliente`).
-        condiciones.append(
-            or_(
-                Caso.id_averia.ilike(f"%{termino}%"),
-                Caso.telefono.ilike(f"%{termino}%"),
-                Caso.contacto_cliente.ilike(f"%{termino}%"),
-                Caso.nombre_cliente.ilike(f"%{termino}%"),
-                Caso.direccion.ilike(f"%{termino}%"),
-            )
-        )
+        # D-92 (adelanto mínimo de RT-19): la búsqueda cubría el **identificador
+        # de pago** (`telefono`) y el **número de contacto** (`contacto_cliente`);
+        # D-167: ahora cubre **todos** los campos de la tabla de ingesta.
+        condiciones.append(or_(*busqueda.condiciones(termino)))
     if id_averia:
         condiciones.append(Caso.id_averia == id_averia.strip())
     if telefono:
