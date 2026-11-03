@@ -18,3 +18,8 @@
 [2026-11-03T21:32:20+00:00] dueño de la bitácora (FK usuario.p00): SUPER «123456»
 [2026-11-03T21:32:21+00:00] verificación post-normalización: {'con_nombre_justificativo': 0, 'ya_renombrados': 24, 'banderas_huerfanas_global': 0, 'poblacion': 24, 'bandera_huerfana': 0, 'sin_sector': 8, 'filas_bitacora_d166': 24}
 [2026-11-03T21:32:21+00:00] RESULTADO: OK — normalización completa ✓
+[2026-11-03T22:26:03+00:00] ==============================================================================
+[2026-11-03T22:26:03+00:00] NORMALIZACIÓN D-166 (JUSTIFICATIVO → solicitud de mantenimiento del FAT)
+[2026-11-03T22:26:03+00:00] modo=SIMULACIÓN
+[2026-11-03T22:26:03+00:00] estado actual: {'con_nombre_justificativo': 0, 'ya_renombrados': 24, 'banderas_huerfanas_global': 0, 'poblacion': 24, 'bandera_huerfana': 0, 'sin_sector': 8, 'filas_bitacora_d166': 24}
+[2026-11-03T22:26:03+00:00] ✓ La base YA está normalizada: no hay cambios pendientes.
