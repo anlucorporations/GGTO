@@ -22,8 +22,8 @@ from ..schemas.ingesta import (
 from ..services import cuadrilla0, fallas, pagos
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.ingesta import (
-    COLUMNAS_ESPERADAS,
-    ESPECIFICACION,
+    CAMPOS_DESTINO,
+    CAMPOS_DESTINO_81,
     columnas_encabezado,
     encabezado_valido,
     filtrar_por_central,
@@ -37,7 +37,8 @@ router = APIRouter(prefix="/api/v1/ingesta", tags=["ingesta"])
 logger = logging.getLogger("ggto.ingesta")
 
 _escritura = require_roles("ADMIN", "SUPERVISOR")
-CAMPOS_ESPECIFICACION = tuple(c for c, _, _ in ESPECIFICACION)
+# Unión de las estructuras 80/81 (D-164): el orden preserva la de la original.
+CAMPOS_ESPECIFICACION = tuple(dict.fromkeys(CAMPOS_DESTINO + CAMPOS_DESTINO_81))
 TAMANO_LOTE_CONSULTA = 1000
 MAX_AVISOS_DETALLE = 500
 
@@ -190,7 +191,7 @@ def _detalle_encabezado(contenido: bytes | str) -> str:
     """Mensaje único de la validación de encabezado (RT-20)."""
     return (
         f"El encabezado tiene {columnas_encabezado(contenido)} columnas; "
-        f"se esperaban {COLUMNAS_ESPERADAS} (RT-05 / RT-20)"
+        f"se esperaban 80 u 81 (RT-05 / RT-20 · D-164)"
     )
 
 

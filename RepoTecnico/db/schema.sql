@@ -345,6 +345,8 @@ CREATE TABLE IF NOT EXISTS caso (
 
     -- Datos administrativos y de contacto
     telefono                varchar(30),
+    -- D-164: teléfono IP / fijo del cliente (columna 15 del CSV desde el 02/11/2026).
+    telefono_ip             varchar(30),
     fecha_reporte           timestamptz,
     persona_reporta         varchar(120),
     contacto_cliente        varchar(60),

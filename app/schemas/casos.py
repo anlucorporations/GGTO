@@ -21,8 +21,8 @@ ESTADOS_CASO = (
 )
 TIPO_CASO = Literal["AVERIA", "REPARACION", "CONSTRUCCION", "REFERIDO", "MANTENIMIENTO"]
 CATEGORIA = Literal["RESIDENCIAL", "EMPRESA", "REFERIDO", "GOBIERNO"]
-#: Tipo de reporte del alta (RN-AL-01): solo REPARACIÓN o CONSTRUCCIÓN.
-TIPO_REPORTE = Literal["REPARACION", "CONSTRUCCION"]
+#: Tipo de reporte del alta: REPARACIÓN, CONSTRUCCIÓN o MANTENIMIENTO.
+TIPO_REPORTE = Literal["REPARACION", "CONSTRUCCION", "MANTENIMIENTO"]
 #: Estados que **no** cuentan como trabajo abierto (mismo criterio que MONITOREO).
 ESTADOS_TERMINALES = ("CERRADO", "CANCELADO")
 ORIGEN = Literal["INGESTA_CSV", "MANUAL", "TELEGRAM", "MCP_IA"]
@@ -68,6 +68,7 @@ class CasoOut(BaseModel):
 
     # Contacto
     telefono: str | None = None
+    telefono_ip: str | None = None      # D-164: teléfono IP / fijo del cliente
     nombre_cliente: str | None = None
     direccion: str | None = None
     persona_reporta: str | None = None

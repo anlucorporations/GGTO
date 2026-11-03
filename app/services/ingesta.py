@@ -1,9 +1,12 @@
 """Parser del archivo diario `detalle_averias_gpon_<fecha>.csv`.
 
-Reglas (RT-05 / D-27):
+Reglas (RT-05 / D-27 · D-164):
 - delimitador `;`
 - codificación **ISO-8859-1**
-- **80 columnas mapeadas por posición**
+- **80 columnas por posición** (estructura original) **u 81** si el archivo es
+  la versión de 02/11/2026 que inserta `telefono_ip` (índice 14, después de
+  `telefono`); la estructura se deduce del encabezado, así que todo el mapeo
+  a partir de ahí se desplaza +1
 - se descartan 21 columnas y se unifican `informacion`(31) + `informacion`(32) + `descripcion`(52)
 - fechas `dd/mm/aaaa hh:mm:ss a.m./p.m.`
 """
@@ -19,7 +22,7 @@ from typing import Any
 
 DELIMITADOR = ";"
 CODIFICACION = "iso-8859-1"
-COLUMNAS_ESPERADAS = 80
+COLUMNAS_ESPERADAS = 80           # estructura original (RT-05 / RT-20)
 COLUMNAS_INFORMACION = (30, 31, 51)  # 0-based: cols. 31, 32 y 52 del archivo
 
 # (campo destino, índices 0-based en el CSV, tipo)
@@ -75,7 +78,26 @@ ESPECIFICACION: tuple[tuple[str, tuple[int, ...], str], ...] = (
     ("fecha_hora_asignacion", (79,), "fecha"),
 )
 
+# Estructura de 81 columnas (D-164): el archivo nuevo inserta `telefono_ip`
+# (teléfono IP/fijo del cliente) justo después de `telefono`; todo el mapeo
+# a partir de la 15.ª columna se desplaza +1. Se deriva de la especificación
+# original para que el contrato siga en un solo lugar.
+_CORTE = next(k for k, (_, indices, _) in enumerate(ESPECIFICACION) if min(indices) >= 14)
+ESPECIFICACION_81: tuple[tuple[str, tuple[int, ...], str], ...] = (
+    *ESPECIFICACION[:_CORTE],
+    ("telefono_ip", (14,), "str"),
+    *(
+        (campo, tuple(i + 1 if i >= 14 else i for i in indices), tipo)
+        for campo, indices, tipo in ESPECIFICACION[_CORTE:]
+    ),
+)
+ESTRUCTURAS: dict[int, tuple[tuple[str, tuple[int, ...], str], ...]] = {
+    80: ESPECIFICACION,
+    81: ESPECIFICACION_81,
+}
+
 CAMPOS_DESTINO = tuple(campo for campo, _, _ in ESPECIFICACION)
+CAMPOS_DESTINO_81 = tuple(campo for campo, _, _ in ESPECIFICACION_81)
 
 # Longitudes máximas de los campos de texto (evita que un valor inesperado
 # aborte la ingesta completa). Los campos `text` no tienen límite.
@@ -92,6 +114,7 @@ LIMITES: dict[str, int] = {
     "despacho_nombre": 80, "despacho_apellido": 80, "telefono_oficina": 30,
     "telefono_movil": 30,
 }
+LIMITES_81: dict[str, int] = {**LIMITES, "telefono_ip": 30}
 
 
 
@@ -174,9 +197,30 @@ def columnas_encabezado(contenido: bytes | str) -> int:
     return len(parsear_encabezado(texto.lstrip("\ufeff")))
 
 
+def _estructura_de_encabezado(
+    encabezado: list[str],
+) -> tuple[tuple[str, tuple[int, ...], str], ...]:
+    """Deduce la estructura (80 o 81, D-164) a partir de las columnas reales.
+
+    La estructura de 81 columnas solo se reconoce si la columna 15 es
+    `telefono_ip`; cualquier otro encabezado devuelve la original (80) y el
+    aviso del tamaño indicará el desvío del encabezado real.
+    """
+    if len(encabezado) == 81 and encabezado[14].strip().lower() == "telefono_ip":
+        return ESTRUCTURAS[81]
+    return ESTRUCTURAS[80]
+
+
 def encabezado_valido(contenido: bytes | str) -> bool:
-    """El contrato exige exactamente 80 columnas (RT-05 / RT-20)."""
-    return columnas_encabezado(contenido) == COLUMNAS_ESPERADAS
+    """Valida la estructura del encabezado (RT-05 / RT-20 · D-164).
+
+    80 columnas siempre; 81 solo si la 15 es «telefono_ip».
+    """
+    texto = decodificar(contenido) if isinstance(contenido, bytes) else contenido
+    encabezado = parsear_encabezado(texto.lstrip("\ufeff"))
+    if len(encabezado) == 81:
+        return encabezado[14].strip().lower() == "telefono_ip"
+    return len(encabezado) == 80
 
 
 def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
@@ -191,10 +235,15 @@ def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
         return [], ["El archivo está vacío"]
 
     avisos: list[str] = []
-    if len(encabezado) != COLUMNAS_ESPERADAS:
+    es_81 = len(encabezado) == 81 and encabezado[14].strip().lower() == "telefono_ip"
+    if not (len(encabezado) == COLUMNAS_ESPERADAS or es_81):
         avisos.append(
             f"El encabezado tiene {len(encabezado)} columnas; se esperaban {COLUMNAS_ESPERADAS}"
+            " o 81 (D-164)"
         )
+    especificacion = ESTRUCTURAS[81] if es_81 else ESTRUCTURAS[80]
+    columnas_contrato = len(encabezado) if es_81 else COLUMNAS_ESPERADAS
+    limites = LIMITES_81 if es_81 else LIMITES
 
     filas: list[dict[str, Any]] = []
     malformadas = 0
@@ -202,10 +251,10 @@ def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
     for numero_linea, cruda in enumerate(lector, start=2):
         if not any(celda.strip() for celda in cruda):
             continue
-        if len(cruda) != COLUMNAS_ESPERADAS:
+        if len(cruda) != columnas_contrato:
             malformadas += 1
         fila: dict[str, Any] = {"_linea": numero_linea}
-        for campo, indices, tipo in ESPECIFICACION:
+        for campo, indices, tipo in especificacion:
             if tipo == "unir":
                 partes = [cruda[i].strip() for i in indices if i < len(cruda) and cruda[i].strip()]
                 fila[campo] = " | ".join(partes) if partes else None
@@ -216,7 +265,7 @@ def parsear(contenido: bytes | str) -> tuple[list[dict[str, Any]], list[str]]:
             else:
                 valor = cruda[indices[0]] if indices[0] < len(cruda) else ""
                 convertido = _convertir(valor, tipo)
-                limite = LIMITES.get(campo)
+                limite = limites.get(campo)
                 if isinstance(convertido, str) and limite and len(convertido) > limite:
                     convertido = convertido[:limite]
                     recortados += 1

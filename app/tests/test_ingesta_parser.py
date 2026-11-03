@@ -7,7 +7,11 @@ from datetime import datetime
 
 from app.services.ingesta import (
     CAMPOS_DESTINO,
+    CAMPOS_DESTINO_81,
     COLUMNAS_ESPERADAS,
+    ESPECIFICACION,
+    ESPECIFICACION_81,
+    encabezado_valido,
     filtrar_por_central,
     normalizar,
     parse_fecha,
@@ -21,10 +25,20 @@ RUTA_MUESTRA = (
     / "muestras"
     / "detalle_averias_gpon_EJEMPLO.csv"
 )
+RUTA_MUESTRA_81 = (
+    pathlib.Path(__file__).resolve().parents[2]
+    / "RepoTecnico"
+    / "muestras"
+    / "detalle_averias_gpon_EJEMPLO_81.csv"
+)
 
 
 def _muestra_bytes() -> bytes:
     return RUTA_MUESTRA.read_bytes()
+
+
+def _muestra81_bytes() -> bytes:
+    return RUTA_MUESTRA_81.read_bytes()
 
 
 def test_parse_fecha_formatos():
@@ -133,3 +147,84 @@ def test_campos_de_texto_no_se_recortan():
     filas, _ = parsear(_csv_minimo({"ultimo_comentario": largo, "direccion": largo}))
     assert filas[0]["ultimo_comentario"] == largo
     assert filas[0]["direccion"] == largo
+
+
+# --------------------------------------------------------------------------- #
+# D-164 · estructura de 81 columnas con `telefono_ip`
+# --------------------------------------------------------------------------- #
+def test_especificacion_81_suma_telefono_ip_y_desplaza():
+    """La especificación 81 inserta `telefono_ip` y desplaza +1 lo demás."""
+    assert len(ESPECIFICACION_81) == len(ESPECIFICACION) + 1
+    assert len(set(CAMPOS_DESTINO_81)) == len(CAMPOS_DESTINO) + 1
+    assert "telefono_ip" in CAMPOS_DESTINO_81
+    # los campos antes de la columna 15 conservan índices y orden
+    assert CAMPOS_DESTINO_81[:11] == CAMPOS_DESTINO[:11]
+    # el índice de fecha_reporte pasa de 14 a 15
+    indices = {campo: indices for campo, indices, _ in ESPECIFICACION_81}
+    assert indices["fecha_reporte"] == (15,)
+    # las tres columnas de `informacion` también se desplazan
+    assert indices["informacion"] == (31, 32, 52)
+
+
+def test_muestra_81_valida_y_parsea_con_telefono_ip():
+    assert encabezado_valido(_muestra81_bytes())
+    filas, avisos = parsear(_muestra81_bytes())
+    assert len(filas) == 56, f"avisos: {avisos}"
+    assert not avisos
+    # las filas de la muestra sintética que llevan teléfono IP se capturan
+    con_ip = [f for f in filas if f["telefono_ip"]]
+    assert con_ip and all(str(f["telefono_ip"]).startswith("21297547") for f in con_ip)
+    # el mapeo desplazado sigue correcto: id_averia y fecha_reporte intactos
+    primera = filas[0]
+    assert primera["id_averia"] == "DEMO-0001"
+    assert primera["codigo_central"] == "2324X"
+    assert isinstance(primera["fecha_reporte"], datetime)
+    assert primera["fecha_reporte"].year == 2026
+    assert primera["informacion"]
+
+
+def test_muestra_80_original_sigue_parseando():
+    """La estructura original de 80 columnas NO se rompe (compatible atrás)."""
+    filas, avisos = parsear(_muestra_bytes())
+    assert len(filas) == 56
+    assert not avisos
+    assert filas[0]["id_averia"] == "DEMO-0001"
+    assert "telefono_ip" not in filas[0]
+    assert encabezado_valido(_muestra_bytes())
+
+
+def test_encabezado_81_sin_telefono_ip_es_invalido():
+    """81 columnas con otro nombre en la 15.ª posición NO es una estructura válida
+    (evita mapear desalineado filas de 81 celdas contra la especificación 80)."""
+    texto = ";".join(f"c{i}" for i in range(81)) + "\n" + ";".join([""] * 81) + "\n"
+    bytes_archivo = texto.encode("iso-8859-1")
+    assert len(parsear_encabezado(texto)) == 81
+    assert not encabezado_valido(bytes_archivo)
+    filas, avisos = parsear(bytes_archivo)
+    assert filas == []
+    assert avisos and "81" in avisos[0]
+
+
+def test_fila_81_desalineada_se_descarta():
+    """Una fila con columnas de más en un archivo de 80 se marca malformada."""
+    texto = ";".join(parsear_encabezado(_muestra_bytes().decode("iso-8859-1"))) + "\n"
+    fila = [""] * 81
+    fila[0] = "ALGO"          # con contenido, para que no se salte como vacía
+    texto += ";".join(fila) + "\n"
+    filas, avisos = parsear(texto.encode("iso-8859-1"))
+    assert filas == []
+    assert any("malformadas" in a for a in avisos)
+
+
+def test_telefono_ip_recorta_y_no_aborta():
+    """Un teléfono IP demasiado largo se recorta al límite de 30 (LIMITES)."""
+    texto = ";".join(parsear_encabezado(_muestra81_bytes().decode("iso-8859-1"))) + "\n"
+    fila = [""] * 81
+    fila[8] = "2324X"
+    fila[10] = "X-0001"
+    fila[14] = "9" * 40
+    texto += ";".join(fila) + "\n"
+    filas, avisos = parsear(texto.encode("iso-8859-1"))
+    assert len(filas) == 1
+    assert filas[0]["telefono_ip"] == "9" * 30
+    assert any("recortados" in a for a in avisos)

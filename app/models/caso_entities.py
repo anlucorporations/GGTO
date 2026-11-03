@@ -82,6 +82,9 @@ class Caso(Base):
 
     # Datos administrativos y de contacto
     telefono: Mapped[str | None] = mapped_column(String(30))
+    # D-164: teléfono IP / fijo del cliente que empieza a venir en el archivo
+    # `detalle_averias_gpon_*` del 02/11/2026 (columna 15 del CSV).
+    telefono_ip: Mapped[str | None] = mapped_column(String(30))
     fecha_reporte: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     persona_reporta: Mapped[str | None] = mapped_column(String(120))
     contacto_cliente: Mapped[str | None] = mapped_column(String(60))
