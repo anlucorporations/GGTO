@@ -213,11 +213,12 @@ def test_el_alta_manual_exige_al_menos_un_caso(client, entorno):
 
 def test_la_deteccion_automatica_materializa_la_concentracion(client, entorno,
                                                               db_session):
-    """RF-58/D-118: la detección agrupa por OLT + slot + puerto + FAT."""
+    """RF-58/D-118·D-168: la detección agrupa por la identidad técnica completa
+    (OLT + slot + puerto + FAT + EXTRA)."""
     headers = entorno["headers"]
     casos = [entorno["crear"](f"TSTD99-D{i}") for i in range(5)]
     _tupla(db_session, [c["id_caso"] for c in casos],
-           olt="OLT-CONCENTRADA", fat="FAT-CONC")
+           olt="OLT-CONCENTRADA", fat="FAT-CONC", extra="RUTA-D99")
     # Mismo OLT, pero otro FAT: no se mezclan en la misma masiva.
     otros = [entorno["crear"](f"TSTD99-DX{i}") for i in range(2)]
     _tupla(db_session, [c["id_caso"] for c in otros],

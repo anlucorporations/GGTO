@@ -69,36 +69,44 @@ def _texto_evidencias(seriales: list[str]) -> str | None:
     return ", ".join(limpios[:20]) or None
 
 
-# --------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------
 # Asociación caso ↔ masiva
 # --------------------------------------------------------------------------- #
 def _norm(valor: object) -> str:
-    """Normaliza OLT/slot/puerto/FAT para comparar sin espacios ni mayúsculas."""
+    """Normaliza OLT/slot/puerto/FAT/EXTRA para comparar sin espacios ni mayúsculas."""
     return "" if valor is None else str(valor).strip().casefold()
 
 
+# D-168: la identidad técnica de una masiva son **5 campos** — la tupla D-118
+# (OLT + slot + puerto + FAT) más el EXTRA del archivo de ingesta (la ruta).
+CAMPOS_TUPLA = ("olt", "slot", "puerto", "fat", "extra")
+TUPLA_LEGACY_4 = ("olt", "slot", "puerto", "fat")
+
+
 def _tupla_completa(falla: FallaMasiva) -> bool:
-    return all(
-        _norm(getattr(falla, campo))
-        for campo in ("olt", "slot", "puerto", "fat")
-    )
+    """Verdadero si la masiva tiene la identidad D-168 completa (5 campos)."""
+    return all(_norm(getattr(falla, campo)) for campo in CAMPOS_TUPLA)
 
 
 def coincide(caso: Caso, falla: FallaMasiva) -> bool:
-    """D-118: ¿el caso pertenece al FAT de la masiva?
+    """D-118 · D-168: ¿el caso pertenece al FAT de la masiva?
 
-    Con la tupla completa (OLT + slot + puerto + FAT) se exigen **los cuatro**
-    valores. En masivas históricas sin la tupla se comparan solo los campos que
-    la falla tenga (FAT/OLT), para no bloquear el cierre de datos viejos.
+    Con la identidad completa (OLT + slot + puerto + FAT + EXTRA) se exigen
+    **los cinco** valores idénticos, para corroborar que el caso es del mismo
+    FAT y de la misma ruta. Reglas de compatibilidad con datos históricos:
+
+    * masiva con OLT + slot + puerto + FAT pero **sin** `extra` (antes de
+      D-168): se comparan los 4 campos (el EXTRA del caso no descalifica);
+    * masiva sin tupla (antes de D-118): se comparan solo los campos que la
+      falla tenga (FAT/OLT), para no romper el cierre de datos viejos.
     """
     if _tupla_completa(falla):
         return all(
             _norm(getattr(caso, campo)) == _norm(getattr(falla, campo))
-            for campo in ("olt", "slot", "puerto", "fat")
+            for campo in CAMPOS_TUPLA
         )
     comparables = [
-        campo for campo in ("olt", "slot", "puerto", "fat")
-        if _norm(getattr(falla, campo))
+        campo for campo in TUPLA_LEGACY_4 if _norm(getattr(falla, campo))
     ]
     if not comparables:
         return True
@@ -109,8 +117,16 @@ def coincide(caso: Caso, falla: FallaMasiva) -> bool:
 
 
 def _condicion_tupla(falla: FallaMasiva) -> ColumnElement[bool] | None:
-    """Condición SQL de la tupla OLT+slot+puerto+FAT (D-118)."""
+    """Condición SQL de la identidad técnica del FAT (D-118 · D-168)."""
     if _tupla_completa(falla):
+        return and_(
+            func.lower(func.trim(Caso.olt)) == _norm(falla.olt),
+            func.lower(func.trim(Caso.slot)) == _norm(falla.slot),
+            func.lower(func.trim(Caso.puerto)) == _norm(falla.puerto),
+            func.lower(func.trim(Caso.fat)) == _norm(falla.fat),
+            func.lower(func.trim(Caso.extra)) == _norm(falla.extra),
+        )
+    if all(_norm(getattr(falla, campo)) for campo in TUPLA_LEGACY_4):
         return and_(
             func.lower(func.trim(Caso.olt)) == _norm(falla.olt),
             func.lower(func.trim(Caso.slot)) == _norm(falla.slot),
@@ -127,8 +143,9 @@ def _condicion_tupla(falla: FallaMasiva) -> ColumnElement[bool] | None:
 def concentracion(db: Session, falla: FallaMasiva) -> list[Caso]:
     """Casos que alcanza la concentración que originó la falla.
 
-    D-118: la identidad es la tupla **OLT + slot + puerto + FAT**. Solo se cae al
-    criterio histórico `clave_concentracion` cuando la masiva no tiene tupla
+    D-118 · D-168: la identidad es la tupla **OLT + slot + puerto + FAT +
+    EXTRA**. Solo se cae al criterio de 4 campos (masivas de antes de D-168) y
+    luego al histórico `clave_concentracion` cuando la masiva no tiene tupla
     (datos anteriores a D-118). **Nunca** se usa el sector: una masiva no puede
     arrastrar todos los casos de la cuadrilla.
     """
@@ -194,7 +211,8 @@ def asociar(db: Session, falla: FallaMasiva, ids_caso: list[int],
             raise MasivaInvalida(f"El caso {id_caso} no existe en la central de la masiva")
         if not coincide(caso, falla):
             raise MasivaInvalida(
-                f"El caso {caso.id_averia} no coincide con OLT/slot/puerto/FAT de la masiva"
+                f"El caso {caso.id_averia} no coincide con OLT/slot/puerto/"
+                f"FAT/EXTRA de la masiva"
             )
         db.add(FallaMasivaCaso(
             id_falla=falla.id_falla, id_caso=id_caso, origen=origen, agregado_por=usuario_p00,
@@ -318,8 +336,9 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
     Exige descripción del trabajo, validador del CRASS y evidencias. Cada caso
     asociado se cierra con `CERRAR` + el modo indicado (IVR por defecto) y la
     descripción «Reparado en FDT», salvo los que ya estén cerrados o **no
-    coincidan con OLT + slot + puerto + FAT**, que se omiten. **Nunca** se cierran
-    los casos de la cuadrilla que no estén asociados a la masiva.
+    coincidan con OLT + slot + puerto + FAT + EXTRA** (D-168), que se omiten.
+    **Nunca** se cierran los casos que no estén asociados a la masiva: el
+    cierre es **solo** sobre los vínculos de `falla_masiva_caso`.
 
     **No hace `commit`**: la operación completa es una sola transacción.
     """
@@ -361,15 +380,17 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
             detalle.append({"id_caso": id_caso, "resultado": "OMITIDO",
                             "motivo": "El caso ya no existe"})
             continue
-        # D-118: solo se cierran los casos que coinciden con la tupla de la
-        # masiva. Nunca se tocan los casos de la cuadrilla que no estén asociados.
+        # D-118 · D-168: solo se cierran los casos que coinciden con la
+        # identidad técnica de la masiva (OLT/slot/puerto/FAT/EXTRA) y que
+        # están **asociados** a ella. Nunca se tocan los casos de la cuadrilla
+        # que no estén asociados.
         if not coincide(caso, falla):
             omitidos += 1
             detalle.append({
                 "id_caso": caso.id_caso,
                 "id_averia": caso.id_averia,
                 "resultado": "OMITIDO",
-                "motivo": "El caso no coincide con OLT/slot/puerto/FAT de la masiva",
+                "motivo": "El caso no coincide con OLT/slot/puerto/FAT/EXTRA de la masiva",
             })
             continue
         try:

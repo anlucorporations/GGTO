@@ -236,9 +236,10 @@ def reportar_falla(
 ) -> FallaMasivaOut:
     """Alta manual de una masiva (D-118).
 
-    Exige OLT + slot + puerto + FAT + dirección y **al menos un caso** asociado en
-    la misma operación. Los casos se validan contra la tupla antes de crear los
-    vínculos: no se puede mezclar otro FAT ni arrastrar la cuadrilla completa.
+    Exige OLT + slot + puerto + FAT + dirección y **al menos un caso** asociado
+    en la misma operación. Los casos se validan contra la identidad técnica
+    (OLT + slot + puerto + FAT + EXTRA, D-168) antes de crear los vínculos: no
+    se puede mezclar otro FAT ni arrastrar la cuadrilla completa.
     """
     ids_caso = list(dict.fromkeys(datos.ids_caso))
     if not ids_caso:
@@ -261,6 +262,9 @@ def reportar_falla(
         slot=datos.slot.strip(),
         puerto=datos.puerto.strip(),
         fat=datos.fat.strip(),
+        # D-168: EXTRA de la ingesta (opcional; la pertenencia de los casos
+        # compara los 5 campos: OLT + slot + puerto + FAT + EXTRA).
+        extra=(datos.extra or None),
         evidencias=_texto_evidencias(datos.evidencias),
         estado="DETECTADA",
     )
@@ -319,6 +323,9 @@ def reportar_falla_campo(
         slot=datos.slot.strip(),
         puerto=datos.puerto.strip(),
         fat=datos.fat.strip(),
+        # D-168: EXTRA de la ingesta (opcional; la pertenencia de los casos
+        # compara los 5 campos: OLT + slot + puerto + FAT + EXTRA).
+        extra=(datos.extra or None),
         evidencias=_texto_evidencias(datos.evidencias),
         estado="DETECTADA",
     )
@@ -332,7 +339,7 @@ def reportar_falla_campo(
         db.rollback()
         raise HTTPException(
             status_code=422,
-            detail="No hay casos que coincidan con OLT/slot/puerto/FAT indicados",
+            detail="No hay casos que coincidan con OLT/slot/puerto/FAT/EXTRA indicados",
         )
     try:
         svc_masivas.asociar(
@@ -416,37 +423,41 @@ def planificar_falla(
 
 
 @router.get("/fallas-masivas/casos-candidatos", response_model=list[CasoCandidatoOut],
-            summary="Casos candidatos por OLT + slot + puerto + FAT (D-118)")
+            summary="Casos candidatos por OLT + slot + puerto + FAT + EXTRA (D-118 · D-168)")
 def casos_candidatos(
     olt: str = Query(min_length=1, max_length=60),
     slot: str = Query(min_length=1, max_length=20),
     puerto: str = Query(min_length=1, max_length=20),
     fat: str = Query(min_length=1, max_length=60),
+    #: D-168: con `extra` el buscador exige además la ruta idéntica; sin él
+    #: devuelve todas las rutas del mismo FAT (y el operador elige).
+    extra: str | None = Query(default=None, max_length=120),
     db: Session = Depends(get_db),
     _: Usuario = Depends(_escritura),
 ) -> list[CasoCandidatoOut]:
     """Candidatos del **mismo FAT** para el alta manual o la asociación.
 
-    Filtra por la tupla completa (OLT + slot + puerto + FAT) y excluye los casos
-    terminales. Es la búsqueda que usa la web para elegir al menos un caso.
+    Filtra por la tupla técnica (OLT + slot + puerto + FAT, y EXTRA si se
+    indica — D-168) y excluye los casos terminales. Es la búsqueda que usa la
+    web para elegir al menos un caso.
     """
     central = resolver_central(db, None, cargar_config(db))
 
     def norm(valor: str) -> str:
         return valor.strip().casefold()
 
+    condiciones = [
+        Caso.id_central == central.id_central,
+        Caso.estado_actual.notin_(("CERRADO", "CANCELADO", "ENRUTADO")),
+        func.lower(func.trim(Caso.olt)) == norm(olt),
+        func.lower(func.trim(Caso.slot)) == norm(slot),
+        func.lower(func.trim(Caso.puerto)) == norm(puerto),
+        func.lower(func.trim(Caso.fat)) == norm(fat),
+    ]
+    if extra and extra.strip():
+        condiciones.append(func.lower(func.trim(Caso.extra)) == norm(extra))
     casos = db.scalars(
-        select(Caso)
-        .where(
-            Caso.id_central == central.id_central,
-            Caso.estado_actual.notin_(("CERRADO", "CANCELADO", "ENRUTADO")),
-            func.lower(func.trim(Caso.olt)) == norm(olt),
-            func.lower(func.trim(Caso.slot)) == norm(slot),
-            func.lower(func.trim(Caso.puerto)) == norm(puerto),
-            func.lower(func.trim(Caso.fat)) == norm(fat),
-        )
-        .order_by(Caso.id_caso.desc())
-        .limit(200)
+        select(Caso).where(*condiciones).order_by(Caso.id_caso.desc()).limit(200)
     ).all()
     sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
     return [
@@ -460,6 +471,7 @@ def casos_candidatos(
             slot=c.slot,
             puerto=c.puerto,
             fat=c.fat,
+            extra=c.extra,
             id_sector=c.id_sector,
             sector_nombre=(sectores.get(c.id_sector) if c.id_sector else None),
         )

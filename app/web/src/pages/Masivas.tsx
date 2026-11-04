@@ -1009,6 +1009,7 @@ function FormularioMasivaManual({
   const [puerto, setPuerto] = useState('');
   const [direccion, setDireccion] = useState('');
   const [fat, setFat] = useState('');
+  const [extra, setExtra] = useState('');
   const [idSector, setIdSector] = useState('');
   const [idCuadrilla, setIdCuadrilla] = useState('');
   const [origen, setOrigen] = useState<OrigenFallaMasiva>('REPORTE_TECNICO');
@@ -1051,6 +1052,8 @@ function FormularioMasivaManual({
         slot: slot.trim(),
         puerto: puerto.trim(),
         fat: fat.trim(),
+        // D-168: si se indica el EXTRA (ruta), el buscador la exige idéntica.
+        extra: extra.trim() === '' ? null : extra.trim(),
       });
       setCandidatos(casos);
       setSeleccionados([]);
@@ -1099,6 +1102,8 @@ function FormularioMasivaManual({
         slot: slot.trim(),
         puerto: puerto.trim(),
         fat: fat.trim(),
+        // D-168: quinto campo de la identidad técnica (ruta de la ingesta).
+        extra: extra.trim() === '' ? null : extra.trim(),
         direccion: direccion.trim(),
         origen,
         odn: odn.trim() === '' ? null : odn.trim(),
@@ -1178,6 +1183,16 @@ function FormularioMasivaManual({
           placeholder="Ej.: F-12"
         />
       </div>
+      <div className="campo">
+        <label htmlFor="mas-manual-extra">EXTRA (ruta de la ingesta · D-168)</label>
+        <input
+          id="mas-manual-extra"
+          value={extra}
+          onChange={(e) => setExtra(e.target.value)}
+          maxLength={120}
+          placeholder="Ej.: TARJETA 3 / PUERTO 7 / FAT F-12"
+        />
+      </div>
       <div className="campo campo-ancho">
         <label htmlFor="mas-manual-direccion">Dirección * (mín. 5)</label>
         <input
@@ -1226,6 +1241,7 @@ function FormularioMasivaManual({
                   <th>OLT</th>
                   <th>Slot/Puerto</th>
                   <th>FAT</th>
+                  <th>EXTRA</th>
                   <th>Dirección</th>
                 </tr>
               </thead>
@@ -1247,6 +1263,7 @@ function FormularioMasivaManual({
                       {[c.slot, c.puerto].filter(Boolean).join('/') || '—'}
                     </td>
                     <td className="mono">{c.fat ?? '—'}</td>
+                    <td className="mono">{c.extra ?? '—'}</td>
                     <td>{c.direccion ?? '—'}</td>
                   </tr>
                 ))}

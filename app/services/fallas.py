@@ -11,8 +11,7 @@ from sqlalchemy.orm import Session
 from ..models import Caso, Cuadrilla, FallaMasiva
 from . import outbox
 
-CAMPOS_VALIDOS = ("olt", "fat", "id_sector")
-UMBRAL_POR_DEFECTO = 5
+UMBRAL_POR_DEFECTO = 3  # D-168: 3 o más casos con la misma tupla → masiva
 VENTANA_POR_DEFECTO = 24
 
 
@@ -53,9 +52,13 @@ def cuadrilla_cercana(db: Session, id_central: int, id_sector: int | None) -> in
 def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
     """Crea fallas masivas para los grupos que superan el umbral (idempotente).
 
-    D-118: la concentración se agrupa por la **tupla completa del FAT**
-    (OLT + slot + puerto + FAT). Un grupo con el mismo OLT pero otro slot,
-    puerto o FAT **no** es la misma masiva, y sus casos no se mezclan.
+    D-118: la concentración se agrupa por la **tupla técnica del FAT**
+    (OLT + slot + puerto + FAT). D-168: la tupla pasa a **5 campos**
+    (OLT + slot + puerto + FAT + EXTRA, la ruta del archivo de ingesta) y el
+    umbral baja de 5 a **3** casos: los casos de una masiva deben tener los
+    datos técnicos **idénticos** para corroborar que pertenecen al mismo FAT.
+    Un grupo con el mismo OLT pero otro slot, puerto, FAT o EXTRA **no** es la
+    misma masiva, y sus casos no se mezclan.
     """
     activo = str(_config(db, "fallas.activo", True)).strip('"').lower()
     if activo in ("false", "0", "no"):
@@ -64,28 +67,29 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
     umbral = int(_config(db, "fallas.umbral_casos", UMBRAL_POR_DEFECTO))
     horas = int(_config(db, "fallas.ventana_horas", VENTANA_POR_DEFECTO))
     desde = datetime.now(UTC) - timedelta(hours=horas)
+    # D-168: los 5 campos se **exigen** (no vacíos) y se agrupan normalizados
+    # (sin espacios ni mayúsculas) para que `FAT 777` y `fat  777` agrupen igual.
+    campos = (Caso.olt, Caso.slot, Caso.puerto, Caso.fat, Caso.extra)
     grupos = db.execute(
-        select(Caso.olt, Caso.slot, Caso.puerto, Caso.fat, func.count())
+        select(*campos, func.count())
         .where(
             Caso.id_central == id_central,
             Caso.estado_actual.notin_(("CERRADO", "CANCELADO")),
             Caso.creado_en >= desde,
-            Caso.olt.is_not(None),
-            Caso.slot.is_not(None),
-            Caso.puerto.is_not(None),
-            Caso.fat.is_not(None),
+            *(c.is_not(None) for c in campos),
+            *(func.trim(c) != "" for c in campos),
         )
-        .group_by(Caso.olt, Caso.slot, Caso.puerto, Caso.fat)
+        .group_by(*campos)
         .having(func.count() >= umbral)
     ).all()
 
     creadas: list[FallaMasiva] = []
-    for olt, slot, puerto, fat, total in grupos:
-        olt, slot, puerto, fat = (
+    for olt, slot, puerto, fat, extra, total in grupos:
+        olt, slot, puerto, fat, extra = (
             "" if valor is None else str(valor).strip()
-            for valor in (olt, slot, puerto, fat)
+            for valor in (olt, slot, puerto, fat, extra)
         )
-        if not (olt and slot and puerto and fat):
+        if not all((olt, slot, puerto, fat, extra)):
             continue
         existente = db.scalar(
             select(FallaMasiva).where(
@@ -94,6 +98,7 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
                 func.lower(func.trim(FallaMasiva.slot)) == slot.casefold(),
                 func.lower(func.trim(FallaMasiva.puerto)) == puerto.casefold(),
                 func.lower(func.trim(FallaMasiva.fat)) == fat.casefold(),
+                func.lower(func.trim(FallaMasiva.extra)) == extra.casefold(),
                 FallaMasiva.estado.in_(("DETECTADA", "PLANIFICADA")),
             )
         )
@@ -108,6 +113,7 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
                 func.lower(func.trim(Caso.slot)) == slot.casefold(),
                 func.lower(func.trim(Caso.puerto)) == puerto.casefold(),
                 func.lower(func.trim(Caso.fat)) == fat.casefold(),
+                func.lower(func.trim(Caso.extra)) == extra.casefold(),
             )
             .order_by(Caso.id_caso.desc())
             .limit(1)
@@ -118,7 +124,7 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
             clave_concentracion=f"fat:{fat}"[:120],
             descripcion=(
                 f"Concentración de {total} casos en OLT {olt} · slot {slot} · "
-                f"puerto {puerto} · FAT {fat} (últimas {horas} h)"
+                f"puerto {puerto} · FAT {fat} · EXTRA {extra} (últimas {horas} h)"
             ),
             origen="AUTOMATICA",
             id_sector=id_sector,
@@ -128,6 +134,7 @@ def detectar(db: Session, id_central: int) -> list[FallaMasiva]:
             slot=slot,
             puerto=puerto,
             fat=fat,
+            extra=extra,
             direccion=(representativo.direccion if representativo else None),
         )
         db.add(falla)

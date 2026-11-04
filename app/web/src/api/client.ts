@@ -1089,6 +1089,8 @@ export function buscarCasosCandidatos(datos: {
   slot: string;
   puerto: string;
   fat: string;
+  /** D-168: EXTRA (ruta) opcional para exigir la ruta idéntica. */
+  extra?: string | null;
 }): Promise<CasoCandidatoOut[]> {
   return request<CasoCandidatoOut[]>(
     `/fallas-masivas/casos-candidatos${construirQuery(datos)}`,

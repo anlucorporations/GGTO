@@ -1132,10 +1132,11 @@ export interface FallaMasivaOut {
   odn?: string | null;
   direccion?: string | null;
   fat?: string | null;
-  /* D-118: identidad técnica del FAT (OLT + slot + puerto + FAT). */
+  /* D-118 · D-168: identidad técnica del FAT (OLT + slot + puerto + FAT + EXTRA). */
   olt?: string | null;
   slot?: string | null;
   puerto?: string | null;
+  extra?: string | null;
   evidencias?: string[];
   /* D-99 · MASIVAS: asociación explícita, cierre y ubicación del FAT. */
   casos_asociados?: number;
@@ -1496,6 +1497,8 @@ export interface FallaMasivaManual {
   slot: string;
   puerto: string;
   fat: string;
+  /** D-168: EXTRA (ruta) de la ingesta, quinto campo de la identidad técnica. */
+  extra?: string | null;
   direccion: string;
   id_sector?: number | null;
   id_cuadrilla?: number | null;
@@ -1517,6 +1520,8 @@ export interface CasoCandidatoOut {
   slot: string | null;
   puerto: string | null;
   fat: string | null;
+  /** D-168: EXTRA (ruta) de la ingesta, quinto campo de la identidad. */
+  extra: string | null;
   id_sector: number | null;
   sector_nombre: string | null;
   id_cuadrilla?: number | null;
@@ -1531,6 +1536,8 @@ export interface FallaMasivaCampo {
   slot: string;
   puerto: string;
   fat: string;
+  /** D-168: EXTRA (ruta) de la ingesta, quinto campo de la identidad técnica. */
+  extra?: string | null;
   direccion: string;
   odn: string;
   id_sector?: number | null;

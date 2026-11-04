@@ -174,6 +174,11 @@ class FallaMasiva(Base):
     olt: Mapped[str | None] = mapped_column(String(60))
     slot: Mapped[str | None] = mapped_column(String(20))
     puerto: Mapped[str | None] = mapped_column(String(20))
+    # D-168: el EXTRA del archivo de ingesta completa la identidad técnica
+    # (OLT + slot + puerto + FAT + EXTRA): es la ruta que viaja en la columna
+    # `extra` del caso y el quinto dato que deben compartir los casos de la
+    # misma masiva para corroborar que pertenecen a un mismo FAT.
+    extra: Mapped[str | None] = mapped_column(String(120))
     evidencias: Mapped[str | None] = mapped_column(Text)
     planificacion: Mapped[str | None] = mapped_column(Text)
     reporte_simple: Mapped[str | None] = mapped_column(Text)

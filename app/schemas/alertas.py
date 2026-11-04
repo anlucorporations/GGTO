@@ -38,10 +38,11 @@ class FallaMasivaOut(BaseModel):
     odn: str | None = None
     direccion: str | None = None
     fat: str | None = None
-    # D-118: identidad técnica del FAT (OLT + slot + puerto + FAT).
+    # D-118: identidad técnica del FAT (OLT + slot + puerto + FAT); D-168 añade EXTRA.
     olt: str | None = None
     slot: str | None = None
     puerto: str | None = None
+    extra: str | None = None
     evidencias: list[str] = Field(default_factory=list)
     planificacion: str | None = None
     reporte_simple: str | None = None
@@ -98,10 +99,11 @@ class FallaMasivaOut(BaseModel):
 class FallaMasivaManual(BaseModel):
     """Alta manual de una masiva (D-118).
 
-    La identidad del FAT es **obligatoria**: OLT, slot, puerto, FAT y dirección.
-    Además, el alta manual debe asociar **al menos un caso** que coincida con esa
-    tupla (`ids_caso`); la validación se hace en el endpoint para conservar los
-    códigos de error del API.
+    La identidad del FAT es **obligatoria**: OLT, slot, puerto, FAT y dirección
+    (D-168: el EXTRA de la ingesta es opcional pero, si se indica, exige
+    la coincidencia exacta de los 5 campos al asociar). Además, el alta manual
+    debe asociar **al menos un caso** que coincida con esa tupla (`ids_caso`);
+    la validación se hace en el endpoint para conservar los códigos del API.
     """
 
     descripcion: str = Field(min_length=5, max_length=500)
@@ -109,6 +111,10 @@ class FallaMasivaManual(BaseModel):
     slot: str = Field(min_length=1, max_length=20)
     puerto: str = Field(min_length=1, max_length=20)
     fat: str = Field(min_length=1, max_length=60)
+    # D-168: EXTRA de la ingesta (ruta del FAT). Opcional para no romper los
+    # reportes antiguos, pero si se indica exige la coincidencia exacta en la
+    # asociación (5 campos: OLT + slot + puerto + FAT + EXTRA).
+    extra: str | None = Field(default=None, max_length=120)
     direccion: str = Field(min_length=5, max_length=200)
     # D-82: ODN/evidencias siguen siendo opcionales en el alta administrativa.
     odn: str | None = Field(default=None, max_length=60)
@@ -198,7 +204,8 @@ class AsociarCasosRequest(BaseModel):
 
 
 class CasoCandidatoOut(BaseModel):
-    """Caso que coincide con OLT + slot + puerto + FAT de una masiva (D-118).
+    """Caso que coincide con OLT + slot + puerto + FAT + EXTRA de una masiva
+    (D-118 · D-168).
 
     Es lo que devuelve el buscador del alta manual y de la asociación: el
     operador ve solo casos del mismo FAT antes de asociarlos.
@@ -215,6 +222,7 @@ class CasoCandidatoOut(BaseModel):
     slot: str | None = None
     puerto: str | None = None
     fat: str | None = None
+    extra: str | None = None
     id_sector: int | None = None
     sector_nombre: str | None = None
     id_cuadrilla: int | None = None

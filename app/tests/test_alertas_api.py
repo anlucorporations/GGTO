@@ -27,18 +27,20 @@ def entorno(client, admin_token, db_session):
         assert r.status_code == 201, r.text
         casos.append(r.json()["id_caso"])
     # La tupla técnica no se carga por la vía manual: se fija para simular la ingesta.
+    # D-168: el EXTRA de la ingesta (ruta) es el 5.º campo de la identidad.
     for id_caso in casos:
         caso = db_session.get(Caso, id_caso)
         caso.olt = "pde-olt-99"
         caso.slot = "3"
         caso.puerto = "7"
         caso.fat = "pde-fat-99"
+        caso.extra = "RUTA-99"
     db_session.commit()
     yield {"headers": headers, "casos": casos}
 
 
 def _masiva(client, entorno, descripcion: str, ids_caso: list[int] | None = None):
-    """Alta manual D-118 con la tupla del entorno y al menos un caso."""
+    """Alta manual D-118/D-168 con la identidad técnica y al menos un caso."""
     r = client.post(
         FALLAS,
         json={
@@ -47,6 +49,7 @@ def _masiva(client, entorno, descripcion: str, ids_caso: list[int] | None = None
             "slot": "3",
             "puerto": "7",
             "fat": "pde-fat-99",
+            "extra": "RUTA-99",
             "direccion": "SECTOR ALFA CASA 1",
             "ids_caso": ids_caso or [entorno["casos"][0]],
         },
@@ -79,6 +82,7 @@ def test_deteccion_por_concentracion(client, entorno, db_session):
     assert falla["clave_concentracion"] == "fat:pde-fat-99"
     assert falla["olt"] == "pde-olt-99" and falla["slot"] == "3"
     assert falla["puerto"] == "7" and falla["fat"] == "pde-fat-99"
+    assert falla["extra"] == "RUTA-99"  # D-168: la identidad trae los 5 campos
     assert falla["estado"] == "DETECTADA"
 
     # Idempotente: una segunda detección no duplica
@@ -450,22 +454,26 @@ def test_enriquecimiento_ruta_sector_direccion(client, entorno, db_session):
     assert sector.status_code == 201, sector.text
     id_sector = sector.json()["id_sector"]
 
-    # Reasigna los 6 casos del entorno al sector y fija la ruta GPON (slot/puerto/fat)
+    # Reasigna los 6 casos del entorno al sector y fija la ruta GPON (slot/puerto/fat).
+    # D-168: con la misma tupla de 5 campos, el representativo (el más reciente)
+    # hereda sector y ruta en la ficha.
     for i, id_caso in enumerate(entorno["casos"]):
         caso = db_session.get(Caso, id_caso)
         caso.id_sector = id_sector
         caso.direccion = "AV LARGUISIMA DE DEL 1234, SECTOR DELTA, CARACAS DISTRITO CAPITAL"
         caso.slot, caso.puerto, caso.fat = "1", "7", "FAT-99"
+        caso.extra = "RUTA-99"
         if i == 0:
             caso.olt = "pde-olt-99"
     db_session.commit()
 
-    # Detecta: agrupa por olt → la falla hereda sector y ruta del caso más reciente
+    # Detecta: agrupa por la identidad (OLT+slot+puerto+FAT+EXTRA) → la falla
+    # hereda sector y ruta del caso más reciente.
     creadas = client.post(f"{FALLAS}/detectar", headers=headers).json()
     assert len(creadas) == 1
     falla = creadas[0]
     assert falla["sector_nombre"] == "Delta"
-    assert falla["ruta"] == "1 · 7 · FAT-99"
+    assert falla["ruta"] == "RUTA-99"
     assert falla["direccion_corta"] and falla["direccion_corta"].startswith("AV LARGUISIMA")
     assert len(falla["direccion_corta"]) <= 41  # truncada a 40 + elipsis
     assert falla["casos_afectos"] == 6

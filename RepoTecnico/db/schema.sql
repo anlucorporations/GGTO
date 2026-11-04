@@ -535,10 +535,12 @@ CREATE TABLE IF NOT EXISTS falla_masiva (
     odn                 varchar(60),
     direccion           varchar(200),
     fat                 varchar(60),
-    -- D-118: identidad técnica del FAT (OLT + slot + puerto + FAT).
+    -- D-118: identidad técnica del FAT (OLT + slot + puerto + FAT); D-168
+    -- añade EXTRA (ruta de la ingesta): tupla de 5 campos obligatoria.
     olt                 varchar(60),
     slot                varchar(20),
     puerto              varchar(20),
+    extra               varchar(120),  -- D-168: EXTRA (ruta) de la ingesta, 5º campo
     evidencias          text,          -- seriales de hasta 2 fotos, separados por coma
     planificacion       text,
     reporte_simple      text,
@@ -947,7 +949,7 @@ INSERT INTO configuracion (clave, valor, descripcion) VALUES
     ('despacho.columnas_evaluar',   '["problema_reporte","ultimo_comentario","informacion"]'::jsonb,
      'Columnas donde se buscan las frases (el brief citaba "Falla Reportada", inexistente en el CSV)'),
     ('fallas.activo',               'true'::jsonb,              'Detección automática de fallas masivas tras la ingesta (RF-09)'),
-    ('fallas.umbral_casos',         '5'::jsonb,                 'Nº de casos en el mismo OLT/sector para declarar falla masiva'),
+    ('fallas.umbral_casos',         '3'::jsonb,                 'Nº mínimo de casos con la misma tupla técnica (OLT/slot/puerto/FAT/EXTRA) para declarar falla masiva (D-168)'),
     ('fallas.ventana_horas',        '24'::jsonb,                'Ventana temporal del análisis de concentración'),
     ('fallas.campo_concentracion',  '"olt"'::jsonb,            'olt | fat | id_sector'),
     ('outbox.max_intentos',         '5'::jsonb,                 'Reintentos máximos por notificación (RNF-20)'),
@@ -1143,6 +1145,9 @@ ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS longitud            numeric(10
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS olt                 varchar(60);
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS slot                varchar(20);
 ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS puerto              varchar(20);
+-- D-168: EXTRA de la ingesta completa la identidad técnica del FAT
+-- (OLT + slot + puerto + FAT + EXTRA) y el umbral baja de 5 a 3 casos.
+ALTER TABLE falla_masiva ADD COLUMN IF NOT EXISTS extra               varchar(120);
 CREATE INDEX IF NOT EXISTS ix_falla_masiva_estado
     ON falla_masiva (id_central, estado, fecha_deteccion DESC);
 
