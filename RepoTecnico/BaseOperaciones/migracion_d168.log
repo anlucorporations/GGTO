@@ -1,0 +1,19 @@
+[2026-11-04T01:47:45+00:00] ==============================================================================
+[2026-11-04T01:47:45+00:00] MIGRACIÓN D-168 (identidad técnica OLT/SLOT/PUERTO/FAT/EXTRA + umbral 3)
+[2026-11-04T01:47:45+00:00] modo=SIMULACIÓN
+[2026-11-04T01:47:45+00:00] estado actual: {'columna_extra': 0, 'umbral_actual': '5'}
+[2026-11-04T01:47:45+00:00]   · añadir columna falla_masiva.extra varchar(120)
+[2026-11-04T01:47:45+00:00]   · fallas.umbral_casos 5 → 3
+[2026-11-04T01:47:45+00:00] SIMULACIÓN: no se escribió nada (usa --aplicar).
+[2026-11-04T01:47:48+00:00] ==============================================================================
+[2026-11-04T01:47:48+00:00] MIGRACIÓN D-168 (identidad técnica OLT/SLOT/PUERTO/FAT/EXTRA + umbral 3)
+[2026-11-04T01:47:48+00:00] modo=APLICAR
+[2026-11-04T01:47:48+00:00] estado actual: {'columna_extra': 0, 'umbral_actual': '5'}
+[2026-11-04T01:47:48+00:00]   · añadir columna falla_masiva.extra varchar(120)
+[2026-11-04T01:47:48+00:00]   · fallas.umbral_casos 5 → 3
+[2026-11-04T01:47:49+00:00] ✓ migración aplicada (backfill: 1 fila(s)); verificación posterior: {'vivas_sin_extra': 0, 'backfill_inequivoco': 0}
+[2026-11-04T01:47:53+00:00] ==============================================================================
+[2026-11-04T01:47:53+00:00] MIGRACIÓN D-168 (identidad técnica OLT/SLOT/PUERTO/FAT/EXTRA + umbral 3)
+[2026-11-04T01:47:53+00:00] modo=SIMULACIÓN
+[2026-11-04T01:47:53+00:00] estado actual: {'columna_extra': 1, 'umbral_actual': '3'}
+[2026-11-04T01:47:53+00:00] ✓ La base YA está migrada: no hay cambios pendientes.
