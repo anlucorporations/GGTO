@@ -310,9 +310,16 @@ def listar(
         patron = f"%{termino}%"
         sector_q = select(Sector.id_sector).where(Sector.nombre.ilike(patron))
         # D-167: el texto libre recorre **todos** los campos de la tabla de
-        # ingesta (contacto D-144 incluido); el nombre del sector acompaña.
+        # ingesta (contacto D-144 incluido); los campos propios del caso
+        # (D-72: tipo, clase, estado, nombre del sector) acompañan.
         condiciones.append(
-            or_(*busqueda.condiciones(termino), Caso.id_sector.in_(sector_q))
+            or_(
+                *busqueda.condiciones(termino),
+                Caso.tipo_caso.ilike(patron),
+                Caso.categoria.ilike(patron),
+                Caso.estado_actual.ilike(patron),
+                Caso.id_sector.in_(sector_q),
+            )
         )
     if id_averia:
         condiciones.append(Caso.id_averia.ilike(f"%{id_averia.strip()}%"))

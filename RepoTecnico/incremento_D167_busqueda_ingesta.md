@@ -47,5 +47,9 @@ texto libre miraba solo un puñado de esos campos; ahora recorre **todos**.
   listado + búsqueda de PANEL con sobre-entrega controlada + `telefono_ip`
   + recinto acotado).
 * Regresivas: `test_d144_busqueda_universo.py` (4), `test_d130_alcance_casos.py`,
-  `test_casos_api.py` — **verde** en el mismo arnés.
+  `test_casos_api.py`, `test_d72_ui_api.py` — **verde** en el mismo arnés
+  (la suite completa detectó una regresión temprana de este ciclo: en el
+  listado, el texto libre había dejado de mirar tipo/clase/estado y sector
+  (D-72); los tres campos y el nombre de sector se devolvieron junto al
+  bloque nuevo).
 * `ruff` y `mypy` limpios; web `tsc` + `vite build` en verde (9,0 s).
