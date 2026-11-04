@@ -84,3 +84,20 @@ casos idénticos.
   regresión temprana de D-167 en el texto libre del listado — D-72 —,
   corregida y re-verificada).
 * `ruff` y `mypy` limpios; web `tsc` + `vite build` en verde (11,1 s).
+
+## Publicación
+
+* Commit `f176be6` pushed a GitHub y GitLab (`dd98319..f176be6`).
+* **Migración aplicada en producción** (`migrar_d168_masivas_fat_extra.py
+  --aplicar --si` vía túnel cloud-sql-proxy): columna `falla_masiva.extra`
+  creada y `fallas.umbral_casos` 5 → 3; idempotencia verde («YA está
+  migrada»); bitácora en `RepoTecnico/BaseOperaciones/migracion_d168.log`.
+* **Despliegue v98** — revisión `ggto-web-00112-x98` al 100 % del tráfico,
+  `/health`, `/ready`, `/`, `/manual/` en 200; los 5 jobs de Cloud Scheduler
+  habilitados.
+* **Humo funcional** (JWT del SUPER): `POST /fallas-masivas/detectar` → `[]`
+  HTTP 200 (no hay grupos de ≥3 en producción — sin masivas, correcto);
+  `GET /fallas-masivas/casos-candidatos` responde 200 con y sin el parámetro
+  nuevo `extra`; `GET /configuracion` confirma `fallas.umbral_casos = 3`;
+  el bundle (v98) trae el campo «EXTRA» del alta manual y la columna EXTRA
+  de los candidatos.
