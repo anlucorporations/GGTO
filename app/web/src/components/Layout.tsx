@@ -237,6 +237,10 @@ export default function Layout() {
   const { usuario, soloLectura } = useAuth();
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fichaGlobal, setFichaGlobal] = useState<CasoOut | null>(null);
+  // Versión desplegada (vNN): el script de despliegue la hornea en
+  // `/version.json` con el TAG de la imagen antes del build; en desarrollo el
+  // archivo no existe y el badge no se muestra.
+  const [version, setVersion] = useState('');
   const rol = usuario?.rol ?? '';
   const puedeConfigurar = ROLES_CONFIG.includes(rol);
   // D-72: DESPACHO (y CONFIGURACIÓN) quedan fuera del alcance del Técnico.
@@ -245,6 +249,19 @@ export default function Layout() {
       (s.roles === null || s.roles.includes(rol)) &&
       !(rol === 'COORDINADOR' && s.ruta === '/casos'),
   );
+
+  useEffect(() => {
+    let vivo = true;
+    fetch('/version.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((datos: { version?: string } | null) => {
+        if (vivo && datos?.version) setVersion(datos.version);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   return (
     <div className="app-shell">
@@ -261,6 +278,11 @@ export default function Layout() {
             <span className="marca-nombre">GGTO</span>
             <span className="marca-sub">Francisco Salias · Área 4</span>
           </span>
+          {version && (
+            <span className="marca-version" title={`Versión publicada: ${version}`}>
+              {version}
+            </span>
+          )}
         </Link>
 
         <BuscadorGlobal onAbrirCaso={setFichaGlobal} />

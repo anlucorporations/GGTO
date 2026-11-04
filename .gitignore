@@ -5,6 +5,9 @@
 # excluido por .gitignore, pero el .gitignore no existía: este archivo lo crea.
 RepoTecnico/credenciales/
 *credenciales*.md
+# Versión horneada por el script de despliegue (11_desplegar_ggto_web.sh):
+# artifact del build, no del código.
+app/web/public/version.json
 *.jks
 *.keystore
 key.properties
