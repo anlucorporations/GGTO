@@ -1126,6 +1126,10 @@ export interface FallaMasivaOut {
   ruta?: string | null;
   direccion_corta?: string | null;
   ordenes_count?: number;
+  /** Órdenes pedidas (SOLICITADA/APROBADA) para los iconos del cuadro. */
+  ordenes_solicitadas?: number;
+  /** Órdenes ya entregadas (ENTREGADA) para los iconos del cuadro. */
+  ordenes_entregadas?: number;
   casos_afectos?: number | null;
   /* D-82: datos del reporte de campo desde la APK (ODN · dirección · FAT) y
    * los seriales de hasta 2 fotos de evidencia. */

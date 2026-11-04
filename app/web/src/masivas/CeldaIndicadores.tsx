@@ -2,11 +2,11 @@
  * Columna **INDICADORES** de la sección MASIVAS (D-111).
  *
  * Una sola celda resume, con **tres iconos**, lo que el supervisor necesita ver
- * de un vistazo en el cuadro de masivas:
+ * de un vistazo en el cuadro de masivas (requisito de la sección reducida):
  *
  *  - **Planificación**: la masiva ya tiene plan de atención (`planificacion`).
- *  - **Materiales**: tiene al menos una orden de material (`ordenes_count`).
- *  - **Asignación**: tiene cuadrilla asignada (`id_cuadrilla`/`cuadrilla_codigo`).
+ *  - **Materiales solicitados**: pedidas a almacén (`SOLICITADA`/`APROBADA`).
+ *  - **Materiales entregados**: ya recibidas por la cuadrilla (`ENTREGADA`).
  *
  * El icono **encendido** (color de marca sobre su fondo claro) significa «sí»;
  * el **apagado** (gris punteado) significa «todavía no». Como el icono no lleva
@@ -15,12 +15,15 @@
  */
 import type { ComponentType, SVGProps } from 'react';
 import type { FallaMasivaOut } from '../api/types';
-import { IconoCuadrilla, IconoMateriales, IconoPlanificado } from '../components/Iconos';
+import { IconoMateriales, IconoPlanificado } from '../components/Iconos';
 
 type Icono = ComponentType<SVGProps<SVGSVGElement>>;
 
 /** Clave estable de cada indicador (también es su clase CSS). */
-export type ClaveIndicador = 'planificacion' | 'materiales' | 'asignacion';
+export type ClaveIndicador =
+  | 'planificacion'
+  | 'materiales-solicitados'
+  | 'materiales-entregados';
 
 export interface IndicadorMasiva {
   clave: ClaveIndicador;
@@ -36,22 +39,16 @@ function recortar(texto: string, largo = 48): string {
   return texto.length <= largo ? texto : `${texto.slice(0, largo - 1)}…`;
 }
 
-/** Código o, si no vino, nombre de la cuadrilla asignada. */
-function cuadrillaDe(falla: FallaMasivaOut): string {
-  return (falla.cuadrilla_codigo ?? falla.cuadrilla_nombre ?? '').trim();
-}
-
 /**
  * Los tres indicadores de una masiva (función pura: se puede probar sin DOM).
  *
  * Las reglas salen de los campos que la API entrega en el listado:
- * `planificacion`, `ordenes_count` e `id_cuadrilla`/`cuadrilla_codigo`.
+ * `planificacion`, `ordenes_solicitadas` y `ordenes_entregadas`.
  */
 export function indicadoresDeMasiva(falla: FallaMasivaOut): IndicadorMasiva[] {
   const planificacion = (falla.planificacion ?? '').trim();
-  const ordenes = falla.ordenes_count ?? 0;
-  const cuadrilla = cuadrillaDe(falla);
-  const asignada = (falla.id_cuadrilla ?? 0) > 0 || cuadrilla !== '';
+  const solicitadas = falla.ordenes_solicitadas ?? 0;
+  const entregadas = falla.ordenes_entregadas ?? 0;
 
   return [
     {
@@ -64,21 +61,22 @@ export function indicadoresDeMasiva(falla: FallaMasivaOut): IndicadorMasiva[] {
       Icono: IconoPlanificado,
     },
     {
-      clave: 'materiales',
-      activo: ordenes > 0,
+      clave: 'materiales-solicitados',
+      activo: solicitadas > 0,
       titulo:
-        ordenes > 0
-          ? `Materiales: ${ordenes} orden(es) de material`
-          : 'Materiales: sin órdenes de material',
+        solicitadas > 0
+          ? `Materiales: ${solicitadas} orden(es) solicitada(s)`
+          : 'Materiales: sin órdenes solicitadas',
       Icono: IconoMateriales,
     },
     {
-      clave: 'asignacion',
-      activo: asignada,
-      titulo: asignada
-        ? `Asignación: cuadrilla ${cuadrilla === '' ? `#${falla.id_cuadrilla}` : cuadrilla}`
-        : 'Asignación: sin cuadrilla',
-      Icono: IconoCuadrilla,
+      clave: 'materiales-entregados',
+      activo: entregadas > 0,
+      titulo:
+        entregadas > 0
+          ? `Materiales: ${entregadas} orden(es) entregada(s)`
+          : 'Materiales: material sin entregar',
+      Icono: IconoMateriales,
     },
   ];
 }

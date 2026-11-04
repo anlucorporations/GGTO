@@ -13,6 +13,7 @@ import '../masivas/masivas_provider.dart';
 import '../mensajes/mensajes_provider.dart';
 import '../sync/sync_provider.dart';
 import '../usuario/banner_actualizacion.dart';
+import '../mantenimiento/mantenimiento_screen.dart';
 import 'caso_detalle_screen.dart';
 import 'acciones_caso.dart';
 import 'casos_provider.dart';
@@ -119,6 +120,23 @@ class _CasosScreenState extends State<CasosScreen> {
             icon: const Icon(Icons.warning_amber),
             onPressed: () => Navigator.pushNamed(context, '/alertas'),
           ),
+          // Alta manual de un caso de MANTENIMIENTO (requisito del usuario):
+          // solo los roles de gestión pueden crear casos (el alta manual exige
+          // ADMIN/SUPERVISOR también en la web).
+          if (const ['SUPER', 'ADMIN', 'SUPERVISOR'].contains(auth.rol))
+            IconButton(
+              tooltip: 'Nuevo mantenimiento',
+              icon: const Icon(Icons.engineering_outlined),
+              onPressed: () async {
+                final creado = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MantenimientoScreen(),
+                  ),
+                );
+                if (creado ?? false) unawaited(_refrescarLocal());
+              },
+            ),
           IconButton(
             tooltip: 'Mensajes',
             icon: Badge(

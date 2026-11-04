@@ -332,6 +332,20 @@
   color: var(--ambar);
 }
 
+/* Materiales SOLICITADOS: ámbar (pedido, aún no en la cuadrilla). */
+.indicador-materiales-solicitados.indicador-on {
+  border-color: #efdca6;
+  background: var(--ambar-claro);
+  color: var(--ambar);
+}
+
+/* Materiales ENTREGADOS: verde (ya en manos de la cuadrilla). */
+.indicador-materiales-entregados.indicador-on {
+  border-color: #b7e0c7;
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+
 .indicador-asignacion.indicador-on {
   border-color: #b7e0c7;
   background: var(--verde-claro);

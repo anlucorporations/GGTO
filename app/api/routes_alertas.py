@@ -133,13 +133,24 @@ def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
     sectores = {s.id_sector: s.nombre for s in db.scalars(select(Sector)).all()}
     cuadrillas = {c.id_cuadrilla: c for c in db.scalars(select(Cuadrilla)).all()}
     ids = [f.id_falla for f in fallas]
-    ordenes = dict(
-        db.execute(
-            select(OrdenMaterial.id_falla, func.count())
-            .where(OrdenMaterial.id_falla.in_(ids))
-            .group_by(OrdenMaterial.id_falla)
-        ).all()
-    )
+    # Desglose de ÓRDENES DE MATERIAL por estado (iconos del cuadro de masivas):
+    # · SOLICITADAS = órdenes SOLICITADA o APROBADA (pedidas, no llegadas);
+    # · ENTREGADAS  = órdenes ENTREGADA (material ya en manos de la cuadrilla).
+    ordenes_solicitadas: dict[int, int] = {}
+    ordenes_entregadas: dict[int, int] = {}
+    ordenes_count: dict[int, int] = {}
+    for id_falla, estado_orden, n in db.execute(
+        select(OrdenMaterial.id_falla, OrdenMaterial.estado, func.count())
+        .where(OrdenMaterial.id_falla.in_(ids))
+        .group_by(OrdenMaterial.id_falla, OrdenMaterial.estado)
+    ).all():
+        if id_falla is None:
+            continue
+        ordenes_count[id_falla] = ordenes_count.get(id_falla, 0) + n
+        if estado_orden == "ENTREGADA":
+            ordenes_entregadas[id_falla] = ordenes_entregadas.get(id_falla, 0) + n
+        else:  # SOLICITADA o APROBADA (pendiente de entrega; RECHAZADA se muestra aquí)
+            ordenes_solicitadas[id_falla] = ordenes_solicitadas.get(id_falla, 0) + n
     # D-99: nº real de casos asociados y validador del CRASS de las cerradas.
     asociados = svc_masivas.contar_asociados(db, ids)
     ids_validador = [f.id_validador_crass for f in fallas if f.id_validador_crass]
@@ -162,7 +173,9 @@ def _salida(db: Session, fallas: list[FallaMasiva]) -> list[FallaMasivaOut]:
             cuadrilla_nombre=(cu.nombre if cu else None),
             ruta=ruta,
             direccion_corta=dir_corta,
-            ordenes_count=ordenes.get(f.id_falla, 0),
+            ordenes_count=ordenes_count.get(f.id_falla, 0),
+            ordenes_solicitadas=ordenes_solicitadas.get(f.id_falla, 0),
+            ordenes_entregadas=ordenes_entregadas.get(f.id_falla, 0),
             casos_afectos=casos_afectos,
             evidencias=_evidencias_de(f.evidencias),
             evidencias_cierre=_evidencias_de(f.evidencias_cierre),

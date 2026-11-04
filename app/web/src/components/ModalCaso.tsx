@@ -20,7 +20,22 @@ import Mensaje from './Mensaje';
 import { IconoCerrar } from './Iconos';
 import { nv } from '../utils';
 
-const TIPOS_REPORTE: TipoActividadEspecial[] = ['REPARACION', 'CONSTRUCCION'];
+/** Tipos de reporte del alta manual (acter. del requerimiento): reparación,
+ *  (referidos REF-) y **mantenimiento** (caso de mantenimiento directo). */
+/** Tipos de reporte del alta manual (reparación → referido; mantenimiento →
+ *  caso de mantenimiento directo). */
+type TipoReporteManual = TipoActividadEspecial | 'MANTENIMIENTO';
+
+const TIPOS_REPORTE: TipoReporteManual[] = [
+  'REPARACION',
+  'CONSTRUCCION',
+  'MANTENIMIENTO'];
+
+/** El reporte es un REFERIDO solo en reparación o construcción (el caso de
+ *  mantenimiento se registra como tipo MANTENIMIENTO, sin solicitante). */
+function esReferido(tipo: TipoReporteManual): boolean {
+  return tipo === 'REPARACION' || tipo === 'CONSTRUCCION';
+}
 
 interface Formulario {
   /** RN-AL-01: datos obligatorios del alta. */
@@ -28,12 +43,13 @@ interface Formulario {
   contacto_cliente: string;
   telefono: string;
   direccion: string;
-  tipo_reporte: TipoActividadEspecial;
+  tipo_reporte: TipoReporteManual;
   tipo_problema: string;
   informacion: string;
   problema_reporte: string;
   fecha_reporte: string;
-  /** D-145: personal externo que reporta (cascada unidad → nombre → número). */
+  /** D-145: personal externo que reporta (cascada unidad → nombre → número).
+   *  Solo cuando el reporte rep. a REFERIDO (REPARACION/CONSTRUCCION). */
   unidad: string;
   nombre_solicitante: string;
   id_solicitante: number | null;
@@ -180,17 +196,19 @@ export default function ModalCaso({ onCerrar }: Props) {
       setError('En un reporte de REPARACIÓN es obligatorio el tipo de problema.');
       return;
     }
-    if (form.id_solicitante === null) {
+    if (esReferido(form.tipo_reporte) && form.id_solicitante === null) {
       setError(
         'Seleccione el solicitante del personal externo: unidad, nombre y número.',
       );
       return;
     }
 
+    const mantenimiento = form.tipo_reporte === 'MANTENIMIENTO';
     const payload: CasoManualCreate = {
       tipo_reporte: form.tipo_reporte,
-      // D-145: toda la ingesta manual es un referido.
-      categoria: 'REFERIDO',
+      // D-145: reparación y construcción ingresan como REFERIDO; el
+      // mantenimiento es un caso de mantenimiento directo (sin solicitante).
+      categoria: mantenimiento ? 'RESIDENCIAL' : 'REFERIDO',
       // D-145: el servidor genera el ID (`REF-REP-…` / `REF-CONS-…`).
       nombre_cliente: nombreCliente,
       contacto_cliente: contactoCliente,
@@ -200,7 +218,7 @@ export default function ModalCaso({ onCerrar }: Props) {
       informacion: nv(form.informacion),
       problema_reporte: nv(form.problema_reporte),
       fecha_reporte: form.fecha_reporte ? form.fecha_reporte : null,
-      id_solicitante: form.id_solicitante,
+      id_solicitante: esReferido(form.tipo_reporte) ? form.id_solicitante : undefined,
     };
     setGuardando(true);
     try {
@@ -249,9 +267,18 @@ export default function ModalCaso({ onCerrar }: Props) {
                 </strong>
               </p>
               <p className="texto-pequeno">
-                El caso quedó registrado como <strong>REFERIDO</strong>. Para empresas,
-                gobierno o el seguimiento del referido use la sección{' '}
-                <strong>Especiales</strong>.
+                {resultado.id_averia?.startsWith('REF-MANT-') ? (
+                  <>
+                    El caso quedó registrado como <strong>REFERIDO</strong>. Para empresas,
+                    gobierno o el seguimiento del referido use la sección{' '}
+                    <strong>Especiales</strong>.
+                  </>
+                ) : (
+                  <>
+                    El caso quedó registrado como <strong>MANTENIMIENTO</strong>. Géstrelo desde
+                    la sección <strong>Mantenimiento</strong>.
+                  </>
+                )}
               </p>
               <div className="acciones-form">
                 <button
@@ -277,8 +304,10 @@ export default function ModalCaso({ onCerrar }: Props) {
                 <span>
                   El <strong>ID de avería se genera automáticamente</strong> con el formato{' '}
                   <span className="mono">REF-REP-######</span> (reparación) o{' '}
-                  <span className="mono">REF-CONS-######</span> (construcción). Todos los
-                  casos de ingesta manual quedan como <strong>REFERIDO</strong>.
+                  <span className="mono">REF-CONS-######</span> (construcción); los casos de
+                  reparación y construcción quedan como <strong>REFERIDO</strong>. El caso de{' '}
+                  <strong>mantenimiento</strong> se registra como tipo MANTENIMIENTO y se gestiona
+                  en la sección <strong>Mantenimiento</strong>.
                 </span>
               </div>
 
@@ -318,12 +347,16 @@ export default function ModalCaso({ onCerrar }: Props) {
                   id="nc-reporte"
                   value={form.tipo_reporte}
                   onChange={(e) =>
-                    setForm({ ...form, tipo_reporte: e.target.value as TipoActividadEspecial })
+                    setForm({ ...form, tipo_reporte: e.target.value as TipoReporteManual })
                   }
                 >
                   {TIPOS_REPORTE.map((t) => (
                     <option key={t} value={t}>
-                      {t === 'REPARACION' ? 'Reparación' : 'Construcción'}
+                      {t === 'REPARACION'
+                        ? 'Reparación (referido REF-REP)'
+                        : t === 'CONSTRUCCION'
+                          ? 'Construcción (referido REF-CONS)'
+                          : 'Mantenimiento'}
                     </option>
                   ))}
                 </select>
@@ -375,7 +408,10 @@ export default function ModalCaso({ onCerrar }: Props) {
                 />
               </div>
 
-              {/* D-145: solicitante del catálogo de personal externo, en cascada. */}
+              {/* D-145: solicitante del catálogo de personal externo, en cascada.
+                  Solo aplica a reparación y construcción (referidos); el caso de
+                  mantenimiento no lleva solicitante. */}
+              {esReferido(form.tipo_reporte) && (
               <div className="subpanel campo-ancho bloque-especial">
                 <h3 className="subtitulo-seccion">Solicitante (personal externo) *</h3>
                 <div className="formulario">
@@ -455,6 +491,7 @@ export default function ModalCaso({ onCerrar }: Props) {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="acciones-form">
                 <button className="btn" type="submit" disabled={guardando}>

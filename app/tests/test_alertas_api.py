@@ -413,7 +413,12 @@ def test_ficha_y_ordenes_por_falla(client, entorno):
     assert all(o["solicitante_usuario"] for o in lista)
 
     # El contador de la tabla refleja las órdenes
-    assert client.get(f"{FALLAS}/{id_falla}", headers=headers).json()["ordenes_count"] == 2
+    datos = client.get(f"{FALLAS}/{id_falla}", headers=headers).json()
+    assert datos["ordenes_count"] == 2
+    # Desglose por estado para los iconos del cuadro (nuevo en este ciclo):
+    # las dos órdenes acaban de pedirse, ninguna está entregada todavía.
+    assert datos["ordenes_solicitadas"] == 2
+    assert datos["ordenes_entregadas"] == 0
 
 
 def test_404_en_ficha_y_ordenes(client, entorno):

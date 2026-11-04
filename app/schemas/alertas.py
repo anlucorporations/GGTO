@@ -60,6 +60,10 @@ class FallaMasivaOut(BaseModel):
     # Dirección corta (truncada) del caso representativo.
     direccion_corta: str | None = None
     ordenes_count: int = 0
+    #: Desglose para los iconos del cuadro de masivas: pedidas (SOLICITADA/
+    #: APROBADA) y material ya entregado a la cuadrilla (ENTREGADA).
+    ordenes_solicitadas: int = 0
+    ordenes_entregadas: int = 0
     casos_afectos: int | None = None
 
     # D-99 · MASIVAS: asociación explícita, cierre y ubicación del FAT.
