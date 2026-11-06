@@ -2,7 +2,7 @@ name: ggto_tecnico
 description: App MÃ³vil para TÃ©cnicos de Terreno GGTO â€” Ciclo 8
 publish_to: 'none'
 # versionCode (lo que va tras el Â«+Â») debe crecer en CADA entrega a CANTV.
-version: 1.15.21+46
+version: 1.15.22+47
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
