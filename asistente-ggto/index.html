@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente GGTO</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; }
+  header { background: #0a7d5a; color: #fff; padding: 14px 20px; font-weight: 600; }
+  main { max-width: 760px; margin: 24px auto; padding: 0 16px; }
+  #chat { background: #fff; border: 1px solid #dde3e8; border-radius: 10px; min-height: 320px; padding: 16px; }
+  .msg { margin: 8px 0; }
+  .msg.yo { text-align: right; }
+  .msg .burbuja { display: inline-block; background: #eef2f5; border-radius: 10px; padding: 8px 12px; max-width: 85%; white-space: pre-wrap; }
+  .msg.yo .burbuja { background: #d9f2e8; }
+  .ficha { border: 1px solid #c8d6d0; background: #f8fbf9; border-radius: 8px; padding: 10px 12px; margin-top: 6px; font-size: 0.92rem; }
+  .ficha table { border-collapse: collapse; width: 100%; }
+  .ficha td { padding: 2px 6px; border-bottom: 1px solid #e5ece9; }
+  .ficha td:first-child { font-weight: 600; width: 34%; }
+  .aviso { color: #8a6d3b; font-size: 0.85rem; margin-top: 6px; }
+  form { display: flex; gap: 8px; margin-top: 14px; }
+  input { flex: 1; padding: 10px 12px; border: 1px solid #ccd4da; border-radius: 8px; }
+  button { background: #0a7d5a; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+  button:disabled { background: #9db8af; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<header>Asistente GGTO — Central Francisco Salias</header>
+<main>
+  <div id="chat"></div>
+  <form id="f">
+    <input id="m" placeholder="Escribe la solicitud… (ej: alta para maría rojas, pago 7012345678, sin señal, urb X)" autocomplete="off">
+    <button id="btn">Enviar</button>
+  </form>
+  <p class="aviso">Panel final (C6): la ficha es <b>editable</b> antes de confirmar — corrige cualquier dato y luego confirma; las consultas se resuelven al instante (lectura). Altas, eventos y consultas por los caminos canónicos de GGTO; Telegram con CONFIRMAR por chat.</p>
+</main>
+<script>
+const chat = document.getElementById("chat"), f = document.getElementById("f"), m = document.getElementById("m"), btn = document.getElementById("btn");
+const sesion = (crypto.randomUUID ? crypto.randomUUID() : "PANEL-" + Date.now());   // sesión de chat (C4: historial en GGTO)
+function burbuja(texto, clase, extra) {
+  const d = document.createElement("div"); d.className = "msg " + (clase || "");
+  const b = document.createElement("div"); b.className = "burbuja"; b.textContent = texto;
+  d.appendChild(b); if (extra) d.appendChild(extra); chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function ficha(o, conBoton) {
+  const c = o.ficha || {};
+  const CAMPOS = ["tipo_reporte","id_pago","nombre_cliente","contacto_cliente","direccion","tipo_problema","tipo_evento","detalle_evento","fecha_cita","estado_nuevo","consulta","nota"];
+  const filas = [["Intención", o.intencion, false]];
+  for (const k of CAMPOS) if (c[k]) filas.push([k, c[k], true]);
+  const d = document.createElement("div"); d.className = "ficha";
+  const tabla = document.createElement("table");
+  const entradas = [];   // C6: ficha editable — el operador corrige antes de confirmar
+  for (const [etiqueta, valor, editable] of filas) {
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td"); td1.textContent = etiqueta;
+    const td2 = document.createElement("td");
+    if (editable) {
+      const inp = document.createElement("input");
+      inp.value = String(valor ?? ""); inp.style.width = "95%";
+      inp.dataset.campo = etiqueta;
+      td2.appendChild(inp); entradas.push(inp);
+    } else td2.textContent = String(valor ?? "");
+    tr.appendChild(td1); tr.appendChild(td2); tabla.appendChild(tr);
+  }
+  d.appendChild(tabla);
+  const alDia = () => { for (const inp of entradas) c[inp.dataset.campo] = inp.value.trim() || undefined; };
+  const confirma = async (b, textoOk, alExito) => {
+    alDia();   // C6: la confirmación usa la ficha EDITADA, no la original
+    b.disabled = true; b.textContent = "Aplicando…";
+    try {
+      const r = await fetch("/api/confirmar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ficha: c }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && alExito(j)) { burbuja(textoOk); b.remove(); return; }
+      if (r.status === 422) { burbuja(`⚠ Faltan datos: ${(j.faltantes || []).join(", ")}`); }
+      else if (r.status === 404) { burbuja(`⚠ Caso no encontrado (${[j.id_averia, j.id_pago].filter(Boolean).join(" / ") || "sin identificador"})`); }
+      else { burbuja(`⚠ No se aplicó (${r.status}): ${j.error || ""}`); }
+      b.disabled = false; b.textContent = textoBoton;
+    } catch (e2) { burbuja("⚠ Error de red: " + e2.message); b.disabled = false; b.textContent = textoBoton; }
+  };
+  let textoBoton;
+  if (conBoton && o.intencion === "ALTA_CASO") textoBoton = "✔ Confirmar y crear caso";
+  else if (conBoton && o.intencion === "EVENTO") textoBoton = "✔ Confirmar y aplicar evento";
+  if (textoBoton) {
+    const b = document.createElement("button"); b.textContent = textoBoton;
+    b.style.marginTop = "10px";
+    b.addEventListener("click", () => {
+      if (o.intencion === "ALTA_CASO")
+        return confirma(b, "✅ Caso creado", (j) => { burbuja(`Caso ${j.id_averia} (id ${j.id_caso}, estado ${j.estado_actual})`); return true; });
+      confirma(b, "✅ Evento aplicado", (j) => { burbuja(`${j.tipo_evento} aplicado al caso ${j.id_caso}`); return true; });
+    });
+    d.appendChild(b);
+  }
+  return d;
+}
+function respuestaBox(j) {
+  const r = j.respuesta || {};
+  let lineas = [];
+  if (r.tipo === "CASO" && r.resumen) {
+    const s = r.resumen;
+    lineas = Object.entries({ Caso: s.id_averia, Estado: s.estado_actual, Tipo: s.tipo_caso,
+      Sector: s.sector, FAT: s.fat, Cliente: s.nombre_cliente, Dirección: s.direccion,
+      Contacto: s.contacto_cliente, Reporte: s.fecha_reporte, Cita: s.fecha_cita,
+      "Último comentario": s.ultimo_comentario }).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
+  } else if (r.tipo === "CASO") lineas = [r.texto || "Caso no encontrado"];
+  else if (r.tipo === "FAT") lineas = [`Búsqueda «${r.termino}» → ${r.total} caso(s)`,
+    ...(r.casos || []).map((c) => `${c.id_averia} · ${c.estado_actual} · sector ${c.sector || "-"} · FAT ${c.fat || "-"}`)];
+  else lineas = [JSON.stringify(r, null, 2)];
+  const d = document.createElement("div"); d.className = "ficha";
+  const pre = document.createElement("pre"); pre.style.whiteSpace = "pre-wrap";
+  pre.style.margin = "0"; pre.textContent = lineas.join("\n");
+  d.appendChild(pre);
+  return d;
+}
+f.addEventListener("submit", async (e) => {
+  e.preventDefault(); const texto = m.value.trim(); if (!texto) return;
+  burbuja(texto, "yo"); m.value = ""; btn.disabled = true;
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: texto, sesion_id: sesion }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { burbuja(`⚠ ${j.error || ("Error " + r.status)}`); }
+    else {
+      if (j.respuesta) burbuja(j.respuesta.encontrado === false ? "Sin resultados:" : "Respuesta:", "", respuestaBox(j));
+      else burbuja("Ficha extraída:", "", ficha(j, true));
+      burbuja(j.nota || "");
+    }
+  } catch (e2) { burbuja("⚠ No se pudo contactar al asistente: " + e2.message); }
+  btn.disabled = false; m.focus();
+});
+</script>
+</body>
+</html>

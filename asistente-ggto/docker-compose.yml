@@ -1,0 +1,40 @@
+# docker-compose de asistente-ggto (patrón del MANUAL_ASISTENTES_V2.md §3.1)
+# Sin secretos en este archivo (RS-2): la credencial del gateway entra por docker secret
+# (root-only /etc/secure/opcode-gateway-api-key) y el resto por env_file root-only.
+services:
+  asistente:
+    build: .
+    container_name: asistente-ggto
+    restart: unless-stopped
+    environment:
+      - GATEWAY_URL=http://100.125.94.21:4090
+      - GATEWAY_AUTH_KEY=${GATEWAY_AUTH_KEY}        # se inyecta desde el docker secret (entrypoint/wrapper) o env_file
+      - MODEL_ID=claude-haiku-5-5
+      - MODEL_PROVIDER=opencode-go
+      - PROJECT_NAME=ggto
+      - GGTO_API_URL=https://ggto-web-597577479284.europe-west1.run.app
+      - GGTO_SERVICE_USER=${GGTO_SERVICE_USER}       # p00 del usuario de servicio (alta en GGTO, rol SUPERVISOR/ADMIN)
+      - GGTO_SERVICE_PASSWORD=${GGTO_SERVICE_PASSWORD}  # vía docker secret ggto_service_pass o env_file root-only
+      - RATE_PER_MIN=30
+      - DAILY_CHAT_LIMIT=500
+      - MONGO_URL=${MONGO_URL}                       # BD proj_ggto (canon v2-A5, usuario dedicado)
+      - MONGO_DB=proj_ggto
+      - TELEGRAM_API_URL=https://api.telegram.org    # C5: para humo se puede simular por env
+      - TELEGRAM_SECRET=${TELEGRAM_SECRET}           # C5: secret_token del webhook (docker secret telegram_secret)
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}     # C5: token del bot (docker secret telegram_bot_token)
+      - PORT=3000
+    env_file:
+      - /etc/secure/asistente-ggto.env               # root-only, generado por alta (nunca en repo)
+    ports:
+      - "100.113.94.52:3003:3000"                    # IP Tailscale de vm-preview (puerto a confirmar con alta_asistente.sh)
+    networks:
+      - asistente-net
+    deploy:
+      resources:
+        limits: { cpus: "1", memory: 1073741824 }    # 1 CPU / 1 GB (canon; la API de Coolify no acepta limits)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+networks:
+  asistente-net:
+    external: true

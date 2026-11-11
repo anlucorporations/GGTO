@@ -76,6 +76,9 @@
 | 36 | Mensaje interno | `mensaje` | Mensajería interna supervisor→técnicos (RF-41, D-81). |
 | 37 | Destino de mensaje | `mensaje_destino` | Fan-out de destinatarios y lectura por técnico (RF-41, D-81). |
 | 38 | Identificador de pago | `identificador_pago` | Historial normalizado del identificador de pago y sus casos asociados (D-89). |
+| 39 | Servicio GPON (parque) | `servicio_gpon` | **PROPUESTA (2026-11-10) — NO migrada:** catálogo del parque de aprovisionamiento FTTH (ver [§9bis](#9bis-propuesta--parque-gpon-servicio_gpon-2026-11-10--solo-documentación) y [`PROPUESTA_parque_gpon_pde.md`](PROPUESTA_parque_gpon_pde.md)). |
+| 40 | Sesión del asistente | `asistente_sesion` | Historial de turnos del asistente virtual (2026-11-11, ciclo C4; ver [§9ter](#9ter-asistente-virtual--asistente_sesion-2026-11-11--ciclo-c4)). |
+| 41 | Remitente del asistente | `asistente_remitente` | Remitentes autorizados por canal de chat (Telegram, ciclo C5); alta por SUPER (ver §9ter). |
 
 ---
 
@@ -601,6 +604,76 @@ caso    1──N seguimiento       caso    1──N cita        caso    1──N
 actividad 1──N evidencia       usuario 1──N actividad
 dispositivo_seguridad 1──N sincronizacion
 ```
+
+---
+
+## 9bis. Propuesta — parque GPON `servicio_gpon` (2026-11-10 · solo documentación)
+
+> **Estado: PROPUESTA NO IMPLEMENTADA** — no hay DDL en `schema.sql`, ni tabla en ninguna base, ni código.
+
+- **Fuente:** `ODN-PDE/GPON_TRAFICO_PDE.xlsx` — parque de conexiones FTTH de la central **2324X**:
+  **16 770 filas × 30 columnas** (inventario de abonados aprovisionados; no es el CSV de averías).
+- **Claves propuestas:** `SERIAL_ONT` UNIQUE (16 770 únicos, clave física natural); `numero_identificador`
+  (70\*, D-89) como **FK lógica sin FK física** — el parque trae servicios sin pago/caso activo y 6 números
+  con varias filas (multiservicio).
+- **Datos nuevos (14):** `DOCUMENTO` (PII), `CIUDAD`, `FECHA_ACTIVACION`, `ESTATUS_CRM`, `ESTATUS_ORDEN`
+  (ACTIVO 14 636 / **CORTADO 2 103** / APROVISIONADO OFFLINE 24 / ND 7), `IP_OLT`, `C_VLAN`, `HOSTNAME`
+  (BRAS → `hostname_bras`), `S_VLAN`, `S_VLAN_AGREGADOR`, `SLOT_AGREGADOR`, `PUERTO_AGREGADOR`,
+  `VSUBIDA`, `VBAJADA`. Las otras 16 columnas ya empalman con campos vigentes (`caso`/ingesta D-27/D-164).
+- **Decisiones del usuario (2026-11-10):** (1) **solo documentación por ahora** — sin migrar la base ni
+  tocar `schema.sql`; (2) el parque entra **solo como catálogo** — sin enriquecer la ficha de los casos;
+  (3) incorporación futura por **script puntual idempotente** (patrón D-166/D-168: simulación →
+  `--aplicar --si`, `ON CONFLICT (serial_ont) DO UPDATE`, sin `DELETE` sin filtro).
+- **PII:** `ODN-PDE/` está fuera de git; cuando la tabla exista, `servicio_gpon` debe entrar a la política
+  de retención/anonimización D-153.
+- **Detalle completo** (métricas, DDL propuesto, reglas de calidad, empalme con producción pendiente de
+  medir contra los 167 casos): [`PROPUESTA_parque_gpon_pde.md`](PROPUESTA_parque_gpon_pde.md).
+
+---
+
+## 9ter. Asistente virtual — `asistente_sesion` (2026-11-11 · ciclo C4)
+
+Historial del asistente de gestión por texto libre (`asistente-ggto`, propuesta v2.1). Cada turno
+del chat se registra por el camino canónico `POST /api/v1/asistente/sesiones` con el **usuario de
+servicio** (rol SUPERVISOR/ADMIN); la lectura se acota por central (solo el SUPER cruza centrales).
+Migración idempotente: `python scripts/migrar_av_asistente_sesion.py --aplicar --si` (patrón D-164).
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_turno | bigserial | PK | |
+| sesion_id | varchar(64) | NN, índice | Sesión de chat (panel: UUID por página; Telegram: chat). |
+| canal | varchar(20) | NN, default `PANEL` | `PANEL` / `TELEGRAM`. |
+| id_central | int | FK→central | Central del usuario de servicio (recinto). |
+| p00 | varchar(20) | | Operador humano, si hay. |
+| texto_entrada | text | NN | Texto libre del operador. |
+| intencion | varchar(30) | | `ALTA_CASO` / `EVENTO` / `CONSULTA` / `DESCONOCIDO`. |
+| detalle | varchar(60) | | `tipo_evento` (C3) o tipo de consulta `CASO/FAT/RESUMEN_DIA` (C4). |
+| ficha_json | text | | Vista previa mostrada al operador (JSON en texto). |
+| respuesta | text | | Respuesta resuelta (consultas) o nota de vista previa. |
+| creado_en | timestamptz | NN, default now() | |
+
+> El conteo de **uso/cuota** sigue en el canon v2-A5 (Mongo `proj_ggto`); esta tabla es solo el
+> historial auditable de conversaciones, dentro de la base de GGTO.
+
+### 9ter.1 `asistente_remitente` (ciclo C5, 2026-11-11)
+
+Remitentes autorizados del asistente por canal de chat. El **SUPER** da de alta cada `chat_id`
+(`POST /api/v1/asistente/remitentes`) ligándolo a un operador (`p00`) de una central; el asistente
+solo responde a chats con `activo=true` (fail-closed). `PATCH` activa/desactiva (solo SUPER);
+la lectura se acota por central (el asistente, con su usuario de servicio, solo ve su central).
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| id_remitente | bigserial | PK | |
+| id_central | int | FK→central, NN | Central del operador (recinto). |
+| canal | varchar(20) | NN, default `TELEGRAM` | Canal de chat. |
+| chat_id | varchar(64) | UQ, NN | Identificador del chat (Telegram). |
+| p00 | varchar(20) | NN | Operador bajo el que se registran sus turnos. |
+| nombre | varchar(120) | | Nombre visible del remitente. |
+| activo | boolean | NN, default true | Alta/desactivación por SUPER. |
+| creado_en / actualizado_en | timestamptz | NN | Auditoría. |
+
+Migración idempotente: `python scripts/migrar_av_asistente_remitentes.py --aplicar --si`.
 
 ---
 

@@ -1,3 +1,4 @@
+from .asistente_entities import AsistenteRemitente, AsistenteSesion
 from .caso_entities import Caso, CasoEstadoHist, IngestaLote
 from .config_entities import (
     CatalogoMetodo,
@@ -38,6 +39,8 @@ from .sync_entities import SyncCheck, SyncLog
 
 __all__ = [
     "Actividad",
+    "AsistenteRemitente",
+    "AsistenteSesion",
     "Auditoria",
     "Caso",
     "CasoEspecial",

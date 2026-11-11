@@ -21,6 +21,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .api import (
     routes_alertas,
+    routes_asistente,
     routes_auditoria,
     routes_auth,
     routes_casos,
@@ -179,6 +180,7 @@ app.include_router(routes_sync.router)
 app.include_router(routes_sincronizacion.router)
 app.include_router(routes_mensajes.router)
 app.include_router(routes_panel.router)
+app.include_router(routes_asistente.router)
 app.include_router(routes_mantenimiento.router)
 
 

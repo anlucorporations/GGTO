@@ -1285,6 +1285,41 @@ DROP TRIGGER IF EXISTS trg_caso_metricas_despacho ON caso;
 CREATE TRIGGER trg_caso_metricas_despacho AFTER UPDATE OF estado_actual, tipo_caso, categoria ON caso
 FOR EACH ROW EXECUTE FUNCTION trg_recalcular_metricas_caso();
 
+-- ============================================================================
+-- Asistente virtual (propuesta v2.1, ciclo C4): historial de sesiones.
+-- Cada turno del asistente (panel / Telegram) se registra por el camino
+-- canónico `POST /api/v1/asistente/sesiones`; la lectura se acota por central.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS asistente_sesion (
+    id_turno      bigserial PRIMARY KEY,
+    sesion_id     varchar(64) NOT NULL,
+    canal         varchar(20) NOT NULL DEFAULT 'PANEL',
+    id_central    integer REFERENCES central(id_central),
+    p00           varchar(20),
+    texto_entrada text NOT NULL,
+    intencion     varchar(30),
+    detalle       varchar(60),          -- tipo_evento o tipo de consulta (CASO/FAT/RESUMEN_DIA)
+    ficha_json    text,                 -- vista previa mostrada al operador
+    respuesta     text,
+    creado_en     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_sesion ON asistente_sesion(sesion_id);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_fecha ON asistente_sesion(creado_en);
+
+-- Remitentes autorizados de Telegram (C5): el alta la hace el SUPER; el
+-- asistente solo responde a chats activos de esta tabla.
+CREATE TABLE IF NOT EXISTS asistente_remitente (
+    id_remitente   bigserial PRIMARY KEY,
+    id_central     integer NOT NULL REFERENCES central(id_central),
+    canal          varchar(20) NOT NULL DEFAULT 'TELEGRAM',
+    chat_id        varchar(64) NOT NULL UNIQUE,
+    p00            varchar(20) NOT NULL,
+    nombre         varchar(120),
+    activo         boolean NOT NULL DEFAULT true,
+    creado_en      timestamptz NOT NULL DEFAULT now(),
+    actualizado_en timestamptz NOT NULL DEFAULT now()
+);
+
 SELECT fn_recalcular_metricas_despacho_diarias(id_central, fecha)
 FROM (SELECT DISTINCT id_central, fecha FROM despacho) jornadas;
 
