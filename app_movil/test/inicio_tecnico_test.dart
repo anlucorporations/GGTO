@@ -7,7 +7,7 @@
 //   * la barra de navegación del técnico ofrece el panel MASIVAS con un
 //     `Badge` con el conteo (y sin badge encendido cuando no hay masivas);
 //   * tocar la pestaña abre el panel MASIVAS de su cuadrilla;
-//   * la versión visible sigue 1.15.23+48 (entrega nueva).
+//   * la versión visible sigue 1.15.24+49 (entrega nueva).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,8 +114,8 @@ Iterable<Badge> badgesDeLaBarra(WidgetTester tester) =>
     ));
 
 void main() {
-  test('la versión de la entrega es 1.15.23+48', () {
-    expect(AppConstants.version, '1.15.23+48');
+  test('la versión de la entrega es 1.15.24+49', () {
+    expect(AppConstants.version, '1.15.24+49');
   });
 
   group('Panel aparte de MASIVAS · barra de navegación del técnico', () {
