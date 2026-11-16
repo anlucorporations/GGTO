@@ -1,5 +1,16 @@
 # DESPLIEGUE GGTO en `ggto-prod-txblvento` (GCP de TX Barlovento)
 
+> **⚠️ ACTUALIZACIÓN 16/11/2026 — la BD ya NO es Cloud SQL.** El servicio
+> `ggto-web` (en `ggto-prod-txblvento2`) conecta ahora al **PostgreSQL 16.15
+> en Docker dentro de la VM `vm-databases`** (`plataforma-txbarlovento`,
+> 10.140.0.2:5432, IP interna, tag `ggto-db`). Detalles de la migración
+> (conector VPC `ggto-connector`, peering `ggto-vpc ↔ plataforma-vpc`,
+> firewall `allow-ggto-pg`, dump con FORCE RLS transitorio, revisión
+> `ggto-web-00007-szq` con `DB_HOST=10.140.0.2`) en `estado_proyecto.md`
+> (fila 16/11). La instancia Cloud SQL `ggto-db` queda como **respaldo**
+> con los mismos datos. El resto de este documento describe el despliegue
+> original del 06/11.
+
 **Fecha de ejecución:** viernes 06/11/2026
 **Sistema migrado desde:** `truekeate-main` (caído por cierre de
 facturación; revisión final `ggto-web-00115-g4b`, v100)
