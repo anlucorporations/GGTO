@@ -10,6 +10,15 @@
 > (fila 16/11). La instancia Cloud SQL `ggto-db` queda como **respaldo**
 > con los mismos datos. El resto de este documento describe el despliegue
 > original del 06/11.
+>
+> **17/11/2026 — accesos de la BD en la VM:**
+> · La misma BD responde por **Tailscale**: `vm-databases.tailb951ba.ts.net:5432`.
+> · **pgAdmin** de la VM (`http://100.89.28.1:5050`, login `txbarlovento@gmail.com`)
+>   tiene el servidor **«GGTO produccion (ggtov2)»** registrado (host `postgres`,
+>   BD `ggtov2`, usuario `ggtov2_app`); al conectar pide la clave del
+>   secreto `ggtov2-db-password`.
+> · El servicio usa la revisión **`ggto-web-00009-tvz`** con la clave alineada
+>   (secreto versión 5).
 
 **Fecha de ejecución:** viernes 06/11/2026
 **Sistema migrado desde:** `truekeate-main` (caído por cierre de
