@@ -4,15 +4,29 @@
 const http = require("http")
 
 // ---- CONFIG (env; secretos por docker secret/env_file root-only, RS-2) ----
-const GATEWAY_URL   = process.env.GATEWAY_URL || "http://100.125.94.21:4090"
-const GATEWAY_AUTH  = process.env.GATEWAY_AUTH_KEY ||
-  (leerArchivo("/run/secrets/gateway_auth") || "").trim()
-const MODEL         = { id: process.env.MODEL_ID || "claude-haiku-5-5",
-                        providerID: process.env.MODEL_PROVIDER || "opencode-go" }
 const GGTO_API_URL  = process.env.GGTO_API_URL || "https://ggto-web-597577479284.europe-west1.run.app"
 const GGTO_USER     = process.env.GGTO_SERVICE_USER || ""       // p00 del usuario de servicio
 const GGTO_PASS     = process.env.GGTO_SERVICE_PASSWORD ||
   (leerArchivo("/run/secrets/ggto_service_pass") || "").trim()
+const GGTO_MCP_KEY  = process.env.GGTO_MCP_KEY ||
+  (leerArchivo("/run/secrets/ggto_mcp_key") || "").trim()
+const GGTO_MCP_URL  = process.env.GGTO_MCP_URL || `${GGTO_API_URL}/api/v1/mcp`
+
+// ---- LLM: OpenRouter (v2.2 de la propuesta: OpenRouter en GCP como LLM principal) ----
+const LLM_PROVIDER  = (process.env.LLM_PROVIDER || "openrouter").toLowerCase()
+const OPENROUTER_URL = process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1"
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ||
+  (leerArchivo("/run/secrets/openrouter_api_key") || "").trim()
+const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "openai/gpt-4o-mini"
+const LLM_TOOLS_ENABLED = process.env.LLM_TOOLS_ENABLED !== "false"
+
+// Para compatibilidad con scripts antiguos que aún usan GATEWAY_URL/GATEWAY_AUTH si LLM_PROVIDER=opencode
+const GATEWAY_URL_LEGACY   = process.env.GATEWAY_URL || "http://100.125.94.21:4090"
+const GATEWAY_AUTH_LEGACY  = process.env.GATEWAY_AUTH_KEY ||
+  (leerArchivo("/run/secrets/gateway_auth") || "").trim()
+const MODEL_LEGACY         = { id: process.env.MODEL_ID || "claude-haiku-5-5",
+                              providerID: process.env.MODEL_PROVIDER || "opencode-go" }
+
 const PROJECT       = process.env.PROJECT_NAME || "ggto"
 const RATE_PER_MIN  = parseInt(process.env.RATE_PER_MIN || "30", 10)
 const DAILY_LIMIT   = parseInt(process.env.DAILY_CHAT_LIMIT || "500", 10)
@@ -48,6 +62,37 @@ Reglas: el texto llega con ortografía imperfecta y abreviaturas: interpreta. Un
 válido empieza con 70 y trae 10 dígitos (ej. 7012345678). Un alta sin id de pago, nombre,
 contacto o dirección igual va como ALTA_CASO con los campos que tengas (el sistema pedirá
 completar los faltantes). Si el texto no parece alta, evento ni consulta → DESCONOCIDO.`
+
+// ---- Herramientas MCP de GGTO expuestas al LLM (v2.2: OpenRouter opera el MCP de GGTO) ----
+// Solo de lectura por defecto (RS-2 / RNF-AV-02: nada se escribe sin confirmación humana).
+// Las herramientas de escritura (reportar_falla, procesar_notificaciones) quedan fuera del
+// set hasta que el operador confirme vía /api/confirmar (camino canónico C2/C3).
+const HERRAMIENTAS_MCP = [
+  { type: "function", function: { name: "estado_central",
+    description: "Resumen de casos pendientes y fallas activas de la central",
+    parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "consultar_caso",
+    description: "Busca un caso por id de avería o teléfono",
+    parameters: { type: "object", properties: {
+      id_averia: { type: "string", description: "Id de avería (REF-…)" },
+      telefono: { type: "string", description: "Teléfono del abonado (70*)" } } } } },
+]
+// Llama al servidor MCP de GGTO (POST /api/v1/mcp, JSON-RPC 2.0, X-MCP-Key)
+async function mcpLlamar(cfg, nombre, argumentos) {
+  const { GGTO_MCP_KEY, GGTO_MCP_URL, fetch, abortSignal, TIMEOUT_MS } = cfg
+  if (!GGTO_MCP_KEY) { const e = new Error("MCP sin clave (fail-closed)"); e.codigo = 503; throw e }
+  const r = await fetch(GGTO_MCP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-MCP-Key": GGTO_MCP_KEY },
+    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method: "tools/call",
+      params: { name: nombre, arguments: argumentos ?? {} } }),
+    signal: abortSignal(TIMEOUT_MS || 30000),
+  })
+  if (!r.ok) { const e = new Error(`MCP respondió ${r.status}`); e.codigo = 503; throw e }
+  const j = await r.json()
+  if (j?.error) { const e = new Error(`MCP: ${j.error.message}`); e.codigo = 502; throw e }
+  return j?.result?.datos ?? j?.result
+}
 
 // ---- C2: autenticación contra GGTO (usuario de servicio, JWT renovable) ----
 function expiracionJwt(token) { // exp del payload (base64url); 0 si no se puede
@@ -383,23 +428,45 @@ function tarifaOk(estado, ahora) {
   return { ok: true }
 }
 
-// ---- Llamada al gateway (contrato del runbook Registro V2) ----
-async function llamarGateway(deps, prompt) {
-  const { GATEWAY_URL, GATEWAY_AUTH, MODEL, TIMEOUT_MS } = deps
-  if (!GATEWAY_AUTH) { const e = new Error("gateway sin credencial (RS-2)"); e.codigo = 503; throw e }
-  const r = await deps.fetch(`${GATEWAY_URL}/api/experimental/generate/text`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json",
-               Authorization: `Basic ${Buffer.from(`opencode:${GATEWAY_AUTH}`).toString("base64")}` },
-    body: JSON.stringify({ prompt, model: MODEL }),
-    signal: deps.abortSignal(TIMEOUT_MS),
-  })
-  if (r.status === 429) { const e = new Error("plan del gateway agotado (429)"); e.codigo = 503; e.retry = r.headers.get("retry-after"); throw e }
-  if (!r.ok) { const e = new Error(`gateway respondió ${r.status}`); e.codigo = 503; throw e }
-  const j = await r.json()
-  const texto = j?.data?.text
-  if (typeof texto !== "string" || !texto.trim()) { const e = new Error("respuesta del gateway sin texto"); e.codigo = 502; throw e }
-  return texto
+// ---- Llamada a OpenRouter: chat/completions con tools (v2.2: OpenRouter como LLM principal) ----
+async function llamarLLM(deps, mensajes) {
+  const { OPENROUTER_URL, OPENROUTER_API_KEY, LLM_MODEL, LLM_TOOLS_ENABLED, TIMEOUT_MS,
+    GGTO_MCP_KEY, GGTO_MCP_URL, fetch, abortSignal } = deps
+  if (!OPENROUTER_API_KEY) { const e = new Error("OpenRouter sin credencial (RS-2)"); e.codigo = 503; throw e }
+  const cuerpo = {
+    model: LLM_MODEL,
+    messages: mensajes,
+    temperature: 0.1,
+  }
+  if (LLM_TOOLS_ENABLED) cuerpo.tools = HERRAMIENTAS_MCP
+  let historial = [...mensajes]
+  for (let ronda = 0; ronda < 4; ronda++) {
+    const r = await fetch(`${OPENROUTER_URL}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENROUTER_API_KEY}` },
+      body: JSON.stringify({ ...cuerpo, messages: historial }),
+      signal: abortSignal(TIMEOUT_MS),
+    })
+    if (r.status === 429) { const e = new Error("OpenRouter: plan de uso agotado (429)"); e.codigo = 503; throw e }
+    if (!r.ok) { const e = new Error(`OpenRouter respondió ${r.status}`); e.codigo = 503; throw e }
+    const j = await r.json()
+    const eleccion = j?.choices?.[0]?.message
+    if (!eleccion) { const e = new Error("OpenRouter: respuesta sin elección"); e.codigo = 502; throw e }
+    if (!eleccion.tool_calls?.length) {
+      const texto = typeof eleccion.content === "string" ? eleccion.content : ""
+      if (!texto.trim()) { const e = new Error("OpenRouter: respuesta sin texto"); e.codigo = 502; throw e }
+      return texto
+    }
+    historial.push(eleccion)
+    for (const tc of eleccion.tool_calls) {
+      const nombre = tc.function?.name || ""
+      let argumentos = {}
+      try { argumentos = JSON.parse(tc.function?.arguments || "{}") } catch { argumentos = {} }
+      const resultado = await mcpLlamar({ GGTO_MCP_KEY, GGTO_MCP_URL, fetch, abortSignal, TIMEOUT_MS }, nombre, argumentos)
+      historial.push({ role: "tool", tool_call_id: tc.id, name: nombre, content: JSON.stringify(resultado) })
+    }
+  }
+  const e = new Error("OpenRouter: demasiadas rondas de tools"); e.codigo = 502; throw e
 }
 const abortSignal = (ms) => AbortSignal.timeout(ms)
 
@@ -422,14 +489,12 @@ function construirPrompt(PROMPT, mensaje, correccion) {
 
 // ---- Procesar un mensaje (C1: extraer y devolver ficha; NUNCA escribir) ----
 async function procesarMensaje(estado, deps, mensaje, sesionId, meta) {
-  const { GATEWAY_URL, GATEWAY_AUTH, MODEL, TIMEOUT_MS, PROMPT } = estado.cfg
+  const { TIMEOUT_MS, PROMPT } = estado.cfg
   try {
-    let texto = await deps.gateway({ GATEWAY_URL, GATEWAY_AUTH, MODEL, TIMEOUT_MS,
-      fetch: deps.fetch, abortSignal: deps.abortSignal }, construirPrompt(PROMPT, mensaje, false))
+    let texto = await deps.gateway({ ...estado.cfg, fetch: deps.fetch, abortSignal: deps.abortSignal }, construirPrompt(PROMPT, mensaje, false))
     let ficha = deps.parse(texto)
     if (!ficha) { // reintento único con corrección (patrón propuesto en la v2.1)
-      texto = await deps.gateway({ GATEWAY_URL, GATEWAY_AUTH, MODEL, TIMEOUT_MS,
-        fetch: deps.fetch, abortSignal: deps.abortSignal }, construirPrompt(PROMPT, mensaje, true))
+      texto = await deps.gateway({ ...estado.cfg, fetch: deps.fetch, abortSignal: deps.abortSignal }, construirPrompt(PROMPT, mensaje, true))
       ficha = deps.parse(texto)
     }
     if (!ficha) return { status: 502, body: { error: "La IA no devolvió una ficha válida", intencion: "DESCONOCIDO" } }
@@ -495,8 +560,9 @@ function crearServidor(estado, deps) {
     const enviar = (codigo, cuerpo) => { res.writeHead(codigo, { "Content-Type": "application/json" }); res.end(JSON.stringify(cuerpo)) }
     if (url.pathname === "/health") {
       return enviar(200, { status: "ok", app: estado.cfg.PROJECT,
-        gateway: estado.cfg.GATEWAY_AUTH ? "configurado" : "no-configurado",
-        modelo: `${estado.cfg.MODEL.providerID}/${estado.cfg.MODEL.id}`,
+        llm: estado.cfg.OPENROUTER_API_KEY ? "configurado" : "no-configurado",
+        modelo: `${estado.cfg.LLM_MODEL || ""}`,
+        mcp: estado.cfg.GGTO_MCP_KEY ? "configurado" : "no-configurado",
         ggto_api: estado.cfg.GGTO_API_URL,
         telegram: estado.cfg.TELEGRAM_SECRET && estado.cfg.TELEGRAM_BOT_TOKEN ? "configurado" : "no-configurado" })
     }
@@ -559,13 +625,13 @@ function crearServidor(estado, deps) {
 
 // ---- Arranque (solo cuando corre como proceso principal) ----
 const INDEX_HTML = (() => { try { return require("fs").readFileSync(require("path").join(__dirname, "index.html"), "utf8") } catch { return "<h1>asistente-ggto</h1>" } })()
-const depsPorDefecto = { fetch: (u, o) => fetch(u, o), abortSignal, parse: parseRespuestaIA, gateway: llamarGateway, indexHtml: INDEX_HTML, procesar: procesarMensaje }
+const depsPorDefecto = { fetch: (u, o) => fetch(u, o), abortSignal, parse: parseRespuestaIA, gateway: llamarLLM, indexHtml: INDEX_HTML, procesar: procesarMensaje }
 if (require.main === module) {
-  const cfg = { GATEWAY_URL, GATEWAY_AUTH, MODEL, GGTO_API_URL, PROJECT, PROMPT: PROMPT_GGTO, RATE_PER_MIN, DAILY_LIMIT, MONGO_URL, MONGO_DB, TIMEOUT_MS, GGTO_USER, GGTO_PASS, TELEGRAM_API_URL, TELEGRAM_SECRET, TELEGRAM_BOT_TOKEN }
+  const cfg = { GGTO_API_URL, GGTO_USER, GGTO_PASS, GGTO_MCP_KEY, GGTO_MCP_URL, LLM_PROVIDER, OPENROUTER_URL, OPENROUTER_API_KEY, LLM_MODEL, LLM_TOOLS_ENABLED, TIMEOUT_MS, PROJECT, PROMPT: PROMPT_GGTO, RATE_PER_MIN, DAILY_LIMIT, MONGO_URL, MONGO_DB, TIMEOUT_MS, GGTO_USER, GGTO_PASS, TELEGRAM_API_URL, TELEGRAM_SECRET, TELEGRAM_BOT_TOKEN }
   const estado = crearEstado(cfg)
-  const depsCompletos = { ...depsPorDefecto, obtenerToken, confirmar: confirmarAccion, mapear: mapearAlta, buscarCaso, aplicarEvento, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram }
+  const depsCompletos = { ...depsPorDefecto, obtenerToken, confirmar: confirmarAccion, mapear: mapearAlta, buscarCaso, aplicarEvento, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, procesarMensaje }
   crearServidor(estado, depsCompletos).listen(PUERTO, () =>
-    console.log(`asistente-${PROJECT} escuchando en :${PUERTO} (gateway ${estado.cfg.GATEWAY_AUTH ? "configurado" : "SIN CREDENCIAL"})`))
+    console.log(`asistente-${PROJECT} escuchando en :${PUERTO} (llm ${estado.cfg.LLM_PROVIDER} ${estado.cfg.LLM_MODEL}, mcp ${estado.cfg.GGTO_MCP_KEY ? "configurado" : "SIN CLAVE"})`))
 }
 
-module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarGateway, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, textoDeRespuesta, vistaPreviaTexto }
+module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarLLM, mcpLlamar, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, textoDeRespuesta, vistaPreviaTexto }

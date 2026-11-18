@@ -1,11 +1,13 @@
 // test/core.test.js — pruebas del núcleo C1 de asistente-ggto (node --test)
-// Sin red: el gateway se simula con un HTTP local; también se prueba el fail-closed y la tarifa.
+// Sin red: OpenRouter se simula con un HTTP local; también se prueba el fail-closed y la tarifa.
 const test = require("node:test")
 const assert = require("node:assert/strict")
 const http = require("node:http")
-const { PROMPT_GGTO, crearEstado, tarifaOk, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, llamarGateway } = require("../server.js")
+const { PROMPT_GGTO, crearEstado, tarifaOk, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, llamarLLM, mcpLlamar } = require("../server.js")
 
-const CFG_OK = { GATEWAY_URL: "http://mock", GATEWAY_AUTH: "clave-prueba", MODEL: { id: "claude-haiku-5-5", providerID: "opencode-go" }, GGTO_API_URL: "https://x", PROJECT: "ggto", PROMPT: PROMPT_GGTO, RATE_PER_MIN: 30, DAILY_LIMIT: 500, MONGO_URL: "", MONGO_DB: "proj_ggto", TIMEOUT_MS: 5000 }
+const CFG_OK = { OPENROUTER_URL: "http://mock", OPENROUTER_API_KEY: "clave-prueba", LLM_MODEL: "openai/gpt-4o-mini",
+  LLM_TOOLS_ENABLED: true, GGTO_MCP_KEY: "mcp-prueba", GGTO_MCP_URL: "http://mcp", GGTO_API_URL: "https://x",
+  PROJECT: "ggto", PROMPT: PROMPT_GGTO, RATE_PER_MIN: 30, DAILY_LIMIT: 500, MONGO_URL: "", MONGO_DB: "proj_ggto", TIMEOUT_MS: 5000 }
 const JSON_BUENO = '{"intencion":"ALTA_CASO","tipo_reporte":"REPARACION","id_pago":"7012345678","nombre_cliente":"Pedro Ramirez","contacto_cliente":"04141234567","direccion":"Av los guayabos casa 12","tipo_problema":"Sin tono","nota":null}'
 
 function peticion(puerto, ruta, metodo, cuerpo) {
@@ -20,14 +22,13 @@ function peticion(puerto, ruta, metodo, cuerpo) {
     req.end()
   })
 }
-// Gateway simulado: /gen devuelve texto configurable; /fallo responde 500
+// OpenRouter simulado: /chat/completions devuelve {choices:[{message:{content}}]}
 function mockGateway(respuesta, codigo = 200) {
   const srv = http.createServer((req, res) => {
     let d = ""; req.on("data", (c) => (d += c))
     req.on("end", () => {
-      if (req.url.includes("/fallo")) { res.writeHead(500); res.end("{}"); return }
       res.writeHead(codigo, { "Content-Type": "application/json" })
-      res.end(JSON.stringify({ data: { text: respuesta } }))
+      res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: respuesta } }] }))
     })
   })
   return new Promise((r) => srv.listen(0, "127.0.0.1", () => r({ srv, url: `http://127.0.0.1:${srv.address().port}` })))
@@ -95,10 +96,10 @@ test("procesarMensaje: gateway caído → 503 fail-closed", async () => {
 
 test("HTTP: /health informa gateway configurado; /api/chat end-to-end con mock", async () => {
   const mock = await mockGateway(JSON_BUENO)
-  const { srv, url } = await servidorEfimero({ ...CFG_OK, GATEWAY_URL: mock.url }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarGateway, indexHtml: "<html></html>", procesar: procesarMensaje })
+  const { srv, url } = await servidorEfimero({ ...CFG_OK, OPENROUTER_URL: mock.url }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarLLM, indexHtml: "<html></html>", procesar: procesarMensaje })
   try {
     const h = await peticion(url.split(":")[2], "/health", "GET")
-    assert.equal(h.status, 200); assert.equal(h.body.status, "ok"); assert.equal(h.body.gateway, "configurado")
+    assert.equal(h.status, 200); assert.equal(h.body.status, "ok"); assert.equal(h.body.llm, "configurado")
     const c = await peticion(url.split(":")[2], "/api/chat", "POST", { message: "alta de prueba" })
     assert.equal(c.status, 200); assert.equal(c.body.ficha.intencion, "ALTA_CASO")
     const conf = await peticion(url.split(":")[2], "/api/confirmar", "POST", {})
@@ -107,10 +108,10 @@ test("HTTP: /health informa gateway configurado; /api/chat end-to-end con mock",
 })
 
 test("HTTP: sin credencial del gateway → /api/chat responde 503 y /health avisa", async () => {
-  const { srv, url } = await servidorEfimero({ ...CFG_OK, GATEWAY_AUTH: "" }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarGateway, indexHtml: "<html></html>", procesar: procesarMensaje })
+  const { srv, url } = await servidorEfimero({ ...CFG_OK, OPENROUTER_API_KEY: "" }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarLLM, indexHtml: "<html></html>", procesar: procesarMensaje })
   try {
     const h = await peticion(url.split(":")[2], "/health", "GET")
-    assert.equal(h.body.gateway, "no-configurado")
+    assert.equal(h.body.llm, "no-configurado")
     const c = await peticion(url.split(":")[2], "/api/chat", "POST", { message: "hola" })
     assert.equal(c.status, 503)
     assert.ok(c.body.error.includes("no disponible"))
@@ -118,7 +119,7 @@ test("HTTP: sin credencial del gateway → /api/chat responde 503 y /health avis
 })
 
 test("HTTP: mensaje vacío → 400; límite diario activo → 429", async () => {
-  const { srv, url } = await servidorEfimero({ ...CFG_OK, DAILY_LIMIT: 1 }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarGateway, indexHtml: "<html></html>", procesar: procesarMensaje })
+  const { srv, url } = await servidorEfimero({ ...CFG_OK, DAILY_LIMIT: 1 }, { fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms), parse: parseRespuestaIA, gateway: llamarLLM, indexHtml: "<html></html>", procesar: procesarMensaje })
   try {
     const vacio = await peticion(url.split(":")[2], "/api/chat", "POST", {})
     assert.equal(vacio.status, 400)
@@ -129,4 +130,59 @@ test("HTTP: mensaje vacío → 400; límite diario activo → 429", async () => 
     assert.equal(segundo.status, 429)
     assert.equal(segundo.body.motivo, "dia")
   } finally { srv.close() }
+})
+
+test("llamarLLM: bucle tools — OpenRouter pide consultar_caso → MCP responde → texto final", async () => {
+  // Mock de OpenRouter: 1.a respuesta pide el tool; tras el resultado del tool, responde el JSON
+  const JSON_FINAL = '{"intencion":"CONSULTA","consulta":"estado del caso"}'
+  const llamadas = []
+  const or = http.createServer((req, res) => {
+    let d = ""; req.on("data", (c) => (d += c))
+    req.on("end", () => {
+      llamadas.push(JSON.parse(d))
+      const cuerpo = JSON.parse(d)
+      const yaHayTool = (cuerpo.messages || []).some((m) => m.role === "tool")
+      res.writeHead(200, { "Content-Type": "application/json" })
+      if (yaHayTool)
+        res.end(JSON.stringify({ choices: [{ message: { role: "assistant", content: JSON_FINAL } }] }))
+      else
+        res.end(JSON.stringify({ choices: [{ message: { role: "assistant", tool_calls: [
+          { id: "tc_1", type: "function", function: { name: "consultar_caso", arguments: '{"telefono":"7012345678"}' } } ] } }] }))
+    })
+  })
+  // Mock del servidor MCP de GGTO (JSON-RPC tools/call)
+  const mcp = http.createServer((req, res) => {
+    let d = ""; req.on("data", (c) => (d += c))
+    req.on("end", () => {
+      llamadas.push({ mcp: JSON.parse(d) })
+      res.writeHead(200, { "Content-Type": "application/json" })
+      res.end(JSON.stringify({ jsonrpc: "2.0", id: 1,
+        result: { datos: { encontrado: true, id_averia: "REF-REP-000991", estado: "EN_GESTION" } } }))
+    })
+  })
+  const arrancar = (srv) => new Promise((r) => srv.listen(0, "127.0.0.1", () => r(`http://127.0.0.1:${srv.address().port}`)))
+  const orUrl = await arrancar(or), mcpUrl = await arrancar(mcp)
+  try {
+    const deps = { OPENROUTER_URL: orUrl, OPENROUTER_API_KEY: "k", LLM_MODEL: "openai/gpt-4o-mini",
+      LLM_TOOLS_ENABLED: true, GGTO_MCP_KEY: "clave-mcp", GGTO_MCP_URL: mcpUrl, TIMEOUT_MS: 5000,
+      fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms) }
+    const texto = await llamarLLM(deps, [{ role: "user", content: "en qué va el caso 7012345678" }])
+    assert.equal(parseRespuestaIA(texto).intencion, "CONSULTA")
+    const rpcMcp = llamadas.find((l) => l.mcp)?.mcp
+    assert.ok(rpcMcp, "debe haber llamado al MCP")
+    assert.equal(rpcMcp.method, "tools/call")
+    assert.equal(rpcMcp.params.name, "consultar_caso")
+    assert.equal(rpcMcp.params.arguments.telefono, "7012345678")
+    assert.ok(llamadas.length >= 2, "OpenRouter debe llamarse otra vez tras el tool")
+  } finally { or.close(); mcp.close() }
+})
+
+test("llamarLLM fail-closed: sin OPENROUTER_API_KEY → 503; MCP sin clave → 503", async () => {
+  await assert.rejects(
+    llamarLLM({ OPENROUTER_API_KEY: "", OPENROUTER_URL: "http://x", LLM_MODEL: "m", LLM_TOOLS_ENABLED: false,
+      TIMEOUT_MS: 1000, fetch, abortSignal: (ms) => AbortSignal.timeout(ms) }, [{ role: "user", content: "x" }]),
+    (e) => e.codigo === 503)
+  await assert.rejects(
+    mcpLlamar({ GGTO_MCP_KEY: "", GGTO_MCP_URL: "http://x", TIMEOUT_MS: 1000, fetch, abortSignal: (ms) => AbortSignal.timeout(ms) }, "estado_central", {}),
+    (e) => e.codigo === 503)
 })

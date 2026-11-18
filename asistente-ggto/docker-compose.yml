@@ -1,17 +1,21 @@
-# docker-compose de asistente-ggto (patrón del MANUAL_ASISTENTES_V2.md §3.1)
-# Sin secretos en este archivo (RS-2): la credencial del gateway entra por docker secret
-# (root-only /etc/secure/opcode-gateway-api-key) y el resto por env_file root-only.
+# docker-compose de asistente-ggto (patrón v2.2, LLM principal OpenRouter GCP)
+# Sin secretos en este archivo: la credencial entra por docker secret
+# y por env_file root-only (RS-2). Cambio respecto a v2-A0:
+#   - LLM_PROVIDER=openrouter   (usaba opencode-go)
+#   - OPENROUTER_API_KEY (docker secret /run/secrets/openrouter_api_key)
+#   - GGTO_MCP_KEY (docker secret /run/secrets/ggto_mcp_key, ahora obligatorio para herramientas)
+#   - Todo lo demás (Telegram, GGTO_USER/PASS, MONGO, tarifa) se mantiene.
+
 services:
   asistente:
     build: .
     container_name: asistente-ggto
     restart: unless-stopped
     environment:
-      - GATEWAY_URL=http://100.125.94.21:4090
-      - GATEWAY_AUTH_KEY=${GATEWAY_AUTH_KEY}        # se inyecta desde el docker secret (entrypoint/wrapper) o env_file
-      - MODEL_ID=claude-haiku-5-5
-      - MODEL_PROVIDER=opencode-go
-      - PROJECT_NAME=ggto
+      - LLM_PROVIDER=openrouter          # proveedor activo: openrouter o opencode
+      - OPENROUTER_URL=${OPENROUTER_URL}  # e.g. https://openrouter.ai/api/v1 (opcional, por defecto v1)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}  # <-- secret inyectado por wrapper o env_file
+      - GGTO_MCP_KEY=${GGTO_MCP_KEY}     # clave X-MCP-Key del servidor MCP GGTO (fail-closed)
       - GGTO_API_URL=https://ggto-web-597577479284.europe-west1.run.app
       - GGTO_SERVICE_USER=${GGTO_SERVICE_USER}       # p00 del usuario de servicio (alta en GGTO, rol SUPERVISOR/ADMIN)
       - GGTO_SERVICE_PASSWORD=${GGTO_SERVICE_PASSWORD}  # vía docker secret ggto_service_pass o env_file root-only
@@ -22,6 +26,7 @@ services:
       - TELEGRAM_API_URL=https://api.telegram.org    # C5: para humo se puede simular por env
       - TELEGRAM_SECRET=${TELEGRAM_SECRET}           # C5: secret_token del webhook (docker secret telegram_secret)
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}     # C5: token del bot (docker secret telegram_bot_token)
+      - LLM_TOOLS_ENABLED=${LLM_TOOLS_ENABLED:-true}  # true: expone herramientas MCP; false: LLM solo chat
       - PORT=3000
     env_file:
       - /etc/secure/asistente-ggto.env               # root-only, generado por alta (nunca en repo)

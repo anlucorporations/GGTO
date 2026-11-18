@@ -8,6 +8,10 @@
 
 - [ ] **Usuario de servicio en GGTO**: p00 tipo `GGTOAST001`, rol `SUPERVISOR` (o ADMIN), central
       2324X. Clave inicial → se guarda en `/etc/secure/asistente-ggto.env` (paso 2); **nunca en repo**.
+- [ ] **Clave de OpenRouter (v2.2)**: crear/obtener en Secret Manager (`openrouter-api-key` en
+      `plataforma-txbarlovento`) — es la credencial del LLM principal.
+- [ ] **Clave del MCP de GGTO**: fijar `mcp.api_key` en la tabla `configuracion` (hoy vacía ⇒ el
+      endpoint responde 503) y copiarla al docker secret `ggto_mcp_key`.
 - [ ] **Token del bot de Telegram**: crear bot con @BotFather, token → Secret Manager/directo al
       docker secret; `secret_token` del webhook: cadena aleatoria ≥ 32 chars.
 - [ ] Decidir **puerto** del rango 3002–3019 (3002 = demo `asistente-hotel`) y registrarlo en el
@@ -25,9 +29,11 @@ python scripts/migrar_av_asistente_remitentes.py --aplicar --si  # tabla asisten
 ## 2 · Secretos (RS-2 — nada en `.env` versionado ni en claro en disco compartido)
 
 ```bash
-# gateway REF-SEC-26 (canon §9-2):
-gcloud secrets versions access latest --secret=opcode-gateway-api-key --project=plataforma-txbarlovento \
-  | sudo tee /etc/secure/opcode-gateway-api-key >/dev/null && sudo chmod 0400 /etc/secure/opcode-gateway-api-key
+# clave de OpenRouter (v2.2 — RS-2, nunca en .env/repo):
+gcloud secrets versions access latest --secret=openrouter-api-key --project=plataforma-txbarlovento \
+  | sudo tee /etc/secure/openrouter_api_key >/dev/null && sudo chmod 0400 /etc/secure/openrouter_api_key
+# clave del MCP de GGTO (de la tabla configuracion, parámetro mcp.api_key → docker secret ggto_mcp_key):
+#   (pedirla al SUPER; solo se lee de la BD)  →  /etc/secure/ggto_mcp_key (chmod 0400)
 # env_file root-only del asistente:
 sudo nano /etc/secure/asistente-ggto.env   # chmod 0400 — contenido:
 #   GGTO_SERVICE_USER=GGTOAST001
@@ -60,14 +66,15 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 | # | Verificación en `asistente-ggto` | Estado |
 |---|---|---|
 | 1 | BD Mongo `proj_ggto` creada, usuario dedicado readWrite solo su BD | ☐ |
-| 2 | `GATEWAY_AUTH_KEY` por docker secret root-only (REF-SEC-26, **no en .env**) | ☐ |
-| 3 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
-| 4 | `MODEL_ID/MODEL_PROVIDER` = `claude-haiku-5-5`/`opencode-go` (verificado en C1) | ☐ |
-| 5 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","gateway":"configurado","telegram":"configurado"}` | ☐ |
-| 6 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta; CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
-| 7 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |
-| 8 | Puerto registrado en `04_runbook.md` §3 y en `estado_proyecto.md` | ☐ |
-| 9 | RS-2: sin secretos en fuentes/repo; auditoría anti-env (`grep -r "7012\|api.telegram\|GATEWAY_AUTH_KEY=" .` sin credenciales) | ☐ |
+| 2 | `OPENROUTER_API_KEY` por docker secret root-only (`/run/secrets/openrouter_api_key`, **no en .env**) | ☐ |
+| 3 | `GGTO_MCP_KEY` por docker secret root-only (`/run/secrets/ggto_mcp_key`) y `mcp.api_key` configurada en GGTO | ☐ |
+| 4 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
+| 5 | `LLM_MODEL` = modelo de OpenRouter elegido (defecto `openai/gpt-4o-mini`); `LLM_TOOLS_ENABLED=true` | ☐ |
+| 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☐ |
+| 7 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta (el LLM puede operar tools de lectura del MCP); CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
+| 8 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |
+| 9 | Puerto registrado en `04_runbook.md` §3 y en `estado_proyecto.md` | ☐ |
+| 10 | RS-2: sin secretos en fuentes/repo; auditoría anti-env (`grep -r "7012\|api.telegram\|OPENROUTER_API_KEY=\|GGTO_MCP_KEY=" .` sin credenciales) | ☐ |
 
 ## 6 · Humo final (con producción)
 
@@ -75,4 +82,4 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 - [ ] Evento real: `PATCH` comentario / cita / cambio de estado sobre un caso de prueba.
 - [ ] Consultas: caso por 70\*, FAT, resumen del día (verificar sin PII en listados).
 - [ ] Telegram: mensaje de remitente autorizado → vista previa → CONFIRMAR; remitente no
-      autorizado → sin respuesta y sin gasto de gateway.
+      autorizado → sin respuesta y sin gasto de OpenRouter.
