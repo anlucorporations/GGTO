@@ -17,7 +17,7 @@ const LLM_PROVIDER  = (process.env.LLM_PROVIDER || "openrouter").toLowerCase()
 const OPENROUTER_URL = process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1"
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ||
   (leerArchivo("/run/secrets/openrouter_api_key") || "").trim()
-const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "openai/gpt-4o-mini"
+const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "deepseek/deepseek-v4.1-flash-1017"
 const LLM_TOOLS_ENABLED = process.env.LLM_TOOLS_ENABLED !== "false"
 
 // Para compatibilidad con scripts antiguos que aún usan GATEWAY_URL/GATEWAY_AUTH si LLM_PROVIDER=opencode

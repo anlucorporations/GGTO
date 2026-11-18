@@ -8,8 +8,8 @@
 
 - [ ] **Usuario de servicio en GGTO**: p00 tipo `GGTOAST001`, rol `SUPERVISOR` (o ADMIN), central
       2324X. Clave inicial → se guarda en `/etc/secure/asistente-ggto.env` (paso 2); **nunca en repo**.
-- [ ] **Clave de OpenRouter (v2.2)**: crear/obtener en Secret Manager (`openrouter-api-key` en
-      `plataforma-txbarlovento`) — es la credencial del LLM principal.
+- [ ] **Clave de OpenRouter (v2.2)**: usar el secreto `openrouter-key-2` en Secret Manager
+      (`plataforma-txbarlovento`; verificada 2026-11-18 — `openrouter-key-1` responde 401).
 - [ ] **Clave del MCP de GGTO**: fijar `mcp.api_key` en la tabla `configuracion` (hoy vacía ⇒ el
       endpoint responde 503) y copiarla al docker secret `ggto_mcp_key`.
 - [ ] **Token del bot de Telegram**: crear bot con @BotFather, token → Secret Manager/directo al
@@ -29,8 +29,10 @@ python scripts/migrar_av_asistente_remitentes.py --aplicar --si  # tabla asisten
 ## 2 · Secretos (RS-2 — nada en `.env` versionado ni en claro en disco compartido)
 
 ```bash
-# clave de OpenRouter (v2.2 — RS-2, nunca en .env/repo):
-gcloud secrets versions access latest --secret=openrouter-api-key --project=plataforma-txbarlovento \
+# clave de OpenRouter (v2.2 — RS-2, nunca en .env/repo). Claves verificadas 2026-11-18:
+#   openrouter-key-1 → 401 (inválida); openrouter-key-2 → OK (límite 50 USD, uso 0) ← LA VÁLIDA
+#   (opcode-gateway-api-key es la clave del servidor OpenCode legacy, NO de OpenRouter)
+gcloud secrets versions access latest --secret=openrouter-key-2 --project=plataforma-txbarlovento \
   | sudo tee /etc/secure/openrouter_api_key >/dev/null && sudo chmod 0400 /etc/secure/openrouter_api_key
 # clave del MCP de GGTO (de la tabla configuracion, parámetro mcp.api_key → docker secret ggto_mcp_key):
 #   (pedirla al SUPER; solo se lee de la BD)  →  /etc/secure/ggto_mcp_key (chmod 0400)
@@ -69,7 +71,7 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 | 2 | `OPENROUTER_API_KEY` por docker secret root-only (`/run/secrets/openrouter_api_key`, **no en .env**) | ☐ |
 | 3 | `GGTO_MCP_KEY` por docker secret root-only (`/run/secrets/ggto_mcp_key`) y `mcp.api_key` configurada en GGTO | ☐ |
 | 4 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
-| 5 | `LLM_MODEL` = modelo de OpenRouter elegido (defecto `openai/gpt-4o-mini`); `LLM_TOOLS_ENABLED=true` | ☐ |
+| 5 | `LLM_MODEL` = `deepseek/deepseek-v4.1-flash-1017` (o el modelo OpenRouter elegido); `LLM_TOOLS_ENABLED=true` | ☐ |
 | 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☐ |
 | 7 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta (el LLM puede operar tools de lectura del MCP); CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
 | 8 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |
