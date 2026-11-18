@@ -401,6 +401,10 @@ def cerrar(db: Session, falla: FallaMasiva, datos, usuario: Usuario) -> dict:
                 evidencias=datos.evidencias,
                 id_causa=datos.id_causa,
                 usuario=usuario,
+                # D-99: la masiva ya exige el validador del CRASS y sus
+                # evidencias; los casos asociados se cierran sin exigir las
+                # 2 POTENCIA del cierre individual (RN-EV-01, F3-1).
+                exigir_evidencias=False,
             )
         except resolucion.CierreInvalido as exc:
             omitidos += 1

@@ -95,6 +95,20 @@ CREATE TABLE IF NOT EXISTS catalogo_metodo (
     UNIQUE (dominio, codigo)
 );
 
+-- RN-EST-01 (F3-1): matriz de transiciones permitidas del ciclo del caso.
+-- Semilla permissiva sin regresión: todo par de estados distintos SALVO las
+-- salidas de un estado terminal (CERRADO/CANCELADO/ENRUTADO → solo
+-- PENDIENTE/NUEVO). La siembra la hace `scripts/migrar_rn_f31.py`.
+CREATE TABLE IF NOT EXISTS estado_transicion (
+    id_transicion  serial       PRIMARY KEY,
+    estado_origen  varchar(20)  NOT NULL,
+    estado_destino varchar(20)  NOT NULL,
+    activo         boolean      NOT NULL DEFAULT true,
+    creado_en      timestamptz  NOT NULL DEFAULT now(),
+    UNIQUE (estado_origen, estado_destino)
+);
+CREATE INDEX IF NOT EXISTS ix_estado_transicion_origen ON estado_transicion(estado_origen);
+
 -- 1.4 Parámetros configurables del sistema
 CREATE TABLE IF NOT EXISTS configuracion (
     clave           varchar(80)  PRIMARY KEY,
@@ -322,6 +336,9 @@ CREATE TABLE IF NOT EXISTS caso (
     estado_actual           varchar(20)  NOT NULL DEFAULT 'NUEVO'
                             CHECK (estado_actual IN ('NUEVO','ASIGNADO','CONTACTADO','CITADO',
                                    'DIFERIDO','EN_GESTION','ENRUTADO','CERRADO','CANCELADO')),
+    -- RN-NC-01 (F3-1): intentos de «No Contesta» del ciclo de despacho vigente;
+    -- se resetea a 0 cuando el caso vuelve a la cola o es CONTACTADO.
+    intentos_no_contesta    smallint     NOT NULL DEFAULT 0,
     id_sector               integer      REFERENCES sector(id_sector),
     id_causa                integer      REFERENCES causa(id_causa),
     id_pago                 bigint       REFERENCES identificador_pago(id_pago)

@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..models import AsistenteRemitente, AsistenteSesion, Central, Usuario
 from ..schemas.asistente import RemitenteAlta, RemitenteOut, RemitenteUpdate, TurnoEntrada, TurnoOut
-from ..services.tiempo import hoy_operativo
 from .deps import require_roles
 
 router = APIRouter(prefix="/api/v1/asistente", tags=["asistente virtual"])
@@ -30,13 +29,16 @@ _solo_super = require_roles()  # sin roles explícitos: solo pasa SUPER (bypass 
 
 
 def _recinto(usuario: Usuario, id_central: int | None) -> int | None:
-    """Central del usuario salvo SUPER (que puede indicarla o ver todas)."""
+    """Central del usuario salvo SUPER (que puede indicarla o ver todas).
+
+    Recinto forzado: si el usuario tiene central asignada, el `id_central` de
+    la query **no cruza el recinto** — se ignora y se usa su central (el
+    supervisor de 2324X nunca opera la central ajena, aunque la pida).
+    """
     if usuario.rol is not None and usuario.rol.codigo == "SUPER":
         return id_central
     if usuario.id_central is None:
         raise HTTPException(status_code=403, detail="Su usuario no tiene central asignada")
-    if id_central is not None and id_central != usuario.id_central:
-        raise HTTPException(status_code=403, detail="No tiene acceso a la central solicitada")
     return usuario.id_central
 
 
@@ -87,7 +89,12 @@ def historial(
         condiciones.append(AsistenteSesion.canal == canal)
     if desde:
         condiciones.append(AsistenteSesion.creado_en >= desde.astimezone(UTC))
-    consulta = select(AsistenteSesion).where(*condiciones).order_by(AsistenteSesion.id_turno.desc()).limit(limite)
+    consulta = (
+        select(AsistenteSesion)
+        .where(*condiciones)
+        .order_by(AsistenteSesion.id_turno.desc())
+        .limit(limite)
+    )
     return list(db.scalars(consulta))
 
 

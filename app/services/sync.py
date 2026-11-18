@@ -664,10 +664,26 @@ def _registrar_estado(
     la cola offline** también cierre su ficha de caso especial. Antes esta copia
     no tocaba `caso_especial` y el referido seguía «pendiente» en la web y en la
     APK aunque el trabajo de campo estuviera terminado.
+
+    F3-1: la delegación aplica RN-EST-01 (matriz) y RN-EV-01 (evidencias);
+    las excepciones suben y cada llamada de la CARGA las traduce a un
+    rechazo del ítem (la regla D-121: un ítem rechazado no arrastra al lote).
+    El RN-EV-01 queda **exento en la CARGA**: las evidencias llegan aparte por
+    el upload (mismo criterio de exención que la cascada de masivas, D-99).
     """
     svc_resolucion.registrar_estado(
-        db, caso, nuevo, motivo, usuario_p00, momento=momento
+        db, caso, nuevo, motivo, usuario_p00, momento=momento,
+        exigir_evidencias=False,
     )
+
+
+def _razon_rn(exc: Exception) -> str:
+    """Mensaje legible para rechazar un ítem por RN-EST-01/RN-EV-01 (F3-1)."""
+    if isinstance(exc, svc_resolucion.TransicionInvalida):
+        return f"{exc.mensaje}"
+    if isinstance(exc, svc_resolucion.EvidenciasInsuficientes):
+        return f"{exc.mensaje}"
+    return f"Regla de resolución rechazó la acción: {exc}"
 
 
 def _instante_del_item(item: dict[str, Any]) -> datetime | None:
@@ -838,8 +854,17 @@ def aplicar_carga(
                 # estado): se aplica el cambio de estado y no se escribe actividad.
                 estado_sin_fila = _estado_por_tipo(tipo)
                 if estado_sin_fila:
-                    _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
-                                      usuario.p00)
+                    try:
+                        _registrar_estado(db, caso, estado_sin_fila, act.get("reporte_corto"),
+                                          usuario.p00)
+                    except (svc_resolucion.TransicionInvalida,
+                            svc_resolucion.EvidenciasInsuficientes) as exc:
+                        # F3-1: RN-EST-01/RN-EV-01 rechazan solo este ítem (D-121).
+                        rechazadas += 1
+                        errores.append({"id_caso": caso.id_caso, "mensaje": _razon_rn(exc),
+                                        "id_actividad_local": local})
+                        _rechazar(caso.id_caso, _razon_rn(exc), local)
+                        continue
                 aceptadas += 1
                 _aceptar(caso.id_caso, local)
                 continue
@@ -855,6 +880,10 @@ def aplicar_carga(
                         caso,
                         modo=str(act.get("modo") or ""),
                         descripcion=str(act.get("reporte_corto") or ""),
+                        # F3-1 · D-99: el cierre offline de la APK no exige las
+                        # 2 evidencias POTENCIA del camino individual (las fotos
+                        # llegan aparte por el upload de evidencias).
+                        exigir_evidencias=False,
                         evidencias=[
                             str(s).strip()
                             for s in (act.get("evidencias") or [])
@@ -866,7 +895,9 @@ def aplicar_carga(
                         id_actividad_local=local,
                         dispositivo_id=dispositivo,
                     )
-                except svc_resolucion.CierreInvalido as exc:
+                except (svc_resolucion.CierreInvalido,
+                        svc_resolucion.TransicionInvalida,
+                        svc_resolucion.EvidenciasInsuficientes) as exc:
                     errores.append({"id_caso": caso.id_caso, "mensaje": exc.mensaje,
                                     "id_actividad_local": local})
                     rechazadas += 1
@@ -875,6 +906,21 @@ def aplicar_carga(
                 aceptadas += 1
                 _aceptar(caso.id_caso, local, cierre.id_actividad)
                 continue
+
+            # F3-1: si la actividad produce un cambio de estado, se valida ANTES
+            # de escribir nada (RN-EST-01): un ítem rechazado no deja actividad
+            # huérfana ni evidencias vinculadas (D-121). El RN-EV-01 queda exento
+            # aquí: las evidencias llegan aparte por el upload (D-99).
+            estado_objetivo = _estado_por_tipo(tipo)
+            if estado_objetivo and estado_objetivo != caso.estado_actual:
+                try:
+                    svc_resolucion.validar_transicion(db, caso, estado_objetivo)
+                except svc_resolucion.TransicionInvalida as exc:
+                    rechazadas += 1
+                    errores.append({"id_caso": caso.id_caso, "mensaje": _razon_rn(exc),
+                                    "id_actividad_local": local})
+                    _rechazar(caso.id_caso, _razon_rn(exc), local)
+                    continue
 
             actividad = Actividad(
                 id_caso=caso.id_caso,
@@ -924,7 +970,6 @@ def aplicar_carga(
                 _registrar_estado(db, caso, estado_objetivo, act.get("reporte_corto"), usuario.p00)
             aceptadas += 1
             _aceptar(caso.id_caso, local, actividad.id_actividad)
-
         else:
             est = datos
             caso = _validar_acceso(int(est["id_caso"]))
@@ -942,10 +987,18 @@ def aplicar_carga(
                 continue
             if nuevo == caso.estado_actual:
                 continue
-            _registrar_estado(
-                db, caso, nuevo, est.get("motivo"), usuario.p00,
-                momento=_instante_del_item(est),
-            )
+            try:
+                _registrar_estado(
+                    db, caso, nuevo, est.get("motivo"), usuario.p00,
+                    momento=_instante_del_item(est),
+                )
+            except (svc_resolucion.TransicionInvalida,
+                    svc_resolucion.EvidenciasInsuficientes) as exc:
+                # F3-1: la matriz/evidencias rechazan el ítem, no el lote (D-121).
+                errores.append({"id_caso": caso.id_caso, "mensaje": _razon_rn(exc),
+                                "id_actividad_local": local})
+                rechazadas += 1
+                continue
             aceptadas += 1
 
     db.commit()

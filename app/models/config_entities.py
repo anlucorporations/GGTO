@@ -178,6 +178,29 @@ class Causa(Base):
     )
 
 
+class EstadoTransicion(Base):
+    """Transición permitida del ciclo del caso: origen → destino (RN-EST-01).
+
+    La semilla (migración F3-1) es *permissiva sin regresión*: todo par de
+    estados distintos está permitido SALVO las salidas de un estado terminal
+    (`CERRADO`, `CANCELADO`, `ENRUTADO`), que solo pueden ir a `PENDIENTE`
+    (corte 23:00 / reapertura) o `NUEVO` (retorno de un derivado).
+    """
+
+    __tablename__ = "estado_transicion"
+
+    id_transicion: Mapped[int] = mapped_column(Integer, primary_key=True)
+    estado_origen: Mapped[str] = mapped_column(String(20), nullable=False)
+    estado_destino: Mapped[str] = mapped_column(String(20), nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("estado_origen", "estado_destino",
+                         name="estado_transicion_origen_destino_key"),
+    )
+
+
 class CatalogoMetodo(Base):
     __tablename__ = "catalogo_metodo"
 

@@ -38,7 +38,7 @@ from ..schemas.especiales import (
     SolicitanteOut,
     SolicitanteUpdate,
 )
-from ..services import avisos, clasificacion, pagos
+from ..services import avisos, clasificacion, pagos, resolucion
 from ..services import sync as svc_sync
 from ..services.consultas import cargar_config, cargar_patrones, resolver_central
 from ..services.sectorizacion import asignar_sector
@@ -955,7 +955,12 @@ def crear_seguimiento(
     db.add(obj)
     # El caso queda enrutado a otra instancia: no vuelve al despacho de calle (RF-34/RF-25)
     if datos.estado == "EN_COLA":
-        caso.estado_actual = "ENRUTADO"
+        # D-120/F3-1: pasa por el camino único (bitácora + RN-EST-01).
+        resolucion.registrar_estado(
+            db, caso, "ENRUTADO",
+            f"Derivado a otra instancia ({datos.instancia_destino or 'seguimiento'})",
+            usuario.p00,
+        )
         if caso.id_sector is None:
             caso.en_gestion_supervisor = False
     db.commit()
@@ -979,7 +984,11 @@ def actualizar_seguimiento(
         setattr(obj, campo, valor)
     if datos.estado == "DEVUELTO":
         if caso.estado_actual == "ENRUTADO":
-            caso.estado_actual = "NUEVO"
+            # D-120/F3-1: camino único (bitácora + RN-EST-01; ENRUTADO→NUEVO
+            # está sembrado como la salida del derivado).
+            resolucion.registrar_estado(
+                db, caso, "NUEVO", "Retorno del derivado (DEVUELTO)", usuario.p00
+            )
             caso.en_gestion_supervisor = False
         obj.fecha_retorno = obj.fecha_retorno or datetime.now(UTC)
     elif datos.estado == "RESUELTO":
@@ -989,7 +998,11 @@ def actualizar_seguimiento(
     elif datos.estado == "EN_COLA":
         obj.fecha_retorno = None
         if caso.estado_actual not in ("CERRADO", "CANCELADO"):
-            caso.estado_actual = "ENRUTADO"
+            resolucion.registrar_estado(
+                db, caso, "ENRUTADO",
+                f"Re-derivar a {datos.instancia_destino or obj.instancia_destino or 'seguimiento'}",
+                usuario.p00,
+            )
     db.commit()
     db.refresh(obj)
     return _resumen_seguimiento(db, [obj])[0]

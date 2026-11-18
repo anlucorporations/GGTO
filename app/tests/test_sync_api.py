@@ -968,7 +968,10 @@ def test_el_pendiente_del_despacho_se_descarga_y_el_tecnico_lo_gestiona(
 
     cierre = client.post(
         f"{CASOS}/{id_caso}/cierre",
-        json={"modo": "COS", "descripcion": "Cierre del pendiente del día"},
+        # RN-EV-01 (F3-1): el cierre exige 2 evidencias de POTENCIA — la APK
+        # las captura antes de enviar (atender_screen valida localmente).
+        json={"modo": "COS", "descripcion": "Cierre del pendiente del día",
+              "evidencias": ["pot-1", "pot-2"]},
         headers=entorno_sync["tecnico"],
     )
     assert cierre.status_code == 200, cierre.text

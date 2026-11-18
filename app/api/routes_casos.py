@@ -155,8 +155,17 @@ def _registrar_estado(db: Session, caso: Caso, nuevo: str, motivo: str | None,
     cierre de jornada— pasen por el mismo punto. Ese camino sincroniza además la
     ficha del caso especial: cerrar un referido desde la APK antes dejaba su
     `caso_especial.estado` en `ABIERTO` para siempre.
+
+    F3-1: traduce las reglas nuevas a errores HTTP —
+    `TransicionInvalida` (RN-EST-01) → **409** con las transiciones válidas y
+    `EvidenciasInsuficientes` (RN-EV-01) → **422** con el faltante.
     """
-    resolucion.registrar_estado(db, caso, nuevo, motivo, usuario)
+    try:
+        resolucion.registrar_estado(db, caso, nuevo, motivo, usuario)
+    except resolucion.TransicionInvalida as exc:
+        raise HTTPException(status_code=409, detail=exc.mensaje) from exc
+    except resolucion.EvidenciasInsuficientes as exc:
+        raise HTTPException(status_code=422, detail=exc.mensaje) from exc
 
 
 def _sectorizar(db: Session, id_central: int, direccion: str | None) -> int | None:
@@ -772,6 +781,8 @@ def cerrar_caso(
             db, caso, modo=datos.modo, descripcion=datos.descripcion,
             evidencias=datos.evidencias, id_causa=datos.id_causa, usuario=usuario,
         )
+    except resolucion.EvidenciasInsuficientes as exc:
+        raise HTTPException(status_code=422, detail=exc.mensaje) from exc
     except resolucion.CierreInvalido as exc:
         raise HTTPException(
             status_code=409 if exc.ya_cerrado else 404, detail=exc.mensaje
@@ -867,6 +878,57 @@ def no_contesta(
         "1ra visita: el cliente no contestó; se informó al COS"
     )
 
+    # RN-NC-01 (F3-1): el «No Contesta» es acumulativo. Al llegar a N
+    # (`configuracion.rn_nc01_n_intentos`, 3 por defecto) el caso vuelve a la
+    # cola de despacho (PENDIENTE) y las citas de 1ª visita PROPUESTA se
+    # anulan: deja de estar en la agenda del día siguiente.
+    caso.intentos_no_contesta = (caso.intentos_no_contesta or 0) + 1
+    n_intentos = resolucion.n_intentos_no_contesta(db)
+    devolver_a_cola = caso.intentos_no_contesta >= n_intentos
+
+    actividad = Actividad(
+        id_caso=caso.id_caso,
+        id_usuario=usuario.id_usuario,
+        tipo="CONTACTO",
+        resultado="CONTACTADO",
+        reporte_corto=observacion[:200],
+        id_metodo=metodo.id_metodo,
+        fecha_hora=ahora,
+        sincronizado=True,
+    )
+    db.add(actividad)
+
+    if devolver_a_cola:
+        _registrar_estado(
+            db, caso, "PENDIENTE",
+            f"No contesta {caso.intentos_no_contesta}/{n_intentos}: vuelve a la cola",
+            usuario.p00,
+        )
+        for cita in db.scalars(
+            select(Cita).where(
+                Cita.id_caso == caso.id_caso,
+                Cita.tipo == "ATENCION",
+                Cita.estado == "PROPUESTA",
+            )
+        ).all():
+            cita.estado = "CANCELADA"
+        caso.fecha_cita = None
+        caso.intentos_no_contesta = 0  # el ciclo de despacho empieza de cero
+        clasificacion.aplicar_en_cambio(db, caso, "NO_CONTESTA", usuario.p00)
+        db.commit()
+        db.refresh(caso)
+        db.refresh(actividad)
+        return ResolucionOut(
+            accion="NO_CONTESTA",
+            id_actividad=actividad.id_actividad,
+            id_cita=None,
+            estado_actual=caso.estado_actual,
+            mensaje=(
+                f"«No Contesta» {n_intentos}: el caso vuelve a la cola de "
+                "despacho y su cita de 1ra visita quedó anulada."
+            ),
+        )
+
     _registrar_estado(db, caso, "CITADO", "No contesta: 1ra visita", usuario.p00)
     cita = Cita(
         id_caso=caso.id_caso,
@@ -879,17 +941,6 @@ def no_contesta(
     db.add(cita)
     caso.fecha_cita = fecha_cita
     db.flush()
-    actividad = Actividad(
-        id_caso=caso.id_caso,
-        id_usuario=usuario.id_usuario,
-        tipo="CONTACTO",
-        resultado="CONTACTADO",
-        reporte_corto=observacion[:200],
-        id_metodo=metodo.id_metodo,
-        fecha_hora=ahora,
-        sincronizado=True,
-    )
-    db.add(actividad)
     clasificacion.aplicar_en_cambio(db, caso, "NO_CONTESTA", usuario.p00)
     db.commit()
     db.refresh(caso)

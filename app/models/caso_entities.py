@@ -10,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    SmallInteger,
     String,
     Text,
     func,
@@ -58,6 +59,9 @@ class Caso(Base):
     tipo_caso: Mapped[str] = mapped_column(String(20), nullable=False, default="AVERIA")
     categoria: Mapped[str] = mapped_column(String(20), nullable=False, default="RESIDENCIAL")
     estado_actual: Mapped[str] = mapped_column(String(20), nullable=False, default="NUEVO")
+    # RN-NC-01: intentos de «No Contesta» acumulados en el ciclo de despacho
+    # vigente. Se resetea a 0 cuando el caso vuelve a la cola o es CONTACTADO.
+    intentos_no_contesta: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
     id_sector: Mapped[int | None] = mapped_column(ForeignKey("sector.id_sector"))
     id_causa: Mapped[int | None] = mapped_column(ForeignKey("causa.id_causa"))
     # D-89 (RF-45 / DEC-IP-4): identificador de pago (70*) del caso. `telefono`

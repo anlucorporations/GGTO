@@ -81,7 +81,17 @@ class _AtenderScreenState extends State<AtenderScreen> {
       _avisar('Describa lo realizado con al menos 10 caracteres.');
       return;
     }
+    // RN-EV-01 (F3-1): el cierre exige 2 evidencias de POTENCIA. El bloqueo es
+    // local ANTES de encolar: sin red no se puede resolver, y el servidor lo
+    // volvería a rechazar con 422 al llegar la acción.
     final seriales = _evidenciasCierre.currentState?.seriales ?? const <String>[];
+    if (seriales.length < 2) {
+      _avisar(
+        'El cierre exige 2 evidencias de potencia y hay ${seriales.length}. '
+        'Tome las fotos faltantes (RN-EV-01).',
+      );
+      return;
+    }
 
     setState(() => _enviando = true);
     final resultado = await OperacionesService.cerrar(
@@ -101,7 +111,12 @@ class _AtenderScreenState extends State<AtenderScreen> {
       _avisar('Indique el motivo del enrutado (mínimo 5 caracteres).');
       return;
     }
+    // RN-EV-01 (F3-1): el enrutado exige 1 evidencia (de cualquier tipo).
     final seriales = _evidenciasEnrutado.currentState?.seriales ?? const <String>[];
+    if (seriales.isEmpty) {
+      _avisar('El enrutado exige 1 evidencia del equipo (RN-EV-01).');
+      return;
+    }
 
     setState(() => _enviando = true);
     final resultado = await OperacionesService.enrutar(
@@ -121,7 +136,15 @@ class _AtenderScreenState extends State<AtenderScreen> {
       _avisar('Indique la justificación del diferido (mínimo 5 caracteres).');
       return;
     }
+    // RN-EV-01 (F3-1): el diferido exige 3 evidencias demostrativas.
     final seriales = _evidenciasDiferido.currentState?.seriales ?? const <String>[];
+    if (seriales.length < 3) {
+      _avisar(
+        'El diferido exige 3 evidencias demostrativas y hay ${seriales.length}. '
+        'Tome las fotos faltantes (RN-EV-01).',
+      );
+      return;
+    }
 
     setState(() => _enviando = true);
     final resultado = await OperacionesService.diferir(
