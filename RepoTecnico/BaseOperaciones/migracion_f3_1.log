@@ -1,0 +1,300 @@
+[2026-11-18T15:13:17+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:19+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:20+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:46+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:48+00:00] Estado actual: {'tabla_ok': 0, 'transiciones': 0, 'columna_nc': 0, 'claves': 0}
+[2026-11-18T15:13:48+00:00] Semilla: 69 transiciones permitidas de 100 pares posibles.
+[2026-11-18T15:13:48+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS estado_transicion (
+    id_transicion  serial PRIMARY KEY,
+    estado_origen  varchar(20) NOT NULL,
+    estado_destino varchar(20) NOT NULL,
+    activo         boolean NOT NULL DEFAULT true,
+    creado_en      timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT estado_transicion_origen_destino_key UNIQUE (estado_origen, estado_destino)
+);
+CREATE INDEX IF NOT EXISTS ix_estado_transicion_origen ON estado_transicion(estado_origen);
+ALTER TABLE caso ADD COLUMN IF NOT EXISTS intentos_no_contesta smallint NOT NULL DEFAULT 0;
+
+INSERT INTO estado_transicion (estado_origen, estado_destino) VALUES
+    ('NUEVO', 'PENDIENTE'),
+    ('NUEVO', 'ASIGNADO'),
+    ('NUEVO', 'EN_GESTION'),
+    ('NUEVO', 'CONTACTADO'),
+    ('NUEVO', 'CITADO'),
+    ('NUEVO', 'DIFERIDO'),
+    ('NUEVO', 'ENRUTADO'),
+    ('NUEVO', 'CERRADO'),
+    ('NUEVO', 'CANCELADO'),
+    ('PENDIENTE', 'NUEVO'),
+    ('PENDIENTE', 'ASIGNADO'),
+    ('PENDIENTE', 'EN_GESTION'),
+    ('PENDIENTE', 'CONTACTADO'),
+    ('PENDIENTE', 'CITADO'),
+    ('PENDIENTE', 'DIFERIDO'),
+    ('PENDIENTE', 'ENRUTADO'),
+    ('PENDIENTE', 'CERRADO'),
+    ('PENDIENTE', 'CANCELADO'),
+    ('ASIGNADO', 'NUEVO'),
+    ('ASIGNADO', 'PENDIENTE'),
+    ('ASIGNADO', 'EN_GESTION'),
+    ('ASIGNADO', 'CONTACTADO'),
+    ('ASIGNADO', 'CITADO'),
+    ('ASIGNADO', 'DIFERIDO'),
+    ('ASIGNADO', 'ENRUTADO'),
+    ('ASIGNADO', 'CERRADO'),
+    ('ASIGNADO', 'CANCELADO'),
+    ('EN_GESTION', 'NUEVO'),
+    ('EN_GESTION', 'PENDIENTE'),
+    ('EN_GESTION', 'ASIGNADO'),
+    ('EN_GESTION', 'CONTACTADO'),
+    ('EN_GESTION', 'CITADO'),
+    ('EN_GESTION', 'DIFERIDO'),
+    ('EN_GESTION', 'ENRUTADO'),
+    ('EN_GESTION', 'CERRADO'),
+    ('EN_GESTION', 'CANCELADO'),
+    ('CONTACTADO', 'NUEVO'),
+    ('CONTACTADO', 'PENDIENTE'),
+    ('CONTACTADO', 'ASIGNADO'),
+    ('CONTACTADO', 'EN_GESTION'),
+    ('CONTACTADO', 'CITADO'),
+    ('CONTACTADO', 'DIFERIDO'),
+    ('CONTACTADO', 'ENRUTADO'),
+    ('CONTACTADO', 'CERRADO'),
+    ('CONTACTADO', 'CANCELADO'),
+    ('CITADO', 'NUEVO'),
+    ('CITADO', 'PENDIENTE'),
+    ('CITADO', 'ASIGNADO'),
+    ('CITADO', 'EN_GESTION'),
+    ('CITADO', 'CONTACTADO'),
+    ('CITADO', 'DIFERIDO'),
+    ('CITADO', 'ENRUTADO'),
+    ('CITADO', 'CERRADO'),
+    ('CITADO', 'CANCELADO'),
+    ('DIFERIDO', 'NUEVO'),
+    ('DIFERIDO', 'PENDIENTE'),
+    ('DIFERIDO', 'ASIGNADO'),
+    ('DIFERIDO', 'EN_GESTION'),
+    ('DIFERIDO', 'CONTACTADO'),
+    ('DIFERIDO', 'CITADO'),
+    ('DIFERIDO', 'ENRUTADO'),
+    ('DIFERIDO', 'CERRADO'),
+    ('DIFERIDO', 'CANCELADO'),
+    ('ENRUTADO', 'NUEVO'),
+    ('ENRUTADO', 'PENDIENTE'),
+    ('CERRADO', 'NUEVO'),
+    ('CERRADO', 'PENDIENTE'),
+    ('CANCELADO', 'NUEVO'),
+    ('CANCELADO', 'PENDIENTE')
+ON CONFLICT (estado_origen, estado_destino) DO NOTHING;
+
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+    ('rn_est01_activo', 'true'::jsonb,
+     'RN-EST-01: valida el cambio de estado contra la matriz estado_transicion'),
+    ('rn_nc01_n_intentos', '3'::jsonb,
+     'RN-NC-01: N intentos de «No Contesta» antes de devolver el caso a la cola'),
+    ('rn_ev01_activo', 'false'::jsonb,
+     'RN-EV-01: exige evidencias mínimas (2 POTENCIA al cierre, 3 DEMO al '
+     'diferido, 1 al enrutado) — se activa al desplegar el build F3-1 de la APK')
+ON CONFLICT (clave) DO NOTHING;
+
+[2026-11-18T15:13:48+00:00] SIMULACIÓN — no se aplicó nada. Ejecuta con --aplicar --si para confirmar.
+[2026-11-18T15:13:48+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:49+00:00] Estado actual: {'tabla_ok': 0, 'transiciones': 0, 'columna_nc': 0, 'claves': 0}
+[2026-11-18T15:13:49+00:00] Semilla: 69 transiciones permitidas de 100 pares posibles.
+[2026-11-18T15:13:49+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS estado_transicion (
+    id_transicion  serial PRIMARY KEY,
+    estado_origen  varchar(20) NOT NULL,
+    estado_destino varchar(20) NOT NULL,
+    activo         boolean NOT NULL DEFAULT true,
+    creado_en      timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT estado_transicion_origen_destino_key UNIQUE (estado_origen, estado_destino)
+);
+CREATE INDEX IF NOT EXISTS ix_estado_transicion_origen ON estado_transicion(estado_origen);
+ALTER TABLE caso ADD COLUMN IF NOT EXISTS intentos_no_contesta smallint NOT NULL DEFAULT 0;
+
+INSERT INTO estado_transicion (estado_origen, estado_destino) VALUES
+    ('NUEVO', 'PENDIENTE'),
+    ('NUEVO', 'ASIGNADO'),
+    ('NUEVO', 'EN_GESTION'),
+    ('NUEVO', 'CONTACTADO'),
+    ('NUEVO', 'CITADO'),
+    ('NUEVO', 'DIFERIDO'),
+    ('NUEVO', 'ENRUTADO'),
+    ('NUEVO', 'CERRADO'),
+    ('NUEVO', 'CANCELADO'),
+    ('PENDIENTE', 'NUEVO'),
+    ('PENDIENTE', 'ASIGNADO'),
+    ('PENDIENTE', 'EN_GESTION'),
+    ('PENDIENTE', 'CONTACTADO'),
+    ('PENDIENTE', 'CITADO'),
+    ('PENDIENTE', 'DIFERIDO'),
+    ('PENDIENTE', 'ENRUTADO'),
+    ('PENDIENTE', 'CERRADO'),
+    ('PENDIENTE', 'CANCELADO'),
+    ('ASIGNADO', 'NUEVO'),
+    ('ASIGNADO', 'PENDIENTE'),
+    ('ASIGNADO', 'EN_GESTION'),
+    ('ASIGNADO', 'CONTACTADO'),
+    ('ASIGNADO', 'CITADO'),
+    ('ASIGNADO', 'DIFERIDO'),
+    ('ASIGNADO', 'ENRUTADO'),
+    ('ASIGNADO', 'CERRADO'),
+    ('ASIGNADO', 'CANCELADO'),
+    ('EN_GESTION', 'NUEVO'),
+    ('EN_GESTION', 'PENDIENTE'),
+    ('EN_GESTION', 'ASIGNADO'),
+    ('EN_GESTION', 'CONTACTADO'),
+    ('EN_GESTION', 'CITADO'),
+    ('EN_GESTION', 'DIFERIDO'),
+    ('EN_GESTION', 'ENRUTADO'),
+    ('EN_GESTION', 'CERRADO'),
+    ('EN_GESTION', 'CANCELADO'),
+    ('CONTACTADO', 'NUEVO'),
+    ('CONTACTADO', 'PENDIENTE'),
+    ('CONTACTADO', 'ASIGNADO'),
+    ('CONTACTADO', 'EN_GESTION'),
+    ('CONTACTADO', 'CITADO'),
+    ('CONTACTADO', 'DIFERIDO'),
+    ('CONTACTADO', 'ENRUTADO'),
+    ('CONTACTADO', 'CERRADO'),
+    ('CONTACTADO', 'CANCELADO'),
+    ('CITADO', 'NUEVO'),
+    ('CITADO', 'PENDIENTE'),
+    ('CITADO', 'ASIGNADO'),
+    ('CITADO', 'EN_GESTION'),
+    ('CITADO', 'CONTACTADO'),
+    ('CITADO', 'DIFERIDO'),
+    ('CITADO', 'ENRUTADO'),
+    ('CITADO', 'CERRADO'),
+    ('CITADO', 'CANCELADO'),
+    ('DIFERIDO', 'NUEVO'),
+    ('DIFERIDO', 'PENDIENTE'),
+    ('DIFERIDO', 'ASIGNADO'),
+    ('DIFERIDO', 'EN_GESTION'),
+    ('DIFERIDO', 'CONTACTADO'),
+    ('DIFERIDO', 'CITADO'),
+    ('DIFERIDO', 'ENRUTADO'),
+    ('DIFERIDO', 'CERRADO'),
+    ('DIFERIDO', 'CANCELADO'),
+    ('ENRUTADO', 'NUEVO'),
+    ('ENRUTADO', 'PENDIENTE'),
+    ('CERRADO', 'NUEVO'),
+    ('CERRADO', 'PENDIENTE'),
+    ('CANCELADO', 'NUEVO'),
+    ('CANCELADO', 'PENDIENTE')
+ON CONFLICT (estado_origen, estado_destino) DO NOTHING;
+
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+    ('rn_est01_activo', 'true'::jsonb,
+     'RN-EST-01: valida el cambio de estado contra la matriz estado_transicion'),
+    ('rn_nc01_n_intentos', '3'::jsonb,
+     'RN-NC-01: N intentos de «No Contesta» antes de devolver el caso a la cola'),
+    ('rn_ev01_activo', 'false'::jsonb,
+     'RN-EV-01: exige evidencias mínimas (2 POTENCIA al cierre, 3 DEMO al '
+     'diferido, 1 al enrutado) — se activa al desplegar el build F3-1 de la APK')
+ON CONFLICT (clave) DO NOTHING;
+
+[2026-11-18T15:13:51+00:00] Aplicado. Verificación: {'tabla_ok': 1, 'transiciones': 69, 'columna_nc': 1, 'claves': 2}
+[2026-11-18T15:13:51+00:00] === migración F3-1: RN-EST-01 + RN-NC-01 ===
+[2026-11-18T15:13:52+00:00] Estado actual: {'tabla_ok': 1, 'transiciones': 69, 'columna_nc': 1, 'claves': 2}
+[2026-11-18T15:13:52+00:00] Semilla: 69 transiciones permitidas de 100 pares posibles.
+[2026-11-18T15:13:52+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS estado_transicion (
+    id_transicion  serial PRIMARY KEY,
+    estado_origen  varchar(20) NOT NULL,
+    estado_destino varchar(20) NOT NULL,
+    activo         boolean NOT NULL DEFAULT true,
+    creado_en      timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT estado_transicion_origen_destino_key UNIQUE (estado_origen, estado_destino)
+);
+CREATE INDEX IF NOT EXISTS ix_estado_transicion_origen ON estado_transicion(estado_origen);
+ALTER TABLE caso ADD COLUMN IF NOT EXISTS intentos_no_contesta smallint NOT NULL DEFAULT 0;
+
+INSERT INTO estado_transicion (estado_origen, estado_destino) VALUES
+    ('NUEVO', 'PENDIENTE'),
+    ('NUEVO', 'ASIGNADO'),
+    ('NUEVO', 'EN_GESTION'),
+    ('NUEVO', 'CONTACTADO'),
+    ('NUEVO', 'CITADO'),
+    ('NUEVO', 'DIFERIDO'),
+    ('NUEVO', 'ENRUTADO'),
+    ('NUEVO', 'CERRADO'),
+    ('NUEVO', 'CANCELADO'),
+    ('PENDIENTE', 'NUEVO'),
+    ('PENDIENTE', 'ASIGNADO'),
+    ('PENDIENTE', 'EN_GESTION'),
+    ('PENDIENTE', 'CONTACTADO'),
+    ('PENDIENTE', 'CITADO'),
+    ('PENDIENTE', 'DIFERIDO'),
+    ('PENDIENTE', 'ENRUTADO'),
+    ('PENDIENTE', 'CERRADO'),
+    ('PENDIENTE', 'CANCELADO'),
+    ('ASIGNADO', 'NUEVO'),
+    ('ASIGNADO', 'PENDIENTE'),
+    ('ASIGNADO', 'EN_GESTION'),
+    ('ASIGNADO', 'CONTACTADO'),
+    ('ASIGNADO', 'CITADO'),
+    ('ASIGNADO', 'DIFERIDO'),
+    ('ASIGNADO', 'ENRUTADO'),
+    ('ASIGNADO', 'CERRADO'),
+    ('ASIGNADO', 'CANCELADO'),
+    ('EN_GESTION', 'NUEVO'),
+    ('EN_GESTION', 'PENDIENTE'),
+    ('EN_GESTION', 'ASIGNADO'),
+    ('EN_GESTION', 'CONTACTADO'),
+    ('EN_GESTION', 'CITADO'),
+    ('EN_GESTION', 'DIFERIDO'),
+    ('EN_GESTION', 'ENRUTADO'),
+    ('EN_GESTION', 'CERRADO'),
+    ('EN_GESTION', 'CANCELADO'),
+    ('CONTACTADO', 'NUEVO'),
+    ('CONTACTADO', 'PENDIENTE'),
+    ('CONTACTADO', 'ASIGNADO'),
+    ('CONTACTADO', 'EN_GESTION'),
+    ('CONTACTADO', 'CITADO'),
+    ('CONTACTADO', 'DIFERIDO'),
+    ('CONTACTADO', 'ENRUTADO'),
+    ('CONTACTADO', 'CERRADO'),
+    ('CONTACTADO', 'CANCELADO'),
+    ('CITADO', 'NUEVO'),
+    ('CITADO', 'PENDIENTE'),
+    ('CITADO', 'ASIGNADO'),
+    ('CITADO', 'EN_GESTION'),
+    ('CITADO', 'CONTACTADO'),
+    ('CITADO', 'DIFERIDO'),
+    ('CITADO', 'ENRUTADO'),
+    ('CITADO', 'CERRADO'),
+    ('CITADO', 'CANCELADO'),
+    ('DIFERIDO', 'NUEVO'),
+    ('DIFERIDO', 'PENDIENTE'),
+    ('DIFERIDO', 'ASIGNADO'),
+    ('DIFERIDO', 'EN_GESTION'),
+    ('DIFERIDO', 'CONTACTADO'),
+    ('DIFERIDO', 'CITADO'),
+    ('DIFERIDO', 'ENRUTADO'),
+    ('DIFERIDO', 'CERRADO'),
+    ('DIFERIDO', 'CANCELADO'),
+    ('ENRUTADO', 'NUEVO'),
+    ('ENRUTADO', 'PENDIENTE'),
+    ('CERRADO', 'NUEVO'),
+    ('CERRADO', 'PENDIENTE'),
+    ('CANCELADO', 'NUEVO'),
+    ('CANCELADO', 'PENDIENTE')
+ON CONFLICT (estado_origen, estado_destino) DO NOTHING;
+
+INSERT INTO configuracion (clave, valor, descripcion) VALUES
+    ('rn_est01_activo', 'true'::jsonb,
+     'RN-EST-01: valida el cambio de estado contra la matriz estado_transicion'),
+    ('rn_nc01_n_intentos', '3'::jsonb,
+     'RN-NC-01: N intentos de «No Contesta» antes de devolver el caso a la cola'),
+    ('rn_ev01_activo', 'false'::jsonb,
+     'RN-EV-01: exige evidencias mínimas (2 POTENCIA al cierre, 3 DEMO al '
+     'diferido, 1 al enrutado) — se activa al desplegar el build F3-1 de la APK')
+ON CONFLICT (clave) DO NOTHING;
+
+[2026-11-18T15:13:52+00:00] SIMULACIÓN — no se aplicó nada. Ejecuta con --aplicar --si para confirmar.
