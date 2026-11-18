@@ -1,0 +1,10 @@
+skillMENSAJESweb3.md
+
+ayudame a crear un skill que me permita leer las iteraciones de un proyecto que tiene funciones o acciones con blockchain (web3) y genere plantillas para mensajes personalizados segun los casos de usos y las funciones, estos mensajes se categorizaran segun las funciones del proyecto e incluiran la informacion escencial para que el usuario sea papaz de entender el tipo de transaccion que se esta firmando, el objetivo/razon/motivo, los involucrados y toda informacion relevante para generar confianza y claridad en el usi de la billetera. estos mensajes debe estar disenados para que interactue con las principales wallet (escritorio,navegador,aplicacion android o appel) y con las extenciones de crome/firefox/edge del mercado.
+
+[COSIDERACION]
+1. analiza completamente elproyecto.
+2. analiza los manuales tecnicos.
+3. analiza los casos de uso.
+4. genera los textos de muestra para cada iteraccion.
+5. genera plantillas para cada tipo de mensaje.

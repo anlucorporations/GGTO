@@ -1,0 +1,16 @@
+[2026-11-12T23:03:34+00:00] ==============================================================================
+[2026-11-12T23:03:34+00:00] CIERRE ADMINISTRATIVO DE AVERÍAS PENDIENTE (orden del SUPER)
+[2026-11-12T23:03:34+00:00] modo de cierre = SACAS; descripción = «VERIFICACION DE DATO»; actor = SUPER «123456»
+[2026-11-12T23:03:34+00:00] modo=SIMULACIÓN
+[2026-11-12T23:03:34+00:00] a cerrar: PENDIENTE=42; verificación: {'por_cerrar': 42, 'cerrados_averia': 40}
+[2026-11-12T23:03:34+00:00] (simulación) Ejecuta con --aplicar --si para escribir.
+[2026-11-12T23:03:42+00:00] ==============================================================================
+[2026-11-12T23:03:42+00:00] CIERRE ADMINISTRATIVO DE AVERÍAS PENDIENTE (orden del SUPER)
+[2026-11-12T23:03:42+00:00] modo de cierre = SACAS; descripción = «VERIFICACION DE DATO»; actor = SUPER «123456»
+[2026-11-12T23:03:42+00:00] modo=APLICAR
+[2026-11-12T23:03:42+00:00] a cerrar: PENDIENTE=42; verificación: {'por_cerrar': 42, 'cerrados_averia': 40}
+[2026-11-12T23:03:55+00:00] ==============================================================================
+[2026-11-12T23:03:55+00:00] CIERRE ADMINISTRATIVO DE AVERÍAS PENDIENTE (orden del SUPER)
+[2026-11-12T23:03:55+00:00] modo de cierre = SACAS; descripción = «VERIFICACION DE DATO»; actor = SUPER «123456»
+[2026-11-12T23:03:55+00:00] modo=APLICAR
+[2026-11-12T23:03:55+00:00] a cerrar: PENDIENTE=42; verificación: {'por_cerrar': 42, 'cerrados_averia': 40}

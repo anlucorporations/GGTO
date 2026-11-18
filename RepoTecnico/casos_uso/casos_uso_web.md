@@ -1,1124 +1,901 @@
-﻿# Casos de uso — GGTO V2 · WEB (inventario funcional completo)
+﻿# Casos de Uso — Aplicación Web GGTO (API `app/` + panel)
 
-| Campo | Valor |
-|---|---|
-| Documento | Casos de uso del canal **WEB** bajo criterio de **analista funcional** (un CU por objetivo de actor) |
-| Estado | **v1.0** — redactado a partir del inventario real de pantallas del código |
-| Fecha | 2026-10-23 |
-| Fuente de verdad | Inventario auditado del código vigente (v84 · D-157 desplegados): `app/web/src/**` (34 páginas/componentes) |
-| Documento complementario | [`casos_uso_apk.md`](casos_uso_apk.md) — los mismos RF en la APK (`CU-A-xx`); varios CU existen en ambos canales y comparten backend |
-| Requisitos | [`../requerimientos.md`](../requerimientos.md) — RF-01…RF-38 · RNF-01…RNF-25 · reglas RN-AL-01/02/03 |
-| Roles vigentes | **SUPER** (acceso total, D-50) · **ADMIN** · **SUPERVISOR** · **TECNICO** · **COORDINADOR** — matriz `requerimientos.md` §5.2 |
-| Notación | Criterios funcionales en **Gherkin** (`Dado/Cuando/Entonces`); restricciones del sistema en **EARS**; 100 % testeables |
-| Convención de IDs | `CU-W-xx` = canal **WEB** (PC y web móvil) · `CU-A-xx` = canal **APK** (documentado por separado) |
-| Verificación sugerida | API: `app/tests/*_api.py` · UI web: Playwright sobre `npm run build` |
-
-**Actores:** `SUPER` Super Usuario · `ADM` Administrador · `SUP` Supervisor de la central ·
-`TEC` Técnico de campo · `COO` Coordinador · `SIS` Sistema (automático, ACT-05).
-
-**Fuera del alcance de este documento (exclusión explícita y verificable):** los canales
-**Telegram**, **WEB-MCP (IA)** y el **solicitante externo ACT-03** (su alta es manual por el
-supervisor y su aviso sale por el *outbox*, D-156). Se cubre solo la interfaz **WEB**. Los
-CU heredan decisiones vigentes: D-156 (aviso al solicitante), **D-157 (cierre de jornada
-anula asignaciones → estado `DEVUELTO`)**, D-71 (aviso de uso), D-113 (procesar despacho
-por tipos), D-99 (cierre de masivas con validador CRASS) y RN-AL-01/02/03.
-
-> **Cómo leer la trazabilidad.** Cada CU lista los RF que cubre. Los criterios citan la
-> verificación (endpoint, tabla, pantalla o test existente). Nada aquí describe
-> comportamiento inexistente: todo lo listado está en el código vigente al 2026-10-23.
+> Catálogo completo por dominio, generado desde el inventario de los 17 routers de `app/api`
+> y `requerimientos.md`. Roles: ver matriz del [README](README.md).
+> Gherkin para comportamientos; EARS para restricciones. Trazabilidad con identificadores reales.
 
 ---
 
-## Índice
+## G1 · Autenticación y sesión — `routes_auth.py` (RF-20, RNF-01, RNF-22, RNF-21)
 
-[CU-W-01](#cu-w-01--aceptar-el-aviso-legal-de-uso-restringido)…[CU-W-06](#cu-w-06--cerrar-sesión) Sesión y cuenta ·
-[CU-W-07](#cu-w-07--buscar-en-el-buscador-global-y-abrir-la-ficha-rápida)…[CU-W-10](#cu-w-10--consultar-la-ayuda-de-la-plataforma) Global/lanzadera ·
-[CU-W-11](#cu-w-11--ingestar-el-archivo-csv-diario-con-vista-previa)…[CU-W-18](#cu-w-18--operar-la-ficha-de-la-falla-masiva-en-la-web) OPERACIÓN ·
-[CU-W-19](#cu-w-19--listar-y-filtrar-el-universo-de-casos)…[CU-W-23](#cu-w-23--imprimir-el-reporte-de-un-caso) CASOS ·
-[CU-W-24](#cu-w-24--registrar-el-seguimiento-de-un-caso)…[CU-W-25](#cu-w-25--gestionar-un-seguimiento-existente) SEGUIMIENTO ·
-[CU-W-26](#cu-w-26--registrar-un-caso-especial)…[CU-W-28](#cu-w-28--cerrar-un-caso-especial-con-informe) ESPECIALES ·
-[CU-W-29](#cu-w-29--crear-una-cita-de-atención)…[CU-W-30](#cu-w-30--consultar-y-gestionar-la-agenda-imprimible) AGENDA ·
-[CU-W-31](#cu-w-31--generar-la-propuesta-de-despacho-diaria)…[CU-W-38](#cu-w-38--ejecutar-el-cierre-de-jornada-del-despacho) DESPACHO ·
-[CU-W-39](#cu-w-39--detectar-fallas-masivas-de-forma-automática)…[CU-W-47](#cu-w-47--consultar-el-histórico-de-fallas-masivas) MASIVAS ·
-[CU-W-48](#cu-w-48--configurar-las-centrales)…[CU-W-56](#cu-w-56--gestionar-el-catálogo-de-personal-externo) CONFIGURACIÓN ·
-[CU-W-57](#cu-w-57--enviar-un-mensaje-interno-a-través-de-la-web)…[CU-W-62](#cu-w-62--inspeccionar-la-base-de-datos-super) MENSAJES·PERFIL·SISTEMAS.
+### CU-W-01 — Iniciar sesión
+**Actor:** cualquier usuario con cuenta (ACT-01/02/04/07) · **Ruta:** `POST /api/v1/auth/login`
+**Precondición:** cuenta activa, no bloqueada.
+**Flujo:** `P00` + clave → JWT + sesión; el token acota el alcance a `id_central` (RLS, D-95); SUPER ve todas las centrales.
+**Alternativos:** clave errática ×3 → bloqueo (CU-W-03 desbloqueo); cuenta inactiva/bloqueada → rechazo con motivo.
+**Gherkin:**
+```gherkin
+Dado un usuario SUPERVISOR de la central 2324X con clave válida
+Cuando inicia sesión
+Entonces recibe un token y sus consultas quedan acotadas a la central 2324X.
+
+Dado un usuario que ya registró 3 intentos fallidos
+Cuando intenta iniciar sesión con la clave correcta
+Entonces el acceso es rechazado por bloqueo y se exige desbloqueo con palabras.
+```
+**EARS:** Si la cuenta está bloqueada o inactiva, entonces el sistema negará el token.
+**Trazabilidad:** RF-20, RNF-01, RNF-22, RNF-21, D-95.
+
+### CU-W-02 — Activación en primer acceso / `setup` inicial
+**Actor:** ACT-01/04 · `GET /primer-acceso`, `POST /setup` (sin guarda de rol: lo ejecuta el usuario nuevo en su primer acceso, D-67; el primer Super Usuario se crea con el procedimiento de instalación)
+**Flujo:** primer acceso → activación con las palabras de seguridad; `setup` crea/ajusta el Super Usuario inicial.
+**Gherkin:**
+```gherkin
+Dado una cuenta nueva sin clave definitiva
+Cuando completa el primer acceso con sus palabras de seguridad
+Entonces la cuenta queda activa y puede iniciar sesión con su clave.
+```
+**Trazabilidad:** RF-20, RNF-22.
+
+### CU-W-03 — Desbloquear cuenta con palabras de seguridad
+**Actor:** usuario bloqueado · `POST /unlock`
+**Flujo:** demuestra **3 de las 12 palabras** → cuenta desbloqueada y marca para cambiar clave.
+**Gherkin:**
+```gherkin
+Dado una cuenta bloqueada por 3 intentos fallidos
+Cuando el usuario indica correctamente 3 de sus 12 palabras
+Entonces la cuenta se desbloquea y se exige un cambio de clave en el siguiente acceso.
+```
+**EARS:** Si las 3 palabras indicadas no corresponden, entonces la cuenta seguirá bloqueada y el intento quedará registrado.
+**Trazabilidad:** RF-20, RNF-01, RNF-22.
+
+### CU-W-04 — Regenerar palabras de seguridad
+**Actor:** ACT-04 SUPER · `POST /palabras/{p00}/regenerar` (solo SUPER)
+**Gherkin:**
+```gherkin
+Dado un SUPER autenticado
+Cuando regenera las palabras del p00 TECG001
+Entonces el usuario recibe 12 palabras nuevas y las anteriores dejan de ser válidas.
+```
+**Trazabilidad:** RF-02, RNF-22.
+
+### CU-W-05 — Restablecer contraseña de un usuario
+**Actor:** ACT-04 SUPER · `POST /reset-password`
+**Gherkin:**
+```gherkin
+Dado un usuario cuya clave se perdió
+Cuando el SUPER ejecuta el restablecimiento
+Entonces el usuario obtiene una clave temporal y debe cambiarla en el próximo acceso.
+```
+**Trazabilidad:** RF-02, RNF-22.
+
+### CU-W-06 — Cambiar mi clave / editar mi perfil
+**Actor:** cualquier usuario · `POST /cambio-clave`, `PATCH /me`
+**Gherkin:**
+```gherkin
+Dado un usuario autenticado
+Cuando cambia su clave cumpliendo la política de complejidad
+Entonces la nueva clave pasa a ser la única válida y el cambio queda registrado.
+```
+**Trazabilidad:** RF-20, RNF-22.
+
+### CU-W-07 — Consultar mi seguridad / mostrar palabras
+**Actor:** cualquier usuario · `GET /mi-seguridad`, `POST /palabras/mostrar`
+**Flujo:** estado de seguridad propio (bloqueos, última regeneración); mostrar palabras con confirmación.
+**Gherkin:**
+```gherkin
+Dado un usuario autenticado
+Cuando consulta GET /mi-seguridad
+Entonces ve su estado de seguridad (bloqueos, ultima regeneracion de palabras)
+Y al pedir mostrar palabras, estas se revelan solo tras la confirmacion del usuario.
+```
+
+**Trazabilidad:** RF-20, RNF-22.
 
 ---
-# PARTE 1 — Casos de uso de la WEB
 
-## 1.1 Sesión y cuenta
+## G2 · Ingesta y sincronización web — `routes_ingesta.py`, `routes_sincronizacion.py` (RF-01, RF-21, RF-22, RF-23, RF-29, RNF-08)
 
-### CU-W-01 — Aceptar el aviso legal de uso restringido
-**Actor(es):** Todos · **RF/RNF:** RNF-18 (aviso y base legal) · D-71
-**Precondición:** Sesión no iniciada (o localStorage sin la clave de aceptación).
-**Flujo principal:**
-1. La web muestra el muro `AvisoLegal` con las cláusulas de privacidad y uso.
-2. El usuario puede abrir el aviso completo (HTML), descargarlo (PDF) o ir a la Ayuda.
-3. Marca la casilla de aceptación y pulsa **«Aceptar e ingresar»** → pasa al formulario de acceso.
-**Alternativos:** sin aceptar, el botón permanece deshabilitado; la aceptación se recuerda en `localStorage` (`k_acepto_legal`) y el muro no vuelve a aparecer.
-**Criterios de aceptación:**
+### CU-W-08 — Cargar y previsualizar el archivo diario de averías
+**Actor:** ACT-01 (`_escritura`) · `POST /api/v1/ingesta/preview` (+ confirmación de lote)
+**Precondición:** CSV `detalle_averias_gpon_<fecha>.csv` del día disponible.
+**Flujo:** cargar archivo → previsualización con nuevos/duplicados/excluidos → confirmar → inserción idempotente por `id_averia` (deduplicación RF-22), parser de 80/81 columnas (D-164), solo casos de la central (RF-21).
+**Alternativos:** archivo con columnas inesperadas → rechazo o exclusión de filas con reporte; carga repetida del mismo archivo → 0 duplicados (idempotencia).
+**Gherkin:**
 ```gherkin
-Dado un usuario sin aceptación registrada
-Cuando accede a la URL raíz de la web
-Entonces ve el muro del aviso legal y no puede operar ninguna sección
-Y "Aceptar e ingresar" está deshabilitado hasta marcar la casilla
-```
-```gherkin
-Dado un usuario que ya aceptó el aviso en el mismo navegador
-Cuando recarga la página
-Entonces el muro no reaparece y va directo al acceso
-```
+Dado un CSV válido con 5 filas de la central 2324X y 2 id_averia ya existentes
+Cuando el Supervisor carga y confirma la ingesta
+Entonces se insertan 3 casos nuevos y 0 duplicados
+Y el lote queda registrado con la cronología y el conteo por categoría (RF-29).
 
-### CU-W-02 — Iniciar sesión web con P00 y clave
-**Actor(es):** Todos · **RF/RNF:** RF-20 · RNF-01, RNF-22 · **Precondición:** Aviso aceptado (CU-W-01).
-**Flujo principal:**
-1. En la pestaña **Acceso** el usuario ingresa `P00` + clave y envía el formulario → `POST /auth/login`.
-2. Con sesión válida se redirige a `/` y el Layout carga su menú según rol.
-**Alternativos:** A1 credencial inválida → mensaje de error y el formulario se resetea; A2 cuenta bloqueada → se muestra el desbloqueo con 3 palabras (CU-W-03); A3 cuenta nueva sin clave → invita al primer acceso (CU-W-04).
-**Criterios de aceptación:**
-```gherkin
-Dado una cuenta activa con credenciales válidas
-Cuando inicia sesión con su P00 y clave
-Entonces obtiene sesión, ve su P00/nombre/rol en la barra y su menú según rol (§5.2)
+Dado que el mismo CSV se vuelve a cargar
+Cuando se confirma
+Entonces la ingesta reporta 0 casos nuevos (idempotente por id_averia, deduplicación RF-22).
 ```
+**EARS:** De acuerdo con RNF-08 (D-33), la ingesta de hasta 20 000 filas deberá completarse en ≤ 5 minutos (p95).
+**Trazabilidad:** RF-01, RF-21, RF-22, RF-29, RNF-08, RNF-15, D-164, RT-05. *(Nota: D-121 es la idempotencia de la CARGA de la APK, no de la ingesta web.)*
+
+### CU-W-09 — Consultar lotes y cronología de ingesta
+**Actor:** ACT-01 · `GET /lotes`, `GET /lotes/{id_lote}`
+**Flujo:** listado de lotes con fecha, totales y detalle por carga; trazabilidad del origen.
+**Gherkin:**
 ```gherkin
-Dado una cuenta que no existe o clave incorrecta
-Cuando intenta iniciar sesión
-Entonces el acceso falla con mensaje claro y sin revelar cuál campo es incorrecto
+Dado 3 lotes de ingesta del dia
+Cuando el Supervisor consulta GET /lotes
+Entonces ve los 3 lotes con fecha y totales
+Y el detalle de cada lote (GET /lotes/{id}) coincide con su cronologia registrada.
 ```
 
-### CU-W-03 — Desbloquear una cuenta bloqueada con 3 palabras de seguridad
-**Actor(es):** Todos · **RF/RNF:** RF-20 · RNF-01 · **Precondición:** Cuenta bloqueada por 3 intentos (o bloqueo manual).
-**Flujo principal:**
-1. Con el conmutador **Desbloquear**, el usuario ingresa P00, clave y selecciona **3 de sus 12 palabras con posición (1–12)**.
-2. `POST /auth/unlock` desbloquea la cuenta y con la clave se encadena el login.
-**Alternativos:** A1 palabras/posiciones incorrectas → permanece bloqueado con mensaje; A2 desconoce las palabras → requiere apoyo de ADMIN/SUPER (regeneración, CU-W-51/W60).
-**Criterios de aceptación:**
+**Trazabilidad:** RF-29, RNF-12, RNF-19.
+
+### CU-W-10 — Sectorizar direcciones pendientes
+**Actor:** ACT-01 · `GET /direcciones-sin-sector`, `POST /sectorizar-pendientes`
+**Flujo:** listar direcciones de casos activos sin sector → asignar sector (manual o regla) → casos actualizados (RF-23).
+**Gherkin:**
 ```gherkin
-Dado una cuenta bloqueada
-Cuando el titular ingresa su clave y correctamente sus 3 palabras de seguridad elegidas con posición
-Entonces la cuenta se desbloquea y la sesión se inicia
+Dado 4 casos activos con dirección sin sector
+Cuando el Supervisor ejecuta la sectorización de pendientes
+Entonces las 4 direcciones quedan asignadas a un sector
+Y los casos pueden participar en la propuesta de despacho.
 ```
+**Trazabilidad:** RF-23, RNF-10, D-27.
+
+### CU-W-11 — Monitorear la sincronización (checklist)
+**Actor:** ACT-01 · `GET /api/v1/sync/resumen|checklist|{id}`
+**Flujo:** estado de ingesta/despacho/sync de campo con checklist de verificación.
+**Gherkin:**
 ```gherkin
-Dado una cuenta bloqueada
-Cuando alguien ingresa palabras que no corresponden o posiciones erróneas
-Entonces el desbloqueo es rechazado y el estado de la cuenta sigue bloqueado
+Dado una ingesta y un despacho del dia completados
+Cuando se consulta GET /sync/resumen
+Entonces el checklist refleja el estado de cada etapa (ingesta, despacho, sync de campo)
+Y cada sync log individual es consultable por su id.
 ```
 
-### CU-W-04 — Primer acceso: activar cuenta y guardar las 12 palabras
-**Actor(es):** `TEC`/`SUP`/`ADM`/`COO` cuentas pre-registradas · **RF/RNF:** RF-20 · RNF-01/02
-**Precondición:** El perfil existe sin cuenta de acceso activada (p. ej. cargado por CONFIGURACIÓN → CU-W-50).
-**Flujo principal:**
-1. En **Primer acceso** el usuario valida su `P00` (elegibilidad).
-2. Registra correo, clave (≥ 8) y confirmación.
-3. El sistema muestra **una sola vez las 12 palabras de seguridad**, con opción **Copiar**, y remite al acceso.
-**Alternativos:** cuenta ya activa → aviso y no se genera otra lista sin flujo expreso.
-**Criterios de aceptación:**
+**Trazabilidad:** RF-26, RNF-19.
+
+---
+
+## G3 · Ciclo del caso — `routes_casos.py` (RF-30…RF-33, RF-36)
+
+### CU-W-12 — Registrar caso manual
+**Actor:** ACT-01 (`POST ""` → 201) · **Precondición:** sesión `_escritura`; datos mínimos RN-AL-01 (fecha, tipo, actividad, contacto, nombre, dirección, información).
+**Flujo:** alta con datos sencillos → 201 con id_caso/id_averia; referidos sin `id_averia` reciben identificador `REF-…` (RF-36).
+**Alternativos:** falta dato obligatorio → 422 con faltantes; referido sin id_averia → `REF-`.
+**Gherkin:**
 ```gherkin
-Dado un pre-registro sin activar
-Cuando completa P00 + las 3 palabras de verificación correspondientes + clave nueva (≥ 8) y confirmación
-Entonces el sistema activa el acceso y muestra las 12 palabras de seguridad una sola vez
+Dado un Supervisor con los datos mínimos de RN-AL-01
+Cuando registra el caso manualmente
+Entonces GGTO responde 201 con un identificador de caso y estado inicial canónico.
+
+Dado un caso de tipo REFERIDO sin id_averia
+Cuando se registra
+Entonces el sistema genera el identificador REF-… y queda gestionable como REFERIDO (RF-36).
 ```
+**Trazabilidad:** RF-32, RF-36, RN-AL-01, D-145, D-89.
+
+### CU-W-13 — Buscar casos (universo/filtros y por identificador)
+**Actor:** TECNICO+ADMIN+SUPERVISOR (`_lectura`; **COORDINADOR excluido**, DEC-G20) · `GET /buscar`
+**Flujo:** por `id_averia`/teléfono (RF-30) o por filtros central/sector/estado/tipo/fechas (RF-33).
+**Alternativos:** sin resultados → listado vacío con filtros aplicados; COORDINADOR → 403.
+**Gherkin:**
 ```gherkin
-Dado las palabras mostradas en primer acceso
-Cuando el usuario pulsa "Copiar"
-Entonces obtiene la lista completa en el portapapeles y no se vuelven a mostrar
+Dado un caso 70123456 con teléfono 04141234567
+Cuando un Supervisor busca por id_averia o por teléfono
+Entonces la ficha completa se muestra en ≤ 10 s (RNF-09, D-37).
+
+Dado un usuario COORDINADOR
+Cuando intenta buscar casos en /casos
+Entonces recibe 403 (exclusión DEC-G20).
+```
+**Trazabilidad:** RF-30, RF-33, RNF-09, RNF-21, DEC-G20.
+
+### CU-W-14 — Ver ficha, historial y relacionados
+**Actor:** `_lectura` · `GET /{id_caso}`, `GET /{id_caso}/historial`, `GET /{id_caso}/relacionados`
+**Flujo:** ficha completa + bitácora de cambios (usuario/fecha, RNF-12) + casos vinculados (misma FAT/dirección).
+**Gherkin:**
+```gherkin
+Dado un caso con 5 eventos registrados
+Cuando se abre su ficha
+Entonces la ficha muestra los datos completos y el historial con los 5 eventos con usuario y fecha
+Y los casos relacionados (misma FAT/direccion) se listan.
 ```
 
-### CU-W-05 — Descargar la APK desde la web móvil
-**Actor(es):** `TEC` (y cualquier rol) · **RF:** RF-20 · D-102/D-107/D-108
-**Precondición:** Acceso a la web desde un navegador móvil.
-**Flujo principal:**
-1. La pantalla de acceso móvil ofrece el bloque de descarga: **Descargar APK** (`/apk/ggto-tecnico.apk`) y **Cómo instalar** (`/apk/apk.json` guía).
-2. Con instalación completa, el técnico queda en el flujo APK (PARTE 2).
-**Alternativos:** la sugerencia puede **omitirse** en esa sesión (localStorage) y volver a aparecer en otra.
-**Criterios de aceptación:**
+**Trazabilidad:** RF-30, RF-33, RNF-12, H-09.
+
+### CU-W-15 — Editar ficha del caso
+**Actor:** ACT-01 (`_escritura`) · `PATCH /{id_caso}` (+ `PATCH /{id_caso}/contacto`)
+**Flujo:** actualizar contacto, dirección, clasificación, campos de gestión (RF-31); cambio de clasificación marca `marcado_reclasificar` (D-89/D-90).
+**Gherkin:**
 ```gherkin
-Dado un dispositivo móvil en la pantalla de acceso
-Cuando pulsa "Descargar APK"
-Entonces el dispositivo descarga el binario vigente publicado con su SHA-256
+Dado un caso con contacto desactualizado
+Cuando el Supervisor actualiza el teléfono de contacto
+Entonces la ficha refleja el nuevo dato y el cambio queda en el historial (RNF-12).
+
+Dado un caso cuya clasificación se corrige
+Cuando se guarda el cambio
+Entonces el caso queda marcado_reclasificar según D-89/D-90.
 ```
+**Trazabilidad:** RF-31, RNF-12, D-89, D-90, D-112.
+
+### CU-W-16 — Cambiar el estado del caso
+**Actor:** `_gestion` (D-112) · `POST /{id_caso}/estado`
+**Flujo:** registrar el cambio de estado por el **camino único de estado** (D-120: desbloqueo de especiales delegado al caso) → nuevo estado + bitácora de estado.
+**EARS:** Mientras el caso esté en un estado terminal (CERRADO/CANCELADO/ENRUTADO), el sistema impedirá registrar nuevos cambios de estado por el camino único (409).
+**Gherkin:**
 ```gherkin
-Dado el binario APK bajado desde la web
-Cuando se verifica su SHA-256
-Entonces coincide con el publicado en /apk/apk.json (integridad de distribución)
+Dado un caso activo en cualquier estado no terminal
+Cuando se registra un cambio de estado por POST /{id_caso}/estado
+Entonces el estado cambia y queda en la bitácora de estado con usuario y fecha.
+
+Dado un caso en estado CERRADO
+Cuando se intenta registrar un cambio de estado
+Entonces el sistema rechaza el cambio (409) y el estado se mantiene.
+```
+**Criterios aspiracionales (RN-EST-01, requisito nuevo aprobado — pendiente de implementación, ver [`requisitos_nuevos.md`](requisitos_nuevos.md)):**
+```gherkin
+Dado un caso en un estado que no permite ir a CERRADO directamente
+Cuando se solicita ese cambio con la matriz RN-EST-01 vigente
+Entonces el sistema responde 409 con las transiciones validas desde el estado actual.
+```
+**Trazabilidad:** RF-31, D-120 (camino único de estado), D-112, RNF-12. *(RN-EST-01 definirá la matriz de transiciones formales — requisito nuevo, pendiente de implementación.)*
+
+### CU-W-17 — Agendar cita
+**Actor:** `_gestion` · `POST /{id_caso}/cita`
+**Flujo:** registrar/modificar fecha-hora de cita → caso queda citado; visible en agenda (CU-W-35) y en APK.
+**Gherkin:**
+```gherkin
+Dado un caso CONTACTADO
+Cuando se agenda una cita para dd/mm/aaaa hh:mm
+Entonces el caso queda con cita registrada y aparece en la agenda del día.
+```
+**Trazabilidad:** RF-12, D-112, D-120.
+
+### CU-W-18 — Registrar NO CONTESTA (D-88)
+**Actor:** `_gestion` (incluye al TECNICO: es gestión del caso que atiende) · `POST /{id_caso}/no-contesta` · **RF-APK-12**
+**Flujo (una sola transacción, D-88):** el caso pasa a **CITADO** con su bitácora de estado → se agenda la cita de **1ª visita** para el día siguiente a las 08:00 (hora enviada por la APK, que conoce la zona del dispositivo) → se registra la actividad de CONTACTO con método **COS** («informado al COS»). La APK lo encola si no hay red (CU-A-12).
+**Alternativos:** caso en estado terminal (CERRADO/CANCELADO/ENRUTADO) → **409** sin cambios; método COS ausente del catálogo → 422.
+**Gherkin:**
+```gherkin
+Dado un caso activo al que el tecnico no pudo contactar
+Cuando se registra el NO CONTESTA
+Entonces el caso queda CITADO
+Y existe una cita de 1ra visita para el dia siguiente a las 08:00
+Y la actividad de CONTACTO con metodo COS queda registrada (D-88).
+
+Dado un caso en estado CERRADO
+Cuando se intenta registrar NO CONTESTA
+Entonces la respuesta es 409 y no cambia ningun dato.
+```
+**Trazabilidad:** RF-13, RF-APK-12, D-88, D-112.
+**Criterio aspiracional (RN-NC-01, requisito nuevo aprobado — pendiente de implementación):**
+```gherkin
+Dado un caso con 3 registros de NO CONTESTA (N = 3, configurable)
+Cuando se registra el tercero
+Entonces el caso vuelve a la cola de despacho y la cita de 1ra visita se cancela.
 ```
 
-### CU-W-06 — Cerrar sesión
-**Actor(es):** Todos · **RF:** RF-20 · RNF-22 · **Precondición:** Sesión activa.
-**Flujo principal:** desde el menú de usuario se pulsa **Cerrar sesión** → se revoca la sesión/token local y la web vuelve a `/`.
-**Criterios de aceptación:**
-```gherkin
-Dado una sesión activa
-Cuando cierra sesión
-Entonces la aplicación pierde el estado autenticado y regresa a la pantalla de acceso
-```
-```gherkin
-Dado una sesión cerrada
-Cuando intenta reingresar a una ruta interna (p. ej. /casos)
-Entonces la web lo redirige al acceso sin exponer datos
-```
-
-## 1.2 Navegación global y lanzadera
-
-### CU-W-07 — Buscar en el buscador global por 70* / contacto y abrir la ficha rápida
-**Actor(es):** Todos · **RF:** RF-30 · RN-AL-03 · D-89 · **Precondición:** Sesión activa.
-**Flujo principal:**
-1. En la barra superior se escribe un término (identificador de pago 70*, número de contacto u otro dato) y se pulsa **Buscar** → `GET /casos/buscar`.
-2. El desplegable muestra hasta **8 resultados agrupados**; al elegir uno se abre `FichaRapida` (modal).
-**Alternativos:** A1 sin resultados → vacío con indicador; A2 **Limpiar** vacía el término.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso con identificador de pago 70* y contacto de cliente
-Cuando se localiza por ambos números
-Entonces el resultado correcto aparece agrupado y abre la ficha del caso
-```
-```gherkin
-Dado un término de búsqueda que no coincide con ningún caso visible para el rol
-Cuando se consulta el buscador
-Entonces el sistema no devuelve ninguno y no revela datos de otras centrales
-```
-
-### CU-W-08 — Consultar la ficha rápida con historial de estados
-**Actor(es):** Todos · **RF:** RF-30 · RNF-12 · **Precondición:** Caso localizado (CU-W-07).
-**Flujo principal:**
-1. Se abre `FichaRapida` modal con pestañas de **solo lectura**: *Actual / Estado / Contacto / Técnico*.
-2. La pestaña **Estado** lista el historial de cambios automático (`GET /casos/{id}/historial`).
-**Alternativos:** para editar el caso se usa la ficha completa de CASOS (CU-W-20).
-**Criterios de aceptación:**
-```gherkin
-Dado un caso con estados históricos
-Cuando abre la ficha rápida
-Entonces se muestran pestañas y el historial con fecha de cada transición
-```
-```gherkin
-Dado un caso ajeno al alcance de central del usuario
-Cuando se solicita la ficha
-Entonces el API responde 404 y la web muestra que no existe el caso (alcance por central)
-```
-
-### CU-W-09 — Dar de alta un caso manual desde la barra superior
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-32 · RN-AL-01
-**Precondición:** Rol con permiso de escritura en PANEL (el TECNICO solo ve los suyos; función no en su botón).
-**Flujo principal:**
-1. Botón **«Agregar caso»** abre `ModalCaso` con contadores de caracteres.
-2. Se completa cliente, avería, 70*, contacto, dirección, sector, causa/subcausa, comentarios… → `POST /casos`.
-3. El caso queda disponible en CASOS y en el buscador.
-**Alternativos:** falta dato obligatorio (nombre/contacto, dirección, 70*, tipo de reporte, y en REPARACIÓN id de avería+problema) → **422** y foco en el campo (RN-AL-01).
-**Criterios de aceptación:**
-```gherkin
-Dado un rol de gestión
-Cuando completa el alta manual con todos los datos obligatorios
-Entonces se crea el caso y aparece en el listado de CASOS
-```
-```gherkin
-Dado un alta manual incompleta sin nombre de cliente ni contacto
-Cuando se intenta guardar
-Entonces la solicitud falla con 422 y el formulario indica los campos faltantes
-```
-
-### CU-W-10 — Consultar la Ayuda de la plataforma
-**Actor(es):** Todos · **Precondición:** Sesión activa.
-**Flujo principal:**
-1. La sección **AYUDA** lista los 8 temas del manual (General, Tecnología, Dependencias, Implementación, Despliegue, Diccionario de Datos, Diagrama Relacional, Operación) con índice de sub-secciones ancladas.
-2. Cada sección permite **Abrir manual HTML** (pestaña nueva) y **Descargar PDF**.
-3. El buscador filtra por texto normalizado y muestra el contador de coincidencias.
-**Criterios de aceptación:**
-```gherkin
-Dado un término buscado en los manuales
-Cuando se aplica el buscador de la Ayuda
-Entonces se listan las secciones con coincidencias y el contador indica cuántas hay
-```
-```gherkin
-Dado un usuario en la Ayuda
-Cuando pulsa "Descargar PDF" en cualquier sección
-Entonces obtiene el PDF generado del proyecto
-```
-## 1.3 Sección OPERACIÓN (pestañas Gestión del día · Ingesta · Monitoreo · Alertas)
-
-### CU-W-11 — Ingestar el archivo CSV diario con vista previa
-**Actor(es):** `SUP`, `ADM`, `SUPER` (escritura); lectura para el resto con datos · **RF:** RF-01, RF-21, RF-22, RF-29
-**Precondición:** Archivo `detalle_averias_gpon_<fecha>.csv` disponible; central configurada (RF-38).
-**Flujo principal:**
-1. Se selecciona el CSV → **Vista previa** (`/ingesta/preview`) muestra qué se procesaría.
-2. **Cargar** (`/ingesta/cargar`) ejecuta la ingesta: filtro por los datos operativos de la central → descarte de duplicados por `id_averia` → inserción de casos nuevos → **resumen del lote** (nuevos, descartados, total).
-3. Los lotes previos quedan consultables (lotes + detalle).
-**Alternativos:** archivos con filas de otras centrales → descartadas por filtro (RF-21); CSV mal formado → error de ingesta sin mutación parcial.
-**Criterios de aceptación:**
-```gherkin
-Dado un CSV del día con casos de la central y 200 duplicados ya existentes
-Cuando se ejecuta la carga
-Entonces la ingesta registra solo ids nuevos + descarta duplicados + deja el lote de referencia con resumen
-```
-```gherkin
-Dado un CSV con filas de otra central
-Cuando se ejecuta la ingesta
-Entonces ninguna de esas filas genera caso (solo se procesan los datos operativos de la central configurada)
-```
-
-### CU-W-12 — Conciliar direcciones sin sector y re-sectorizar pendientes
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-23, RF-38 · RNF-10
-**Precondición:** Casos con dirección no encajada después de la ingesta.
-**Flujo principal:**
-1. El panel **Gestionar direcciones** lista los casos sin sector.
-2. Se asigna una dirección a un sector definiendo el **patrón** (`CONTIENE`/`EXACTO`/`REGEX`).
-3. **Re-sectorizar pendientes** re-evalúa las direcciones activas con los patrones vigentes.
-**Criterios de aceptación:**
-```gherkin
-Dado direcciones casadas con un patrón CONTIENE
-Cuando se re-sectorizan los casos pendientes
-Entonces los casos afectados cambian a su sector y quedan disponibles para el despacho
-```
-```gherkin
-Dado un patrón REGEX inválido
-Cuando se guarda
-Entonces el sistema lo rechaza sin dejar patrones rotos en el catálogo
-```
-
-### CU-W-13 — Consultar el tablero de Gestión diaria y crear un especial desde el Widget
-**Actor(es):** `SUP`, `ADM`, `SUPER` (tablero); `COO` lo ve sin el Widget de gestión · **RF:** RF-25, RF-37 · D-105
-**Flujo principal:**
-1. La pestaña **Gestión del día** muestra el tablero de bandeja común/referidos con auto-refresco 30 s (`/gestion-diaria`).
-2. Desde el Widget se puede **registrar un alta de caso especial** (tipo, título, nota).
-**Alternativos:** recarga manual del tablero; casos gestionados invisibles por defecto (D-105) según el filtro vigente.
-**Criterios de aceptación:**
-```gherkin
-Dado un tablero de gestión del día activo
-Cuando pasa 30 s con la pestaña abierta
-Entonces los datos se refrescan solos sin recarga manual
-```
-```gherkin
-Dado un tablero de gestión del día abierto
-Cuando se registra un caso especial con tipo y título
-Entonces aparece en el tablero y también en la sección ESPECIALES
-```
-
-### CU-W-14 — Consultar el monitoreo de la gestión en sus bloques
-**Actor(es):** Todos (TEC solo su cuadrilla, D-72) · **RF:** RF-26, RF-28 · D-94
-**Flujo principal:**
-1. La pestaña **Monitoreo** expone los parámetros (central, fechas, cuadrilla…) y los bloques: gestión semanal, reparación, construcción, por cuadrilla, capacidad operativa, métricas por identificador de pago (reincidencia, reclasificaciones).
-2. Cada bloque consulta su API de monitoreo y se pinta en tablas/gráficas.
-**Alternativos:** sin datos en el rango → bloques vacíos con mensaje (no error).
-**Criterios de aceptación:**
-```gherkin
-Dado un rango con casos cerrados de varias cuadrillas
-Cuando se consulta el monitoreo
-Entonces los bloques se muestran y las métricas cuadran con el detalle de CASOS del mismo rango
-```
-```gherkin
-Dado un técnico (TEC) autenticado
-Cuando consulta el monitoreo
-Entonces solo ve bloques de su cuadrilla, sin métricas de identificador de pago
-```
-
-### CU-W-15 — Generar e imprimir el reporte de trabajo
-**Actor(es):** Todos (según alcance) · **RF:** RF-28 · RNF-13
-**Flujo principal:**
-1. Desde Monitoreo se genera el reporte de trabajo (diario/semanal/mensual según parámetros).
-2. La acción **imprimible** entrega versión en formato carta lista para imprimir.
-**Criterios de aceptación:**
-```gherkin
-Dado un reporte de trabajo generado
-Cuando se solicita la versión imprimible
-Entonces el HTML se abre en formato carta sin paginar el contenido
-```
-```gherkin
-Dado un periodo mensual seleccionado
-Cuando se genera el reporte
-Entonces consolida solo los días del mes elegido
-```
-
-### CU-W-16 — Consultar alertas y detectar fallas masivas
-**Actor(es):** Todos (acceso de lectura); detección/gestión según RBAC de ALERTAS · **RF:** RF-09, RF-16 · RNF-19
-**Flujo principal:**
-1. La pestaña **Alertas** muestra métricas (fallas activas, notificaciones pendientes/enviadas/fallidas, bandeja) y el cuadro de fallas masivas.
-2. El botón **Detectar fallas** lanza el análisis de concentración tras la ingesta (RF-09); las filas abren `FichaFalla` (CU-W-18).
-**Alternativos:** notificaciones con error se auditan en la bandeja filtrada por estado.
-**Criterios de aceptación:**
-```gherkin
-Dado una ingesta concentrada en un mismo ODN/FAT
-Cuando se pide la detección de fallas
-Entonces la falla masiva se crea o actualiza con los casos afectados
-```
-```gherkin
-Dado notificaciones con envío fallido
-Cuando se consulta la bandeja filtrando por estado
-Entonces se listan con su motivo y canal para revisar el flujo de envío (RNF-20)
-```
-
-### CU-W-17 — Reportar manualmente una falla masiva desde la web
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-09, RF-16
-**Flujo principal:**
-1. En Alertas se abre el modal **reportar falla manual** y se completan ODN/FAT/sector/dirección/descripción.
-2. Se registra la falla con origen manual; casos candidatos pueden asociarse luego (CU-W-40/CU-A-28).
-**Criterios de aceptación:**
-```gherkin
-Dado una falla reportada por un técnico desde la APK
-Cuando el supervisor la registra manualmente con sus datos técnicos
-Entonces la falla aparece activa con origen MANUAL y queda disponible para planificación y cierre
-```
-```gherkin
-Dado una falla activa para el mismo FAT
-Cuando se intenta registrar de nuevo de forma manual
-Entonces no se duplica: se reutiliza la masiva ya activa para ese FAT
-```
-
-### CU-W-18 — Operar la ficha de la falla masiva en la web
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-09, RF-17, RF-18 · D-99
-**Precondición:** Falla activa localizada (CU-W-16/17/39).
-**Flujo principal:**
-1. `FichaFalla` abre con pestañas **Masiva / Planificar / Materiales / Cerrar** (el COO solo accede a Materiales).
-2. **Planificar** registra plan + reporte + evidencias + cuadrilla (RF-17).
-3. **Materiales** consulta órdenes y registra solicitud (RF-18).
-4. **Cerrar** exige descripción del trabajo, **validador CRASS activo de la misma central** (D-99), modo IVR/COS/SACAS y cierra la masiva y sus casos en cascada.
-**Criterios de aceptación:**
-```gherkin
-Dado una falla activa planificada
-Cuando un ADMIN de la misma central la cierra con un validador CRASS activo
-Entonces la falla queda CERRADA y los casos asociados pasan a cerrado con la descripción del cierre
-```
-```gherkin
-Dado una masiva de la central X con validador CRASS de la central Y
-Cuando se intenta el cierre
-Entonces se rechaza el cierre y los casos no cambian de estado
-```
-
-## 1.4 Sección CASOS
-
-### CU-W-19 — Listar y filtrar el universo de casos
-**Actor(es):** `SUPER`, `ADM`, `SUP`, `TEC` (acotado a su cuadrilla) · **RF:** RF-33 · RN-AL-02
-**Flujo principal:**
-1. En **CASOS** se aplican filtros (texto, id avería, teléfono 70*, cliente, estado, sector, fechas, origen…) y se listan paginados los casos.
-2. Por defecto `solo_abiertos=true`: se excluyen `CERRADO` y `CANCELADO` (RN-AL-02).
-**Alternativos:** **Limpiar** restaura la vista base.
-**Criterios de aceptación:**
-```gherkin
-Dado una central con casos cerrados y abiertos
-Cuando se lista la bandeja sin filtros
-Entonces la lista muestra abiertos por omisión y ninguno CERRADO ni CANCELADO
-```
-```gherkin
-Dado un usuario técnico
-Cuando consulta CASOS
-Entonces solo ve los casos de su cuadrilla; los casos de otras cuadrillas no aparecen
-```
-
-### CU-W-20 — Editar la ficha completa de un caso
-**Actor(es):** `SUPER`, `ADM`, `SUP` (el TEC solo consulta) · **RF:** RF-30, RF-31
-**Flujo principal:**
-1. Desde el listado, abrir la fila → `FichaCaso` con pestañas Resumen/Contacto/Técnico/Clasificación/Despacho/Textos/Gestión/Resolución/Histórico.
-2. Editar campos permitidos (sector, cita, datos del cliente, textos) y **Guardar** → `PATCH /casos/{id}`.
-3. Cada cambio queda en `auditoria` (RNF-12) y en el historial del caso.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso abierto de la central del usuario
-Cuando el supervisor edita cliente y sector y guarda
-Entonces los cambios se reflejan en el listado y el historial registra antes/después por usuario
-```
-```gherkin
-Dado un técnico
-Cuando intenta escritura en la ficha de otro caso
-Entonces el API lo rechaza y la web lo muestra en solo lectura (matriz §5.2)
-```
-
-### CU-W-21 — Cambiar el estado de un caso y reactivar cerrados
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-31, RF-33
-**Flujo principal:**
-1. En la ficha se ejecuta el cambio de estado con motivo (acciones: cierre, cita, enrutado…).
-2. Un caso cerrado puede **reactivarse** cuando proceda, quedando abierto de nuevo.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso activo abierto
-Cuando el admin cambia su estado con motivo válido
-Entonces el historial muestra la transición con fecha, usuario y motivo
-```
-```gherkin
-Dado un caso CERRADO
-Cuando se reactiva con justificación
-Entonces vuelve a la bandeja abierta y aparece en CASOS con su historial previo intacto
-```
-
-### CU-W-22 — Asignar o quitar un caso de una cuadrilla fuera del despacho
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-08, RF-24
-**Flujo principal:**
-1. En la ficha (o desde despacho, CU-W-32) se **asigna** el caso a una cuadrilla activa, o se **quita** la asignación vigente.
-2. La asignación crea/actualiza el renglón de `despacho_caso` y queda en el histórico del despacho del día.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso sin asignar y una cuadrilla activa de su central
-Cuando se asigna hoy
-Entonces la cuadrilla lo recibe en el despacho del día sin regenerar el resto
-```
-```gherkin
-Dado un caso asignado por error
-Cuando se quita de la cuadrilla
-Entonces la asignación deja de ser vigente y el caso vuelve a la masa por asignar, conservando el histórico
-```
-
-### CU-W-23 — Imprimir el reporte de un caso
-**Actor(es):** Todos (según alcance) · **RF:** RF-26 → reportes; RNF-13
-**Flujo principal:** la columna **REPORTE** del listado genera un documento del caso (ficha técnica y de gestión) listo para imprimir/compartir con la cuadrilla.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso visible para el rol
-Cuando se pide su reporte
-Entonces el documento impreso contiene ficha del caso con datos y no incluye casos ajenos al alcance
-```
-
-## 1.5 Sección SEGUIMIENTO
-
-### CU-W-24 — Registrar el seguimiento de un caso
-**Actor(es):** `SUP`, `ADM`, `SUPER` (TEC consulta) · **RF:** RF-34 · D-156
-**Flujo principal:**
-1. En SEGUIMIENTO se pulsa **crear**, se localiza el caso (búsqueda) y se registran instancia destino, motivo y fechas.
-2. La bandeja lista el seguimiento **enriquecido** con avería, cliente, dirección, sector, estado y cuadrilla del caso (D-156); lectura con alcance por central/cuadrilla.
-**Criterios de aceptación:**
+### CU-W-19 — Registrar comentario / actividad
+**Actor:** `_gestion` · `PATCH /{id_caso}`
+**Flujo:** comentario o actividad documentada (RF-13) con historial.
+**Gherkin:**
 ```gherkin
 Dado un caso activo
-Cuando se crea el seguimiento a otra cola con la instancia y el motivo
-Entonces la bandeja lo muestra completo con los datos del caso
-```
-```gherkin
-Dado un técnico
-Cuando consulta la sección
-Entonces ve los seguimientos de sus casos en modo lectura y no tiene botones de crear/editar
+Cuando se registra un comentario via PATCH /{id_caso}
+Entonces el comentario queda en el historial con autor y fecha.
 ```
 
-### CU-W-25 — Gestionar un seguimiento existente
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-34
-**Flujo principal:** editar estado/fechas de un seguimiento o **eliminarlo** cuando la cola cambia; cada acción respeta permiso de escritura.
-**Criterios de aceptación:**
+**Trazabilidad:** RF-13, RNF-12.
+
+### CU-W-20 — Cerrar caso (resolución IVR / COS / SACAS)
+**Actor:** `_gestion` · `POST /{id_caso}/cierre`
+**Flujo:** registrar resolución con método/causa del catálogo → estado RESUELTO/CERRADO; cierre en cascada si pertenece a masiva (D-99). El cierre no exige evidencias por tipo (esa regla no existe en el código; la única cuantificación es el reporte de masiva con máx. 2 fotos, D-82).
+**Alternativos:** caso ya cerrado → **409 `CierreInvalido`** (reactivar vía CU-W-22); método/causa inexistente en catálogo → 422.
+**Gherkin:**
 ```gherkin
-Dado un seguimiento dirigido a «Masivos»
-Cuando se actualiza a «Planta externa» con nueva fecha
-Entonces el registro queda actualizado sin crear filas nuevas
+Dado un caso activo
+Cuando se cierra con metodo IVR y causa valida del catalogo
+Entonces el caso queda en estado cerrado con la resolucion registrada.
+
+Dado un caso ya cerrado
+Cuando se intenta cerrar de nuevo
+Entonces el sistema rechaza con 409 CierreInvalido.
 ```
+**Criterio aspiracional (RN-EV-01, requisito nuevo aprobado — pendiente de implementación, ver [`requisitos_nuevos.md`](requisitos_nuevos.md)):**
 ```gherkin
-Dado un seguimiento superado
-Cuando se elimina
-Entonces desaparece de la bandeja sin alterar el caso subyacente
+Dado un caso con solo 1 evidencia de POTENCIA
+Cuando se intenta cerrar con IVR/COS/SACAS
+Entonces el sistema rechaza el cierre indicando que faltan 2 evidencias de potencia.
+```
+**Trazabilidad:** RF-15, RF-33, D-99, D-128, D-154, D-112.
+
+### CU-W-21 — Enrutar caso (a otra cola/instancia)
+**Actor:** `_gestion` · `POST /{id_caso}/enrutado`
+**Flujo:** derivar a instancia/cola con motivo → caso sale del flujo activo y entra a seguimiento (RF-34).
+**Gherkin:**
+```gherkin
+Dado un caso activo
+Cuando se deriva con POST /{id_caso}/enrutado e instancia y motivo
+Entonces el caso queda enrutado y aparece en el seguimiento correspondiente.
 ```
 
-## 1.6 Sección ESPECIALES
+**Trazabilidad:** RF-34, D-112.
 
-### CU-W-26 — Registrar un caso especial
-**Actor(es):** `SUP`, `ADM`, `SUPER`, `COO` (crear) · **RF:** RF-06 · RN-AL-01 · D-95…D-98
-**Flujo principal:**
-1. Botón **crear especial**: clasificación (**REFERIDO/EMPRESA/GOBIERNO**), tipo (REPARACIÓN/CONSTRUCCIÓN), prioridad, **solicitante registrado o nuevo** (unidad + nombre + contacto), nombre/teléfono/70*, dirección, descripción, requiere informe.
-2. En REPARACIÓN son obligatorios el `id_averia` y el tipo de problema (RN-AL-01); el alta genera el **caso especial referenciado** (REF-… si aplica).
-**Alternativos:** faltantes obligatorios → 422 con foco; el aviso de cierre al solicitante sale del *outbox* al cerrar (D-156), no en el alta.
-**Criterios de aceptación:**
+### CU-W-22 — Reactivar caso cerrado
+**Actor:** `_escritura` · `POST /{id_caso}/reactivar`
+**Flujo:** reabrir con motivo → estado activo + historial.
+**Gherkin:**
 ```gherkin
-Dado un referido de reparación sin id de avería
-Cuando se intenta crear
-Entonces el alta falla con 422 indicando los obligatorios de REPARACIÓN
+Dado un caso cerrado
+Cuando el Supervisor lo reactiva con motivo
+Entonces el caso vuelve a estado activo y conserva su historial íntegro.
 ```
-```gherkin
-Dado un especial completo con solicitante nuevo
-Cuando se guarda
-Entonces se crea el especial, su solicitante y el caso asociado visible por central
-```
-
-### CU-W-27 — Editar y gestionar el estado de un especial
-**Actor(es):** `ADM`, `SUP`, `SUPER` · **RF:** RF-06
-**Flujo principal:** en la ficha se actualizan **estado (ABIERTO/EN_PROCESO/ATENDIDO/CERRADO)**, prioridad, descripción y la marca «requiere informe».
-**Criterios de aceptación:**
-```gherkin
-Dado un especial ABIERTO
-Cuando el supervisor lo pasa a EN_PROCESO y fija prioridad ALTA
-Entonces la ficha queda actualizada y el especial es filtrable por ambos valores
-```
-
-### CU-W-28 — Cerrar un caso especial con informe
-**Actor(es):** `ADM`, `SUP`, `SUPER` · **RF:** RF-06 · D-156
-**Flujo principal:**
-1. Al cerrar el especial se elige **modo de cierre (IVR/COS/SACAS)** y se registra la descripción del cierre (el texto queda en cada caso asociado).
-2. Si el especial marca **"requiere informe"**, el **informe de atención es obligatorio (≥ 20 caracteres)**.
-3. Con el cierre se encola el **aviso al solicitante** por el *outbox*; si el canal es `MANUAL`/`MCP_IA` queda **PENDIENTE** para entrega manual (D-156) sin marcarse como fallido.
-**Criterios de aceptación:**
-```gherkin
-Dado un especial con requiere_informe=true
-Cuando se cierra sin informe
-Entonces el cierre se rechaza hasta completar un informe de al menos 20 caracteres
-```
-```gherkin
-Dado un especial cerrado correctamente
-Cuando el sistema procesa el outbox
-Entonces la notificación del aviso queda registrada (MANUAL → PENDIENTE para entrega del supervisor)
-```
-
-## 1.7 Sección AGENDA
-
-### CU-W-29 — Crear una cita de atención
-**Actor(es):** `ADM`, `SUP`, `TEC`, `COO` · **RF:** RF-12, RF-35, RF-36 · RN-AL-03
-**Precondición:** Caso localizado con la búsqueda; los especiales se excluyen del selector según criterio vigente.
-**Flujo principal:**
-1. Se abre **nueva cita**, se busca el caso, se elige fecha/hora y observación.
-2. La cita queda asociada al caso y el caso puede pasar a **CITADO** según el flujo del modelo.
-**Alternativos:** fechas pasadas → rechazo con validación de cita futura.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso abierto sin cita
-Cuando se agenda para hoy a las 10:00
-Entonces la cita figura en la Agenda del día y el panel muestra el caso citado
-```
-```gherkin
-Dado un intento de cita en el pasado
-Cuando se guarda
-Entonces el sistema lo rechaza con mensaje de fecha inválida
-```
-
-### CU-W-30 — Consultar y gestionar la agenda imprimible
-**Actor(es):** Todos (SUPER en solo lectura) · **RF:** RF-12
-**Flujo principal:**
-1. La AGENDA ofrece calendario con 3 vistas y navegación (anterior/siguiente/hoy).
-2. Se abre el detalle de una cita, se ajusta o cambia estado, y se puede **imprimir PDF** de la agenda del día.
-**Criterios de aceptación:**
-```gherkin
-Dado una agenda con varias citas de fechas distintas
-Cuando se navega entre días
-Entonces cada vista muestra solo las citas de su fecha
-```
-```gherkin
-Dado el SUPER en la Agenda
-Cuando intenta editar una cita
-Entonces la edición está bloqueada para su rol y puede seguir consultando e imprimiendo
-```
-## 1.8 Sección DESPACHO
-
-### CU-W-31 — Generar la propuesta de despacho diaria
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-08, RF-24, RF-25
-**Precondición:** Casos abiertos sectorizados (CU-W-11); cuadrillas activas declaradas.
-**Flujo principal:**
-1. Se solicita la **propuesta** y el sistema la calcula: casos citados del día, ≥ 2 reparaciones de referidos, ≥ 1 de empresas; construcción a **una sola** cuadrilla —preferentemente la del sector— (RF-DESPACHO §4.5).
-2. Antes de preparar el despacho se aplica el **criterio combinado RF-25** (PROCEDIMIENTO 3 / GENERALIDADES 3.5) que envía a la **cuadrilla 0**; modo vigente `SUPERVISOR` (D-59).
-3. El despacho queda en **BORRADOR** reversible y re-generable.
-**Criterios de aceptación:**
-```gherkin
-Dado casos con frases de campo y frases de supervisor mezclados
-Cuando se genera la propuesta en modo SUPERVISOR
-Entonces los de frases_supervisor y sin frases_campo van a la cuadrilla 0 y el resto queda repartible
-```
-```gherkin
-Dado un despacho borrador ya generado
-Cuando se regenera
-Entonces la propuesta nueva sustituye al borrador anterior sin tocar los despachos ya publicados
-```
-
-### CU-W-32 — Revisar y ajustar la propuesta del despacho
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-08, RF-24
-**Flujo principal:**
-1. En la etapa de preparación se pasan casos entre cuadrillas; por lote o caso se **asignan/quitan** casos (`agregar-casos`/`quitar-casos`).
-2. Cada cambio queda reflejado en el listado y en el historial del despacho (RNF-12).
-**Criterios de aceptación:**
-```gherkin
-Dado un despacho borrador con dos cuadrillas
-Cuando el supervisor mueve un caso de una cuadrilla a la otra
-Entonces el caso pertenece a la cuadrilla destino y deja de listarse en la de origen, con la alteración registrada
-```
-```gherkin
-Dado un caso de un despacho ya publicado
-Cuando se intenta quitar
-Entonces el API rechaza la operación y sugiere el ajuste correcto (liberar por cierre de jornada o cambio de estado)
-```
-
-### CU-W-33 — Procesar el despacho por tipos y sectores (checklist)
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-08 · D-113
-**Flujo principal:**
-1. Con **Procesar despacho** se abre `ProcesarDespacho` con **checklist por tipos** (reparación/construcción/referidos/empresas), zonas y selección de **cuadrilla por lote**, con las masivas en vista secundaria (D-113).
-2. Al completar el checklist, el despacho queda preparado para publicar.
-**Criterios de aceptación:**
-```gherkin
-Dado una propuesta con los tipos previstos
-Cuando se procesa cubriendo el checklist completo
-Entonces cada tipo queda con cuadrilla asignada y no quedan casos sin destino
-```
-
-### CU-W-34 — Publicar y enviar el despacho por canal
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-10
-**Flujo principal:**
-1. El despacho pasa **BORRADOR → PUBLICADO** y queda visible para las cuadrillas (APK, CU-A-19).
-2. **Envío por canal**: ficha de cuadrilla + sectores por Telegram/correo según el canal configurado; el envío queda registrado en notificaciones.
-**Criterios de aceptación:**
-```gherkin
-Dado un despacho procesado
-Cuando se publica
-Entonces pasa a PUBLICADO y las cuadrillas ya lo reciben al sincronizar
-```
-```gherkin
-Dado la publicación con el canal externo caído
-Cuando se confirma el envío
-Entonces la notificación queda en reintento por outbox y el despacho ya está publicado y operativo (RNF-20)
-```
-
-### CU-W-35 — Imprimir el despacho (carta)
-**Actor(es):** `SUP`, `ADM`, `SUPER`, `COO` (lectura) · **RF:** RF-10
-**Flujo principal:** se genera el **imprimible** del despacho en formato carta (cuadrillas, sectores, casos) para pizarra/archivo.
-**Criterios de aceptación:**
-```gherkin
-Dado un despacho del día
-Cuando se solicita el imprimible
-Entonces el documento en formato carta lista cuadrillas y casos sin cortar la ficha de ninguno
-```
-
-### CU-W-36 — Consultar el reporte y la efectividad del despacho
-**Actor(es):** `SUP`, `ADM`, `SUPER`, `COO` · **RF:** RF-27, RF-28 · D-146
-**Flujo principal:**
-1. El **reporte** del despacho consolida el día (atendidos, citados, referidos…).
-2. La vista de **efectividad** muestra el ranking por periodos (D-146) con el rendimiento de la jornada.
-**Criterios de aceptación:**
-```gherkin
-Dado días con despachos cerrados
-Cuando se elige el periodo semanal
-Entonces el ranking de efectividad cuadra con los cierres del periodo
-```
-
-### CU-W-37 — Seguir las construcciones del despacho
-**Actor(es):** `SUP`, `ADM`, `SUPER`, `COO` · **RF:** RF-06, RF-08
-**Flujo principal:** en DESPACHO se abre la vista de **construcciones** para el seguimiento de esos casos (cuadrilla asignada y etapa vigente).
-**Criterios de aceptación:**
-```gherkin
-Dado construcciones asignadas a cuadrilla única
-Cuando se consulta el seguimiento de construcciones
-Entonces cada una muestra su cuadrilla y su estado vigente
-```
-
-### CU-W-38 — Ejecutar el cierre de jornada del despacho
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-08 · **D-157 (vigente)**
-**Flujo principal:**
-1. Al finalizar el día se ejecuta **Cierre de jornada**: los casos **no atendidos** del despacho vuelven a pendiente y se liberan de las cuadrillas.
-2. Los renglones liberados de `despacho_caso` pasan a **estado `DEVUELTO`** (no se borran: se conserva el histórico), la respuesta del corte trae `asignaciones_devueltas` y los casos dejan de pertenecer a su cuadrilla en APK/CASOS, conservando la ventana D-123 de trabajo reciente.
-**Alternativos:** los casos `GESTIONADO`/terminales no se tocan; los citados conservan su cita.
-**Criterios de aceptación:**
-```gherkin
-Dado un despacho publicado con casos CERRADO, GESTIONADO y sin atender
-Cuando el supervisor ejecuta el cierre de jornada
-Entonces la respuesta reporta el conteo de asignaciones_devueltas
-Y los renglones de los no atendidos quedan DEVUELTO sin borrarse del histórico
-```
-```gherkin
-Dado un caso devuelto por el cierre de la jornada anterior
-Cuando el técnico sincroniza su APK o consulta CASOS en la web
-Entonces el caso ya no aparece como asignado a esa cuadrilla
-Y el histórico del despacho conserva la trazabilidad sin alterar las métricas históricas
-```
-
-## 1.9 Sección MASIVAS en la web
-
-### CU-W-39 — Detectar fallas masivas de forma automática
-**Actor(es):** `SUP`, `ADM`, `SUPER` (acción); `SIS` tras ingesta · **RF:** RF-09
-**Flujo principal:**
-1. Botón **Detectar masivas** en la cabecera (o detección automática post-ingesta) agrupa casos por **concentración de ODN/FAT** y crea o actualiza masivas activas.
-2. El cuadro de masivas muestra cada una con los indicadores: ¿planificada? ¿materiales? ¿asignada a cuadrilla?
-**Criterios de aceptación:**
-```gherkin
-Dado varios casos nuevos de un mismo ODN/FAT hoy
-Cuando se ejecuta la detección
-Entonces la masiva queda con los casos afectados asociados y el indicador sin planificar
-```
-
-### CU-W-40 — Agregar una masiva manual con casos candidatos
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-09
-**Flujo principal:**
-1. En la pestaña **Agregar manual** se completan descripción, ODN, OLT/slot/puerto, FAT, dirección, sector, cuadrilla, origen y hasta 2 evidencias.
-2. La acción **Buscar casos de ese FAT** lista los candidatos con casillas de **Asociar** y los vincula al crearse.
-**Criterios de aceptación:**
-```gherkin
-Dado un FAT con 40 casos activos
-Cuando se registra la masiva manual seleccionando 8 casos
-Entonces la masiva se crea con los 8 casos asociados y origen MANUAL
-```
-
-### CU-W-41 — Editar la masiva (estado, sector, cuadrilla)
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-09
-**Flujo principal:** en la ficha → **Editar masiva**: cambia estado, sector, cuadrilla asignada, descripción y guarda.
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva activa sin cuadrilla
-Cuando se asigna una cuadrilla y se guarda
-Entonces el indicador de asignación pasa a marcado en el cuadro de masivas
-```
-
-### CU-W-42 — Asociar y desasociar casos de una masiva
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-09
-**Flujo principal:** en la ficha → **Casos asociados**: asociar por ids/averías, recargar y quitar por caso cuando la vinculación fue errónea.
-**Criterios de aceptación:**
-```gherkin
-Dado un caso vinculado por error a una masiva
-Cuando se quita de los asociados
-Entonces deja de pertenecer a la masiva sin alterar su estado propio
-```
-
-### CU-W-43 — Planificar la masiva
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-17
-**Flujo principal:** pestaña **Planificar**: plan de atención (obligatorio), reporte simple, evidencias (máx. 10) y cuadrilla → estado **PLANIFICADA**.
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva detectada sin plan
-Cuando se planifica con plan y cuadrilla y se guarda
-Entonces queda PLANIFICADA y el indicador de planificación se marca en el cuadro
-```
-
-### CU-W-44 — Solicitar material para la masiva
-**Actor(es):** `SUP`, `ADM`, `SUPER`, `COO` · **RF:** RF-18
-**Flujo principal:** pestaña **Materiales**: se describe el material requerido y se registra la **orden** sobre la masiva y la cuadrilla; las órdenes vigentes se consultan por masiva.
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva planificada
-Cuando se solicita material con descripción y cuadrilla
-Entonces se crea una orden asociada visible en el listado de la masiva
-```
-
-### CU-W-45 — Cerrar la masiva y sus casos con el validador del CRASS
-**Actor(es):** `SUP`, `ADM`, `SUPER` · **RF:** RF-17 · D-99
-**Flujo principal:**
-1. Pestaña **Cerrar**: descripción del trabajo (mínimo 10 caracteres), **validador CRASS activo de la misma central** (D-99), modo IVR/COS/SACAS, texto que queda en cada caso (por defecto «Reparado en FDT») y hasta 20 evidencias.
-2. Confirmación irreversible → **cierre en cascada** de la masiva y sus casos con resumen (cerrados/omitidos).
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva PLANIFICADA con 24 casos asociados
-Cuando el ADMIN cierra con un validador CRASS activo de la misma central
-Entonces la masiva queda cerrada y los 24 casos reciben el texto del cierre
-```
-```gherkin
-Dado una masiva de la central A con un validador de otra central o con estado no activo
-Cuando se intenta cerrar
-Entonces la operación se rechaza y ningún caso cambia de estado
-```
-
-### CU-W-46 — Generar el reporte de la masiva
-**Actor(es):** Todos (según rol) · **RF:** RF-17 · RNF-13
-**Flujo principal:** el icono **Reporte** genera el documento HTML imprimible de la masiva (datos técnicos, plan, materiales, cierre).
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva cerrada
-Cuando se genera su reporte
-Entonces el documento incluye el ciclo completo con el cierre y el validador registrado
-```
-
-### CU-W-47 — Ubicar masivas y consultar el histórico
-**Actor(es):** Todos (según rol) · **RF:** RF-17
-**Flujo principal:**
-1. La pestaña **Ubicación** abre el mapa con el FAT y las coordenadas de las evidencias; sin coordenadas permite **Ubicar por la dirección** (geocodificar) y abrir en **OpenStreetMap**.
-2. El **Histórico** lista masivas cerradas con filtros (texto, estado, origen, fechas) y accesos a reporte/ubicación por fila.
-**Criterios de aceptación:**
-```gherkin
-Dado una masiva con evidencias con GPS
-Cuando se abre la ubicación
-Entonces el mapa marca el FAT y los puntos de las evidencias
-```
-```gherkin
-Dado masivas históricas de distintos orígenes
-Cuando se filtra el histórico por origen MANUAL y estado CERRADO
-Entonces la lista paginada devuelve solo ese criterio
-```
-## 1.10 Sección CONFIGURACIÓN (`RutaGestion`: TECNICO fuera)
-
-### CU-W-48 — Configurar las centrales
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-38 · RNF-14
-**Flujo principal:**
-1. En CENTRAL: **Nueva central** (región, estado geográfico, capital, municipio, parroquia, estado operativo, distrito, área, código y nombre) o editar/crear.
-2. Cada central puede **desactivarse**; el filtro «Solo activas» limita la vista.
-**Criterios de aceptación:**
-```gherkin
-Dado una central nueva con los datos obligatorios
-Cuando se crea
-Entonces queda disponible como alcance para usuarios, ingesta y despacho (multi-central, RNF-14)
-```
-```gherkin
-Dado una central desactivada
-Cuando se listan solo activas
-Entonces no aparece en los selectores de las demás secciones
-```
-
-### CU-W-49 — Configurar los sectores y sus direcciones
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-23, RF-38 · RNF-10
-**Flujo principal:**
-1. **Nuevo sector** (central, nombre, código, prioridad 1–999, descripción, activo).
-2. Al crear/editar se administran **direcciones/patrones frecuentes** (patrón + tipo `CONTIENE`/`EXACTO`/`REGEX`, normalizar, activar, quitar).
-3. Los patrones alimentan la sectorización de la ingesta (RF-23).
-**Criterios de aceptación:**
-```gherkin
-Dado un patrón CONTIENE nuevo para la Av. Bolívar
-Cuando se re-sectorizan los pendientes
-Entonces los casos cuya dirección contiene el patrón quedan en ese sector
-```
-```gherkin
-Dado una dirección de un sector activo
-Cuando se quita el patrón
-Entonces los casos ya sectorizados conservan su sector y los nuevos se re-evalúan con lo vigente
-```
-
-### CU-W-50 — Administrar técnicos, accesos y roles
-**Actor(es):** `SUPER`, `ADM`, `SUP` (con restricciones) · **RF:** RF-02, RF-05 · RNF-21/22 · D-50
-**Flujo principal:**
-1. **Nuevo técnico** o **Editar**: central, nombre, apellido, cédula, P00 (fijo al editar), teléfono, correo, especialidad y estado (ACTIVO/INACTIVO/VACACIONES/SUSPENDIDO).
-2. Asignar el **rol de acceso** (Técnico/Supervisor/Administrador) queda **solo para SUPER o SUPERVISOR**; SUPER no es modificable (D-50); la cuenta queda pre-registrada para el primer acceso (CU-W-04).
-3. Filtro por central y por estado; chips de estado de cuenta (Activo/Sin alta/Bloqueado/Cambio de clave/Inactivo). Bloque inferior: **Personal externo** (CU-W-56).
-**Criterios de aceptación:**
-```gherkin
-Dado un técnico nuevo con sus datos y rol TECNICO
-Cuando se registra
-Entonces aparece con chip "Sin alta" y puede activar su cuenta por primer acceso
-```
-```gherkin
-Dado un ADMIN de otra central
-Cuando intenta editar el rol de un técnico
-Entonces la acción está bloqueada por rol/central (matriz §5.2)
-```
-
-### CU-W-51 — Regenerar las 12 palabras de un técnico
-**Actor(es):** `SUPER` · **RF:** RF-20 · RNF-01
-**Flujo principal:** en CONFIGURACIÓN → TÉCNICOS, acción **Palabras** (solo SUPER) regenera las 12 palabras de seguridad de la cuenta, con confirmación; las anteriores quedan inservibles.
-**Criterios de aceptación:**
-```gherkin
-Dado un técnico que perdió sus palabras
-Cuando el SUPER regenera
-Entonces se entrega la lista nueva de una sola vez y las anteriores no desbloquean la cuenta
-```
-
-### CU-W-52 — Gestionar la flota
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-03
-**Flujo principal:**
-1. **Nuevo vehículo** (central, CAN, tipo, marca, modelo, placa, combustible, estado de cauchos/fluidos/general).
-2. Ciclo de estado de vehículos: `DISPONIBLE → EN_RUTA → MANTENIMIENTO → FUERA_SERVICIO` y acción **Fuera de servicio** con confirmación.
-**Criterios de aceptación:**
-```gherkin
-Dado un vehículo en revisión
-Cuando el supervisor lo marca FUERA_SERVICIO
-Entonces deja de ser seleccionable como flota en nuevas cuadrillas
-```
-
-### CU-W-53 — Gestionar cuadrillas e integrantes
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-04
-**Flujo principal:**
-1. **Nueva cuadrilla** (central, código, nombre, vehículo, marca de **es supervisora**, activa).
-2. Gestión de **integrantes** (técnico + rol `REPARADOR_PRINCIPAL`/`AYUDANTE`/`SUPERVISOR` con alta y retiro confirmado) y herramientas (ids al alta).
-3. La composición alimenta el despacho y el alcance del técnico (qué casos ve).
-**Criterios de aceptación:**
-```gherkin
-Dado una cuadrilla activa con 3 integrantes y flota
-Cuando se incorpora un técnico nuevo con rol AYUDANTE
-Entonces el listado lo muestra y el técnico empezará a ver los casos de esa cuadrilla
-```
-```gherkin
-Dado un integrante retirado
-Cuando se confirma el retiro
-Entonces deja de operar en esa cuadrilla y el histórico de despachos lo conserva
-```
-
-### CU-W-54 — Administrar catálogos (causas y métodos)
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-31 · RNF-10
-**Flujo principal:**
-1. **Causas**: alta con código, subcódigo, tipo, descripción(es) y desactivación.
-2. **Métodos**: alta por dominio (`CIERRE`/`ENRUTE`/`DIFERIDO`/`CONTACTO`) con código/nombre/activo; quedan disponibles en la app sin despliegue.
-**Criterios de aceptación:**
-```gherkin
-Dado una causa nueva habilitada
-Cuando se edita un caso en CASOS
-Entonces la lista de causas ofrece la nueva como opción seleccionable
-```
-
-### CU-W-55 — Editar los parámetros del sistema
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RNF-10 · D-22/D-59 (listas del criterio combinado)
-**Flujo principal:** en PARÁMETROS se edita el campo **valor JSON** de cada clave con validación de sintaxis; ahí viven las listas de frases de `despacho.frases_campo`/`frases_supervisor` y los modos `CAMPO`/`SUPERVISOR`/`UNION`.
-**Criterios de aceptación:**
-```gherkin
-Dado la lista de frases_supervisor vigente
-Cuando el supervisor agrega una frase y guarda un JSON válido
-Entonces la próxima preparación de despacho usa los criterios actualizados sin cambiar código
-```
-```gherkin
-Dado un valor que no es JSON válido
-Cuando se intenta guardar
-Entonces la edición se rechaza con error y el valor previo no cambia
-```
-
-### CU-W-56 — Gestionar el catálogo de personal externo
-**Actor(es):** `SUPER`, `ADM`, `SUP` · **RF:** RF-06 · D-156
-**Flujo principal:** en la base de TÉCNICOS se consulta el **Personal externo** (solicitantes: unidad + nombre + contacto), usado para dar de alta especiales (CU-W-26) y como fuente de **validadores CRASS** para el cierre de masivas (D-99).
-**Criterios de aceptación:**
-```gherkin
-Dado un solicitante externo registrado con tipo CRASS y estado activo
-Cuando se abre el cierre de una masiva de su central
-Entonces aparece en el desplegable de validadores del CRASS
-```
-
-## 1.11 Mensajes · Perfil · Sistemas
-
-### CU-W-57 — Enviar un mensaje interno a través de la web
-**Actor(es):** `SUPER`, `ADM`, `SUP` (envío); `COO` solo a un Supervisor · **RF:** RF-10 · D-81
-**Flujo principal:**
-1. En MENSAJES → **Enviar**: destino `TODOS` (con selectores condicionales) o cuerpo del mensaje con límite de 500 caracteres.
-2. `COO` ve su bloque especial: desplegable de supervisor (o *Escalar al Administrador* si no hay activo).
-3. El envío queda en **Enviados** y el badge de no leídos en destino con sondeo cada 20 s.
-**Criterios de aceptación:**
-```gherkin
-Dado un supervisor con su cuadrilla activa
-Cuando envía un mensaje a TODOS
-Entonces el mensaje llega de inmediato en el badge y el historial de la bandeja
-```
-```gherkin
-Dado un coordinador sin supervisores activos en su central
-Cuando abre su bloque de mensajería
-Entonces puede activar "Escalar al Administrador" y enviar con ese destino
-```
-
-### CU-W-58 — Consultar la bandeja de mensajes
-**Actor(es):** Todos · D-81
-**Flujo principal:** pestañas **Recibidos/Enviados** (enviados solo si puedeEnviar), agrupación/no leídos, clic en el mensaje lo marca como leído; sondeo de nuevos cada 20 s.
-**Criterios de aceptación:**
-```gherkin
-Dado 3 mensajes no leídos
-Cuando la bandeja se refresca y se toca una burbuja
-Entonces el mensaje queda marcado como leído y sale del grupo de no leídos
-```
-```gherkin
-Dado un técnico con mensajes nuevos
-Cuando abre la web
-Entonces el badge muestra el número actualizado de no leídos
-```
-
-### CU-W-59 — Mantener el perfil y la cuenta propios
-**Actor(es):** Todos · **RF:** RF-20 · RNF-22
-**Flujo principal:**
-1. En **Perfil y Cuenta**: ficha de identidad (P00, nombre, rol, central) y edición del **correo** propio (`PATCH /auth/me`).
-2. **Cambiar clave** actual + nueva (mínimo 8) + confirmación.
-3. Ficha de **palabras de seguridad** (estado/cantidad/versión); solo `SUPER` puede regenerar sus propias 12 palabras con modal de copiado único.
-**Criterios de aceptación:**
-```gherkin
-Dado un usuario con correo obsoleto
-Cuando lo actualiza y guarda
-Entonces la recuperación al correo vigente llega a la nueva dirección
-```
-```gherkin
-Dado un usuario con su clave vigente
-Cuando la cambia por una nueva (≥ 8) y guarda
-Entonces la siguiente sesión exige la nueva y la anterior ya no accede
-```
-
-### CU-W-60 — Regenerar las propias palabras de seguridad (SUPER)
-**Actor(es):** `SUPER` · RF-20
-**Flujo principal:** en Perfil, el SUPER confirma y regenera **sus 12 palabras**; se muestran una sola vez con botón «Las he copiado».
-**Criterios de aceptación:**
-```gherkin
-Dado las palabras del SUPER obsoletas o expuestas
-Cuando se regeneran
-Entonces las anteriores dejan de funcionar en cualquier intento de desbloqueo
-```
-
-### CU-W-61 — Consultar el log de sincronizaciones con checklist
-**Actor(es):** `SUPER`, `ADM`, `SUP` · D-81 · RNF-12, RNF-19
-**Flujo principal:**
-1. En **Sistemas → Sincronización** se ven los indicadores del día (Total/OK/Parcial/Error/En proceso) y filtros por **Estado, Tipo (Descarga|Carga) y búsqueda por P00**.
-2. Cada sesión abre la ficha con el **checklist** (conexión · login · descarga · carga: paso/estado/hora/detalle).
-**Criterios de aceptación:**
-```gherkin
-Dado un lote de sesiones con una falla de descarga
-Cuando se filtra por estado ERROR y tipo DESCARGA
-Entonces la lista muestra solo esa sesión
-```
-```gherkin
-Dado una sesión con descarga fallida
-Cuando se abre la ficha
-Entonces el checklist marca la fase y muestra el detalle del error para seguimiento
-```
-
-### CU-W-62 — Inspeccionar la base de datos (SUPER)
-**Actor(es):** `SUPER` · D-69/D-81 · RNF-12
-**Flujo principal:**
-1. Pestaña **Base de datos**: análisis de estructura (motor, tablas, renglones, espacio, extensiones) con botón **Reanalizar**.
-2. Tabla de tablas con filas clicables → ficha de la entidad con selector de tabla, filtro de columnas y paginación de contenido (50 renglones/página), con aviso de columnas ofuscadas.
-**Criterios de aceptación:**
-```gherkin
-Dado el SUPER en la inspección
-Cuando re-analiza la estructura
-Entonces los renglones de tablas coinciden con el conteo SQL y el contenido respeta la ofuscación marcada
-```
-```gherkin
-Dado un usuario no SUPER en la pestaña de Base de datos
-Cuando accede por ruta directa
-
-## 3.1 Matriz RF → casos de uso (WEB + APK)
-
-| RF | Requerimiento (síntesis) | CUs web | CUs APK |
-|---|---|---|---|
-| RF-01 | Cargar CSV diario | W-11 | — |
-| RF-02 | Perfiles/accesos de trabajadores | W-50, W-51 | A-05 |
-| RF-03 | Flota | W-52 | — |
-| RF-04 | Cuadrillas | W-53 | A-29 |
-| RF-05 | Insumos/medios (v2) | W-50 (órdenes) | A-27 |
-| RF-06 | Casos especiales | W-13, W-26, W-27, W-28, W-37 | A-32, A-33 |
-| RF-07 | Reportes capacidad/fn diaria | W-15, W-36 | A-30 |
-| RF-08 | Despacho diario | W-31…W-35, W-22, W-38 | A-31 |
-| RF-09 | Fallas masivas | W-16, W-17, W-39, W-40, W-41, W-42, W-47 | A-23, A-24, A-25 |
-| RF-10 | Envío ficha de cuadrilla/sectores; reporte 16:00 | W-34, W-35, W-57 | A-31 |
-| RF-11 | Ficha de casos asignados | W-19, W-20 | A-08, A-24, A-25 |
-| RF-12 | Contactar/agendar | W-29, W-30 | A-10, A-11, A-12 |
-| RF-13 | Documentar actividad | W-20, W-21 | A-14, A-15, A-16 |
-| RF-14 | Fotos GPS+fecha (sin galería) | — | A-17, A-23 |
-| RF-15 | Documentar resolución | W-21 | A-14…A-16 |
-| RF-16 | Alertar falla masiva | W-17, W-39 | A-23 |
-| RF-17 | Planificar masivas | W-18, W-43, W-45, W-46, W-47 | A-26, A-28 |
-| RF-18 | Solicitud de material | W-18, W-44 | A-27, A-34 |
-| RF-19 | Incidentes flota/herramientas | W-17 (manual) | — |
-| RF-20 | Login/bloqueo/12 palabras/PIN | W-01…W-06, W-59, W-60 | A-01…A-07, A-36 |
-| RF-21 | Ingesta SAS/filtro | W-11 | — |
-| RF-22 | Deduplicación | W-11 | — |
-| RF-23 | Sectores | W-12, W-49 | — |
-| RF-24 | Propuesta despacho | W-31, W-32 | A-31 |
-| RF-25 | Cuadrilla 0 criterio combinado | W-13, W-31, W-55 | A-29 |
-| RF-26 | Tableros monitoreo/gráficos | W-14, W-23 | A-30 |
-| RF-27 | Reporte producción 16:00 | W-36 | A-31 |
-| RF-28 | Reporte trabajo d/s/m | W-14, W-15 | A-30 |
-| RF-29 | Documentar cada carga | W-11 | — |
-| RF-30 | Buscar caso | W-07, W-08 | A-08 |
-| RF-31 | Actualizar/editar caso | W-20, W-21 | A-13 |
-| RF-32 | Alta manual | W-09 | — |
-| RF-33 | Universo de casos | W-19, W-21 | A-09 |
-| RF-34 | Seguimiento | W-24, W-25 | — |
-| RF-35 | Empresas | W-26 (clasificación), W-29 | — |
-| RF-36 | Referidos prioritarios | W-26, W-29 | — |
-| RF-37 | Gestión cuadrilla 0 | W-13 | A-29 |
-| RF-38 | Central/sectores config | W-48, W-49 | — |
-
-## 3.2 RNF y decisiones cubiertas
-
-| RNF | Criterio | CUs de cobertura |
-|---|---|---|
-| RNF-01 | Bloqueo 3 intentos + 12 palabras | W-02/03/04, A-02/04/05 |
-| RNF-04 | Solo cámara (sin galería) | A-17, A-23 |
-| RNF-05 | Bloqueo app por privacidad | A-06 |
-| RNF-06 | Operación offline + sinc. async. | A-03, A-08, A-18, A-19 |
-| RNF-09 | Usabilidad de campo (3 toques / 20 s) | A-10, A-14 |
-| RNF-10 | Configuración sin código | W-49, W-54, W-55 |
-| RNF-12 | Bitácora por caso y despacho | W-20, W-21, W-32, W-61 |
-| RNF-13 | Español + formato dd/mm/aaaa | W-15, W-23, W-35, W-46 |
-| RNF-18 | Aviso legal/PII | W-01, A-01 |
-| RNF-19/20 | Observabilidad + outbox | W-16, W-34, W-61 |
-| RNF-21 | RBAC y alcance por central | W-14/19/20/47/62, A-14 |
-| RNF-22 | Endurecimiento de acceso | W-02/03/04/59/60, A-02/03/04/05/06 |
-| — | D-71 aviso de uso | W-01, A-01 |
-| — | D-81 mensajería + sistemas | W-57/58/61, A-34/35 |
-| — | D-99 validador CRASS | W-45, A-28 |
-| — | D-100 PIN sin conexión | A-03 |
-| — | D-105 resueltos invisibles | W-13, A-09 |
-| — | D-113 checklist por tipos | W-33, A-31 |
-| — | D-115 actualización única | A-22 |
-| — | D-116 pendientes en APK | A-18, A-21 |
-| — | D-123 trabajo reciente | W-38, A-19 |
-| — | D-144 filtros de casos | A-08 |
-| — | D-146 ranking de efectividad | W-36 |
-| — | **D-157 devolución de asignados** | W-38, A-19 |
-
-## 3.3 Notas de testeabilidad y verificación
-
-1. **Cada criterio de aceptación es comprobable** con el harness vigente:
-   - API → `app/tests/*_api.py` (pytest con PostgreSQL temporal, `scripts/tmp_pg_pytest.ps1`).
-   - Web → pruebas de contrato por pantalla (`npm run build` verde + Playwright sobre el bundle).
-   - APK → `flutter test / app_movil/test` (d93, d156, d157 ya existentes) + pruebas manuales en dispositivo de campo.
-2. **Severidad de lo no cubierto en este documento:** los canales Telegram/WEB-MCP (RF-06/16/25 vía IA y bot) y el flujo del solicitante externo ACT-03 requieren su propio documento de casos de uso; no se inventó funcionalidad.
-3. **Marca de rendimiento:** los SLO p95 de RNF-08 (despacho ≤ 2 s, panel ≤ 2 s) se verifican en la fase de pruebas, no como criterio de cada CU.
-4. **Convergencia de doble canal:** varios CUs existen en web y APK (ej. cierre de masiva W-45/A-28, especial W-26/A-32). Ambos comparten el mismo backend; las pruebas de contrato se corren una vez por endpoint y por pantalla una vez por canal.
+**Trazabilidad:** RF-33, RNF-12.
 
 ---
+
+## G4 · Despachos — `routes_despachos.py` (RF-08, RF-10, RF-24, RF-25, RF-27)
+
+### CU-W-23 — Generar propuesta de despacho
+**Actor:** ACT-01 (`_escritura`) · `POST /propuesta`
+**Flujo:** el sistema agrupa casos activos por sector/área y propone distribución entre cuadrillas activas del día (RF-24); **cuadrilla 0** recibe los casos por criterio combinado D-22 (RF-25: PROCEDIMIENTO 3, sin contacto, masivas…).
+**Gherkin:**
+```gherkin
+Dado 30 casos activos sectorizados y 3 cuadrillas activas
+Cuando se genera la propuesta
+Entonces cada caso recibe una cuadrilla propuesta agrupada por área geográfica
+Y los casos del criterio D-22 van a la cuadrilla 0 (supervisor).
+```
+**Trazabilidad:** RF-08, RF-24, RF-25, D-22.
+
+### CU-W-24 — Procesar el despacho del día
+**Actor:** ACT-01 · `POST /procesar`, `PUT /asignacion`
+**Flujo:** convertir propuesta en despacho oficial del día; ajustes de asignación manual previos.
+**Gherkin:**
+```gherkin
+Dado una propuesta con 30 casos distribuidos en 3 cuadrillas
+Cuando se procesa el despacho
+Entonces el despacho queda oficial para el dia con sus asignaciones
+Y un ajuste posterior via PUT /asignacion queda registrado.
+```
+
+**Trazabilidad:** RF-08, RF-24, D-113, D-162.
+
+### CU-W-25 — Gestionar casos de un despacho
+**Actor:** ACT-01 · `POST /{id}/casos`, `DELETE /{id}/casos/{id_caso}`, `PATCH /{id}/casos/{id_caso}`
+**Flujo:** añadir/quitar/mover casos entre cuadrillas del despacho del día.
+**EARS:** Si un caso ya fue descargado por la cuadrilla (estado de campo), entonces el sistema impedirá su reasignación sin control de conflicto (merge «pendiente manda», D-126).
+**Gherkin:**
+```gherkin
+Dado un despacho con 10 casos y la cuadrilla 3 con 12
+Cuando se anade 1 caso a la cuadrilla 3 y se quita otro
+Entonces el despacho refleja 11 casos en la cuadrilla 3
+Y cada movimiento queda en el historial de los casos.
+```
+
+**Trazabilidad:** RF-08, D-123, D-126, D-162.
+
+### CU-W-26 — Enviar despacho a la cuadrilla
+**Actor:** ACT-01/ACT-04 (`_escritura` ADMIN+SUPERVISOR, `routes_despachos.py`) · `POST /{id}/enviar`
+**Flujo:** enviar ficha de cuadrilla + sectores del día por Telegram/correo (RF-10) o habilitar descarga en APK. *(DEC-G9 reserva al COORDINADOR el envío de MENSAJES al Supervisor, no el envío de despachos.)*
+**Gherkin:**
+```gherkin
+Dado un despacho procesado con 3 cuadrillas
+Cuando se envía
+Entonces cada cuadrilla recibe su ficha por el canal configurado (Telegram/correo)
+Y los casos quedan disponibles para descarga diferencial en la APK.
+```
+**Trazabilidad:** RF-10, RNF-11, RT-06, D-113.
+
+### CU-W-27 — Consultar e imprimir el despacho
+**Actor:** ACT-01/ACT-07 (`_lectura_gestion`) · `GET /{id}`, `GET /{id}/imprimible`, `GET /{id}/reporte`
+**Flujo:** detalle del despacho + versión imprimible tamaño carta (RT-08).
+**Gherkin:**
+```gherkin
+Dado un despacho del dia procesado
+Cuando se consulta GET /despachos/{id} (o se ajusta via PATCH /{id_despacho})
+Entonces se muestra el detalle completo con sus casos y cuadrillas
+Y la version imprimible (GET /imprimible) genera el documento tamano carta.
+```
+
+**Trazabilidad:** RF-08, RT-08.
+
+### CU-W-28 — Cierre de jornada
+**Actor:** ACT-01 · `POST /cierre-jornada`
+**Flujo:** cierre del día: contadores, casos no atendidos y devoluciones.
+**EARS:** Cuando el corte nocturno de las 23:00 (D-160) se ejecuta, el sistema devolverá a DEVUELTO (D-157) todos los casos PENDIENTES sin despachar.
+**Gherkin:**
+```gherkin
+Dado un día cerrado con 5 casos PENDIENTE sin despachar
+Cuando se ejecuta el corte nocturno (D-160, 23:00)
+Entonces los 5 casos quedan en estado DEVUELTO (D-157)
+Y el reporte de jornada refleja la devolución.
+```
+**Trazabilidad:** RF-08, RF-28, D-157, D-160.
+
+### CU-W-29 — Reporte de producción (16:00)
+**Actor:** ACT-01/ACT-05 · `GET /reporte/produccion`
+**Flujo:** producción del día (atendidos, citados, referidos…) para envío por Telegram/correo (RF-27).
+**Gherkin:**
+```gherkin
+Dado un dia con 100 casos gestionados
+Cuando se consulta GET /reportes/produccion
+Entonces el reporte contiene los contadores del dia (atendidos, citados, referidos, cerrados)
+Y esta listo para su envio por Telegram/correo.
+```
+
+**Trazabilidad:** RF-27, RT-06.
+
+### CU-W-30 — Consultar efectividad
+**Actor:** ACT-01/ACT-07 · `GET /efectividad`
+**Flujo:** efectividad por cuadrilla/técnico/día (D-146/D-147; reglas de cómputo en servidor, no visibles para manipulación en APK).
+**Gherkin:**
+```gherkin
+Dado cierres del dia de 3 cuadrillas
+Cuando se consulta GET /efectividad
+Entonces se muestra la efectividad por cuadrilla/tecnico calculada en el servidor (D-146/D-147).
+```
+
+**Trazabilidad:** RF-26, RF-28, D-146, D-147.
+
+### CU-W-31 — Seguimiento de construcciones
+**Actor:** ACT-01/ACT-07 · `GET /construcciones/seguimiento`
+**Flujo:** avance de casos de construcción por etapa.
+**Gherkin:**
+```gherkin
+Dado casos de construccion en curso
+Cuando se consulta GET /construcciones/seguimiento
+Entonces se muestra el avance por etapa de cada construccion.
+```
+
+**Trazabilidad:** RF-06, RF-34.
+
+---
+
+## G5 · Casos especiales, empresas, referidos, agenda y seguimiento — `routes_especiales.py` (RF-06, RF-34, RF-35, RF-36)
+
+### CU-W-32 — Gestionar solicitantes
+**Actor:** ACT-01 (`_escritura`) · CRUD `solicitantes`
+**Flujo:** alta/edición/baja de unidades solicitantes (referidos, empresas, gobiernos) con Unidad+Nombre+Contacto.
+**Gherkin:**
+```gherkin
+Dado un solicitante nuevo (Unidad + Nombre + Contacto)
+Cuando el Supervisor lo da de alta
+Entonces queda disponible para las altas de casos especiales
+Y su edicion/baja se refleja en los usos siguientes.
+```
+
+**Trazabilidad:** RF-06, D-156.
+
+### CU-W-33 — Registrar y atender un caso especial
+**Actor:** ACT-01 y ACT-07 alta (`_especial_alta`); **reversión solo SUPER** · `POST/GET/PATCH /casos-especiales`
+**Flujo:** alta con solicitante/tipo (REFERIDO/EMPRESA/GOBIERNO) → máquina de estados D-134 → si `requiere_informe`, informe ≥ 20 caracteres (D-133) al cerrar → notificación al solicitante por outbox (D-156).
+**Alternativos:** cierre sin informe requerido → rechazo 422; reversión por no-SUPER → 403.
+**Gherkin:**
+```gherkin
+Dado un caso especial REFERIDO en trámite segun la maquina de estados D-134
+Cuando se cierra y requiere_informe es verdadero
+Entonces el sistema exige un informe de al menos 20 caracteres (D-133).
+
+Dado un caso especial cerrado
+Cuando un SUPERVISOR intenta revertirlo
+Entonces recibe 403 (la reversion es exclusiva de SUPER).
+```
+**EARS:** Cuando el cierre del caso especial se completa, el sistema encolará el aviso al solicitante en el outbox (D-156); si el canal es manual, el aviso quedará pendiente de entrega por el Supervisor.
+**Trazabilidad:** RF-06, RF-35, RF-36, D-133, D-134, D-156, RNF-20.
+
+### CU-W-34 — Gestionar agenda de citas
+**Actor:** ACT-01/ACT-07 · CRUD `citas`
+**Flujo:** listar/reprogramar/cancelar citas del día/semana (especiales y casos).
+**Gherkin:**
+```gherkin
+Dado 4 citas del dia
+Cuando se consulta la agenda
+Entonces aparecen las 4 citas ordenadas por hora
+Y una reprogramacion (PATCH) o cancelacion (DELETE) se refleja en la agenda y en el caso.
+```
+
+**Trazabilidad:** RF-12, RF-35.
+
+### CU-W-35 — Gestionar seguimiento de derivados
+**Actor:** ACT-01 (`_escritura`) · CRUD `seguimiento`
+**Flujo:** registrar instancia/estado/fechas de casos derivados (RF-34); consulta por caso.
+**Gherkin:**
+```gherkin
+Dado un caso derivado a otra instancia
+Cuando se consulta el seguimiento
+Entonces se muestran instancia, motivo, fechas y estado del derivado.
+```
+
+**Trazabilidad:** RF-34, RF-06.
+
+---
+
+## G6 · Fallas masivas y alertas — `routes_alertas.py` (RF-09, RF-16, RF-17, RF-18)
+
+### CU-W-36 — Registrar falla masiva manual
+**Actor:** ACT-01 (`_falla_escritura`) · `POST /fallas-masivas`
+**Precondición (D-118):** OLT + slot + puerto + FAT + dirección + **al menos 1 caso** asociado.
+**Gherkin:**
+```gherkin
+Dado una falla en OLT/SLOT/PUERTO/FAT con 8 casos afectados
+Cuando el Supervisor la registra
+Entonces la masiva queda activa con los 8 casos vinculados
+Y los casos muestran el indicador de masiva en web y APK.
+
+Dado un intento de alta sin FAT o sin casos asociados
+Cuando se envía
+Entonces el sistema rechaza el alta exigiendo los datos de D-118.
+```
+**Trazabilidad:** RF-09, D-118, D-99.
+
+### CU-W-37 — Detección automática por concentración
+**Actor:** ACT-05 (y ACT-01 dispara) · `POST /fallas-masivas/detectar`
+**Flujo:** tras la ingesta, análisis de concentración (D-168): agrupa por los **5 campos** OLT/SLOT/PUERTO/FAT/EXTRA y propone masiva cuando el umbral es **≥ 3 casos** por misma llave → confirmación del Supervisor.
+**Gherkin:**
+```gherkin
+Dado una ingesta con 3 casos nuevos de la misma llave OLT/SLOT/PUERTO/FAT/EXTRA
+Cuando corre la deteccion (D-168)
+Entonces se propone una falla masiva con esos 3 casos como candidatos (umbral = 3).
+
+Dado solo 2 casos de la misma llave
+Cuando corre la deteccion
+Entonces NO se propone ninguna masiva (bajo el umbral).
+```
+**Trazabilidad:** RF-09, D-168.
+
+### CU-W-38 — Reporte de masiva desde campo
+**Actor:** ACT-02 TECNICO (línea 309: TECNICO/ADMIN/SUPERVISOR) · `POST /fallas-masivas/reporte-campo`
+**Flujo:** el técnico reporta la masiva con evidencia desde la APK → masiva candidata/activa.
+**Gherkin:**
+```gherkin
+Dado 12 casos nuevos de la misma llave OLT/SLOT/PUERTO/FAT/EXTRA
+Cuando ACT-05 dispara la deteccion
+Entonces se propone la masiva correspondiente
+Y sin confirmacion del Supervisor no se crea ninguna masiva definitiva.
+```
+
+**Trazabilidad:** RF-09, RF-16, D-82 (reporte de campo: ODN/dirección/FAT + máx. 2 fotos).
+
+### CU-W-39 — Planificar la atención de la masiva
+**Actor:** ACT-01 · `POST /fallas-masivas/{id}/planificacion`
+**Flujo:** reporte de planificación + evidencias fotográficas (RF-17).
+**Gherkin:**
+```gherkin
+Dado una masiva activa
+Cuando se registra su planificacion con reporte y evidencias
+Entonces la planificacion queda asociada a la masiva y visible en su reporte.
+```
+
+**Trazabilidad:** RF-17, D-118.
+
+### CU-W-40 — Gestionar casos de la masiva
+**Actor:** ACT-01 · `GET /casos-candidatos`, `POST|DELETE /{id}/casos`
+**Flujo:** ver candidatos por FAT/OLT → añadir/quitar casos de la masiva.
+**Gherkin:**
+```gherkin
+Dado una masiva con 12 candidatos
+Cuando se consultan los candidatos
+Entonces se listan los 12
+Y al anadir/quitar casos (POST/DELETE) el vinculo se refleja en ambos sentidos.
+```
+
+**Trazabilidad:** RF-09, D-118.
+
+### CU-W-41 — Registrar material de la masiva
+**Actor:** ACT-01/ACT-07 (`_material`) · `POST /{id}/material`
+**Flujo:** solicitud/preparación de material (RF-18).
+**Gherkin:**
+```gherkin
+Dado una masiva activa
+Cuando se registra material via POST /{id}/material
+Entonces la solicitud queda asociada a la masiva y visible para el Supervisor.
+```
+
+**Trazabilidad:** RF-18, DEC-G (material COORDINADOR).
+
+### CU-W-42 — Cierre en cascada de la masiva
+**Actor:** ACT-01 · `POST /{id}/cierre`
+**Precondición (D-99):** CRASS registrado + evidencias.
+**Gherkin:**
+```gherkin
+Dado una masiva activa con 8 casos y CRASS + evidencias registrados
+Cuando el Supervisor ejecuta el cierre
+Entonces los 8 casos pasan a cerrado en cascada (D-99)
+Y la masiva queda CERRADA con su reporte.
+```
+**EARS:** Si falta el CRASS o las evidencias mínimas, entonces el sistema impedirá el cierre en cascada.
+**Trazabilidad:** RF-09, RF-15, D-99, D-118.
+
+### CU-W-43 — Consultar masivas, ubicación y reporte
+**Actor:** ACT-01/ACT-07 · `GET /fallas-masivas`, `/{id}`, `/{id}/ubicacion`, `/{id}/ordenes`, `/{id}/reporte`
+**Flujo:** listado de masivas activas/históricas, ubicación (OLT/FAT), órdenes y reporte (ACT-07 consulta sin actuar).
+**Rutas:** incluye tambien `PATCH /fallas-masivas/{id_falla}` (edicion) y `GET /metricas` del dominio.
+**Gherkin:**
+```gherkin
+Dado 3 masivas activas
+Cuando se consulta GET /fallas-masivas
+Entonces se listan las 3 con su ubicacion (OLT/FAT), ordenes y estado
+Y el reporte (GET /reporte) consolida el detalle; la edicion (PATCH) y las metricas quedan registradas.
+```
+
+**Trazabilidad:** RF-09, RF-26.
+
+### CU-W-44 — Notificaciones y alertas
+**Actor:** ACT-05/ACT-01 · `GET /notificaciones`, `POST /notificaciones/procesar`
+**Flujo:** outbox de notificaciones (Telegram/correo/MCP) con reintentos (RNF-20); procesar envía pendientes.
+**EARS:** Cuando un envío falla, el sistema aplicará reintentos exponenciales con estado terminal tras el máximo de reintentos configurado (RNF-20, outbox).
+**Gherkin:**
+```gherkin
+Dado 2 notificaciones pendientes en el outbox
+Cuando se ejecuta POST /notificaciones/procesar
+Entonces las 2 se envian por su canal
+Y las que fallan quedan en reintento con su proximo intento programado.
+```
+
+**Trazabilidad:** RF-16, RNF-20, RT-06.
+
+### CU-W-45 — Alerta por Telegram / WEB-MCP
+**Actor:** ACT-05 · `POST /telegram/webhook`, `POST /mcp`
+**Flujo:** canal de alertas/mensajería automática (RF-16, RNF-11).
+**Gherkin:**
+```gherkin
+Dado una alerta de masiva registrada
+Cuando el canal Telegram/MCP recibe el evento
+Entonces el destinatario configurado recibe el aviso
+Y el envio queda registrado en el outbox (RNF-11).
+```
+
+**Trazabilidad:** RF-16, RNF-11, RT-06, RT-07.
+
+---
+
+## G7 · Monitoreo, panel y reportes — `routes_panel.py`, `routes_monitoreo.py` (RF-26, RF-28, RF-07)
+
+### CU-W-46 — Panel de gestión diaria
+**Actor:** ACT-01 (`_gestion`) · `GET /gestion-diaria`
+**Flujo:** resumen del día (cola, despachos, masivas, citas) para operar.
+**Gherkin:**
+```gherkin
+Dado un dia con casos en cola, despachos y 1 masiva activa
+Cuando el Supervisor abre el panel de gestion diaria
+Entonces ve el resumen consolidado del dia
+Y desde el panel puede acceder a las acciones de su dominio.
+```
+
+**Trazabilidad:** RF-26, RF-30.
+
+### CU-W-47 — Consultar tableros de monitoreo
+**Actor:** ACT-01/ACT-07 · `GET /monitoreo/{diario|semanal|globales|reparacion|construccion|cuadrilla|capacidad|mensual|casos-especiales|construcciones|reclasificaciones|identificadores}`
+**Flujo:** las 12 vistas de monitoreo con datos para gráficos (RT-10); ACT-07 tiene sus 5 vistas (DEC-G1).
+**Gherkin:**
+```gherkin
+Dado un dia con 100 casos gestionados
+Cuando el Coordinador consulta su vista de monitoreo
+Entonces recibe los indicadores de su alcance sin acceso a fichas de casos (DEC-G20).
+```
+**Trazabilidad:** RF-26, RF-28, RF-07, RT-10, DEC-G1, DEC-G20.
+
+### CU-W-48 — Generar reporte de trabajo
+**Actor:** ACT-01 · `GET /reportes/trabajo`, `/imprimible`
+**Flujo:** reporte diario/semanal/mensual (RF-28) versión imprimible.
+**Gherkin:**
+```gherkin
+Dado un mes completo de operacion
+Cuando se consulta GET /reportes/trabajo
+Entonces se genera el reporte con los datos del periodo
+Y su version imprimible esta disponible.
+```
+
+**Trazabilidad:** RF-28, RT-08.
+
+---
+
+## G8 · Mensajería interna — `routes_mensajes.py` (D-81/D-95)
+
+### CU-W-49 — Enviar mensaje a técnico / supervisor
+**Actor:** ACT-01/ACT-04 (`_envio` ADMIN+SUPERVISOR) vía `POST /mensajes` («»); el COORDINADOR usa `POST /mensajes/supervisor` (`_envio_supervisor`, destino forzado al Supervisor — DEC-G9/G15)
+**Flujo:** redactar → enviar a técnico(s)/cuadrilla → aparece en bandeja de la APK (D-86) y web.
+**Gherkin:**
+```gherkin
+Dado un Supervisor que necesita avisar a la cuadrilla 3
+Cuando envía el mensaje
+Entonces los integrantes lo ven en su bandeja como no leído
+Y el envío queda registrado con autor y hora (RNF-12).
+```
+**Trazabilidad:** D-81, D-95, DEC-G9, DEC-G15.
+
+### CU-W-50 — Consultar bandeja y marcar leído
+**Actor:** cualquier usuario con bandeja · `GET /bandeja`, `GET /no-leidos`, `POST /leidos`, `POST /{id}/leido`
+**Flujo:** bandeja con no leídos; lectura registra marca (en APK «leído pegajoso» D-86).
+**Rutas:** incluye tambien `GET /mensajes/supervisores` (supervisores disponibles como destino).
+**Gherkin:**
+```gherkin
+Dado 2 mensajes nuevos en la bandeja
+Cuando el usuario consulta GET /bandeja
+Entonces los 2 aparecen como no leidos
+Y al marcarlos leidos el contador de no leidos baja a 0.
+```
+
+**Trazabilidad:** D-81, D-86.
+
+---
+
+## G9 · Configuración — `routes_config.py` (RF-02, RF-03, RF-04, RF-38, RNF-10)
+
+### CU-W-51 — Configurar central y sectores
+**Actor:** ACT-01/ACT-04 (`_escritura`) · CRUD `central`, `sectores`, direcciones por sector
+**Flujo:** datos operativos de la central (2324X) y sectores con direcciones/alias (D-27/P1.2).
+**Gherkin:**
+```gherkin
+Dado una nueva zona de trabajo
+Cuando el Supervisor crea el sector con sus direcciones
+Entonces la sectorización y la propuesta de despacho lo usan de inmediato (RNF-10: sin cambio de código).
+```
+**Trazabilidad:** RF-38, RNF-10, D-27, RNF-14.
+
+### CU-W-52 — Gestionar técnicos, roles y usuarios de gestión
+**Actor:** ACT-01/ACT-04 · CRUD `tecnicos`, `PATCH /{id}/rol`, `POST /usuarios-gestion`
+**Flujo:** alta/edición/baja de técnicos, cambio de rol, cuentas de gestión (COORDINADOR separado de tecnico, DEC-G16; DEC-G11).
+**EARS:** De acuerdo con RNF-21, el sistema validará toda acción contra la matriz rol × módulo × acción.
+**Gherkin:**
+```gherkin
+Dado un tecnico nuevo de la central
+Cuando se da de alta con rol TECNICO y se asigna a una cuadrilla
+Entonces puede iniciar sesion y su alcance queda acotado a la central (RNF-21)
+Y un cambio de rol via PATCH /{id}/rol se aplica en su proximo acceso.
+```
+
+**Trazabilidad:** RF-02, RNF-21, DEC-G11, DEC-G16, H-15.
+
+### CU-W-53 — Gestionar flota
+**Actor:** ACT-01/ACT-04 · CRUD `flota`
+**Gherkin:**
+```gherkin
+Dado un vehiculo nuevo de la central
+Cuando se da de alta en flota
+Entonces queda disponible para las cuadrillas
+Y su edicion/baja se refleja en los reportes de flota (RF-07).
+```
+
+**Trazabilidad:** RF-03 (gestión de flota), RF-19 (reporte de incidentes con flota/herramientas).
+
+### CU-W-54 — Gestionar cuadrillas e integrantes
+**Actor:** ACT-01/ACT-04 · CRUD `cuadrillas`, integrantes (asociar/quitar técnico)
+**Flujo:** cuadrilla = técnicos + flota + herramientas; la APK descarga solo los casos de su cuadrilla (D-123/D-130).
+**Gherkin:**
+```gherkin
+Dado el tecnico TECG001 recien asignado a la cuadrilla 3
+Cuando la APK sincroniza
+Entonces TECG001 descarga unicamente los casos de la cuadrilla 3 (D-123/D-130).
+```
+**Trazabilidad:** RF-04, D-123, D-130.
+
+### CU-W-55 — Gestionar catálogos y configuración
+**Actor:** ACT-01/ACT-04 · `catalogos/causas|metodos`, `configuracion` (GET/PUT por clave)
+**Flujo:** causas/métodos de resolución, parámetros (frases de exclusión, umbrales) sin tocar código (RNF-10).
+**Gherkin:**
+```gherkin
+Dado una nueva causa de resolucion
+Cuando se agrega al catalogo de causas
+Entonces esta disponible para los cierres sin desplegar codigo (RNF-10)
+Y un cambio de configuracion via PUT /configuracion/{clave} se aplica a la operacion.
+```
+
+**Trazabilidad:** RF-33 (catálogos), RNF-10, RNF-12.
+
+---
+
+## G10 · Auditoría y sistemas — `routes_auditoria.py`, `routes_sistemas.py` (RNF-12, DEC-G17)
+
+### CU-W-56 — Consultar la traza de auditoría
+**Actor:** ACT-04 SUPER (exclusivo, solo lectura) · `GET /api/v1/auditoria`
+**Flujo:** filtros por usuario/acción/entidad/central/fechas, paginado; incluye auditoría de acciones del COORDINADOR (DEC-G17).
+**Gherkin:**
+```gherkin
+Dado la accion «alta de caso especial» del p00 COOR001
+Cuando el SUPER consulta la auditoria con filtro usuario=COOR001
+Entonces la traza muestra accion, entidad, fecha/hora y central
+Y un ADMIN obtiene 403 (la auditoria es exclusiva de SUPER).
+```
+**Trazabilidad:** RNF-12, DEC-G17, RT-APK-06.
+
+### CU-W-57 — Explorar estructura y datos del sistema
+**Actor:** ACT-04 SUPER · `GET /estructura|tablas|tabla/{nombre}(/datos)`
+**Flujo:** introspección solo-lectura del esquema y tablas.
+**Gherkin:**
+```gherkin
+Dado el esquema de la base de datos
+Cuando el SUPER consulta GET /sistemas/estructura y /tablas
+Entonces recibe la lista de tablas y sus columnas
+Y los datos de una tabla (GET /tabla/{nombre}/datos) son de solo lectura.
+```
+
+**Trazabilidad:** RNF-12. *(La introspección comparte la guarda exclusiva de SUPER con la auditoría.)*
+
+---
+
+## G11 · Mantenimiento — `routes_mantenimiento.py` (D-132, D-153, D-160)
+
+**Guarda transversal:** token `X-Mantenimiento-Token`; **fail-closed 503** si falta o es inválido.
+
+### CU-W-58 — Purgar datos con protección
+**Actor:** ACT-05 (proceso con token) · `POST /purgar`
+**EARS:** Si un caso tiene trabajo sin enviar desde campo, entonces la purga NO lo eliminará (D-132); la retención de datos aplicará según RNF-18 / D-153 / D-34. *(D-140 es otra regla: la cuadrilla de gestión no purga aunque tenga casos.)*
+**Gherkin:**
+```gherkin
+Dado un job de purga con token valido
+Cuando se ejecuta
+Entonces se purgan los datos elegibles y se conservan los protegidos (D-132)
+Y sin token el endpoint responde 503.
+```
+**Trazabilidad:** D-132, D-153, RNF-18, RNF-16.
+
+### CU-W-59 — Cerrar sesiones activas
+**Actor:** ACT-04/ACT-05 · `POST /cerrar-sesiones`
+**Flujo:** invalida sesiones/JWT activos (cierre operativo o compromiso).
+**Gherkin:**
+```gherkin
+Dado 5 sesiones JWT activas
+Cuando se ejecuta POST /mantenimiento/cerrar-sesiones
+Entonces las 5 sesiones quedan invalidadas
+Y el siguiente request con esos tokens devuelve 401.
+```
+
+**Trazabilidad:** RNF-22, RF-20.
+
+### CU-W-60 — Tareas programadas nocturnas
+**Actor:** ACT-05 · `POST /recordatorios-citas`, `/alarmas-despacho`, `/cierre-jornada`
+**Flujo:** recordatorios de citas del día siguiente, alarmas de despacho y el corte nocturno 23:00 (D-160 → DEVUELTO D-157, ver CU-W-28).
+**Gherkin:**
+```gherkin
+Dado 3 citas para el dia siguiente y casos PENDIENTE a las 23:00
+Cuando se ejecutan las tareas nocturnas
+Entonces se envian los recordatorios de citas y las alarmas de despacho
+Y el corte nocturno devuelve los PENDIENTE a DEVUELTO (D-157/D-160).
+```
+
+**Trazabilidad:** RF-12, RF-27, D-157, D-160, RNF-19.
+
+---
+
+## G12 · Asistente virtual (lado GGTO) — `routes_asistente.py`
+
+### CU-W-61 — Gestionar sesiones del asistente
+**Actor:** ACT-01 (ADMIN+SUPERVISOR, `_acceso`) · `POST/GET /api/v1/asistente/sesiones`
+**Flujo:** abrir turno del asistente y consultar historial acotado a su central.
+**Gherkin:**
+```gherkin
+Dado un turno del asistente con 3 intercambios
+Cuando un SUPERVISOR consulta GET /api/v1/asistente/sesiones
+Entonces ve las sesiones de su central con su historial
+Y el alta de turno via POST /sesiones queda acotada a su central.
+```
+
+**Trazabilidad:** RNF-AV, RNF-21, RNF-12. Detalle: [`casos_uso_asistente.md`](casos_uso_asistente.md) CU-AV-08.
+
+### CU-W-62 — Gestionar remitentes de Telegram
+**Actor:** ACT-04 SUPER (`_solo_super`) · `POST/GET/PATCH /remitentes/{id}`
+**Gherkin:**
+```gherkin
+Dado un SUPER autenticado
+Cuando consulta GET /api/v1/asistente/remitentes
+Entonces ve los remitentes registrados con su chat_id, p00 y central
+Y puede editarlos o desactivarlos via PATCH.
+```
+
+**Trazabilidad:** RNF-21, H-15. Detalle: CU-AV-09.
+
+---
+
+## G13 · Salud del servicio — `routes_health.py` (ACT-05, RNF-17, RNF-19)
+
+### CU-W-63 — Supervisar la salud del servicio
+**Actor:** ACT-05/infraestructura · `GET /health`, `/ready`, `/api/v1/info`, `/api/v1/resumen`
+**Gherkin:**
+```gherkin
+Dado el backend en operacion
+Cuando se consulta /ready
+Entonces responde 200 si DB y dependencias estan listas
+Y /health expone el estado para el monitoreo de disponibilidad (RNF-17).
+```
+**Trazabilidad:** RNF-17, RNF-19.
