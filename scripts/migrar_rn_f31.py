@@ -141,7 +141,12 @@ def conectar(args: argparse.Namespace):
 
 def estado_actual(conn) -> dict:
     with conn.cursor() as cur:
-        cur.execute(VERIFICACION)
+        try:
+            cur.execute(VERIFICACION)
+        except Exception:
+            # Primera corrida: la tabla/la columna aún no existen.
+            conn.rollback()
+            return {"tabla_ok": 0, "transiciones": 0, "columna_nc": 0, "claves": 0}
         cols = [d[0] for d in cur.description]
         return dict(zip(cols, cur.fetchone(), strict=True))
 
