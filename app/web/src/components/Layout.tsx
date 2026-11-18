@@ -237,10 +237,11 @@ export default function Layout() {
   const { usuario, soloLectura } = useAuth();
   const [modalAbierto, setModalAbierto] = useState(false);
   const [fichaGlobal, setFichaGlobal] = useState<CasoOut | null>(null);
-  // Versión desplegada (vNN): el script de despliegue la hornea en
-  // `/version.json` con el TAG de la imagen antes del build; en desarrollo el
-  // archivo no existe y el badge no se muestra.
+  // Versión desplegada (vNN) y fecha del build: el script de despliegue los
+  // hornea en `/version.json` con el TAG y la fecha antes del build; en
+  // desarrollo el archivo no existe y el badge no se muestra.
   const [version, setVersion] = useState('');
+  const [fechaBuild, setFechaBuild] = useState('');
   const rol = usuario?.rol ?? '';
   const puedeConfigurar = ROLES_CONFIG.includes(rol);
   // D-72: DESPACHO (y CONFIGURACIÓN) quedan fuera del alcance del Técnico.
@@ -254,8 +255,13 @@ export default function Layout() {
     let vivo = true;
     fetch('/version.json', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((datos: { version?: string } | null) => {
-        if (vivo && datos?.version) setVersion(datos.version);
+      .then((datos: { version?: string; fecha?: string } | null) => {
+        if (!vivo) return;
+        if (datos?.version) setVersion(datos.version);
+        if (datos?.fecha) {
+          const t = new Date(datos.fecha);
+          if (!Number.isNaN(t.getTime())) setFechaBuild(t.toISOString());
+        }
       })
       .catch(() => {});
     return () => {
@@ -279,8 +285,25 @@ export default function Layout() {
             <span className="marca-sub">Francisco Salias · Área 4</span>
           </span>
           {version && (
-            <span className="marca-version" title={`Versión publicada: ${version}`}>
+            <span
+              className="marca-version"
+              title={
+                fechaBuild
+                  ? `Versión ${version} — proyecto modificado: ${new Date(fechaBuild).toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' })} (UTC)`
+                  : `Versión ${version}`
+              }
+            >
               {version}
+              {fechaBuild && (
+                <span className="marca-version-fecha">
+                  {' · '}
+                  {new Date(fechaBuild).toLocaleDateString('es-VE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
+                </span>
+              )}
             </span>
           )}
         </Link>

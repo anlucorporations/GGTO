@@ -3232,6 +3232,13 @@ h3 {
   white-space: nowrap;
 }
 
+/* La fecha de modificación, en tono más suave dentro del mismo badge. */
+.marca-version .marca-version-fecha {
+  font-weight: 400;
+  opacity: 0.85;
+  letter-spacing: 0.02em;
+}
+
 .nav-item.activo {
   background: rgba(255, 255, 255, 0.96);
   color: var(--m-azul);

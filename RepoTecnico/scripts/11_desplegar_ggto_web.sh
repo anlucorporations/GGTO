@@ -110,8 +110,9 @@ rm -f "$LIFECYCLE"
 echo "  Ciclo de vida: borrar objetos a los 730 días (respaldo de la purga D-153)."
 
 echo "== 4/7 Construyendo la imagen en Cloud Build (Dockerfile multi-etapa) =="
-# Versión horneada (vNN): la web la muestra en la navbar leyendo /version.json.
-printf '{"version":"%s"}\n' "$TAG" > "$RAIZ/app/web/public/version.json"
+# Versión horneada (vNN): la web la muestra en la navbar leyendo /version.json;
+# incluye la fecha/hora del build para saber CUÁNDO fue modificado el proyecto.
+printf '{"version":"%s","fecha":"%s"}\n' "$TAG" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > "$RAIZ/app/web/public/version.json"
 gcloud builds submit "$RAIZ/app" --project "$PROYECTO" --tag "$IMAGEN"
 
 echo "== 5/7 Desplegando el servicio $SERVICIO =="
