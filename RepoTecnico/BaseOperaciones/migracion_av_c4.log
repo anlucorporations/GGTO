@@ -1,0 +1,43 @@
+[2026-11-19T00:58:18+00:00] === migración AV-C4: tabla asistente_sesion ===
+[2026-11-19T00:58:18+00:00] Estado actual: {'tabla_ok': 0, 'columnas': 0, 'indices': 2}
+[2026-11-19T00:58:18+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS asistente_sesion (
+    id_turno      bigserial PRIMARY KEY,
+    sesion_id     varchar(64) NOT NULL,
+    canal         varchar(20) NOT NULL DEFAULT 'PANEL',
+    id_central    integer REFERENCES central(id_central),
+    p00           varchar(20),
+    texto_entrada text NOT NULL,
+    intencion     varchar(30),
+    detalle       varchar(60),
+    ficha_json    text,
+    respuesta     text,
+    creado_en     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_sesion ON asistente_sesion(sesion_id);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_fecha ON asistente_sesion(creado_en);
+
+[2026-11-19T00:58:18+00:00] SIMULACIÓN — no se aplicó nada. Ejecuta con --aplicar --si para confirmar.
+[2026-11-19T00:58:25+00:00] === migración AV-C4: tabla asistente_sesion ===
+[2026-11-19T00:58:26+00:00] Estado actual: {'tabla_ok': 0, 'columnas': 0, 'indices': 2}
+[2026-11-19T00:58:26+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS asistente_sesion (
+    id_turno      bigserial PRIMARY KEY,
+    sesion_id     varchar(64) NOT NULL,
+    canal         varchar(20) NOT NULL DEFAULT 'PANEL',
+    id_central    integer REFERENCES central(id_central),
+    p00           varchar(20),
+    texto_entrada text NOT NULL,
+    intencion     varchar(30),
+    detalle       varchar(60),
+    ficha_json    text,
+    respuesta     text,
+    creado_en     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_sesion ON asistente_sesion(sesion_id);
+CREATE INDEX IF NOT EXISTS ix_asistente_sesion_fecha ON asistente_sesion(creado_en);
+
+[2026-11-19T01:00:47+00:00] === migración AV-C4: tabla asistente_sesion ===
+[2026-11-19T01:00:48+00:00] Ya existe (11 columnas, 3 índices): nada por hacer.

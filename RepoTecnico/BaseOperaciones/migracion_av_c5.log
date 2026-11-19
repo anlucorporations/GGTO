@@ -1,0 +1,19 @@
+[2026-11-19T00:58:26+00:00] === migración AV-C5: tabla asistente_remitente ===
+[2026-11-19T00:58:28+00:00] Estado actual: {'tabla_ok': 0, 'columnas': 0}
+[2026-11-19T00:58:28+00:00] CAMBIO a aplicar:
+
+CREATE TABLE IF NOT EXISTS asistente_remitente (
+    id_remitente   bigserial PRIMARY KEY,
+    id_central     integer NOT NULL REFERENCES central(id_central),
+    canal          varchar(20) NOT NULL DEFAULT 'TELEGRAM',
+    chat_id        varchar(64) NOT NULL UNIQUE,
+    p00            varchar(20) NOT NULL,
+    nombre         varchar(120),
+    activo         boolean NOT NULL DEFAULT true,
+    creado_en      timestamptz NOT NULL DEFAULT now(),
+    actualizado_en timestamptz NOT NULL DEFAULT now()
+);
+
+[2026-11-19T00:58:28+00:00] Aplicado. Verificación: {'tabla_ok': 0, 'columnas': 0}
+[2026-11-19T01:00:49+00:00] === migración AV-C5: tabla asistente_remitente ===
+[2026-11-19T01:00:50+00:00] Ya existe (9 columnas): nada por hacer.
