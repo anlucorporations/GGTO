@@ -17,7 +17,7 @@ const LLM_PROVIDER  = (process.env.LLM_PROVIDER || "openrouter").toLowerCase()
 const OPENROUTER_URL = process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1"
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ||
   (leerArchivo("/run/secrets/openrouter_api_key") || "").trim()
-const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "deepseek/deepseek-v4.1-flash-1017"
+const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "inclusionai/ling-3.2-flash:free"
 const LLM_TOOLS_ENABLED = process.env.LLM_TOOLS_ENABLED !== "false"
 
 // Para compatibilidad con scripts antiguos que aún usan GATEWAY_URL/GATEWAY_AUTH si LLM_PROVIDER=opencode
@@ -429,10 +429,12 @@ function tarifaOk(estado, ahora) {
 }
 
 // ---- Llamada a OpenRouter: chat/completions con tools (v2.2: OpenRouter como LLM principal) ----
-async function llamarLLM(deps, mensajes) {
+// Recibe el prompt completo en texto (contrato del gateway legacy) y lo envía como mensaje de usuario.
+async function llamarLLM(deps, prompt) {
   const { OPENROUTER_URL, OPENROUTER_API_KEY, LLM_MODEL, LLM_TOOLS_ENABLED, TIMEOUT_MS,
     GGTO_MCP_KEY, GGTO_MCP_URL, fetch, abortSignal } = deps
   if (!OPENROUTER_API_KEY) { const e = new Error("OpenRouter sin credencial (RS-2)"); e.codigo = 503; throw e }
+  const mensajes = [{ role: "user", content: prompt }]
   const cuerpo = {
     model: LLM_MODEL,
     messages: mensajes,
@@ -448,7 +450,11 @@ async function llamarLLM(deps, mensajes) {
       signal: abortSignal(TIMEOUT_MS),
     })
     if (r.status === 429) { const e = new Error("OpenRouter: plan de uso agotado (429)"); e.codigo = 503; throw e }
-    if (!r.ok) { const e = new Error(`OpenRouter respondió ${r.status}`); e.codigo = 503; throw e }
+    if (!r.ok) {
+      const detalle = (await r.text().catch(() => "")).slice(0, 200)
+      const e = new Error(`OpenRouter respondió ${r.status}${detalle ? `: ${detalle}` : ""}`)
+      e.codigo = 503; throw e
+    }
     const j = await r.json()
     const eleccion = j?.choices?.[0]?.message
     if (!eleccion) { const e = new Error("OpenRouter: respuesta sin elección"); e.codigo = 502; throw e }

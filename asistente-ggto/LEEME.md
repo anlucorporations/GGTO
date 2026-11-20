@@ -9,7 +9,7 @@ canónicos de la API (C2 altas, C3 eventos).
 | Campo | Valor |
 |---|---|
 | Ciclo | **C1–C6 completados (2026-11-10/11) — código listo, sin despliegue** · C1 núcleo · C2 altas · C3 eventos · C4 consultas + historial · C5 Telegram (fail-closed, CONFIRMAR) · C6 panel editable + `DESPLIEGUE.md` (checklist §9, pendiente de ejecutar) · **v2.2 (2026-11-18): LLM principal migrado a OpenRouter con tools MCP** |
-| IA | **OpenRouter** `POST {OPENROUTER_URL}/chat/completions` · `Authorization: Bearer <OPENROUTER_API_KEY>` (docker secret `/run/secrets/openrouter_api_key`) · modelo `LLM_MODEL` (defecto `deepseek/deepseek-v4.1-flash-1017`) · **el LLM opera el MCP de GGTO por tools** (`estado_central`, `consultar_caso` — solo lectura; las escrituras siguen por CONFIRMAR canónico). El Gateway OpenCode queda como legacy (`LLM_PROVIDER=opencode` + REF-SEC-26) |
+| IA | **OpenRouter** `POST {OPENROUTER_URL}/chat/completions` · `Authorization: Bearer <OPENROUTER_API_KEY>` (docker secret `/run/secrets/openrouter_api_key`; en producción `openrouter-key-2`, saldo 0 ⇒ modelo **`:free`**) · modelo `LLM_MODEL` (defecto `nvidia/nemotron-3.5-lightning`; alternativa pagada `deepseek/deepseek-v4.1-flash-1017`) · **el LLM opera el MCP de GGTO por tools** (`estado_central`, `consultar_caso` — solo lectura; las escrituras siguen por CONFIRMAR canónico). El Gateway OpenCode queda como legacy (`LLM_PROVIDER=opencode` + REF-SEC-26) |
 | Alcance C4+ | Consultas (caso por 70*/avería, FAT, resumen del día); historial (PG GGTO); Telegram |
 
 ## Endpoints (C1 + C2 + C3 + C4)
@@ -30,7 +30,7 @@ canónicos de la API (C2 altas, C3 eventos).
 | `LLM_PROVIDER` | `openrouter` | Proveedor del LLM (`openrouter` o `opencode` legacy) |
 | `OPENROUTER_URL` | `https://openrouter.ai/api/v1` | Base de la API de OpenRouter (sobrescribir para humo/proxy en GCP) |
 | `OPENROUTER_API_KEY` | — | **Clave de OpenRouter** (docker secret `/run/secrets/openrouter_api_key` o env_file root-only); sin ella **503 fail-closed** |
-| `LLM_MODEL` | `deepseek/deepseek-v4.1-flash-1017` | Modelo de OpenRouter (formato `proveedor/modelo`); cambio solo por env |
+| `LLM_MODEL` | `inclusionai/ling-3.2-flash:free` | Modelo de OpenRouter (formato `proveedor/modelo`); cambio solo por env. Alternativa con créditos: `deepseek/deepseek-v4.1-flash-1017` |
 | `LLM_TOOLS_ENABLED` | `true` | `true`: el LLM opera las tools del MCP de GGTO (solo lectura); `false`: chat sin tools |
 | `GGTO_MCP_KEY` | — | **Clave `X-MCP-Key` del servidor MCP de GGTO** (docker secret `/run/secrets/ggto_mcp_key`); sin ella las tools responden **503 fail-closed** |
 | `GGTO_MCP_URL` | `{GGTO_API_URL}/api/v1/mcp` | Endpoint JSON-RPC del servidor MCP de GGTO |

@@ -71,7 +71,7 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 | 2 | `OPENROUTER_API_KEY` por docker secret root-only (`/run/secrets/openrouter_api_key`, **no en .env**) | ☐ |
 | 3 | `GGTO_MCP_KEY` por docker secret root-only (`/run/secrets/ggto_mcp_key`) y `mcp.api_key` configurada en GGTO | ☐ |
 | 4 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
-| 5 | `LLM_MODEL` = `deepseek/deepseek-v4.1-flash-1017` (o el modelo OpenRouter elegido); `LLM_TOOLS_ENABLED=true` | ☐ |
+| 5 | `LLM_MODEL` = `nvidia/nemotron-3.5-lightning` (:free; alternativa con créditos: `deepseek/deepseek-v4.1-flash-1017`); `LLM_TOOLS_ENABLED=true` | ☐ |
 | 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☐ |
 | 7 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta (el LLM puede operar tools de lectura del MCP); CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
 | 8 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |

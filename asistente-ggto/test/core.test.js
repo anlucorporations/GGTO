@@ -166,7 +166,7 @@ test("llamarLLM: bucle tools — OpenRouter pide consultar_caso → MCP responde
     const deps = { OPENROUTER_URL: orUrl, OPENROUTER_API_KEY: "k", LLM_MODEL: "openai/gpt-4o-mini",
       LLM_TOOLS_ENABLED: true, GGTO_MCP_KEY: "clave-mcp", GGTO_MCP_URL: mcpUrl, TIMEOUT_MS: 5000,
       fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms) }
-    const texto = await llamarLLM(deps, [{ role: "user", content: "en qué va el caso 7012345678" }])
+    const texto = await llamarLLM(deps, "en qué va el caso 7012345678")
     assert.equal(parseRespuestaIA(texto).intencion, "CONSULTA")
     const rpcMcp = llamadas.find((l) => l.mcp)?.mcp
     assert.ok(rpcMcp, "debe haber llamado al MCP")
@@ -180,7 +180,7 @@ test("llamarLLM: bucle tools — OpenRouter pide consultar_caso → MCP responde
 test("llamarLLM fail-closed: sin OPENROUTER_API_KEY → 503; MCP sin clave → 503", async () => {
   await assert.rejects(
     llamarLLM({ OPENROUTER_API_KEY: "", OPENROUTER_URL: "http://x", LLM_MODEL: "m", LLM_TOOLS_ENABLED: false,
-      TIMEOUT_MS: 1000, fetch, abortSignal: (ms) => AbortSignal.timeout(ms) }, [{ role: "user", content: "x" }]),
+      TIMEOUT_MS: 1000, fetch, abortSignal: (ms) => AbortSignal.timeout(ms) }, "x"),
     (e) => e.codigo === 503)
   await assert.rejects(
     mcpLlamar({ GGTO_MCP_KEY: "", GGTO_MCP_URL: "http://x", TIMEOUT_MS: 1000, fetch, abortSignal: (ms) => AbortSignal.timeout(ms) }, "estado_central", {}),
