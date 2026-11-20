@@ -1,6 +1,10 @@
 # Despliegue de `asistente-ggto` — checklist §9 del canon (pendiente de ejecutar)
 
-> Estado: **documentado en C6, sin ejecutar** (orden del usuario: C6 sin despliegue).
+> Estado: **DESPLEGADO (2026-11-19/20)** en `vm-preview` (100.113.94.52:3004), contenedor
+> `asistente-ggto` con `docker compose up -d --build`; `/health` en verde (`llm/mcp/telegram:
+> configurado`) y humo de chat CONSULTA→RESUMEN_DIA con datos reales OK.
+> Secretos en `/etc/secure/asistente-ggto.env` (0400, enlazado como `.env` del compose):
+> GGTOAST001, GGTO_MCP_KEY, OPENROUTER_API_KEY (`openrouter-key-2`), TELEGRAM_*.
 > Ejecutar en `vm-preview` (100.113.94.52) como root, siguiendo el canon
 > `RepoTecnico/Asistente/MANUAL_ASISTENTES_V2.md` y `04_runbook.md` (patrón V2-A2).
 
@@ -80,8 +84,16 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 
 ## 6 · Humo final (con producción)
 
-- [ ] Alta real: texto → ficha editable → confirmar → 201 con `REF-…` en GGTO.
+- [ ] Alta real: texto → ficha editable → confirmar → 201 con `REF-…` en GGTO. *(CONSULTA
+      → RESUMEN_DIA verificada 2026-11-20; ALTA/EVENTO exigen el LLM vivo — el pool `:free`
+      de OpenRouter se satura por upstream a ratos y responde 503; ver nota)*
 - [ ] Evento real: `PATCH` comentario / cita / cambio de estado sobre un caso de prueba.
 - [ ] Consultas: caso por 70\*, FAT, resumen del día (verificar sin PII en listados).
 - [ ] Telegram: mensaje de remitente autorizado → vista previa → CONFIRMAR; remitente no
       autorizado → sin respuesta y sin gasto de OpenRouter.
+
+> **Nota LLM (2026-11-20):** el tier `:free` de OpenRouter (`openrouter/free`, ling-3.2,
+> gemma-4-31b) se satura **por upstream** (`upstream_provider_shared_pool`) y devuelve 429
+> a ratos; `llamarLLM` reintenta 1 vez con backoff de 3 s y si persiste responde 503
+> fail-closed. Para estabilidad plena: añadir créditos en openrouter.ai y fijar
+> `LLM_MODEL=deepseek/deepseek-v4.1-flash-1017` (el compose ya lo permite por env).

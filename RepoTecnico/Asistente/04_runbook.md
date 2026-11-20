@@ -112,7 +112,7 @@ sudo gcloud secrets versions access latest --secret=dsh-password \
 
 | Proyecto | Tipo | PG BD/usuario | Mongo DB/usuario | Puerto preview | URL preview |
 |---|---|---|---|---|---|
-| *(ninguno aún — se agrega con cada proyecto)* | | | | | |
+| `asistente-ggto` (GGTO) | Node.js chat + tools MCP | `ggtov2`/`ggtov2_app` (historial `asistente_sesion`) | *(opcional, sin usar)* | **3004** | `http://100.113.94.52:3004` (panel web; Telegram webhook pendiente de URL pública) |
 
 ### 3bis. Registro de ejecución Fase 2
 

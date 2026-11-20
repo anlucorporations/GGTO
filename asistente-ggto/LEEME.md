@@ -30,7 +30,7 @@ canónicos de la API (C2 altas, C3 eventos).
 | `LLM_PROVIDER` | `openrouter` | Proveedor del LLM (`openrouter` o `opencode` legacy) |
 | `OPENROUTER_URL` | `https://openrouter.ai/api/v1` | Base de la API de OpenRouter (sobrescribir para humo/proxy en GCP) |
 | `OPENROUTER_API_KEY` | — | **Clave de OpenRouter** (docker secret `/run/secrets/openrouter_api_key` o env_file root-only); sin ella **503 fail-closed** |
-| `LLM_MODEL` | `inclusionai/ling-3.2-flash:free` | Modelo de OpenRouter (formato `proveedor/modelo`); cambio solo por env. Alternativa con créditos: `deepseek/deepseek-v4.1-flash-1017` |
+| `LLM_MODEL` | `openrouter/free` | Auto-enrutador entre los modelos gratis de OpenRouter (resiliente ante upstream saturado); cambio solo por env. Alternativas: `inclusionai/ling-3.2-flash:free`, o con créditos `deepseek/deepseek-v4.1-flash-1017` |
 | `LLM_TOOLS_ENABLED` | `true` | `true`: el LLM opera las tools del MCP de GGTO (solo lectura); `false`: chat sin tools |
 | `GGTO_MCP_KEY` | — | **Clave `X-MCP-Key` del servidor MCP de GGTO** (docker secret `/run/secrets/ggto_mcp_key`); sin ella las tools responden **503 fail-closed** |
 | `GGTO_MCP_URL` | `{GGTO_API_URL}/api/v1/mcp` | Endpoint JSON-RPC del servidor MCP de GGTO |

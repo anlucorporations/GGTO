@@ -17,7 +17,7 @@ const LLM_PROVIDER  = (process.env.LLM_PROVIDER || "openrouter").toLowerCase()
 const OPENROUTER_URL = process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1"
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ||
   (leerArchivo("/run/secrets/openrouter_api_key") || "").trim()
-const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "inclusionai/ling-3.2-flash:free"
+const LLM_MODEL = process.env.LLM_MODEL || process.env.MODEL_ID || "openrouter/free"
 const LLM_TOOLS_ENABLED = process.env.LLM_TOOLS_ENABLED !== "false"
 
 // Para compatibilidad con scripts antiguos que aún usan GATEWAY_URL/GATEWAY_AUTH si LLM_PROVIDER=opencode
@@ -443,12 +443,18 @@ async function llamarLLM(deps, prompt) {
   if (LLM_TOOLS_ENABLED) cuerpo.tools = HERRAMIENTAS_MCP
   let historial = [...mensajes]
   for (let ronda = 0; ronda < 4; ronda++) {
-    const r = await fetch(`${OPENROUTER_URL}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENROUTER_API_KEY}` },
-      body: JSON.stringify({ ...cuerpo, messages: historial }),
-      signal: abortSignal(TIMEOUT_MS),
-    })
+    // El tier :free de OpenRouter se satura por upstream a ratos: 1 reintento con backoff de 3 s
+    let r
+    for (let intento = 0; intento < 2; intento++) {
+      r = await fetch(`${OPENROUTER_URL}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENROUTER_API_KEY}` },
+        body: JSON.stringify({ ...cuerpo, messages: historial }),
+        signal: abortSignal(TIMEOUT_MS),
+      })
+      if (r.status !== 429 || intento === 1) break
+      await new Promise((ok) => setTimeout(ok, 3000))
+    }
     if (r.status === 429) { const e = new Error("OpenRouter: plan de uso agotado (429)"); e.codigo = 503; throw e }
     if (!r.ok) {
       const detalle = (await r.text().catch(() => "")).slice(0, 200)
