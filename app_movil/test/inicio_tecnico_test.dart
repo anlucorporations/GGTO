@@ -114,8 +114,11 @@ Iterable<Badge> badgesDeLaBarra(WidgetTester tester) =>
     ));
 
 void main() {
-  test('la versión de la entrega es 1.15.24+49', () {
-    expect(AppConstants.version, '1.15.24+49');
+  test('la versión de la entrega tiene el formato nombre+versionCode', () {
+    // La versión concreta la fija `pubspec.yaml`, y `version_visible_test.dart`
+    // comprueba que `AppConstants.version` coincida con ella. Fijarla aquí
+    // rompía la suite en cada subida de versión (mismo defecto que corrigió D-102).
+    expect(AppConstants.version, matches(RegExp(r'^\d+\.\d+\.\d+\+\d+$')));
   });
 
   group('Panel aparte de MASIVAS · barra de navegación del técnico', () {
