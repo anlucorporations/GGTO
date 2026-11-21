@@ -56,16 +56,40 @@ sudo /usr/local/bin/alta_asistente.sh ggto <puerto>     # genera servicio/BD/nam
 cd /opt/asistente-ggto && docker compose up -d --build  # limits ya en el compose (1 CPU / 1 GB)
 ```
 
-## 4 · Webhook de Telegram (una vez resuelta la URL pública — decisión de C5/C6)
+## 4 · Webhook de Telegram ✅ EJECUTADO (2026-11-21)
+
+`vm-preview` ya tenía **Tailscale Funnel** activo en `https://vm-preview.tailb951ba.ts.net`
+(solo el path `/`, hacia el puerto 8000). Se expone **únicamente** `/telegram`:
 
 ```bash
-# con la URL pública (o túnel) del asistente:
-curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
-  -d "url=https://<URL_PUBLICA>/telegram" \
-  -d "secret_token=$TELEGRAM_SECRET" | jq .
+# en vm-preview (el contenedor escucha en la IP Tailscale, no en 127.0.0.1):
+sudo tailscale funnel --set-path=/telegram --bg http://100.113.94.52:3004/telegram
+tailscale funnel status   # / → 8000 · /telegram → 3004
 ```
 
-- [ ] Dar de alta los remitentes: SUPER → `POST /api/v1/asistente/remitentes` (chat_id, p00, central).
+```bash
+# registro del webhook (token y secret en Secret Manager, nunca en el repo):
+curl -s -X "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  -d "url=https://vm-preview.tailb951ba.ts.net/telegram" \
+  -d "secret_token=$TELEGRAM_SECRET" | jq .
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo" | jq .
+```
+
+- [x] Funnel activo y restringido a `/telegram` (el panel NO queda público).
+- [x] `secret_token` fail-closed: sin cabecera → **403**; con cabecera → **200**.
+- [x] Bot `@GGTOv2Testbot` verificado con `getMe` (id 9052843256).
+- [x] Remitente autorizado: `chat_id=1090508107` → p00 `123456` (SUPER), central 1.
+- [x] Humo real: `CONSULTA → RESUMEN_DIA` por webhook con respuesta del bot y turno
+      registrado en `asistente_sesion` (`TG-1090508107`, canal TELEGRAM).
+- [x] Migración de secuencias aplicada (ver `RepoTecnico/BaseOperaciones/asistente_secuencias.sql`):
+      `asistente_sesion.id_turno` y `asistente_remitente.id_remitente` no tenían DEFAULT;
+      el API respondía **500** al registrar turnos. Ahora `nextval(...)` con GRANT a
+      `ggtov2_app` (POST → **201**).
+
+> **Nota:** el tier `:free` de OpenRouter (`openrouter/free`) se satura por proveedor
+> a ratos (429) y el webhook responde `{"atendido":true,"accion":"error","status_interno":503}`
+> con el mensaje de error al usuario; `llamarLLM` ya prueba modelos gratis alternativos
+> antes de rendirse. Para estabilidad plena: créditos + `LLM_MODEL=deepseek/deepseek-v4.1-flash-1017`.
 
 ## 5 · Checklist §9 del canon (verificar una a una)
 

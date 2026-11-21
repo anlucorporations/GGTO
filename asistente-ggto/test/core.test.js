@@ -177,6 +177,32 @@ test("llamarLLM: bucle tools — OpenRouter pide consultar_caso → MCP responde
   } finally { or.close(); mcp.close() }
 })
 
+test("llamarLLM: ante 429 del tier :free prueba el siguiente modelo gratis", async () => {
+  const modelos = []
+  const or = http.createServer((req, res) => {
+    let d = ""; req.on("data", (c) => (d += c))
+    req.on("end", () => {
+      const cuerpo = JSON.parse(d)
+      modelos.push(cuerpo.model)
+      res.writeHead(cuerpo.model === "openrouter/free" ? 429 : 200,
+        { "Content-Type": "application/json" })
+      res.end(cuerpo.model === "openrouter/free"
+        ? JSON.stringify({ error: { message: "upstream rate-limited", code: 429 } })
+        : JSON.stringify({ choices: [{ message: { role: "assistant",
+          content: '{"intencion":"CONSULTA","consulta":"ok"}' } }] }))
+    })
+  })
+  const url = await new Promise((r) => or.listen(0, "127.0.0.1", () => r(`http://127.0.0.1:${or.address().port}`)))
+  try {
+    const texto = await llamarLLM({ OPENROUTER_URL: url, OPENROUTER_API_KEY: "k",
+      LLM_MODEL: "openrouter/free", LLM_TOOLS_ENABLED: false, TIMEOUT_MS: 5000,
+      fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms) }, "hola")
+    assert.equal(parseRespuestaIA(texto).intencion, "CONSULTA")
+    assert.ok(modelos.includes("inclusionai/ling-3.2-flash:free"),
+      "debe probar un modelo gratis alternativo tras el 429")
+  } finally { or.close() }
+})
+
 test("llamarLLM fail-closed: sin OPENROUTER_API_KEY → 503; MCP sin clave → 503", async () => {
   await assert.rejects(
     llamarLLM({ OPENROUTER_API_KEY: "", OPENROUTER_URL: "http://x", LLM_MODEL: "m", LLM_TOOLS_ENABLED: false,

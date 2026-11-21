@@ -376,8 +376,13 @@ async function procesarTelegram(estado, deps, update, secretoHeader) {
   let remitente = null
   try { remitente = await deps.buscarRemitente(estado, deps, chatId) }
   catch (e) { return { status: 503, body: { atendido: false, error: e.message } } }
-  if (!remitente)
-    return { status: 200, body: { atendido: false, motivo: "remitente no autorizado" } }
+  if (!remitente) {
+    // El chat_id se devuelve al solicitante para que pueda pedir su alta al SUPER
+    // (y queda en la respuesta del webhook para el diagnóstico del operador).
+    await deps.responderTelegram(estado, deps, chatId,
+      `Este chat (${chatId}) no está autorizado para usar el asistente. Solicite su alta al SUPER.`)
+    return { status: 200, body: { atendido: false, motivo: "remitente no autorizado", chat_id: chatId } }
+  }
   const texto = String(mensaje.text).trim()
   // confirmación de la ficha pendiente (nada se aplica sin ella)
   const pendiente = estado.telegram?.pendientes?.get(chatId)
@@ -441,21 +446,29 @@ async function llamarLLM(deps, prompt) {
     temperature: 0.1,
   }
   if (LLM_TOOLS_ENABLED) cuerpo.tools = HERRAMIENTAS_MCP
+  // El tier :free se satura POR PROVEEDOR (429 "upstream_provider_shared_pool"):
+  // el enrutador openrouter/free elige un modelo como gemma-4-26b que está
+  // temporalmente agotado. Ante 429 se prueba el siguiente modelo gratis antes
+  // de responder fail-closed (el modelo elegido por el usuario sigue siendo el principal).
+  const modelos = [LLM_MODEL, "inclusionai/ling-3.2-flash:free", "google/gemma-4-26b-a4b-it:free"]
+    .filter((m, i, a) => m && a.indexOf(m) === i)
   let historial = [...mensajes]
   for (let ronda = 0; ronda < 4; ronda++) {
-    // El tier :free de OpenRouter se satura por upstream a ratos: 1 reintento con backoff de 3 s
-    let r
-    for (let intento = 0; intento < 2; intento++) {
-      r = await fetch(`${OPENROUTER_URL}/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENROUTER_API_KEY}` },
-        body: JSON.stringify({ ...cuerpo, messages: historial }),
-        signal: abortSignal(TIMEOUT_MS),
-      })
-      if (r.status !== 429 || intento === 1) break
-      await new Promise((ok) => setTimeout(ok, 3000))
+    let r = null
+    for (const modelo of modelos) {
+      for (let intento = 0; intento < 2; intento++) {
+        r = await fetch(`${OPENROUTER_URL}/chat/completions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENROUTER_API_KEY}` },
+          body: JSON.stringify({ ...cuerpo, model: modelo, messages: historial }),
+          signal: abortSignal(TIMEOUT_MS),
+        })
+        if (r.status !== 429) break
+        if (intento === 0) await new Promise((ok) => setTimeout(ok, 1500))
+      }
+      if (r && r.status !== 429) break
     }
-    if (r.status === 429) { const e = new Error("OpenRouter: plan de uso agotado (429)"); e.codigo = 503; throw e }
+    if (!r || r.status === 429) { const e = new Error("OpenRouter: plan de uso agotado (429)"); e.codigo = 503; throw e }
     if (!r.ok) {
       const detalle = (await r.text().catch(() => "")).slice(0, 200)
       const e = new Error(`OpenRouter respondió ${r.status}${detalle ? `: ${detalle}` : ""}`)
