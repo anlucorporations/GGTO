@@ -495,6 +495,48 @@ async function llamarLLM(deps, prompt) {
 }
 const abortSignal = (ms) => AbortSignal.timeout(ms)
 
+// ---- Proveedor legacy: Gateway OpenCode (REF-SEC-26), contrato del runbook §4 ----
+// POST {GATEWAY_URL}/api/experimental/generate/text
+//   Authorization: Basic base64("opencode:" + opcode-gateway-api-key)
+//   body: { prompt, model: { id, providerID } } → { data: { text } }
+// No soporta tools (a diferencia de OpenRouter), así que con este proveedor el
+// MCP se resuelve por el código de GGTO (resolverConsulta), no por tool-calling.
+async function llamarGateway(deps, prompt) {
+  const { GATEWAY_URL, GATEWAY_AUTH, MODEL, TIMEOUT_MS } = deps
+  if (!GATEWAY_AUTH) { const e = new Error("Gateway OpenCode sin credencial (RS-2)"); e.codigo = 503; throw e }
+  let r
+  try {
+    r = await deps.fetch(`${GATEWAY_URL}/api/experimental/generate/text`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json",
+        Authorization: `Basic ${Buffer.from(`opencode:${GATEWAY_AUTH}`).toString("base64")}` },
+      body: JSON.stringify({ prompt, model: MODEL }),
+      signal: deps.abortSignal(TIMEOUT_MS),
+    })
+  } catch (e) {
+    const err = new Error(`Gateway OpenCode no disponible: ${e.message}`); err.codigo = 503; throw err
+  }
+  const textoRespuesta = await r.text().catch(() => "")
+  const detalle = textoRespuesta.slice(0, 200)
+  if (r.status === 429 || /rate_limit|Free usage limit reached/i.test(textoRespuesta)) {
+    const e = new Error(`Gateway OpenCode: límite de uso (${r.status})${detalle ? `: ${detalle}` : ""}`)
+    e.codigo = 503; throw e
+  }
+  if (!r.ok) { const e = new Error(`Gateway OpenCode respondió ${r.status}${detalle ? `: ${detalle}` : ""}`); e.codigo = 503; throw e }
+  let j = {}
+  try { j = JSON.parse(textoRespuesta) } catch { /* cuerpo no JSON */ }
+  const texto = j?.data?.text
+  if (typeof texto !== "string" || !texto.trim()) { const e = new Error("Gateway OpenCode: respuesta sin texto"); e.codigo = 502; throw e }
+  return texto
+}
+
+/** Despacha al proveedor configurado. OpenRouter por defecto (v2.2). */
+async function llamarProveedor(deps, prompt) {
+  return (deps.LLM_PROVIDER || "openrouter") === "opencode"
+    ? llamarGateway(deps, prompt)
+    : llamarLLM(deps, prompt)
+}
+
 // ---- Parseo robusto de la respuesta (el gateway devuelve texto) ----
 function parseRespuestaIA(texto) {
   if (!texto) return null
@@ -585,8 +627,13 @@ function crearServidor(estado, deps) {
     const enviar = (codigo, cuerpo) => { res.writeHead(codigo, { "Content-Type": "application/json" }); res.end(JSON.stringify(cuerpo)) }
     if (url.pathname === "/health") {
       return enviar(200, { status: "ok", app: estado.cfg.PROJECT,
-        llm: estado.cfg.OPENROUTER_API_KEY ? "configurado" : "no-configurado",
-        modelo: `${estado.cfg.LLM_MODEL || ""}`,
+        proveedor: estado.cfg.LLM_PROVIDER,
+        llm: estado.cfg.LLM_PROVIDER === "opencode"
+          ? (estado.cfg.GATEWAY_AUTH ? "configurado" : "no-configurado")
+          : (estado.cfg.OPENROUTER_API_KEY ? "configurado" : "no-configurado"),
+        modelo: estado.cfg.LLM_PROVIDER === "opencode"
+          ? `${estado.cfg.MODEL?.providerID}/${estado.cfg.MODEL?.id}`
+          : `${estado.cfg.LLM_MODEL || ""}`,
         mcp: estado.cfg.GGTO_MCP_KEY ? "configurado" : "no-configurado",
         ggto_api: estado.cfg.GGTO_API_URL,
         telegram: estado.cfg.TELEGRAM_SECRET && estado.cfg.TELEGRAM_BOT_TOKEN ? "configurado" : "no-configurado" })
@@ -650,13 +697,17 @@ function crearServidor(estado, deps) {
 
 // ---- Arranque (solo cuando corre como proceso principal) ----
 const INDEX_HTML = (() => { try { return require("fs").readFileSync(require("path").join(__dirname, "index.html"), "utf8") } catch { return "<h1>asistente-ggto</h1>" } })()
-const depsPorDefecto = { fetch: (u, o) => fetch(u, o), abortSignal, parse: parseRespuestaIA, gateway: llamarLLM, indexHtml: INDEX_HTML, procesar: procesarMensaje }
+const depsPorDefecto = { fetch: (u, o) => fetch(u, o), abortSignal, parse: parseRespuestaIA, gateway: llamarProveedor, indexHtml: INDEX_HTML, procesar: procesarMensaje }
 if (require.main === module) {
-  const cfg = { GGTO_API_URL, GGTO_USER, GGTO_PASS, GGTO_MCP_KEY, GGTO_MCP_URL, LLM_PROVIDER, OPENROUTER_URL, OPENROUTER_API_KEY, LLM_MODEL, LLM_TOOLS_ENABLED, TIMEOUT_MS, PROJECT, PROMPT: PROMPT_GGTO, RATE_PER_MIN, DAILY_LIMIT, MONGO_URL, MONGO_DB, TIMEOUT_MS, GGTO_USER, GGTO_PASS, TELEGRAM_API_URL, TELEGRAM_SECRET, TELEGRAM_BOT_TOKEN }
+  const cfg = { GGTO_API_URL, GGTO_USER, GGTO_PASS, GGTO_MCP_KEY, GGTO_MCP_URL, LLM_PROVIDER,
+    OPENROUTER_URL, OPENROUTER_API_KEY, LLM_MODEL, LLM_TOOLS_ENABLED, TIMEOUT_MS,
+    GATEWAY_URL: GATEWAY_URL_LEGACY, GATEWAY_AUTH: GATEWAY_AUTH_LEGACY, MODEL: MODEL_LEGACY,
+    PROJECT, PROMPT: PROMPT_GGTO, RATE_PER_MIN, DAILY_LIMIT, MONGO_URL, MONGO_DB,
+    TELEGRAM_API_URL, TELEGRAM_SECRET, TELEGRAM_BOT_TOKEN }
   const estado = crearEstado(cfg)
   const depsCompletos = { ...depsPorDefecto, obtenerToken, confirmar: confirmarAccion, mapear: mapearAlta, buscarCaso, aplicarEvento, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, procesarMensaje }
   crearServidor(estado, depsCompletos).listen(PUERTO, () =>
-    console.log(`asistente-${PROJECT} escuchando en :${PUERTO} (llm ${estado.cfg.LLM_PROVIDER} ${estado.cfg.LLM_MODEL}, mcp ${estado.cfg.GGTO_MCP_KEY ? "configurado" : "SIN CLAVE"})`))
+    console.log(`asistente-${PROJECT} escuchando en :${PUERTO} (llm ${estado.cfg.LLM_PROVIDER} ${estado.cfg.LLM_PROVIDER === "opencode" ? `${estado.cfg.MODEL.providerID}/${estado.cfg.MODEL.id}` : estado.cfg.LLM_MODEL}, mcp ${estado.cfg.GGTO_MCP_KEY ? "configurado" : "SIN CLAVE"})`))
 }
 
-module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarLLM, mcpLlamar, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, textoDeRespuesta, vistaPreviaTexto }
+module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarLLM, llamarGateway, llamarProveedor, mcpLlamar, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, textoDeRespuesta, vistaPreviaTexto }

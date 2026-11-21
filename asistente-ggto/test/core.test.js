@@ -3,7 +3,7 @@
 const test = require("node:test")
 const assert = require("node:assert/strict")
 const http = require("node:http")
-const { PROMPT_GGTO, crearEstado, tarifaOk, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, llamarLLM, mcpLlamar } = require("../server.js")
+const { PROMPT_GGTO, crearEstado, tarifaOk, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, llamarLLM, llamarGateway, llamarProveedor, mcpLlamar } = require("../server.js")
 
 const CFG_OK = { OPENROUTER_URL: "http://mock", OPENROUTER_API_KEY: "clave-prueba", LLM_MODEL: "openai/gpt-4o-mini",
   LLM_TOOLS_ENABLED: true, GGTO_MCP_KEY: "mcp-prueba", GGTO_MCP_URL: "http://mcp", GGTO_API_URL: "https://x",
@@ -201,6 +201,29 @@ test("llamarLLM: ante 429 del tier :free prueba el siguiente modelo gratis", asy
     assert.ok(modelos.includes("inclusionai/ling-3.2-flash:free"),
       "debe probar un modelo gratis alternativo tras el 429")
   } finally { or.close() }
+})
+
+test("llamarGateway: Basic auth, modelo opencode y respuesta {data:{text}}", async () => {
+  const vistos = []
+  const gw = http.createServer((req, res) => {
+    let d = ""; req.on("data", (c) => (d += c))
+    req.on("end", () => {
+      vistos.push({ auth: req.headers.authorization, cuerpo: JSON.parse(d) })
+      res.writeHead(200, { "Content-Type": "application/json" })
+      res.end(JSON.stringify({ data: { text: '{"intencion":"CONSULTA","consulta":"estado"}' } }))
+    })
+  })
+  const url = await new Promise((r) => gw.listen(0, "127.0.0.1", () => r(`http://127.0.0.1:${gw.address().port}`)))
+  try {
+    const deps = { GATEWAY_URL: url, GATEWAY_AUTH: "pw-secreta",
+      MODEL: { id: "nemotron-3.5-super-vl-free", providerID: "opencode" }, TIMEOUT_MS: 5000,
+      fetch: (u, o) => fetch(u, o), abortSignal: (ms) => AbortSignal.timeout(ms) }
+    const texto = await llamarProveedor({ ...deps, LLM_PROVIDER: "opencode" }, "hola")
+    assert.equal(parseRespuestaIA(texto).intencion, "CONSULTA")
+    assert.equal(vistos[0].auth, "Basic " + Buffer.from("opencode:pw-secreta").toString("base64"))
+    assert.deepEqual(vistos[0].cuerpo.model, { id: "nemotron-3.5-super-vl-free", providerID: "opencode" })
+    await assert.rejects(llamarGateway({ ...deps, GATEWAY_AUTH: "" }, "hola"), (e) => e.codigo === 503)
+  } finally { gw.close() }
 })
 
 test("llamarLLM fail-closed: sin OPENROUTER_API_KEY → 503; MCP sin clave → 503", async () => {

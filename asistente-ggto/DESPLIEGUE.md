@@ -47,6 +47,13 @@ sudo nano /etc/secure/asistente-ggto.env   # chmod 0400 — contenido:
 #   TELEGRAM_SECRET=<secret_token del webhook>
 #   TELEGRAM_BOT_TOKEN=<token de @BotFather>
 #   MONGO_URL=<resoluble por tailnet; BD proj_ggto con usuario dedicado>
+#   GATEWAY_AUTH_KEY=<valor de opcode-gateway-api-key>  ← proveedor activo (REF-SEC-26)
+```
+# La credencial del gateway se publica así (nunca en el repo):
+```bash
+gcloud secrets versions access latest --secret=opcode-gateway-api-key --project=plataforma-txbarlovento \
+  | sudo tee /etc/secure/opcode-gateway-api-key >/dev/null && sudo chmod 0400 /etc/secure/opcode-gateway-api-key
+# y se añade GATEWAY_AUTH_KEY=<ese valor> a /etc/secure/asistente-ggto.env (0400)
 ```
 
 ## 3 · Alta y arranque (runbook §3, patrón V2-A2)
@@ -99,7 +106,7 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo" | jq .
 | 2 | `OPENROUTER_API_KEY` por docker secret root-only (`/run/secrets/openrouter_api_key`, **no en .env**) | ☐ |
 | 3 | `GGTO_MCP_KEY` por docker secret root-only (`/run/secrets/ggto_mcp_key`) y `mcp.api_key` configurada en GGTO | ☐ |
 | 4 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
-| 5 | `LLM_MODEL` = `nvidia/nemotron-3.5-lightning` (:free; alternativa con créditos: `deepseek/deepseek-v4.1-flash-1017`); `LLM_TOOLS_ENABLED=true` | ☐ |
+| 5 | `LLM_PROVIDER=opencode` · `GATEWAY_URL=http://100.125.94.21:4090` · `MODEL_ID=nemotron-3.5-super-vl-free` · `MODEL_PROVIDER=opencode` · `GATEWAY_AUTH_KEY` desde `opcode-gateway-api-key` (REF-SEC-26). Verificado en `/api/model` del gateway. Alternativa con tools MCP: `LLM_PROVIDER=openrouter` | ☑ |
 | 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☐ |
 | 7 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta (el LLM puede operar tools de lectura del MCP); CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
 | 8 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |

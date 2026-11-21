@@ -1,7 +1,7 @@
 # docker-compose de asistente-ggto (patrón v2.2, LLM principal OpenRouter GCP)
 # Sin secretos en este archivo: la credencial entra por docker secret
 # y por env_file root-only (RS-2). Cambio respecto a v2-A0:
-#   - LLM_PROVIDER=openrouter   (usaba opencode-go)
+#   - LLM_PROVIDER=opencode + MODEL_ID=nemotron-3.5-super-vl-free (antes openrouter)
 #   - OPENROUTER_API_KEY (docker secret /run/secrets/openrouter_api_key)
 #   - GGTO_MCP_KEY (docker secret /run/secrets/ggto_mcp_key, ahora obligatorio para herramientas)
 #   - Todo lo demás (Telegram, GGTO_USER/PASS, MONGO, tarifa) se mantiene.
@@ -12,9 +12,13 @@ services:
     container_name: asistente-ggto
     restart: unless-stopped
     environment:
-      - LLM_PROVIDER=openrouter          # proveedor activo: openrouter o opencode
-      - OPENROUTER_URL=${OPENROUTER_URL}  # e.g. https://openrouter.ai/api/v1 (opcional, por defecto v1)
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}  # <-- secret inyectado por wrapper o env_file
+      - LLM_PROVIDER=opencode            # proveedor activo: opencode (Gateway) u openrouter
+      - GATEWAY_URL=http://100.125.94.21:4090      # Gateway OpenCode en vm-dsh-dev (tailnet)
+      - GATEWAY_AUTH_KEY=${GATEWAY_AUTH_KEY}       # REF-SEC-26 opcode-gateway-api-key (env_file root-only)
+      - MODEL_ID=nemotron-3.5-super-vl-free        # modelo pedido por el usuario (catálogo del gateway)
+      - MODEL_PROVIDER=opencode                    # providerID real del modelo en el gateway
+      - OPENROUTER_URL=${OPENROUTER_URL}  # legado: se mantiene para volver a openrouter
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}  # legado: secret inyectado por wrapper o env_file
       - GGTO_MCP_KEY=${GGTO_MCP_KEY}     # clave X-MCP-Key del servidor MCP GGTO (fail-closed)
       - GGTO_API_URL=https://ggto-web-depapaeivq-ew.a.run.app   # Cloud Run de ggto-prod-txblvento2 (producción vigente)
       - GGTO_SERVICE_USER=${GGTO_SERVICE_USER}       # p00 del usuario de servicio (alta en GGTO, rol SUPERVISOR/ADMIN)
