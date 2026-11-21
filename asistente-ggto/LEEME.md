@@ -9,14 +9,14 @@ canónicos de la API (C2 altas, C3 eventos).
 | Campo | Valor |
 |---|---|
 | Ciclo | **C1–C6 completados (2026-11-10/11) — código listo, sin despliegue** · C1 núcleo · C2 altas · C3 eventos · C4 consultas + historial · C5 Telegram (fail-closed, CONFIRMAR) · C6 panel editable + `DESPLIEGUE.md` (checklist §9, pendiente de ejecutar) · **v2.2 (2026-11-18): LLM principal migrado a OpenRouter con tools MCP** |
-| IA | **Gateway OpenCode** `POST {GATEWAY_URL}/api/experimental/generate/text` · `Authorization: Basic base64("opencode:" + REF-SEC-26)` · modelo `{"id":"nemotron-3.5-super-vl-free","providerID":"opencode"}` (`MODEL_ID`/`MODEL_PROVIDER`). El gateway es tailnet-only (`http://100.125.94.21:4090`) y su endpoint no soporta tools: las consultas se resuelven por el código de GGTO (`resolverConsulta`), no por tool-calling del LLM. Alternativa: **OpenRouter** `POST {OPENROUTER_URL}/chat/completions` con `LLM_PROVIDER=openrouter` (tools MCP `estado_central`/`consultar_caso`, solo lectura; las escrituras siguen por CONFIRMAR canónico) |
+| IA | **Gateway OpenCode** `POST {GATEWAY_URL}/api/experimental/generate/text` · `Authorization: Basic base64("opencode:" + REF-SEC-26)` · modelo activo `{"id":"nvidia/nemotron-3.5-super-vl-120b-a12b","providerID":"nvidia"}` (`MODEL_ID`/`MODEL_PROVIDER`). El modelo pedido `nemotron-3.5-super-vl-free` / `opencode` existe en el catálogo, pero la cuota gratis de OpenCode está agotada (`retryAfterMs≈6 h`); se usa la misma familia vía proveedor NVIDIA configurado en el gateway (verificado OK). El gateway es tailnet-only (`http://100.125.94.21:4090`) y su endpoint no soporta tools: las consultas se resuelven por el código de GGTO (`resolverConsulta`), no por tool-calling del LLM. Alternativa: **OpenRouter** `POST {OPENROUTER_URL}/chat/completions` con `LLM_PROVIDER=openrouter` (tools MCP `estado_central`/`consultar_caso`, solo lectura; las escrituras siguen por CONFIRMAR canónico) |
 | Alcance C4+ | Consultas (caso por 70*/avería, FAT, resumen del día); historial (PG GGTO); Telegram |
 
 ## Endpoints (C1 + C2 + C3 + C4)
 
 | Ruta | Descripción |
 |---|---|
-| `GET /health` | `{"status":"ok","proveedor":"opencode\|openrouter","llm":"configurado\|no-configurado","modelo":"opencode/nemotron-3.5-super-vl-free","mcp":"configurado\|no-configurado","ggto_api":"…","telegram":"configurado\|no-configurado"}` |
+| `GET /health` | `{"status":"ok","proveedor":"opencode\|openrouter","llm":"configurado\|no-configurado","modelo":"nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b","mcp":"configurado\|no-configurado","ggto_api":"…","telegram":"configurado\|no-configurado"}` |
 | `GET /` | Panel de chat (ficha extraída **editable** antes de confirmar — C6; botón «Confirmar y crear caso» en ALTA_CASO y «Confirmar y aplicar evento» en EVENTO) |
 | `POST /api/chat` | `{message, sesion_id?}` → `{intencion, ficha, confirmado:false, nota}` · **CONSULTA se resuelve en el mismo turno**: `consulta` (`CASO`/`FAT`/`RESUMEN_DIA`) + `respuesta` (lectura, sin escrituras; listados y resumen **sin PII**) · cada turno se registra en el historial de GGTO (best-effort, con `sesion_id`; defecto `PANEL-<día>`) · **fail-closed 503** sin clave de OpenRouter o sin clave MCP · 400 vacío · **429** (canon v2-A5) |
 | `POST /telegram` | **C5 — webhook de Telegram (fail-closed):** header `X-Telegram-Bot-Api-Secret-Token` debe coincidir con `TELEGRAM_SECRET` (mismatch → **403**; sin config → **503**). Solo remitentes **activos** de la tabla `asistente_remitente` de GGTO (alta por SUPER). CONSULTA → respuesta directa; ALTA_CASO/EVENTO → **vista previa** que queda pendiente y se aplica solo con el mensaje `CONFIRMAR` (otro mensaje la descarta). Tarifa v2-A5 compartida con el panel. Sesiones como `TG-<chat_id>` con el p00 del remitente |
@@ -30,7 +30,7 @@ canónicos de la API (C2 altas, C3 eventos).
 | `LLM_PROVIDER` | `opencode` | Proveedor del LLM (`opencode` = Gateway OpenCode, `openrouter` = alternativo con tools MCP) |
 | `GATEWAY_URL` | `http://100.125.94.21:4090` | URL del Gateway OpenCode (vm-dsh-dev, tailnet) |
 | `GATEWAY_AUTH_KEY` | — | REF-SEC-26 `opcode-gateway-api-key` (env_file root-only / docker secret `gateway_auth`) |
-| `MODEL_ID` / `MODEL_PROVIDER` | `nemotron-3.5-super-vl-free` / `opencode` | Modelo del gateway (verificado en `/api/model` del gateway) |
+| `MODEL_ID` / `MODEL_PROVIDER` | `nvidia/nemotron-3.5-super-vl-120b-a12b` / `nvidia` | Modelo del gateway (verificado en `/api/model`); el `:free` de `opencode` agotó cuota |
 | `OPENROUTER_URL` | `https://openrouter.ai/api/v1` | Base de la API de OpenRouter (sobrescribir para humo/proxy en GCP) |
 | `OPENROUTER_API_KEY` | — | **Clave de OpenRouter** (docker secret `/run/secrets/openrouter_api_key` o env_file root-only); sin ella **503 fail-closed** |
 | `LLM_MODEL` | `openrouter/free` | Auto-enrutador entre los modelos gratis de OpenRouter (resiliente ante upstream saturado); cambio solo por env. Alternativas: `inclusionai/ling-3.2-flash:free`, o con créditos `deepseek/deepseek-v4.1-flash-1017` |

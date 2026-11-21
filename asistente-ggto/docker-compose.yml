@@ -15,8 +15,8 @@ services:
       - LLM_PROVIDER=opencode            # proveedor activo: opencode (Gateway) u openrouter
       - GATEWAY_URL=http://100.125.94.21:4090      # Gateway OpenCode en vm-dsh-dev (tailnet)
       - GATEWAY_AUTH_KEY=${GATEWAY_AUTH_KEY}       # REF-SEC-26 opcode-gateway-api-key (env_file root-only)
-      - MODEL_ID=nemotron-3.5-super-vl-free        # modelo pedido por el usuario (catálogo del gateway)
-      - MODEL_PROVIDER=opencode                    # providerID real del modelo en el gateway
+      - MODEL_ID=nvidia/nemotron-3.5-super-vl-120b-a12b  # Nemotron 3.5 Super VL (variante NVIDIA; la :free de opencode agotó cuota)
+      - MODEL_PROVIDER=nvidia                      # providerID del modelo en el gateway (API key NVIDIA configurada allí)
       - OPENROUTER_URL=${OPENROUTER_URL}  # legado: se mantiene para volver a openrouter
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}  # legado: secret inyectado por wrapper o env_file
       - GGTO_MCP_KEY=${GGTO_MCP_KEY}     # clave X-MCP-Key del servidor MCP GGTO (fail-closed)
