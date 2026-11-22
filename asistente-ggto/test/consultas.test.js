@@ -2,7 +2,7 @@
 const test = require("node:test")
 const assert = require("node:assert/strict")
 const http = require("node:http")
-const { crearEstado, clasificarConsulta, procesarMensaje, claveVentana } = require("../server.js")
+const { crearEstado, clasificarConsulta, procesarMensaje, claveVentana, resolverConsulta, obtenerToken, buscarCaso } = require("../server.js")
 
 const CASO = { id_caso: 991, id_averia: "REF-REP-000991", estado_actual: "EN_GESTION", tipo_caso: "AVERIA",
   sector_nombre: "S1", olt: "OLT1", slot: "1", puerto: "4", fat: "FAT-12",
@@ -158,4 +158,30 @@ test("sin sesion_id del cliente: sesion diaria PANEL-<fecha> (canon v2-A5)", asy
   const turno = mock.llamadas().find((l) => l.url.startsWith("/api/v1/asistente/sesiones"))
   assert.equal(turno.cuerpo.sesion_id, `PANEL-${claveVentana(Date.now(), "dia")}`)
   mock.srv.close(); gw.srv.close()
+})
+
+test("MCP conectado: RESUMEN_DIA usa estado_central y marca via MCP+API", async () => {
+  const mock = await mockGGTO()
+  const herramientas = []
+  const mcpSrv = http.createServer((req, res) => {
+    let d = ""; req.on("data", (c) => (d += c))
+    req.on("end", () => {
+      const peticion = JSON.parse(d || "{}")
+      herramientas.push(peticion.params?.name)
+      res.writeHead(200, { "Content-Type": "application/json" })
+      res.end(JSON.stringify({ jsonrpc: "2.0", id: peticion.id,
+        result: { datos: { central: "FRANCISCO SALIAS", casos_pendientes: 112, fallas_activas: 1 } } }))
+    })
+  })
+  const mcpUrl = await new Promise((r) => mcpSrv.listen(0, "127.0.0.1", () => r(`http://127.0.0.1:${mcpSrv.address().port}`)))
+  try {
+    const estado = crearEstado({ ...CFG(mock), GGTO_MCP_KEY: "clave-mcp", GGTO_MCP_URL: mcpUrl })
+    const d = { ...deps((e, x) => obtenerToken(e, x)), buscarCaso }
+    const r = await resolverConsulta(estado, d, { consulta: "resumen del dia" })
+    assert.equal(r.tipo, "RESUMEN_DIA")
+    assert.equal(r.via, "MCP+API")
+    assert.equal(r.mcp.casos_pendientes, 112)
+    assert.equal(r.resumen.casos_pendientes, 112)
+    assert.deepEqual(herramientas, ["estado_central"])
+  } finally { mock.srv.close(); mcpSrv.close() }
 })

@@ -93,6 +93,14 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo" | jq .
       el API respondía **500** al registrar turnos. Ahora `nextval(...)` con GRANT a
       `ggtov2_app` (POST → **201**).
 
+> **MCP (verificado 2026-11-21):** `tools/list` devuelve 4 herramientas
+> (`estado_central`, `consultar_caso`, `reportar_falla`, `procesar_notificaciones`) y
+> `estado_central` responde con datos reales. Solo las dos de lectura se usan. Como el
+> endpoint de generación del Gateway OpenCode no acepta `tools`, el MCP se conecta por
+> código en `resolverConsulta` (`estado_central` para RESUMEN_DIA, `consultar_caso` para
+> CASO) y la respuesta lleva `via:"MCP+API"`; si el MCP falla se cae a la API REST.
+> Humo: `/api/chat` → `via:MCP+API`, `casos_pendientes:112`, `fallas_activas:1`.
+
 > **Nota:** el tier `:free` de OpenRouter (`openrouter/free`) se satura por proveedor
 > a ratos (429) y el webhook responde `{"atendido":true,"accion":"error","status_interno":503}`
 > con el mensaje de error al usuario; `llamarLLM` ya prueba modelos gratis alternativos

@@ -263,6 +263,21 @@ function resumenCaso(caso, conPII) {
   return conPII ? { ...base, nombre_cliente: g("nombre_cliente"), direccion: g("direccion"),
     contacto_cliente: g("contacto_cliente") } : base
 }
+// El Gateway OpenCode no acepta `tools` en /generate/text, así que el MCP se
+// conecta por código: cada CONSULTA pasa por las herramientas de lectura del MCP
+// de GGTO y se complementa con la API canónica. Fail-soft: si el MCP falla, la
+// consulta se resuelve igual con la API (nunca se escribe).
+async function datosMcp(estado, deps, nombre, argumentos) {
+  if (!estado.cfg.GGTO_MCP_KEY || !estado.cfg.GGTO_MCP_URL) return null
+  try {
+    return await mcpLlamar({ ...estado.cfg, fetch: deps.fetch, abortSignal: deps.abortSignal },
+      nombre, argumentos)
+  } catch (e) {
+    console.error(`[mcp] ${nombre} no disponible: ${e.message}`)
+    return null
+  }
+}
+
 async function resolverConsulta(estado, deps, ficha) {
   const token = await deps.obtenerToken(estado, deps)
   const cab = { Authorization: `Bearer ${token}` }
@@ -272,11 +287,14 @@ async function resolverConsulta(estado, deps, ficha) {
     const texto = String(ficha?.consulta ?? "")
     ficha.id_pago = String(ficha?.id_pago ?? "").trim() || texto.match(/\b70\d{8}\b/)?.[0]
     ficha.id_averia = String(ficha?.id_averia ?? "").trim() || texto.match(/REF-[A-Z]+-\d+/i)?.[0]
+    const mcp = await datosMcp(estado, deps, "consultar_caso",
+      ficha.id_averia ? { id_averia: ficha.id_averia } : { telefono: ficha.id_pago })
     const caso = await deps.buscarCaso(estado, deps, ficha)
     if (!caso)
-      return { tipo, encontrado: false,
+      return { tipo, encontrado: false, ...(mcp ? { mcp, via: "MCP+API" } : {}),
         texto: `No encontré un caso con ${ficha.id_averia ? `id_averia ${ficha.id_averia}` : `identificador ${ficha.id_pago}`} en tu central.` }
-    return { tipo, encontrado: true, resumen: resumenCaso(caso, true) }
+    return { tipo, encontrado: true, resumen: resumenCaso(caso, true),
+      ...(mcp ? { mcp, via: "MCP+API" } : {}) }
   }
   if (tipo === "FAT") {
     const texto = String(ficha?.consulta ?? "")
@@ -289,11 +307,17 @@ async function resolverConsulta(estado, deps, ficha) {
     return { tipo, termino, total: Array.isArray(lista) ? lista.length : 0,
       casos: (Array.isArray(lista) ? lista : []).map((c) => resumenCaso(c, false)) }
   }
-  // RESUMEN_DIA: agregados del monitoreo canónico (sin PII por diseño)
+  // RESUMEN_DIA: estado de la central desde el MCP + agregados del monitoreo canónico (sin PII)
+  const mcp = await datosMcp(estado, deps, "estado_central", {})
   const r = await deps.fetch(`${base}/monitoreo/diario`, {
     headers: cab, signal: deps.abortSignal(estado.cfg.TIMEOUT_MS || 30000) })
   if (!r.ok) { const e = new Error(`monitoreo GGTO respondió ${r.status}`); e.codigo = 503; throw e }
-  return { tipo, resumen: await r.json() }
+  const diario = await r.json()
+  const resumen = mcp
+    ? { ...diario, central: mcp.central ?? diario.central,
+        casos_pendientes: mcp.casos_pendientes, fallas_activas: mcp.fallas_activas }
+    : diario
+  return { tipo, resumen, ...(mcp ? { mcp, via: "MCP+API" } : {}) }
 }
 
 // ---- C4: historial de sesión en la PostgreSQL de GGTO (best-effort: si falla, el chat sigue) ----
