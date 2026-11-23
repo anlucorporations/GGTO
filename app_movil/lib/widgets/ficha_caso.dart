@@ -302,7 +302,7 @@ class FichaPie extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         sinConexion
-                            ? 'Sin conexión: los cambios se enviarán al sincronizar'
+                            ? 'Sin Wi-Fi: cambios pendientes de sincronizar'
                             : 'Cambios pendientes de sincronizar',
                         style: const TextStyle(fontSize: 11, color: Colors.black54),
                       ),

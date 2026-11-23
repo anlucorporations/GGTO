@@ -27,10 +27,13 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen> {
   final _pinController = TextEditingController();
+  final _pinFocus = FocusNode();
   final _nuevoController = TextEditingController();
   final _confirmarController = TextEditingController();
   final _claveController = TextEditingController();
 
+  /// El PIN se puede mostrar mientras se escribe para confirmar los 6 dígitos.
+  bool _pinVisible = false;
   bool _cambiando = false;
   bool _enviando = false;
   /// D-120: formulario de **clave de sesión** (alternativa al PIN olvidado).
@@ -41,6 +44,7 @@ class _LockScreenState extends State<LockScreen> {
   @override
   void dispose() {
     _pinController.dispose();
+    _pinFocus.dispose();
     _nuevoController.dispose();
     _confirmarController.dispose();
     _claveController.dispose();
@@ -73,12 +77,17 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
     if (resultado.exigeCambio) {
+      // Se conserva el PIN tecleado: `_guardarNuevoPin` lo usa como PIN actual.
       setState(() {
         _cambiando = true;
         _error = resultado.mensaje;
       });
       return;
     }
+    // Un PIN rechazado se limpia para que el técnico escriba los 6 dígitos
+    // desde cero; con `maxLength: 6` no podía volver a intentarlo sin borrar.
+    _pinController.clear();
+    FocusScope.of(context).requestFocus(_pinFocus);
     setState(() => _error = resultado.mensaje);
   }
 
@@ -283,6 +292,8 @@ class _LockScreenState extends State<LockScreen> {
                       autofocus: true,
                       obscureText: !_claveVisible,
                       textInputAction: TextInputAction.done,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       decoration: InputDecoration(
                         labelText: 'Clave de sesión',
                         helperText: '3 intentos incorrectos bloquean la cuenta.',
@@ -318,17 +329,29 @@ class _LockScreenState extends State<LockScreen> {
                     TextField(
                       key: const Key('lock-pin'),
                       controller: _pinController,
+                      focusNode: _pinFocus,
                       autofocus: true,
-                      obscureText: true,
+                      obscureText: !_pinVisible,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       maxLength: AppConstants.pinLongitud,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(
-                        labelText: 'PIN',
+                      decoration: InputDecoration(
+                        labelText: 'PIN (${AppConstants.pinLongitud} dígitos)',
                         hintText: '••••••',
                         counterText: '',
-                        prefixIcon: Icon(Icons.password),
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.password),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(_pinVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          tooltip: _pinVisible ? 'Ocultar PIN' : 'Mostrar PIN',
+                          onPressed: () =>
+                              setState(() => _pinVisible = !_pinVisible),
+                        ),
                       ),
                       onSubmitted: (_) => _enviando ? null : _desbloquear(),
                     ),
@@ -365,6 +388,9 @@ class _LockScreenState extends State<LockScreen> {
                       controller: _nuevoController,
                       obscureText: true,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       maxLength: AppConstants.pinLongitud,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
@@ -379,6 +405,9 @@ class _LockScreenState extends State<LockScreen> {
                       controller: _confirmarController,
                       obscureText: true,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       maxLength: AppConstants.pinLongitud,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(

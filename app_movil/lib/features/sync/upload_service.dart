@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
+import '../../core/red_sync.dart';
 import '../../core/sync_lock.dart';
 import 'cola_offline.dart';
 import 'detalle_sync.dart';
@@ -162,13 +164,25 @@ class UploadService {
   /// automático no pueda mandar la misma acción a la vez.
   static Future<ResultadoCarga> cargar({
     void Function(String fase, double valor)? onProgreso,
+    Future<bool> Function()? hayWifi,
   }) =>
-      SyncLock.instance.ejecutar(() => _cargarInterno(onProgreso: onProgreso));
+      SyncLock.instance.ejecutar(() => _cargarInterno(
+            onProgreso: onProgreso,
+            hayWifi: hayWifi,
+          ));
 
   static Future<ResultadoCarga> _cargarInterno({
     void Function(String fase, double valor)? onProgreso,
+    Future<bool> Function()? hayWifi,
   }) async {
     void avisar(double valor, String fase) => onProgreso?.call(fase, valor);
+
+    // Sincronización solo por Wi-Fi: no se abre sesión ni se envía nada por
+    // datos móviles. El trabajo queda en la cola para la próxima ocasión.
+    if (!await (hayWifi ?? RedSync.hayWifi)()) {
+      avisar(1, RedSync.mensajeSinWifi);
+      throw ApiError(mensaje: RedSync.mensajeSinWifi, esDeRed: true);
+    }
 
     avisar(0.05, 'Abriendo la jornada de sincronización…');
     final sesion = await SyncSesionService.abrir('CARGA');

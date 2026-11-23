@@ -166,7 +166,9 @@ class _AtenderScreenState extends State<AtenderScreen> {
     final navigator = Navigator.of(context);
     final sync = context.read<SyncProvider>();
 
-    if (resultado.enviada) {
+    // La operación se aplicó en local y quedó en la cola: hay que recountar
+    // pendientes aunque no haya habido respuesta del servidor.
+    if (resultado.encolada) {
       await sync.refrescar();
     }
 

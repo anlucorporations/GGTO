@@ -175,7 +175,7 @@ class _AlertasScreenState extends State<AlertasScreen> {
         aviso: resultado.encolada,
       );
 
-      if (resultado.enviada && resultado.valida) {
+      if (resultado.encolada && resultado.valida) {
         _odnController.clear();
         _oltController.clear();
         _slotController.clear();

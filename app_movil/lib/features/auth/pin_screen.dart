@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
@@ -105,6 +106,8 @@ class _PinScreenState extends State<PinScreen> {
         _fase = _Fase.cambiar;
         _aviso = 'PIN verificado. Defina el nuevo.';
       } else if (!resultado.concedido) {
+        // Se limpia el PIN rechazado para poder escribir los 6 dígitos de nuevo.
+        _pinController.clear();
         _error = resultado.mensaje;
       }
     });
@@ -240,9 +243,13 @@ class _PinScreenState extends State<PinScreen> {
                 obscureText: true,
                 enabled: _fase == _Fase.pedir,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
                 maxLength: AppConstants.pinLongitud,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
-                  labelText: 'PIN',
+                  labelText: 'PIN (${AppConstants.pinLongitud} dígitos)',
                   border: OutlineInputBorder(),
                   counterText: '',
                 ),
@@ -260,7 +267,11 @@ class _PinScreenState extends State<PinScreen> {
                   controller: _nuevoController,
                   obscureText: true,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   maxLength: AppConstants.pinLongitud,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: const InputDecoration(
                     labelText: 'PIN nuevo',
                     border: OutlineInputBorder(),
@@ -272,7 +283,11 @@ class _PinScreenState extends State<PinScreen> {
                   controller: _confirmarController,
                   obscureText: true,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   maxLength: AppConstants.pinLongitud,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: const InputDecoration(
                     labelText: 'Repita el PIN nuevo',
                     border: OutlineInputBorder(),

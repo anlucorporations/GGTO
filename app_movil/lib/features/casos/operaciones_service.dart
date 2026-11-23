@@ -1,5 +1,3 @@
-import '../../core/api_client.dart';
-import '../../core/api_error.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
 import 'acciones_caso.dart';
@@ -16,27 +14,39 @@ class ResultadoOperacion {
   /// Mensaje para mostrar al técnico.
   final String mensaje;
 
-  /// `true` si se aplicó en el servidor; `false` si quedó en la cola offline.
+  /// `true` solo si la operación se aplicó **en el servidor**.
+  ///
+  /// Con la gestión local-first (petición del técnico) las operaciones de campo
+  /// nunca se envían aquí: quedan en `enviada = false` hasta que el técnico
+  /// pulsa SINCRONIZAR.
   final bool enviada;
 
-  /// Caso actualizado devuelto por el servidor (si lo hubo).
+  /// Caso local ya actualizado (si procede).
   final Map<String, dynamic>? caso;
 
   /// `false` cuando el mensaje es una **validación local** (faltan datos): no se
-  /// envió nada ni se encoló.
+  /// encoló nada.
   final bool valida;
 
   bool get encolada => !enviada && valida;
 }
 
-/// Operaciones de campo del técnico contra el contrato real de la API.
+/// Operaciones de campo del técnico, **local-first**.
 ///
-/// Cada operación intenta el envío y, si no hay red (o el servidor falla con un
-/// error recuperable), la **encola con su payload exacto** para sincronizarla
-/// después. Los errores que no se resuelven reintentando (403, 404, 409, 422)
-/// se devuelven al usuario en lugar de perderse.
+/// Cada operación valida y escribe el cambio en SQLite y lo deja en la cola
+/// (`accion_pendiente`) con su payload exacto. **Ninguna** llama a la API: el
+/// servidor solo se actualiza cuando el técnico ejecuta SINCRONIZAR (que exige
+/// Wi-Fi). Así el trabajo en campo no depende de la cobertura y no se envía a
+/// medias durante la jornada.
 class OperacionesService {
   const OperacionesService._();
+
+  /// Mensaje uniforme para una acción guardada y pendiente de sincronizar.
+  static ResultadoOperacion _guardado(String que) => ResultadoOperacion(
+        mensaje: 'Guardado en el dispositivo: $que Se enviará al servidor al '
+            'sincronizar por Wi-Fi.',
+        enviada: false,
+      );
 
   /// Fusiona un cambio en el mapa del caso (D-85).
   ///
@@ -56,7 +66,7 @@ class OperacionesService {
   }
 
   /// Escribe el cambio en la **caché local** para que se vea de inmediato y
-  /// sobreviva al reinicio, haya o no conexión (D-85 · requisito 1 del usuario).
+  /// sobreviva al reinicio (D-85 · requisito 1 del usuario).
   static Future<void> _aplicarLocal(
     String idAveria, {
     String? estado,
@@ -77,46 +87,43 @@ class OperacionesService {
     required int idCaso,
     required String idAveria,
     String? motivo,
-  }) async {
-    final payload = {
-      'estado_actual': 'CONTACTADO',
-      if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
-    };
-    return _enviarEstado(
-      idCaso: idCaso,
-      idAveria: idAveria,
-      payload: payload,
-      tipo: 'CONTACTADO',
-      exito: 'Caso marcado como CONTACTADO.',
-    );
-  }
+  }) =>
+      _guardarEstado(
+        idCaso: idCaso,
+        idAveria: idAveria,
+        payload: {
+          'estado_actual': 'CONTACTADO',
+          if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
+        },
+        tipo: 'CONTACTADO',
+        exito: 'Caso marcado como CONTACTADO.',
+      );
 
   /// Marca el caso como CITADO (RF-12).
   static Future<ResultadoOperacion> marcarCitado({
     required int idCaso,
     required String idAveria,
     String? motivo,
-  }) async {
-    return _enviarEstado(
-      idCaso: idCaso,
-      idAveria: idAveria,
-      payload: {
-        'estado_actual': 'CITADO',
-        if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
-      },
-      tipo: 'CITADO',
-      exito: 'Caso marcado como CITADO.',
-    );
-  }
+  }) =>
+      _guardarEstado(
+        idCaso: idCaso,
+        idAveria: idAveria,
+        payload: {
+          'estado_actual': 'CITADO',
+          if (motivo != null && motivo.trim().isNotEmpty) 'motivo_estado': motivo.trim(),
+        },
+        tipo: 'CITADO',
+        exito: 'Caso marcado como CITADO.',
+      );
 
-  /// Marca el caso como DIFERIDO con su justificación (RF-13).
+  /// Diferir con justificación y evidencias (RF-13).
   static Future<ResultadoOperacion> diferir({
     required int idCaso,
     required String idAveria,
     required String justificacion,
     List<String> evidencias = const [],
   }) async {
-    final resultado = await _enviarEstado(
+    final resultado = await _guardarEstado(
       idCaso: idCaso,
       idAveria: idAveria,
       payload: {
@@ -126,9 +133,7 @@ class OperacionesService {
       tipo: 'DIFERIDO',
       exito: 'Caso diferido con su justificación.',
     );
-    // D-73/D-112: las evidencias **nunca** se marcan como subidas aquí. El
-    // archivo lo sube `UploadService` en la CARGA (`subida = 0`); marcarlas sin
-    // subirlas dejaba al servidor con el serial y sin la foto.
+    // Las evidencias nunca se marcan como subidas aquí: las sube la CARGA.
     if (evidencias.isNotEmpty && resultado.encolada) {
       await DatabaseHelper.instance.encolarAccion(
         tipo: 'DIFERIDO_EVIDENCIAS',
@@ -141,8 +146,6 @@ class OperacionesService {
   }
 
   /// Agenda una cita para el caso (RF-12).
-  ///
-  /// Usa `POST /citas` con `fecha_hora`, el campo que exige el backend (H-07).
   static Future<ResultadoOperacion> agendarCita({
     required int idCaso,
     required String idAveria,
@@ -156,42 +159,19 @@ class OperacionesService {
       'tipo': tipo,
       if (observacion != null && observacion.trim().isNotEmpty) 'observacion': observacion.trim(),
     };
-    const endpoint = '/citas';
-
-    try {
-      final datos = await ApiClient.post(endpoint, data: payload);
-      final caso = await _refrescarCaso(idCaso);
-      final hora = _formato(fechaHora);
-      return ResultadoOperacion(
-        mensaje: 'Cita agendada para el $hora.',
-        enviada: true,
-        caso: caso ?? _conEstado(datos),
-      );
-    } on ApiError catch (error) {
-      if (error.esConflicto) {
-        // Solapamiento con otra cita de la cuadrilla (RNF-04).
-        return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-      }
-      if (_convieneEncolar(error)) {
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'CITA',
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: payload,
-        );
-        // D-85: la cita se ve en el teléfono aunque aún no haya viajado.
-        await _aplicarLocal(
-          idAveria,
-          pendienteSync: true,
-          extra: {'fecha_cita': fechaHora.toIso8601String()},
-        );
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: la cita quedó guardada en el dispositivo y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'CITA',
+      endpoint: '/citas',
+      metodo: 'POST',
+      payload: payload,
+    );
+    // D-85: la cita se ve en el teléfono aunque aún no haya viajado.
+    await _aplicarLocal(
+      idAveria,
+      pendienteSync: true,
+      extra: {'fecha_cita': fechaHora.toIso8601String()},
+    );
+    return _guardado('Cita agendada para el ${_formato(fechaHora)}.');
   }
 
   /// Cierra el caso con modo, descripción y evidencias (RF-15 / §4.2).
@@ -209,37 +189,15 @@ class OperacionesService {
       'evidencias': evidencias,
       if (idCausa != null) 'id_causa': idCausa,
     };
-    final endpoint = '/casos/$idCaso/cierre';
-
-    try {
-      final datos = await ApiClient.post(endpoint, data: payload);
-      final caso = await _refrescarCaso(idCaso);
-      // D-112: las evidencias quedan con `subida = 0` para que la CARGA suba los
-      // archivos (`UploadService`); marcarlas aquí sin subirlas dejaba el cierre
-      // con los seriales pero sin las fotos en el servidor.
-      final mensaje = datos is Map && datos['mensaje'] != null
-          ? '${datos['mensaje']}'
-          : 'Caso cerrado con $modo.';
-      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
-    } on ApiError catch (error) {
-      if (_convieneEncolar(error)) {
-        // D-73: las evidencias NO se marcan como subidas aquí; `UploadService`
-        // sube primero el archivo y luego envía la acción por `/sync/carga`.
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'CIERRE',
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: payload,
-        );
-        // D-85: el caso queda CERRADO en el dispositivo (marcado como pendiente).
-        await _aplicarLocal(idAveria, estado: 'CERRADO', pendienteSync: true);
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el cierre quedó guardado en el dispositivo y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'CIERRE',
+      endpoint: '/casos/$idCaso/cierre',
+      metodo: 'POST',
+      payload: payload,
+    );
+    // D-85: el caso queda CERRADO en el dispositivo (pendiente de enviar).
+    await _aplicarLocal(idAveria, estado: 'CERRADO', pendienteSync: true);
+    return _guardado('Caso cerrado con $modo.');
   }
 
   /// Enruta el caso a otra instancia (RF-13 / §4.2).
@@ -256,54 +214,19 @@ class OperacionesService {
       'motivo': motivo.trim(),
       if (idMetodo != null) 'id_metodo': idMetodo,
     };
-    final endpoint = '/casos/$idCaso/enrutado';
-
-    try {
-      final datos = await ApiClient.post(endpoint, data: payload);
-      final caso = await _refrescarCaso(idCaso);
-      // D-112: las fotos quedan con `subida = 0` y las sube la CARGA; el serial
-      // viaja en la propia acción de enrutado. Antes se encolaba además una
-      // acción EVIDENCIA contra `/casos/{id}/cierre` (endpoint equivocado, 422).
-      final mensaje = datos is Map && datos['mensaje'] != null
-          ? '${datos['mensaje']}'
-          : 'Caso enrutado a $destino.';
-      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
-    } on ApiError catch (error) {
-      if (_convieneEncolar(error)) {
-        // D-73: la evidencia viaja dentro de la propia acción ENRUTADO; no se
-        // marca subida ni se encola aparte (UploadService sube el archivo).
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'ENRUTADO',
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: {...payload, 'evidencias': evidencias},
-        );
-        // D-85: el caso queda ENRUTADO en el dispositivo (pendiente de enviar).
-        await _aplicarLocal(idAveria, estado: 'ENRUTADO', pendienteSync: true);
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el enrutado quedó guardado en el dispositivo y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    // La evidencia viaja dentro de la propia acción ENRUTADO; no se encola
+    // aparte (UploadService sube el archivo en la CARGA).
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'ENRUTADO',
+      endpoint: '/casos/$idCaso/enrutado',
+      metodo: 'POST',
+      payload: {...payload, 'evidencias': evidencias},
+    );
+    await _aplicarLocal(idAveria, estado: 'ENRUTADO', pendienteSync: true);
+    return _guardado('Caso enrutado a $destino.');
   }
 
-  /// ¿El error se resuelve reintentando (red o servidor caído)?
-  ///
-  /// D-112: un **403 no se encola**. Hasta D-112 se encolaba porque `cerrar`,
-  /// `enrutar` y la cita exigían ADMIN/SUPERVISOR y el TÉCNICO recibía 403: la
-  /// acción se quedaba en la cola, el envío automático la marcaba `ERROR` y el
-  /// lote entero dejaba de aplicarse. La API ya admite al TÉCNICO en la
-  /// resolución de campo, así que un permiso denegado se muestra en el acto.
-  static bool _convieneEncolar(ApiError error) =>
-      error.esDeRed || (error.status != null && error.status! >= 500);
-
-  /// «No Contesta» (D-88 · RF-APK-12).
-  ///
-  /// El caso pasa a `CITADO` con la cita de **1ra visita** (mañana 08:00) y queda
-  /// constancia de «informado al COS»: el servidor lo compone en una sola
-  /// transacción y, si no hay red, la acción viaja en la CARGA.
+  /// «No Contesta» (D-88 · RF-APK-12): CITADO con cita de 1ra visita.
   static Future<ResultadoOperacion> noContesta({
     required int idCaso,
     required String idAveria,
@@ -316,44 +239,22 @@ class OperacionesService {
       if (observacion != null && observacion.trim().isNotEmpty)
         'observacion': observacion.trim(),
     };
-    final endpoint = '/casos/$idCaso/no-contesta';
-    try {
-      final datos = await ApiClient.post(endpoint, data: payload);
-      final caso = await _refrescarCaso(idCaso);
-      final mensaje = datos is Map && datos['mensaje'] != null
-          ? '${datos['mensaje']}'
-          : 'El caso quedó CITADO con cita de 1ra visita.';
-      return ResultadoOperacion(mensaje: mensaje, enviada: true, caso: caso);
-    } on ApiError catch (error) {
-      if (_convieneEncolar(error)) {
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'NO_CONTESTA',
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: payload,
-        );
-        // D-85: el cambio se ve de inmediato y queda marcado como pendiente.
-        await _aplicarLocal(
-          idAveria,
-          estado: 'CITADO',
-          pendienteSync: true,
-          extra: {'fecha_cita': cita.toUtc().toIso8601String()},
-        );
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el «No Contesta» quedó guardado en el dispositivo '
-              'y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'NO_CONTESTA',
+      endpoint: '/casos/$idCaso/no-contesta',
+      metodo: 'POST',
+      payload: payload,
+    );
+    await _aplicarLocal(
+      idAveria,
+      estado: 'CITADO',
+      pendienteSync: true,
+      extra: {'fecha_cita': cita.toUtc().toIso8601String()},
+    );
+    return _guardado('El caso quedó CITADO con cita de 1ra visita.');
   }
 
-  /// Corrige la **dirección** y el **número de contacto** desde el campo (D-88 ·
-  /// RF-APK-11 · D-93). El servidor acepta **cualquier** número en `contacto`
-  /// (ya no exige las series 700/701/702): si el técnico teclea un **70\***, el
-  /// servidor lo registra como **identificador de pago del caso** y la APK se lo
-  /// informa. Sin red, la edición queda encolada.
+  /// Corrige dirección y número de contacto desde el campo (D-88 · D-93).
   static Future<ResultadoOperacion> editarContacto({
     required int idCaso,
     required String idAveria,
@@ -370,52 +271,23 @@ class OperacionesService {
       return const ResultadoOperacion(
         mensaje: 'Indique la dirección o el número de contacto.',
         enviada: false,
+        valida: false,
       );
     }
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'CONTACTO_CAMPO',
+      endpoint: '/casos/$idCaso/contacto',
+      metodo: 'PATCH',
+      payload: payload,
+    );
+    await _aplicarLocal(idAveria, pendienteSync: true, extra: payload);
     final eraIdentificador = esIdentificadorPago(texto);
-    final endpoint = '/casos/$idCaso/contacto';
-    try {
-      final datos = await ApiClient.patch(endpoint, data: payload);
-      final caso = datos is Map
-          ? Map<String, dynamic>.from(datos)
-          : await _refrescarCaso(idCaso);
-      if (caso != null) {
-        await DatabaseHelper.instance
-            .actualizarCasoLocal(conCambioLocal(caso, pendienteSync: false));
-      }
-      return ResultadoOperacion(
-        mensaje: eraIdentificador
-            ? '${normalizarNumero(texto)} se registró como identificador de pago del caso.'
-            : 'Contacto actualizado en el caso.',
-        enviada: true,
-        caso: caso,
-      );
-    } on ApiError catch (error) {
-      if (_convieneEncolar(error)) {
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'CONTACTO_CAMPO',
-          endpoint: endpoint,
-          metodo: 'PATCH',
-          payload: payload,
-        );
-        await _aplicarLocal(idAveria, pendienteSync: true, extra: payload);
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: la corrección quedó guardada en el dispositivo '
-              'y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    return _guardado(eraIdentificador
+        ? '${normalizarNumero(texto)} se registrará como identificador de pago del caso.'
+        : 'Contacto actualizado en el caso.');
   }
 
   /// Reporta una falla masiva desde el campo (RF-16 · D-82 · D-118).
-  ///
-  /// El reporte indica la **OLT, slot, puerto, FAT, dirección y descripción**,
-  /// con **hasta 2 fotos** de evidencia. La tupla identifica el FAT: el servidor
-  /// asocia automáticamente los casos de ese mismo FAT y rechaza el reporte si no
-  /// hay ninguno. Las fotos se suben con `POST /evidencias/upload` y sus seriales
-  /// viajan en el reporte; sin conexión, la acción queda en la cola.
   static Future<ResultadoOperacion> reportarFallaMasiva({
     required String olt,
     required String slot,
@@ -437,31 +309,19 @@ class OperacionesService {
     final texto = _recortar(descripcion.trim(), 500);
     if (oltLimpia.isEmpty) {
       return const ResultadoOperacion(
-        mensaje: 'Indique la OLT del reporte.',
-        enviada: true,
-        valida: false,
-      );
+        mensaje: 'Indique la OLT del reporte.', enviada: true, valida: false);
     }
     if (slotLimpio.isEmpty) {
       return const ResultadoOperacion(
-        mensaje: 'Indique el SLOT del reporte.',
-        enviada: true,
-        valida: false,
-      );
+        mensaje: 'Indique el SLOT del reporte.', enviada: true, valida: false);
     }
     if (puertoLimpio.isEmpty) {
       return const ResultadoOperacion(
-        mensaje: 'Indique el PUERTO del reporte.',
-        enviada: true,
-        valida: false,
-      );
+        mensaje: 'Indique el PUERTO del reporte.', enviada: true, valida: false);
     }
     if (odnLimpia.length < 3) {
       return const ResultadoOperacion(
-        mensaje: 'Indique la ODN del reporte.',
-        enviada: true,
-        valida: false,
-      );
+        mensaje: 'Indique la ODN del reporte.', enviada: true, valida: false);
     }
     if (direccionLimpia.length < 5) {
       return const ResultadoOperacion(
@@ -472,10 +332,7 @@ class OperacionesService {
     }
     if (fatLimpia.isEmpty) {
       return const ResultadoOperacion(
-        mensaje: 'Indique la FAT del reporte.',
-        enviada: true,
-        valida: false,
-      );
+        mensaje: 'Indique la FAT del reporte.', enviada: true, valida: false);
     }
     if (texto.length < 5) {
       return const ResultadoOperacion(
@@ -505,92 +362,35 @@ class OperacionesService {
       if (idSector != null) 'id_sector': idSector,
       if (idCuadrilla != null) 'id_cuadrilla': idCuadrilla,
     };
-    const endpoint = '/fallas-masivas/reporte-campo';
-
-    try {
-      await ApiClient.post(endpoint, data: payload);
-      return const ResultadoOperacion(mensaje: 'Falla masiva reportada.', enviada: true);
-    } on ApiError catch (error) {
-      if (_convieneEncolar(error)) {
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: 'FALLA_MASIVA',
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: payload,
-        );
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: la falla quedó guardada y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: 'FALLA_MASIVA',
+      endpoint: '/fallas-masivas/reporte-campo',
+      metodo: 'POST',
+      payload: payload,
+    );
+    return _guardado('Falla masiva reportada.');
   }
 
-  static Future<ResultadoOperacion> _enviarEstado({
+  /// Guarda un cambio de estado en local y en la cola, sin tocar la red.
+  static Future<ResultadoOperacion> _guardarEstado({
     required int idCaso,
     required String idAveria,
     required Map<String, dynamic> payload,
     required String tipo,
     required String exito,
   }) async {
-    final endpoint = '/casos/$idCaso/estado';
-    final estadoNuevo = '${payload['estado_actual'] ?? ''}';
-    try {
-      final datos = await ApiClient.post(endpoint, data: payload);
-      final caso = datos is Map
-          ? Map<String, dynamic>.from(datos)
-          : await _refrescarCaso(idCaso);
-      // D-85: el servidor confirmó; se guarda el caso y se quita el distintivo.
-      if (caso != null) {
-        await DatabaseHelper.instance
-            .actualizarCasoLocal(conCambioLocal(caso, pendienteSync: false));
-      } else {
-        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: false);
-      }
-      return ResultadoOperacion(mensaje: exito, enviada: true, caso: caso);
-    } on ApiError catch (error) {
-      if (error.esConflicto) {
-        // El caso ya está en ese estado: no es un fallo para el usuario.
-        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: false);
-        return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-      }
-      if (_convieneEncolar(error)) {
-        await DatabaseHelper.instance.encolarAccion(
-          tipo: tipo,
-          endpoint: endpoint,
-          metodo: 'POST',
-          payload: payload,
-        );
-        // D-85: el cambio se ve **ya** en el teléfono y queda marcado como
-        // pendiente de sincronizar (antes no se reflejaba hasta la CARGA).
-        await _aplicarLocal(idAveria, estado: estadoNuevo, pendienteSync: true);
-        return const ResultadoOperacion(
-          mensaje: 'Sin conexión: el cambio quedó guardado en el dispositivo y se enviará al sincronizar.',
-          enviada: false,
-        );
-      }
-      return ResultadoOperacion(mensaje: error.mensaje, enviada: true);
-    }
-  }
-
-  static Future<Map<String, dynamic>?> _refrescarCaso(int idCaso) async {
-    try {
-      final datos = await ApiClient.get('/casos/$idCaso');
-      if (datos is Map) {
-        final caso = Map<String, dynamic>.from(datos);
-        await DatabaseHelper.instance.actualizarCasoLocal(caso);
-        return caso;
-      }
-    } on ApiError {
-      // Si no se puede refrescar, se devuelve `null` y la pantalla se recarga.
-    }
-    return null;
-  }
-
-  static Map<String, dynamic>? _conEstado(dynamic datos) {
-    if (datos is Map) return Map<String, dynamic>.from(datos);
-    return null;
+    await DatabaseHelper.instance.encolarAccion(
+      tipo: tipo,
+      endpoint: '/casos/$idCaso/estado',
+      metodo: 'POST',
+      payload: payload,
+    );
+    await _aplicarLocal(
+      idAveria,
+      estado: '${payload['estado_actual'] ?? ''}',
+      pendienteSync: true,
+    );
+    return _guardado(exito);
   }
 
   static String _recortar(String texto, int maximo) {

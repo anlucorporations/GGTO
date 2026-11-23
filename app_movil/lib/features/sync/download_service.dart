@@ -1,6 +1,7 @@
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/database.dart';
+import '../../core/red_sync.dart';
 import 'detalle_sync.dart';
 import 'purga_despachos.dart';
 import 'reintentos.dart';
@@ -93,8 +94,16 @@ class DownloadService {
   /// para siempre porque todo parecía «ya modificado».
   static Future<ResultadoDescarga> descargar({
     void Function(String fase, double valor)? onProgreso,
+    Future<bool> Function()? hayWifi,
   }) async {
     void avisar(double valor, String fase) => onProgreso?.call(fase, valor);
+
+    // Sincronización solo por Wi-Fi: ni la descarga del despacho ni la purga
+    // deben consumir datos móviles. El contenido local queda intacto.
+    if (!await (hayWifi ?? RedSync.hayWifi)()) {
+      avisar(1, RedSync.mensajeSinWifi);
+      throw ApiError(mensaje: RedSync.mensajeSinWifi, esDeRed: true);
+    }
 
     avisar(0.05, 'Conectando con el servidor…');
     final sesion = await SyncSesionService.abrir('DESCARGA');

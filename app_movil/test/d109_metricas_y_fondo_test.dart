@@ -19,8 +19,8 @@ void main() {
       expect(MensajesProvider.intervaloSondeo, const Duration(seconds: 60));
     });
 
-    test('los casos atendidos se envían solos cada 5 minutos', () {
-      expect(SyncProvider.intervaloAutoEnvio, const Duration(minutes: 5));
+    test('no hay envío automático: la web solo se actualiza al sincronizar', () {
+      expect(SyncProvider.envioAutomaticoHabilitado, isFalse);
     });
   });
 

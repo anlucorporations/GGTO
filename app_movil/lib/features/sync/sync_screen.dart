@@ -153,21 +153,23 @@ class _SyncScreenState extends State<SyncScreen> {
                   Row(
                     children: [
                       Icon(
-                        sync.enLinea ? Icons.cloud_done : Icons.cloud_off,
-                        color: sync.enLinea ? Colors.green : Colors.red,
+                        sync.puedeSincronizar ? Icons.wifi : Icons.wifi_off,
+                        color: sync.puedeSincronizar ? Colors.green : Colors.red,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        sync.enLinea ? 'Con conexión' : 'Sin conexión',
+                        sync.puedeSincronizar
+                            ? 'Wi-Fi disponible · puede sincronizar'
+                            : 'Sin Wi-Fi · la sincronización está desactivada',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Sube los casos resueltos (cerrados, citados, enrutados, '
-                    'diferidos) y los contactados; descarga los casos asignados '
-                    'por el despacho del día.',
+                    'Sus cambios se guardan en el teléfono y solo se envían a la '
+                    'web cuando pulsa SINCRONIZAR con Wi-Fi. Sube los casos '
+                    'resueltos y contactados y descarga el despacho del día.',
                     style: TextStyle(fontSize: 12.5, color: Colors.black54),
                   ),
                   const SizedBox(height: 10),

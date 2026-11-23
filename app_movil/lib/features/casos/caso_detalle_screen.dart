@@ -36,7 +36,7 @@ class CasoDetalleScreen extends StatelessWidget {
           orElse: () => caso,
         );
     final pendienteSync = vivo['pendiente_sync'] == true;
-    final sinConexion = !context.watch<SyncProvider>().enLinea;
+    final sinConexion = !context.watch<SyncProvider>().puedeSincronizar;
     final estado = _v(vivo, 'estado_actual', porDefecto: 'NUEVO');
     final idCaso = caso['id_caso'] is int ? caso['id_caso'] as int : null;
     final acciones = accionesDeEstado(estado);

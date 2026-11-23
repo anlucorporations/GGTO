@@ -1,4 +1,5 @@
 import '../../core/api_error.dart';
+import '../../core/red_sync.dart';
 import 'download_service.dart';
 import 'sync_provider.dart';
 import 'upload_service.dart';
@@ -16,6 +17,7 @@ class ResultadoActualizacionDatos {
     this.descarga,
     this.errorCarga,
     this.errorDescarga,
+    this.errorRed,
   });
 
   final ResultadoCarga? carga;
@@ -24,11 +26,15 @@ class ResultadoActualizacionDatos {
   final String? errorCarga;
   final String? errorDescarga;
 
+  /// Motivo por el que no se sincronizó (por ejemplo, falta de Wi-Fi).
+  final String? errorRed;
+
   bool get huboErrores =>
       (carga?.tuvoErrores ?? false) ||
       (cola?.huboErrores ?? false) ||
       errorCarga != null ||
-      errorDescarga != null;
+      errorDescarga != null ||
+      errorRed != null;
 
   /// `true` si no se pudo descargar (p. ej. sin conexión): el contenido local
   /// sigue disponible, pero no se pudo confirmar el despacho del día.
@@ -36,6 +42,10 @@ class ResultadoActualizacionDatos {
 
   String get resumen {
     final partes = <String>[];
+    if (errorRed != null) {
+      partes.add(errorRed!);
+      return partes.join(' · ');
+    }
     if (errorCarga != null) {
       partes.add('sin carga: $errorCarga');
     } else if (carga != null) {
@@ -85,6 +95,13 @@ class ActualizacionDatosService {
     Future<ResultadoDescarga> Function(void Function(String, double)?)? descargar,
   }) async {
     void avisar(double valor, String fase) => onProgreso?.call(fase, valor);
+
+    // Petición del técnico: la sincronización del dispositivo es **solo por
+    // Wi-Fi**. El trabajo queda guardado en local hasta que haya Wi-Fi.
+    if (!sync.puedeSincronizar) {
+      avisar(1, RedSync.mensajeSinWifi);
+      return const ResultadoActualizacionDatos(errorRed: RedSync.mensajeSinWifi);
+    }
 
     ResultadoCarga? resultadoCarga;
     ResultadoSync? resultadoCola;

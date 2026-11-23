@@ -121,7 +121,9 @@ class BarraProgresoSync extends StatelessWidget {
             barra,
             const SizedBox(height: 6),
             Text(
-              sync.enLinea ? 'Con conexión' : 'Sin conexión: el contenido local sigue disponible',
+              sync.puedeSincronizar
+                  ? 'Wi-Fi disponible · puede sincronizar'
+                  : 'Sin Wi-Fi: el contenido local sigue disponible',
               style: const TextStyle(fontSize: 12.5, color: Marca.textoSuave),
             ),
           ],

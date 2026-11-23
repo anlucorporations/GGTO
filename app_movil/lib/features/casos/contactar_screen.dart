@@ -76,8 +76,9 @@ class _ContactarScreenState extends State<ContactarScreen> {
       observacion: _observacionController.text,
     );
 
-    // Si la cita quedó registrada (en el servidor o en la cola), se marca CITADO.
-    if (cita.enviada && _noEsError(cita.mensaje)) {
+    // Gestión local-first: la cita válida se guardó en el dispositivo, así que
+    // se marca CITADO en local aunque todavía no haya viajado al servidor.
+    if (cita.valida && _noEsError(cita.mensaje)) {
       final estado = await OperacionesService.marcarCitado(
         idCaso: widget.idCaso,
         idAveria: widget.idAveria,
@@ -87,7 +88,7 @@ class _ContactarScreenState extends State<ContactarScreen> {
       await _finalizar(
         ResultadoOperacion(
           mensaje: '${cita.mensaje} ${estado.mensaje}'.trim(),
-          enviada: cita.enviada && estado.enviada,
+          enviada: false, // local-first: se enviará al sincronizar
           caso: estado.caso ?? cita.caso,
         ),
       );

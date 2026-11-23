@@ -96,8 +96,12 @@ class CredencialLocal {
       ahora.difference(ultimoAccesoConRed) < vigencia;
 
   /// Comprueba el PIN contra el verificador.
+  ///
+  /// Se normaliza con `trim()` igual que `validarFormatoPin` y `cambiarPin`: un
+  /// PIN pegado con espacios alrededor debe escribirse y validarse igual que el
+  /// tecleado, sin consumir un intento fallido por un espacio invisible.
   bool comprobarPin(String pin) =>
-      compararEnTiempoConstante(derivarPin(pin, sal), verificador);
+      compararEnTiempoConstante(derivarPin(pin.trim(), sal), verificador);
 
   /// Reconstruye los datos de sesión que se restauran al entrar sin conexión.
   SesionUsuario get sesion => SesionUsuario(

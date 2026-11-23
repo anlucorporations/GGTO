@@ -8,6 +8,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/constants.dart';
 import '../../core/database.dart';
+import '../../core/red_sync.dart';
 import '../../core/sync_lock.dart';
 import 'cola_offline.dart';
 
@@ -18,6 +19,7 @@ class ResultadoSync {
     required this.reintentar,
     required this.fallidas,
     required this.pendientes,
+    this.errorRed,
   });
 
   final int enviadas;
@@ -25,7 +27,10 @@ class ResultadoSync {
   final int fallidas;
   final int pendientes;
 
-  bool get huboErrores => fallidas > 0;
+  /// Motivo por el que no se sincronizó (p. ej. falta de Wi-Fi).
+  final String? errorRed;
+
+  bool get huboErrores => fallidas > 0 || errorRed != null;
 
   String get resumen {
     if (enviadas == 0 && reintentar == 0 && fallidas == 0) {
@@ -41,24 +46,23 @@ class ResultadoSync {
 
 /// Cola offline (outbox) con estados, reintentos y backoff.
 ///
-/// Corrige H-08 (el `break` bloqueaba toda la cola ante el primer fallo), H-14
-/// (no había estados ni reintentos) y añade el vaciado automático al recuperar
-/// la conexión (RNF-06).
+/// Corrige H-08 (el `break` bloqueaba toda la cola ante el primer fallo) y H-14
+/// (no había estados ni reintentos). **Ya no hay envío automático**: la web solo
+/// se actualiza cuando el técnico pulsa SINCRONIZAR, y ese envío exige Wi-Fi.
 class SyncProvider extends ChangeNotifier {
-  /// D-109: cada cuánto se envían solos los datos de los casos atendidos.
-  static const Duration intervaloAutoEnvio = Duration(minutes: 5);
+  /// La gestión de casos es local: la web solo se actualiza con SINCRONIZAR.
+  static const bool envioAutomaticoHabilitado = false;
 
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _suscripcion;
-  Timer? _autoEnvio;
 
   Map<String, int> _resumen = {'PENDIENTE': 0, 'REINTENTO': 0, 'ERROR': 0, 'TOTAL': 0};
   List<Map<String, dynamic>> _acciones = [];
   bool _sincronizando = false;
   bool _enLinea = true;
+  bool _enWifi = false;
   ResultadoSync? _ultimoResultado;
   DateTime? _ultimaSync;
-  DateTime? _ultimoEnvioAuto;
   int _evidencias = 0;
   List<Map<String, dynamic>> _ultimoChecklist = [];
   double _progreso = 1;
@@ -72,11 +76,15 @@ class SyncProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get acciones => _acciones;
   bool get sincronizando => _sincronizando;
   bool get enLinea => _enLinea;
+
+  /// `true` solo si hay Wi-Fi: es la condición para sincronizar.
+  bool get enWifi => _enWifi;
+
+  /// La sincronización del dispositivo es **solo por Wi-Fi**.
+  bool get puedeSincronizar => _enWifi;
+
   ResultadoSync? get ultimoResultado => _ultimoResultado;
   DateTime? get ultimaSync => _ultimaSync;
-
-  /// D-109: momento del último envío automático de los casos atendidos.
-  DateTime? get ultimoEnvioAuto => _ultimoEnvioAuto;
   int get evidencias => _evidencias;
   List<Map<String, dynamic>> get ultimoChecklist => _ultimoChecklist;
 
@@ -135,55 +143,27 @@ class SyncProvider extends ChangeNotifier {
   }
 
 
-  /// Arranca la vigilancia de conectividad (solo para el indicador) y el
-  /// **envío automático** de los datos de los casos atendidos (D-109).
-  ///
-  /// D-84 (DEC-3): **no** se descarga nada al recuperar la red. La DESCARGA la
-  /// decide el técnico; lo que sí ocurre solo es el envío **ligero** de lo ya
-  /// atendido (la cola de acciones), para que las métricas y el monitoreo de la
-  /// web no se queden atrás cuando el técnico trabaja sin pulsar «Cargar».
+  /// Arranca la vigilancia de conectividad para el indicador de red y para
+  /// saber si hay Wi-Fi. **No envía nada por su cuenta**: la gestión de casos es
+  /// local y la web solo se actualiza cuando el técnico pulsa SINCRONIZAR.
   void iniciar() {
-    _suscripcion ??= _connectivity.onConnectivityChanged.listen((resultados) {
-      final conectado = resultados.any((r) => r != ConnectivityResult.none);
-      _enLinea = conectado;
-      notifyListeners();
-      // Al recuperar la red se intenta el envío ligero sin esperar los 5 min.
-      if (conectado) _enviarAtendidosSiAplica();
-    });
+    _suscripcion ??= _connectivity.onConnectivityChanged.listen(_actualizarRed);
 
-    _connectivity.checkConnectivity().then((resultados) {
-      _enLinea = resultados.any((r) => r != ConnectivityResult.none);
-      notifyListeners();
-    }).catchError((_) {
-      // Si la consulta falla, se asume en línea y se deja que la API decida.
+    _connectivity.checkConnectivity().then(_actualizarRed).catchError((_) {
+      // Ante duda se permite navegar en línea, pero NO sincronizar (fail-closed).
       _enLinea = true;
-    });
-
-    // D-109: cada 5 minutos se suben **solo** los datos de los casos atendidos
-    // (la cola de acciones). No descarga casos ni sube fotos: es la información
-    // mínima que mantiene al día las métricas y el monitoreo de la web.
-    _autoEnvio ??= Timer.periodic(intervaloAutoEnvio, (_) {
-      _enviarAtendidosSiAplica();
+      _enWifi = false;
+      notifyListeners();
     });
 
     refrescar();
   }
 
-  /// Envía la cola de acciones (casos atendidos) si hay algo pendiente y red.
-  ///
-  /// Público para poder forzarlo (y probarlo) sin depender del temporizador.
-  Future<void> enviarAtendidos() async {
-    if (_sincronizando) return;
-    await refrescar();
-    if (pendientesSinError == 0) return;
-    if (!_enLinea) return;
-    await sincronizar(silencioso: true);
-    _ultimoEnvioAuto = DateTime.now();
+  /// Actualiza los indicadores de red a partir de las conexiones activas.
+  void _actualizarRed(List<ConnectivityResult> resultados) {
+    _enLinea = resultados.any((r) => r != ConnectivityResult.none);
+    _enWifi = RedSync.esWifi(resultados);
     notifyListeners();
-  }
-
-  void _enviarAtendidosSiAplica() {
-    unawaited(enviarAtendidos());
   }
 
   /// Recuenta la cola y las evidencias de la jornada.
@@ -234,6 +214,19 @@ class SyncProvider extends ChangeNotifier {
     double progresoDesde = 0,
     double progresoHasta = 1,
   }) async {
+    // La sincronización del dispositivo es solo por Wi-Fi. Nunca se envía nada
+    // por datos móviles, ni de forma automática ni al pulsar SINCRONIZAR.
+    if (!_enWifi) {
+      _ultimoResultado = ResultadoSync(
+        enviadas: 0,
+        reintentar: 0,
+        fallidas: 0,
+        pendientes: pendientes,
+        errorRed: RedSync.mensajeSinWifi,
+      );
+      notifyListeners();
+      return _ultimoResultado!;
+    }
     final resultado = await SyncLock.instance.intentar(
       () => _sincronizarInterno(
         silencioso: silencioso,
@@ -408,7 +401,6 @@ class SyncProvider extends ChangeNotifier {
   @override
   void dispose() {
     _suscripcion?.cancel();
-    _autoEnvio?.cancel();
     super.dispose();
   }
 }

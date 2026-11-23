@@ -2,15 +2,15 @@ import 'dart:async';
 
 /// Cerrojo de las operaciones de sincronización (D-124 · H-07).
 ///
-/// La cola offline la consumían **dos** caminos a la vez —el envío automático de
-/// cada 5 minutos (`SyncProvider.sincronizar`) y la CARGA (`UploadService.cargar`,
+/// La cola offline podía consumirse desde dos caminos a la vez —la cola ligera
+/// (`SyncProvider.sincronizar`, hoy solo manual) y la CARGA (`UploadService.cargar`,
 /// dentro de `/sync/carga`)— sin ningún cerrojo compartido: la misma acción podía
 /// salir dos veces (dos cierres y doble juego de evidencias).
 ///
 /// Con este cerrojo:
 ///   · una operación de **usuario** (CARGA) espera su turno (`ejecutar`);
-///   · el **envío automático** no espera: si hay algo en curso se salta esta
-///     vuelta (`intentar` devuelve `null`) y lo intentará en la siguiente.
+///   · la cola ligera no espera: si hay algo en curso se salta esta vuelta
+///     (`intentar` devuelve `null`) y lo deja para la siguiente.
 ///
 /// Es un singleton de proceso: la app tiene una sola base local y un solo
 /// dispositivo, de modo que un cerrojo en memoria es suficiente.

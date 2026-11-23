@@ -126,6 +126,16 @@ void main() {
       expect(validarFormatoPin('13579a'), isNotNull);
     });
 
+    test('un PIN pegado con espacios se escribe y se valida igual', () {
+      final ficha = _ficha(pin: '135790');
+      // El formato tolera espacios (trim) y la verificación debe hacer lo mismo
+      // para no gastar un intento fallido por un espacio invisible.
+      expect(validarFormatoPin('  135790  '), isNull);
+      expect(ficha.comprobarPin('135790'), isTrue);
+      expect(ficha.comprobarPin('  135790  '), isTrue);
+      expect(ficha.comprobarPin('135791'), isFalse);
+    });
+
     test('validarPinNuevo rechaza lo que no aporta seguridad', () {
       expect(
         validarPinNuevo(nuevo: '246810', confirmacion: '246810', actual: '135790'),

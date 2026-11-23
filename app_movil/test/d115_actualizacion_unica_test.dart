@@ -34,9 +34,10 @@ final _descarga = ResultadoDescarga(
 );
 
 class _SyncFalso extends SyncProvider {
-  _SyncFalso({this.pendientesFalsos = 1});
+  _SyncFalso({this.pendientesFalsos = 1, this.wifi = true});
 
   final int pendientesFalsos;
+  final bool wifi;
   int refrescos = 0;
 
   @override
@@ -44,6 +45,9 @@ class _SyncFalso extends SyncProvider {
 
   @override
   bool get enLinea => true;
+
+  @override
+  bool get puedeSincronizar => wifi;
 
   @override
   Future<void> refrescar() async {
@@ -132,6 +136,32 @@ void main() {
       expect(resultado.descarga, isNull);
       expect(resultado.errorDescarga, contains('Sin conexión'));
       expect(resultado.huboErrores, isTrue);
+    });
+
+    test('sin Wi-Fi no se ejecuta ninguna fase y el trabajo queda en local',
+        () async {
+      final orden = <String>[];
+      final resultado = await ActualizacionDatosService.ejecutar(
+        sync: _SyncFalso(wifi: false),
+        cargar: (_) async {
+          orden.add('carga');
+          return _carga;
+        },
+        sincronizar: (_) async {
+          orden.add('cola');
+          return const ResultadoSync(
+              enviadas: 0, reintentar: 0, fallidas: 0, pendientes: 0);
+        },
+        descargar: (_) async {
+          orden.add('descarga');
+          return _descarga;
+        },
+      );
+
+      expect(orden, isEmpty);
+      expect(resultado.errorRed, contains('Wi-Fi'));
+      expect(resultado.huboErrores, isTrue);
+      expect(resultado.sinDescarga, isTrue);
     });
   });
 
