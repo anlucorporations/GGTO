@@ -1340,6 +1340,73 @@ CREATE TABLE IF NOT EXISTS asistente_remitente (
 SELECT fn_recalcular_metricas_despacho_diarias(id_central, fecha)
 FROM (SELECT DISTINCT id_central, fecha FROM despacho) jornadas;
 
+-- ============================================================================
+-- v2 — Asistente con IA en grupo de Telegram (F3-TG-1 / DEC-TG-01..17)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS asistente_grupo (
+    id_grupo      bigserial PRIMARY KEY,
+    chat_id       bigint NOT NULL UNIQUE,
+    titulo        varchar(160) NOT NULL,
+    topic_id      bigint,
+    activo        boolean NOT NULL DEFAULT true,
+    id_central    integer REFERENCES central(id_central),
+    politica_pii  varchar(20) NOT NULL DEFAULT 'REFERENCIAS'
+                  CHECK (politica_pii IN ('NONE','REFERENCIAS')),
+    eventos_config jsonb NOT NULL DEFAULT '{}'::jsonb,
+    creado_en     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS asistente_grupo_miembro (
+    id_miembro        bigserial PRIMARY KEY,
+    id_grupo          integer NOT NULL REFERENCES asistente_grupo(id_grupo),
+    telegram_user_id  bigint NOT NULL,
+    p00               varchar(20) NOT NULL CHECK (p00 <> 'GGTOAST001'),
+    rol               varchar(20) NOT NULL,
+    puede_actualizar  boolean NOT NULL DEFAULT false,
+    activo            boolean NOT NULL DEFAULT true,
+    creado_en         timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (id_grupo, telegram_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS asistente_pending_confirm (
+    id_pending         bigserial PRIMARY KEY,
+    id_grupo           integer NOT NULL REFERENCES asistente_grupo(id_grupo),
+    telegram_user_id   bigint NOT NULL,
+    intencion          varchar(20) NOT NULL,
+    ficha_json         jsonb NOT NULL DEFAULT '{}'::jsonb,
+    estado             varchar(20) NOT NULL DEFAULT 'PENDIENTE'
+                       CHECK (estado IN ('PENDIENTE','CONSUMIDA','DESCARTADA','EXPIRADA')),
+    expira_en          timestamptz NOT NULL,
+    solicitado_por     bigint,
+    confirmado_por     bigint,
+    id_mensaje_preview bigint,
+    creado_en          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tg_pending_activa
+    ON asistente_pending_confirm (id_grupo, telegram_user_id)
+    WHERE estado = 'PENDIENTE';
+
+ALTER TABLE asistente_sesion ADD COLUMN IF NOT EXISTS id_grupo integer
+    REFERENCES asistente_grupo(id_grupo);
+ALTER TABLE asistente_sesion ADD COLUMN IF NOT EXISTS mensaje_id bigint;
+ALTER TABLE asistente_sesion ADD COLUMN IF NOT EXISTS telegram_user_id bigint;
+
+CREATE TABLE IF NOT EXISTS asistente_evento_tipo (
+    codigo      varchar(40) PRIMARY KEY,
+    descripcion varchar(160)
+);
+INSERT INTO asistente_evento_tipo (codigo, descripcion) VALUES
+    ('CIERRE','Caso cerrado'), ('CITA','Cita agendada'),
+    ('ENRUTADO','Caso enrutado'), ('DIFERIDO','Caso diferido'),
+    ('FALLA','Falla masiva')
+ON CONFLICT (codigo) DO NOTHING;
+
+INSERT INTO asistente_grupo (chat_id, titulo, id_central, politica_pii, eventos_config)
+VALUES (-5561202916, 'GGTOv3-PDE', 1, 'REFERENCIAS',
+        '{"CIERRE":true,"CITA":true,"ENRUTADO":true,"DIFERIDO":true,"FALLA":false}'::jsonb)
+ON CONFLICT (chat_id) DO NOTHING;
+
 COMMIT;
 
 -- =============================================================================
