@@ -1,6 +1,8 @@
-# DESPLIEGUE GGTO en `plataforma-txbarlovento` con BD en `vm-databases` — v101
+# DESPLIEGUE GGTO con BD en `vm-databases` — BD vigente, Cloud Run retirado
 
-**Fecha de ejecución:** jueves 12/11/2026 (noche)
+> **Estado vigente verificado el 24/11/2026:** la **base sigue siendo la de este documento** (PostgreSQL 16.15 en `vm-databases`, `10.140.0.2:5432`, base `ggtov2`). El **Cloud Run de `plataforma-txbarlovento`** (`ggto-web-695669822281…`) fue retirado: la web/API vigente es `ggto-web` en **`ggto-prod-txblvento2`** (<https://ggto-web-695669822281.europe-west1.run.app>, imagen `:v106`), conectada a esta BD mediante el conector VPC `ggto-connector`. La tabla siguiente conserva el despliegue original como registro histórico.
+
+**Fecha de ejecución original:** jueves 12/11/2026 (noche)
 **Motivo:** indicación del usuario de usar **la BD del servicio de
 `txbarlovento@gmail.com`** (Postgres de `vm-databases`) y redesplegar allí.
 
@@ -10,14 +12,15 @@
 
 | Recurso | Valor |
 |---|---|
-| **URL web / API** | <https://ggto-web-173076294289.europe-west1.run.app> |
-| Proyecto GCP | `plataforma-txbarlovento` (nº **173076294289**) |
+| **URL web / API (vigente)** | <https://ggto-web-695669822281.europe-west1.run.app> |
+| Proyecto GCP del Cloud Run (vigente) | `ggto-prod-txblvento2` (nº **695669822281**) |
+| Proyecto GCP de la BD (vigente) | `plataforma-txbarlovento` (nº **695669822281**) |
 | Región | **europe-west1** |
-| Imagen | `europe-west1-docker.pkg.dev/plataforma-txbarlovento/ggto/ggto-web:v101` |
-| Bucket de evidencias | `gs://plataforma-txbarlovento-ggto-evidencias` |
-| Cuenta de servicio | `ggto-web-sa@plataforma-txbarlovento.iam.gserviceaccount.com` |
-| Revisión | `ggto-web-00001-lvg` (100 % del tráfico) |
-| APK | **`1.15.24+49`** |
+| Imagen (vigente) | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v106` |
+| Bucket de evidencias (env vigente) | `gs://ggto-prod-txblvento-ggto-evidencias` |
+| Cuenta de servicio (vigente) | `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` |
+| Revisión (vigente) | `ggto-web-00016-k2k` (100 % del tráfico) |
+| APK | **`1.15.25+50`** |
 
 ## 2 · Base de datos (en la VM, no Cloud SQL)
 
@@ -101,6 +104,6 @@ gcloud run deploy ggto-web \
 
 | Proyecto | URL | BD | Estado |
 |---|---|---|---|
-| `plataforma-txbarlovento` | ggto-web-173076294289… | Postgres VM (`ggtov2`) | **en operaciones** |
+| `plataforma-txbarlovento` | ggto-web-695669822281… | Postgres VM (`ggtov2`) | **en operaciones** |
 | `ggto-prod-txblvento2` | ggto-web-695669822281… | Cloud SQL `ggto-db` | intacto, como respaldo (se puede apagar) |
 | `ggto-prod-txblvento` | — | Cloud SQL `ggto-db` | restaurado, servicios corruptos, solo respaldo |

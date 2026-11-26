@@ -1,4 +1,5 @@
 # Manual de Operación y Mantenimiento — GGTO
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > **Corte operativo verificado 2026-10-22:** servicio Cloud Run `ggto-web` en
 > revisión `ggto-web-00093-g8c`, imagen `v80`, con la APK `1.15.17+42`; Cloud SQL está RUNNABLE y los
@@ -281,7 +282,7 @@ en modo `ENCRYPTED_ONLY`.
 ### Estado real (D-26: sin backups/PITR)
 
 La base operativa **no es** `ggtov2-pg`, sino una instancia compartida llamada
-`truekeate-main:southamerica-east1:truekeate-db-dev`, que **no tiene respaldos, ni recuperación a un
+`ggto-prod-txblvento2:europe-west1:ggto-db`, que **no tiene respaldos, ni recuperación a un
 punto en el tiempo, ni SSL obligatorio, ni protección de borrado**.
 
 El **riesgo D-26 fue aceptado** por la Dirección del proyecto el 2026-09-25, con dueño asignado y
@@ -305,7 +306,7 @@ condición de cierre: «migrar a `ggtov2-pg` propio al desbloquear la facturaci�
    (instancia regional con alta disponibilidad, respaldos, PITR y SSL `ENCRYPTED_ONLY`).
 2. Migrar la base `ggtov2` con una ventana de mantenimiento y verificar los 36 objetos.
 3. Reapuntar Cloud Run a la instancia propia y dejar de usar la instancia compartida
-   `truekeate-db-dev`.
+   `vm-databases`.
 4. Ejecutar y **documentar** una prueba de restauración trimestral (RNF-16).
 5. Designar un responsable del respaldo y registrar el resultado en la documentación del proyecto.
 

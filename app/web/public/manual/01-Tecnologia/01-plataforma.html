@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plataforma GGTO — Visión general y arquitectura — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Estado verificado 2026-10-24: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.15.20+45) es multirol: campo y pantallas de gestión (D-95…D-158). La auditoría de c">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../imagenes/onboarding-tecnico.png">
 <style>
 /* ==================================================================
@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-del-sistema" data-target="vision-general-del-sistema"><span class="tn">2</span> Visión general del sistema</a><span class="pag"></span><ul><li class="n3"><a href="#proposito-y-alcance" data-target="proposito-y-alcance"><span class="tn">2.1</span> Propósito y alcance</a><span class="pag"></span></li><li class="n3"><a href="#actores-y-roles" data-target="actores-y-roles"><span class="tn">2.2</span> Actores y roles</a><span class="pag"></span></li><li class="n3"><a href="#secciones-de-la-plataforma" data-target="secciones-de-la-plataforma"><span class="tn">2.3</span> Secciones de la plataforma</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#arquitectura-de-componentes" data-target="arquitectura-de-componentes"><span class="tn">3</span> Arquitectura de componentes</a><span class="pag"></span><ul><li class="n3"><a href="#backend-fastapi" data-target="backend-fastapi"><span class="tn">3.1</span> Backend FastAPI</a><span class="pag"></span></li><li class="n3"><a href="#spa-react-servida-por-el-mismo-contenedor" data-target="spa-react-servida-por-el-mismo-contenedor"><span class="tn">3.2</span> SPA React servida por el mismo contenedor</a><span class="pag"></span></li><li class="n3"><a href="#base-de-datos-postgresql" data-target="base-de-datos-postgresql"><span class="tn">3.3</span> Base de datos PostgreSQL</a><span class="pag"></span></li><li class="n3"><a href="#canales-externos-telegram-correo-smtp-mcp" data-target="canales-externos-telegram-correo-smtp-mcp"><span class="tn">3.4</span> Canales externos (Telegram, correo SMTP, MCP)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#flujo-de-una-operacion-tipica-peticion-middleware-router-ser" data-target="flujo-de-una-operacion-tipica-peticion-middleware-router-ser"><span class="tn">4</span> Flujo de una operacion tipica (peticion -&gt; middleware -&gt; router -&gt; servicio -&gt; BD)</a><span class="pag"></span></li><li class="n2"><a href="#despliegue-en-gcp" data-target="despliegue-en-gcp"><span class="tn">5</span> Despliegue en GCP</a><span class="pag"></span><ul><li class="n3"><a href="#proyecto-ggtov2-y-bloqueo-de-facturacion" data-target="proyecto-ggtov2-y-bloqueo-de-facturacion"><span class="tn">5.1</span> Proyecto ggtov2 y bloqueo de facturacion</a><span class="pag"></span></li><li class="n3"><a href="#servicio-cloud-run-ggto-web-en-truekeate-main" data-target="servicio-cloud-run-ggto-web-en-truekeate-main"><span class="tn">5.2</span> Servicio Cloud Run ggto-web en truekeate-main</a><span class="pag"></span></li><li class="n3"><a href="#cloud-sql-compartida-truekeate-db-dev" data-target="cloud-sql-compartida-truekeate-db-dev"><span class="tn">5.3</span> Cloud SQL compartida truekeate-db-dev</a><span class="pag"></span></li><li class="n3"><a href="#pendientes-y-riesgos-d-26-acceso-publico-con-pii" data-target="pendientes-y-riesgos-d-26-acceso-publico-con-pii"><span class="tn">5.4</span> Pendientes y riesgos (D-26, acceso publico con PII)</a><span class="pag"></span></li></ul></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general-del-sistema" data-target="vision-general-del-sistema"><span class="tn">2</span> Visión general del sistema</a><span class="pag"></span><ul><li class="n3"><a href="#proposito-y-alcance" data-target="proposito-y-alcance"><span class="tn">2.1</span> Propósito y alcance</a><span class="pag"></span></li><li class="n3"><a href="#actores-y-roles" data-target="actores-y-roles"><span class="tn">2.2</span> Actores y roles</a><span class="pag"></span></li><li class="n3"><a href="#secciones-de-la-plataforma" data-target="secciones-de-la-plataforma"><span class="tn">2.3</span> Secciones de la plataforma</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#arquitectura-de-componentes" data-target="arquitectura-de-componentes"><span class="tn">3</span> Arquitectura de componentes</a><span class="pag"></span><ul><li class="n3"><a href="#backend-fastapi" data-target="backend-fastapi"><span class="tn">3.1</span> Backend FastAPI</a><span class="pag"></span></li><li class="n3"><a href="#spa-react-servida-por-el-mismo-contenedor" data-target="spa-react-servida-por-el-mismo-contenedor"><span class="tn">3.2</span> SPA React servida por el mismo contenedor</a><span class="pag"></span></li><li class="n3"><a href="#base-de-datos-postgresql" data-target="base-de-datos-postgresql"><span class="tn">3.3</span> Base de datos PostgreSQL</a><span class="pag"></span></li><li class="n3"><a href="#canales-externos-telegram-correo-smtp-mcp" data-target="canales-externos-telegram-correo-smtp-mcp"><span class="tn">3.4</span> Canales externos (Telegram, correo SMTP, MCP)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#flujo-de-una-operacion-tipica-peticion-middleware-router-ser" data-target="flujo-de-una-operacion-tipica-peticion-middleware-router-ser"><span class="tn">4</span> Flujo de una operacion tipica (peticion -&gt; middleware -&gt; router -&gt; servicio -&gt; BD)</a><span class="pag"></span></li><li class="n2"><a href="#despliegue-en-gcp" data-target="despliegue-en-gcp"><span class="tn">5</span> Despliegue en GCP</a><span class="pag"></span><ul><li class="n3"><a href="#proyecto-ggtov2-y-bloqueo-de-facturacion" data-target="proyecto-ggtov2-y-bloqueo-de-facturacion"><span class="tn">5.1</span> Proyecto ggtov2 y bloqueo de facturacion</a><span class="pag"></span></li><li class="n3"><a href="#servicio-cloud-run-ggto-web-en-ggto-prod-txblvento2" data-target="servicio-cloud-run-ggto-web-en-ggto-prod-txblvento2"><span class="tn">5.2</span> Servicio Cloud Run ggto-web en ggto-prod-txblvento2</a><span class="pag"></span></li><li class="n3"><a href="#cloud-sql-compartida-vm-databases" data-target="cloud-sql-compartida-vm-databases"><span class="tn">5.3</span> Cloud SQL compartida vm-databases</a><span class="pag"></span></li><li class="n3"><a href="#pendientes-y-riesgos-d-26-acceso-publico-con-pii" data-target="pendientes-y-riesgos-d-26-acceso-publico-con-pii"><span class="tn">5.4</span> Pendientes y riesgos (D-26, acceso publico con PII)</a><span class="pag"></span></li></ul></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Tecnología</span>
           <h1 class="portada-titulo">Plataforma GGTO — Visión general y arquitectura</h1>
-          <p class="portada-resumen">Estado verificado 2026-10-24: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.15.20+45) es multirol: campo y pantallas de gestión (D-95…D-158). La auditoría de código, documentación y despliegue está en RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Manual para todo público. Explica qué es GGTO, para qué sirve y cómo está armado por dentro, en lenguaje sencillo. GGTO es el Sistema de administración de reportes de avería y construcción de puntos ópticos de CANTV C.A., Central Francisco Salias (Área […]</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Estado verificado 2026-10-24: GGTO V1 continúa desplegado; GGTO V2 está parcialmente implementado. La APK vigente (1.15.20+45) es multirol: […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Tecnología</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/01-Tecnologia/01-plataforma.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p><strong>Estado verificado 2026-10-24:</strong> GGTO V1 continúa desplegado; GGTO V2 está
 parcialmente implementado. La APK vigente (<code>1.15.20+45</code>) es multirol: campo y
@@ -1237,7 +1240,7 @@ manual):</p>
 <tbody>
 <tr>
 <td>Instancia</td>
-<td><code>truekeate-db-dev</code> (PostgreSQL 15.18)</td>
+<td><code>vm-databases</code> (PostgreSQL 15.18)</td>
 </tr>
 <tr>
 <td>Base</td>
@@ -1392,8 +1395,8 @@ cifrada obligatoria (<code>ENCRYPTED_ONLY</code>).</li>
 </ol>
 <p>Mientras eso no ocurra, el sistema vive en <strong>otro proyecto</strong>. Este es un dato central: cualquier
 persona nueva debe saber que el despliegue actual es <strong>temporal</strong>.</p>
-<h3 id="servicio-cloud-run-ggto-web-en-truekeate-main"><span class="sec-num">5.2</span>Servicio Cloud Run ggto-web en truekeate-main</h3>
-<p>El sistema está alojado temporalmente en el proyecto <strong><code>truekeate-main</code></strong>, que sí tiene facturación.</p>
+<h3 id="servicio-cloud-run-ggto-web-en-ggto-prod-txblvento2"><span class="sec-num">5.2</span>Servicio Cloud Run ggto-web en ggto-prod-txblvento2</h3>
+<p>El sistema está alojado temporalmente en el proyecto <strong><code>ggto-prod-txblvento2</code></strong>, que sí tiene facturación.</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
@@ -1412,7 +1415,7 @@ persona nueva debe saber que el despliegue actual es <strong>temporal</strong>.<
 </tr>
 <tr>
 <td>Dirección principal</td>
-<td><code>https://ggto-web-593453426217.europe-west1.run.app</code></td>
+<td><code>https://ggto-web-695669822281.europe-west1.run.app</code></td>
 </tr>
 <tr>
 <td>Dirección alternativa</td>
@@ -1420,11 +1423,11 @@ persona nueva debe saber que el despliegue actual es <strong>temporal</strong>.<
 </tr>
 <tr>
 <td>Cuenta de servicio</td>
-<td><code>ggto-web-sa@truekeate-main.iam.gserviceaccount.com</code></td>
+<td><code>ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com</code></td>
 </tr>
 <tr>
 <td>Imagen (última documentada)</td>
-<td><code>.../truekeate-repo/ggto-web:v14</code></td>
+<td><code>.../ggto/ggto-web:v14</code></td>
 </tr>
 <tr>
 <td>Revisión (última documentada)</td>
@@ -1501,14 +1504,14 @@ que cambia y no se puede dar por fijo en un manual.</p>
 <p>Los <strong>scripts</strong> de instalación en la nube están en la carpeta <code>RepoTecnico/scripts/</code>. Se ejecutan en
 orden, del <code>00</code> al <code>10</code>, y existe un orquestador que los coordina. El manual de scripts GCP los
 explica uno por uno.</p>
-<h3 id="cloud-sql-compartida-truekeate-db-dev"><span class="sec-num">5.3</span>Cloud SQL compartida truekeate-db-dev</h3>
+<h3 id="cloud-sql-compartida-vm-databases"><span class="sec-num">5.3</span>Cloud SQL compartida vm-databases</h3>
 <p>La base de datos de GGTO <strong>comparte servidor</strong> con otro producto llamado TrueKeate. La instancia es
-<code>truekeate-db-dev</code> (PostgreSQL 15.18), con la base <code>ggtov2</code> y el usuario <code>ggtov2_app</code>. Compartir
+<code>vm-databases</code> (PostgreSQL 15.18), con la base <code>ggtov2</code> y el usuario <code>ggtov2_app</code>. Compartir
 servidor tiene consecuencias, como se explica en los riesgos más abajo.</p>
 <p>En la nube, la aplicación se conecta por un <strong>socket</strong> (una vía interna de comunicación). Por eso la
 dirección del servidor no es una IP sino una ruta que empieza por <code>/cloudsql/</code>. La conexión
 documentada es:</p>
-<pre data-lang="dotenv"><code class="language-dotenv">DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+<pre data-lang="dotenv"><code class="language-dotenv">DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db
 DB_PORT=5432
 DB_NAME=ggtov2
 DB_USER=ggtov2_app
@@ -1581,9 +1584,9 @@ traslado a una instancia con respaldo.</p>
 usarlas para una decisión.</strong> Lo que no se pueda comprobar se reporta como <em>pendiente de confirmar</em>.</p>
 <figure id="fig-3"><img src="../imagenes/despliegue-gcp.png" alt="despliegue gcp"><figcaption>Figura 4 · despliegue-gcp.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TB
     subgraph Real[&quot;Lo que está desplegado HOY (temporal)&quot;]
-        P1[&quot;Proyecto truekeate-main&lt;br/&gt;(con facturación)&quot;]
+        P1[&quot;Proyecto ggto-prod-txblvento2&lt;br/&gt;(con facturación)&quot;]
         CR[&quot;Cloud Run ggto-web&lt;br/&gt;europe-west1 · imagen v14&lt;br/&gt;ACCESO PÚBLICO con datos reales&quot;]
-        DB[&quot;Cloud SQL truekeate-db-dev&lt;br/&gt;compartida con TrueKeate&lt;br/&gt;sin backups ni PITR (D-26)&quot;]
+        DB[&quot;Cloud SQL vm-databases&lt;br/&gt;compartida con TrueKeate&lt;br/&gt;sin backups ni PITR (D-26)&quot;]
         P1 --&gt; CR
         CR --&gt;|&quot;socket /cloudsql/...&quot;| DB
     end
@@ -1606,7 +1609,7 @@ usarlas para una decisión.</strong> Lo que no se pueda comprobar se reporta com
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Tecnología</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

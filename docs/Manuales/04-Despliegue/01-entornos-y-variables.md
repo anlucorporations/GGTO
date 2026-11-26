@@ -1,4 +1,5 @@
 # Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Manual para todo público. Explica, en lenguaje sencillo, **dónde se ejecuta la plataforma GGTO**,
 > **qué variables de configuración usa** y **cómo se cuidan los secretos** (claves y contraseñas).
@@ -17,7 +18,7 @@
 3. **Nunca escriba un secreto en un archivo, en un chat ni en la línea de comandos.** Los secretos
    viven en **Secret Manager** y solo se usan **por su nombre**: `SECRET_KEY`, `DB_PASSWORD`,
    `TELEGRAM_BOT_TOKEN`, `SMTP_HOST`, `SMTP_PASSWORD` y `MCP_API_KEY`.
-4. **No cargue datos reales todavía.** La base actual (`truekeate-db-dev`) no tiene respaldos ni
+4. **No cargue datos reales todavía.** La base actual (`vm-databases`) no tiene respaldos ni
    recuperación a un punto en el tiempo, y el servicio es público. El riesgo **D-26** prohíbe cargar
    datos reales hasta migrar a la instancia `ggtov2-pg` con backups, PITR y SSL.
 5. **Para probar, use un esquema aislado.** `pytest` trabaja en el esquema `ggto_test` y las pruebas
@@ -41,7 +42,7 @@ sola vez por proceso (mediante `@lru_cache` sobre `get_settings()`), para que se
 ```mermaid
 flowchart TD
     A["Desarrollo<br/>APP_ENV=development"] --> P["Cloud SQL Auth Proxy<br/>127.0.0.1:5433"]
-    B["Producción<br/>Cloud Run ggto-web"] --> S["Socket Cloud SQL<br/>/cloudsql/truekeate-main:..."]
+    B["Producción<br/>Cloud Run ggto-web"] --> S["Socket Cloud SQL<br/>/cloudsql/ggto-prod-txblvento2:..."]
     C["Pruebas pytest<br/>DB_SCHEMA=ggto_test"] --> P
     D["Pruebas E2E Playwright<br/>DB_SCHEMA=ggto_e2e"] --> P
     E["Staging<br/>no desplegado"] -.->|"pendiente de confirmar"| B
@@ -68,7 +69,7 @@ Es el entorno de trabajo dentro de la instancia de Google Compute Engine del *wo
 No existe un entorno de *staging* (preproducción) desplegado y verificado en la infraestructura
 actual. El requerimiento **RNF-24** exige «entornos separados `dev`/`staging`/`prod`» y el
 requerimiento **RNF-25** exige paridad de versiones entre desarrollo y producción. Sin embargo, el
-estado real del despliegue solo registra el servicio de producción en `truekeate-main`.
+estado real del despliegue solo registra el servicio de producción en `ggto-prod-txblvento2`.
 
 El valor que deba usarse en `APP_ENV` para *staging* y el proceso concreto de promoción entre
 entornos están **pendientes de confirmar**.
@@ -76,10 +77,10 @@ entornos están **pendientes de confirmar**.
 ### production
 
 Es el entorno donde corre el servicio **Cloud Run `ggto-web`**, desplegado temporalmente en el
-proyecto `truekeate-main` y en la región `europe-west1`. En producción:
+proyecto `ggto-prod-txblvento2` y en la región `europe-west1`. En producción:
 
 - El servicio se conecta a la base mediante el socket de Cloud SQL:
-  `DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev`.
+  `DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db`.
 - El valor de `APP_ENV` en la revisión desplegada está **pendiente de confirmar**. El guion de
   despliegue del repositorio solo declara `DB_USER`, `DB_NAME`, `DB_HOST` y `SECRET_KEY`; no incluye
   `APP_ENV`. La documentación del servicio desplegado indica que `GET /api/v1/info` respondía
@@ -190,7 +191,7 @@ organizan por dominio.
 
 | Variable | Valor previsto | Observación |
 |---|---|---|
-| `DB_HOST` | `/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev` | Socket en Cloud Run; proxy local en desarrollo |
+| `DB_HOST` | `/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db` | Socket en Cloud Run; proxy local en desarrollo |
 | `DB_PORT` | `5432` | Coincide con el valor de la aplicación |
 | `DB_NAME` | `ggtov2` | Coincide con el valor de la aplicación |
 | `DB_USER` | `ggtov2_app` | Coincide con el valor de la aplicación |
@@ -338,9 +339,9 @@ nombran los secretos, jamás sus valores.
 
 | Secreto | Proyecto | Función |
 |---|---|---|
-| `ggtov2-db-password` | `truekeate-main` | Contraseña del usuario `ggtov2_app` |
-| `ggtov2-db-connection` | `truekeate-main` | Nombre de conexión de la instancia |
-| `ggto-secret-key` | `truekeate-main` | Clave de firma de los JWT que usa el servicio desplegado |
+| `ggtov2-db-password` | `ggto-prod-txblvento2` | Contraseña del usuario `ggtov2_app` |
+| `ggtov2-db-connection` | `ggto-prod-txblvento2` | Nombre de conexión de la instancia |
+| `ggto-secret-key` | `ggto-prod-txblvento2` | Clave de firma de los JWT que usa el servicio desplegado |
 | `ggtov2-app-secret-key` | `ggtov2` (previsto) | Clave de firma prevista para el proyecto GGTOv2 |
 
 El guion de secretos planificado crea, además, `ggtov2-db-root-password` y
@@ -349,7 +350,7 @@ servicio. El inventario de pendientes del proyecto los lista como tareas del apr
 `ggtov2`.
 
 La cuenta de servicio de ejecución del servicio real,
-`ggto-web-sa@truekeate-main.iam.gserviceaccount.com`, tiene los roles `roles/cloudsql.client` y
+`ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com`, tiene los roles `roles/cloudsql.client` y
 `roles/secretmanager.secretAccessor` sobre los secretos `ggtov2-db-password` y `ggto-secret-key`. El
 acceso a los secretos se concede de forma explícita **por nombre**: el guion que usa la instancia
 compartida recorre `ggtov2-db-password` y `ggtov2-db-connection` y fija la política con las cuentas
@@ -382,7 +383,7 @@ de error de Node imprimió la contraseña del usuario `app` de TrueKeate, conten
 #### Procedimiento observado
 
 1. Cambiar la contraseña con `ALTER ROLE app PASSWORD '<nueva>'`, usando 32 caracteres aleatorios.
-2. Publicar una nueva versión del secreto (la versión `versions/3`) en `truekeate-main`.
+2. Publicar una nueva versión del secreto (la versión `versions/3`) en `ggto-prod-txblvento2`.
 3. Crear una nueva revisión de Cloud Run (`truekeate-api-00034-hvk`) para que tomara el valor
    `latest`. La revisión quedó `Ready`, con el 100 % del tráfico y sin errores de autenticación en
    los registros.

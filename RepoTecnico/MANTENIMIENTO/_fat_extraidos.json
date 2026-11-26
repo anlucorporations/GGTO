@@ -1,0 +1,1039 @@
+[
+ {
+  "archivo": "PDE 14_15 FAT 43.xlsx",
+  "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+  "olt_nombre": "Prados del Este 02",
+  "slot": "14",
+  "puerto": "15",
+  "fat": "FAT-43",
+  "tipo": "OLT ATENUADAS",
+  "total_onts": 11,
+  "onts": [
+   {
+    "serial": "48575443EC311CA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO PH PH PH A P"
+   },
+   {
+    "serial": "48575443EC2F95A5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 93 P 9 A 93B"
+   },
+   {
+    "serial": "48575443EC283BA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 111 P 11 A 1"
+   },
+   {
+    "serial": "48575443DC7AAAA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 52 P 5 A 52B"
+   },
+   {
+    "serial": "48575443DC7889A5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 94 P 9 A 94"
+   },
+   {
+    "serial": "48575443DC786FA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 103 P 10 A 1"
+   },
+   {
+    "serial": "48575443DC784DA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 23 P 2 A 23B"
+   },
+   {
+    "serial": "48575443C08930A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 113 P 11 A 1"
+   },
+   {
+    "serial": "48575443C07FD8A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 64 P 6 A 64B"
+   },
+   {
+    "serial": "48575443AA4399A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA BV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 153 P 15 A 1"
+   },
+   {
+    "serial": "48575443AA432AA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/15/FAT-43",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 51 P 5 A 51B"
+   }
+  ],
+  "direcciones": [
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 103 P 10 A 1",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 111 P 11 A 1",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 113 P 11 A 1",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 23 P 2 A 23B",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 51 P 5 A 51B",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 52 P 5 A 52B",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 64 P 6 A 64B",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 93 P 9 A 93B",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 94 P 9 A 94",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO PH PH PH A P",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA BV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO 153 P 15 A 1"
+  ]
+ },
+ {
+  "archivo": "PDE 18_12_FAT77.xlsx",
+  "olt": "pde-olt-00 (Prados del Este)-Mir",
+  "olt_nombre": "Prados del Este",
+  "slot": "18",
+  "puerto": "12",
+  "fat": "FAT77",
+  "tipo": "OLT ATENUADAS",
+  "total_onts": 17,
+  "onts": [
+   {
+    "serial": "48575443EC27FEA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 7"
+   },
+   {
+    "serial": "48575443E56836A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443E13155A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA4B18A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 5"
+   },
+   {
+    "serial": "48575443AA4902A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 9"
+   },
+   {
+    "serial": "48575443AA48D9A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 7"
+   },
+   {
+    "serial": "48575443AA4892A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO P"
+   },
+   {
+    "serial": "48575443AA464CA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA45D8A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA45CEA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA45C6A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA45AFA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 7"
+   },
+   {
+    "serial": "48575443AA4160A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 8"
+   },
+   {
+    "serial": "48575443AA414BA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1"
+   },
+   {
+    "serial": "48575443AA40E5A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 2"
+   },
+   {
+    "serial": "4857544334A9A59B",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 3"
+   },
+   {
+    "serial": "485754430B708BB7",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/18/12/FAT77",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 9"
+   }
+  ],
+  "direcciones": [
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 2",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 3",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 5",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 7",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 8",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 9",
+   "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO P"
+  ]
+ },
+ {
+  "archivo": "PDE 7_5_FAT 138.xlsx",
+  "olt": "pde-olt-00 (Prados del Este)-Mir",
+  "olt_nombre": "Prados del Este",
+  "slot": "7",
+  "puerto": "5",
+  "fat": "FAT 138",
+  "tipo": "OLT ATENUADAS",
+  "total_onts": 12,
+  "onts": [
+   {
+    "serial": "48575443DC7DC4A5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 7 APTO 74"
+   },
+   {
+    "serial": "48575443DC7DB8A5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 7 APTO 72"
+   },
+   {
+    "serial": "48575443DC7CBBA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 4 APTO 41"
+   },
+   {
+    "serial": "48575443DC7C9EA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 6 APTO 6-1"
+   },
+   {
+    "serial": "48575443C08BAFA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 1 APTO 1-4"
+   },
+   {
+    "serial": "48575443C08AEDA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 5 APTO 53"
+   },
+   {
+    "serial": "48575443C080D2A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO PB APTO PB-1"
+   },
+   {
+    "serial": "48575443C07D42A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 2 APTO 2-3"
+   },
+   {
+    "serial": "48575443C07D10A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE"
+   },
+   {
+    "serial": "48575443C079DDA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 1 APTO 13"
+   },
+   {
+    "serial": "48575443C07979A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 6 APTO 6-3"
+   },
+   {
+    "serial": "48575443BA2A16A5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/7/5/FAT 138",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 4 APTO 4-3"
+   }
+  ],
+  "direcciones": [
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 1 APTO 1-4",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 1 APTO 13",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 2 APTO 2-3",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 4 APTO 4-3",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 4 APTO 41",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 5 APTO 53",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 6 APTO 6-1",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 6 APTO 6-3",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 7 APTO 72",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 7 APTO 74",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO PB APTO PB-1",
+   "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE"
+  ]
+ },
+ {
+  "archivo": "PDE00 16_13 FAT 08.xlsx",
+  "olt": "pde-olt-00 (Prados del Este)-Mir",
+  "olt_nombre": "Prados del Este",
+  "slot": "16",
+  "puerto": "13",
+  "fat": "FAT 08",
+  "tipo": "FAT 08",
+  "total_onts": 7,
+  "onts": [
+   {
+    "serial": "485754439AA7DBAF",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-20.00",
+    "rx_olt": "-30.00",
+    "ont_id": "47",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO PB APTO PB-L"
+   },
+   {
+    "serial": "485754432AD5569B",
+    "modelo": "EG8141A5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-26.00",
+    "rx_olt": "-30.00",
+    "ont_id": "40",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO PB APTO CONS"
+   },
+   {
+    "serial": "48575443E562E7A6",
+    "modelo": "HG8245W5-6T",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-28.00",
+    "rx_olt": "-31.00",
+    "ont_id": "14",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 6 APTO 64B P"
+   },
+   {
+    "serial": "48575443C08B1EA6",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-28.00",
+    "rx_olt": "-29.00",
+    "ont_id": "13",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE M VARGAS PARQUE AVILA TORRE B PISO 5 APTO 53B P 5 A"
+   },
+   {
+    "serial": "48575443C085C5A6",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-26.00",
+    "rx_olt": "-30.00",
+    "ont_id": "10",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 6 APTO 62B P"
+   },
+   {
+    "serial": "48575443AA43D3A6",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-26.00",
+    "rx_olt": "-30.00",
+    "ont_id": "3",
+    "direccion": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 2 APTO 23B P"
+   },
+   {
+    "serial": "48575443AA49DFA6",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-00 (Prados del Este)-Mir/16/13/FAT 08",
+    "fat": "FAT 08",
+    "rx_ont": "-25.00",
+    "rx_olt": "-30.00",
+    "ont_id": "1",
+    "direccion": "Dato no registrado en el sistema, dispositivo no encontrado"
+   }
+  ],
+  "direcciones": [
+   "Dato no registrado en el sistema, dispositivo no encontrado",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE M VARGAS PARQUE AVILA TORRE B PISO 5 APTO 53B P 5 A",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 2 APTO 23B P",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 6 APTO 62B P",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO 6 APTO 64B P",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO PB APTO CONS",
+   "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO PB APTO PB-L"
+  ]
+ },
+ {
+  "archivo": "PDE02 14_7 FAT 05.xlsx",
+  "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+  "olt_nombre": "Prados del Este 02",
+  "slot": "14",
+  "puerto": "7",
+  "fat": "FAT05",
+  "tipo": "FAT05",
+  "total_onts": 9,
+  "onts": [
+   {
+    "serial": "48575443DC7A59A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-29.00",
+    "ont_id": "33",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 12 APTO 121 P 12 A"
+   },
+   {
+    "serial": "48575443DC78DBA5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-29.00",
+    "rx_olt": "-29.00",
+    "ont_id": "29",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 9 APTO 93 P 9 A 93"
+   },
+   {
+    "serial": "48575443DC78FAA5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-29.00",
+    "ont_id": "28",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 8 APTO 84 P 8 A 84"
+   },
+   {
+    "serial": "48575443DC7932A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-30.00",
+    "ont_id": "22",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 2 APTO 24 P 2 A 24"
+   },
+   {
+    "serial": "48575443DC790AA5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-29.00",
+    "ont_id": "15",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 12 APTO 121 P 12 A"
+   },
+   {
+    "serial": "48575443DC7918A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-28.00",
+    "rx_olt": "-30.00",
+    "ont_id": "13",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 6 APTO 61 P 6 A 61"
+   },
+   {
+    "serial": "48575443DC7921A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-30.00",
+    "ont_id": "12",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 10 APTO 103 P 10 A"
+   },
+   {
+    "serial": "48575443DC791AA5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-32.00",
+    "rx_olt": "-30.00",
+    "ont_id": "10",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 8 APTO 83 P 8 A 83"
+   },
+   {
+    "serial": "48575443DC7817A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT05",
+    "fat": "FAT05",
+    "rx_ont": "-30.00",
+    "rx_olt": "-29.00",
+    "ont_id": "2",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 6 APTO 64 P 6 A 64"
+   }
+  ],
+  "direcciones": [
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 10 APTO 103 P 10 A",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 12 APTO 121 P 12 A",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 2 APTO 24 P 2 A 24",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 6 APTO 61 P 6 A 61",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 6 APTO 64 P 6 A 64",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 8 APTO 83 P 8 A 83",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 8 APTO 84 P 8 A 84",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 9 APTO 93 P 9 A 93"
+  ]
+ },
+ {
+  "archivo": "PDE02 14_7 FAT 06.xlsx",
+  "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+  "olt_nombre": "Prados del Este 02",
+  "slot": "14",
+  "puerto": "7",
+  "fat": "FAT06",
+  "tipo": "FAT06",
+  "total_onts": 6,
+  "onts": [
+   {
+    "serial": "485754432A35E59B",
+    "modelo": "EG8141A5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-28.00",
+    "rx_olt": "-29.00",
+    "ont_id": "49",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO PARAGUA RESIDENCIA PARQUE PRADO 4A PISO 9 APTO 92 A P 9 A"
+   },
+   {
+    "serial": "48575443DC7901A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-28.00",
+    "rx_olt": "-29.00",
+    "ont_id": "42",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4B PISO 7 APTO 71 P 7 A 71"
+   },
+   {
+    "serial": "485754432A667D9B",
+    "modelo": "EG8141A5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-28.00",
+    "rx_olt": "-29.00",
+    "ont_id": "35",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 2 APTO 21 P 2 A 21"
+   },
+   {
+    "serial": "48575443DC7928A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-30.00",
+    "rx_olt": "-29.00",
+    "ont_id": "31",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 15 APTO 153 P 15 A"
+   },
+   {
+    "serial": "48575443DC78E6A5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-33.00",
+    "rx_olt": "-31.00",
+    "ont_id": "6",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA CA RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 15 APTO 151 P 15 A"
+   },
+   {
+    "serial": "48575443DC789AA5",
+    "modelo": "EG8245H5",
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/14/7/FAT06",
+    "fat": "FAT06",
+    "rx_ont": "-32.00",
+    "rx_olt": "-30.00",
+    "ont_id": "5",
+    "direccion": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 14 APTO 142 P 14 A"
+   }
+  ],
+  "direcciones": [
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 14 APTO 142 P 14 A",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 15 APTO 153 P 15 A",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 2 APTO 21 P 2 A 21",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4B PISO 7 APTO 71 P 7 A 71",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO PARAGUA RESIDENCIA PARQUE PRADO 4A PISO 9 APTO 92 A P 9 A",
+   "PARQUE HUMBOLDT AVENIDA RIO PARAGUA CA RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 15 APTO 151 P 15 A"
+  ]
+ },
+ {
+  "archivo": "PDE13_0_FAT 214.xlsx",
+  "olt": "pde-olt-01 (Prados del Este 01)-Mir",
+  "olt_nombre": "Prados del Este 01",
+  "slot": "13",
+  "puerto": "0",
+  "fat": "FAT 214",
+  "tipo": "OLT ATENUADAS",
+  "total_onts": 12,
+  "onts": [
+   {
+    "serial": "48575443EC2EFDA5",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CALLE CARIPE QUINTA LAS SHERAS QUINTA LAS SHERAS"
+   },
+   {
+    "serial": "48575443E56145A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA MEDITERRANEO QUINTA MEDITERRANEO"
+   },
+   {
+    "serial": "48575443E56140A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA ACUEDUCTO QUINTA CHANDA QUINTA CHANDA"
+   },
+   {
+    "serial": "48575443E5613EA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA LAS PIEDRAS QUINTA LAS PIEDRAS"
+   },
+   {
+    "serial": "48575443E56121A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE CON ACUEDUCTO QUINTA TAIMA QUINTA TAIMA"
+   },
+   {
+    "serial": "48575443E560D5A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA MV QUINTA MV"
+   },
+   {
+    "serial": "48575443E560D4A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA POCO A POCO QUINTA POCO A POCO"
+   },
+   {
+    "serial": "48575443E56083A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA SERENA QUINTA SERENA"
+   },
+   {
+    "serial": "48575443E55FE1A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA GIGIMAR QUINTA GIGIMAR"
+   },
+   {
+    "serial": "48575443E55F38A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA ARETUSA QUINTA ARETUSA"
+   },
+   {
+    "serial": "48575443E55EEEA6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA CAROS QUINTA CAROS"
+   },
+   {
+    "serial": "48575443E55DC8A6",
+    "modelo": null,
+    "slot_puerto": "pde-olt-01 (Prados del Este 01)-Mir/13/0/FAT 214",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA CHUINA QUINTA CHUINA"
+   }
+  ],
+  "direcciones": [
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA ACUEDUCTO QUINTA CHANDA QUINTA CHANDA",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CALLE CARIPE QUINTA LAS SHERAS QUINTA LAS SHERAS",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE CON ACUEDUCTO QUINTA TAIMA QUINTA TAIMA",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA ARETUSA QUINTA ARETUSA",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA CAROS QUINTA CAROS",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA CHUINA QUINTA CHUINA",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA GIGIMAR QUINTA GIGIMAR",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA LAS PIEDRAS QUINTA LAS PIEDRAS",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA MEDITERRANEO QUINTA MEDITERRANEO",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA MV QUINTA MV",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA POCO A POCO QUINTA POCO A POCO",
+   "PRADOS DEL ESTE CALLE ACUEDUCTO CA CARIPE QUINTA SERENA QUINTA SERENA"
+  ]
+ },
+ {
+  "archivo": "PDE4_13_FAT 279.xlsx",
+  "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+  "olt_nombre": "Prados del Este 02",
+  "slot": "4",
+  "puerto": "13",
+  "fat": "FAT 279",
+  "tipo": "OLT ATENUADAS",
+  "total_onts": 11,
+  "onts": [
+   {
+    "serial": "485754434E36A3AD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 5 APTO 51-C P 5 A 5"
+   },
+   {
+    "serial": "485754434E369FAD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 4 APTO 44-C P 4 A 4"
+   },
+   {
+    "serial": "485754434E365FAD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 1 APTO 14-C P 1 A 1"
+   },
+   {
+    "serial": "485754434E3644AD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 1 APTO 13-C P 1 A 1"
+   },
+   {
+    "serial": "485754432A854D9B",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 7 APTO 74-C P 7 A 7"
+   },
+   {
+    "serial": "4857544322C2ACAD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 3 APTO 31-C P 3 A 3"
+   },
+   {
+    "serial": "4857544322C2ABAD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 3 APTO 33-C P 3 A 3"
+   },
+   {
+    "serial": "4857544322C27EAD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 2 APTO 22-C P 2 A 2"
+   },
+   {
+    "serial": "4857544322C268AD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 9 APTO 93-C P 9 A 9"
+   },
+   {
+    "serial": "4857544322C244AD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 4 APTO 43-C P 4 A 4"
+   },
+   {
+    "serial": "4857544322C1B2AD",
+    "modelo": null,
+    "slot_puerto": "pde-olt-02 (Prados del Este 02)-Mir/4/13/FAT 279",
+    "fat": null,
+    "rx_ont": null,
+    "rx_olt": null,
+    "ont_id": null,
+    "direccion": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 10 APTO 102-C P 10"
+   }
+  ],
+  "direcciones": [
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 1 APTO 13-C P 1 A 1",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 1 APTO 14-C P 1 A 1",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 10 APTO 102-C P 10",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 2 APTO 22-C P 2 A 2",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 3 APTO 31-C P 3 A 3",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 3 APTO 33-C P 3 A 3",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 4 APTO 43-C P 4 A 4",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 4 APTO 44-C P 4 A 4",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 5 APTO 51-C P 5 A 5",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 7 APTO 74-C P 7 A 7",
+   "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 9 APTO 93-C P 9 A 9"
+  ]
+ }
+]

@@ -165,7 +165,7 @@ aplicación no muestra la pantalla de acceso. El binario se publica con
 `scripts/publicar_apk.py` y no debe distribuirse por canales ajenos al servicio.
 
 Sustituya la ruta relativa por la URL absoluta del servicio desplegado (por ejemplo,
-`https://ggto-web-593453426217.europe-west1.run.app/disclaimer`).
+`https://ggto-web-695669822281.europe-west1.run.app/disclaimer`).
 
 Enlaces oficiales del proyecto
 ------------------------------

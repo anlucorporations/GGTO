@@ -1,12 +1,13 @@
 # PROPUESTA — Redespliegue de GGTO (web + APK) en el GCP de TX Barlovento
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > **⏱️ ESTADO: EJECUTADA el 06/11/2026** — en lugar de `barloventasv2` se
-> creó un proyecto dedicado: **`ggto-prod-txblvento`** (nº 597577479284),
+> creó un proyecto dedicado: **`ggto-prod-txblvento`** (nº 695669822281),
 > enlazado a la cuenta de facturación ABIERTA `01E9E1-5892F8-EC5643`.
 >
 > | Recurso | Valor final |
 > |---|---|
-> | URL de la web/API | `https://ggto-web-597577479284.europe-west1.run.app` |
+> | URL de la web/API | `https://ggto-web-695669822281.europe-west1.run.app` |
 > | Revisión | `ggto-web-00001-dzx` (v100, 100 % del tráfico; `/health /ready` 200) |
 > | Cloud SQL | `ggto-db` — PostgreSQL 15 `db-f1-micro` con **HA REGIONAL** en europe-west1 |
 > | Datos | Dump de producción importado: 167 casos · 633 movimientos · 82 averías |
@@ -14,7 +15,7 @@
 > | Bucket | `gs://ggto-prod-txblvento-ggto-evidencias` (con el dump respaldado) |
 > | APK | base URL nueva + versión `1.15.22+47` — APK compilada (24,2 MB) |
 >
-> El proyecto `truekeate-main` queda INTACTO (fase de apagado pendiente).
+> El proyecto `ggto-prod-txblvento2` queda INTACTO (fase de apagado pendiente).
 
 **Fecha de la propuesta:** 05/11/2026
 
@@ -23,7 +24,7 @@
 ## 1 · Resumen ejecutivo
 
 Mudar la plataforma GGTO (API FastAPI + web React + APK Flutter) del proyecto
-`truekeate-main` al proyecto **`barloventasv2`** en ~1 día de trabajo, con
+`ggto-prod-txblvento2` al proyecto **`barloventasv2`** en ~1 día de trabajo, con
 **cero pérdida de datos** y reversibilidad: el repositorio ya está
 empaquetado (v100, commit `ce781a0` en `C:\GGTO\backup_gcp_2026-11-05\`),
 los scripts de despliegue ya están parametrizados y la BD se restablece
@@ -50,7 +51,7 @@ a la MISMA cuenta cerrada (`013B00…`, `open: false`). Antes de empezar hay
 que: (a) reactivar esa cuenta con el medio de pago, o (b) vincular
 `barloventasv2` a otra cuenta de facturación activa de TX Barlovento.
 Sin esto NADA arranca (misma respuesta `BILLING_DISABLED` que hoy bloquea
-`truekeate-main`).
+`ggto-prod-txblvento2`).
 
 ## 3 · Arquitectura destino
 
@@ -161,7 +162,7 @@ Manager ~$0.1 · Scheduler ~$0.5 · Cloud Build dentro del tier gratuito.
 ## 9 · Cierre del proyecto viejo (fase 2 posterior)
 
 Con el servicio estable 48 h en `barloventasv2`: apagar el servicio y la
-BD de `truekeate-main` (queda snapshot en Cloud SQL) para no pagar doble.
+BD de `ggto-prod-txblvento2` (queda snapshot en Cloud SQL) para no pagar doble.
 
 ---
 

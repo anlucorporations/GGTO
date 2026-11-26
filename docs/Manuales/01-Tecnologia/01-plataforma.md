@@ -1,4 +1,5 @@
 # Plataforma GGTO — Visión general y arquitectura
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > **Estado verificado 2026-10-24:** GGTO V1 continúa desplegado; GGTO V2 está
 > parcialmente implementado. La APK vigente (`1.15.20+45`) es multirol: campo y
@@ -261,7 +262,7 @@ Estado actual de la base en producción:
 
 | Comprobación | Resultado |
 |---|---|
-| Instancia | `truekeate-db-dev` (PostgreSQL 15.18) |
+| Instancia | `vm-databases` (PostgreSQL 15.18) |
 | Base | `ggtov2` |
 | Extensiones | `pgcrypto 1.3`, `pg_trgm 1.6` |
 | Seguridad por filas (RLS) | Activa en `caso` y `despacho`, con 2 políticas |
@@ -372,18 +373,18 @@ propios.
 Mientras eso no ocurra, el sistema vive en **otro proyecto**. Este es un dato central: cualquier
 persona nueva debe saber que el despliegue actual es **temporal**.
 
-### Servicio Cloud Run ggto-web en truekeate-main
+### Servicio Cloud Run ggto-web en ggto-prod-txblvento2
 
-El sistema está alojado temporalmente en el proyecto **`truekeate-main`**, que sí tiene facturación.
+El sistema está alojado temporalmente en el proyecto **`ggto-prod-txblvento2`**, que sí tiene facturación.
 
 | Dato | Valor |
 |---|---|
 | Servicio | Cloud Run `ggto-web` |
 | Región | `europe-west1` |
-| Dirección principal | `https://ggto-web-593453426217.europe-west1.run.app` |
+| Dirección principal | `https://ggto-web-695669822281.europe-west1.run.app` |
 | Dirección alternativa | `https://ggto-web-m33mjctj4a-ew.a.run.app` |
-| Cuenta de servicio | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` |
-| Imagen (última documentada) | `.../truekeate-repo/ggto-web:v14` |
+| Cuenta de servicio | `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` |
+| Imagen (última documentada) | `.../ggto/ggto-web:v14` |
 | Revisión (última documentada) | `ggto-web-00014-zqx` |
 
 La imagen del sistema es **multi-etapa**: primero Node compila la parte visual y después Python la
@@ -413,10 +414,10 @@ Los **scripts** de instalación en la nube están en la carpeta `RepoTecnico/scr
 orden, del `00` al `10`, y existe un orquestador que los coordina. El manual de scripts GCP los
 explica uno por uno.
 
-### Cloud SQL compartida truekeate-db-dev
+### Cloud SQL compartida vm-databases
 
 La base de datos de GGTO **comparte servidor** con otro producto llamado TrueKeate. La instancia es
-`truekeate-db-dev` (PostgreSQL 15.18), con la base `ggtov2` y el usuario `ggtov2_app`. Compartir
+`vm-databases` (PostgreSQL 15.18), con la base `ggtov2` y el usuario `ggtov2_app`. Compartir
 servidor tiene consecuencias, como se explica en los riesgos más abajo.
 
 En la nube, la aplicación se conecta por un **socket** (una vía interna de comunicación). Por eso la
@@ -424,7 +425,7 @@ dirección del servidor no es una IP sino una ruta que empieza por `/cloudsql/`.
 documentada es:
 
 ```dotenv
-DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db
 DB_PORT=5432
 DB_NAME=ggtov2
 DB_USER=ggtov2_app
@@ -472,9 +473,9 @@ usarlas para una decisión.** Lo que no se pueda comprobar se reporta como *pend
 ```mermaid
 flowchart TB
     subgraph Real["Lo que está desplegado HOY (temporal)"]
-        P1["Proyecto truekeate-main<br/>(con facturación)"]
+        P1["Proyecto ggto-prod-txblvento2<br/>(con facturación)"]
         CR["Cloud Run ggto-web<br/>europe-west1 · imagen v14<br/>ACCESO PÚBLICO con datos reales"]
-        DB["Cloud SQL truekeate-db-dev<br/>compartida con TrueKeate<br/>sin backups ni PITR (D-26)"]
+        DB["Cloud SQL vm-databases<br/>compartida con TrueKeate<br/>sin backups ni PITR (D-26)"]
         P1 --> CR
         CR -->|"socket /cloudsql/..."| DB
     end

@@ -1,6 +1,8 @@
-# DESPLIEGUE GGTO en `ggto-prod-txblvento2` (GCP de TX Barlovento) — v101
+# DESPLIEGUE GGTO en `ggto-prod-txblvento2` (GCP de TX Barlovento) — v106
 
-**Fecha de ejecución:** jueves 12/11/2026
+> **Estado vigente verificado el 24/11/2026:** el servicio `ggto-web` sirve la imagen `ggto-web:v106` (revisión `ggto-web-00016-k2k`, 100 % del tráfico) desde `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web`. La BD ya no es la Cloud SQL de este proyecto: es **PostgreSQL 16.15 en la VM `vm-databases`** (`10.140.0.2:5432`, base `ggtov2`) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` queda como respaldo. Los valores del despliegue original de v101 se conservan más abajo como registro histórico.
+
+**Fecha de ejecución original:** jueves 12/11/2026
 **Motivo:** el proyecto anterior `ggto-prod-txblvento` había quedado en estado
 `DELETE_REQUESTED` (facturación desvinculada, servicio caído). Se restauró y,
 como varios servicios de GCP seguían considerándolo eliminado (Cloud Build,
@@ -17,12 +19,14 @@ se desplegó en un proyecto nuevo y limpio.
 | Proyecto GCP | `ggto-prod-txblvento2` (nº **695669822281**) |
 | Cuenta de facturación | `01E9E1-5892F8-EC5643` (`Mi cuenta de facturación`, **OPEN**) |
 | Región | **europe-west1** |
-| Imagen | `europe-west1-docker.pkg.dev/plataforma-txbarlovento/ggto/ggto-web:v101` |
-| Bucket de evidencias | `gs://ggto-prod-txblvento2-ggto-evidencias` |
+| Imagen (vigente) | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v106` |
+| Bucket de evidencias (env vigente) | `gs://ggto-prod-txblvento-ggto-evidencias` (existe también `gs://ggto-prod-txblvento2-ggto-evidencias`) |
 | Cuenta de servicio | `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` |
-| Revisión en tráfico | `ggto-web-00005-q9g` **al 100 %** |
-| Ciclo del código | v101 — commit `1302277` (asistente virtual C1–C6) |
-| APK | **`1.15.23+48`** — base URL apuntando a la URL nueva |
+| Revisión en tráfico | `ggto-web-00016-k2k` **al 100 %** |
+| BD viva | PostgreSQL 16.15 en `vm-databases` — `10.140.0.2:5432`, base `ggtov2`, usuario `ggtov2_app` |
+| Conector VPC | `ggto-connector` (red `ggto-vpc`, egress `private-ranges-only`) |
+| Ciclo del código | v106 |
+| APK | **`1.15.25+50`** — base URL apuntando a la URL nueva |
 
 ### 1.1 Registro de imágenes (cambio importante)
 

@@ -1,4 +1,5 @@
 # Plan de Desarrollo Vertical — GGTO v2 (Fase 3)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Generado el 2026-11-12 (`/plan_desarrollo`) tras cerrar la Fase 2 (catálogo de 101 CU +
 > gráficos + documento técnico, todo auditado). Cada ciclo es una **entrega 100 % operativa**:

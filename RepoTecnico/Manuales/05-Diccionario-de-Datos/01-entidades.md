@@ -1,10 +1,11 @@
 # Diccionario de Datos — Entidades de la base GGTO
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Dato | Valor |
 |---|---|
 | Proyecto | **GGTO** — Sistema de administración de reportes de avería y construcción de puntos ópticos |
 | Cliente | CANTV C.A. — Central Francisco Salias (Área 4) |
-| Motor | PostgreSQL 15 (instancia compartida `truekeate-main:southamerica-east1:truekeate-db-dev`) |
+| Motor | PostgreSQL 15 (instancia compartida `ggto-prod-txblvento2:europe-west1:ggto-db`) |
 | Base | `ggtov2` · usuario de aplicación `ggtov2_app` |
 | DDL de referencia | `RepoTecnico/db/schema.sql` (**41 tablas locales**) |
 | Mapeo ORM | `app/models/*.py` (SQLAlchemy 2.x declarativo) |

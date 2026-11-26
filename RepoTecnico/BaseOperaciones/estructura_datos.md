@@ -1,4 +1,5 @@
 # Estructura de datos para operaciones — GGTO
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Documento de `@InyectaDatos` (adaptado: el proyecto **no usa blockchain/Anvil**;
 > el sistema de persistencia real es **PostgreSQL**). Reutiliza
@@ -7,7 +8,7 @@
 | Campo | Valor |
 |---|---|
 | Proyecto | GGTO — CANTV Central Francisco Salias (Área 4) |
-| Base de datos | PostgreSQL 15.18 · base `ggtov2` (instancia `truekeate-db-dev`) |
+| Base de datos | PostgreSQL 15.18 · base `ggtov2` (instancia `vm-databases`) |
 | Usuario de datos | `ggtov2_app` |
 | Migas de datos | `RepoTecnico/db/schema.sql` (DDL) · `RepoTecnico/diccionario_datos.md` |
 | Roles | `SUPER`, `ADMIN`, `SUPERVISOR`, `TECNICO` |

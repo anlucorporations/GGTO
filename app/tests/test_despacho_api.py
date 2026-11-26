@@ -202,6 +202,9 @@ def test_proceso_muestra_universo_sectores_y_cuadrillas(client, entorno):
     totales = {s["nombre"]: s["total"] for s in p["sectores"]}
     assert totales == {"Alfa": 6, "Beta": 4}
     assert sum(totales.values()) == 10
+    # El formulario identifica los sectores por sus direcciones, no por el nombre.
+    direcciones = {s["nombre"]: s["direcciones"] for s in p["sectores"]}
+    assert direcciones == {"Alfa": ["SECTOR ALFA"], "Beta": ["SECTOR BETA"]}
 
     # Cuadrillas con los sectores asignados (propuesta automática la primera vez).
     # D-77: la cuadrilla 0 también viaja en el formulario, sin sectores.

@@ -45,7 +45,7 @@
     "entradasToc": 16,
     "anclas": {
       "empezar-en-5-minutos": {
-        "pagina": 3,
+        "pagina": 4,
         "texto": "1Empezar en 5 minutos"
       },
       "vision-general-del-sistema": {
@@ -96,13 +96,13 @@
         "pagina": 12,
         "texto": "5.1Proyecto ggtov2 y bloqueo de facturacion"
       },
-      "servicio-cloud-run-ggto-web-en-truekeate-main": {
+      "servicio-cloud-run-ggto-web-en-ggto-prod-txblvento2": {
         "pagina": 12,
-        "texto": "5.2Servicio Cloud Run ggto-web en truekeate-main"
+        "texto": "5.2Servicio Cloud Run ggto-web en ggto-prod-txblvento2"
       },
-      "cloud-sql-compartida-truekeate-db-dev": {
+      "cloud-sql-compartida-vm-databases": {
         "pagina": 13,
-        "texto": "5.3Cloud SQL compartida truekeate-db-dev"
+        "texto": "5.3Cloud SQL compartida vm-databases"
       },
       "pendientes-y-riesgos-d-26-acceso-publico-con-pii": {
         "pagina": 13,
@@ -2702,112 +2702,112 @@
   {
     "manual": "04-Despliegue\\02-cloud-run-y-cloud-sql.html",
     "pdf": "pdf\\04-Despliegue\\02-cloud-run-y-cloud-sql.pdf",
-    "paginas": 15,
-    "hojasContenido": 13,
+    "paginas": 16,
+    "hojasContenido": 14,
     "entradasToc": 26,
     "anclas": {
       "empezar-en-5-minutos": {
-        "pagina": 3,
+        "pagina": 4,
         "texto": "1Empezar en 5 minutos"
       },
       "estado-real-del-despliegue": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2Estado real del despliegue"
       },
-      "cloud-run-ggto-web-en-truekeate-main-europe-west1": {
-        "pagina": 4,
-        "texto": "2.1Cloud Run ggto-web en truekeate-main/europe-west1"
+      "cloud-run-ggto-web-en-ggto-prod-txblvento2-europe-west1": {
+        "pagina": 6,
+        "texto": "2.1Cloud Run ggto-web en ggto-prod-txblvento2/europe-west1"
       },
       "url-y-revision-ggto-web-00014-zqx-imagen-v14": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.2URL y revision (ggto-web-00014-zqx, imagen v14)"
       },
       "sa-de-ejecucion": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.3SA de ejecucion"
       },
       "cloud-sql": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3Cloud SQL"
       },
-      "instancia-truekeate-db-dev-postgresql-15-18": {
-        "pagina": 6,
-        "texto": "3.1instancia truekeate-db-dev (PostgreSQL 15.18)"
+      "instancia-vm-databases-postgresql-15-18": {
+        "pagina": 7,
+        "texto": "3.1instancia vm-databases (PostgreSQL 15.18)"
       },
       "base-ggtov2-y-usuario-ggtov2-app": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.2base ggtov2 y usuario ggtov2_app"
       },
       "socket-cloudsql": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "3.3socket /cloudsql/..."
       },
       "ssl-y-roles-endurecidos-entornos-globales-md-83-106": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "3.4SSL y roles endurecidos (entornos_globales.md:83-106)"
       },
       "imagen-de-contenedor": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4Imagen de contenedor"
       },
       "multi-etapa-node-python": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "4.1multi-etapa Node+Python"
       },
-      "artifact-registry-truekeate-repo": {
-        "pagina": 8,
-        "texto": "4.2Artifact Registry truekeate-repo"
+      "artifact-registry-ggto": {
+        "pagina": 9,
+        "texto": "4.2Artifact Registry ggto"
       },
       "conexion-de-la-aplicacion": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5Conexion de la aplicacion"
       },
       "socket-vs-proxy-local-127-0-0-1-5433": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.1socket vs proxy local 127.0.0.1:5433"
       },
       "app-core-db-py-26-36": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.2app/core/db.py:26-36"
       },
       "despliegue-a-ggto-web": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6Despliegue a ggto-web"
       },
       "pasos-operativos": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.1Pasos operativos"
       },
       "alternativa-por-api-rest": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "6.2Alternativa por API REST"
       },
       "bloqueo-de-ggtov2-y-plan-de-migracion-entornos-globales-md-3": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "7Bloqueo de ggtov2 y plan de migracion (entornos_globales.md:360-369)"
       },
       "riesgos": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "8Riesgos"
       },
       "d-26-sin-backups-pitr": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "8.1D-26 sin backups/PITR"
       },
       "servicio-publico-con-pii-real-debe-restringirse": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "8.2servicio publico con PII real (debe restringirse)"
       },
       "roles-de-bd-noinherit-riesgo-residual": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "8.3roles de BD (NOINHERIT, riesgo residual)"
       },
       "verificacion": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "9Verificacion"
       },
       "lista-de-comprobacion-posterior-al-despliegue": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "9.0.1Lista de comprobacion posterior al despliegue"
       }
     },
@@ -2926,7 +2926,7 @@
       },
       "diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad": {
         "pagina": 14,
-        "texto": "8Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)"
+        "texto": "8Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (ggto-prod-txblvento2)"
       }
     },
     "avisos": []
@@ -2934,12 +2934,12 @@
   {
     "manual": "04-Despliegue\\04-pruebas-y-ci.html",
     "pdf": "pdf\\04-Despliegue\\04-pruebas-y-ci.pdf",
-    "paginas": 12,
-    "hojasContenido": 10,
+    "paginas": 13,
+    "hojasContenido": 11,
     "entradasToc": 33,
     "anclas": {
       "empezar-en-5-minutos": {
-        "pagina": 3,
+        "pagina": 4,
         "texto": "1Empezar en 5 minutos"
       },
       "estrategia-de-pruebas": {
@@ -2951,15 +2951,15 @@
         "texto": "2.1Los cuatro niveles de prueba"
       },
       "unitarias": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1.1Unitarias"
       },
       "integracion": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1.2Integración"
       },
       "contratos": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1.3Contratos"
       },
       "e2e-de-navegador": {
@@ -2967,107 +2967,107 @@
         "texto": "2.1.4E2E de navegador"
       },
       "entornos-de-prueba": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3Entornos de prueba"
       },
       "ggto-test-pytest": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.1ggto_test (pytest)"
       },
       "ggto-e2e-playwright": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.2ggto_e2e (Playwright)"
       },
       "cloud-sql-auth-proxy": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.3Cloud SQL Auth Proxy"
       },
       "chromium-y-ld-library-path-fontconfig-file": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "3.4Chromium y LD_LIBRARY_PATH/FONTCONFIG_FILE"
       },
       "pruebas-backend": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "4Pruebas backend"
       },
       "estructura-de-app-tests": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "4.1Estructura de app/tests"
       },
       "conftest-py": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "4.2conftest.py"
       },
       "inventario-por-archivo": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "4.3Inventario por archivo"
       },
       "como-ejecutarlas": {
-        "pagina": 7,
+        "pagina": 8,
         "texto": "4.4Cómo ejecutarlas"
       },
       "pruebas-e2e": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5Pruebas E2E"
       },
       "repotecnico-pruebas-e2e": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5.1RepoTecnico/pruebas/e2e"
       },
       "11-archivos-y-46-pruebas": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5.211 archivos y 46 pruebas"
       },
       "run-e2e-sh": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "5.3run_e2e.sh"
       },
       "seed-e2e-py": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "5.4seed_e2e.py"
       },
       "calidad-estatica": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6Calidad estática"
       },
       "ruff": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.1ruff"
       },
       "mypy": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.2mypy"
       },
       "tsc-strict": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "6.3tsc strict"
       },
       "resultado-fase-4": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7Resultado Fase 4"
       },
       "169-169-pytest": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.1169/169 pytest"
       },
       "46-46-e2e": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.246/46 E2E"
       },
       "hallazgos-f4-01-a-f4-06": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "7.3Hallazgos F4-01 a F4-06"
       },
       "ci": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8CI"
       },
       "github-workflows-ci-yml": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8.1.github/workflows/ci.yml"
       },
       "comparacion-con-lo-previsto": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "8.2Comparación con lo previsto"
       }
     },
@@ -3076,240 +3076,240 @@
   {
     "manual": "05-Diccionario-de-Datos\\01-entidades.html",
     "pdf": "pdf\\05-Diccionario-de-Datos\\01-entidades.pdf",
-    "paginas": 29,
-    "hojasContenido": 26,
+    "paginas": 30,
+    "hojasContenido": 27,
     "entradasToc": 58,
     "anclas": {
       "empezar-en-5-minutos": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "1Empezar en 5 minutos"
       },
       "vision-general": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2Visión general"
       },
       "las-41-tablas-del-ddl-local": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.1Las 41 tablas del DDL local"
       },
       "convenciones-de-nombres-y-tipos": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "2.2Convenciones de nombres y tipos"
       },
       "campos-de-auditoria-creado-en-actualizado-en": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "2.3Campos de auditoría (creado_en, actualizado_en)"
       },
       "extensiones-pgcrypto-pg-trgm": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "2.4Extensiones pgcrypto/pg_trgm"
       },
       "entidades-por-dominio": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "3Entidades por dominio"
       },
       "seguridad-y-acceso": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "3.1Seguridad y acceso"
       },
       "rol-catalogo-de-roles": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "3.1.1rol — catálogo de roles"
       },
       "usuario-credenciales-de-acceso": {
-        "pagina": 9,
+        "pagina": 10,
         "texto": "3.1.2usuario — credenciales de acceso"
       },
       "dispositivo-seguridad-recuperacion-y-documento-cifrado": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "3.1.3dispositivo_seguridad — recuperación y documento cifrado"
       },
       "auditoria-bitacora-de-acciones": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "3.1.4auditoria — bitácora de acciones"
       },
       "configuracion": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "3.2Configuración"
       },
       "central-direccion-operativa": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "3.2.1central — dirección operativa"
       },
       "sector-agrupacion-geografica-de-trabajo": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "3.2.2sector — agrupación geográfica de trabajo"
       },
       "sector-direccion-patrones-de-direccion-del-sector": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "3.2.3sector_direccion — patrones de dirección del sector"
       },
       "tecnico-trabajador-de-la-central": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "3.2.4tecnico — trabajador de la central"
       },
       "flota-vehiculos-de-la-central": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "3.2.5flota — vehículos de la central"
       },
       "herramienta-inventario-de-herramientas": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "3.2.6herramienta — inventario de herramientas"
       },
       "cuadrilla-equipo-de-trabajo": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "3.2.7cuadrilla — equipo de trabajo"
       },
       "cuadrilla-tecnico-pertenencia-n-m-con-vigencia": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "3.2.8cuadrilla_tecnico — pertenencia N:M con vigencia"
       },
       "cuadrilla-herramienta-asignacion-de-herramientas": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "3.2.9cuadrilla_herramienta — asignación de herramientas"
       },
       "causa-catalogo-de-causas": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "3.2.10causa — catálogo de causas"
       },
       "catalogo-metodo-metodos-de-cierre-enrutado-contacto": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "3.2.11catalogo_metodo — métodos de cierre/enrutado/contacto"
       },
       "configuracion-parametros-del-sistema": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "3.2.12configuracion — parámetros del sistema"
       },
       "operacion": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "3.3Operación"
       },
       "ingesta-lote-carga-del-csv-diario": {
-        "pagina": 16,
+        "pagina": 17,
         "texto": "3.3.1ingesta_lote — carga del CSV diario"
       },
       "caso-entidad-central-de-averias": {
-        "pagina": 16,
+        "pagina": 17,
         "texto": "3.3.2caso — entidad central de averías"
       },
       "caso-estado-hist-bitacora-de-estados": {
-        "pagina": 17,
+        "pagina": 18,
         "texto": "3.3.3caso_estado_hist — bitácora de estados"
       },
       "actividad-reporte-corto-de-gestion": {
-        "pagina": 18,
+        "pagina": 19,
         "texto": "3.3.4actividad — reporte corto de gestión"
       },
       "evidencia-registro-fotografico": {
-        "pagina": 18,
+        "pagina": 19,
         "texto": "3.3.5evidencia — registro fotográfico"
       },
       "incidente-novedades-de-flota-o-herramienta": {
-        "pagina": 19,
+        "pagina": 20,
         "texto": "3.3.6incidente — novedades de flota o herramienta"
       },
       "sincronizacion-paquetes-zip-del-dispositivo": {
-        "pagina": 19,
+        "pagina": 20,
         "texto": "3.3.7sincronizacion — paquetes ZIP del dispositivo"
       },
       "especiales": {
-        "pagina": 20,
+        "pagina": 21,
         "texto": "3.4Especiales"
       },
       "solicitante-personal-externo": {
-        "pagina": 20,
+        "pagina": 21,
         "texto": "3.4.1solicitante — personal externo"
       },
       "caso-especial-referidos-empresas-y-gobiernos": {
-        "pagina": 20,
+        "pagina": 21,
         "texto": "3.4.2caso_especial — referidos, empresas y gobiernos"
       },
       "seguimiento-derivacion-a-otras-instancias": {
-        "pagina": 21,
+        "pagina": 22,
         "texto": "3.4.3seguimiento — derivación a otras instancias"
       },
       "cita-agenda-de-contacto-atencion": {
-        "pagina": 21,
+        "pagina": 22,
         "texto": "3.4.4cita — agenda de contacto/atención"
       },
       "despacho": {
-        "pagina": 21,
+        "pagina": 22,
         "texto": "3.5Despacho"
       },
       "despacho-cabecera-diaria-por-cuadrilla": {
-        "pagina": 21,
+        "pagina": 22,
         "texto": "3.5.1despacho — cabecera diaria por cuadrilla"
       },
       "despacho-caso-detalle-de-casos-asignados": {
-        "pagina": 22,
+        "pagina": 23,
         "texto": "3.5.2despacho_caso — detalle de casos asignados"
       },
       "cuadrilla-sector-dia-asignacion-diaria-de-sectores": {
-        "pagina": 22,
+        "pagina": 23,
         "texto": "3.5.3cuadrilla_sector_dia — asignación diaria de sectores"
       },
       "falla-masiva-evento-de-falla-por-concentracion": {
-        "pagina": 23,
+        "pagina": 24,
         "texto": "3.5.4falla_masiva — evento de falla por concentración"
       },
       "insumos-v2": {
-        "pagina": 23,
+        "pagina": 24,
         "texto": "3.6Insumos (v2)"
       },
       "insumo-catalogo-de-materiales": {
-        "pagina": 23,
+        "pagina": 24,
         "texto": "3.6.1insumo — catálogo de materiales"
       },
       "orden-material-solicitud-de-material": {
-        "pagina": 24,
+        "pagina": 25,
         "texto": "3.6.2orden_material — solicitud de material"
       },
       "orden-material-detalle-renglones-de-la-orden": {
-        "pagina": 24,
+        "pagina": 25,
         "texto": "3.6.3orden_material_detalle — renglones de la orden"
       },
       "inventario-movimiento-ingresos-egresos-y-ajustes": {
-        "pagina": 24,
+        "pagina": 25,
         "texto": "3.6.4inventario_movimiento — ingresos, egresos y ajustes"
       },
       "notificaciones": {
-        "pagina": 25,
+        "pagina": 26,
         "texto": "3.7Notificaciones"
       },
       "notificacion-bandeja-de-salida-outbox": {
-        "pagina": 25,
+        "pagina": 26,
         "texto": "3.7.1notificacion — bandeja de salida (outbox)"
       },
       "campos-pii": {
-        "pagina": 26,
+        "pagina": 27,
         "texto": "4Campos PII"
       },
       "inventario-y-clasificacion-rnf-18": {
-        "pagina": 26,
+        "pagina": 27,
         "texto": "4.1inventario y clasificación (RNF-18)"
       },
       "retencion-por-entidad-requerimientos-md-212-225": {
-        "pagina": 26,
+        "pagina": 27,
         "texto": "4.2retención por entidad (requerimientos.md:212-225)"
       },
       "fuentes": {
-        "pagina": 28,
+        "pagina": 29,
         "texto": "5Fuentes"
       },
       "repotecnico-diccionario-datos-md": {
-        "pagina": 28,
+        "pagina": 29,
         "texto": "5.1RepoTecnico/diccionario_datos.md"
       },
       "repotecnico-db-schema-sql": {
-        "pagina": 28,
+        "pagina": 29,
         "texto": "5.2RepoTecnico/db/schema.sql"
       },
       "cobertura-del-orm-app-models": {
-        "pagina": 28,
+        "pagina": 29,
         "texto": "5.3Cobertura del ORM (app/models/)"
       },
       "divergencias-detectadas": {
-        "pagina": 28,
+        "pagina": 29,
         "texto": "5.4Divergencias detectadas"
       }
     },
@@ -3444,140 +3444,140 @@
   {
     "manual": "07-Operacion\\01-operacion-y-mantenimiento.html",
     "pdf": "pdf\\07-Operacion\\01-operacion-y-mantenimiento.pdf",
-    "paginas": 15,
-    "hojasContenido": 13,
+    "paginas": 16,
+    "hojasContenido": 14,
     "entradasToc": 33,
     "anclas": {
       "empezar-en-5-minutos": {
-        "pagina": 3,
+        "pagina": 4,
         "texto": "1Empezar en 5 minutos"
       },
       "operacion-diaria": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2Operación diaria"
       },
       "ingesta-del-csv-diario": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1Ingesta del CSV diario"
       },
       "ventana-de-entrega-y-horario": {
-        "pagina": 4,
+        "pagina": 5,
         "texto": "2.1.1Ventana de entrega y horario"
       },
       "procedimiento-paso-a-paso": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.1.2Procedimiento paso a paso"
       },
       "verificacion-del-resultado": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.1.3Verificación del resultado"
       },
       "gestion-de-casos": {
-        "pagina": 5,
+        "pagina": 6,
         "texto": "2.2Gestión de casos"
       },
       "despacho-y-reporte-de-las-16-00": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "2.3Despacho y reporte de las 16:00"
       },
       "agenda-y-especiales": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "2.4Agenda y especiales"
       },
       "monitoreo": {
-        "pagina": 6,
+        "pagina": 7,
         "texto": "2.5Monitoreo"
       },
       "rutinas-programadas": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "3Rutinas programadas"
       },
       "deteccion-de-fallas-tras-la-ingesta": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "3.1Detección de fallas tras la ingesta"
       },
       "procesamiento-del-outbox": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "3.2Procesamiento del outbox"
       },
       "que-es-automatico-y-que-es-manual-segun-el-codigo": {
-        "pagina": 8,
+        "pagina": 9,
         "texto": "3.3Qué es automático y qué es manual según el código"
       },
       "respaldo-y-recuperacion": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "4Respaldo y recuperación"
       },
       "rnf-16-rpo-24-h-rto-4-h": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "4.1RNF-16 (RPO ≤ 24 h, RTO ≤ 4 h)"
       },
       "estado-real-d-26-sin-backups-pitr": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "4.2Estado real (D-26: sin backups/PITR)"
       },
       "procedimiento-deseado-y-pendiente": {
-        "pagina": 10,
+        "pagina": 11,
         "texto": "4.3Procedimiento deseado y pendiente"
       },
       "mantenimiento": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5Mantenimiento"
       },
       "esquema-db-schema-sql-y-recarga-de-catalogos": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5.1Esquema (db/schema.sql) y recarga de catálogos"
       },
       "reaplicacion-del-esquema": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5.1.1Reaplicación del esquema"
       },
       "recalcular-cuadrilla0-py": {
-        "pagina": 11,
+        "pagina": 12,
         "texto": "5.2recalcular_cuadrilla0.py"
       },
       "migraciones-alembic-previstas-no-implementadas-pendiente-de-": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "5.3Migraciones Alembic (previstas, no implementadas → \"pendiente de confirmar\")"
       },
       "logs-y-health-ready": {
-        "pagina": 12,
+        "pagina": 13,
         "texto": "5.4Logs y /health /ready"
       },
       "incidentes": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "6Incidentes"
       },
       "tipos-ingesta-fallida-dependencia-externa-caida-bloqueo-de-u": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "6.1Tipos (ingesta fallida, dependencia externa caída, bloqueo de usuario, fallo de notificación)"
       },
       "deteccion": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "6.2Detección"
       },
       "contencion": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "6.3Contención"
       },
       "escalamiento": {
-        "pagina": 13,
+        "pagina": 14,
         "texto": "6.4Escalamiento"
       },
       "continuidad": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "7Continuidad"
       },
       "disponibilidad-99-en-06-00-20-00-rnf-17": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "7.1Disponibilidad 99 % en 06:00–20:00 (RNF-17)"
       },
       "degradacion-controlada": {
-        "pagina": 14,
+        "pagina": 15,
         "texto": "7.2Degradación controlada"
       },
       "pendientes-operativos": {
-        "pagina": 15,
+        "pagina": 16,
         "texto": "8Pendientes operativos"
       }
     },

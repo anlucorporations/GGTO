@@ -55,7 +55,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 API = os.environ.get(
-    "GGTO_API", "https://ggto-web-593453426217.europe-west1.run.app/api/v1"
+    "GGTO_API", "https://ggto-web-695669822281.europe-west1.run.app/api/v1"
 )
 ZONA = ZoneInfo("America/Caracas")
 

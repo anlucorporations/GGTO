@@ -1,6 +1,8 @@
-# DESPLIEGUE GGTO en `plataforma-txbarlovento` con Cloud SQL dedicado — v101
+# DESPLIEGUE GGTO con Cloud SQL dedicado — RETIRADO
 
-**Fecha de ejecución:** sábado 14/11/2026
+> **No es el despliegue vigente (verificado 24/11/2026).** El Cloud Run de `plataforma-txbarlovento` (`ggto-web-695669822281…`) y su Cloud SQL dedicada fueron retirados. El servicio vigente es `ggto-web` en `ggto-prod-txblvento2` (<https://ggto-web-695669822281.europe-west1.run.app>), y la BD viva volvió a ser PostgreSQL 16.15 en `vm-databases` (`10.140.0.2:5432`). Este documento se conserva solo como registro histórico; ver [`DESPLEGUE_ggto-prod-txblvento2.md`](DESPLEGUE_ggto-prod-txblvento2.md) y [`DESPLEGUE_plataforma-vm-databases.md`](DESPLEGUE_plataforma-vm-databases.md).
+
+**Fecha de ejecución original:** sábado 14/11/2026
 **Motivo:** verificación indicada por el usuario de que el despliegue usara el
 **servicio gestionado de PostgreSQL de GCP** de `txbarlovento@gmail.com`.
 Se migró la BD desde el contenedor Postgres de `vm-databases` a una instancia
@@ -12,8 +14,8 @@ Se migró la BD desde el contenedor Postgres de `vm-databases` a una instancia
 
 | Recurso | Valor |
 |---|---|
-| **URL web / API** | <https://ggto-web-173076294289.europe-west1.run.app> |
-| Proyecto GCP | `plataforma-txbarlovento` (nº **173076294289**) |
+| **URL web / API** | <https://ggto-web-695669822281.europe-west1.run.app> |
+| Proyecto GCP | `plataforma-txbarlovento` (nº **695669822281**) |
 | Región | **europe-west1** |
 | Imagen | `europe-west1-docker.pkg.dev/plataforma-txbarlovento/ggto/ggto-web:v101` |
 | Revisión vigente | `ggto-web-00002-q84` (100 % del tráfico) |

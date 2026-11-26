@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4) — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, dónde se ejecuta la plataforma GGTO, qué variables de configuración usa y cómo se cuidan los secretos (claves y contraseñas). Está dirigido a o">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../../../imagenes/entornos-ggto.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Despliegue</span>
           <h1 class="portada-titulo">Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4)</h1>
-          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, dónde se ejecuta la plataforma GGTO, qué variables de configuración usa y cómo se cuidan los secretos (claves y contraseñas). Está dirigido a operadores, supervisores y administradores. Cuando un dato no pudo comprobarse, se indica como «pendiente de confirmar». Este manual nunca escribe valores de secretos: solo los nombra.</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Manual para todo público. Explica, en lenguaje sencillo, dónde se ejecuta la plataforma GGTO, qué variables de configuración usa y cómo se […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/01-entornos-y-variables.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p>Manual para todo público. Explica, en lenguaje sencillo, <strong>dónde se ejecuta la plataforma GGTO</strong>,
 <strong>qué variables de configuración usa</strong> y <strong>cómo se cuidan los secretos</strong> (claves y contraseñas).
@@ -816,7 +819,7 @@ no está declarada, se ignora sin romper el arranque.</li>
 <li><strong>Nunca escriba un secreto en un archivo, en un chat ni en la línea de comandos.</strong> Los secretos
 viven en <strong>Secret Manager</strong> y solo se usan <strong>por su nombre</strong>: <code>SECRET_KEY</code>, <code>DB_PASSWORD</code>,
 <code>TELEGRAM_BOT_TOKEN</code>, <code>SMTP_HOST</code>, <code>SMTP_PASSWORD</code> y <code>MCP_API_KEY</code>.</li>
-<li><strong>No cargue datos reales todavía.</strong> La base actual (<code>truekeate-db-dev</code>) no tiene respaldos ni
+<li><strong>No cargue datos reales todavía.</strong> La base actual (<code>vm-databases</code>) no tiene respaldos ni
 recuperación a un punto en el tiempo, y el servicio es público. El riesgo <strong>D-26</strong> prohíbe cargar
 datos reales hasta migrar a la instancia <code>ggtov2-pg</code> con backups, PITR y SSL.</li>
 <li><strong>Para probar, use un esquema aislado.</strong> <code>pytest</code> trabaja en el esquema <code>ggto_test</code> y las pruebas
@@ -835,7 +838,7 @@ variables del sistema tienen prioridad sobre el archivo. La configuración se gu
 sola vez por proceso (mediante <code>@lru_cache</code> sobre <code>get_settings()</code>), para que sea única y rápida.</p>
 <figure id="fig-0"><img src="../../../imagenes/entornos-ggto.png" alt="entornos ggto"><figcaption>Figura 1 · entornos-ggto.png</figcaption><details><summary>Código del gráfico (Mermaid)</summary><pre data-lang="mermaid"><code class="language-mermaid">flowchart TD
     A[&quot;Desarrollo&lt;br/&gt;APP_ENV=development&quot;] --&gt; P[&quot;Cloud SQL Auth Proxy&lt;br/&gt;127.0.0.1:5433&quot;]
-    B[&quot;Producción&lt;br/&gt;Cloud Run ggto-web&quot;] --&gt; S[&quot;Socket Cloud SQL&lt;br/&gt;/cloudsql/truekeate-main:...&quot;]
+    B[&quot;Producción&lt;br/&gt;Cloud Run ggto-web&quot;] --&gt; S[&quot;Socket Cloud SQL&lt;br/&gt;/cloudsql/ggto-prod-txblvento2:...&quot;]
     C[&quot;Pruebas pytest&lt;br/&gt;DB_SCHEMA=ggto_test&quot;] --&gt; P
     D[&quot;Pruebas E2E Playwright&lt;br/&gt;DB_SCHEMA=ggto_e2e&quot;] --&gt; P
     E[&quot;Staging&lt;br/&gt;no desplegado&quot;] -.-&gt;|&quot;pendiente de confirmar&quot;| B
@@ -858,15 +861,15 @@ sola vez por proceso (mediante <code>@lru_cache</code> sobre <code>get_settings(
 <p>No existe un entorno de <em>staging</em> (preproducción) desplegado y verificado en la infraestructura
 actual. El requerimiento <strong>RNF-24</strong> exige «entornos separados <code>dev</code>/<code>staging</code>/<code>prod</code>» y el
 requerimiento <strong>RNF-25</strong> exige paridad de versiones entre desarrollo y producción. Sin embargo, el
-estado real del despliegue solo registra el servicio de producción en <code>truekeate-main</code>.</p>
+estado real del despliegue solo registra el servicio de producción en <code>ggto-prod-txblvento2</code>.</p>
 <p>El valor que deba usarse en <code>APP_ENV</code> para <em>staging</em> y el proceso concreto de promoción entre
 entornos están <strong>pendientes de confirmar</strong>.</p>
 <h3 id="production"><span class="sec-num">2.3</span>production</h3>
 <p>Es el entorno donde corre el servicio <strong>Cloud Run <code>ggto-web</code></strong>, desplegado temporalmente en el
-proyecto <code>truekeate-main</code> y en la región <code>europe-west1</code>. En producción:</p>
+proyecto <code>ggto-prod-txblvento2</code> y en la región <code>europe-west1</code>. En producción:</p>
 <ul>
 <li>El servicio se conecta a la base mediante el socket de Cloud SQL:
-<code>DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev</code>.</li>
+<code>DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db</code>.</li>
 <li>El valor de <code>APP_ENV</code> en la revisión desplegada está <strong>pendiente de confirmar</strong>. El guion de
 despliegue del repositorio solo declara <code>DB_USER</code>, <code>DB_NAME</code>, <code>DB_HOST</code> y <code>SECRET_KEY</code>; no incluye
 <code>APP_ENV</code>. La documentación del servicio desplegado indica que <code>GET /api/v1/info</code> respondía
@@ -1153,7 +1156,7 @@ organizan por dominio.</p>
 <tbody>
 <tr>
 <td><code>DB_HOST</code></td>
-<td><code>/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev</code></td>
+<td><code>/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db</code></td>
 <td>Socket en Cloud Run; proxy local en desarrollo</td>
 </tr>
 <tr>
@@ -1563,17 +1566,17 @@ nombran los secretos, jamás sus valores.</p>
 <tbody>
 <tr>
 <td><code>ggtov2-db-password</code></td>
-<td><code>truekeate-main</code></td>
+<td><code>ggto-prod-txblvento2</code></td>
 <td>Contraseña del usuario <code>ggtov2_app</code></td>
 </tr>
 <tr>
 <td><code>ggtov2-db-connection</code></td>
-<td><code>truekeate-main</code></td>
+<td><code>ggto-prod-txblvento2</code></td>
 <td>Nombre de conexión de la instancia</td>
 </tr>
 <tr>
 <td><code>ggto-secret-key</code></td>
-<td><code>truekeate-main</code></td>
+<td><code>ggto-prod-txblvento2</code></td>
 <td>Clave de firma de los JWT que usa el servicio desplegado</td>
 </tr>
 <tr>
@@ -1588,7 +1591,7 @@ nombran los secretos, jamás sus valores.</p>
 servicio. El inventario de pendientes del proyecto los lista como tareas del aprovisionamiento de
 <code>ggtov2</code>.</p>
 <p>La cuenta de servicio de ejecución del servicio real,
-<code>ggto-web-sa@truekeate-main.iam.gserviceaccount.com</code>, tiene los roles <code>roles/cloudsql.client</code> y
+<code>ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com</code>, tiene los roles <code>roles/cloudsql.client</code> y
 <code>roles/secretmanager.secretAccessor</code> sobre los secretos <code>ggtov2-db-password</code> y <code>ggto-secret-key</code>. El
 acceso a los secretos se concede de forma explícita <strong>por nombre</strong>: el guion que usa la instancia
 compartida recorre <code>ggtov2-db-password</code> y <code>ggtov2-db-connection</code> y fija la política con las cuentas
@@ -1614,7 +1617,7 @@ de error de Node imprimió la contraseña del usuario <code>app</code> de TrueKe
 <h4 id="procedimiento-observado"><span class="sec-num">6.3.1</span>Procedimiento observado</h4>
 <ol>
 <li>Cambiar la contraseña con <code>ALTER ROLE app PASSWORD '&lt;nueva&gt;'</code>, usando 32 caracteres aleatorios.</li>
-<li>Publicar una nueva versión del secreto (la versión <code>versions/3</code>) en <code>truekeate-main</code>.</li>
+<li>Publicar una nueva versión del secreto (la versión <code>versions/3</code>) en <code>ggto-prod-txblvento2</code>.</li>
 <li>Crear una nueva revisión de Cloud Run (<code>truekeate-api-00034-hvk</code>) para que tomara el valor
 <code>latest</code>. La revisión quedó <code>Ready</code>, con el 100 % del tráfico y sin errores de autenticación en
 los registros.</li>
@@ -1741,7 +1744,7 @@ revisión de Cloud Run, para evitar cortes de servicio.</li>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Despliegue</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

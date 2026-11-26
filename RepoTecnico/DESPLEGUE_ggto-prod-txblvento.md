@@ -1,4 +1,5 @@
 # DESPLIEGUE GGTO en `ggto-prod-txblvento` (GCP de TX Barlovento)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > **⚠️ ACTUALIZACIÓN 16/11/2026 — la BD ya NO es Cloud SQL.** El servicio
 > `ggto-web` (en `ggto-prod-txblvento2`) conecta ahora al **PostgreSQL 16.15
@@ -21,7 +22,7 @@
 >   (secreto versión 5).
 
 **Fecha de ejecución:** viernes 06/11/2026
-**Sistema migrado desde:** `truekeate-main` (caído por cierre de
+**Sistema migrado desde:** `ggto-prod-txblvento2` (caído por cierre de
 facturación; revisión final `ggto-web-00115-g4b`, v100)
 **Ciclo del código desplegado:** v100 — commit `93b81b0` en la rama
 `GGTOv2-DSH-GCP` (GitHub + GitLab).
@@ -32,8 +33,8 @@ facturación; revisión final `ggto-web-00115-g4b`, v100)
 
 | Recurso | Valor |
 |---|---|
-| **URL de la web / API** | <https://ggto-web-597577479284.europe-west1.run.app> |
-| Proyecto GCP | `ggto-prod-txblvento` (nº **597577479284**) — creado 06/11/2026 |
+| **URL de la web / API** | <https://ggto-web-695669822281.europe-west1.run.app> |
+| Proyecto GCP | `ggto-prod-txblvento` (nº **695669822281**) — creado 06/11/2026 |
 | Cuenta de facturación | `01E9E1-5892F8-EC5643` (`Mi cuenta de facturación`, **OPEN**) — del dueño `txbarlovento@gmail.com` |
 | Región | **europe-west1** (Cloud Run, Cloud SQL, registro, bucket y Scheduler) |
 | Cuentas usadas | `txbarlovento@gmail.com` (dueño, propietario) · `anlucorporations@gmail.com` (solo el export de la BD del proyecto viejo) |
@@ -73,10 +74,10 @@ gcloud services enable run, cloudbuild, artifactregistry, sqladmin,
 cerrada del proyecto viejo y la clave rotada de `ggtov2_app`):
 
 ```
-gcloud sql export sql truekeate-db-dev gs://ggto-prod-txblvento-ggto-evidencias/dump_ggtov2_20261106.sql \
-  --database=ggtov2 --project truekeate-main
+gcloud sql export sql vm-databases gs://ggto-prod-txblvento-ggto-evidencias/dump_ggtov2_20261106.sql \
+  --database=ggtov2 --project ggto-prod-txblvento2
 gcloud storage buckets add-iam-policy-binding gs://ggto-prod-txblvento-ggto-evidencias \
-  --member="serviceAccount:p593453426217-o127e6@gcp-sa-cloud-sql.iam.gserviceaccount.com" \
+  --member="serviceAccount:p695669822281-o127e6@gcp-sa-cloud-sql.iam.gserviceaccount.com" \
   --role="roles/storage.objectAdmin "
 gcloud sql import sql ggto-db gs://ggto-prod-txblvento-ggto-evidencias/dump_ggtov2_20261106.sql \
   --database=ggtov2 --project ggto-prod-txblvento
@@ -154,7 +155,7 @@ Creados en `europe-west1` con TZ America/Caracas y cabecera
 | Atributo | Valor |
 |---|---|
 | Versión | **`1.15.22+47`** — la entrega previa era `1.15.21+46` |
-| Cambio esencial | `core/constants.dart` — base URL `https://ggto-web-597577479284.europe-west1.run.app/api/v1` (vs la de `truekeate-main`) |
+| Cambio esencial | `core/constants.dart` — base URL `https://ggto-web-695669822281.europe-west1.run.app/api/v1` (vs la de `ggto-prod-txblvento2`) |
 | Compilación | `flutter build apk --release` → `app-release.apk` de **24,2 MB** |
 | Test de versión | **2 passed** (`test/version_visible_test.dart`: coincide con pubspec y formato nombre+versionCode) |
 
@@ -185,13 +186,13 @@ programar los 5 jobs si aún no existen. En PowerShell NO usar `|` sobre el
 script; el `gcloud run deploy` interactivo se confirma con
 `echo y | gcloud run deploy …`.)
 
-## 9 · Proyecto viejo `truekeate-main` (fase de apagado, PENDIENTE)
+## 9 · Proyecto viejo `ggto-prod-txblvento2` (fase de apagado, PENDIENTE)
 
 - Queda intacto y **caído** (503 por facturación cerrada) — no se tocó.
 - Al darse 48 h estables en el proyecto nuevo se recomienda:
   1. Snapshot final de la BD vieja (ya se tiene).
-  2. `gcloud run services delete ggto-web --project truekeate-main`
-  3. Mover la instancia `truekeate-db-dev` a un snapshot demasiado y
+  2. `gcloud run services delete ggto-web --project ggto-prod-txblvento2`
+  3. Mover la instancia `vm-databases` a un snapshot demasiado y
      quitarla del proyecto para no pagar más (la facturación del proyecto
      apáctiva NO corre hasta el proyecto nuevo).
 
@@ -232,5 +233,5 @@ script; el `gcloud run deploy` interactivo se confirma con
 - **¿Scheduler llama y falla?** Sus invocadores son anónimos sobre la URL
   pública; verificar `X-Mantenimiento-Token` cabeza y que el secret
   `ggto-mantenimiento-token` no haya sido rotado sin re-programar.
-- **¿Apk vieja no responde?** La APK 1.15.21+46 apunta a `truekeate-main`
+- **¿Apk vieja no responde?** La APK 1.15.21+46 apunta a `ggto-prod-txblvento2`
   (es de la misma URL caída). Entregar la nueva.

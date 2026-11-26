@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de Seguridad y Privacidad — GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con claridad lo que está previsto pero todavía no está implement">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../../../imagenes/defensa-en-capas.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Operación</span>
           <h1 class="portada-titulo">Manual de Seguridad y Privacidad — GGTO</h1>
-          <p class="portada-resumen">Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con claridad lo que está previsto pero todavía no está implementado. Todo dato que no se pudo verificar se marca como «pendiente de confirmar». Aquí no se incluye ningún secreto ni contraseña: solo se citan los nombres de los secretos.</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos. Describe lo que el sistema hace hoy y separa con […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/02-seguridad-y-privacidad.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p>Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos.
 Describe <strong>lo que el sistema hace hoy</strong> y separa con claridad lo que está <strong>previsto pero
@@ -1385,7 +1388,7 @@ El script de aprovisionamiento define el llavero <code>ggtov2</code>, las claves
 <p>El acceso se limita por IAM con el rol <code>roles/secretmanager.secretAccessor</code> a la cuenta de servicio
 del runtime <code>ggtov2-app@ggtov2.iam.gserviceaccount.com</code>.</p>
 <p>El script de la instancia compartida otorga además lectura a <code>ggtov2-app@ggtov2</code> y a
-<code>truekeate-app-sa@truekeate-main</code>. Se verificó que <code>truekeate-app-sa</code> <strong>no</strong> tiene acceso a los
+<code>truekeate-app-sa@ggto-prod-txblvento2</code>. Se verificó que <code>truekeate-app-sa</code> <strong>no</strong> tiene acceso a los
 secretos de GGTO.</p>
 <h3 id="variables-de-entorno"><span class="sec-num">5.2</span>Variables de entorno</h3>
 <p>La aplicación se configura <strong>solo por variables de entorno</strong> (RNF-25). La configuración se declara
@@ -1463,7 +1466,7 @@ hallazgo H-01, y la carpeta <code>RepoTecnico/credenciales/</code> también est�
 usuario <code>app</code> de TrueKeate, que estaba contenida en el secreto <code>DATABASE_URL</code>. La respuesta fue:</p>
 <ol>
 <li>Rotar la contraseña con <code>ALTER ROLE app PASSWORD '&lt;nueva&gt;'</code>, usando 32 caracteres aleatorios.</li>
-<li>Publicar una <strong>nueva versión del secreto</strong> <code>DATABASE_URL</code> (versión 3) en <code>truekeate-main</code>.</li>
+<li>Publicar una <strong>nueva versión del secreto</strong> <code>DATABASE_URL</code> (versión 3) en <code>ggto-prod-txblvento2</code>.</li>
 <li>Desplegar una <strong>nueva revisión</strong> de Cloud Run <code>truekeate-api-00034-hvk</code> para tomar el valor
 <code>latest</code>, con estado <code>Ready</code>, el 100 % del tráfico y sin errores de autenticación en los
 registros.</li>
@@ -1644,7 +1647,7 @@ pueden tratar datos son:</p>
 </table></div>
 <h3 id="transferencia-internacional"><span class="sec-num">6.8</span>Transferencia internacional</h3>
 <p>El tratamiento implica transferencia fuera de Venezuela: el servicio Cloud Run corre en
-<code>europe-west1</code> y la base operativa en <code>southamerica-east1</code>. Además, Telegram opera en el exterior
+<code>europe-west1</code> y la base operativa en <code>europe-west1</code>. Además, Telegram opera en el exterior
 y el correo puede usar SendGrid.</p>
 <p>RNF-18 exige <strong>evaluar la transferencia internacional</strong>. La evaluación y las garantías
 contractuales están <strong>pendientes de confirmar</strong> con CANTV y asesoría legal.</p>
@@ -1654,7 +1657,7 @@ contractuales están <strong>pendientes de confirmar</strong> con CANTV y asesor
 <p>El servicio <code>ggto-web</code> está desplegado con acceso <strong>público</strong>: el script concede el rol
 <code>roles/run.invoker</code> a <code>allUsers</code>, y el documento de entorno lo confirma como «Público (<code>allUsers</code>)
 — prueba de humo; endurecer antes de producción».</p>
-<p>La dirección del servicio es <code>https://ggto-web-593453426217.europe-west1.run.app</code>.</p>
+<p>La dirección del servicio es <code>https://ggto-web-695669822281.europe-west1.run.app</code>.</p>
 <p>Ese servicio opera hoy con <strong>datos personales reales</strong> (42 casos) y la recomendación es explícita:
 <strong>restringir el acceso</strong> (con IAP o invocación autenticada), porque hoy <code>allUsers</code> alcanza la API y
 la aplicación web. El informe de Fase 4 lo lista como pendiente que <strong>no bloquea</strong> las pruebas,
@@ -1678,7 +1681,7 @@ autenticada.</strong></p>
 <h3 id="riesgo-aceptado-d-26"><span class="sec-num">7.2</span>Riesgo aceptado D-26</h3>
 <p>El riesgo <strong>D-26</strong> fue aceptado el 2026-09-25 por la Dirección del proyecto: <strong>no</strong> se modifican
 los respaldos, la recuperación a un punto en el tiempo (PITR) ni el SSL de la instancia compartida
-<code>truekeate-db-dev</code>. Su condición de cierre es «migrar a <code>ggtov2-pg</code> propio (regional, con SSL
+<code>vm-databases</code>. Su condición de cierre es «migrar a <code>ggtov2-pg</code> propio (regional, con SSL
 <code>ENCRYPTED_ONLY</code>, respaldos, PITR y protección de borrado) cuando se resuelva la cuota de
 facturación».</p>
 <p>La misma decisión indica que <strong>no se deben cargar datos reales de producción</strong> en la instancia
@@ -1921,7 +1924,7 @@ no se haya podido verificar.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

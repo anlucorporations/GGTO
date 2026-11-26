@@ -91,6 +91,16 @@ function contarEspeciales(casos: CasoAsignadoOut[]) {
   return { reparacion, construccion, gobierno };
 }
 
+/**
+ * Identificación del sector en el formulario flotante de proceso: se muestran
+ * sus **direcciones** (patrones registrados) en vez del nombre. Si no tiene
+ * ninguna, se cae al id para que la fila nunca quede sin etiqueta.
+ */
+function etiquetaSector(sector: { id_sector: number; direcciones?: string[] }): string {
+  const direcciones = (sector.direcciones ?? []).map((d) => d.trim()).filter(Boolean);
+  return direcciones.length > 0 ? direcciones.join(' · ') : `Sector #${sector.id_sector}`;
+}
+
 export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props) {
   const [proceso, setProceso] = useState<ProcesoDespachoOut | null>(null);
   const [asignacion, setAsignacion] = useState<Record<number, number | null>>({});
@@ -519,7 +529,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                 <table>
                   <thead>
                     <tr>
-                      <th>Sector</th>
+                      <th>Direcciones asociadas</th>
                       <th>Casos</th>
                       <th>Esp. Reparación</th>
                       <th>Esp. Construcción</th>
@@ -537,7 +547,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                         .map((m) => String(m.id_falla));
                       return (
                         <tr key={s.id_sector}>
-                          <td>{s.nombre ?? `Sector #${s.id_sector}`}</td>
+                          <td>{etiquetaSector(s)}</td>
                           <td>{s.total}</td>
                           <td>{s.especiales_reparacion}</td>
                           <td>{s.especiales_construccion}</td>
@@ -545,7 +555,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                           <td>{s.citados}</td>
                           <td>
                             <select
-                              aria-label={`Cuadrilla para ${s.nombre ?? `sector ${s.id_sector}`}`}
+                              aria-label={`Cuadrilla para ${etiquetaSector(s)}`}
                               value={asignacion[s.id_sector] ?? ''}
                               onChange={(e) =>
                                 setAsignacion({
@@ -570,7 +580,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                                 className="selector-masivas"
                                 multiple
                                 size={Math.min(Math.max(opciones.length, 2), 4)}
-                                aria-label={`Masivas para ${s.nombre ?? `sector ${s.id_sector}`}`}
+                                aria-label={`Masivas para ${etiquetaSector(s)}`}
                                 value={elegidas}
                                 onChange={(e) =>
                                   cambiarMasivasDelSector(
@@ -653,14 +663,14 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                   <table>
                     <thead>
                       <tr>
-                        <th>Sector</th>
+                        <th>Direcciones asociadas</th>
                         <th>Cantidad</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(construccion?.por_sector ?? []).map((s) => (
                         <tr key={s.id_sector}>
-                          <td>{s.nombre ?? `Sector #${s.id_sector}`}</td>
+                          <td>{etiquetaSector(s)}</td>
                           <td>{s.cantidad}</td>
                         </tr>
                       ))}
@@ -760,7 +770,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                   <table>
                     <thead>
                       <tr>
-                        <th>Sector</th>
+                        <th>Direcciones asociadas</th>
                         <th>Casos de mantenimiento</th>
                         <th>Cuadrilla asignada</th>
                       </tr>
@@ -768,11 +778,11 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                     <tbody>
                       {porSector.map((s) => (
                         <tr key={s.id_sector}>
-                          <td><strong>{s.nombre ?? `Sector #${s.id_sector}`}</strong></td>
+                          <td><strong>{etiquetaSector(s)}</strong></td>
                           <td><span className="chip chip-info">{s.cantidad} caso(s)</span></td>
                           <td>
                             <select
-                              aria-label={`Cuadrilla para mantenimiento en ${s.nombre ?? `Sector ${s.id_sector}`}`}
+                              aria-label={`Cuadrilla para mantenimiento en ${etiquetaSector(s)}`}
                               value={mantenimientoAsignacion[s.id_sector] ?? ''}
                               onChange={(e) =>
                                 setMantenimientoAsignacion({
@@ -835,7 +845,7 @@ export default function ProcesarDespacho({ fecha, onCerrar, onProcesado }: Props
                         ? 'Recibe los casos en gestión (sin sectores)'
                         : suyos.length === 0
                           ? 'Sin sectores asignados'
-                          : suyos.map((s) => s.nombre ?? `#${s.id_sector}`).join(' · ')}
+                          : suyos.map(etiquetaSector).join(' · ')}
                     </p>
                     <p className="texto-pequeno">
                       Especiales: {desglose.reparacion} reparación ·{' '}

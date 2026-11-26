@@ -1,4 +1,5 @@
 # Manual de Seguridad y Privacidad — GGTO
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Este manual explica, en lenguaje sencillo, cómo protege GGTO la información y los accesos.
 > Describe **lo que el sistema hace hoy** y separa con claridad lo que está **previsto pero
@@ -288,7 +289,7 @@ El acceso se limita por IAM con el rol `roles/secretmanager.secretAccessor` a la
 del runtime `ggtov2-app@ggtov2.iam.gserviceaccount.com`.
 
 El script de la instancia compartida otorga además lectura a `ggtov2-app@ggtov2` y a
-`truekeate-app-sa@truekeate-main`. Se verificó que `truekeate-app-sa` **no** tiene acceso a los
+`truekeate-app-sa@ggto-prod-txblvento2`. Se verificó que `truekeate-app-sa` **no** tiene acceso a los
 secretos de GGTO.
 
 ### Variables de entorno
@@ -325,7 +326,7 @@ Durante la verificación del entorno, un mensaje de error de Node **imprimió la
 usuario `app` de TrueKeate, que estaba contenida en el secreto `DATABASE_URL`. La respuesta fue:
 
 1. Rotar la contraseña con `ALTER ROLE app PASSWORD '<nueva>'`, usando 32 caracteres aleatorios.
-2. Publicar una **nueva versión del secreto** `DATABASE_URL` (versión 3) en `truekeate-main`.
+2. Publicar una **nueva versión del secreto** `DATABASE_URL` (versión 3) en `ggto-prod-txblvento2`.
 3. Desplegar una **nueva revisión** de Cloud Run `truekeate-api-00034-hvk` para tomar el valor
    `latest`, con estado `Ready`, el 100 % del tráfico y sin errores de autenticación en los
    registros.
@@ -425,7 +426,7 @@ pueden tratar datos son:
 ### Transferencia internacional
 
 El tratamiento implica transferencia fuera de Venezuela: el servicio Cloud Run corre en
-`europe-west1` y la base operativa en `southamerica-east1`. Además, Telegram opera en el exterior
+`europe-west1` y la base operativa en `europe-west1`. Además, Telegram opera en el exterior
 y el correo puede usar SendGrid.
 
 RNF-18 exige **evaluar la transferencia internacional**. La evaluación y las garantías
@@ -441,7 +442,7 @@ El servicio `ggto-web` está desplegado con acceso **público**: el script conce
 `roles/run.invoker` a `allUsers`, y el documento de entorno lo confirma como «Público (`allUsers`)
 — prueba de humo; endurecer antes de producción».
 
-La dirección del servicio es `https://ggto-web-593453426217.europe-west1.run.app`.
+La dirección del servicio es `https://ggto-web-695669822281.europe-west1.run.app`.
 
 Ese servicio opera hoy con **datos personales reales** (42 casos) y la recomendación es explícita:
 **restringir el acceso** (con IAP o invocación autenticada), porque hoy `allUsers` alcanza la API y
@@ -469,7 +470,7 @@ autenticada.**
 
 El riesgo **D-26** fue aceptado el 2026-09-25 por la Dirección del proyecto: **no** se modifican
 los respaldos, la recuperación a un punto en el tiempo (PITR) ni el SSL de la instancia compartida
-`truekeate-db-dev`. Su condición de cierre es «migrar a `ggtov2-pg` propio (regional, con SSL
+`vm-databases`. Su condición de cierre es «migrar a `ggtov2-pg` propio (regional, con SSL
 `ENCRYPTED_ONLY`, respaldos, PITR y protección de borrado) cuando se resuelva la cuota de
 facturación».
 

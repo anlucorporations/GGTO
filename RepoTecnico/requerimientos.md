@@ -6,7 +6,7 @@
 | Cliente | **CANTV C.A.** — Central **Francisco Salias (Área 4)** |
 | Fuente | `RepoTecnico/BRIEF-GGTO-INICIAL.md` |
 | Muestra de datos | `RepoTecnico/muestras/detalle_averias_gpon_EJEMPLO.csv` (80 columnas, pseudonimizada, delimitador `;`) |
-| Infraestructura | Cloud Run verificado en proyecto GCP `truekeate-main`; base lógica `ggtov2` / instancia documentada `truekeate-db-dev`. Ver `GGTOv2_GCP.md` y [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
+| Infraestructura | Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1, URL `https://ggto-web-695669822281.europe-west1.run.app`); base lógica `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432). Ver `estado_proyecto.md` y `DESPLEGUE_ggto-prod-txblvento2.md`. |
 | Fase | V1 operativa + definición e implementación parcial de V2 |
 | Estado | **V1:** línea técnica desplegada. **V2:** objetivo, no entrega terminada. Ver [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
 | Decisiones | Base D-01…D-94; incremento V2 DEC-G1…DEC-G19 (ver `estado_proyecto.md`, `incremento_D95_apk_gestion.md`) |
@@ -241,7 +241,7 @@ solicitudes de construcción de puntos ópticos de la Central Francisco Salias (
 | **RNF-24** | Mantenibilidad / DevOps | **Calidad y entrega (H-13/H-29):** **migraciones versionadas** con Alembic (baseline = `db/schema.sql`); CI con `pytest`, Ruff y mypy en cada PR; **cobertura mínima 70 %**; API versionada (`/api/v1`) con OpenAPI; entornos separados `dev`/`staging`/`prod`. | Pipeline en verde + informe de cobertura + `alembic upgrade head` reproducible. |
 | **RNF-25** | Portabilidad / Despliegue | **Paridad de entornos (H-29):** mismas versiones de PostgreSQL/Python en dev y prod; configuración solo por variables de entorno; imagen Docker reproducible; despliegue automatizado a Cloud Run. | Comparación de versiones dev/prod + despliegue reproducible desde cero. |
 
-> ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`truekeate-db-dev`) **no** cumple RNF-16/SSL
+> ⚠️ **Riesgo aceptado (D-26):** la base de datos provisional (`vm-databases`) **no** cumple RNF-16/SSL
 > obligatorio. El usuario aceptó el riesgo el 2026-09-25 con dueño **Dirección del proyecto** y condición
 > de cierre: **migrar a `ggtov2-pg` propio** (REGIONAL, SSL `ENCRYPTED_ONLY`, backups + PITR +
 > `deletionProtectionEnabled`) al resolver la cuota de facturación de GCP. **No se cargan datos reales
@@ -370,7 +370,7 @@ Roles de la v1: **SUPER**, **ADMIN**, **SUPERVISOR**, **TECNICO**. Cada usuario 
 
 | ID | Requerimiento | Definición |
 |---|---|---|
-| **RT-01** | Base de datos | **PostgreSQL** (Cloud SQL / instancia `truekeate-db-dev` o `ggtov2-pg`). Ver `GGTOv2_GCP.md`. |
+| **RT-01** | Base de datos | **PostgreSQL** (Cloud SQL / instancia `vm-databases` o `ggtov2-pg`). Ver `GGTOv2_GCP.md`. |
 | **RT-02** | Backend | API web con autenticación, RBAC y capa de servicios para ingesta, despacho y reportes. |
 | **RT-03** | Frontend web | Aplicación web responsive (PC + móvil). |
 | **RT-04** | App móvil | APK Android con almacenamiento local, sincronización asíncrona y cámara. |

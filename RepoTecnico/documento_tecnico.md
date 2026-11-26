@@ -156,23 +156,23 @@ verificado en código:
 
 ## 5 · Entornos, variables y despliegue
 
-### 5.1 Producción (desplegada 06/11/2026)
+### 5.1 Producción (vigente, verificada 24/11/2026)
 
 | Recurso | Valor |
 |---|---|
-| Proyecto GCP | `ggto-prod-txblvento` (nº 597577479284) — migrado desde `truekeate-main` |
-| URL web/API | `https://ggto-web-597577479284.europe-west1.run.app` |
-| Cloud Run | `ggto-web` (europe-west1) — código v100/HEAD `93b81b0+` |
-| Cloud SQL | `ggto-db` PostgreSQL 15, **HA regional**, BD `ggtov2`, usuario `ggtov2_app` |
-| Conexión | socket `/cloudsql/ggto-prod-txblvento:europe-west1:ggto-db` |
-| Secretos | Secret Manager (RS-2: nada en repo ni en claro; REF-SEC-26 vía `gcloud`) |
+| Proyecto GCP | `ggto-prod-txblvento2` (nº 695669822281) |
+| URL web/API | `https://ggto-web-695669822281.europe-west1.run.app` (alias `ggto-web-depapaeivq-ew.a.run.app`) |
+| Cloud Run | `ggto-web` (europe-west1), imagen `ggto-web:v106`, revisión `ggto-web-00016-k2k` al 100 % |
+| Base de datos | PostgreSQL **16.15** en la VM `vm-databases` (`10.140.0.2:5432`, proyecto `plataforma-txbarlovento`), BD `ggtov2`, usuario `ggtov2_app` |
+| Conexión | VPC connector `ggto-connector` (red `ggto-vpc`, egress `private-ranges-only`); Cloud SQL `ggto-db` de `ggto-prod-txblvento2` queda como respaldo |
+| Secretos | Secret Manager (RS-2: nada en repo ni en claro; REF-SEC-26 vía `gcloud`): `ggto-secret-key`, `ggtov2-db-password`, `ggto-mantenimiento-token` |
 | Programación | Cloud Scheduler: **5 jobs reales** (purgar, cerrar-sesiones, recordatorios-citas, alarmas-despacho, cierre-jornada `0 23 * * *`). La ingesta es manual (RF-01) y el reporte de 16:00 se genera bajo demanda (CU-W-29) — ver decisión pendiente en §6-R9. |
 
 ### 5.2 Desarrollo / preview
 
 - Variables globales del workspace: `source /home/dsh/workspace/gcp-env.sh` + `.env.global`
   (detalle en `entornos_globales.md`; el `.env.global` apunta al entorno MCC — para GGTO usar
-  el proyecto `ggto-prod-txblvento`).
+  el proyecto `ggto-prod-txblvento2`).
 - Cloud SQL Proxy en `/home/dsh/tools/cloud-sql-proxy`; sin `docker`/`psql` en el host dev.
 - Preview del asistente: vm-preview `100.113.94.52` (tailnet), checklist pendiente de ejecutar
   en `asistente-ggto/DESPLIEGUE.md` (usuario de servicio `GGTOAST001`, migraciones

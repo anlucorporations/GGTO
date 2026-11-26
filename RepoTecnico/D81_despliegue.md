@@ -1,4 +1,5 @@
 # D-81 — Runbook de despliegue (preparado, NO ejecutado)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Pasos para poner el **Incremento D-81** en producción (`ggtov2` + `ggto-web`).
 > **Ninguno de estos pasos se ha ejecutado**: quedan a la espera de la orden del
@@ -8,7 +9,7 @@
 
 ## 0. Precondiciones
 
-- Acceso a la instancia Cloud SQL (`truekeate-db-dev`, base `ggtov2`) o su DSN.
+- Acceso a la instancia Cloud SQL (`vm-databases`, base `ggtov2`) o su DSN.
 - `gcloud` autenticado y proyecto `ggtov2` (o el disponible) seleccionado.
 - Imagen base ya desplegada (revisión vigente de `ggto-web`).
 
@@ -16,7 +17,7 @@
 
 ```bash
 export DB_HOST=... DB_PORT=5432 DB_NAME=ggtov2 DB_USER=ggtov2_app DB_SSLMODE=require
-export DB_PASSWORD="$(gcloud secrets versions access latest --secret=ggtov2-db-password --project=truekeate-main)"
+export DB_PASSWORD="$(gcloud secrets versions access latest --secret=ggtov2-db-password --project=ggto-prod-txblvento2)"
 
 python3 scripts/migrar_d81_sync_mensajeria.py            # SIMULACIÓN (revisar el plan)
 python3 scripts/migrar_d81_sync_mensajeria.py --aplicar  # aplica (confirmar con «sí»)
@@ -70,7 +71,7 @@ cd app/web && npm ci && npm run build && cd ../..
 
 # Imagen y despliegue (ver RepoTecnico/scripts/11_desplegar_ggto_web.sh)
 gcloud run deploy ggto-web --source . --region=europe-west1 \
-  --set-env-vars DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev,DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require,APP_ENV=production,GGTO_GCS_BUCKET=<PROY>-ggto-evidencias \
+  --set-env-vars DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db,DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require,APP_ENV=production,GGTO_GCS_BUCKET=<PROY>-ggto-evidencias \
   --set-secrets SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest,MANTENIMIENTO_TOKEN=ggto-mantenimiento-token:latest
 ```
 
@@ -95,7 +96,7 @@ Todos con el header `X-Mantenimiento-Token: <token>` (OIDC como alternativa):
 una cuenta que tiene permisos de Logging y Monitoring:
 
 ```bash
-PROYECTO=truekeate-main bash RepoTecnico/scripts/12_observabilidad.sh
+PROYECTO=ggto-prod-txblvento2 bash RepoTecnico/scripts/12_observabilidad.sh
 ```
 
 El script crea o actualiza métricas basadas en logs, 4 políticas de alerta (ingesta ausente a las

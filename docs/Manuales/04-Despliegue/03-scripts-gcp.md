@@ -1,4 +1,5 @@
 # Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Manual para todo público. Explica, en lenguaje sencillo, los **guiones (scripts) que preparan la
 > infraestructura de Google Cloud** para la plataforma GGTO: quién hace qué, en qué orden y con qué
@@ -17,7 +18,7 @@
 3. **Entienda el orquestador.** `provision_all.sh` corre solo los pasos que no generan costo. Para
    incluir los que sí cuestan dinero, se ejecuta con `CREAR_RECURSOS=si ./provision_all.sh`.
 4. **Recuerde lo que realmente está desplegado.** Por el bloqueo de facturación de `ggtov2`, la
-   operación real usa la instancia compartida de `truekeate-main` con el guion `10`, no la instancia
+   operación real usa la instancia compartida de `ggto-prod-txblvento2` con el guion `10`, no la instancia
    propia `ggtov2-pg` del guion `06`.
 5. **Nunca borre a la ligera.** El guion `99_eliminar_todo.sh` solo funciona si se escribe
    exactamente `CONFIRM_DESTROY=ELIMINAR`; además, el depósito y las claves de cifrado deben borrarse
@@ -43,7 +44,7 @@ flowchart TD
     F --> G["05 bucket seguro y Artifact Registry"]
     G --> H["06 Cloud SQL propio ggtov2-pg"]
     H --> I["07 Cloud Run ggtov2-web<br/>(comentado en el orquestador)"]
-    D --> J["10 base y usuario ggtov2<br/>en truekeate-db-dev"]
+    D --> J["10 base y usuario ggtov2<br/>en vm-databases"]
     I -.-> K["99 teardown controlado"]
     J -.-> K
 ```
@@ -65,7 +66,7 @@ La carpeta `RepoTecnico/scripts/` contiene trece archivos:
 | `06_cloudsql_postgres.sh` | Instancia Cloud SQL PostgreSQL |
 | `07_cloudrun_web.sh` | Servicio Cloud Run |
 | `08_auditoria_presupuesto.sh` | Auditoría de acceso a datos y presupuesto |
-| `10_usar_instancia_truekeate.sh` | Base y usuario `ggtov2` en la instancia compartida `truekeate-db-dev` |
+| `10_usar_instancia_truekeate.sh` | Base y usuario `ggtov2` en la instancia compartida `vm-databases` |
 | `99_eliminar_todo.sh` | *Teardown* controlado (borrado ordenado) |
 
 La tabla funcional coincide con la que mantiene el documento de entornos. El documento de referencia
@@ -163,7 +164,7 @@ usa: `$PROJECT_ID`, `$ORG_ID` y `$BILLING_ACCOUNT`.
   para imprimir `billingEnabled`.
 - **Nota:** advierte que el mensaje `Cloud billing quota exceeded` significa que la cuenta alcanzó el
   máximo de cinco proyectos. Ese cupo agotado es exactamente el bloqueo que obligó a usar
-  `truekeate-main`.
+  `ggto-prod-txblvento2`.
 
 ### 01_habilitar_apis.sh
 
@@ -264,7 +265,7 @@ sondeo de hasta 60 iteraciones de 15 segundos), crea la base `ggtov2` con `chars
 contraseña.
 
 > **Nota de fidelidad:** lo realmente desplegado **no** es esta instancia, sino la base `ggtov2`
-> dentro de la instancia compartida `truekeate-db-dev` (PostgreSQL 15.18). Este guion es el camino
+> dentro de la instancia compartida `vm-databases` (PostgreSQL 15.18). Este guion es el camino
 > previsto al desbloquear la facturación.
 
 ### 07_cloudrun_web.sh
@@ -296,23 +297,23 @@ Activa la auditoría de acceso a datos y crea el presupuesto con alertas.
 ### 10_usar_instancia_truekeate.sh
 
 Es el guion que permitió operar **sin** facturación propia. Da de alta una base y un usuario
-dedicados a GGTO dentro de la instancia Cloud SQL existente en `truekeate-main`, y habilita el
+dedicados a GGTO dentro de la instancia Cloud SQL existente en `ggto-prod-txblvento2`, y habilita el
 acceso de la ejecución.
 
 | Dato | Valor |
 |---|---|
-| Proyecto origen | `truekeate-main` |
-| Instancia | `truekeate-db-dev` |
+| Proyecto origen | `ggto-prod-txblvento2` |
+| Instancia | `vm-databases` |
 | Base / usuario | `ggtov2` / `ggtov2_app` |
-| `connectionName` | `truekeate-main:southamerica-east1:truekeate-db-dev` |
+| `connectionName` | `ggto-prod-txblvento2:europe-west1:ggto-db` |
 | Cuenta de servicio de la app | `ggtov2-app@ggtov2.iam.gserviceaccount.com` |
-| Cuenta de servicio de TrueKeate | `truekeate-app-sa@truekeate-main.iam.gserviceaccount.com` |
+| Cuenta de servicio de TrueKeate | `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` |
 
 Pasos: genera una contraseña aleatoria de 32 caracteres sin imprimirla; crea o versiona los secretos
-`ggtov2-db-password` y `ggtov2-db-connection` en `truekeate-main`; concede
+`ggtov2-db-password` y `ggtov2-db-connection` en `ggto-prod-txblvento2`; concede
 `secretmanager.secretAccessor` sobre ambos a las dos cuentas de servicio; crea la base y el usuario
 solo si no existen, sin cambiar la contraseña del usuario ya creado; y añade `roles/cloudsql.client`
-para la cuenta de servicio de GGTO en la política de `truekeate-main`. El resumen final indica que la
+para la cuenta de servicio de GGTO en la política de `ggto-prod-txblvento2`. El resumen final indica que la
 contraseña vive solo en Secret Manager y muestra la ruta del socket para Cloud Run.
 
 ### 99_eliminar_todo.sh
@@ -392,41 +393,41 @@ CONFIRM_DESTROY=ELIMINAR ./99_eliminar_todo.sh
 Puntos que conviene tener presentes antes de usarlo:
 
 - El guion apunta a `$PROJECT_ID`, que por defecto es `ggtov2`. **No** borra la base `ggtov2` ni el
-  usuario `ggtov2_app` de la instancia `truekeate-db-dev`, ni los secretos creados en
-  `truekeate-main` por `10_usar_instancia_truekeate.sh`. Ese borrado está **pendiente de confirmar**
+  usuario `ggtov2_app` de la instancia `vm-databases`, ni los secretos creados en
+  `ggto-prod-txblvento2` por `10_usar_instancia_truekeate.sh`. Ese borrado está **pendiente de confirmar**
   como procedimiento documentado y debe hacerse de forma manual y coordinada con TrueKeate.
 - Los borrados de la instancia, el servicio, el repositorio, la VPC y los secretos usan
   `>/dev/null 2>&1 || true`, de modo que un recurso inexistente no aborta el *teardown*.
 - El depósito y las claves KMS **no** se borran automáticamente por su política de retención.
-- El servicio Cloud Run realmente desplegado se llama `ggto-web` en `truekeate-main`, mientras que el
+- El servicio Cloud Run realmente desplegado se llama `ggto-web` en `ggto-prod-txblvento2`, mientras que el
   guion intenta borrar `ggtov2-web` en `$PROJECT_ID`; por tanto, el `ggto-web` real **no** queda
   cubierto por este guion.
 
-## Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)
+## Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (ggto-prod-txblvento2)
 
 La infraestructura prevista y la realmente operativa divergen por un bloqueo administrativo, no por
 un cambio de diseño. La cuenta de facturación tiene agotado el cupo de cinco proyectos, de modo que
 `ggtov2` quedó sin facturación y sin APIs de despliegue. Para no detener el proyecto, se reutilizó la
-instancia Cloud SQL de `truekeate-main`.
+instancia Cloud SQL de `ggto-prod-txblvento2`.
 
-| Aspecto | Previsto (`ggtov2`) | Real (`truekeate-main`) |
+| Aspecto | Previsto (`ggtov2`) | Real (`ggto-prod-txblvento2`) |
 |---|---|---|
-| Proyecto | `ggtov2` | `truekeate-main` |
+| Proyecto | `ggtov2` | `ggto-prod-txblvento2` |
 | Servicio Cloud Run | `ggtov2-web` | `ggto-web` |
-| Imagen | `.../ggtov2/ggtov2-web/app:latest` | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v14` |
-| Instancia de datos | `ggtov2-pg` (PostgreSQL 16, privada) | `truekeate-db-dev` (PostgreSQL 15.18, compartida) |
+| Imagen | `.../ggtov2/ggtov2-web/app:latest` | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v14` |
+| Instancia de datos | `ggtov2-pg` (PostgreSQL 16, privada) | `vm-databases` (PostgreSQL 15.18, compartida) |
 | Base / usuario | `ggtov2` / `ggtov2_app` | `ggtov2` / `ggtov2_app` (mismos nombres) |
 | Buena parte de 04, 05 y 06 | Ejecutables con `CREAR_RECURSOS=si` | **No ejecutados** por falta de facturación |
-| Cuenta de servicio de ejecución | `ggtov2-app@ggtov2…` | `ggto-web-sa@truekeate-main…` |
+| Cuenta de servicio de ejecución | `ggtov2-app@ggtov2…` | `ggto-web-sa@ggto-prod-txblvento2…` |
 
 Consecuencias operativas verificadas:
 
 - La base propia no se creó: por eso existe `10_usar_instancia_truekeate.sh`, que da base, usuario,
-  secretos y permiso cruzado dentro de `truekeate-main`.
+  secretos y permiso cruzado dentro de `ggto-prod-txblvento2`.
 - La instancia compartida **no** tiene los respaldos, el PITR ni el SSL obligatorio que sí definiría
   `06_cloudsql_postgres.sh`; ese riesgo quedó aceptado como **D-26** hasta migrar.
 - El paso `07_cloudrun_web.sh` no se ejecutó en `ggtov2`; el despliegue real usa el proyecto
-  `truekeate-main` con una cuenta de servicio distinta.
+  `ggto-prod-txblvento2` con una cuenta de servicio distinta.
 - La ruta de convergencia está definida: al desbloquear la facturación, migrar el servicio a
   `ggtov2` con `07_cloudrun_web.sh` y su propio Cloud SQL `ggtov2-pg`.
 - El importe y la fecha exactos para esa migración están **pendientes de confirmar**; el estado del

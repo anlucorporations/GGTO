@@ -1,4 +1,5 @@
 # Estructura viva de la BD `ggtov2` — ggto-prod-txblvento (06/11/2026)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 **Tablas: 44 · Vistas: 0 · Secuencias: 41 · Extensiones: pg_trgm, pgcrypto, plpgsql**
 

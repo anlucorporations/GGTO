@@ -11,7 +11,7 @@ QUÉ HACE
     5. (--aplicar) Ejecuta la detección de masivas RF-09.
 
 USO (PowerShell)
-    $env:GGTO_URL   = 'https://ggto-web-593453426217.europe-west1.run.app'
+    $env:GGTO_URL   = 'https://ggto-web-695669822281.europe-west1.run.app'
     $env:GGTO_TOKEN = $tok   # JWT del SUPER
     python scripts/ejecutar_ingesta_04_11.py                # simulación
     python scripts/ejecutar_ingesta_04_11.py --aplicar --si

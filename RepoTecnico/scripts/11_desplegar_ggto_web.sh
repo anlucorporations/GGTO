@@ -3,7 +3,9 @@
 #
 # Reconstruye la imagen multi-etapa de `app/Dockerfile` (backend FastAPI + SPA
 # React, ahora con la sección AYUDA y los manuales en `app/web/public/manual`)
-# y actualiza el servicio `ggto-web` en `truekeate-main/europe-west1`.
+# y actualiza el servicio `ggto-web` en `ggto-prod-txblvento2/europe-west1`.
+# Despliegue vigente: Cloud Run `ggto-web`, BD PostgreSQL 16.15 en `vm-databases`
+# (10.140.0.2:5432, base `ggtov2`) alcanzada por el conector VPC `ggto-connector`.
 #
 # USO
 #   RepoTecnico/scripts/11_desplegar_ggto_web.sh                 # muestra el plan (no despliega)
@@ -17,13 +19,18 @@
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROYECTO="${PROYECTO:-truekeate-main}"
+PROYECTO="${PROYECTO:-ggto-prod-txblvento2}"
 REGION="${REGION:-europe-west1}"
 SERVICIO="${SERVICIO:-ggto-web}"
-REPO_IMAGEN="${REPO_IMAGEN:-southamerica-east1-docker.pkg.dev/${PROYECTO}/truekeate-repo/ggto-web}"
-TAG="${TAG:-v15}"
+REPO_IMAGEN="${REPO_IMAGEN:-europe-west1-docker.pkg.dev/${PROYECTO}/ggto/ggto-web}"
+TAG="${TAG:-v106}"
 IMAGEN="${REPO_IMAGEN}:${TAG}"
-INSTANCIA_SQL="${INSTANCIA_SQL:-${PROYECTO}:southamerica-east1:truekeate-db-dev}"
+# Cloud SQL `ggto-db` queda como respaldo; la BD viva está en la VM `vm-databases`.
+INSTANCIA_SQL="${INSTANCIA_SQL:-${PROYECTO}:europe-west1:ggto-db}"
+DB_HOST="${DB_HOST:-10.140.0.2}"
+DB_SSLMODE="${DB_SSLMODE:-disable}"
+VPC_CONNECTOR="${VPC_CONNECTOR:-ggto-connector}"
+BUCKET_EVIDENCIAS="${BUCKET_EVIDENCIAS:-ggto-prod-txblvento-ggto-evidencias}"
 CUENTA_SERVICIO="${CUENTA_SERVICIO:-ggto-web-sa@${PROYECTO}.iam.gserviceaccount.com}"
 
 # gcloud: se prefiere el SDK local (el de snap falla en este entorno).
@@ -43,7 +50,10 @@ cat <<EOF
   Región          : $REGION
   Servicio        : $SERVICIO
   Imagen          : $IMAGEN
-  Instancia SQL   : $INSTANCIA_SQL
+  BD (viva)       : $DB_HOST:5432 / ggtov2 (SSL $DB_SSLMODE)
+  Conector VPC    : $VPC_CONNECTOR
+  Instancia SQL   : $INSTANCIA_SQL (respaldo)
+  Bucket          : gs://$BUCKET_EVIDENCIAS
   Cuenta de servicio: $CUENTA_SERVICIO
   Contexto de build: $RAIZ/app (app/Dockerfile)
 EOF
@@ -89,7 +99,7 @@ gcloud secrets add-iam-policy-binding ggto-mantenimiento-token \
 echo "  Permiso de lectura concedido a $CUENTA_SERVICIO."
 
 echo "== 3/7 Preparando el bucket de evidencias =="
-BUCKET="${GGTO_BUCKET:-${PROYECTO}-ggto-evidencias}"
+BUCKET="${GGTO_BUCKET:-$BUCKET_EVIDENCIAS}"
 gcloud services enable storage.googleapis.com --project "$PROYECTO" >/dev/null
 if ! gcloud storage buckets describe "gs://$BUCKET" --project "$PROYECTO" >/dev/null 2>&1; then
   gcloud storage buckets create "gs://$BUCKET" --project "$PROYECTO" --location "$REGION" \
@@ -125,7 +135,9 @@ gcloud run deploy "$SERVICIO" \
   --min-instances 0 --max-instances 10 \
   --timeout 300 \
   --add-cloudsql-instances "$INSTANCIA_SQL" \
-  --set-env-vars "DB_HOST=/cloudsql/${INSTANCIA_SQL},DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=require,APP_ENV=production,GGTO_GCS_BUCKET=${BUCKET}" \
+  --vpc-connector "$VPC_CONNECTOR" \
+  --vpc-egress private-ranges-only \
+  --set-env-vars "DB_HOST=${DB_HOST},DB_PORT=5432,DB_NAME=ggtov2,DB_USER=ggtov2_app,DB_SSLMODE=${DB_SSLMODE},APP_ENV=production,GGTO_GCS_BUCKET=${BUCKET}" \
   --set-secrets "SECRET_KEY=ggto-secret-key:latest,DB_PASSWORD=ggtov2-db-password:latest,MANTENIMIENTO_TOKEN=ggto-mantenimiento-token:latest" \
   --service-account "$CUENTA_SERVICIO" \
   --allow-unauthenticated
@@ -160,6 +172,8 @@ programar_job() {
       --schedule "$cron" --time-zone "America/Caracas" --uri "$URL$ruta" \
       --http-method POST --headers "X-Mantenimiento-Token=$TOKEN_MANTENIMIENTO" >/dev/null
   fi
+  # Un despliegue no debe dejar los jobs pausados: retomarlos siempre (D-160).
+  gcloud scheduler jobs resume "$nombre" --location "$REGION" --project "$PROYECTO" >/dev/null 2>&1 || true
   echo "  $nombre  $cron  $ruta"
 }
 

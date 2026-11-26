@@ -1,4 +1,5 @@
 # Incremento D-155 · Observabilidad y monitoreo (H-15)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 **Fecha:** 2026-10-22
 **Hallazgo:** H-15 (R3, severidad M) del `INFORME_OPTIMIZACION_V2.md`.
@@ -97,9 +98,9 @@ D-155. Resultado verificado:
 
 | Dato | Valor |
 |---|---|
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v80` |
+| Imagen | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v80` |
 | Revisión de Cloud Run | `ggto-web-00093-g8c`, 100 % del tráfico |
-| URL | `https://ggto-web-593453426217.europe-west1.run.app` |
+| URL | `https://ggto-web-695669822281.europe-west1.run.app` |
 | `/health`, `/ready`, `/`, `/manual/` y un HTML de manual | `200` |
 | `/ready` | PostgreSQL 15.18, base `ggtov2`, 43 tablas, `"almacenamiento": "gcs"`, `evidencias_ok: true` |
 | Log JSON | `jsonPayload.evento="http_request"`, `request_id="deploy-v80-check"`, ruta `/health`, estado 200 |
@@ -113,17 +114,17 @@ activarlas, ejecutar de nuevo con el correo de destino o asociar un canal desde 
 La ejecución de referencia es:
 
 ```bash
-PROYECTO=truekeate-main bash RepoTecnico/scripts/12_observabilidad.sh
+PROYECTO=ggto-prod-txblvento2 bash RepoTecnico/scripts/12_observabilidad.sh
 ```
 
 La verificación de una línea JSON se hizo con una petición marcada:
 
 ```bash
 curl -H 'X-Request-ID: deploy-v80-check' \
-  https://ggto-web-593453426217.europe-west1.run.app/health
+  https://ggto-web-695669822281.europe-west1.run.app/health
 gcloud logging read \
   'resource.type="cloud_run_revision" AND jsonPayload.request_id="deploy-v80-check"' \
-  --project=truekeate-main --limit=1 --format=json
+  --project=ggto-prod-txblvento2 --limit=1 --format=json
 ```
 
 Queda pendiente la prueba en un dispositivo real del log local de la APK: provocar un fallo

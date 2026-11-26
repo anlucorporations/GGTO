@@ -1,4 +1,5 @@
 # INFORME DE OPTIMIZACIÓN V2 — Auditoría integral de GGTO (proyecto y APK)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | | |
 |---|---|
@@ -13,7 +14,7 @@
 
 > **Aviso de lectura.** Este informe sustituye y amplía `INFORME_OPTIMIZACION_V1.md` (que auditó documentación de Fase 1) y `INFORME_OPTIMIZACION_D95_V1.md` (que auditó el incremento D-95). Aquí se audita el proyecto completo en su estado de 2026-10-19. Cuando la verificación desmintió un dato de partida, se señala expresamente y se conserva el hecho verificado; cuando algo no pudo comprobarse, se marca **«necesita verificación»**.
 >
-> **Corrección importante respecto al dato de partida.** El resumen de métricas de la auditoría describía producción «sin backups automáticos». Tres dimensiones (R5, R6 y R7) verificaron en vivo, el 2026-10-19, lo contrario: `truekeate-db-dev` tiene `backupConfiguration.enabled=true`, `pointInTimeRecoveryEnabled=true`, `retainedBackups=30` y 7 días de transaction logs. Lo que **sí** sigue abierto es `deletionProtectionEnabled=false`, `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED`, la ausencia de prueba de restauración y una documentación que afirma lo contrario de la realidad. Este informe refleja el hecho verificado (ver H-01 y H-29).
+> **Corrección importante respecto al dato de partida.** El resumen de métricas de la auditoría describía producción «sin backups automáticos». Tres dimensiones (R5, R6 y R7) verificaron en vivo, el 2026-10-19, lo contrario: `vm-databases` tiene `backupConfiguration.enabled=true`, `pointInTimeRecoveryEnabled=true`, `retainedBackups=30` y 7 días de transaction logs. Lo que **sí** sigue abierto es `deletionProtectionEnabled=false`, `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED`, la ausencia de prueba de restauración y una documentación que afirma lo contrario de la realidad. Este informe refleja el hecho verificado (ver H-01 y H-29).
 
 > **Nota de línea base (detectada al cierre).** La auditoría se ejecutó sobre el commit `7c10086` (2026-10-19). Durante su ejecución apareció en el árbol de trabajo un conjunto de cambios **sin versionar** de un incremento **D-114** —especiales separados por concepto y masivas por sector— que **no forma parte de esta auditoría ni de su alcance**. No se modificó ni se revirtió: se dejó intacto. Las referencias de línea de los archivos que ese cambio toca (`app/services/despacho.py`, `app/schemas/despacho.py`, `app/api/routes_despachos.py`, `app/web/src/api/types.ts`, `ProcesarDespacho.tsx`, `styles.css`) pueden estar desplazadas respecto al commit auditado; el contenido de los hallazgos se sostiene sobre el código del commit y sobre las comprobaciones en vivo. **Revalidar este informe tras integrar D-114.**
 
@@ -101,7 +102,7 @@ Consolidación cruzada de los **70 hallazgos supervivientes** en **46 hallazgos 
 | E2E Playwright | **27** specs (R1 y R2 citan 26; el árbol tiene 27) | Sin ejecutar en esta auditoría |
 | CI | **No existe `.github/` ni workflow propio** (`Test-Path .github` → `False`) | Brecha estructural |
 | Producción | Cloud Run **público** (`allUsers` → `roles/run.invoker`), revisión `ggto-web-00060-lrm`, PII real | Riesgo confirmado |
-| Cloud SQL (en vivo) | `truekeate-db-dev`: **backups y PITR activos**, 30 backups, 7 días de logs; **`deletionProtectionEnabled=false`**, `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` | Corrige el dato de partida |
+| Cloud SQL (en vivo) | `vm-databases`: **backups y PITR activos**, 30 backups, 7 días de logs; **`deletionProtectionEnabled=false`**, `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` | Corrige el dato de partida |
 | Cloud Scheduler | **API deshabilitada**; la revisión no define `MANTENIMIENTO_TOKEN` | Los 4 jobs de D-81 no existen |
 
 ### 3.2 Qué no se pudo medir
@@ -109,7 +110,7 @@ Consolidación cruzada de los **70 hallazgos supervivientes** en **46 hallazgos 
 - **Cobertura de código:** no hay `pytest-cov` en `app/requirements-dev.txt` ni configuración de cobertura en `pyproject.toml`/`pytest.ini`. El umbral del 70 % de RNF-24 no se mide en ninguna parte.
 - **Rendimiento:** no hay latencia, throughput ni concurrencia medidas. Los SLO de RNF-08/RNF-15/RNF-34 (p95 de ingesta, PANEL y despacho, 30 concurrentes) siguen sin verificar y los archivos de prueba de carga que la documentación cita no existen.
 - **Restauración:** no se ejecutó ninguna restauración ni PITR de prueba; el RTO ≤ 4 h de RNF-16 **necesita verificación**.
-- **Capacidad de la instancia:** el `max_connections` real de `truekeate-db-dev` no es legible desde el repositorio y **necesita verificación** con `gcloud sql instances describe/flags`.
+- **Capacidad de la instancia:** el `max_connections` real de `vm-databases` no es legible desde el repositorio y **necesita verificación** con `gcloud sql instances describe/flags`.
 - **Producción vs DDL:** `/ready` informa 43 tablas frente a 42 del esquema versionado; la conciliación **necesita verificación** contra la base.
 - **PII real:** consta en la documentación (`estado_proyecto.md:151`) y en los manuales; no se consultó la base ni se invocó `consultar_caso` (decisión deliberada para no recuperar PII).
 - **Firma del APK publicado y valor de los secretos:** **necesita verificación**; no se descargó ni analizó el binario.
@@ -271,7 +272,7 @@ Consolidación cruzada de los **70 hallazgos supervivientes** en **46 hallazgos 
 - **Recomendación.** Habilitar Cloud Scheduler, crear cinco jobs (los cuatro de D-81 más uno de `outbox.procesar` cada 2-5 min), inyectar `MANTENIMIENTO_TOKEN` desde Secret Manager y verificar 200 en cada ruta; configurar Telegram/SMTP o aceptar por escrito un solo canal; probar un envío extremo a extremo; alertar por job fallido y por `notificacion` PENDIENTE antigua; corregir D-81.
 
 #### H-12 — Instancia zonal compartida, en otra región y sin SSL exigido
-- **Contexto.** La base `ggtov2` vive en `truekeate-db-dev` (`southamerica-east1`): `ZONAL`, `db-f1-micro`, 10 GB, compartida físicamente con TrueKeate, `ipv4Enabled=true`, red autorizada `35.232.138.181/32` y `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` con `requireSsl=false`; el `DB_SSLMODE=require` de la aplicación es una exigencia del cliente, no de la instancia. Cloud Run corre en `europe-west1` con `--cpu 1 --memory 512Mi`, concurrencia 80, `maxScale=10` y sin `minScale` (0): cada consulta cruza el Atlántico y se multiplica en los flujos con N+1. El engine global usa `pool_size=5` + `max_overflow=5` (hasta 10 por instancia y 100 con 10 instancias), sin pooler ni `max_connections` fijado. Un fallo zonal, una ventana de mantenimiento o el llenado de los 10 GB tumban backend, web y sincronización; el plan de contingencia se limita a «conservar los CSV de origen».
+- **Contexto.** La base `ggtov2` vive en `vm-databases` (`europe-west1`): `ZONAL`, `db-f1-micro`, 10 GB, compartida físicamente con TrueKeate, `ipv4Enabled=true`, red autorizada `35.232.138.181/32` y `sslMode=ALLOW_UNENCRYPTED_AND_ENCRYPTED` con `requireSsl=false`; el `DB_SSLMODE=require` de la aplicación es una exigencia del cliente, no de la instancia. Cloud Run corre en `europe-west1` con `--cpu 1 --memory 512Mi`, concurrencia 80, `maxScale=10` y sin `minScale` (0): cada consulta cruza el Atlántico y se multiplica en los flujos con N+1. El engine global usa `pool_size=5` + `max_overflow=5` (hasta 10 por instancia y 100 con 10 instancias), sin pooler ni `max_connections` fijado. Un fallo zonal, una ventana de mantenimiento o el llenado de los 10 GB tumban backend, web y sincronización; el plan de contingencia se limita a «conservar los CSV de origen».
 - **Evidencia.** `scripts/11_desplegar_ggto_web.sh:21,26,81-82`; `app/core/db.py:26-39`; `app/web/src/components/Layout.tsx:134`; `Manuales/07-Operacion/01-operacion-y-mantenimiento.md:287-290,307-309`; `GGTOv2_GCP.md:345,348`; `estado_proyecto.md:12`; en vivo: `gcloud sql instances describe` y `gcloud run services describe` (2026-10-19).
 - **Impacto.** Punto único de fallo de toda la persistencia, latencia transatlántica, riesgo de agotamiento de conexiones y datos sin cifrado en tránsito garantizado. **Necesita verificación:** `max_connections` efectivo y existencia del índice GIN en producción.
 - **Recomendación.** Migrar a una instancia propia REGIONAL en la misma región que Cloud Run, con `sslMode=ENCRYPTED_ONLY`, IP privada + Cloud SQL Connector, `deletionProtectionEnabled=true` y tier dimensionado. Mientras tanto: reducir el pool (2-3), alinear `max-instances` con el techo de conexiones, fijar `max_connections`, alertas de conexiones/CPU/disco, sustituir el sondeo de listado por endpoint incremental y documentar un plan de contingencia con RTO/RPO medidos.
@@ -441,7 +442,7 @@ Consolidación cruzada de los **70 hallazgos supervivientes** en **46 hallazgos 
 
 | ID | Acción | Responsable sugerido | Esf. |
 |---|---|---|---|
-| H-12 | Migración a Cloud SQL REGIONAL propia en `southamerica-east1` (o Cloud Run en la región de la BD), IP privada, Connector y pooler | SRE + Plataforma | L |
+| H-12 | Migración a Cloud SQL REGIONAL propia en `europe-west1` (o Cloud Run en la región de la BD), IP privada, Connector y pooler | SRE + Plataforma | L |
 | H-27 | Migraciones versionadas completas y baseline conciliado con producción | DBA/SRE | L |
 | H-24 | Organigrama operativo: DBA/SRE, seguridad, DPO, DPA y plan de continuidad | Dirección | M |
 | H-10 | MFA y separación de funciones con auditoría independiente (si se mantiene el SUPER) | Seguridad | L |

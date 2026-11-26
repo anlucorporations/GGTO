@@ -193,7 +193,7 @@ final ThemeData appTheme = ThemeData(
 """,
 
     "lib/core/constants.dart": """class AppConstants {
-  static const String baseUrl = 'https://ggto-web-593453426217.europe-west1.run.app/api/v1';
+  static const String baseUrl = 'https://ggto-web-695669822281.europe-west1.run.app/api/v1';
 }
 """,
 

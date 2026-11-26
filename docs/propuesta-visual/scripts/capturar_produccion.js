@@ -4,7 +4,7 @@
  * Evidencia de que la propuesta visual está en producción (no solo en local).
  *
  * Uso: node docs/propuesta-visual/scripts/capturar_produccion.js [url]
- *   url por defecto: https://ggto-web-593453426217.europe-west1.run.app
+ *   url por defecto: https://ggto-web-695669822281.europe-west1.run.app
  */
 const path = require('path');
 const fs = require('fs');
@@ -13,7 +13,7 @@ const E2E = path.resolve(__dirname, '../../../RepoTecnico/pruebas/e2e/node_modul
 if (!module.paths.includes(E2E)) module.paths.push(E2E);
 const { chromium } = require(path.join(E2E, 'playwright'));
 
-const BASE = process.argv[2] || 'https://ggto-web-593453426217.europe-west1.run.app';
+const BASE = process.argv[2] || 'https://ggto-web-695669822281.europe-west1.run.app';
 const SALIDA = path.resolve(__dirname, '..', 'capturas');
 fs.mkdirSync(SALIDA, { recursive: true });
 

@@ -4,7 +4,7 @@
 const http = require("http")
 
 // ---- CONFIG (env; secretos por docker secret/env_file root-only, RS-2) ----
-const GGTO_API_URL  = process.env.GGTO_API_URL || "https://ggto-web-597577479284.europe-west1.run.app"
+const GGTO_API_URL  = process.env.GGTO_API_URL || "https://ggto-web-695669822281.europe-west1.run.app"
 const GGTO_USER     = process.env.GGTO_SERVICE_USER || ""       // p00 del usuario de servicio
 const GGTO_PASS     = process.env.GGTO_SERVICE_PASSWORD ||
   (leerArchivo("/run/secrets/ggto_service_pass") || "").trim()

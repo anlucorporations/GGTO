@@ -1,4 +1,5 @@
 # Estado de inyección de datos — GGTO
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 > Memoria de trabajo de `@InyectaDatos`. Se actualiza de forma incremental.
 
@@ -61,7 +62,7 @@
 cd /home/dsh/workspace/CANTV_PDE
 export PATH="/home/dsh/google-cloud-sdk/bin:$PATH"
 export DB_HOST=34.39.180.101 DB_PORT=5432 DB_NAME=ggtov2 DB_USER=ggtov2_app DB_SSLMODE=require
-export DB_PASSWORD="$(gcloud secrets versions access latest --secret=ggtov2-db-password --project=truekeate-main)"
+export DB_PASSWORD="$(gcloud secrets versions access latest --secret=ggtov2-db-password --project=ggto-prod-txblvento2)"
 export GGTO_SUPER_CLAVE='<clave>'
 
 # Simulación (no escribe nada)

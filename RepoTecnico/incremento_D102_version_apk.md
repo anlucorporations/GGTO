@@ -1,4 +1,5 @@
 # Incremento D-102 — Chequeo de la última versión de la APK desde el panel de usuario
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -53,7 +54,7 @@ La web lo sirve como archivo estático, así que la APK lo consulta **sin sesió
 ```
 
 Verificado en producción: ambos responden **200** en
-`https://ggto-web-593453426217.europe-west1.run.app`.
+`https://ggto-web-695669822281.europe-west1.run.app`.
 
 ---
 

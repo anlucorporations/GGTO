@@ -5,9 +5,9 @@
 | Proyecto | **GGTO** — Gestión de averías y puntos ópticos (CANTV, Central Francisco Salias / Área 4) |
 | Workspace | `/home/dsh/workspace/CANTV_PDE` |
 | Carpeta técnica | `/home/dsh/workspace/CANTV_PDE/RepoTecnico` |
-| Infraestructura GCP | Cloud Run y Cloud SQL consultados en el proyecto `truekeate-main`; la base lógica GGTO es `ggtov2`. Ver auditoría V2. |
-| Fase | V1 desplegada; V2 en definición e implementación parcial |
-| Estado | La configuración que sigue es mayormente histórica/planificada. Estado observado al 2026-10-12 en [`auditoria_estado_real_v2.md`](auditoria_estado_real_v2.md). |
+| Infraestructura GCP | **Vigente (24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1); BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`. Cloud SQL `ggto-db` = respaldo. |
+| Fase | Producción vigente v106 (`ggto-web-00016-k2k`), ciclos D-121…D-168. |
+| Estado | El §2 y siguientes conservan el estado **histórico** (2026-10-12). El estado actual está en `estado_proyecto.md` y en `DESPLEGUE_ggto-prod-txblvento2.md` / `DESPLEGUE_plataforma-vm-databases.md`. |
 
 > Este archivo registra **configuración, rutas, variables de entorno y comandos** importantes.
 > Nunca se escriben secretos: solo se referencian por nombre en Secret Manager.
@@ -43,18 +43,20 @@ Variables relevantes de `.env.global` (entorno **MCC**, distinto de GGTOv2):
 | `MCC_ANVIL_RPC_URL` | `https://mcc-foundry-anvil-1095249147821.europe-west1.run.app` |
 
 > ⚠️ El `.env.global` apunta al proyecto **`mcc-ecommerce`** (TrueKeate/MCC). Para GGTO se
-> trabajará contra **`ggtov2`** y la instancia PostgreSQL reutilizada `truekeate-db-dev`.
+> trabajará contra **`ggtov2`** y la instancia PostgreSQL reutilizada `vm-databases`.
 > Conviene crear un `.env.ggto` propio del proyecto (pendiente de confirmar, ver §6).
 
 ---
 
 ## 2. Infraestructura GCP del proyecto (GGTOv2)
 
-> **Estado observado 2026-10-12:** el proyecto activo de gcloud es `truekeate-main`. El servicio desplegado es Cloud Run `ggto-web` en `europe-west1`, revisión `ggto-web-00039-g9n`, imagen `v24`, 100 % del tráfico y con `allUsers` en `roles/run.invoker`. Cloud SQL `truekeate-db-dev` (PostgreSQL 15, `southamerica-east1`) está `RUNNABLE`; los backups automáticos están deshabilitados. La tabla siguiente conserva identificadores planeados de la etapa inicial y no debe tratarse como descripción del despliegue actual.
+> **DESPLIEGUE VIGENTE (verificado 2026-11-24):** proyecto `ggto-prod-txblvento2` (nº 695669822281), región `europe-west1`, Cloud Run `ggto-web` imagen `ggto-web:v106` revisión `ggto-web-00016-k2k`, URL <https://ggto-web-695669822281.europe-west1.run.app>, SA `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com`, bucket `gs://ggto-prod-txblvento-ggto-evidencias`. Base de datos viva: PostgreSQL 16.15 en `vm-databases` (`10.140.0.2:5432`), BD `ggtov2`, usuario `ggtov2_app`, vía conector VPC `ggto-connector`; 47 tablas según `/ready`. Cloud SQL `ggto-db` del proyecto queda como respaldo. 5 jobs de Scheduler `ENABLED` con `X-Mantenimiento-Token`.
+
+> **Estado histórico observado 2026-10-12:** el proyecto activo de gcloud es `ggto-prod-txblvento2`. El servicio desplegado es Cloud Run `ggto-web` en `europe-west1`, revisión `ggto-web-00039-g9n`, imagen `v24`, 100 % del tráfico y con `allUsers` en `roles/run.invoker`. Cloud SQL `vm-databases` (PostgreSQL 15, `europe-west1`) está `RUNNABLE`; los backups automáticos están deshabilitados. La tabla siguiente conserva identificadores planeados de la etapa inicial y no debe tratarse como descripción del despliegue actual.
 
 | Recurso | Identificador |
 |---|---|
-| Proyecto que contiene los recursos verificados | `truekeate-main` |
+| Proyecto que contiene los recursos verificados | `ggto-prod-txblvento2` |
 | Organización | `organizations/253767381125` |
 | Cuenta de facturación | `billingAccounts/013B00-B9A67C-014A43` — ⚠️ **cupo agotado (5 proyectos)** |
 | Región | `europe-west1` |
@@ -62,21 +64,21 @@ Variables relevantes de `.env.global` (entorno **MCC**, distinto de GGTOv2):
 | SA runtime | `ggtov2-app@ggtov2.iam.gserviceaccount.com` |
 | SA despliegue | `ggtov2-deploy@ggtov2.iam.gserviceaccount.com` |
 | Servicio web planeado originalmente | Cloud Run `ggtov2-web` — **no coincide con el servicio verificado** `ggto-web` |
-| Imagen activa observada | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v24` |
+| Imagen activa observada | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v24` |
 | Bucket de activos | `ggtov2-assets-905974355709` |
-| Cloud SQL existente observado | `truekeate-db-dev` (PostgreSQL 15, `southamerica-east1`); backups automáticos deshabilitados |
+| Cloud SQL existente observado | `vm-databases` (PostgreSQL 15, `europe-west1`); backups automáticos deshabilitados |
 
 ### 2.1 Base de datos PostgreSQL operativa (instancia reutilizada)
 
 | Dato | Valor |
 |---|---|
-| Instancia | `truekeate-main:southamerica-east1:truekeate-db-dev` (POSTGRES_15; estado `RUNNABLE` consultado el 2026-10-12) |
+| Instancia | `ggto-prod-txblvento2:europe-west1:ggto-db` (POSTGRES_15; estado `RUNNABLE` consultado el 2026-10-12) |
 | Base de datos | `ggtov2` |
 | Usuario | `ggtov2_app` |
-| Contraseña | Secret Manager: `projects/truekeate-main/secrets/ggtov2-db-password` |
-| Conexión (Secret) | `projects/truekeate-main/secrets/ggtov2-db-connection` |
+| Contraseña | Secret Manager: `projects/ggto-prod-txblvento2/secrets/ggtov2-db-password` |
+| Conexión (Secret) | `projects/ggto-prod-txblvento2/secrets/ggtov2-db-connection` |
 | IP pública | `34.39.180.101` (red autorizada `35.232.138.181/32`) |
-| IAM cruzado | `ggtov2-app@ggtov2…` → `roles/cloudsql.client` en `truekeate-main` |
+| IAM cruzado | `ggtov2-app@ggtov2…` → `roles/cloudsql.client` en `ggto-prod-txblvento2` |
 | Acceso local | Cloud SQL Auth Proxy en `127.0.0.1:5433` |
 
 ⚠️ Riesgos pendientes sobre la instancia compartida (ver `GGTOv2_GCP.md` §6.5):
@@ -102,7 +104,7 @@ Estado aplicado el 2026-09-25 sobre `ggtov2_app`:
 **Incidente de exposición — RESUELTO:** durante la verificación, un mensaje de error de Node imprimió la contraseña del usuario `app` (TrueKeate) contenida en el secreto `DATABASE_URL`. Se **rotó la contraseña**:
 
 1. `ALTER ROLE app PASSWORD '<nueva>'` (32 caracteres aleatorios).
-2. Nueva versión del secreto `DATABASE_URL` (`versions/3`) en `truekeate-main`.
+2. Nueva versión del secreto `DATABASE_URL` (`versions/3`) en `ggto-prod-txblvento2`.
 3. Nueva revisión de Cloud Run `truekeate-api-00034-hvk` para tomar el valor `latest` → `Ready`, 100 % del tráfico, sin errores de autenticación en logs.
 
 > `truekeate-web` no consume `DATABASE_URL`, por lo que no requirió revisión nueva.
@@ -123,7 +125,7 @@ Todos en `RepoTecnico/scripts/` (idempotentes, autenticación por token `gcloud`
 | `06_cloudsql_postgres.sh` | Cloud SQL PostgreSQL 16. |
 | `07_cloudrun_web.sh` | Servicio Cloud Run. |
 | `08_auditoria_presupuesto.sh` | Auditoría + presupuesto. |
-| `10_usar_instancia_truekeate.sh` | Base/usuario `ggtov2` en `truekeate-db-dev`. |
+| `10_usar_instancia_truekeate.sh` | Base/usuario `ggtov2` en `vm-databases`. |
 | `99_eliminar_todo.sh` | Teardown (requiere `CONFIRM_DESTROY=ELIMINAR`). |
 
 ---
@@ -138,7 +140,7 @@ APP_TIMEZONE=America/Caracas
 SECRET_KEY=<Secret Manager: ggtov2-app-secret-key>
 
 # --- Base de datos (Cloud Run: socket; local: proxy) ---
-DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db
 DB_PORT=5432
 DB_NAME=ggtov2
 DB_USER=ggtov2_app
@@ -224,8 +226,8 @@ gcloud secrets list --project ggtov2
 
 # --- PostgreSQL (proxy local) ---
 nohup /home/dsh/tools/cloud-sql-proxy \
-  --project truekeate-main --address 127.0.0.1 --port 5433 \
-  truekeate-main:southamerica-east1:truekeate-db-dev &
+  --project ggto-prod-txblvento2 --address 127.0.0.1 --port 5433 \
+  ggto-prod-txblvento2:europe-west1:ggto-db &
 # (requiere cliente psql, actualmente NO instalado)
 
 # --- Ingesta de muestra (referencia) ---
@@ -280,7 +282,7 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
    `compute`, `run`, `secretmanager`, `cloudkms`, `storage`, `artifactregistry` y Cloud SQL propio.
 5. **Credenciales de mensajería**: token del **bot de Telegram** (v1), servicio de **correo**
    (SendGrid free tier / Gmail app password) y clave del **MCP**.
-6. **Habilitar backups/PITR/protección de borrado** en `truekeate-db-dev` antes de datos reales.
+6. **Habilitar backups/PITR/protección de borrado** en `vm-databases` antes de datos reales.
 
 ---
 
@@ -292,7 +294,7 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
 
 | Dato | Valor |
 |---|---|
-| Instancia | `truekeate-main:southamerica-east1:truekeate-db-dev` (PostgreSQL 15.18) |
+| Instancia | `ggto-prod-txblvento2:europe-west1:ggto-db` (PostgreSQL 15.18) |
 | Base | `ggtov2` |
 | Usuario | `ggtov2_app` |
 | Conexión usada | IP pública `34.39.180.101:5432` con SSL (red autorizada `35.232.138.181/32`) |
@@ -310,19 +312,21 @@ ISO-8859-1, 80 columnas por posición, validaciones, manejo de errores y confide
 | Semillas | 3 roles · 1 central (`2324X` FRANCISCO SALIAS) · 1 cuadrilla (`C-00`) · 9 métodos · 13 parámetros · 0 causas |
 | Función `generar_id_averia_ref` | ✅ devolvió `REF-2324X-000001` (secuencia reiniciada a 1) |
 
-### 8.2 Aplicación web — ✅ DESPLEGADA (esqueleto, 2026-09-26)
+### 8.2 Aplicación web — registro HISTÓRICO (esqueleto, 2026-09-26)
 
-Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`truekeate-main`**
+> Esta sección describe el despliegue inicial de septiembre, ya retirado. El despliegue vigente está en §2 y en `estado_proyecto.md`.
+
+Al no haber facturación en `ggtov2`, el servicio se alojó temporalmente en **`ggto-prod-txblvento2`**
 (que sí tiene facturación), apuntando a la base **`ggtov2`** de la instancia compartida.
 
 | Dato | Valor |
 |---|---|
-| Servicio | **Cloud Run `ggto-web`** en `truekeate-main`, región `europe-west1` |
-| URL | **https://ggto-web-593453426217.europe-west1.run.app** · alternativa `https://ggto-web-m33mjctj4a-ew.a.run.app` (API + web) |
+| Servicio | **Cloud Run `ggto-web`** en `ggto-prod-txblvento2`, región `europe-west1` |
+| URL | **https://ggto-web-695669822281.europe-west1.run.app** · alternativa `https://ggto-web-m33mjctj4a-ew.a.run.app` (API + web) |
 | Revisión | `ggto-web-00013-9pf` (100 % del tráfico) — versión `0.7.0` · navegación superior (D-57) y cuadrilla 0 en `SUPERVISOR` (D-59) |
-| Imagen | `southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v13` (multi-etapa: Node compila la SPA, Python la sirve) |
-| SA de ejecución | `ggto-web-sa@truekeate-main.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
-| Cloud SQL montado | `truekeate-main:southamerica-east1:truekeate-db-dev` |
+| Imagen | `europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v13` (multi-etapa: Node compila la SPA, Python la sirve) |
+| SA de ejecución | `ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` (roles `cloudsql.client` + `secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`) |
+| Cloud SQL montado | `ggto-prod-txblvento2:europe-west1:ggto-db` |
 | Código | `app/` (FastAPI + SQLAlchemy + Argon2id + JWT) · `app/web/` (React + Vite + TypeScript) |
 | Acceso | Público (`allUsers`) — **smoke test; endurecer antes de producción** |
 
@@ -373,14 +377,14 @@ Cloud SQL `ggtov2-pg` (REGIONAL, SSL `ENCRYPTED_ONLY`, backups + PITR).
 ### 8.4 Conexión de la aplicación
 
 ```dotenv
-DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db
 DB_PORT=5432
 DB_NAME=ggtov2
 DB_USER=ggtov2_app
-DB_PASSWORD=<Secret Manager: truekeate-main/ggtov2-db-password>
+DB_PASSWORD=<Secret Manager: ggto-prod-txblvento2/ggtov2-db-password>
 DB_SSLMODE=require
 ```
 
 > En Cloud Run se monta la instancia con
-> `--add-cloudsql-instances=truekeate-main:southamerica-east1:truekeate-db-dev`; la SA
-> `ggtov2-app@ggtov2` ya tiene `roles/cloudsql.client` en `truekeate-main`.
+> `--add-cloudsql-instances=ggto-prod-txblvento2:europe-west1:ggto-db`; la SA
+> `ggtov2-app@ggtov2` ya tiene `roles/cloudsql.client` en `ggto-prod-txblvento2`.

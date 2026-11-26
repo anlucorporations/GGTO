@@ -1,4 +1,5 @@
 # Incremento D-82 — APK: contenido local, progreso de sincronización, sección Usuario y reporte de Falla Masiva
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -119,7 +120,7 @@ la cola envía la acción.
 
 | Paso | Resultado |
 |---|---|
-| **Migración D-82 en producción** | Túnel `cloud-sql-proxy` (v2.15.2, `--gcloud-auth`) → `truekeate-main:southamerica-east1:truekeate-db-dev`, base `ggtov2`. Simulación → `--aplicar --si` → **verificado**: `falla_masiva` pasa de 14 a **18 columnas** (`odn`, `direccion`, `fat`, `evidencias`), 4 filas intactas. En la segunda pasada (tras la prueba de escritura) se recreó además el CHECK `evidencia_tipo_check` con `FALLA_MASIVA`. Reejecución: «ya migrada». |
+| **Migración D-82 en producción** | Túnel `cloud-sql-proxy` (v2.15.2, `--gcloud-auth`) → `ggto-prod-txblvento2:europe-west1:ggto-db`, base `ggtov2`. Simulación → `--aplicar --si` → **verificado**: `falla_masiva` pasa de 14 a **18 columnas** (`odn`, `direccion`, `fat`, `evidencias`), 4 filas intactas. En la segunda pasada (tras la prueba de escritura) se recreó además el CHECK `evidencia_tipo_check` con `FALLA_MASIVA`. Reejecución: «ya migrada». |
 | **APK firmada** | `python scripts/publicar_apk.py --confirmar`: detecta el keystore, valida con `keytool`, compila, **verifica la firma con `apksigner`** y publica `app_movil/GGTOv2.apk` (22,7 MB, `1.0.0+3`). |
 | **Imágenes** | `gcloud builds submit app --tag …/ggto-web:v18` (1M56S) y, tras las correcciones de la verificación, **`v19`** (1M34S). Se descartaron la `v16` (cancelada) y la `v17` (manuales mal codificados, ver §9). |
 | **Servicio** | `gcloud run deploy ggto-web` con el mismo entorno, secretos, cuenta de servicio y escalado: revisión **`ggto-web-00033-tcn`** (v18) y, finalmente, **`ggto-web-00034-7h2`** (v19) con el **100 %** del tráfico. |

@@ -4,7 +4,7 @@
 # Requiere una sesión de gcloud autenticada con permiso para Logging y Monitoring
 # (por ejemplo, Cloud Shell). Es idempotente: crea o actualiza los objetos.
 #
-#   PROYECTO=truekeate-main ALERTA_EMAIL=operaciones@ejemplo.com \
+#   PROYECTO=ggto-prod-txblvento2 ALERTA_EMAIL=operaciones@ejemplo.com \
 #     bash RepoTecnico/scripts/12_observabilidad.sh
 #
 # Sin ALERTA_EMAIL las políticas se crean igual, pero no tendrán un canal de
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-PROYECTO="${PROYECTO:-truekeate-main}"
+PROYECTO="${PROYECTO:-ggto-prod-txblvento2}"
 PROJECT_ID="$PROYECTO"
 REGION="${REGION:-europe-west1}"
 SERVICIO="${SERVICIO:-ggto-web}"

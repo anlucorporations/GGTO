@@ -92,8 +92,8 @@ void main() {
   group('D-102 · metadatos publicados', () {
     test('el origen sale de la URL de la API', () {
       expect(
-        VersionService.origenDeApi('https://ggto-web-593453426217.europe-west1.run.app/api/v1'),
-        'https://ggto-web-593453426217.europe-west1.run.app',
+        VersionService.origenDeApi('https://ggto-web-695669822281.europe-west1.run.app/api/v1'),
+        'https://ggto-web-695669822281.europe-west1.run.app',
       );
       expect(
         VersionService.origenDeApi('https://ejemplo.test/api/v1/'),

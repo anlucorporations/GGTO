@@ -364,7 +364,7 @@ const TEMAS: Tema[] = [
           { num: '5', titulo: 'Script por script', ancla: 'script-por-script' },
           { num: '6', titulo: 'Scripts auxiliares del proyecto', ancla: 'scripts-auxiliares-del-proyecto' },
           { num: '7', titulo: 'Teardown y confirmación (CONFIRM_DESTROY=ELIMINAR)', ancla: 'teardown-y-confirmacion-confirm-destroy-eliminar' },
-          { num: '8', titulo: 'Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)', ancla: 'diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad' },
+          { num: '8', titulo: 'Despliegues históricos vs. despliegue vigente (ggto-prod-txblvento2)', ancla: 'diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad' },
         ],
       },
       {

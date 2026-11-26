@@ -636,6 +636,8 @@ export interface CasoAsignadoOut {
 export interface SectorProcesoOut {
   id_sector: number;
   nombre: string | null;
+  /** Patrones de dirección del sector: se muestran en vez del nombre. */
+  direcciones?: string[];
   total: number;
   /** D-114: los especiales separados por concepto. */
   especiales: number;
@@ -713,6 +715,7 @@ export interface AsignacionMasiva {
 export interface SectorConstruccionOut {
   id_sector: number;
   nombre: string | null;
+  direcciones?: string[];
   cantidad: number;
 }
 
@@ -746,6 +749,7 @@ export interface ConstruccionProcesoOut {
 export interface SectorMantenimientoOut {
   id_sector: number;
   nombre: string | null;
+  direcciones?: string[];
   cantidad: number;
   id_cuadrilla?: number | null;
 }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4) — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos de prueba existen, en qué entornos aislados corren, cuánt">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../imagenes/piramide-pruebas.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Despliegue</span>
           <h1 class="portada-titulo">Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)</h1>
-          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos de prueba existen, en qué entornos aislados corren, cuántas pruebas se ejecutaron, qué revisores automáticos de calidad se usan y cómo funciona la integración continua (CI, la revisión automática en cada cambio de código). Cuando algo no está implementado, se dice con claridad. Este manual nunca escribe valores de credenciales: solo las menciona.</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Manual para todo público. Explica, en lenguaje sencillo, cómo se comprueba que la plataforma GGTO funciona bien antes de entregarla: qué tipos […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/04-pruebas-y-ci.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>29/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p>Manual para todo público. Explica, en lenguaje sencillo, <strong>cómo se comprueba que la plataforma
 GGTO funciona bien antes de entregarla</strong>: qué tipos de prueba existen, en qué entornos aislados
@@ -865,7 +868,7 @@ corregido durante la Fase 4 (hallazgo <strong>F4-01</strong>).</p>
 y siembra los datos desde <code>schema.sql</code>. La aplicación bajo prueba se levanta con ese esquema y la
 dirección <code>http://127.0.0.1:8090</code>.</p>
 <h3 id="cloud-sql-auth-proxy"><span class="sec-num">3.3</span>Cloud SQL Auth Proxy</h3>
-<p>Ambos entornos usan la instancia compartida <code>truekeate-db-dev</code> a través del <strong>Cloud SQL Auth Proxy</strong>,
+<p>Ambos entornos usan la instancia compartida <code>vm-databases</code> a través del <strong>Cloud SQL Auth Proxy</strong>,
 un programa que abre un canal seguro desde la máquina local hacia la base gestionada. El plan de
 pruebas lo describe escuchando en <code>127.0.0.1:5433</code> y da el comando de arranque. El guion
 <code>run_e2e.sh</code> usa ese puerto por defecto y comprueba la conectividad con <code>psql</code>. El proxy es
@@ -1070,7 +1073,7 @@ menor.</p>
 <p>El plan describe el procedimiento. El modo directo es:</p>
 <pre data-lang="bash"><code class="language-bash"># Proxy (una vez)
 ~/tools/cloud-sql-proxy --gcloud-auth --port 5433 \
-  truekeate-main:southamerica-east1:truekeate-db-dev &amp;
+  ggto-prod-txblvento2:europe-west1:ggto-db &amp;
 
 # Integración + contratos
 export GGTO_TEST_DB_URL=&quot;postgresql+psycopg2://ggtov2_app:&lt;clave&gt;@127.0.0.1:5433/ggtov2&quot;
@@ -1386,7 +1389,7 @@ aquí como pendientes de confirmar en cuanto a su planificación.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Despliegue</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

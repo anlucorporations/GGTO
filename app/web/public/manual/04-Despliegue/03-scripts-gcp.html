@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4) — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la plataforma GGTO: quién hace qué, en qué orden y con qué precaucio">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../imagenes/orden-scripts-aprovisionamiento.png">
 <style>
 /* ==================================================================
@@ -772,7 +772,7 @@ a { color: var(--azul); }
 <div class="doc-layout">
   <nav class="doc-nav" aria-label="Índice del manual">
     <p class="toc-titulo">Índice del manual</p>
-    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#la-carpeta-repotecnico-scripts" data-target="la-carpeta-repotecnico-scripts"><span class="tn">2.1</span> La carpeta RepoTecnico/scripts</a><span class="pag"></span></li><li class="n3"><a href="#convenciones-idempotencia-token-gcloud-variables" data-target="convenciones-idempotencia-token-gcloud-variables"><span class="tn">2.2</span> Convenciones (idempotencia, token gcloud, variables)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#biblioteca-comun-scripts-lib-gcp-sh" data-target="biblioteca-comun-scripts-lib-gcp-sh"><span class="tn">3</span> Biblioteca común (scripts/lib_gcp.sh)</a><span class="pag"></span><ul><li class="n3"><a href="#obtencion-del-token-gcp-token" data-target="obtencion-del-token-gcp-token"><span class="tn">3.1</span> Obtención del token (gcp_token)</a><span class="pag"></span></li><li class="n3"><a href="#helper-api-y-variables-globales" data-target="helper-api-y-variables-globales"><span class="tn">3.2</span> Helper api y variables globales</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#orquestador-scripts-provision-all-sh-y-variable-crear-recurs" data-target="orquestador-scripts-provision-all-sh-y-variable-crear-recurs"><span class="tn">4</span> Orquestador (scripts/provision_all.sh) y variable CREAR_RECURSOS</a><span class="pag"></span></li><li class="n2"><a href="#script-por-script" data-target="script-por-script"><span class="tn">5</span> Script por script</a><span class="pag"></span><ul><li class="n3"><a href="#00-crear-proyecto-sh" data-target="00-crear-proyecto-sh"><span class="tn">5.1</span> 00_crear_proyecto.sh</a><span class="pag"></span></li><li class="n3"><a href="#01-habilitar-apis-sh" data-target="01-habilitar-apis-sh"><span class="tn">5.2</span> 01_habilitar_apis.sh</a><span class="pag"></span></li><li class="n3"><a href="#02-red-privada-sh" data-target="02-red-privada-sh"><span class="tn">5.3</span> 02_red_privada.sh</a><span class="pag"></span></li><li class="n3"><a href="#03-iam-cuentas-servicio-sh" data-target="03-iam-cuentas-servicio-sh"><span class="tn">5.4</span> 03_iam_cuentas_servicio.sh</a><span class="pag"></span></li><li class="n3"><a href="#04-secretos-kms-sh" data-target="04-secretos-kms-sh"><span class="tn">5.5</span> 04_secretos_kms.sh</a><span class="pag"></span></li><li class="n3"><a href="#05-storage-registry-sh" data-target="05-storage-registry-sh"><span class="tn">5.6</span> 05_storage_registry.sh</a><span class="pag"></span></li><li class="n3"><a href="#06-cloudsql-postgres-sh" data-target="06-cloudsql-postgres-sh"><span class="tn">5.7</span> 06_cloudsql_postgres.sh</a><span class="pag"></span></li><li class="n3"><a href="#07-cloudrun-web-sh" data-target="07-cloudrun-web-sh"><span class="tn">5.8</span> 07_cloudrun_web.sh</a><span class="pag"></span></li><li class="n3"><a href="#08-auditoria-presupuesto-sh" data-target="08-auditoria-presupuesto-sh"><span class="tn">5.9</span> 08_auditoria_presupuesto.sh</a><span class="pag"></span></li><li class="n3"><a href="#10-usar-instancia-truekeate-sh" data-target="10-usar-instancia-truekeate-sh"><span class="tn">5.10</span> 10_usar_instancia_truekeate.sh</a><span class="pag"></span></li><li class="n3"><a href="#99-eliminar-todo-sh" data-target="99-eliminar-todo-sh"><span class="tn">5.11</span> 99_eliminar_todo.sh</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#scripts-auxiliares-del-proyecto" data-target="scripts-auxiliares-del-proyecto"><span class="tn">6</span> Scripts auxiliares del proyecto</a><span class="pag"></span><ul><li class="n3"><a href="#scripts-inyectar-super-usuario-py" data-target="scripts-inyectar-super-usuario-py"><span class="tn">6.1</span> scripts/inyectar_super_usuario.py</a><span class="pag"></span></li><li class="n3"><a href="#scripts-recalcular-cuadrilla0-py" data-target="scripts-recalcular-cuadrilla0-py"><span class="tn">6.2</span> scripts/recalcular_cuadrilla0.py</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-run-e2e-sh" data-target="repotecnico-pruebas-run-e2e-sh"><span class="tn">6.3</span> RepoTecnico/pruebas/run_e2e.sh</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-seed-e2e-py" data-target="repotecnico-pruebas-seed-e2e-py"><span class="tn">6.4</span> RepoTecnico/pruebas/seed_e2e.py</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#teardown-y-confirmacion-confirm-destroy-eliminar" data-target="teardown-y-confirmacion-confirm-destroy-eliminar"><span class="tn">7</span> Teardown y confirmación (CONFIRM_DESTROY=ELIMINAR)</a><span class="pag"></span></li><li class="n2"><a href="#diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad" data-target="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="tn">8</span> Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)</a><span class="pag"></span></li></ol>
+    <ol class="toc-lista"><li class="n2"><a href="#empezar-en-5-minutos" data-target="empezar-en-5-minutos"><span class="tn">1</span> Empezar en 5 minutos</a><span class="pag"></span></li><li class="n2"><a href="#vision-general" data-target="vision-general"><span class="tn">2</span> Visión general</a><span class="pag"></span><ul><li class="n3"><a href="#la-carpeta-repotecnico-scripts" data-target="la-carpeta-repotecnico-scripts"><span class="tn">2.1</span> La carpeta RepoTecnico/scripts</a><span class="pag"></span></li><li class="n3"><a href="#convenciones-idempotencia-token-gcloud-variables" data-target="convenciones-idempotencia-token-gcloud-variables"><span class="tn">2.2</span> Convenciones (idempotencia, token gcloud, variables)</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#biblioteca-comun-scripts-lib-gcp-sh" data-target="biblioteca-comun-scripts-lib-gcp-sh"><span class="tn">3</span> Biblioteca común (scripts/lib_gcp.sh)</a><span class="pag"></span><ul><li class="n3"><a href="#obtencion-del-token-gcp-token" data-target="obtencion-del-token-gcp-token"><span class="tn">3.1</span> Obtención del token (gcp_token)</a><span class="pag"></span></li><li class="n3"><a href="#helper-api-y-variables-globales" data-target="helper-api-y-variables-globales"><span class="tn">3.2</span> Helper api y variables globales</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#orquestador-scripts-provision-all-sh-y-variable-crear-recurs" data-target="orquestador-scripts-provision-all-sh-y-variable-crear-recurs"><span class="tn">4</span> Orquestador (scripts/provision_all.sh) y variable CREAR_RECURSOS</a><span class="pag"></span></li><li class="n2"><a href="#script-por-script" data-target="script-por-script"><span class="tn">5</span> Script por script</a><span class="pag"></span><ul><li class="n3"><a href="#00-crear-proyecto-sh" data-target="00-crear-proyecto-sh"><span class="tn">5.1</span> 00_crear_proyecto.sh</a><span class="pag"></span></li><li class="n3"><a href="#01-habilitar-apis-sh" data-target="01-habilitar-apis-sh"><span class="tn">5.2</span> 01_habilitar_apis.sh</a><span class="pag"></span></li><li class="n3"><a href="#02-red-privada-sh" data-target="02-red-privada-sh"><span class="tn">5.3</span> 02_red_privada.sh</a><span class="pag"></span></li><li class="n3"><a href="#03-iam-cuentas-servicio-sh" data-target="03-iam-cuentas-servicio-sh"><span class="tn">5.4</span> 03_iam_cuentas_servicio.sh</a><span class="pag"></span></li><li class="n3"><a href="#04-secretos-kms-sh" data-target="04-secretos-kms-sh"><span class="tn">5.5</span> 04_secretos_kms.sh</a><span class="pag"></span></li><li class="n3"><a href="#05-storage-registry-sh" data-target="05-storage-registry-sh"><span class="tn">5.6</span> 05_storage_registry.sh</a><span class="pag"></span></li><li class="n3"><a href="#06-cloudsql-postgres-sh" data-target="06-cloudsql-postgres-sh"><span class="tn">5.7</span> 06_cloudsql_postgres.sh</a><span class="pag"></span></li><li class="n3"><a href="#07-cloudrun-web-sh" data-target="07-cloudrun-web-sh"><span class="tn">5.8</span> 07_cloudrun_web.sh</a><span class="pag"></span></li><li class="n3"><a href="#08-auditoria-presupuesto-sh" data-target="08-auditoria-presupuesto-sh"><span class="tn">5.9</span> 08_auditoria_presupuesto.sh</a><span class="pag"></span></li><li class="n3"><a href="#10-usar-instancia-truekeate-sh" data-target="10-usar-instancia-truekeate-sh"><span class="tn">5.10</span> 10_usar_instancia_truekeate.sh</a><span class="pag"></span></li><li class="n3"><a href="#99-eliminar-todo-sh" data-target="99-eliminar-todo-sh"><span class="tn">5.11</span> 99_eliminar_todo.sh</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#scripts-auxiliares-del-proyecto" data-target="scripts-auxiliares-del-proyecto"><span class="tn">6</span> Scripts auxiliares del proyecto</a><span class="pag"></span><ul><li class="n3"><a href="#scripts-inyectar-super-usuario-py" data-target="scripts-inyectar-super-usuario-py"><span class="tn">6.1</span> scripts/inyectar_super_usuario.py</a><span class="pag"></span></li><li class="n3"><a href="#scripts-recalcular-cuadrilla0-py" data-target="scripts-recalcular-cuadrilla0-py"><span class="tn">6.2</span> scripts/recalcular_cuadrilla0.py</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-run-e2e-sh" data-target="repotecnico-pruebas-run-e2e-sh"><span class="tn">6.3</span> RepoTecnico/pruebas/run_e2e.sh</a><span class="pag"></span></li><li class="n3"><a href="#repotecnico-pruebas-seed-e2e-py" data-target="repotecnico-pruebas-seed-e2e-py"><span class="tn">6.4</span> RepoTecnico/pruebas/seed_e2e.py</a><span class="pag"></span></li></ul></li><li class="n2"><a href="#teardown-y-confirmacion-confirm-destroy-eliminar" data-target="teardown-y-confirmacion-confirm-destroy-eliminar"><span class="tn">7</span> Teardown y confirmación (CONFIRM_DESTROY=ELIMINAR)</a><span class="pag"></span></li><li class="n2"><a href="#diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad" data-target="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="tn">8</span> Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (ggto-prod-txblvento2)</a><span class="pag"></span></li></ol>
   </nav>
   <main class="doc-main">
     <article class="contenido" id="contenido">
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Despliegue</span>
           <h1 class="portada-titulo">Manual de scripts de aprovisionamiento GCP — GGTO (CANTV, Central Francisco Salias / Área 4)</h1>
-          <p class="portada-resumen">Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la plataforma GGTO: quién hace qué, en qué orden y con qué precauciones. Un «script» es un archivo con órdenes que la computadora ejecuta una tras otra. Cuando un dato no pudo comprobarse, se indica como «pendiente de confirmar». Este manual nunca escribe valores de secretos: solo los nombra.</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Manual para todo público. Explica, en lenguaje sencillo, los guiones (scripts) que preparan la infraestructura de Google Cloud para la […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Despliegue</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/04-Despliegue/03-scripts-gcp.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>27/09/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p>Manual para todo público. Explica, en lenguaje sencillo, los <strong>guiones (scripts) que preparan la
 infraestructura de Google Cloud</strong> para la plataforma GGTO: quién hace qué, en qué orden y con qué
@@ -816,7 +819,7 @@ secretos), <code>05</code> (depósito y registro de imágenes) y <code>06</code>
 <li><strong>Entienda el orquestador.</strong> <code>provision_all.sh</code> corre solo los pasos que no generan costo. Para
 incluir los que sí cuestan dinero, se ejecuta con <code>CREAR_RECURSOS=si ./provision_all.sh</code>.</li>
 <li><strong>Recuerde lo que realmente está desplegado.</strong> Por el bloqueo de facturación de <code>ggtov2</code>, la
-operación real usa la instancia compartida de <code>truekeate-main</code> con el guion <code>10</code>, no la instancia
+operación real usa la instancia compartida de <code>ggto-prod-txblvento2</code> con el guion <code>10</code>, no la instancia
 propia <code>ggtov2-pg</code> del guion <code>06</code>.</li>
 <li><strong>Nunca borre a la ligera.</strong> El guion <code>99_eliminar_todo.sh</code> solo funciona si se escribe
 exactamente <code>CONFIRM_DESTROY=ELIMINAR</code>; además, el depósito y las claves de cifrado deben borrarse
@@ -838,7 +841,7 @@ y no un paso de aprovisionamiento. Todos están escritos en <code>bash</code>, d
     F --&gt; G[&quot;05 bucket seguro y Artifact Registry&quot;]
     G --&gt; H[&quot;06 Cloud SQL propio ggtov2-pg&quot;]
     H --&gt; I[&quot;07 Cloud Run ggtov2-web&lt;br/&gt;(comentado en el orquestador)&quot;]
-    D --&gt; J[&quot;10 base y usuario ggtov2&lt;br/&gt;en truekeate-db-dev&quot;]
+    D --&gt; J[&quot;10 base y usuario ggtov2&lt;br/&gt;en vm-databases&quot;]
     I -.-&gt; K[&quot;99 teardown controlado&quot;]
     J -.-&gt; K</code></pre></details></figure>
 <h3 id="la-carpeta-repotecnico-scripts"><span class="sec-num">2.1</span>La carpeta RepoTecnico/scripts</h3>
@@ -897,7 +900,7 @@ y no un paso de aprovisionamiento. Todos están escritos en <code>bash</code>, d
 </tr>
 <tr>
 <td><code>10_usar_instancia_truekeate.sh</code></td>
-<td>Base y usuario <code>ggtov2</code> en la instancia compartida <code>truekeate-db-dev</code></td>
+<td>Base y usuario <code>ggtov2</code> en la instancia compartida <code>vm-databases</code></td>
 </tr>
 <tr>
 <td><code>99_eliminar_todo.sh</code></td>
@@ -1022,7 +1025,7 @@ usa: <code>$PROJECT_ID</code>, <code>$ORG_ID</code> y <code>$BILLING_ACCOUNT</co
 para imprimir <code>billingEnabled</code>.</li>
 <li><strong>Nota:</strong> advierte que el mensaje <code>Cloud billing quota exceeded</code> significa que la cuenta alcanzó el
 máximo de cinco proyectos. Ese cupo agotado es exactamente el bloqueo que obligó a usar
-<code>truekeate-main</code>.</li>
+<code>ggto-prod-txblvento2</code>.</li>
 </ul>
 <h3 id="01-habilitar-apis-sh"><span class="sec-num">5.2</span>01_habilitar_apis.sh</h3>
 <p>Habilita las APIs de Google Cloud que requiere la plataforma. Primero obtiene el número de proyecto
@@ -1212,7 +1215,7 @@ sondeo de hasta 60 iteraciones de 15 segundos), crea la base <code>ggtov2</code>
 contraseña.</p>
 <blockquote>
 <p><strong>Nota de fidelidad:</strong> lo realmente desplegado <strong>no</strong> es esta instancia, sino la base <code>ggtov2</code>
-dentro de la instancia compartida <code>truekeate-db-dev</code> (PostgreSQL 15.18). Este guion es el camino
+dentro de la instancia compartida <code>vm-databases</code> (PostgreSQL 15.18). Este guion es el camino
 previsto al desbloquear la facturación.</p>
 </blockquote>
 <h3 id="07-cloudrun-web-sh"><span class="sec-num">5.8</span>07_cloudrun_web.sh</h3>
@@ -1240,7 +1243,7 @@ variable del importe es <code>BUDGET_USD</code>.</li>
 </ul>
 <h3 id="10-usar-instancia-truekeate-sh"><span class="sec-num">5.10</span>10_usar_instancia_truekeate.sh</h3>
 <p>Es el guion que permitió operar <strong>sin</strong> facturación propia. Da de alta una base y un usuario
-dedicados a GGTO dentro de la instancia Cloud SQL existente en <code>truekeate-main</code>, y habilita el
+dedicados a GGTO dentro de la instancia Cloud SQL existente en <code>ggto-prod-txblvento2</code>, y habilita el
 acceso de la ejecución.</p>
 <div class="tabla-scroll"><table>
 <thead>
@@ -1252,11 +1255,11 @@ acceso de la ejecución.</p>
 <tbody>
 <tr>
 <td>Proyecto origen</td>
-<td><code>truekeate-main</code></td>
+<td><code>ggto-prod-txblvento2</code></td>
 </tr>
 <tr>
 <td>Instancia</td>
-<td><code>truekeate-db-dev</code></td>
+<td><code>vm-databases</code></td>
 </tr>
 <tr>
 <td>Base / usuario</td>
@@ -1264,7 +1267,7 @@ acceso de la ejecución.</p>
 </tr>
 <tr>
 <td><code>connectionName</code></td>
-<td><code>truekeate-main:southamerica-east1:truekeate-db-dev</code></td>
+<td><code>ggto-prod-txblvento2:europe-west1:ggto-db</code></td>
 </tr>
 <tr>
 <td>Cuenta de servicio de la app</td>
@@ -1272,15 +1275,15 @@ acceso de la ejecución.</p>
 </tr>
 <tr>
 <td>Cuenta de servicio de TrueKeate</td>
-<td><code>truekeate-app-sa@truekeate-main.iam.gserviceaccount.com</code></td>
+<td><code>ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com</code></td>
 </tr>
 </tbody>
 </table></div>
 <p>Pasos: genera una contraseña aleatoria de 32 caracteres sin imprimirla; crea o versiona los secretos
-<code>ggtov2-db-password</code> y <code>ggtov2-db-connection</code> en <code>truekeate-main</code>; concede
+<code>ggtov2-db-password</code> y <code>ggtov2-db-connection</code> en <code>ggto-prod-txblvento2</code>; concede
 <code>secretmanager.secretAccessor</code> sobre ambos a las dos cuentas de servicio; crea la base y el usuario
 solo si no existen, sin cambiar la contraseña del usuario ya creado; y añade <code>roles/cloudsql.client</code>
-para la cuenta de servicio de GGTO en la política de <code>truekeate-main</code>. El resumen final indica que la
+para la cuenta de servicio de GGTO en la política de <code>ggto-prod-txblvento2</code>. El resumen final indica que la
 contraseña vive solo en Secret Manager y muestra la ruta del socket para Cloud Run.</p>
 <h3 id="99-eliminar-todo-sh"><span class="sec-num">5.11</span>99_eliminar_todo.sh</h3>
 <p><em>Teardown</em> controlado (borrado ordenado) de los recursos de GGTO. Antes de tocar nada exige
@@ -1343,34 +1346,34 @@ CONFIRM_DESTROY=ELIMINAR ./99_eliminar_todo.sh
 <p>Puntos que conviene tener presentes antes de usarlo:</p>
 <ul>
 <li>El guion apunta a <code>$PROJECT_ID</code>, que por defecto es <code>ggtov2</code>. <strong>No</strong> borra la base <code>ggtov2</code> ni el
-usuario <code>ggtov2_app</code> de la instancia <code>truekeate-db-dev</code>, ni los secretos creados en
-<code>truekeate-main</code> por <code>10_usar_instancia_truekeate.sh</code>. Ese borrado está <strong>pendiente de confirmar</strong>
+usuario <code>ggtov2_app</code> de la instancia <code>vm-databases</code>, ni los secretos creados en
+<code>ggto-prod-txblvento2</code> por <code>10_usar_instancia_truekeate.sh</code>. Ese borrado está <strong>pendiente de confirmar</strong>
 como procedimiento documentado y debe hacerse de forma manual y coordinada con TrueKeate.</li>
 <li>Los borrados de la instancia, el servicio, el repositorio, la VPC y los secretos usan
 <code>&gt;/dev/null 2&gt;&amp;1 || true</code>, de modo que un recurso inexistente no aborta el <em>teardown</em>.</li>
 <li>El depósito y las claves KMS <strong>no</strong> se borran automáticamente por su política de retención.</li>
-<li>El servicio Cloud Run realmente desplegado se llama <code>ggto-web</code> en <code>truekeate-main</code>, mientras que el
+<li>El servicio Cloud Run realmente desplegado se llama <code>ggto-web</code> en <code>ggto-prod-txblvento2</code>, mientras que el
 guion intenta borrar <code>ggtov2-web</code> en <code>$PROJECT_ID</code>; por tanto, el <code>ggto-web</code> real <strong>no</strong> queda
 cubierto por este guion.</li>
 </ul>
-<h2 id="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="sec-num">8</span>Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (truekeate-main)</h2>
+<h2 id="diferencia-entre-lo-previsto-ggtov2-y-lo-realmente-desplegad"><span class="sec-num">8</span>Diferencia entre lo previsto (ggtov2) y lo realmente desplegado (ggto-prod-txblvento2)</h2>
 <p>La infraestructura prevista y la realmente operativa divergen por un bloqueo administrativo, no por
 un cambio de diseño. La cuenta de facturación tiene agotado el cupo de cinco proyectos, de modo que
 <code>ggtov2</code> quedó sin facturación y sin APIs de despliegue. Para no detener el proyecto, se reutilizó la
-instancia Cloud SQL de <code>truekeate-main</code>.</p>
+instancia Cloud SQL de <code>ggto-prod-txblvento2</code>.</p>
 <div class="tabla-scroll"><table>
 <thead>
 <tr>
 <th>Aspecto</th>
 <th>Previsto (<code>ggtov2</code>)</th>
-<th>Real (<code>truekeate-main</code>)</th>
+<th>Real (<code>ggto-prod-txblvento2</code>)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Proyecto</td>
 <td><code>ggtov2</code></td>
-<td><code>truekeate-main</code></td>
+<td><code>ggto-prod-txblvento2</code></td>
 </tr>
 <tr>
 <td>Servicio Cloud Run</td>
@@ -1380,12 +1383,12 @@ instancia Cloud SQL de <code>truekeate-main</code>.</p>
 <tr>
 <td>Imagen</td>
 <td><code>.../ggtov2/ggtov2-web/app:latest</code></td>
-<td><code>southamerica-east1-docker.pkg.dev/truekeate-main/truekeate-repo/ggto-web:v14</code></td>
+<td><code>europe-west1-docker.pkg.dev/ggto-prod-txblvento2/ggto/ggto-web:v14</code></td>
 </tr>
 <tr>
 <td>Instancia de datos</td>
 <td><code>ggtov2-pg</code> (PostgreSQL 16, privada)</td>
-<td><code>truekeate-db-dev</code> (PostgreSQL 15.18, compartida)</td>
+<td><code>vm-databases</code> (PostgreSQL 15.18, compartida)</td>
 </tr>
 <tr>
 <td>Base / usuario</td>
@@ -1400,18 +1403,18 @@ instancia Cloud SQL de <code>truekeate-main</code>.</p>
 <tr>
 <td>Cuenta de servicio de ejecución</td>
 <td><code>ggtov2-app@ggtov2…</code></td>
-<td><code>ggto-web-sa@truekeate-main…</code></td>
+<td><code>ggto-web-sa@ggto-prod-txblvento2…</code></td>
 </tr>
 </tbody>
 </table></div>
 <p>Consecuencias operativas verificadas:</p>
 <ul>
 <li>La base propia no se creó: por eso existe <code>10_usar_instancia_truekeate.sh</code>, que da base, usuario,
-secretos y permiso cruzado dentro de <code>truekeate-main</code>.</li>
+secretos y permiso cruzado dentro de <code>ggto-prod-txblvento2</code>.</li>
 <li>La instancia compartida <strong>no</strong> tiene los respaldos, el PITR ni el SSL obligatorio que sí definiría
 <code>06_cloudsql_postgres.sh</code>; ese riesgo quedó aceptado como <strong>D-26</strong> hasta migrar.</li>
 <li>El paso <code>07_cloudrun_web.sh</code> no se ejecutó en <code>ggtov2</code>; el despliegue real usa el proyecto
-<code>truekeate-main</code> con una cuenta de servicio distinta.</li>
+<code>ggto-prod-txblvento2</code> con una cuenta de servicio distinta.</li>
 <li>La ruta de convergencia está definida: al desbloquear la facturación, migrar el servicio a
 <code>ggtov2</code> con <code>07_cloudrun_web.sh</code> y su propio Cloud SQL <code>ggtov2-pg</code>.</li>
 <li>El importe y la fecha exactos para esa migración están <strong>pendientes de confirmar</strong>; el estado del
@@ -1428,7 +1431,7 @@ proyecto solo registra «desbloquear la facturación GCP y migrar».</li>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Despliegue</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

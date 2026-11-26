@@ -1,4 +1,5 @@
 # Estado real y auditoría documental — GGTO V2
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 **Fecha de corte:** 2026-10-13 · **Ámbito:** checkout local, código fuente, documentos, remotos Git y metadatos de GCP consultables en esta sesión.
 
@@ -19,10 +20,10 @@ La V1 continúa desplegada. El estado del checkout, el código fuente y el servi
 
 | Recurso | Evidencia observada | Lectura correcta |
 |---|---|---|
-| Proyecto configurado en gcloud | `truekeate-main` | Es el proyecto consultado en esta sesión; no se debe sustituir por el identificador lógico/base `ggtov2`. |
+| Proyecto configurado en gcloud | `ggto-prod-txblvento2` | Es el proyecto consultado en esta sesión; no se debe sustituir por el identificador lógico/base `ggtov2`. |
 | Cloud Run | Servicio `ggto-web`, `europe-west1`, revisión lista `ggto-web-00039-g9n`, imagen `v24`, 100 % del tráfico | Servicio activo. La imagen desplegada no acredita el código local no comprometido. |
 | Política IAM directa del servicio | `roles/run.invoker` incluye `allUsers` | El servicio admite invocación pública a nivel Cloud Run. La autenticación JWT de las rutas de negocio es una capa distinta; no se afirma que toda API entregue datos sin token. |
-| Cloud SQL | `truekeate-db-dev`, `southamerica-east1`, PostgreSQL 15, estado `RUNNABLE` | La instancia existe y está activa. La consulta no verificó filas, tablas desplegadas ni configuración PITR. |
+| Cloud SQL | `vm-databases`, `europe-west1`, PostgreSQL 15, estado `RUNNABLE` | La instancia existe y está activa. La consulta no verificó filas, tablas desplegadas ni configuración PITR. |
 | Respaldo automático | `settings.backupConfiguration.enabled=false` | No hay backup automático habilitado en la configuración consultada. |
 
 ## Arquitectura real del checkout
@@ -74,7 +75,7 @@ La API FastAPI y la SPA React comparten la imagen de Cloud Run. Flutter tiene su
 - Los backups automáticos de Cloud SQL están deshabilitados en la configuración consultada.
 - La política RLS en `schema.sql` permite filas cuando no existe `app.id_central`; el backend fija ese contexto durante la autenticación solo cuando el usuario tiene central asignada. Debe verificarse el comportamiento de todos los accesos y jobs antes de afirmar aislamiento por central.
 - `app/core/config.py` conserva valores por defecto de desarrollo para `SECRET_KEY` y CORS. No se inspeccionaron secretos de Cloud Run; no se afirma que producción esté usando esos valores por defecto.
-- El proyecto activo de gcloud (`truekeate-main`) y la base lógica documentada (`ggtov2`) son nombres distintos; las guías deben explicar la diferencia y evitar llamar `ggtov2` al proyecto GCP sin evidencia.
+- El proyecto activo de gcloud (`ggto-prod-txblvento2`) y la base lógica documentada (`ggtov2`) son nombres distintos; las guías deben explicar la diferencia y evitar llamar `ggtov2` al proyecto GCP sin evidencia.
 
 ## Documentación que debe gobernar el estado
 

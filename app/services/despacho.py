@@ -62,6 +62,7 @@ from ..models import (
     FallaMasiva,
     FallaMasivaCaso,
     Sector,
+    SectorDireccion,
 )
 
 ESTADOS_FUERA = ("CERRADO", "CANCELADO", "ENRUTADO")
@@ -381,6 +382,38 @@ def nombres_de_sector(db: Session, id_central: int) -> dict[int, str]:
         s.id_sector: s.nombre
         for s in db.scalars(select(Sector).where(Sector.id_central == id_central)).all()
     }
+
+
+def direcciones_de_sector(db: Session, id_central: int) -> dict[int, list[str]]:
+    """Patrones de dirección activos de cada sector de la central.
+
+    El formulario flotante de proceso identifica los sectores por sus direcciones
+    en vez de por su nombre, así que el servicio las entrega junto a los totales.
+    """
+    ids_sector = [
+        s.id_sector
+        for s in db.scalars(select(Sector).where(Sector.id_central == id_central)).all()
+    ]
+    if not ids_sector:
+        return {}
+    filas = db.scalars(
+        select(SectorDireccion)
+        .where(
+            SectorDireccion.id_sector.in_(ids_sector),
+            SectorDireccion.activo.is_(True),
+        )
+        .order_by(SectorDireccion.id_sector, SectorDireccion.patron)
+    ).all()
+    resultado: dict[int, list[str]] = defaultdict(list)
+    for direccion in filas:
+        resultado[direccion.id_sector].append(direccion.patron)
+    return dict(resultado)
+
+
+def etiqueta_orden_sector(fila: dict) -> tuple[str, int]:
+    """Ordena las tablas del formulario por la dirección que se está mostrando."""
+    direcciones = fila.get("direcciones") or []
+    return (direcciones[0] if direcciones else "", fila["id_sector"])
 
 
 # --------------------------------------------------------------------------- #
@@ -1074,6 +1107,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
     supervisor = cuadrilla_supervisor(db, id_central)
     casos = universo_casos(db, id_central, fecha)
     nombres = nombres_de_sector(db, id_central)
+    direcciones = direcciones_de_sector(db, id_central)
     asignacion, origen = asignacion_efectiva(db, id_central, fecha)
     # La propuesta del formulario se calcula con **todos** los tipos (es el
     # universo completo); el checklist de D-113 decide después qué se distribuye.
@@ -1091,6 +1125,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             {
                 "id_sector": caso.id_sector,
                 "nombre": nombres.get(caso.id_sector),
+                "direcciones": direcciones.get(caso.id_sector, []),
                 "total": 0,
                 "especiales": 0,
                 "especiales_reparacion": 0,
@@ -1206,6 +1241,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             {
                 "id_sector": caso.id_sector,
                 "nombre": nombres.get(caso.id_sector),
+                "direcciones": direcciones.get(caso.id_sector, []),
                 "cantidad": 0,
             },
         )
@@ -1215,7 +1251,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
     bloque_construccion = {
         "total": propuesta.reglas.get("construccion_total", 0),
         "por_sector": sorted(
-            sectores_construccion.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])
+            sectores_construccion.values(), key=etiqueta_orden_sector
         ),
         "id_cuadrilla": id_construccion,
         "cuadrilla_codigo": cuadrilla_construccion.codigo if cuadrilla_construccion else None,
@@ -1245,6 +1281,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
             {
                 "id_sector": caso.id_sector,
                 "nombre": nombres.get(caso.id_sector),
+                "direcciones": direcciones.get(caso.id_sector, []),
                 "cantidad": 0,
                 "id_cuadrilla": asignacion.get(caso.id_sector),
             },
@@ -1253,7 +1290,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
     bloque_mantenimiento = {
         "total": len(candidatos_mantenimiento),
         "por_sector": sorted(
-            sectores_mantenimiento.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])
+            sectores_mantenimiento.values(), key=etiqueta_orden_sector
         ),
     }
 
@@ -1283,7 +1320,7 @@ def proceso(db: Session, id_central: int, fecha: date) -> dict:
                 for i, c in enumerate(casos, start=1)
             ],
         },
-        "sectores": sorted(sectores.values(), key=lambda s: (s["nombre"] or "", s["id_sector"])),
+        "sectores": sorted(sectores.values(), key=etiqueta_orden_sector),
         "cuadrillas": (
             ([{
                 "id_cuadrilla": supervisor.id_cuadrilla,

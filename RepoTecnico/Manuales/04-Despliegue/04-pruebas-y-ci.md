@@ -1,4 +1,5 @@
 # Manual de pruebas y CI — GGTO (CANTV, Central Francisco Salias / Área 4)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 Este manual describe la estrategia de pruebas de la plataforma **GGTO**, los entornos aislados que
 usa, la estructura y el inventario de la batería de `pytest` y de las pruebas E2E de navegador, los
@@ -78,7 +79,7 @@ la URL `http://127.0.0.1:8090` (`run_e2e.sh:30,49-51`).
 
 ### Cloud SQL Auth Proxy
 
-Ambos entornos usan la instancia compartida `truekeate-db-dev` a través del **Cloud SQL Auth
+Ambos entornos usan la instancia compartida `vm-databases` a través del **Cloud SQL Auth
 Proxy**. El plan de pruebas lo describe escuchando en `127.0.0.1:5433`
 (`RepoTecnico/pruebas/plan_pruebas.md:35`) y da el comando de arranque
 (`RepoTecnico/pruebas/plan_pruebas.md:110-112`). `run_e2e.sh` usa ese puerto por defecto
@@ -190,7 +191,7 @@ El plan describe el procedimiento (`RepoTecnico/pruebas/plan_pruebas.md:107-124`
 ```bash
 # Proxy (una vez)
 ~/tools/cloud-sql-proxy --gcloud-auth --port 5433 \
-  truekeate-main:southamerica-east1:truekeate-db-dev &
+  ggto-prod-txblvento2:europe-west1:ggto-db &
 
 # Integración + contratos
 export GGTO_TEST_DB_URL="postgresql+psycopg2://ggtov2_app:<clave>@127.0.0.1:5433/ggtov2"

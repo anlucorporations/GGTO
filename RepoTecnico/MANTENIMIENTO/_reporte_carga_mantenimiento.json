@@ -1,0 +1,101 @@
+{
+ "creados": [
+  {
+   "fat": "FAT-43",
+   "archivo": "PDE 14_15 FAT 43.xlsx",
+   "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+   "slot_puerto": "14/15",
+   "onts": 11,
+   "direccion_base": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO E1-B PISO APTO PH PH PH A P",
+   "id_caso": 102,
+   "id_averia": "REF-MANT-000178",
+   "sector": "ESTE-01",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT77",
+   "archivo": "PDE 18_12_FAT77.xlsx",
+   "olt": "pde-olt-00 (Prados del Este)-Mir",
+   "slot_puerto": "18/12",
+   "onts": 17,
+   "direccion_base": "SANTA FE NORTE AVENIDA LEOPOLDO AGUERREVERE AV LEOPOLDO AGUERREVERE RESIDENCIA PUNTA DEL ESTE PISO 1",
+   "id_caso": 103,
+   "id_averia": "REF-MANT-000179",
+   "sector": "ESTE-02",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT 138",
+   "archivo": "PDE 7_5_FAT 138.xlsx",
+   "olt": "pde-olt-00 (Prados del Este)-Mir",
+   "slot_puerto": "7/5",
+   "onts": 12,
+   "direccion_base": "VALLE ARRIBA COLINAS DE VALLE ARRIBA CALLE T C/C CALLE B EDIFICIO NAOMI PISO 7 APTO 74",
+   "id_caso": 104,
+   "id_averia": "REF-MANT-000180",
+   "sector": "ESTE-02",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT 08",
+   "archivo": "PDE00 16_13 FAT 08.xlsx",
+   "olt": "pde-olt-00 (Prados del Este)-Mir",
+   "slot_puerto": "16/13",
+   "onts": 7,
+   "direccion_base": "SANTA FE NORTE AVENIDA JOSE MARIA VARGAS AV JOSE MARIA VARGAS PARQUE AVILA TORRE B PISO PB APTO PB-L",
+   "id_caso": 105,
+   "id_averia": "REF-MANT-000181",
+   "sector": "ESTE-02",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT05",
+   "archivo": "PDE02 14_7 FAT 05.xlsx",
+   "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+   "slot_puerto": "14/7",
+   "onts": 9,
+   "direccion_base": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO CAURA RESIDENCIA PARQUE PRADO 4A PISO 12 APTO 121 P 12 A",
+   "id_caso": 106,
+   "id_averia": "REF-MANT-000182",
+   "sector": "ESTE-01",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT06",
+   "archivo": "PDE02 14_7 FAT 06.xlsx",
+   "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+   "slot_puerto": "14/7",
+   "onts": 6,
+   "direccion_base": "PARQUE HUMBOLDT AVENIDA RIO PARAGUA AV RIO PARAGUA RESIDENCIA PARQUE PRADO 4A PISO 9 APTO 92 A P 9 A",
+   "id_caso": 107,
+   "id_averia": "REF-MANT-000183",
+   "sector": "ESTE-01",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT 214",
+   "archivo": "PDE13_0_FAT 214.xlsx",
+   "olt": "pde-olt-01 (Prados del Este 01)-Mir",
+   "slot_puerto": "13/0",
+   "onts": 12,
+   "direccion_base": "PRADOS DEL ESTE CALLE ACUEDUCTO CA CALLE CARIPE QUINTA LAS SHERAS QUINTA LAS SHERAS",
+   "id_caso": 108,
+   "id_averia": "REF-MANT-000184",
+   "sector": "SUR-01",
+   "estado": "NUEVO"
+  },
+  {
+   "fat": "FAT 279",
+   "archivo": "PDE4_13_FAT 279.xlsx",
+   "olt": "pde-olt-02 (Prados del Este 02)-Mir",
+   "slot_puerto": "4/13",
+   "onts": 11,
+   "direccion_base": "ALTO PRADO CALLE OESTE DE MANZANARES CA OESTE RESIDENCIA LAS PERLAS TORRE C PISO 5 APTO 51-C P 5 A 5",
+   "id_caso": 109,
+   "id_averia": "REF-MANT-000185",
+   "sector": "SUR-01",
+   "estado": "NUEVO"
+  }
+ ],
+ "fallidos": []
+}

@@ -1,0 +1,311 @@
+{
+ "creados": [
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "ASOCIACION CIVIL TAXI VALLE ARRIBA",
+   "id_caso_especial": 1,
+   "id_caso": 68,
+   "id_averia": "REF-2324X-000116",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "LICORERIA CARDEIVIS",
+   "id_caso_especial": 2,
+   "id_caso": 69,
+   "id_averia": "REF-2324X-000119",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "RESTAURANT CENTRO HIPICO VALLE ARRIBA CA.",
+   "id_caso_especial": 3,
+   "id_caso": 70,
+   "id_averia": "REF-2324X-000120",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "INVERSIONES EL POZON C.A",
+   "id_caso_especial": 4,
+   "id_caso": 71,
+   "id_averia": "REF-2324X-000121",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "FARMACIA LOS VALLE CA.",
+   "id_caso_especial": 5,
+   "id_caso": 72,
+   "id_averia": "REF-2324X-000122",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "EMPREDIMIENTO ARGENIR RIVERO 5",
+   "id_caso_especial": 6,
+   "id_caso": 73,
+   "id_averia": "REF-2324X-000123",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "THE DOG-TOR CLINICA VETERINARIA C.A",
+   "id_caso_especial": 7,
+   "id_caso": 74,
+   "id_averia": "REF-2324X-000124",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "CASA MENDEZ",
+   "id_caso_especial": 8,
+   "id_caso": 75,
+   "id_averia": "REF-2324X-000134",
+   "sector": "OESTE-01",
+   "prioridad": "ALTA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "IUTECP",
+   "id_caso_especial": 9,
+   "id_caso": 76,
+   "id_averia": "REF-2324X-000135",
+   "sector": "ESTE-02",
+   "prioridad": "ALTA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "LABORATORIO CLINICO RIVAS RIVAS 2005, C.A",
+   "id_caso_especial": 10,
+   "id_caso": 77,
+   "id_averia": "REF-2324X-000136",
+   "sector": "ESTE-02",
+   "prioridad": "ALTA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "COMMERCE CHEMICAL,CA",
+   "id_caso_especial": 11,
+   "id_caso": 78,
+   "id_averia": "REF-2324X-000140",
+   "sector": "ESTE-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_RC_20_10_2026",
+   "cliente": "EMPRENDIMIENTO MIRIAM PORRAS",
+   "id_caso_especial": 12,
+   "id_caso": 79,
+   "id_averia": "REF-2324X-000149",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "ALEX JOSE MIJARES BRINEZ",
+   "id_caso_especial": 13,
+   "id_caso": 80,
+   "id_averia": "REF-2324X-000151",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "José pastor piña león",
+   "id_caso_especial": 14,
+   "id_caso": 81,
+   "id_averia": "REF-2324X-000152",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "MARIA GALARRAGA",
+   "id_caso_especial": 15,
+   "id_caso": 82,
+   "id_averia": "REF-2324X-000154",
+   "sector": "NORTE-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "LEOPOLDO ALBERTO GARCIA MENDEZ",
+   "id_caso_especial": 16,
+   "id_caso": 83,
+   "id_averia": "REF-2324X-000155",
+   "sector": "NORTE-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "LIGIA OSIO DE MORALES",
+   "id_caso_especial": 17,
+   "id_caso": 84,
+   "id_averia": "REF-2324X-000156",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "HECTOR GUILLERMO ACEVEDO LUZARDO",
+   "id_caso_especial": 18,
+   "id_caso": 85,
+   "id_averia": "REF-2324X-000157",
+   "sector": "ESTE-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "Fernando Enrique torres",
+   "id_caso_especial": 19,
+   "id_caso": 86,
+   "id_averia": "REF-2324X-000159",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "CLAUDIA DOUAIHI",
+   "id_caso_especial": 20,
+   "id_caso": 87,
+   "id_averia": "REF-2324X-000160",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "HUMBERTO NIVALDO GONZALEZ RODRIGUEZ",
+   "id_caso_especial": 21,
+   "id_caso": 88,
+   "id_averia": "REF-2324X-000164",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "CARLOS ENRIQUE MARACARA SANCHEZ",
+   "id_caso_especial": 22,
+   "id_caso": 89,
+   "id_averia": "REF-2324X-000165",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "MARIA DEL CARMEN FERNANDEZ DE GOMEZ",
+   "id_caso_especial": 23,
+   "id_caso": 90,
+   "id_averia": "REF-2324X-000166",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "Ana Karina González",
+   "id_caso_especial": 24,
+   "id_caso": 91,
+   "id_averia": "REF-2324X-000167",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "Fernando Enrique torres",
+   "id_caso_especial": 25,
+   "id_caso": 92,
+   "id_averia": "REF-2324X-000168",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "MAGALY ASLAN",
+   "id_caso_especial": 26,
+   "id_caso": 93,
+   "id_averia": "REF-2324X-000169",
+   "sector": "ESTE-02",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "EDINSON MANUEL OLIVERA AGAMEZ",
+   "id_caso_especial": 27,
+   "id_caso": 94,
+   "id_averia": "REF-2324X-000170",
+   "sector": "OESTE-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "Gustavo Perez",
+   "id_caso_especial": 28,
+   "id_caso": 95,
+   "id_averia": "REF-2324X-000171",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "DEMANDA_FS",
+   "cliente": "SENDRI MATA",
+   "id_caso_especial": 29,
+   "id_caso": 96,
+   "id_averia": "REF-2324X-000172",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "GIOCONDA ELENA TINEO GAMBOA",
+   "id_caso_especial": 30,
+   "id_caso": 97,
+   "id_averia": "REF-2324X-000173",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "NATACHA COROMOTO ARGUELLO DE COELHO",
+   "id_caso_especial": 31,
+   "id_caso": 98,
+   "id_averia": "REF-2324X-000174",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "EDUARDO ELEUTERIO RIVAS DRAGUERT",
+   "id_caso_especial": 32,
+   "id_caso": 99,
+   "id_averia": "REF-2324X-000175",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "VICTOR ORLANDO GIMENEZ TELLERIA",
+   "id_caso_especial": 33,
+   "id_caso": 100,
+   "id_averia": "REF-2324X-000176",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  },
+  {
+   "origen": "ACOMETIDAS_FS_7_10_2026",
+   "cliente": "Carmen Elisa Calzadilla",
+   "id_caso_especial": 34,
+   "id_caso": 101,
+   "id_averia": "REF-2324X-000177",
+   "sector": "SUR-01",
+   "prioridad": "MEDIA"
+  }
+ ],
+ "fallidos": []
+}

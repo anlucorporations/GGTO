@@ -1,4 +1,5 @@
 # GGTOv2 — Proyecto Google Cloud preparado para plataforma web con PostgreSQL
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -8,9 +9,9 @@
 | Cuenta de facturación | `013B00-B9A67C-014A43` (USD) |
 | Región principal | `europe-west1` (Bélgica) |
 | Perfil de base de datos | Desarrollo — Cloud SQL PostgreSQL `db-f1-micro`, sin HA |
-| **Base de datos en uso** | **`truekeate-db-dev` (proyecto `truekeate-main`), base dedicada `ggtov2`** |
+| **Base de datos en uso** | **`vm-databases` (proyecto `ggto-prod-txblvento2`), base dedicada `ggtov2`** |
 | Fecha de ejecución | 2026-09-24 / 2026-09-25 |
-| Estado global | **Proyecto creado, base habilitada y PostgreSQL operativo vía instancia reutilizada de `truekeate-main`. Recursos facturables propios de `ggtov2` PENDIENTES por cuota de facturación.** |
+| Estado global | **Proyecto creado, base habilitada y PostgreSQL operativo vía instancia reutilizada de `ggto-prod-txblvento2`. Recursos facturables propios de `ggtov2` PENDIENTES por cuota de facturación.** |
 
 > Nota: el pedido inicial mencionaba `GGTOv1`; por indicación expresa del usuario el proyecto se aprovisionó como **GGTOv2**.
 
@@ -29,7 +30,7 @@ Se preparó un proyecto de Google Cloud llamado **GGTOv2** destinado a albergar 
 5. Configuración preparada para auditoría de accesos a datos (intentada; ver §3.5).
 6. Scripts reproducibles de aprovisionamiento completo en `RepoTecnico/scripts/`.
 7. **PostgreSQL operativo**: base `ggtov2` y usuario `ggtov2_app` creados en la instancia
-   existente `truekeate-db-dev` (proyecto `truekeate-main`), credenciales en Secret Manager y
+   existente `vm-databases` (proyecto `ggto-prod-txblvento2`), credenciales en Secret Manager y
    acceso IAM cruzado para el runtime de GGTOv2. Privilegios verificados (ver §6.5).
 
 **Bloqueo encontrado (único):** la cuenta de facturación ya tiene sus **5 proyectos** vinculados (cuota por defecto de cuentas autogestionadas). Sin facturación no se pueden habilitar `compute`, `secretmanager`, `run`, `cloudkms` (creación de llaves), `storage` (creación de buckets), `artifactregistry` ni crear la instancia Cloud SQL. El usuario decidió **no modificar la facturación** en esta sesión; por eso todo lo facturable quedó **documentado y scripteado** para ejecutarse en un solo comando cuando la cuota se resuelva.
@@ -54,8 +55,8 @@ Se preparó un proyecto de Google Cloud llamado **GGTOv2** destinado a albergar 
 | Red objetivo | `ggtov2-vpc` / subred `ggtov2-subnet` (10.10.0.0/24) |
 | Rango Private Service Access | `ggtov2-psa-range` (/20) |
 | Instancia PostgreSQL | `ggtov2-pg` (PostgreSQL 16) — *no creada, pendiente de facturación* |
-| **Instancia PostgreSQL en uso** | **`truekeate-db-dev` — `truekeate-main:southamerica-east1:truekeate-db-dev` (POSTGRES_15)** |
-| **Base / usuario dedicados** | **`ggtov2` / `ggtov2_app` en `truekeate-db-dev`** |
+| **Instancia PostgreSQL en uso** | **`vm-databases` — `ggto-prod-txblvento2:europe-west1:ggto-db` (POSTGRES_15)** |
+| **Base / usuario dedicados** | **`ggtov2` / `ggtov2_app` en `vm-databases`** |
 | Base de datos / usuario | `ggtov2` / `ggtov2_app` |
 | Servicio web | `ggtov2-web` (Cloud Run) |
 | Repositorio de imágenes | `europe-west1-docker.pkg.dev/ggtov2/ggtov2-web` |
@@ -174,7 +175,7 @@ Proyectos que ocupan los 5 cupos de la cuenta `013B00-B9A67C-014A43`:
 | `daovotacionv1` | Evaluar |
 | `mcc-ecommerce` | No (proyecto actual de la instancia) |
 | `quantum-feat-503600-q6` | Probable (nombre de proyecto temporal) |
-| `truekeate-main` | Evaluar |
+| `ggto-prod-txblvento2` | Evaluar |
 
 ### 4.2 Opciones para resolverlo (decisión del usuario)
 
@@ -326,10 +327,10 @@ Además, para producción: réplica de lectura en otra zona, CMEK para el disco 
 > **AlloyDB for PostgreSQL** o **Cloud SQL Enterprise Plus**; Cloud SQL sigue siendo el estándar
 > gestionado de PostgreSQL en GCP.
 
-### 6.5 Instancia reutilizada de `truekeate-main` (decisión del usuario)
+### 6.5 Instancia reutilizada de `ggto-prod-txblvento2` (decisión del usuario)
 
 Ante el bloqueo de facturación de `ggtov2`, el usuario indicó **usar la instancia PostgreSQL
-existente en `truekeate-main`** en lugar de esperar a crear `ggtov2-pg`. Se aprovisionó una base
+existente en `ggto-prod-txblvento2`** en lugar de esperar a crear `ggtov2-pg`. Se aprovisionó una base
 y un usuario **dedicados** (sin mezclar datos con la aplicación TrueKeate) y se habilitó el acceso
 mediante **Cloud SQL Auth (conector/IAM)**.
 
@@ -337,11 +338,11 @@ mediante **Cloud SQL Auth (conector/IAM)**.
 
 | Dato | Valor |
 |---|---|
-| Proyecto | `truekeate-main` (facturación activa) |
-| Instancia | `truekeate-db-dev` |
+| Proyecto | `ggto-prod-txblvento2` (facturación activa) |
+| Instancia | `vm-databases` |
 | Motor | `POSTGRES_15` |
-| connectionName | `truekeate-main:southamerica-east1:truekeate-db-dev` |
-| Región | `southamerica-east1` |
+| connectionName | `ggto-prod-txblvento2:europe-west1:ggto-db` |
+| Región | `europe-west1` |
 | Tier | `db-f1-micro`, 10 GB PD_SSD, ZONAL |
 | IP pública | `34.39.180.101` (red autorizada `35.232.138.181/32`) |
 | SSL | `ALLOW_UNENCRYPTED_AND_ENCRYPTED` (⚠️ no obligatorio) |
@@ -353,10 +354,10 @@ mediante **Cloud SQL Auth (conector/IAM)**.
 |---|---|
 | Base de datos | `ggtov2` (UTF8) |
 | Usuario | `ggtov2_app` (contraseña aleatoria de 32 caracteres) |
-| Secreto contraseña | `truekeate-main/ggtov2-db-password` |
-| Secreto conexión | `truekeate-main/ggtov2-db-connection` |
-| IAM cruzado | `ggtov2-app@ggtov2.iam.gserviceaccount.com` → `roles/cloudsql.client` en `truekeate-main` |
-| Lectura de secretos | `ggtov2-app@ggtov2…` y `truekeate-app-sa@truekeate-main…` → `secretmanager.secretAccessor` |
+| Secreto contraseña | `ggto-prod-txblvento2/ggtov2-db-password` |
+| Secreto conexión | `ggto-prod-txblvento2/ggtov2-db-connection` |
+| IAM cruzado | `ggtov2-app@ggtov2.iam.gserviceaccount.com` → `roles/cloudsql.client` en `ggto-prod-txblvento2` |
+| Lectura de secretos | `ggtov2-app@ggtov2…` y `truekeate-app-sa@ggto-prod-txblvento2…` → `secretmanager.secretAccessor` |
 
 **Verificación real de privilegios** (conexión directa por IP autorizada, `psycopg2`):
 
@@ -370,15 +371,15 @@ ggtov2_app @ ggtov2 -> super=False createrole=True createdb=True
 
 ```
 # Cloud Run (conector Cloud SQL), recomendado:
-DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev
+DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db
 DB_USER=ggtov2_app
 DB_NAME=ggtov2
-# contraseña: Secret Manager -> projects/truekeate-main/secrets/ggtov2-db-password
+# contraseña: Secret Manager -> projects/ggto-prod-txblvento2/secrets/ggtov2-db-password
 ```
 
 Para exponerla en Cloud Run del proyecto `ggtov2` (cuando haya facturación) se monta la instancia
-con `--add-cloudsql-instances=truekeate-main:southamerica-east1:truekeate-db-dev`; el conector usa
-TLS y no requiere abrir redes, dado que la SA ya tiene `roles/cloudsql.client` en `truekeate-main`.
+con `--add-cloudsql-instances=ggto-prod-txblvento2:europe-west1:ggto-db`; el conector usa
+TLS y no requiere abrir redes, dado que la SA ya tiene `roles/cloudsql.client` en `ggto-prod-txblvento2`.
 
 **Script:** `RepoTecnico/scripts/10_usar_instancia_truekeate.sh` (idempotente).
 
@@ -474,7 +475,7 @@ de usuario) y diseño idempotente.
 | `06_cloudsql_postgres.sh` | Instancia PostgreSQL 16 privada, backups, PITR, SSL |
 | `07_cloudrun_web.sh` | Servicio Cloud Run con salida VPC y secretos |
 | `08_auditoria_presupuesto.sh` | Audit configs + presupuesto con alertas |
-| `10_usar_instancia_truekeate.sh` | Base/usuario `ggtov2` en `truekeate-db-dev` + secretos + IAM cruzado |
+| `10_usar_instancia_truekeate.sh` | Base/usuario `ggtov2` en `vm-databases` + secretos + IAM cruzado |
 | `99_eliminar_todo.sh` | Teardown controlado (requiere `CONFIRM_DESTROY=ELIMINAR`) |
 | `provision_all.sh` | Orquesta 00→08 (facturables solo con `CREAR_RECURSOS=si`) |
 
@@ -520,7 +521,7 @@ CREAR_RECURSOS=si RepoTecnico/scripts/provision_all.sh
 ### Fase 2-bis — Usar PostgreSQL existente (ya ejecutada)
 
 ```bash
-# Crea base ggtov2 + usuario ggtov2_app en truekeate-db-dev, secretos e IAM cruzado
+# Crea base ggtov2 + usuario ggtov2_app en vm-databases, secretos e IAM cruzado
 RepoTecnico/scripts/10_usar_instancia_truekeate.sh
 ```
 
@@ -576,9 +577,9 @@ gcloud projects get-iam-policy ggtov2 --format=json | jq '.auditConfigs'
 - [ ] Cloud KMS con claves `ggtov2-secrets` y `ggtov2-storage` (rotación 90 d).
 - [ ] Secretos `ggtov2-db-password`, `ggtov2-db-root-password`, `ggtov2-app-secret-key`, `ggtov2-django-secret-key`.
 - [ ] Cloud SQL PostgreSQL 16 `ggtov2-pg` con IP privada, SSL obligatorio, backups y PITR (instancia propia, pendiente de facturación).
-- [x] Base `ggtov2` y usuario `ggtov2_app` creados (en la instancia reutilizada `truekeate-db-dev`).
+- [x] Base `ggtov2` y usuario `ggtov2_app` creados (en la instancia reutilizada `vm-databases`).
 - [x] Credenciales en Secret Manager + acceso IAM cruzado `roles/cloudsql.client`.
-- [ ] SSL obligatorio, backups, PITR y protección de borrado en `truekeate-db-dev`.
+- [ ] SSL obligatorio, backups, PITR y protección de borrado en `vm-databases`.
 - [ ] Bucket `ggtov2-assets-905974355709` con CMEK, sin acceso público y versionado.
 - [ ] Artifact Registry `ggtov2-web`.
 - [ ] Cloud Run `ggtov2-web` desplegado y accesible por HTTPS.
@@ -615,8 +616,8 @@ Cloud (plano de control global, instancia regional). Quedó habilitada su API de
 5. Creación de cuentas de servicio y aplicación de IAM de mínimo privilegio.
 6. Intento de auditoría de acceso a datos (no persistió; documentado).
 7. Generación de scripts reproducibles y de este documento.
-8. Inventario de servicios PostgreSQL de la organización: instancias en `hotel-mcp` y `truekeate-main`; `ggtov2` sin instancia.
-9. Decisión del usuario de reutilizar `truekeate-db-dev`: creación de la base `ggtov2`, el usuario `ggtov2_app`, los secretos y el IAM cruzado; verificación de privilegios con `psycopg2` (DDL OK).
+8. Inventario de servicios PostgreSQL de la organización: instancias en `hotel-mcp` y `ggto-prod-txblvento2`; `ggtov2` sin instancia.
+9. Decisión del usuario de reutilizar `vm-databases`: creación de la base `ggtov2`, el usuario `ggtov2_app`, los secretos y el IAM cruzado; verificación de privilegios con `psycopg2` (DDL OK).
 
 ---
 

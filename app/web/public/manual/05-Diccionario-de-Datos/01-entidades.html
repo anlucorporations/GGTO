@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Diccionario de Datos — Entidades de la base GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Estado verificado 2026-10-24: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa. La APK vigente (1.15.20+45) es multirol (campo + gestión), ya no solo de campo. Este manual expl">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../imagenes/dominios-datos.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Diccionario de Datos</span>
           <h1 class="portada-titulo">Diccionario de Datos — Entidades de la base GGTO</h1>
-          <p class="portada-resumen">Estado verificado 2026-10-24: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa. La APK vigente (1.15.20+45) es multirol (campo + gestión), ya no solo de campo. Este manual explica, con palabras sencillas, qué información guarda la base de datos del sistema GGTO y cómo se organiza. Es la versión literal del manual técnico: conserva el mismo orden de secciones, las mismas tablas y los mismos datos, pero sin tecnicismos. Cuando el código no permite confirmar algo, se indica como pendiente de confirmar.</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Estado verificado 2026-10-24: DDL local con 41 tablas; ORM con 36. La instancia desplegada está activa. La APK vigente (1.15.20+45) es multirol […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Diccionario de Datos</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/05-Diccionario-de-Datos/01-entidades.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>24/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p><strong>Estado verificado 2026-10-24:</strong> DDL local con 41 tablas; ORM con 36. La
 instancia desplegada está activa. La APK vigente (<code>1.15.20+45</code>) es multirol
@@ -851,7 +854,7 @@ tiene respaldos automáticos deshabilitados según la configuración consultada.
 </tr>
 <tr>
 <td>Motor de base de datos</td>
-<td>PostgreSQL 15 (instancia compartida <code>truekeate-main:southamerica-east1:truekeate-db-dev</code>)</td>
+<td>PostgreSQL 15 (instancia compartida <code>ggto-prod-txblvento2:europe-west1:ggto-db</code>)</td>
 </tr>
 <tr>
 <td>Base</td>
@@ -4025,7 +4028,7 @@ intención definitiva.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Diccionario de Datos</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

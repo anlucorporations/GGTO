@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manual de Operación y Mantenimiento — GGTO — Manual GGTO (CANTV)</title>
 <meta name="author" content="GGTO · CANTV">
-<meta name="description" content="Corte operativo verificado 2026-10-22: servicio Cloud Run ggto-web en revisión ggto-web-00093-g8c, imagen v80, con la APK 1.15.17+42; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabil">
+<meta name="description" content="DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL">
 <meta property="og:image" content="../imagenes/rutina-diaria.png">
 <style>
 /* ==================================================================
@@ -783,21 +783,24 @@ a { color: var(--azul); }
           <p class="portada-sistema">Sistema de administración de reportes de avería y construcción de puntos ópticos</p>
           <span class="portada-etiqueta">Manual literal · Operación</span>
           <h1 class="portada-titulo">Manual de Operación y Mantenimiento — GGTO</h1>
-          <p class="portada-resumen">Corte operativo verificado 2026-10-22: servicio Cloud Run ggto-web en revisión ggto-web-00093-g8c, imagen v80, con la APK 1.15.17+42; Cloud SQL está RUNNABLE y los respaldos automáticos están deshabilitados. El esquema desplegado y las rutinas de restauración no se validaron en esta auditoría. Consulta el informe RepoTecnico/auditoria_estado_real_v2.md dentro del repositorio. Guía sencilla para el trabajo diario con GGTO en la Central Francisco Salias (Área 4). Aquí se explica cómo se opera el sistema, qué rutinas existen, cómo se respalda la […]</p>
+          <p class="portada-resumen">DESPLIEGUE VIGENTE (verificado 24/11/2026): Cloud Run ggto-web en ggto-prod-txblvento2 (europe-west1), https://ggto-web-695669822281.europe-west1.run.app, imagen ggto-web:v106; BD ggtov2 en PostgreSQL 16.15 de vm-databases (10.140.0.2:5432) vía conector VPC ggto-connector; Cloud SQL ggto-db = respaldo. 5 jobs de Scheduler ENABLED. El resto de este archivo es histórico/previsto y no describe el despliegue actual. Corte operativo verificado 2026-10-22: servicio Cloud Run ggto-web en revisión ggto-web-00093-g8c, imagen v80, con la APK 1.15.17+42; Cloud SQL […]</p>
           <dl class="portada-meta">
             <div><dt>Producto</dt><dd>GGTO · versión 0.9.0</dd></div>
             <div><dt>Cliente</dt><dd>CANTV C.A. — Central Francisco Salias (Área 4)</dd></div>
             <div><dt>Colección</dt><dd>Manuales literales · Operación</dd></div>
             <div><dt>Documento</dt><dd>docs/Manuales/07-Operacion/01-operacion-y-mantenimiento.md</dd></div>
             <div><dt>Público</dt><dd>Todo público (lenguaje sencillo)</dd></div>
-            <div><dt>Actualización de la fuente</dt><dd>27/10/2026</dd></div>
+            <div><dt>Actualización de la fuente</dt><dd>25/11/2026</dd></div>
           </dl>
         </div>
         <div class="portada-pie">
           <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
-          <span>Edición HTML y PDF generada el 28/10/2026</span>
+          <span>Edición HTML y PDF generada el 25/11/2026</span>
         </div>
       </section>
+<blockquote>
+<p><strong>DESPLIEGUE VIGENTE (verificado 24/11/2026):</strong> Cloud Run <code>ggto-web</code> en <code>ggto-prod-txblvento2</code> (europe-west1), <a href="https://ggto-web-695669822281.europe-west1.run.app">https://ggto-web-695669822281.europe-west1.run.app</a>, imagen <code>ggto-web:v106</code>; BD <code>ggtov2</code> en PostgreSQL 16.15 de <code>vm-databases</code> (10.140.0.2:5432) vía conector VPC <code>ggto-connector</code>; Cloud SQL <code>ggto-db</code> = respaldo. 5 jobs de Scheduler <code>ENABLED</code>. <strong>El resto de este archivo es histórico/previsto y no describe el despliegue actual.</strong></p>
+</blockquote>
 <blockquote>
 <p><strong>Corte operativo verificado 2026-10-22:</strong> servicio Cloud Run <code>ggto-web</code> en
 revisión <code>ggto-web-00093-g8c</code>, imagen <code>v80</code>, con la APK <code>1.15.17+42</code>; Cloud SQL está RUNNABLE y los
@@ -1270,7 +1273,7 @@ recuperación a un punto en el tiempo habilitada y protección de borrado habili
 en modo <code>ENCRYPTED_ONLY</code>.</p>
 <h3 id="estado-real-d-26-sin-backups-pitr"><span class="sec-num">4.2</span>Estado real (D-26: sin backups/PITR)</h3>
 <p>La base operativa <strong>no es</strong> <code>ggtov2-pg</code>, sino una instancia compartida llamada
-<code>truekeate-main:southamerica-east1:truekeate-db-dev</code>, que <strong>no tiene respaldos, ni recuperación a un
+<code>ggto-prod-txblvento2:europe-west1:ggto-db</code>, que <strong>no tiene respaldos, ni recuperación a un
 punto en el tiempo, ni SSL obligatorio, ni protección de borrado</strong>.</p>
 <p>El <strong>riesgo D-26 fue aceptado</strong> por la Dirección del proyecto el 2026-09-25, con dueño asignado y
 condición de cierre: «migrar a <code>ggtov2-pg</code> propio al desbloquear la facturación».</p>
@@ -1315,7 +1318,7 @@ documentada, por lo que <strong>la migración es una prioridad operativa</strong
 (instancia regional con alta disponibilidad, respaldos, PITR y SSL <code>ENCRYPTED_ONLY</code>).</li>
 <li>Migrar la base <code>ggtov2</code> con una ventana de mantenimiento y verificar los 36 objetos.</li>
 <li>Reapuntar Cloud Run a la instancia propia y dejar de usar la instancia compartida
-<code>truekeate-db-dev</code>.</li>
+<code>vm-databases</code>.</li>
 <li>Ejecutar y <strong>documentar</strong> una prueba de restauración trimestral (RNF-16).</li>
 <li>Designar un responsable del respaldo y registrar el resultado en la documentación del proyecto.</li>
 </ol>
@@ -1680,7 +1683,7 @@ confirmar»</strong>.</p>
   <div class="pie-nav">
     <span>CANTV C.A. — Central Francisco Salias (Área 4)</span>
     <span>Manual literal · Operación</span>
-    <span>Generado el 28/10/2026</span>
+    <span>Generado el 25/11/2026</span>
   </div>
 </footer>
 

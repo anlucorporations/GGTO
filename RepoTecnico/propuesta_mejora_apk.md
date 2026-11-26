@@ -1,4 +1,5 @@
 # Propuesta de mejora — APK «GGTO Técnico» (`app_movil`)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | | |
 |---|---|
@@ -37,7 +38,7 @@ Adicionalmente, el cumplimiento del brief es parcial: no hay subida de evidencia
 | Identidad | `applicationId com.example.ggto_tecnico`, `minSdk 21`, `targetSdk/compileSdk 35` |
 | Toolchain | Flutter 3.24.3 (`android/local.properties`), Gradle 8.7, AGP 8.6.0, Kotlin 2.1.0, NDK 26.1.10909125 |
 | Higiene | Sin `.git`, sin `.gitignore`; `build/` = **223 MB / 6 330 archivos**; **dos copias** del APK en la raíz de la app; `generate_app.py` regenera los fuentes con versiones antiguas |
-| Base URL | `https://ggto-web-593453426217.europe-west1.run.app/api/v1` (`lib/core/constants.dart:2`) |
+| Base URL | `https://ggto-web-695669822281.europe-west1.run.app/api/v1` (`lib/core/constants.dart:2`) |
 
 ---
 

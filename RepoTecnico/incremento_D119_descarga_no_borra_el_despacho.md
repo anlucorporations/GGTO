@@ -1,4 +1,5 @@
-﻿# Incremento D-119 â€” La APK ya muestra el despacho despuÃ©s de sincronizar
+# Incremento D-119 â€” La APK ya muestra el despacho despuÃ©s de sincronizar
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -195,7 +196,7 @@ En el servidor, el cierre quedÃ³ registrado con su bitÃ¡cora
 
 | Elemento | Valor |
 |---|---|
-| Imagen | `â€¦/truekeate-repo/ggto-web:v51` |
+| Imagen | `â€¦/ggto/ggto-web:v51` |
 | RevisiÃ³n | **`ggto-web-00064-54m`**, 100 % del trÃ¡fico |
 | Humo en vivo | `/health` 200 Â· `/ready` 200 (43 tablas) Â· `/apk/apk.json` 200 |
 | Contrato desplegado | `/openapi.json` incluye `SyncDescargaOut.ids_vigentes` |

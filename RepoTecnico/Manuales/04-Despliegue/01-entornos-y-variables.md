@@ -1,4 +1,5 @@
 # Manual de Entornos y Variables — GGTO (CANTV, Central Francisco Salias / Área 4)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 Este manual describe los entornos en los que se ejecuta la plataforma **GGTO**, el inventario
 completo de variables de configuración de la aplicación y el gobierno de los secretos. Todas
@@ -45,18 +46,18 @@ No existe un entorno de *staging* desplegado y verificado en la infraestructura 
 requerimiento **RNF-24** exige "entornos separados `dev`/`staging`/`prod`"
 (`RepoTecnico/requerimientos.md:203`) y **RNF-25** exige paridad de versiones entre desarrollo y
 producción (`RepoTecnico/requerimientos.md:204`); sin embargo, el estado real del despliegue
-solo registra el servicio de producción en `truekeate-main`
+solo registra el servicio de producción en `ggto-prod-txblvento2`
 (`RepoTecnico/entornos_globales.md:311-325`). El valor que deba usarse en `APP_ENV` para
 *staging* y el proceso concreto de promoción entre entornos están **pendientes de confirmar**.
 
 ### production
 
 Es el entorno donde corre el servicio **Cloud Run `ggto-web`**, desplegado temporalmente en el
-proyecto `truekeate-main` y región `europe-west1`
+proyecto `ggto-prod-txblvento2` y región `europe-west1`
 (`RepoTecnico/entornos_globales.md:317-319`). En producción:
 
 - El servicio se conecta a la base mediante el socket de Cloud SQL:
-  `DB_HOST=/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev`
+  `DB_HOST=/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db`
   (`RepoTecnico/entornos_globales.md:374`).
 - El valor de `APP_ENV` en la revisión desplegada es **pendiente de confirmar**: el script
   `RepoTecnico/scripts/07_cloudrun_web.sh:16-21` solo declara `DB_USER`, `DB_NAME`, `DB_HOST` y
@@ -170,7 +171,7 @@ siguiente). Se organizan por dominio.
 
 | Variable | Valor previsto | Observación |
 |---|---|---|
-| `DB_HOST` | `/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev` | Socket en Cloud Run; proxy local en desarrollo (`RepoTecnico/entornos_globales.md:139`) |
+| `DB_HOST` | `/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db` | Socket en Cloud Run; proxy local en desarrollo (`RepoTecnico/entornos_globales.md:139`) |
 | `DB_PORT` | `5432` | `app/core/config.py:19` |
 | `DB_NAME` | `ggtov2` | `app/core/config.py:20` |
 | `DB_USER` | `ggtov2_app` | `app/core/config.py:21` |
@@ -318,9 +319,9 @@ secretos, jamás sus valores.
 
 | Secreto | Proyecto | Función | Evidencia |
 |---|---|---|---|
-| `ggtov2-db-password` | `truekeate-main` | Contraseña del usuario `ggtov2_app` | `RepoTecnico/entornos_globales.md:74`; creado por `RepoTecnico/scripts/10_usar_instancia_truekeate.sh:26-35` |
-| `ggtov2-db-connection` | `truekeate-main` | Nombre de conexión de la instancia | `RepoTecnico/entornos_globales.md:75`; creado por `RepoTecnico/scripts/10_usar_instancia_truekeate.sh:38-46` |
-| `ggto-secret-key` | `truekeate-main` | Clave de firma de JWT usada por el servicio desplegado | `RepoTecnico/entornos_globales.md:322` |
+| `ggtov2-db-password` | `ggto-prod-txblvento2` | Contraseña del usuario `ggtov2_app` | `RepoTecnico/entornos_globales.md:74`; creado por `RepoTecnico/scripts/10_usar_instancia_truekeate.sh:26-35` |
+| `ggtov2-db-connection` | `ggto-prod-txblvento2` | Nombre de conexión de la instancia | `RepoTecnico/entornos_globales.md:75`; creado por `RepoTecnico/scripts/10_usar_instancia_truekeate.sh:38-46` |
+| `ggto-secret-key` | `ggto-prod-txblvento2` | Clave de firma de JWT usada por el servicio desplegado | `RepoTecnico/entornos_globales.md:322` |
 | `ggtov2-app-secret-key` | `ggtov2` (previsto) | Clave de firma prevista para el proyecto GGTOv2 | `RepoTecnico/scripts/04_secretos_kms.sh:45`; referenciada por `RepoTecnico/scripts/07_cloudrun_web.sh:20` |
 
 El script de secretos planificado crea, además, `ggtov2-db-root-password` y
@@ -330,7 +331,7 @@ proyecto los lista como tareas del aprovisionamiento de `ggtov2`
 (`RepoTecnico/GGTOv2_GCP.md:577`).
 
 La cuenta de servicio de ejecución del servicio real
-`ggto-web-sa@truekeate-main.iam.gserviceaccount.com` tiene `roles/cloudsql.client` y
+`ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com` tiene `roles/cloudsql.client` y
 `roles/secretmanager.secretAccessor` sobre `ggtov2-db-password` y `ggto-secret-key`
 (`RepoTecnico/entornos_globales.md:322`). El acceso a los secretos se concede de forma explícita
 por nombre: `RepoTecnico/scripts/10_usar_instancia_truekeate.sh:49-53` recorre `ggtov2-db-password` y
@@ -363,7 +364,7 @@ secreto `DATABASE_URL`; la respuesta fue (`RepoTecnico/entornos_globales.md:100-
 #### Procedimiento observado
 
 1. `ALTER ROLE app PASSWORD '<nueva>'` con 32 caracteres aleatorios.
-2. Publicación de una nueva versión del secreto (`versions/3`) en `truekeate-main`.
+2. Publicación de una nueva versión del secreto (`versions/3`) en `ggto-prod-txblvento2`.
 3. Nueva revisión de Cloud Run `truekeate-api-00034-hvk` para tomar el valor `latest`, que
    quedó `Ready`, con el 100 % del tráfico y sin errores de autenticación en los logs.
 

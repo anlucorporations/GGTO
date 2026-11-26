@@ -1,4 +1,5 @@
 # Documento técnico — Incremento **D-95 … D-98** · APK de Gestión (Supervisor · Administrador · Coordinador)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -1158,16 +1159,16 @@ El flujo de campo conserva su CARGA/DESCARGA manual y su sondeo de mensajes de 6
 | Recurso | Valor | Evidencia |
 |---|---|---|
 | Proyecto GCP | `ggtov2` (projectNumber `905974355709`) | `RepoTecnico/entornos_globales.md:55` |
-| Servicio web **desplegado** | Cloud Run **`ggto-web`** en `truekeate-main`, `europe-west1` — `https://ggto-web-593453426217.europe-west1.run.app` | `RepoTecnico/entornos_globales.md:318-319` |
+| Servicio web **desplegado** | Cloud Run **`ggto-web`** en `ggto-prod-txblvento2`, `europe-west1` — `https://ggto-web-695669822281.europe-west1.run.app` | `RepoTecnico/entornos_globales.md:318-319` |
 | Servicio **planificado** en `ggtov2` | `ggtov2-web` (no existe: sin facturación) | `RepoTecnico/entornos_globales.md:62,356-366` |
-| Base de datos | Instancia reutilizada `truekeate-main:southamerica-east1:truekeate-db-dev` (POSTGRES_**15**), base `ggtov2`, usuario `ggtov2_app` | `RepoTecnico/entornos_globales.md:71-74` |
-| Contraseña / conexión | Secret Manager `truekeate-main/ggtov2-db-password` y `…/ggtov2-db-connection` | `RepoTecnico/entornos_globales.md:74-75` |
+| Base de datos | Instancia reutilizada `ggto-prod-txblvento2:europe-west1:ggto-db` (POSTGRES_**15**), base `ggtov2`, usuario `ggtov2_app` | `RepoTecnico/entornos_globales.md:71-74` |
+| Contraseña / conexión | Secret Manager `ggto-prod-txblvento2/ggtov2-db-password` y `…/ggtov2-db-connection` | `RepoTecnico/entornos_globales.md:74-75` |
 | Rama de trabajo | `GGTOv2-DSH-GCP` | `RepoTecnico/entornos_globales.md:257` |
-| URL base que compila la APK | `https://ggto-web-593453426217.europe-west1.run.app/api/v1` | `app_movil/lib/core/constants.dart:5-8` |
+| URL base que compila la APK | `https://ggto-web-695669822281.europe-west1.run.app/api/v1` | `app_movil/lib/core/constants.dart:5-8` |
 
 **Variables de entorno relevantes** (sin secretos; nombres según
 `RepoTecnico/entornos_globales.md:131-185`): `APP_ENV`, `APP_NAME`, `APP_TIMEZONE=America/Caracas`,
-`SECRET_KEY`, `DB_HOST` (`/cloudsql/truekeate-main:southamerica-east1:truekeate-db-dev`),
+`SECRET_KEY`, `DB_HOST` (`/cloudsql/ggto-prod-txblvento2:europe-west1:ggto-db`),
 `DB_PORT`, `DB_NAME=ggtov2`, `DB_USER=ggtov2_app`, `DB_PASSWORD`, `DB_SSLMODE=require`,
 `DB_SCHEMA` (vacío en producción; `ggto_test`/`ggto_e2e` en pruebas), `TELEGRAM_BOT_TOKEN`,
 `SMTP_*`, `MCP_API_KEY`, `STORAGE_BUCKET`.

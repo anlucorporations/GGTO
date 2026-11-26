@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
+# ⚠️ SCRIPT HISTÓRICO / NO EJECUTAR — apuntaba al despliegue retirado de
+# `ggto-prod-txblvento2:europe-west1:ggto-db`. Despliegue vigente
+# (24/11/2026): Cloud Run `ggto-web` en `ggto-prod-txblvento2`, BD `ggtov2` en
+# PostgreSQL 16.15 de `vm-databases` (`10.140.0.2:5432`) vía VPC `ggto-connector`.
+# Cloud SQL `ggto-db` de `ggto-prod-txblvento2` queda solo como respaldo.
 # 10_usar_instancia_truekeate.sh
 # Da de alta una base y usuario DEDICADOS para GGTOv2 dentro de la instancia
-# Cloud SQL existente en truekeate-main, y habilita el acceso del runtime de GGTOv2.
+# Cloud SQL existente en ggto-prod-txblvento2, y habilita el acceso del runtime de GGTOv2.
 #
-# Instancia destino : truekeate-main:southamerica-east1:truekeate-db-dev
+# Instancia destino : ggto-prod-txblvento2:europe-west1:ggto-db
 # Crea              : database ggtov2  /  user ggtov2_app
-# Secretos          : ggtov2-db-password, ggtov2-db-connection (en truekeate-main)
+# Secretos          : ggtov2-db-password, ggtov2-db-connection (en ggto-prod-txblvento2)
 set -euo pipefail
 source "$(dirname "$0")/lib_gcp.sh"
 
-ORIGEN_PROJECT="truekeate-main"   # proyecto que aloja la instancia
-INSTANCE="truekeate-db-dev"
+ORIGEN_PROJECT="ggto-prod-txblvento2"   # proyecto que aloja la instancia
+INSTANCE="vm-databases"
 DB_NAME="ggtov2"
 DB_USER="ggtov2_app"
-CONN="$ORIGEN_PROJECT:southamerica-east1:$INSTANCE"
+CONN="$ORIGEN_PROJECT:europe-west1:$INSTANCE"
 APP_SA="serviceAccount:ggtov2-app@ggtov2.iam.gserviceaccount.com"
-TK_SA="serviceAccount:truekeate-app-sa@truekeate-main.iam.gserviceaccount.com"
+TK_SA="serviceAccount:ggto-web-sa@ggto-prod-txblvento2.iam.gserviceaccount.com"
 
 echo "== [10] Usando $CONN para el proyecto GGTOv2 =="
 
@@ -69,7 +74,7 @@ else
     | python3 -c 'import sys,json;d=json.load(sys.stdin);print("  Usuario:",d.get("name") or d.get("error",{}).get("message"))'
 fi
 
-# --- 6) Acceso IAM cruzado: runtime de GGTOv2 -> Cloud SQL en truekeate-main ---
+# --- 6) Acceso IAM cruzado: runtime de GGTOv2 -> Cloud SQL en ggto-prod-txblvento2 ---
 api POST "https://cloudresourcemanager.googleapis.com/v1/projects/$ORIGEN_PROJECT:getIamPolicy" '{"options":{"requestedPolicyVersion":3}}' > /tmp/tk_pol.json
 python3 - "$APP_SA" <<'PY' > /tmp/tk_pol_new.json
 import json,sys
@@ -85,7 +90,7 @@ add("roles/cloudsql.client",app)
 print(json.dumps({"policy":p}))
 PY
 api POST "https://cloudresourcemanager.googleapis.com/v1/projects/$ORIGEN_PROJECT:setIamPolicy" "$(cat /tmp/tk_pol_new.json)" \
-  | python3 -c 'import sys,json;d=json.load(sys.stdin);print("  IAM truekeate-main actualizado:",len(d.get("bindings",[])),"bindings" if "bindings" in d else d.get("error",{}).get("message"))'
+  | python3 -c 'import sys,json;d=json.load(sys.stdin);print("  IAM ggto-prod-txblvento2 actualizado:",len(d.get("bindings",[])),"bindings" if "bindings" in d else d.get("error",{}).get("message"))'
 
 echo
 echo "== Resumen =="

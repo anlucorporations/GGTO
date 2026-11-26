@@ -108,6 +108,8 @@ class DespachoUpdate(BaseModel):
 class SectorProcesoOut(BaseModel):
     id_sector: int
     nombre: str | None = None
+    #: Direcciones (patrones) del sector, que se muestran en vez del nombre.
+    direcciones: list[str] = Field(default_factory=list)
     total: int = 0
     #: D-114: los especiales separados por concepto (Gobierno suma a su actividad).
     especiales: int = 0
@@ -192,6 +194,7 @@ class SectorConstruccionOut(BaseModel):
 
     id_sector: int
     nombre: str | None = None
+    direcciones: list[str] = Field(default_factory=list)
     cantidad: int = 0
 
 
@@ -200,6 +203,7 @@ class SectorMantenimientoOut(BaseModel):
 
     id_sector: int
     nombre: str | None = None
+    direcciones: list[str] = Field(default_factory=list)
     cantidad: int = 0
     id_cuadrilla: int | None = None
 

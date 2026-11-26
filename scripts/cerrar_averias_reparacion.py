@@ -23,7 +23,7 @@
 
  USO (PowerShell)
      $tok = ... (login del SUPER) ...
-     $env:GGTO_URL  = 'https://ggto-web-XXXX.run.app'
+     $env:GGTO_URL  = 'https://ggto-web-695669822281.europe-west1.run.app'
      $env:GGTO_TOKEN = $tok
      python scripts/cerrar_averias_reparacion.py              # simulación
      python scripts/cerrar_averias_reparacion.py --aplicar

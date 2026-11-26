@@ -38,8 +38,8 @@ test.describe('Proceso de despacho', () => {
       modal.getByRole('heading', { name: 'Cuadrillas y sectores asignados' }),
     ).toBeVisible();
 
-    // El sector con casos aparece con su total.
-    await expect(modal.getByRole('cell', { name: 'SECTOR E2E' }).first()).toBeVisible();
+    // El sector con casos aparece identificado por su dirección, con su total.
+    await expect(modal.getByRole('cell', { name: 'CALLE E2E' }).first()).toBeVisible();
     // Las dos cuadrillas de calle están disponibles (tarjetas, no los <option>)
     await expect(modal.locator('.ficha-tarjeta', { hasText: 'E2E-C1' })).toBeVisible();
     await expect(modal.locator('.ficha-tarjeta', { hasText: 'E2E-C2' })).toBeVisible();
@@ -51,10 +51,10 @@ test.describe('Proceso de despacho', () => {
 
   test('permite cambiar la asignación de sector y procesar el despacho', async ({ page }) => {
     const modal = page.getByRole('dialog', { name: /Procesar despacho/ });
-    await expect(modal.getByLabel('Cuadrilla para SECTOR E2E')).toBeVisible({ timeout: 30_000 });
+    await expect(modal.getByLabel('Cuadrilla para CALLE E2E')).toBeVisible({ timeout: 30_000 });
 
     // Reasignar el sector de la cuadrilla por defecto a E2E-C2
-    const selector = modal.getByLabel('Cuadrilla para SECTOR E2E');
+    const selector = modal.getByLabel('Cuadrilla para CALLE E2E');
     const opciones = await selector.locator('option').allTextContents();
     const destino = opciones.find((t) => t.includes('E2E-C2'));
     expect(destino).toBeTruthy();
@@ -62,7 +62,7 @@ test.describe('Proceso de despacho', () => {
 
     // La tarjeta de la cuadrilla refleja el sector asignado
     const tarjeta = modal.locator('.ficha-tarjeta', { hasText: 'E2E-C2' });
-    await expect(tarjeta).toContainText('SECTOR E2E');
+    await expect(tarjeta).toContainText('CALLE E2E');
 
     await modal.getByRole('button', { name: 'Procesar despacho' }).click();
     await expect(page.locator('.aviso-ok')).toBeVisible({ timeout: 60_000 });

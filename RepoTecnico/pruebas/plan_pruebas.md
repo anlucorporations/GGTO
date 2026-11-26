@@ -1,4 +1,5 @@
 # Plan de Pruebas — GGTO (Fase 4)
+> **DESPLIEGUE VIGENTE (verificado 24/11/2026):** Cloud Run `ggto-web` en `ggto-prod-txblvento2` (europe-west1), <https://ggto-web-695669822281.europe-west1.run.app>, imagen `ggto-web:v106`; BD `ggtov2` en PostgreSQL 16.15 de `vm-databases` (10.140.0.2:5432) vía conector VPC `ggto-connector`; Cloud SQL `ggto-db` = respaldo. 5 jobs de Scheduler `ENABLED`. **El resto de este archivo es histórico/previsto y no describe el despliegue actual.**
 
 | Campo | Valor |
 |---|---|
@@ -32,7 +33,7 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 
 | Aspecto | Valor |
 |---|---|
-| Base de datos | PostgreSQL 15 (`truekeate-db-dev`) vía **Cloud SQL Auth Proxy** en `127.0.0.1:5433` |
+| Base de datos | PostgreSQL 15 (`vm-databases`) vía **Cloud SQL Auth Proxy** en `127.0.0.1:5433` |
 | Esquema de integración | `ggto_test` (lo recrea `app/tests/conftest.py`) |
 | Esquema E2E | `ggto_e2e` (lo recrea `RepoTecnico/pruebas/seed_e2e.py`) |
 | Aplicación E2E | `uvicorn app.main:app` en `http://127.0.0.1:8090` con `DB_SCHEMA=ggto_e2e` |
@@ -114,7 +115,7 @@ de pruebas en verde**, cubriendo cuatro niveles complementarios:
 ```bash
 # 0. Proxy (una vez)
 ~/tools/cloud-sql-proxy --gcloud-auth --port 5433 \
-  truekeate-main:southamerica-east1:truekeate-db-dev &
+  ggto-prod-txblvento2:europe-west1:ggto-db &
 
 # 1. Integración + contratos
 export GGTO_TEST_DB_URL="postgresql+psycopg2://ggtov2_app:<clave>@127.0.0.1:5433/ggtov2"
