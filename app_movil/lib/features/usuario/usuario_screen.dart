@@ -244,9 +244,11 @@ class _UsuarioScreenState extends State<UsuarioScreen> {
   }
 
   Future<void> _cerrarSesion() async {
+    // Capturar el navegador raíz antes de apagar la sesión: la ruta se retira
+    // al cambiar `autenticado` y el contexto local queda desmontado.
+    final navegador = Navigator.of(context, rootNavigator: true);
     await context.read<AuthProvider>().cerrarSesion();
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (ruta) => false);
+    navegador.pushNamedAndRemoveUntil('/login', (ruta) => false);
   }
 
   @override

@@ -127,10 +127,14 @@ class _LockScreenState extends State<LockScreen> {
       _cambiando = false;
       _usandoClave = false;
       _error = null;
+      // El PIN tecleado antes del cambio tiene 6 dígitos: sin limpiarlo el
+      // campo aparece "lleno" y `maxLength` impide escribir el PIN actual.
+      _pinController.clear();
       _nuevoController.clear();
       _confirmarController.clear();
       _claveController.clear();
     });
+    FocusScope.of(context).requestFocus(_pinFocus);
   }
 
   /// D-120: desbloquea con la **clave de sesión** (la del acceso a la app).
@@ -211,10 +215,12 @@ class _LockScreenState extends State<LockScreen> {
       ),
     );
     if (confirmado != true || !mounted) return;
+    // Capturar el navegador raíz ANTES de cerrar: al apagar la sesión este
+    // overlay se retira y el `context` del State deja de estar montado.
+    final navegador = Navigator.of(context, rootNavigator: true);
     await auth.cerrarSesion();
     lock.desbloquear();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (ruta) => false);
+    navegador.pushNamedAndRemoveUntil('/login', (ruta) => false);
   }
 
   @override
@@ -353,6 +359,7 @@ class _LockScreenState extends State<LockScreen> {
                               setState(() => _pinVisible = !_pinVisible),
                         ),
                       ),
+                      onTap: () => FocusScope.of(context).requestFocus(_pinFocus),
                       onSubmitted: (_) => _enviando ? null : _desbloquear(),
                     ),
                     const SizedBox(height: 14),

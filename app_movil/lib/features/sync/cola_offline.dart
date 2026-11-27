@@ -55,7 +55,11 @@ Map<String, dynamic>? actividadDeCarga({
         'reporte_corto': payload['descripcion'],
         // El cierre de campo guarda el modo (IVR/COS/SACAS) sin conexión; el
         // servidor lo traduce al catálogo para no perderlo.
-        'modo': payload['modo'],
+        // Un cierre encolado por una build anterior puede no traer `modo`;
+        // sin él el servidor rechaza la actividad ("modo de cierre  ...").
+        'modo': '${payload['modo'] ?? ''}'.trim().isEmpty
+            ? 'IVR'
+            : '${payload['modo']}'.trim().toUpperCase(),
         'id_metodo': payload['id_metodo'],
         'id_causa': payload['id_causa'],
         'fecha_hora': fechaHora,

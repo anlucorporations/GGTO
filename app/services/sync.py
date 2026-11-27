@@ -878,7 +878,7 @@ def aplicar_carga(
                     cierre = svc_resolucion.cerrar_caso(
                         db,
                         caso,
-                        modo=str(act.get("modo") or ""),
+                        modo=modo_cierre_de_carga(act),
                         descripcion=str(act.get("reporte_corto") or ""),
                         # F3-1 · D-99: el cierre offline de la APK no exige las
                         # 2 evidencias POTENCIA del camino individual (las fotos
@@ -1041,6 +1041,16 @@ def _resultado_db(tipo_db: str, enviado: Any) -> str | None:
     if isinstance(enviado, str) and enviado.upper() in RESULTADOS_VALIDOS:
         return enviado.upper()
     return RESULTADO_POR_TIPO.get(tipo_db)
+
+
+def modo_cierre_de_carga(act: dict[str, Any]) -> str:
+    """Modo de cierre de una actividad de la cola offline de la APK.
+
+    Las builds anteriores a la corrección (2026-11-27) encolaban el cierre sin
+    `modo`, y el servidor lo rechazaba con «El modo de cierre  no está en el
+    catálogo». Se normaliza al mismo valor por defecto de la pantalla de campo.
+    """
+    return (str(act.get("modo") or "").strip().upper() or "IVR")
 
 
 def _resolver_metodo(db: Session, tipo_db: str, act: dict[str, Any]) -> int | None:
