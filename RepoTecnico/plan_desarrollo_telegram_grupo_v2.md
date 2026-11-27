@@ -3,6 +3,12 @@
 > Fase 3 · 2026-11-26 · Rama `feature/tg-grupo-ia` · Alcance: **grupo + web**
 > (APK en ciclo posterior, DEC-TG-11). Base: casos de uso APTO, documento
 > técnico APTO, `INFORME_OPTIMIZACION_V4.md` y DEC-TG-01…17.
+>
+> **Estado 2026-11-27:** F3-TG-2 y F3-TG-3 implementados, probados (49/49 en
+> `asistente-ggto/test`) y desplegados (API `ggto-web:v108` + motor en vm-preview):
+> autorización por `from.id`, dedupe, respuestas sin PII y turnos `TELEGRAM_GRUPO`.
+> F3-TG-4 queda parcial: `/confirmar <id>` funciona con pendiente **en memoria**;
+> falta persistir en `asistente_pending_confirm`. F3-TG-5/6/7 pendientes.
 
 ## Reglas de los ciclos
 

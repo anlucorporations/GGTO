@@ -8,16 +8,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TurnoEntrada(BaseModel):
-    """Registro de un turno del asistente (canal PANEL o TELEGRAM)."""
+    """Registro de un turno del asistente (PANEL, TELEGRAM o TELEGRAM_GRUPO)."""
 
     sesion_id: str = Field(min_length=1, max_length=64)
-    canal: str = Field(default="PANEL", pattern="^(PANEL|TELEGRAM)$")
+    canal: str = Field(default="PANEL", pattern="^(PANEL|TELEGRAM|TELEGRAM_GRUPO)$")
     p00: str | None = Field(default=None, max_length=20)
     texto_entrada: str = Field(min_length=1, max_length=4000)
     intencion: str | None = Field(default=None, max_length=30)
     detalle: str | None = Field(default=None, max_length=60)
     ficha_json: str | None = Field(default=None, max_length=20000)
     respuesta: str | None = Field(default=None, max_length=20000)
+    # v2 (F3-TG-1): trazabilidad del turno en grupo (identidad por from.id)
+    id_grupo: int | None = None
+    mensaje_id: int | None = None
+    telegram_user_id: int | None = None
 
 
 class TurnoOut(BaseModel):
@@ -35,6 +39,37 @@ class TurnoOut(BaseModel):
     detalle: str | None = None
     respuesta: str | None = None
     creado_en: datetime
+    id_grupo: int | None = None
+    mensaje_id: int | None = None
+    telegram_user_id: int | None = None
+
+
+class GrupoOut(BaseModel):
+    """Grupo de Telegram autorizado (F3-TG-1)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_grupo: int
+    chat_id: int
+    titulo: str
+    id_central: int | None = None
+    politica_pii: str
+    eventos_config: dict = Field(default_factory=dict)
+    activo: bool
+
+
+class MiembroOut(BaseModel):
+    """Miembro autorizado del grupo: identidad por telegram_user_id (from.id)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_miembro: int
+    id_grupo: int
+    telegram_user_id: int
+    p00: str
+    rol: str
+    puede_actualizar: bool
+    activo: bool
 
 
 class RemitenteAlta(BaseModel):

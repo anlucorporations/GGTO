@@ -301,17 +301,17 @@ export default function Casos() {
   const cargarLista = useCallback(async () => {
     setCargandoLista(true);
     try {
-      // D-144: la búsqueda de texto libre cubre **todo** el universo (abiertos,
-      // cerrados, cancelados…) y elegir un estado manda sobre «solo abiertos»;
-      // el listado por defecto sigue mostrando solo trabajo abierto (RN-AL-02).
-      const buscaOTraeEstado =
-        aplicados.q.trim() !== '' || aplicados.estado_actual !== '';
+      // La búsqueda de texto libre mantiene el recinto de trabajo abierto
+      // (RN-AL-02): buscar "BAN-ACO-" no debe resurrectar casos cancelados.
+      // Solo al elegir explícitamente un estado (incluido CANCELADO) se
+      // desactiva «solo abiertos» y se consulta todo el universo (D-144).
+      const traeEstado = aplicados.estado_actual !== '';
       const params: CasosFiltros = {
         q: aplicados.q,
         estado_actual: aplicados.estado_actual,
         categoria: aplicados.categoria,
         tipo_caso: aplicados.tipo_caso,
-        solo_abiertos: !buscaOTraeEstado,
+        solo_abiertos: !traeEstado,
         page,
         page_size: tamanio,
       };

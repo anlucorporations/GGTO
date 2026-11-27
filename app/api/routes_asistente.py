@@ -18,8 +18,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.db import get_db
-from ..models import AsistenteRemitente, AsistenteSesion, Central, Usuario
-from ..schemas.asistente import RemitenteAlta, RemitenteOut, RemitenteUpdate, TurnoEntrada, TurnoOut
+from ..models import (
+    AsistenteGrupo,
+    AsistenteGrupoMiembro,
+    AsistenteRemitente,
+    AsistenteSesion,
+    Central,
+    Usuario,
+)
+from ..schemas.asistente import (
+    GrupoOut,
+    MiembroOut,
+    RemitenteAlta,
+    RemitenteOut,
+    RemitenteUpdate,
+    TurnoEntrada,
+    TurnoOut,
+)
 from .deps import require_roles
 
 router = APIRouter(prefix="/api/v1/asistente", tags=["asistente virtual"])
@@ -61,6 +76,9 @@ def registrar_turno(
         detalle=datos.detalle,
         ficha_json=datos.ficha_json,
         respuesta=datos.respuesta,
+        id_grupo=datos.id_grupo,
+        mensaje_id=datos.mensaje_id,
+        telegram_user_id=datos.telegram_user_id,
     )
     db.add(turno)
     db.commit()
@@ -72,7 +90,7 @@ def registrar_turno(
             summary="Historial de sesiones del asistente (acotado por central)")
 def historial(
     sesion_id: str | None = Query(default=None, max_length=64),
-    canal: str | None = Query(default=None, pattern="^(PANEL|TELEGRAM)$"),
+    canal: str | None = Query(default=None, pattern="^(PANEL|TELEGRAM|TELEGRAM_GRUPO)$"),
     desde: datetime | None = Query(default=None),
     limite: int = Query(default=50, ge=1, le=200),
     id_central: int | None = Query(default=None),
@@ -166,3 +184,44 @@ def actualizar_remitente(
     db.commit()
     db.refresh(remitente)
     return remitente
+
+
+# --------------------------------------------------------------------------- #
+# v2 (F3-TG-1/2): grupo de Telegram y autorización por from.id (telegram_user_id)
+# --------------------------------------------------------------------------- #
+@router.get("/grupos", response_model=list[GrupoOut],
+            summary="Grupos de Telegram dados de alta (motor del asistente)")
+def listar_grupos(
+    chat_id: int | None = Query(default=None),
+    activo: bool | None = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_acceso),
+) -> list[AsistenteGrupo]:
+    """El motor consulta el grupo por `chat.id`; la identidad del emisor es `from.id`."""
+    condiciones = []
+    if chat_id is not None:
+        condiciones.append(AsistenteGrupo.chat_id == chat_id)
+    if activo is not None:
+        condiciones.append(AsistenteGrupo.activo == activo)
+    return list(db.scalars(
+        select(AsistenteGrupo).where(*condiciones).order_by(AsistenteGrupo.id_grupo)
+    ))
+
+
+@router.get("/grupos/{id_grupo}/miembros", response_model=list[MiembroOut],
+            summary="Miembros autorizados del grupo (identidad por from.id)")
+def listar_miembros(
+    id_grupo: int,
+    telegram_user_id: int | None = Query(default=None),
+    activo: bool | None = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(_acceso),
+) -> list[AsistenteGrupoMiembro]:
+    condiciones = [AsistenteGrupoMiembro.id_grupo == id_grupo]
+    if telegram_user_id is not None:
+        condiciones.append(AsistenteGrupoMiembro.telegram_user_id == telegram_user_id)
+    if activo is not None:
+        condiciones.append(AsistenteGrupoMiembro.activo == activo)
+    return list(db.scalars(
+        select(AsistenteGrupoMiembro).where(*condiciones).order_by(AsistenteGrupoMiembro.id_miembro)
+    ))

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..core.db import Base
@@ -23,7 +23,7 @@ class AsistenteSesion(Base):
 
     id_turno: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     sesion_id: Mapped[str] = mapped_column(String(64), nullable=False)
-    #: PANEL | TELEGRAM (canales de la propuesta v2.1)
+    #: PANEL | TELEGRAM | TELEGRAM_GRUPO (v2: identidad por from.id en grupo)
     canal: Mapped[str] = mapped_column(String(20), nullable=False, default="PANEL")
     #: Central del usuario de servicio (recinto de lectura del historial).
     id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
@@ -37,6 +37,41 @@ class AsistenteSesion(Base):
     #: Vista previa mostrada al operador (JSON en texto).
     ficha_json: Mapped[str | None] = mapped_column(Text)
     respuesta: Mapped[str | None] = mapped_column(Text)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # v2 (F3-TG-1): trazabilidad del turno en el grupo de Telegram
+    id_grupo: Mapped[int | None] = mapped_column(Integer, ForeignKey("asistente_grupo.id_grupo"))
+    mensaje_id: Mapped[int | None] = mapped_column(BigInteger)
+    telegram_user_id: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class AsistenteGrupo(Base):
+    """Grupo de Telegram dado de alta (chat_id del grupo, política de PII)."""
+
+    __tablename__ = "asistente_grupo"
+
+    id_grupo: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    titulo: Mapped[str] = mapped_column(String(160), nullable=False)
+    topic_id: Mapped[int | None] = mapped_column(BigInteger)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    id_central: Mapped[int | None] = mapped_column(ForeignKey("central.id_central"))
+    politica_pii: Mapped[str] = mapped_column(String(20), nullable=False, default="REFERENCIAS")
+    eventos_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AsistenteGrupoMiembro(Base):
+    """Miembro autorizado del grupo: la identidad es `from.id`, nunca `chat.id`."""
+
+    __tablename__ = "asistente_grupo_miembro"
+
+    id_miembro: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_grupo: Mapped[int] = mapped_column(Integer, ForeignKey("asistente_grupo.id_grupo"), nullable=False)
+    telegram_user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    p00: Mapped[str] = mapped_column(String(20), nullable=False)
+    rol: Mapped[str] = mapped_column(String(20), nullable=False)
+    puede_actualizar: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

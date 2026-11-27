@@ -254,8 +254,8 @@ function clasificarConsulta(ficha) {
 }
 function resumenCaso(caso, conPII) {
   const g = (k) => (caso?.[k] ?? null)
-  const base = { id_caso: g("id_caso"), id_averia: g("id_averia"), estado_actual: g("estado_actual"),
-    tipo_caso: g("tipo_caso"), sector: g("sector_nombre"),
+  const base = { id_caso: g("id_caso"), id_averia: g("id_averia"), id_pago: g("id_pago"),
+    estado_actual: g("estado_actual"), tipo_caso: g("tipo_caso"), sector: g("sector_nombre"),
     fat: [g("olt"), g("slot"), g("puerto"), g("fat")].filter(Boolean).join("-") || null,
     fecha_reporte: g("fecha_reporte"), fecha_cita: g("fecha_cita"),
     ultimo_comentario: g("ultimo_comentario") }
@@ -380,6 +380,77 @@ function vistaPreviaTexto(body) {
     if (v && k !== "intencion") lineas.push(`· ${k}: ${v}`)
   return lineas.join("\n")
 }
+// ---- v2 (F3-TG-1/2/3): grupo de Telegram — identidad por from.id, no por chat.id ----
+const ROLES_GESTION = /^(SUPER|ADMIN|SUPERVISOR)$/i
+function esGrupo(mensaje) {
+  const chat = mensaje?.chat || {}
+  return ["group", "supergroup"].includes(String(chat.type).toLowerCase()) || /^-/.test(String(chat.id ?? ""))
+}
+async function buscarGrupo(estado, deps, chatId) {
+  const token = await deps.obtenerToken(estado, deps)
+  const url = `${estado.cfg.GGTO_API_URL}/api/v1/asistente/grupos?chat_id=${encodeURIComponent(chatId)}&activo=true`
+  const r = await deps.fetch(url, { headers: { Authorization: `Bearer ${token}` },
+    signal: deps.abortSignal(estado.cfg.TIMEOUT_MS || 30000) })
+  if (!r.ok) { const e = new Error(`grupos GGTO respondió ${r.status}`); e.codigo = 503; throw e }
+  const lista = await r.json()
+  return Array.isArray(lista) && lista.length ? lista[0] : null
+}
+async function buscarMiembro(estado, deps, idGrupo, telegramUserId) {
+  const token = await deps.obtenerToken(estado, deps)
+  const url = `${estado.cfg.GGTO_API_URL}/api/v1/asistente/grupos/${idGrupo}/miembros`
+    + `?telegram_user_id=${encodeURIComponent(telegramUserId)}&activo=true`
+  const r = await deps.fetch(url, { headers: { Authorization: `Bearer ${token}` },
+    signal: deps.abortSignal(estado.cfg.TIMEOUT_MS || 30000) })
+  if (!r.ok) { const e = new Error(`miembros GGTO respondió ${r.status}`); e.codigo = 503; throw e }
+  const lista = await r.json()
+  return Array.isArray(lista) && lista.length ? lista[0] : null
+}
+// DEC-TG-05: el grupo recibe SOLO referencias (ID avería, ID pago, estado y sector).
+function textoDeRespuestaGrupo(respuesta) {
+  if (!respuesta) return "⚠ No pude resolver la consulta."
+  if (respuesta.error) return `⚠ ${respuesta.error}`
+  if (respuesta.tipo === "CASO") {
+    if (respuesta.encontrado === false) return respuesta.texto || "Caso no encontrado."
+    const s = respuesta.resumen || {}
+    const pares = { "ID avería": s.id_averia, "ID pago": s.id_pago,
+      Estado: s.estado_actual, Sector: s.sector }
+    const lineas = Object.entries(pares).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)
+    return lineas.length ? lineas.join("\n") : "Caso sin datos de referencia."
+  }
+  if (respuesta.tipo === "FAT") {
+    const lineas = [`Búsqueda «${respuesta.termino || ""}»: ${respuesta.total ?? 0} caso(s)`]
+    for (const c of respuesta.casos || [])
+      lineas.push(`· ${c.id_averia || ""} · ${c.estado_actual || ""} · sector ${c.sector || "-"}`)
+    return lineas.join("\n")
+  }
+  if (respuesta.tipo === "RESUMEN_DIA") {
+    const s = respuesta.resumen || {}
+    return `Resumen ${s.fecha || ""}: ${s.casos_pendientes ?? "?"} casos pendientes · `
+      + `${s.fallas_activas ?? "?"} fallas activas${s.central ? ` · central ${s.central}` : ""}`
+  }
+  return "Consulta resuelta (sin datos personales)."
+}
+// DEC-TG-05: la vista previa en el grupo también va sin nombre/teléfono/dirección.
+function vistaPreviaTextoGrupo(body) {
+  const f = body?.ficha || {}
+  const lineas = ["Vista previa — nada aplicado todavía (solo referencias):"]
+  for (const k of ["id_averia", "id_pago", "tipo_reporte", "tipo_evento", "estado_nuevo"])
+    if (f[k]) lineas.push(`· ${k}: ${f[k]}`)
+  return lineas.join("\n")
+}
+function claveDeduplicacion(update, chatId) {
+  if (update?.update_id !== undefined && update?.update_id !== null) return `u:${update.update_id}`
+  return `m:${chatId}:${update?.message?.message_id ?? ""}`
+}
+function yaVisto(estado, clave, ahora) {
+  const vistos = estado.telegram?.vistos
+  if (!vistos) return false
+  for (const [k, t] of vistos) if (ahora - t > 10 * 60 * 1000) vistos.delete(k)
+  if (vistos.has(clave)) return true
+  vistos.set(clave, ahora)
+  return false
+}
+
 async function procesarTelegram(estado, deps, update, secretoHeader) {
   const cfg = estado.cfg
   if (!cfg.TELEGRAM_SECRET || !cfg.TELEGRAM_BOT_TOKEN)
@@ -390,11 +461,89 @@ async function procesarTelegram(estado, deps, update, secretoHeader) {
   if (!mensaje?.text) return { status: 200, body: { atendido: false, motivo: "sin texto" } }
   const chatId = String(mensaje.chat?.id ?? "")
   if (!chatId) return { status: 200, body: { atendido: false, motivo: "sin chat_id" } }
+  // v2 F3-TG-2: dedupe de reenvíos (update_id / chat_id + message_id)
+  const ahora = Date.now()
+  if (esGrupo(mensaje) && yaVisto(estado, claveDeduplicacion(update, chatId), ahora))
+    return { status: 200, body: { atendido: false, motivo: "duplicado" } }
   // canon v2-A5: los chats de Telegram comparten la tarifa global con el panel
-  const tarifa = tarifaOk(estado, Date.now())
+  const tarifa = tarifaOk(estado, ahora)
   if (!tarifa.ok) {
     await deps.responderTelegram(estado, deps, chatId, "⚠ Límite de uso alcanzado (canon v2-A5). Prueba más tarde.")
     return { status: 200, body: { atendido: false, motivo: tarifa.motivo } }
+  }
+  // ---- v2: GROUP — autorización por from.id contra asistente_grupo_miembro ----
+  if (esGrupo(mensaje)) {
+    const fromId = String(mensaje.from?.id ?? "")
+    if (!fromId) return { status: 200, body: { atendido: false, motivo: "sin from.id" } }
+    let grupo, miembro
+    try {
+      grupo = await deps.buscarGrupo(estado, deps, chatId)
+      if (!grupo) {
+        await deps.responderTelegram(estado, deps, chatId,
+          `Este grupo (${chatId}) no está dado de alta para usar el asistente.`)
+        return { status: 200, body: { atendido: false, motivo: "grupo no registrado", chat_id: chatId } }
+      }
+      miembro = await deps.buscarMiembro(estado, deps, grupo.id_grupo, fromId)
+    } catch (e) {
+      await deps.responderTelegram(estado, deps, chatId, "⚠ No pude validar tu identidad; intenta de nuevo.")
+      return { status: 503, body: { atendido: false, error: e.message } }
+    }
+    if (!miembro) {
+      // Nunca se invoca al LLM: la autorización es por USUARIO (from.id), no por chat.id.
+      await deps.responderTelegram(estado, deps, chatId,
+        `Este usuario (${fromId}) no está autorizado para usar el asistente. Solicite su alta al SUPER.`)
+      return { status: 200, body: { atendido: false, motivo: "usuario no autorizado",
+        chat_id: chatId, telegram_user_id: fromId } }
+    }
+    const texto = String(mensaje.text).trim()
+    const meta = { canal: "TELEGRAM_GRUPO", p00: miembro.p00, id_grupo: grupo.id_grupo,
+      mensaje_id: mensaje.message_id ?? null, telegram_user_id: Number(fromId) }
+    const sesionId = `TG-${chatId}-U${fromId}`
+    // DEC-TG-13: /confirmar <id_pending> — solo el solicitante o un gestor.
+    const confirmar = /^\/confirmar(?:\s+(\S+))?$/i.exec(texto)
+    if (confirmar) {
+      const idPending = confirmar[1]
+      const pendiente = idPending && estado.telegram.pendientes.get(idPending)
+      if (!pendiente || pendiente.fromId !== fromId && !ROLES_GESTION.test(miembro.rol || "")) {
+        await deps.responderTelegram(estado, deps, chatId,
+          "⚠ No hay una solicitud pendiente con ese ID para tu usuario (o no tienes permiso para confirmarla).")
+        return { status: 200, body: { atendido: false, motivo: "pendiente no encontrado" } }
+      }
+      estado.telegram.pendientes.delete(idPending)
+      const r = await deps.confirmar(estado, deps, { ficha: pendiente.ficha })
+      await deps.responderTelegram(estado, deps, chatId,
+        r.status === 201 ? `✅ Caso creado: ${r.body.id_averia} (id ${r.body.id_caso})`
+          : r.body.aplicado ? `✅ Actualización aplicada al caso ${r.body.id_caso}`
+            : `⚠ No se aplicó (${r.status}): ${r.body.error || ""}`)
+      return { status: 200, body: { atendido: true, accion: "confirmado", status_interno: r.status } }
+    }
+    // Las escrituras solo con rol de gestión y confirmación humana (DEC-TG-02/12).
+    const puedeEscribir = ROLES_GESTION.test(miembro.rol || "") && miembro.puede_actualizar !== false
+    if (texto.startsWith("/")) {
+      await deps.responderTelegram(estado, deps, chatId, "Comando no reconocido. Uso: /confirmar <id_pending>")
+      return { status: 200, body: { atendido: false, motivo: "comando desconocido" } }
+    }
+    const r = await deps.procesar(estado, deps, texto, sesionId, meta)
+    if (r.status !== 200) {
+      await deps.responderTelegram(estado, deps, chatId, `⚠ ${r.body.error || "Asistente no disponible"}`)
+      return { status: 200, body: { atendido: true, accion: "error", status_interno: r.status } }
+    }
+    if (r.body.intencion === "CONSULTA") {
+      await deps.responderTelegram(estado, deps, chatId, textoDeRespuestaGrupo(r.body.respuesta))
+      return { status: 200, body: { atendido: true, accion: "consulta", consulta: r.body.consulta } }
+    }
+    if (!puedeEscribir) {
+      await deps.responderTelegram(estado, deps, chatId,
+        "Tu rol no permite crear casos ni actualizar estados en el grupo; las consultas sí están disponibles.")
+      return { status: 200, body: { atendido: false, motivo: "rol sin permiso de escritura" } }
+    }
+    const idPending = `P${Date.now()}-${fromId}`
+    estado.telegram.pendientes.set(idPending,
+      { ficha: r.body.ficha, fromId, idGrupo: grupo.id_grupo, expiraEn: ahora + 10 * 60 * 1000 })
+    await deps.responderTelegram(estado, deps, chatId,
+      `${vistaPreviaTextoGrupo(r.body)}\n\nResponde /confirmar ${idPending} para aplicar.`)
+    return { status: 200, body: { atendido: true, accion: "vista_previa", intencion: r.body.intencion,
+      id_pending: idPending } }
   }
   // solo remitentes activos autorizados por el SUPER (tabla asistente_remitente)
   let remitente = null
@@ -438,7 +587,7 @@ async function procesarTelegram(estado, deps, update, secretoHeader) {
 // ---- Estado por proceso (tarifa + límite diario) ----
 function crearEstado(cfg) {
   return { cfg, minuto: { clave: null, conteo: 0 }, dia: { clave: null, conteo: 0 },
-    telegram: { pendientes: new Map() } }   // C5: ficha pendiente de confirmar por chat
+    telegram: { pendientes: new Map(), vistos: new Map() } }   // C5 pendientes; v2 dedupe de updates
 }
 function claveVentana(t, unidad) {
   const d = new Date(t)
@@ -602,10 +751,17 @@ async function procesarMensaje(estado, deps, mensaje, sesionId, meta) {
     }
     // C4: historial del turno en GGTO (best-effort; su fallo no afecta el chat)
     if (deps.registrarTurno) {
+      const canal = String(meta?.canal || "PANEL")
       await deps.registrarTurno(estado, deps, {
         sesion_id: String(sesionId || `PANEL-${claveVentana(Date.now(), "dia")}`).slice(0, 64),
-        canal: String(meta?.canal || "PANEL") === "TELEGRAM" ? "TELEGRAM" : "PANEL",
+        canal: canal === "TELEGRAM" || canal === "TELEGRAM_GRUPO" ? canal : "PANEL",
         p00: meta?.p00 || null,
+        // v2 F3-TG-1: trazabilidad del turno en grupo (id_grupo, mensaje_id, from.id)
+        ...(canal === "TELEGRAM_GRUPO" ? {
+          id_grupo: meta?.id_grupo ?? null,
+          mensaje_id: meta?.mensaje_id ?? null,
+          telegram_user_id: meta?.telegram_user_id ?? null,
+        } : {}),
         texto_entrada: String(mensaje || "").slice(0, 4000),
         intencion: ficha.intencion,
         detalle: String(ficha.tipo_evento || extra.consulta || "").slice(0, 60) || null,
@@ -729,9 +885,9 @@ if (require.main === module) {
     PROJECT, PROMPT: PROMPT_GGTO, RATE_PER_MIN, DAILY_LIMIT, MONGO_URL, MONGO_DB,
     TELEGRAM_API_URL, TELEGRAM_SECRET, TELEGRAM_BOT_TOKEN }
   const estado = crearEstado(cfg)
-  const depsCompletos = { ...depsPorDefecto, obtenerToken, confirmar: confirmarAccion, mapear: mapearAlta, buscarCaso, aplicarEvento, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, procesarMensaje }
+  const depsCompletos = { ...depsPorDefecto, obtenerToken, confirmar: confirmarAccion, mapear: mapearAlta, buscarCaso, aplicarEvento, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, buscarGrupo, buscarMiembro, procesarMensaje }
   crearServidor(estado, depsCompletos).listen(PUERTO, () =>
     console.log(`asistente-${PROJECT} escuchando en :${PUERTO} (llm ${estado.cfg.LLM_PROVIDER} ${estado.cfg.LLM_PROVIDER === "opencode" ? `${estado.cfg.MODEL.providerID}/${estado.cfg.MODEL.id}` : estado.cfg.LLM_MODEL}, mcp ${estado.cfg.GGTO_MCP_KEY ? "configurado" : "SIN CLAVE"})`))
 }
 
-module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarLLM, llamarGateway, llamarProveedor, mcpLlamar, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, textoDeRespuesta, vistaPreviaTexto }
+module.exports = { PROMPT_GGTO, crearEstado, tarifaOk, llamarLLM, llamarGateway, llamarProveedor, mcpLlamar, parseRespuestaIA, construirPrompt, procesarMensaje, crearServidor, claveVentana, obtenerToken, validarFichaAlta, mapearAlta, confirmarAccion, expiracionJwt, validarFichaEvento, buscarCaso, aplicarEvento, clasificarConsulta, resumenCaso, resolverConsulta, registrarTurno, procesarTelegram, buscarRemitente, responderTelegram, buscarGrupo, buscarMiembro, esGrupo, textoDeRespuestaGrupo, textoDeRespuesta, vistaPreviaTexto, vistaPreviaTextoGrupo }

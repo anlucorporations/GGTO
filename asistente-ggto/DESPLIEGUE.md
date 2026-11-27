@@ -106,6 +106,55 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo" | jq .
 > con el mensaje de error al usuario; `llamarLLM` ya prueba modelos gratis alternativos
 > antes de rendirse. Para estabilidad plena: créditos + `LLM_MODEL=deepseek/deepseek-v4.1-flash-1017`.
 
+## 4bis · Verificación operativa 2026-11-27 (reparación de webhook)
+
+**Hallazgo:** `getWebhookInfo` devolvió `url=""` con 19 updates pendientes; además el
+`TELEGRAM_BOT_TOKEN` de `/etc/secure/asistente-ggto.env` era inválido (`getMe` → 404) y su
+`TELEGRAM_SECRET` no coincide con el secreto vigente en Secret Manager. El webhook público
+estaba operativo pero Telegram **no entregaba mensajes**.
+
+**Corrección en `vm-preview`:** copia de seguridad del env (`asistente-ggto.env.bak-20261127`,
+0400), actualización de `TELEGRAM_SECRET`/`TELEGRAM_BOT_TOKEN` desde Secret Manager
+(`plataforma-txbarlovento`), recreate del contenedor (`docker compose up -d --no-deps
+--force-recreate asistente`) y `setWebhook` con la URL pública y el `secret_token` vigente.
+
+**Evidencia posterior:**
+- `getWebhookInfo`: `url=https://vm-preview.tailb951ba.ts.net/telegram`, `last_error=null`,
+  `pending_update_count=0` (los 19 mensajes acumulados se entregaron).
+- `POST /telegram` sin header → **403** `secret_token inválido` (fail-closed intacto).
+- `POST /telegram` con header válido y `chat_id=1090508107` → **200**
+  `{"atendido":true,"accion":"consulta","consulta":"RESUMEN_DIA"}`; el primer intento dio
+  `status_interno=503` transitorio del gateway y el inmediato reintento fue 200.
+- Turno persistido en GGTO: `id_turno=13`, `sesion_id=TG-1090508107`, `canal=TELEGRAM`,
+  `detalle=RESUMEN_DIA`, con el resumen real (vía `MCP+API`).
+- Contenedor `healthy`; `node --test asistente-ggto/test/*.test.js` → **44/44** (6 de Telegram).
+
+## 4ter · Grupo `GGTOv3-PDE` operativo (2026-11-27, F3-TG-2/3)
+
+**Síntoma:** en el grupo el bot respondía «Este chat (-5561202916) no está autorizado…»:
+el motor desplegado aún autorizaba por `chat.id` (`asistente_remitente`, C5), mientras la
+versión v2 exige identidad por **`from.id`** contra `asistente_grupo_miembro`.
+
+**Cambio implementado y desplegado:**
+- API `ggto-web` **v108**: nuevos `GET /api/v1/asistente/grupos` y
+  `GET /api/v1/asistente/grupos/{id}/miembros`; `asistente_sesion` acepta
+  `canal=TELEGRAM_GRUPO` con `id_grupo`, `mensaje_id` y `telegram_user_id`.
+- `asistente-ggto/server.js`: rama de grupo con autorización por `from.id`, dedupe por
+  `update_id`, plantillas de **solo referencias** (sin nombre/teléfono/dirección),
+  `/confirmar <id_pending>` para gestores y trazabilidad del turno.
+- BD: alta de `telegram_user_id=8589760242` → p00 `155541` (SUPERVISOR) en el grupo 1.
+
+**Evidencia en vivo:** `POST /telegram` con `chat.id=-5561202916`, `from.id=8589760242`
+→ `{"atendido":true,"accion":"consulta","consulta":"CASO"}` y → `RESUMEN_DIA`; turnos
+`id_turno=15/16` con `canal=TELEGRAM_GRUPO`, `id_grupo=1`, `mensaje_id`, `from.id` y p00
+propios. Un `from.id` no dado de alta (`1090508107`) → `motivo:"usuario no autorizado"`
+**sin invocar al LLM**. `getWebhookInfo`: `pending_update_count=0`. Suite Node **49/49**
+(nuevas 5 pruebas de grupo; incluye rechazo de PII en respuestas y vistas previas).
+
+> **Pendiente del ciclo F3-TG-4:** los pendientes de `/confirmar` viven en memoria del
+> proceso (TTL 10 min), no en `asistente_pending_confirm`; las alertas del bot (F3-TG-5)
+> y la integración web (F3-TG-6) siguen sin implementar.
+
 ## 5 · Checklist §9 del canon (verificar una a una)
 
 | # | Verificación en `asistente-ggto` | Estado |
@@ -115,7 +164,7 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo" | jq .
 | 3 | `GGTO_MCP_KEY` por docker secret root-only (`/run/secrets/ggto_mcp_key`) y `mcp.api_key` configurada en GGTO | ☐ |
 | 4 | `MONGO_URL` resoluble desde el contenedor (tailnet) | ☐ |
 | 5 | `LLM_PROVIDER=opencode` · `GATEWAY_URL=http://100.125.94.21:4090` · `MODEL_ID=nvidia/nemotron-3.5-super-vl-120b-a12b` · `MODEL_PROVIDER=nvidia` · `GATEWAY_AUTH_KEY` desde `opcode-gateway-api-key` (REF-SEC-26). El `:free` (`nemotron-3.5-super-vl-free`/`opencode`) está agotado (~6 h); se usa la misma familia vía NVIDIA del gateway (probado OK). Alternativa con tools MCP: `LLM_PROVIDER=openrouter` | ☑ |
-| 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☐ |
+| 6 | `curl http://100.113.94.52:<puerto>/health` → `{"status":"ok","llm":"configurado","mcp":"configurado","telegram":"configurado"}` | ☑ (2026-11-27) |
 | 7 | Chat básico: texto ficticio → ficha; CONSULTA → respuesta (el LLM puede operar tools de lectura del MCP); CONFIRMAR → alta canónica; historial en `asistente_sesion` + Mongo | ☐ |
 | 8 | docker-compose limits 1 CPU / 1 GB (ya configurado) | ☐ |
 | 9 | Puerto registrado en `04_runbook.md` §3 y en `estado_proyecto.md` | ☐ |
